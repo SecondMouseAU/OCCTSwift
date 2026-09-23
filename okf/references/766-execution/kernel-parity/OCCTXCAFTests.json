@@ -126,5 +126,285 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "TDF Label Properties::Label tag",
+    "bridge_function": "OCCTDocumentLabelTag",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "tag": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tag": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label depth",
+    "bridge_function": "OCCTDocumentLabelDepth",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "main": 1,
+        "child": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "main": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label isNull",
+    "bridge_function": "OCCTDocumentLabelIsNull",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "null": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "entry": "0:1"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label isRoot",
+    "bridge_function": "OCCTDocumentLabelIsRoot",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "main": false,
+        "root": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "main": false,
+        "root": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label father",
+    "bridge_function": "OCCTDocumentLabelFather",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "father_is_main": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "entry": "0:1"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label root",
+    "bridge_function": "OCCTDocumentLabelRoot",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "root_is_root": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "root": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label hasAttribute and attributeCount",
+    "bridge_function": "OCCTDocumentLabelHasAttribute",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "fresh": false,
+        "fresh_count": 0,
+        "after_name": true,
+        "count_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_count": 0,
+        "after_name_count": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label hasChild and childCount",
+    "bridge_function": "OCCTDocumentLabelNbChildren",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "after": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "after": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label findChild by tag",
+    "bridge_function": "OCCTDocumentLabelFindChild",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "found": true,
+        "missing": null,
+        "created": true,
+        "children": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "found": true,
+        "missing_null": true,
+        "children_after_create": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label forgetAllAttributes",
+    "bridge_function": "OCCTDocumentLabelForgetAllAttributes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "after": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "after": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label descendants",
+    "bridge_function": "OCCTDocumentGetDescendantLabels",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "direct": 2,
+        "all": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "direct": 2,
+        "all": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label descendants past the 1024 buffer cap reports the true count (#1563)",
+    "bridge_function": "OCCTDocumentGetDescendantLabels",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "beyond_cap": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "walk_counts_every_level": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
   }
 ]

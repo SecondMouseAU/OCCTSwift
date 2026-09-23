@@ -99,3 +99,24 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `TDFLabelPropertyTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `labelTag` | `OCCTDocumentLabelTag` answers 99 | :17 Expectation failed: main.tag == 1 | passed | `OCCTDocumentLabelTag` | PASS: Main tag 1 |
+| `labelDepth` | `OCCTDocumentLabelDepth` answers 5 | :25 Expectation failed: main.depth == 1; :27 Expectation failed: child.depth == 2 | passed | `OCCTDocumentLabelDepth` | PASS: Main depth 1 |
+| `labelIsNull` | `OCCTDocumentLabelIsNull` returns true for every id | :36 Expectation failed: !main.isNull | passed | `OCCTDocumentLabelIsNull` | PASS: Main is 0:1 |
+| `labelIsRoot` | `OCCTDocumentLabelIsRoot` returns true | :44 Expectation failed: !main.isRoot | passed | `OCCTDocumentLabelIsRoot` | PASS: Main not root; Root() is |
+| `labelFather` | `OCCTDocumentLabelFather` answers -1 | :57 `child.father?.labelId == main.labelId` (rewritten; with `father` inside the `if let`, a missing father passed) | passed | `OCCTDocumentLabelFather` | PASS: a Main child's father is 0:1 |
+| `labelRoot` | `OCCTDocumentLabelIsRoot` returns false | :65 Expectation failed: root.isRoot | passed | `OCCTDocumentLabelRoot` | PASS: Root() is root |
+| `labelAttributes` | `OCCTDocumentLabelHasAttribute` returns false | :78 Expectation failed: label.hasAttribute | passed | `OCCTDocumentLabelHasAttribute` | PASS: 0, then 2 |
+| `labelChildren` | `OCCTDocumentLabelNbChildren` answers 0 | :92 Expectation failed: parent.childCount == 2 | passed | `OCCTDocumentLabelNbChildren` | PASS: 0, then 2 |
+| `labelFindChild` | `OCCTDocumentLabelFindChild` answers -1 | :103 Expectation failed: found != nil; :111 Expectation failed: created != nil | passed | `OCCTDocumentLabelFindChild` | PASS: found; 99 absent; create adds one |
+| `labelForgetAllAttributes` | `OCCTDocumentLabelForgetAllAttributes` returns without forgetting | :124 Expectation failed: !label.hasAttribute | passed | `OCCTDocumentLabelForgetAllAttributes` | PASS: no attribute after |
+| `labelDescendants` | `OCCTDocumentGetDescendantLabels` answers 0 | :137 Expectation failed: direct.count == 2; :140 Expectation failed: all.count == 4 | passed | `OCCTDocumentGetDescendantLabels` | PASS: 2 and 4 |
+| `labelDescendantsBeyondBufferCap` | `OCCTDocumentGetDescendantLabels` answers 0 | :153 Expectation failed: direct.count == extraCount | passed | `OCCTDocumentGetDescendantLabels` | PASS: the kernel walk has no cap; the bridge's buffer must not truncate |
