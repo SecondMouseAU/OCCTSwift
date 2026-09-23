@@ -109,3 +109,24 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-intrv (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **Intrv_Intervals Tests** | create from single interval | `OCCTIntrvIntervalsCreate / OCCTIntrvIntervalsValue` | Value() reads start and end into each other's slots | red | green | PASS |
+| **Intrv_Intervals Tests** | create empty | `OCCTIntrvIntervalsCreateEmpty` | empty set seeded with [0, 0] | red | green | PASS |
+| **Intrv_Intervals Tests** | unite non-overlapping | `OCCTIntrvIntervalsUnite` | united interval's end replaced by its start ([5,5] instead of [5,8]) | red | green | PASS |
+| **Intrv_Intervals Tests** | unite overlapping merges | `OCCTIntrvIntervalsUnite` | united interval's end replaced by its start | red | green | PASS |
+| **Intrv_Intervals Tests** | subtract middle | `OCCTIntrvIntervalsSubtract` | subtracted interval end + 1 | red | green | PASS |
+| **Intrv_Intervals Tests** | intersect | `OCCTIntrvIntervalsIntersect` | Intersect skipped | red | green | PASS |
+| **Intrv_Intervals Tests** | xUnite symmetric difference | `OCCTIntrvIntervalsXUnite` | xUnite interval end - 1 | red | green | PASS |
+| **Intrv_Interval Tests** | create and get bounds | `OCCTIntrvIntervalBounds` | Bounds() reads start and end into each other's slots | red | green | PASS |
+| **Intrv_Interval Tests** | create with tolerances | `OCCTIntrvIntervalCreate` | tolStart and tolEnd exchanged at construction | red | green | PASS |
+| **Intrv_Interval Tests** | probably empty | `OCCTIntrvIntervalIsProbablyEmpty` | IsProbablyEmpty negated | red | green | PASS |
+| **Intrv_Interval Tests** | before and after | `OCCTIntrvIntervalIsBefore / OCCTIntrvIntervalIsAfter` | IsBefore and IsAfter exchanged | red | green | PASS |
+| **Intrv_Interval Tests** | inside and enclosing | `OCCTIntrvIntervalIsInside / OCCTIntrvIntervalIsEnclosing` | IsInside and IsEnclosing exchanged | red | green | PASS |
+| **Intrv_Interval Tests** | similar | `OCCTIntrvIntervalIsSimilar` | IsSimilar negated | red | green | PASS |
+| **Intrv_Interval Tests** | position | `OCCTIntrvIntervalPosition` | receiver and argument exchanged (b.Position(a) = 12, Intrv_After) | red | green | PASS |
+| **Intrv_Interval Tests** | set and modify bounds | `OCCTIntrvIntervalSetEnd` | SetEnd calls SetStart | red | green | PASS |
+| **Intrv_Interval Tests** | fuse and cut | `OCCTIntrvIntervalFuseAtStart (and FuseAtEnd/CutAtStart/CutAtEnd)` | FuseAtStart calls CutAtStart (start stays 3) | red | green | PASS |

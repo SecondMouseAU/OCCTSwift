@@ -182,5 +182,165 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Intrv_Intervals Tests::create from single interval",
+    "bridge_function": "OCCTIntrvIntervalsCreate / OCCTIntrvIntervalsValue",
+    "bridge_output": {"type": "observed", "data": "count=1 [1, 5]", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "count=1 [1, 5]", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "Value() reads start and end into each other's slots", "failing_expectation": ":14 `abs(b.start - 1.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Intervals Tests::create empty",
+    "bridge_function": "OCCTIntrvIntervalsCreateEmpty",
+    "bridge_output": {"type": "observed", "data": "count=0", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "count=0", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "empty set seeded with [0, 0]", "failing_expectation": ":21 `set.count == 0`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Intervals Tests::unite non-overlapping",
+    "bridge_function": "OCCTIntrvIntervalsUnite",
+    "bridge_output": {"type": "observed", "data": "count=2 [1, 3] [5, 8]", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "count=2 [1, 3] [5, 8]", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "united interval's end replaced by its start ([5,5] instead of [5,8])", "failing_expectation": "original: **green**; rewritten: :37 `abs(set.bounds(at: 1).end - 8.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Intervals Tests::unite overlapping merges",
+    "bridge_function": "OCCTIntrvIntervalsUnite",
+    "bridge_output": {"type": "observed", "data": "count=1 [1, 8]", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "count=1 [1, 8]", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "united interval's end replaced by its start", "failing_expectation": "original: **green**; rewritten: :48 `abs(set.bounds(at: 0).end - 8.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Intervals Tests::subtract middle",
+    "bridge_function": "OCCTIntrvIntervalsSubtract",
+    "bridge_output": {"type": "observed", "data": "count=2 [0, 3] [7, 10]", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "count=2 [0, 3] [7, 10]", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "subtracted interval end + 1", "failing_expectation": "original: **green**; rewritten: :60 `abs(set.bounds(at: 1).start - 7.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Intervals Tests::intersect",
+    "bridge_function": "OCCTIntrvIntervalsIntersect",
+    "bridge_output": {"type": "observed", "data": "count=1 [3, 7]", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "count=1 [3, 7]", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "Intersect skipped", "failing_expectation": ":51 `abs(b.start - 3.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Intervals Tests::xUnite symmetric difference",
+    "bridge_function": "OCCTIntrvIntervalsXUnite",
+    "bridge_output": {"type": "observed", "data": "count=2 [0, 3] [5, 8]", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "count=2 [0, 3] [5, 8]", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "xUnite interval end - 1", "failing_expectation": "original: **green**; rewritten: :84 `abs(set.bounds(at: 1).end - 8.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Interval Tests::create and get bounds",
+    "bridge_function": "OCCTIntrvIntervalBounds",
+    "bridge_output": {"type": "observed", "data": "start=1 end=5 (tolerances clamped to 2.2e-16 / 8.9e-16 by Intrv_Interval)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "start=1 end=5 (tolerances clamped to 2.2e-16 / 8.9e-16 by Intrv_Interval)", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "Bounds() reads start and end into each other's slots", "failing_expectation": ":13 `abs(b.start - 1.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Interval Tests::create with tolerances",
+    "bridge_function": "OCCTIntrvIntervalCreate",
+    "bridge_output": {"type": "observed", "data": "tolStart=0.009999999776 tolEnd=0.01999999955", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "tolStart=0.009999999776 tolEnd=0.01999999955", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "tolStart and tolEnd exchanged at construction", "failing_expectation": ":21 `abs(b.tolStart - 0.01) < 1e-6`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Interval Tests::probably empty",
+    "bridge_function": "OCCTIntrvIntervalIsProbablyEmpty",
+    "bridge_output": {"type": "observed", "data": "big=0 empty=1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "big=0 empty=1", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "IsProbablyEmpty negated", "failing_expectation": ":28 `!big.isProbablyEmpty`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Interval Tests::before and after",
+    "bridge_function": "OCCTIntrvIntervalIsBefore / OCCTIntrvIntervalIsAfter",
+    "bridge_output": {"type": "observed", "data": "a.IsBefore(b)=1 b.IsAfter(a)=1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "a.IsBefore(b)=1 b.IsAfter(a)=1", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "IsBefore and IsAfter exchanged", "failing_expectation": ":38 `a.isBefore(b)`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Interval Tests::inside and enclosing",
+    "bridge_function": "OCCTIntrvIntervalIsInside / OCCTIntrvIntervalIsEnclosing",
+    "bridge_output": {"type": "observed", "data": "inner.IsInside(outer)=1 outer.IsEnclosing(inner)=1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "inner.IsInside(outer)=1 outer.IsEnclosing(inner)=1", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "IsInside and IsEnclosing exchanged", "failing_expectation": ":46 `inner.isInside(outer)`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Interval Tests::similar",
+    "bridge_function": "OCCTIntrvIntervalIsSimilar",
+    "bridge_output": {"type": "observed", "data": "1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "1", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "IsSimilar negated", "failing_expectation": ":54 `a.isSimilar(to: b)`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Interval Tests::position",
+    "bridge_function": "OCCTIntrvIntervalPosition",
+    "bridge_output": {"type": "observed", "data": "a.Position(b)=0 (Intrv_Before=0), b.Position(a)=12", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "a.Position(b)=0 (Intrv_Before=0), b.Position(a)=12", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "receiver and argument exchanged (b.Position(a) = 12, Intrv_After)", "failing_expectation": ":61 `a.position(relativeTo: b) == 0`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Interval Tests::set and modify bounds",
+    "bridge_function": "OCCTIntrvIntervalSetEnd",
+    "bridge_output": {"type": "observed", "data": "start=2 end=8", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "start=2 end=8", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "SetEnd calls SetStart", "failing_expectation": ":70 `abs(b.start - 2.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Intrv_Interval Tests::fuse and cut",
+    "bridge_function": "OCCTIntrvIntervalFuseAtStart (and FuseAtEnd/CutAtStart/CutAtEnd)",
+    "bridge_output": {"type": "observed", "data": "after FuseAtStart(1): [1,7]; FuseAtEnd(9): [1,9]; CutAtStart(2): [2,9]; CutAtEnd(8): [2,8]", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "after FuseAtStart(1): [1,7]; FuseAtEnd(9): [1,9]; CutAtStart(2): [2,9]; CutAtEnd(8): [2,8]", "source": "Scripts/repro/766-math-intrv/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "FuseAtStart calls CutAtStart (start stays 3)", "failing_expectation": ":78 `abs(iv.bounds.start - 1.0) < 1e-10`"},
+    "green": true
   }
 ]
