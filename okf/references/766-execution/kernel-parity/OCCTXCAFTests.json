@@ -126,5 +126,211 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "TDataXtd Constraint Tests::setAndGetType",
+    "bridge_function": "OCCTDocumentConstraintGetType",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "type": "parallel"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "type": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Constraint Tests::isPlanarAndDimension",
+    "bridge_function": "OCCTDocumentConstraintIsPlanar",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "planar": false,
+        "dimension": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "planar": false,
+        "dimension": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Constraint Tests::verifiedFlag",
+    "bridge_function": "OCCTDocumentConstraintGetVerified",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Constraint Tests::noConstraint",
+    "bridge_function": "OCCTDocumentConstraintGetType",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "type": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_has_constraint": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Point/Axis/Plane Attributes::Set point attribute",
+    "bridge_function": "OCCTDocumentSetPointAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "set_non_null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Point/Axis/Plane Attributes::Set axis attribute",
+    "bridge_function": "OCCTDocumentSetAxisAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "set_non_null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Point/Axis/Plane Attributes::Set plane attribute",
+    "bridge_function": "OCCTDocumentSetPlaneAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "set_non_null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Geometry Attribute::Set and get geometry type",
+    "bridge_function": "OCCTDocumentGetGeometryType",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "types": [
+          "point",
+          "plane",
+          "cylinder"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "POINT": 1,
+        "PLANE": 6,
+        "CYLINDER": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Geometry Attribute::All geometry type values",
+    "bridge_function": "OCCTDocumentGetGeometryType",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "every_type_round_trips": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "SetType_GetType_roundtrip": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
   }
 ]

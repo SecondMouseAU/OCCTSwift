@@ -99,3 +99,31 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `TDataXtdConstraintTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGetType` | `OCCTDocumentConstraintGetType` answers 3 | :18 Expectation failed: type == .parallel | passed | `OCCTDocumentConstraintGetType` | PASS: PARALLEL (5) |
+| `isPlanarAndDimension` | `OCCTDocumentConstraintIsPlanar` returns true | :29 Expectation failed: !doc.constraintIsPlanar(labelId: node.labelId) | passed | `OCCTDocumentConstraintIsPlanar` | PASS: false, false |
+| `verifiedFlag` | `OCCTDocumentConstraintGetVerified` returns false | :40 Expectation failed: doc.constraintGetVerified(labelId: node.labelId) | passed | `OCCTDocumentConstraintGetVerified` | PASS: true |
+| `noConstraint` | `OCCTDocumentConstraintGetType` answers 0 where there is none | :46 Expectation failed: doc.constraintGetType(labelId: node.labelId) == nil | passed | `OCCTDocumentConstraintGetType` | PASS: no constraint on a fresh label |
+
+### `TDataXtdGeometricAttrTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setPoint` | `OCCTDocumentSetPointAttr` returns false | :15 Expectation failed: label.setPointAttribute(x: 5.0, y: 10.0, z: 15.0) | passed | `OCCTDocumentSetPointAttr` | PASS: `TDataXtd_Point::Set` non-null |
+| `setAxis` | `OCCTDocumentSetAxisAttr` returns false | :22 Expectation failed: label.setAxisAttribute(originX: 0, originY: 0, originZ: 0, directionX: 0, directionY: 0, directionZ: 1) | passed | `OCCTDocumentSetAxisAttr` | PASS: `TDataXtd_Axis::Set` non-null |
+| `setPlane` | `OCCTDocumentSetPlaneAttr` returns false | :32 Expectation failed: label.setPlaneAttribute(originX: 0, originY: 0, originZ: 0, normalX: 0, normalY: 0, normalZ: 1) | passed | `OCCTDocumentSetPlaneAttr` | PASS: `TDataXtd_Plane::Set` non-null |
+
+### `TDataXtdGeometryAttributeTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setGetGeometryType` | `OCCTDocumentGetGeometryType` answers 0 | :18 Expectation failed: label.geometryType() == .point; :21 Expectation failed: label.geometryType() == .plane | passed | `OCCTDocumentGetGeometryType` | PASS: 1, 6, 7 |
+| `allGeometryTypes` | `OCCTDocumentGetGeometryType` answers 0 | :36 Expectation failed: label.geometryType() == type; :36 Expectation failed: label.geometryType() == type | passed | `OCCTDocumentGetGeometryType` | PASS: each type reads back |
