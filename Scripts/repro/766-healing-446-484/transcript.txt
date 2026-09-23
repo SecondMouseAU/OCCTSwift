@@ -1,0 +1,8 @@
+stacked cylinders: faces=4 volume=1570.796326795
+unify on a copy: result faces=3 volume=1570.796326795; input faces after=4 volume=1570.796326795
+unify box on a copy: faces=6 sharedWithInput=0 isSame=0
+box connect: faces=6
+cylinder r4 h9 connect: faces=3
+two squares shell: edges before=8 after=7 faces after=2
+box 10x20x30: ShapeFix_Face per face -> 6 of 6 valid single faces
+cylinder r5 h12: ShapeFix_Face per face -> 3 of 3 valid single faces
