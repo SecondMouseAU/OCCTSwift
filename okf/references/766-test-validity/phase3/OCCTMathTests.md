@@ -109,3 +109,14 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-plane-geometry (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **PlaneGeometry_Operations** | distanceToPointOnPlane | `OCCTPlaneDistanceToPoint` | gp_Pln::Distance(point) + 0.5 | red | green | PASS |
+| **PlaneGeometry_Operations** | distanceToPointAbovePlane | `OCCTPlaneDistanceToPoint` | gp_Pln::Distance(point) + 0.5 | red | green | PASS |
+| **PlaneGeometry_Operations** | distanceToParallelLine | `OCCTPlaneDistanceToLine` | gp_Pln::Distance(line) + 0.5 | red | green | PASS |
+| **PlaneGeometry_Operations** | distanceToIntersectingLine | `OCCTPlaneDistanceToLine` | gp_Pln::Distance(line) + 0.5 | red | green | PASS |
+| **PlaneGeometry_Operations** | containsPointTrue | `OCCTPlaneContainsPoint` | negate gp_Pln::Contains | red | green | PASS |
+| **PlaneGeometry_Operations** | containsPointFalse | `OCCTPlaneContainsPoint` | negate gp_Pln::Contains | red | green | PASS |
