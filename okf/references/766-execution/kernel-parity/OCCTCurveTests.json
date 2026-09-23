@@ -302,5 +302,230 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BSpline knot splitting continuity range (#398)::thirdDerivativeOrderReportsInteriorKnots",
+    "test_file": "Tests/OCCTCurveTests/Issue398KnotSplittingTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineKnotSplits",
+    "bridge_output": {
+      "type": "value",
+      "data": "C2 2 splits, C3 8 knots"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_Interpolate + GeomConvert_BSplineCurveKnotSplitting: C2 2, C3 8: 0, 11.180339887498949 ... 90.995437366198999"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cbdrop: last split dropped; cborder: C3 asked as C2",
+    "red": "Issue398KnotSplittingTests.swift:48 atC3.count == kernel.count",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt",
+    "note": "REWRITTEN: atC3.count > atC2.count held for any interior knot; now all 8 knots are pinned"
+  },
+  {
+    "test_name": "BSpline knot splitting continuity range (#398)::largeSplitCountSurvivesTheBuffer",
+    "test_file": "Tests/OCCTCurveTests/Issue398KnotSplittingTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineKnotSplits",
+    "bridge_output": {
+      "type": "value",
+      "data": "400"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_Interpolate + GeomConvert_BSplineCurveKnotSplitting: C3 400 splits"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cbtrunc: no retry past 256",
+    "red": "Issue398KnotSplittingTests.swift:75 splits.count > 256",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt",
+    "note": "Count pinned to 400 alongside the existing > 256"
+  },
+  {
+    "test_name": "BSpline knot splitting continuity range (#398)::higherOrdersAreMonotonic",
+    "test_file": "Tests/OCCTCurveTests/Issue398KnotSplittingTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineKnotSplits",
+    "bridge_output": {
+      "type": "value",
+      "data": "[2, 2, 2, 8]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_Interpolate + GeomConvert_BSplineCurveKnotSplitting: C0..C3: 2, 2, 2, 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cbdrop; cborder",
+    "red": "Issue398KnotSplittingTests.swift:106 counts == [2, 2, 2, 8]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt",
+    "note": "REWRITTEN: sortedness held for any non-decreasing answer; now pinned"
+  },
+  {
+    "test_name": "LawFunction knot splitting parameters (#403)::countMatchesIndexMethod",
+    "test_file": "Tests/OCCTCurveTests/Issue403LawKnotSplitParamsTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitting, OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "[0, 0.5, 1]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: C2 3 splits: 0, 0.5, 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lpdrop; lawnone; lpshift",
+    "red": "Issue403LawKnotSplitParamsTests.swift:34 indices.count == params.count",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt",
+    "note": "REWRITTEN: params.count >= 2 now also pins [0, 0.5, 1]"
+  },
+  {
+    "test_name": "LawFunction knot splitting parameters (#403)::parametersMatchBounds",
+    "test_file": "Tests/OCCTCurveTests/Issue403LawKnotSplitParamsTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "0 ... 1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: 0 ... 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lpshift: params + 1e-6; lpdrop",
+    "red": "Issue403LawKnotSplitParamsTests.swift:52 first == bounds.lower",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt",
+    "note": "An empty result skipped the end checks; now records an issue"
+  },
+  {
+    "test_name": "LawFunction knot splitting parameters (#403)::interiorBreakReported",
+    "test_file": "Tests/OCCTCurveTests/Issue403LawKnotSplitParamsTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "contains 0.5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: C2 includes 0.5 (C1 does not)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lorder: order - 1; lpshift",
+    "red": "Issue403LawKnotSplitParamsTests.swift:70 contains 0.5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt"
+  },
+  {
+    "test_name": "LawFunction knot splitting parameters (#403)::nonBSplineLawReturnsEmpty",
+    "test_file": "Tests/OCCTCurveTests/Issue403LawKnotSplitParamsTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Linear does not DownCast to Law_BSpFunc (Scripts/repro/766-curve-integration-extrema-law)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lpall: non-BSpFunc law answers [0, 1]",
+    "red": "Issue403LawKnotSplitParamsTests.swift:79 isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt"
+  },
+  {
+    "test_name": "Law knot-splitting continuity range (#480)::cubicSimpleKnotsNeedC3",
+    "test_file": "Tests/OCCTCurveTests/Issue480LawKnotSplitContinuityTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitParams, OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "C0..C2 [0, 5], C3 [0...5]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: C0..C2 0 5; C3 0 1 2 3 4 5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lorder; lpshift; lawnone",
+    "red": "Issue480LawKnotSplitContinuityTests.swift:49 .c3 == [0, 1, 2, 3, 4, 5]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt"
+  },
+  {
+    "test_name": "Law knot-splitting continuity range (#480)::defaultFindsGenuineKink",
+    "test_file": "Tests/OCCTCurveTests/Issue480LawKnotSplitContinuityTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "C1 [0, 2, 5], C0 [0, 5]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: C0 0 5; C1 0 2 5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lorder; lpshift; lpdrop",
+    "red": "Issue480LawKnotSplitContinuityTests.swift:57 == [0, 2, 5]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt"
+  },
+  {
+    "test_name": "Law knot-splitting continuity range (#480)::indicesAndParametersAgree",
+    "test_file": "Tests/OCCTCurveTests/Issue480LawKnotSplitContinuityTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitting, OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "2, 2, 2, 6 both ways"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: 2, 2, 2, 6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lorder (params only); lpdrop; lawnone",
+    "red": "Issue480LawKnotSplitContinuityTests.swift:66 counts agree",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt"
   }
 ]

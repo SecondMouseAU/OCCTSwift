@@ -197,3 +197,20 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| BSpline knot splitting continuity range (#398) | thirdDerivativeOrderReportsInteriorKnots | `OCCTCurve3DBSplineKnotSplits` | cbdrop: last split dropped; cborder: C3 asked as C2 | `Issue398KnotSplittingTests.swift:48 atC3.count == kernel.count` | ✅ | MATCH | REWRITTEN: atC3.count > atC2.count held for any interior knot; now all 8 knots are pinned |
+| BSpline knot splitting continuity range (#398) | largeSplitCountSurvivesTheBuffer | `OCCTCurve3DBSplineKnotSplits` | cbtrunc: no retry past 256 | `Issue398KnotSplittingTests.swift:75 splits.count > 256` | ✅ | MATCH | Count pinned to 400 alongside the existing > 256 |
+| BSpline knot splitting continuity range (#398) | higherOrdersAreMonotonic | `OCCTCurve3DBSplineKnotSplits` | cbdrop; cborder | `Issue398KnotSplittingTests.swift:106 counts == [2, 2, 2, 8]` | ✅ | MATCH | REWRITTEN: sortedness held for any non-decreasing answer; now pinned |
+| LawFunction knot splitting parameters (#403) | countMatchesIndexMethod | `OCCTLawBSplineKnotSplitting, OCCTLawBSplineKnotSplitParams` | lpdrop; lawnone; lpshift | `Issue403LawKnotSplitParamsTests.swift:34 indices.count == params.count` | ✅ | MATCH | REWRITTEN: params.count >= 2 now also pins [0, 0.5, 1] |
+| LawFunction knot splitting parameters (#403) | parametersMatchBounds | `OCCTLawBSplineKnotSplitParams` | lpshift: params + 1e-6; lpdrop | `Issue403LawKnotSplitParamsTests.swift:52 first == bounds.lower` | ✅ | MATCH | An empty result skipped the end checks; now records an issue |
+| LawFunction knot splitting parameters (#403) | interiorBreakReported | `OCCTLawBSplineKnotSplitParams` | lorder: order - 1; lpshift | `Issue403LawKnotSplitParamsTests.swift:70 contains 0.5` | ✅ | MATCH |  |
+| LawFunction knot splitting parameters (#403) | nonBSplineLawReturnsEmpty | `OCCTLawBSplineKnotSplitParams` | lpall: non-BSpFunc law answers [0, 1] | `Issue403LawKnotSplitParamsTests.swift:79 isEmpty` | ✅ | MATCH |  |
+| Law knot-splitting continuity range (#480) | cubicSimpleKnotsNeedC3 | `OCCTLawBSplineKnotSplitParams, OCCTLawBSplineKnotSplitting` | lorder; lpshift; lawnone | `Issue480LawKnotSplitContinuityTests.swift:49 .c3 == [0, 1, 2, 3, 4, 5]` | ✅ | MATCH |  |
+| Law knot-splitting continuity range (#480) | defaultFindsGenuineKink | `OCCTLawBSplineKnotSplitParams` | lorder; lpshift; lpdrop | `Issue480LawKnotSplitContinuityTests.swift:57 == [0, 2, 5]` | ✅ | MATCH |  |
+| Law knot-splitting continuity range (#480) | indicesAndParametersAgree | `OCCTLawBSplineKnotSplitting, OCCTLawBSplineKnotSplitParams` | lorder (params only); lpdrop; lawnone | `Issue480LawKnotSplitContinuityTests.swift:66 counts agree` | ✅ | MATCH |  |

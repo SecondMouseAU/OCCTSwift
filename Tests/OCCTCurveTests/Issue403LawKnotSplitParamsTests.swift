@@ -33,6 +33,10 @@ struct Issue403LawKnotSplitParamsTests {
         // splits there are, even though one returns indices and the other parameters.
         #expect(indices.count == params.count)
         #expect(params.count >= 2)
+        // #766: Law_BSplineKnotSplitting at C2 gives the two ends and the multiplicity-2 knot
+        // (Scripts/repro/766-curve-knot-splitting).
+        #expect(indices.count == 3)
+        #expect(params == [0, 0.5, 1])
     }
 
     @Test("Parameters are ascending and bracketed by the law's own bounds")
@@ -47,6 +51,8 @@ struct Issue403LawKnotSplitParamsTests {
         if let first = params.first, let last = params.last {
             #expect(abs(first - bounds.lowerBound) < 1e-9)
             #expect(abs(last - bounds.upperBound) < 1e-9)
+        } else {
+            Issue.record("no split parameters")  // #766: was a silent pass
         }
         #expect(zip(params, params.dropFirst()).allSatisfy { $0 < $1 })
         #expect(params.allSatisfy { bounds.contains($0) })
