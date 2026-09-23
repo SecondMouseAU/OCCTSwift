@@ -302,5 +302,419 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.113.0 - ProjectionOnCurve::multiResultProjection",
+    "test_file": "Tests/OCCTCurveTests/ProjectionOnCurveTests.swift",
+    "bridge_function": "OCCTProjOnCurveCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": "count 2; (5,0,0) d=5; (-5,0,0) d=15; lowerDistance 5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_ProjectPointOnCurve: NbPoints 2; (5,0,0) d=5; (-5,6e-16,0) d=15; LowerDistance 5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "proj: Init on (10,1,0) instead of (10,0,0)",
+    "red": "ProjectionOnCurveTests.swift:23 point(at: 0) == (5,0,0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: tolerances were 0.1 and the far extremum was never checked; silent `if let` guards now record an issue"
+  },
+  {
+    "test_name": "v0.113.0 - ProjectionOnCurve::parameterAccess",
+    "test_file": "Tests/OCCTCurveTests/ProjectionOnCurveTests.swift",
+    "bridge_function": "OCCTProjOnCurveParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": "parameters 0 and pi; lowerParameter 0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_ProjectPointOnCurve: Parameter(1)=0, Parameter(2)=3.14159265359, LowerDistanceParameter=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "proj",
+    "red": "ProjectionOnCurveTests.swift:41 parameter(at: 0) == 0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: was `param >= 0`, true of any wrong parameter in [0, 2pi)"
+  },
+  {
+    "test_name": "Quasi-Uniform Abscissa Sampling::sampleSegment",
+    "test_file": "Tests/OCCTCurveTests/QuasiUniformAbscissaTests.swift",
+    "bridge_function": "OCCTCurve3DQuasiUniformAbscissa",
+    "bridge_output": {
+      "type": "value",
+      "data": "[0, 2.5, 5, 7.5, 10]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_QuasiUniformAbscissa: 0 2.5 5 7.5 10"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "qua: parameter i shifted by 1e-3 * i",
+    "red": "QuasiUniformAbscissaTests.swift:23 abs(p - e) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: was count + monotonic only"
+  },
+  {
+    "test_name": "Quasi-Uniform Abscissa Sampling::sampleCircle",
+    "test_file": "Tests/OCCTCurveTests/QuasiUniformAbscissaTests.swift",
+    "bridge_function": "OCCTCurve3DQuasiUniformAbscissa",
+    "bridge_output": {
+      "type": "value",
+      "data": "10 parameters k*2pi/9"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_QuasiUniformAbscissa: 0 0.698131700798 ... 6.28318530718 (10)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "qua",
+    "red": "QuasiUniformAbscissaTests.swift:37 abs(p - k*2pi/9) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: was count only"
+  },
+  {
+    "test_name": "Quasi-Uniform Abscissa Sampling::minCount",
+    "test_file": "Tests/OCCTCurveTests/QuasiUniformAbscissaTests.swift",
+    "bridge_function": "OCCTCurve3DQuasiUniformAbscissa",
+    "bridge_output": {
+      "type": "value",
+      "data": "[0, 10]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_QuasiUniformAbscissa n=2: 0 10"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "qua",
+    "red": "QuasiUniformAbscissaTests.swift:51 params[1] == 10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: was count only"
+  },
+  {
+    "test_name": "Quasi-Uniform Deflection Sampling::sampleCircle",
+    "test_file": "Tests/OCCTCurveTests/QuasiUniformDeflectionTests.swift",
+    "bridge_function": "OCCTCurve3DQuasiUniformDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": "24 points on r=10, max sagitta <= 0.1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_QuasiUniformDeflection defl 0.1: NbPoints 24, maxSagitta 0.0931405396367, radial error 1.8e-15"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "qud: sampler given 2x the deflection",
+    "red": "QuasiUniformDeflectionTests.swift:29 points.count == 24",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: was count > 4 and radius within 0.2"
+  },
+  {
+    "test_name": "Quasi-Uniform Deflection Sampling::tighterDeflection",
+    "test_file": "Tests/OCCTCurveTests/QuasiUniformDeflectionTests.swift",
+    "bridge_function": "OCCTCurve3DQuasiUniformDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": "8 points at 1.0, 72 at 0.01"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_QuasiUniformDeflection: 8 at 1.0 (maxSagitta 0.99), 72 at 0.01 (maxSagitta 0.00979)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "qud",
+    "red": "QuasiUniformDeflectionTests.swift:48 coarse.count == 8",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: was fine.count > coarse.count"
+  },
+  {
+    "test_name": "v0.143 Sketch arcs and circles::circleTessellation",
+    "test_file": "Tests/OCCTCurveTests/SketchArcCircleTests.swift",
+    "bridge_function": "none (pure Swift SketchElement.CurveKind.tessellate2D)",
+    "bridge_output": {
+      "type": "value",
+      "data": "51 points on r=5, closed"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: pure-Swift tessellation, no OCCT call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "injection": "sk (Swift): radius scaled by 1.000001 in tessellate2D",
+    "red": "SketchArcCircleTests.swift:20 abs(r - 5.0) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "strengthened: exact count 51 and closure added"
+  },
+  {
+    "test_name": "v0.143 Sketch arcs and circles::arcTessellation",
+    "test_file": "Tests/OCCTCurveTests/SketchArcCircleTests.swift",
+    "bridge_function": "none (pure Swift SketchElement.CurveKind.tessellate2D)",
+    "bridge_output": {
+      "type": "value",
+      "data": "26 points, (2,0) to (0,2)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: pure-Swift tessellation, no OCCT call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "injection": "sk",
+    "red": "SketchArcCircleTests.swift:40 first == (2,0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: force-unwrapped `pts.first!` inside #expect; now guarded, count and radius pinned"
+  },
+  {
+    "test_name": "v0.143 Sketch arcs and circles::buildProfileWithArc",
+    "test_file": "Tests/OCCTCurveTests/SketchArcCircleTests.swift",
+    "bridge_function": "OCCTWireCreateFastPolygon",
+    "bridge_output": {
+      "type": "value",
+      "data": "51 edges, length 25.7053795391"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepBuilderAPI_MakePolygon on the same 52 points, Close(): 51 edges, length 25.7053795391"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "sk",
+    "red": "SketchArcCircleTests.swift:72 wire.orderedEdgeCount == 51",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: was `wire != nil`"
+  },
+  {
+    "test_name": "GeomConvert_SurfToAnaSurf::recognizePlane",
+    "test_file": "Tests/OCCTCurveTests/SurfToAnaSurfTests.swift",
+    "bridge_function": "OCCTGeomConvertSurfToAnalytical",
+    "bridge_output": {
+      "type": "value",
+      "data": "plane, gap 0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert_SurfToAnaSurf::ConvertToAnalytical(1e-4): Geom_Plane normal (0,0,1), Gap 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "sta: gap + 1.0 and IsCanonical negated",
+    "red": "SurfToAnaSurfTests.swift:27 result.gap < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: a nil result skipped every assertion; now records an issue and pins kind and gap"
+  },
+  {
+    "test_name": "GeomConvert_SurfToAnaSurf::isCanonical",
+    "test_file": "Tests/OCCTCurveTests/SurfToAnaSurfTests.swift",
+    "bridge_function": "OCCTGeomConvertIsCanonical",
+    "bridge_output": {
+      "type": "value",
+      "data": "plane true, BSpline false"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert_SurfToAnaSurf::IsCanonical: plane 1, BSpline 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "sta",
+    "red": "SurfToAnaSurfTests.swift:39 plane.isCanonical",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "silent `if let` guards now record an issue"
+  },
+  {
+    "test_name": "TopTrans CurveTransition Tests::basicCurveTransition",
+    "test_file": "Tests/OCCTCurveTests/TopTransCurveTransitionTests.swift",
+    "bridge_function": "OCCTTopTransCurveTransition",
+    "bridge_output": {
+      "type": "value",
+      "data": "before .out, after .in"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "TopTrans_CurveTransition: StateBefore OUT(1), StateAfter IN(0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "tt: StateBefore reports StateAfter",
+    "red": "TopTransCurveTransitionTests.swift:19 stateBefore == .out",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: asserted nothing (`_ = result.stateBefore`)"
+  },
+  {
+    "test_name": "TopTrans CurveTransition Tests::curveTransitionWithCurvature",
+    "test_file": "Tests/OCCTCurveTests/TopTransCurveTransitionTests.swift",
+    "bridge_function": "OCCTTopTransCurveTransitionWithCurvature",
+    "bridge_output": {
+      "type": "value",
+      "data": "before .out, after .in"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "TopTrans_CurveTransition (curvature Reset): StateBefore OUT(1), StateAfter IN(0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "tt",
+    "red": "TopTransCurveTransitionTests.swift:30 stateBefore == .out",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: asserted nothing (`_ = result.stateBefore`)"
+  },
+  {
+    "test_name": "GCPnts_UniformAbscissa Tests::uniformByCount",
+    "test_file": "Tests/OCCTCurveTests/UniformAbscissaTests.swift",
+    "bridge_function": "OCCTUniformAbscissaByCount",
+    "bridge_output": {
+      "type": "value",
+      "data": "[0, 2.5, 5, 7.5, 10]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_UniformAbscissa(edge, 5): 0 2.5 5 7.5 10"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ua: every parameter scaled by 1.01",
+    "red": "UniformAbscissaTests.swift:24 abs(p - e) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: was count only"
+  },
+  {
+    "test_name": "GCPnts_UniformAbscissa Tests::uniformByDistance",
+    "test_file": "Tests/OCCTCurveTests/UniformAbscissaTests.swift",
+    "bridge_function": "OCCTUniformAbscissaByDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": "[0, 3, 6, 9, 10]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_UniformAbscissa(edge, 3.0): 0 3 6 9 10"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ua",
+    "red": "UniformAbscissaTests.swift:24 abs(p - e) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: was count >= 2"
+  },
+  {
+    "test_name": "GCPnts_UniformAbscissa Tests::uniformByCountRange",
+    "test_file": "Tests/OCCTCurveTests/UniformAbscissaTests.swift",
+    "bridge_function": "OCCTUniformAbscissaByCountRange",
+    "bridge_output": {
+      "type": "value",
+      "data": "[0, 0.5, 1]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_UniformAbscissa(edge, 3, 0, 1): 0 0.5 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ua",
+    "red": "UniformAbscissaTests.swift:24 abs(p - e) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: was count only"
+  },
+  {
+    "test_name": "Wire.edgePolyline::singleEdge",
+    "test_file": "Tests/OCCTCurveTests/WireEdgePolylineTests.swift",
+    "bridge_function": "OCCTShapeGetEdgePolyline",
+    "bridge_output": {
+      "type": "value",
+      "data": "2 points (-5,-2.5,0), (5,-2.5,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_TangentialDeflection(edge, 0.1, 0.1): NbPoints 2, (-5,-2.5,0) (5,-2.5,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "wep: z + 1e-3 on every primary-path point",
+    "red": "WireEdgePolylineTests.swift:23 polyline[0] == (-5,-2.5,0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-final-sampling/transcript.txt",
+    "note": "REWRITTEN: was count >= 2"
   }
 ]

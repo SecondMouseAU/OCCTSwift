@@ -197,3 +197,28 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| v0.113.0 - ProjectionOnCurve | multiResultProjection | `OCCTProjOnCurveCreate` | proj: Init on (10,1,0) instead of (10,0,0) | `ProjectionOnCurveTests.swift:23 point(at: 0) == (5,0,0)` | ✅ | MATCH | REWRITTEN: tolerances were 0.1 and the far extremum was never checked; silent `if let` guards now record an issue |
+| v0.113.0 - ProjectionOnCurve | parameterAccess | `OCCTProjOnCurveParameter` | proj | `ProjectionOnCurveTests.swift:41 parameter(at: 0) == 0` | ✅ | MATCH | REWRITTEN: was `param >= 0`, true of any wrong parameter in [0, 2pi) |
+| Quasi-Uniform Abscissa Sampling | sampleSegment | `OCCTCurve3DQuasiUniformAbscissa` | qua: parameter i shifted by 1e-3 * i | `QuasiUniformAbscissaTests.swift:23 abs(p - e) < 1e-9` | ✅ | MATCH | REWRITTEN: was count + monotonic only |
+| Quasi-Uniform Abscissa Sampling | sampleCircle | `OCCTCurve3DQuasiUniformAbscissa` | qua | `QuasiUniformAbscissaTests.swift:37 abs(p - k*2pi/9) < 1e-9` | ✅ | MATCH | REWRITTEN: was count only |
+| Quasi-Uniform Abscissa Sampling | minCount | `OCCTCurve3DQuasiUniformAbscissa` | qua | `QuasiUniformAbscissaTests.swift:51 params[1] == 10` | ✅ | MATCH | REWRITTEN: was count only |
+| Quasi-Uniform Deflection Sampling | sampleCircle | `OCCTCurve3DQuasiUniformDeflection` | qud: sampler given 2x the deflection | `QuasiUniformDeflectionTests.swift:29 points.count == 24` | ✅ | MATCH | REWRITTEN: was count > 4 and radius within 0.2 |
+| Quasi-Uniform Deflection Sampling | tighterDeflection | `OCCTCurve3DQuasiUniformDeflection` | qud | `QuasiUniformDeflectionTests.swift:48 coarse.count == 8` | ✅ | MATCH | REWRITTEN: was fine.count > coarse.count |
+| v0.143 Sketch arcs and circles | circleTessellation | none (pure Swift SketchElement.CurveKind.tessellate2D) | sk (Swift): radius scaled by 1.000001 in tessellate2D | `SketchArcCircleTests.swift:20 abs(r - 5.0) < 1e-9` | ✅ | N/A | strengthened: exact count 51 and closure added |
+| v0.143 Sketch arcs and circles | arcTessellation | none (pure Swift SketchElement.CurveKind.tessellate2D) | sk | `SketchArcCircleTests.swift:40 first == (2,0)` | ✅ | N/A | REWRITTEN: force-unwrapped `pts.first!` inside #expect; now guarded, count and radius pinned |
+| v0.143 Sketch arcs and circles | buildProfileWithArc | `OCCTWireCreateFastPolygon` | sk | `SketchArcCircleTests.swift:72 wire.orderedEdgeCount == 51` | ✅ | MATCH | REWRITTEN: was `wire != nil` |
+| GeomConvert_SurfToAnaSurf | recognizePlane | `OCCTGeomConvertSurfToAnalytical` | sta: gap + 1.0 and IsCanonical negated | `SurfToAnaSurfTests.swift:27 result.gap < 1e-12` | ✅ | MATCH | REWRITTEN: a nil result skipped every assertion; now records an issue and pins kind and gap |
+| GeomConvert_SurfToAnaSurf | isCanonical | `OCCTGeomConvertIsCanonical` | sta | `SurfToAnaSurfTests.swift:39 plane.isCanonical` | ✅ | MATCH | silent `if let` guards now record an issue |
+| TopTrans CurveTransition Tests | basicCurveTransition | `OCCTTopTransCurveTransition` | tt: StateBefore reports StateAfter | `TopTransCurveTransitionTests.swift:19 stateBefore == .out` | ✅ | MATCH | REWRITTEN: asserted nothing (`_ = result.stateBefore`) |
+| TopTrans CurveTransition Tests | curveTransitionWithCurvature | `OCCTTopTransCurveTransitionWithCurvature` | tt | `TopTransCurveTransitionTests.swift:30 stateBefore == .out` | ✅ | MATCH | REWRITTEN: asserted nothing (`_ = result.stateBefore`) |
+| GCPnts_UniformAbscissa Tests | uniformByCount | `OCCTUniformAbscissaByCount` | ua: every parameter scaled by 1.01 | `UniformAbscissaTests.swift:24 abs(p - e) < 1e-9` | ✅ | MATCH | REWRITTEN: was count only |
+| GCPnts_UniformAbscissa Tests | uniformByDistance | `OCCTUniformAbscissaByDistance` | ua | `UniformAbscissaTests.swift:24 abs(p - e) < 1e-9` | ✅ | MATCH | REWRITTEN: was count >= 2 |
+| GCPnts_UniformAbscissa Tests | uniformByCountRange | `OCCTUniformAbscissaByCountRange` | ua | `UniformAbscissaTests.swift:24 abs(p - e) < 1e-9` | ✅ | MATCH | REWRITTEN: was count only |
+| Wire.edgePolyline | singleEdge | `OCCTShapeGetEdgePolyline` | wep: z + 1e-3 on every primary-path point | `WireEdgePolylineTests.swift:23 polyline[0] == (-5,-2.5,0)` | ✅ | MATCH | REWRITTEN: was count >= 2 |
