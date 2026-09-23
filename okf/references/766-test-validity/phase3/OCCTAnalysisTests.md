@@ -95,6 +95,7 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **BRepExtrema ExtFF Tests** | Face-face distance between separated boxes | Face-face extrema | Return SquareDistance(1) without sqrt |
 | **Curve3D Local Properties Tests** | Curvature of circle is 1/r | Curve local curvature | Curvature() + 0.5 |
 | **Curve3D Local Properties Tests** | Curvature of line is zero | Curve local curvature | Curvature() + 0.5 |
 | **Curve3D Local Properties Tests** | Tangent of X-axis segment is (1,0,0) | Curve local tangent | Swap tangent X and Y |
