@@ -221,3 +221,22 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `BooleanToleranceTests.swift` (6 tests)
+
+Probe: `Scripts/repro/766-modeling-boolean-tolerance/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| fuseWithTolerance | `OCCTShapeUnionEx` returns nullptr | `:15 Expectation failed: fused != nil` | pass | `OCCTShapeUnionEx` | PASS: the boxes are 4.999 apart, not 0.001: the fuzzy value never comes into play |
+| cutWithTolerance | `OCCTShapeSubtractEx` returns nullptr | `:27 Expectation failed: cut != nil` | pass | `OCCTShapeSubtractEx` | PASS: the tool touches box1 only at the corner (5,5,5); nothing is removed |
+| commonWithTolerance | `OCCTShapeIntersectEx` returns nullptr | `:39 Expectation failed: common != nil` | pass | `OCCTShapeIntersectEx` | PASS: corner contact: the common is an empty compound |
+| fuseWithGlue | `OCCTShapeUnionEx` returns nullptr | `:51 Expectation failed: fused != nil` | pass | `OCCTShapeUnionEx` | PASS: the boxes are 5 apart and share no face, so GlueShift has nothing to glue |
+| cutWithGlue | `OCCTShapeSubtractEx` returns nullptr | `:63 Expectation failed: cut != nil` | pass | `OCCTShapeSubtractEx` | PASS |
+| commonWithGlue | `OCCTShapeIntersectEx` returns nullptr | `:72 Expectation failed: common != nil` | pass | `OCCTShapeIntersectEx` | PASS: corner contact: the common is an empty compound |
