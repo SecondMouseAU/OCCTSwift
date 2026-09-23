@@ -1,94 +1,96 @@
 [
   {
-    "test_name": "threadedHole cuts material from a bored block",
-    "bridge_function": "OCCTShapeBuildThreadCutter",
+    "test_name": "Issue #193, long full-length threads return a usable solid (not nil)::M10x1.0 long threads stay in-envelope and remove material (never nil)",
+    "bridge_function": "Shape.threadedShaft -> Swift cam-section build (buildThreadedRodDirect/threadedRodSolid) over OCCTShapeCreateLoftAdvanced; measured with OCCTShapeBoundingBoxOptimal, OCCTShapeGetVolume",
     "bridge_output": {
-      "type": "shape",
+      "type": "measurements",
       "data": {
-        "volume_ratio": 0.85,
-        "valid": true
+        "193_shank.opt": [
+          -5.0,
+          -5.0,
+          0.0,
+          5.0,
+          5.0,
+          50.0
+        ],
+        "193_shank.vol": 3926.99082,
+        "193_long_26.0.opt": [
+          -5.00000472,
+          -5.00000496,
+          -1e-07,
+          5.00000472,
+          5.00000472,
+          50.0000002
+        ],
+        "193_long_26.0.vol": 3689.30168,
+        "193_long_40.0.opt": [
+          -5.00000075,
+          -5.00000909,
+          -1e-07,
+          5.00000075,
+          5.00000075,
+          50.0000002
+        ],
+        "193_long_40.0.vol": 3561.28873,
+        "193_long_49.0.opt": [
+          -5.00000385,
+          -5.00000616,
+          -1e-07,
+          5.00000248,
+          5.0000001,
+          50.0000002
+        ],
+        "193_long_49.0.vol": 3479.02451
       }
     },
     "kernel_output": {
-      "type": "shape",
+      "type": "measurements",
       "data": {
-        "volume_ratio": 0.85,
-        "valid": true
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "threadedShaft cuts helical V-grooves into the shaft",
-    "bridge_function": "Shape.threadedRodSolid (direct build)",
-    "bridge_output": {
-      "type": "shape",
-      "data": {
-        "volume_ratio": 0.82,
-        "valid": true,
-        "build_path": "direct"
-      }
-    },
-    "kernel_output": {
-      "type": "shape",
-      "data": {
-        "volume_ratio": 0.82,
-        "valid": true,
-        "build_path": "direct"
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "threadedHole respects left-handed helix parameter",
-    "bridge_function": "OCCTShapeBuildThreadCutter",
-    "bridge_output": {
-      "type": "shape",
-      "data": {
-        "rh_volume": 42.1,
-        "lh_volume": 42.1,
-        "mirror_symmetric": true
-      }
-    },
-    "kernel_output": {
-      "type": "shape",
-      "data": {
-        "rh_volume": 42.1,
-        "lh_volume": 42.1,
-        "mirror_symmetric": true
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "Multi-start thread (starts: 2) removes more material than single-start",
-    "bridge_function": "OCCTShapeBuildThreadCutter",
-    "bridge_output": {
-      "type": "shape",
-      "data": {
-        "single_start_cut": 45.2,
-        "double_start_cut": 89.1,
-        "double_gt_single": true
-      }
-    },
-    "kernel_output": {
-      "type": "shape",
-      "data": {
-        "single_start_cut": 45.2,
-        "double_start_cut": 89.1,
-        "double_gt_single": true
+        "193_shank.opt": [
+          -5.0,
+          -5.0,
+          0.0,
+          5.0,
+          5.0,
+          50.0
+        ],
+        "193_shank.vol": 3926.99082,
+        "prim_193_shank.opt": [
+          -5.0,
+          -5.0,
+          0.0,
+          5.0,
+          5.0,
+          50.0
+        ],
+        "prim_193_shank.vol": 3926.99082,
+        "193_long_26.0.opt": [
+          -5.00000472,
+          -5.00000496,
+          -1e-07,
+          5.00000472,
+          5.00000472,
+          50.0000002
+        ],
+        "193_long_26.0.vol": 3689.30168,
+        "193_long_40.0.opt": [
+          -5.00000075,
+          -5.00000909,
+          -1e-07,
+          5.00000075,
+          5.00000075,
+          50.0000002
+        ],
+        "193_long_40.0.vol": 3561.28873,
+        "193_long_49.0.opt": [
+          -5.00000385,
+          -5.00000616,
+          -1e-07,
+          5.00000248,
+          5.0000001,
+          50.0000002
+        ],
+        "193_long_49.0.vol": 3479.02451
       }
     },
     "comparison": {
@@ -96,158 +98,315 @@
       "differences": []
     },
     "status": "PASS",
-    "note": "PLACEHOLDER VALUES - need actual measurement from macOS test run"
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
   },
   {
-    "test_name": "Metric M5x0.8",
-    "bridge_function": "ThreadSpec.parse (Swift only)",
+    "test_name": "Issue #193, long full-length threads return a usable solid (not nil)::Short thread is the smooth analytic helicoid and is valid",
+    "bridge_function": "Shape.threadedShaft -> Swift cam-section build (buildThreadedRodDirect/threadedRodSolid) over OCCTShapeCreateLoftAdvanced; measured with OCCTShapeIsValid, OCCTShapeGetSubShapes",
     "bridge_output": {
-      "type": "ThreadSpec",
+      "type": "measurements",
       "data": {
-        "form": "iso68",
-        "nominalDiameter": 5.0,
-        "pitch": 0.8
+        "193_short.valid": true,
+        "193_short.faces": 9.0
       }
     },
     "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
+      "type": "measurements",
+      "data": {
+        "193_short.valid": true,
+        "193_short.faces": 9.0
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
   },
   {
-    "test_name": "Metric M6 uses coarse pitch",
-    "bridge_function": "ThreadSpec.parse (Swift only)",
+    "test_name": "Issue #196, polyhedral HLR for threaded solids (fast 2D drawings)::poly HLR projects the analytic thread to 2D edges",
+    "bridge_function": "OCCTHLRPolyGetEdgesByCategory",
     "bridge_output": {
-      "type": "ThreadSpec",
+      "type": "measurements",
       "data": {
-        "form": "iso68",
-        "nominalDiameter": 6.0,
-        "pitch": 1.0
+        "196_def.edges": 1741.0
       }
     },
     "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
+      "type": "measurements",
+      "data": {
+        "196_def.edges": 1741.0
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "note": "Kernel side: BRepMesh_IncrementalMesh + HLRBRep_PolyAlgo + HLRBRep_PolyHLRToShape::VCompound, view +X, on the BREP of the same thread."
   },
   {
-    "test_name": "UNC 1/4-20 converts to metric",
-    "bridge_function": "ThreadSpec.parse (Swift only)",
+    "test_name": "Issue #196, polyhedral HLR for threaded solids (fast 2D drawings)::deflection is honoured, coarser mesh yields fewer drawing edges",
+    "bridge_function": "OCCTHLRPolyGetEdgesByCategory",
     "bridge_output": {
-      "type": "ThreadSpec",
+      "type": "measurements",
       "data": {
-        "form": "unified",
-        "nominalDiameter": 6.35,
-        "pitch": 1.27
+        "196_fine.edges": 1873.0,
+        "196_coarse.edges": 2089.0,
+        "196_fine_fromBREP.edges": 1869.0
       }
     },
     "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
+      "type": "measurements",
+      "data": {
+        "196_fine.edges": 1869.0,
+        "196_coarse.edges": 2089.0
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [
+        "196_fine.edges: 1873 in-process vs 1869 after a BREP round trip; 1869 from the Swift bridge on the same BREP (see note)"
+      ]
     },
-    "status": "PASS"
+    "status": "PASS",
+    "note": "Deflection 0.05: the in-process shape gives 1873 edges, the probe 1869. The same Swift call on the shape read back from the BREP the probe used also gives 1869, and two fresh in-process builds both give 1873, so the 4-edge gap is the BREP text round trip perturbing the mesh input, not the bridge. On identical input bridge and kernel agree. Deflection 0.8: 2089 both."
   },
   {
-    "test_name": "Theoretical and cut depths",
-    "bridge_function": "ThreadSpec properties (Swift only)",
+    "test_name": "Issue #213, ISO-68 V-thread profile::threadedShaft removes a V-groove's worth of material, not a square slot's",
+    "bridge_function": "Shape.threadedShaft -> Swift cam-section build (buildThreadedRodDirect/threadedRodSolid) over OCCTShapeCreateLoftAdvanced; measured with OCCTShapeIsValid, OCCTShapeGetVolume",
     "bridge_output": {
-      "type": "ThreadSpec",
+      "type": "measurements",
       "data": {
-        "theoreticalDepth": 1.299,
-        "cutDepth": 0.8119,
-        "minorDiameter": 8.376
+        "213_shaft.valid": true,
+        "213_shaft.vol": 1570.79633,
+        "213_thread.valid": true,
+        "213_thread.vol": 1356.43926
       }
     },
     "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
+      "type": "measurements",
+      "data": {
+        "213_shaft.valid": true,
+        "213_shaft.vol": 1570.79633,
+        "prim_213_shaft.valid": true,
+        "prim_213_shaft.vol": 1570.79633,
+        "213_thread.valid": true,
+        "213_thread.vol": 1356.43926
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
   },
   {
-    "test_name": "ISO-68 crest flat = P/8",
-    "bridge_function": "ThreadSpec.crestFlat (Swift only)",
+    "test_name": "Issue #213, ISO-68 V-thread profile::the cutter cross-section spec yields 30° flanks (the geometric core of #213)",
+    "bridge_function": "none (pure Swift: ThreadSpec.halfFlankAngle / rootFlat / cutDepth)",
     "bridge_output": {
-      "type": "double",
-      "data": 0.1875
+      "type": "measurements",
+      "data": {}
     },
     "kernel_output": {
-      "type": "N/A (Swift computation)",
+      "type": "measurements",
       "data": {}
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "note": "Pure Swift arithmetic on ThreadSpec; no kernel call. The expression reduces to halfFlankAngle, so the test checks that constant and nothing about the cutter."
   },
   {
-    "test_name": "ISO-68 root flat = P/4",
-    "bridge_function": "ThreadSpec.rootFlat (Swift only)",
+    "test_name": "Issue #219, smooth fine-pitch internal thread::3/8-16 UNC internal thread cuts smooth (few faces), not faceted",
+    "bridge_function": "Shape.threadedHole -> applyThreadCut: OCCTShapeBuildThreadCutter (analytic) or screw-loft cutter via OCCTShapeCreateLoftAdvanced/OCCTShapeCreateLoft, OCCTShapeSubtractEx; measured with OCCTShapeIsValid, OCCTShapeGetSubShapes",
     "bridge_output": {
-      "type": "double",
-      "data": 0.375
+      "type": "measurements",
+      "data": {
+        "219_body.valid": true,
+        "219_body.faces": 4.0,
+        "219_tapped.valid": true,
+        "219_tapped.faces": 15.0
+      }
     },
     "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
+      "type": "measurements",
+      "data": {
+        "219_body.valid": true,
+        "219_body.faces": 4.0,
+        "219_tapped.valid": true,
+        "219_tapped.faces": 15.0
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
   },
   {
-    "test_name": "cutDepth = 5H/8",
-    "bridge_function": "ThreadSpec.cutDepth (Swift only)",
+    "test_name": "Issue #219, smooth fine-pitch internal thread::the smooth internal cut still removes a thread's worth of material",
+    "bridge_function": "Shape.threadedHole -> applyThreadCut: OCCTShapeBuildThreadCutter (analytic) or screw-loft cutter via OCCTShapeCreateLoftAdvanced/OCCTShapeCreateLoft, OCCTShapeSubtractEx; measured with OCCTShapeGetVolume",
     "bridge_output": {
-      "type": "double",
-      "data": 0.8119
+      "type": "measurements",
+      "data": {
+        "219_body.vol": 1378.78981,
+        "219_tapped.vol": 1268.52012
+      }
     },
     "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
+      "type": "measurements",
+      "data": {
+        "219_body.vol": 1378.78981,
+        "219_tapped.vol": 1268.52012
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
   },
   {
-    "test_name": "minorDiameter consistent with cut depth",
-    "bridge_function": "ThreadSpec.minorDiameter (Swift only)",
+    "test_name": "Issue #222, coarse-pitch thread crest is in-envelope (tight measure)::Direct build keeps the crest within the nominal major radius (iso68, coarse)",
+    "bridge_function": "Shape.threadedShaft -> Swift cam-section build (buildThreadedRodDirect/threadedRodSolid) over OCCTShapeCreateLoftAdvanced; measured with OCCTShapeIsValid, OCCTShapeBoundingBoxOptimal, OCCTShapeCreateMesh, OCCTShapeGetVolume",
     "bridge_output": {
-      "type": "double",
-      "data": 8.376
+      "type": "measurements",
+      "data": {
+        "222_rod.valid": true,
+        "222_rod.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          40.0
+        ],
+        "222_rod.vol": 4523.89342,
+        "222_iso.valid": true,
+        "222_iso.opt": [
+          -6.00000222,
+          -6.00000539,
+          -1e-07,
+          6.00000542,
+          6.00000696,
+          40.0000001
+        ],
+        "222_iso.vol": 3772.20068,
+        "222_iso_mesh.crest": 6.00000715
+      }
     },
     "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
+      "type": "measurements",
+      "data": {
+        "222_rod.valid": true,
+        "222_rod.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          40.0
+        ],
+        "222_rod.vol": 4523.89342,
+        "prim_222_rod.valid": true,
+        "prim_222_rod.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          40.0
+        ],
+        "prim_222_rod.vol": 4523.89342,
+        "222_iso.valid": true,
+        "222_iso.opt": [
+          -6.00000222,
+          -6.00000539,
+          -1e-07,
+          6.00000542,
+          6.00000696,
+          40.0000001
+        ],
+        "222_iso.vol": 3772.20068,
+        "222_iso_mesh.crest": 6.00000715
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
+  },
+  {
+    "test_name": "Issue #222, coarse-pitch thread crest is in-envelope (tight measure)::Direct build keeps the crest within the nominal major radius (Tr trapezoidal, coarse)",
+    "bridge_function": "Shape.threadedShaft -> Swift cam-section build (buildThreadedRodDirect/threadedRodSolid) over OCCTShapeCreateLoftAdvanced; measured with OCCTShapeIsValid, OCCTShapeBoundingBoxOptimal, OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "measurements",
+      "data": {
+        "222_trap.valid": true,
+        "222_trap.opt": [
+          -6.00000649,
+          -6.0000065,
+          -1e-07,
+          6.00000658,
+          6.00000658,
+          40.0000001
+        ],
+        "222_trap_mesh.crest": 6.00000668
+      }
+    },
+    "kernel_output": {
+      "type": "measurements",
+      "data": {
+        "222_trap.valid": true,
+        "222_trap.opt": [
+          -6.00000649,
+          -6.0000065,
+          -1e-07,
+          6.00000658,
+          6.00000658,
+          40.0000001
+        ],
+        "222_trap_mesh.crest": 6.00000668
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
+  },
+  {
+    "test_name": "Issue #222, coarse-pitch thread crest is in-envelope (tight measure)::default `.auto` still builds a valid single-start rod (no regression)",
+    "bridge_function": "Shape.threadedShaft -> Swift cam-section build (buildThreadedRodDirect/threadedRodSolid) over OCCTShapeCreateLoftAdvanced; measured with OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "measurements",
+      "data": {
+        "222_auto.valid": true,
+        "222_auto.vol": 1302.85264
+      }
+    },
+    "kernel_output": {
+      "type": "measurements",
+      "data": {
+        "222_auto.valid": true,
+        "222_auto.vol": 1302.85264
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
   }
 ]
