@@ -126,5 +126,229 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::a box stores all six faces, not one",
+    "bridge_function": "OCCTDocumentTriangulationNbNodes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nodes": 24,
+        "triangles": 12
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 6,
+        "nodes": 24,
+        "triangles": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::a two-body compound stores both bodies",
+    "bridge_function": "OCCTDocumentTriangulationNbNodes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nodes": 48,
+        "triangles": 24
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 12,
+        "nodes": 48,
+        "triangles": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::deflection still controls mesh density on a curved shape",
+    "bridge_function": "OCCTDocumentTriangulationDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "fine_more_triangles": true,
+        "fine_smaller_deflection": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "coarse_triangles": 306,
+        "fine_triangles": 516,
+        "coarse_deflection": 0.62736,
+        "fine_deflection": 0.238182
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::a planar shape reports its faces' own deflection",
+    "bridge_function": "OCCTDocumentTriangulationDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonnegative": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "box_deflection": 3.14018e-16
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::a located shape stores nodes in the shape's frame, not the face's",
+    "bridge_function": "OCCTDocumentTriangulationNode",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nodes": 24,
+        "in_frame": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "nodes": 24,
+        "nodeX": [
+          95,
+          105
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::a mirrored shape stores every face, in frame",
+    "bridge_function": "OCCTDocumentTriangulationNbNodes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nodes": 24,
+        "triangles": 12,
+        "x_negative": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "nodes": 24,
+        "triangles": 12,
+        "nodeX": [
+          -20,
+          -10
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::triangulationNode rejects out-of-range and attribute-less labels",
+    "bridge_function": "OCCTDocumentTriangulationNode",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "one_based": true,
+        "count": 24
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "nodes": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::a glTF-imported mesh carries its node normals through the merge",
+    "bridge_function": "OCCTDocumentTriangulationNormal",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "unit_normals": true,
+        "brep_normals": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "brep_mesh_normals": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::a shape with no face stores nothing",
+    "bridge_function": "OCCTDocumentSetTriangulationFromShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": false,
+        "nodes": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 0,
+        "nodes": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
   }
 ]
