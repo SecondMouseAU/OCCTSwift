@@ -308,5 +308,164 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Bnd OBB Tests::createAndQuery",
+    "bridge_function": "OCCTOBBGetHalfSizes",
+    "bridge_output": {
+      "type": "bnd_obb",
+      "data": {
+        "is_void": false,
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "half_sizes": [
+          5.0,
+          3.0,
+          2.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_obb",
+      "data": {
+        "is_void": false,
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "half_sizes": [
+          5.0,
+          3.0,
+          2.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd OBB Tests::pointInOut",
+    "bridge_function": "OCCTOBBIsOutPoint",
+    "bridge_output": {
+      "type": "is_out",
+      "data": {
+        "(1,1,1)": false,
+        "(10,10,10)": true
+      }
+    },
+    "kernel_output": {
+      "type": "is_out",
+      "data": {
+        "(1,1,1)": false,
+        "(10,10,10)": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd OBB Tests::obbOverlap",
+    "bridge_function": "OCCTOBBIsOutOBB",
+    "bridge_output": {
+      "type": "is_out",
+      "data": {
+        "partner_at_x4": false,
+        "partner_at_x20": true
+      }
+    },
+    "kernel_output": {
+      "type": "is_out",
+      "data": {
+        "partner_at_x4": false,
+        "partner_at_x20": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd OBB Tests::fromShape",
+    "bridge_function": "OCCTOBBCreateFromShape",
+    "bridge_output": {
+      "type": "bnd_obb",
+      "data": {
+        "is_void": false,
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "half_sizes": [
+          5.0000001,
+          5.0000001,
+          5.0000001
+        ],
+        "square_extent": 300.00001200000014
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_obb",
+      "data": {
+        "is_void": false,
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "half_sizes": [
+          5.0000001,
+          5.0000001,
+          5.0000001
+        ],
+        "square_extent": 300.00001200000014
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd OBB Tests::enlarge",
+    "bridge_function": "OCCTOBBEnlarge",
+    "bridge_output": {
+      "type": "bnd_obb",
+      "data": {
+        "half_sizes": [
+          3.0,
+          3.0,
+          3.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_obb",
+      "data": {
+        "half_sizes": [
+          3.0,
+          3.0,
+          3.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
