@@ -182,5 +182,65 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1643: eigenvalues take the n-1 real off-diagonal entries::A constant-diagonal matrix returns 2 - sqrt(2), 2, 2 + sqrt(2), not 1, 2, 3",
+    "bridge_function": "OCCTMathEigenValues",
+    "bridge_output": {"type": "observed", "data": "0.58578643762690497 2 3.4142135623730949 (old convention: 1 3 2)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "0.58578643762690497 2 3.4142135623730949 (old convention: 1 3 2)", "source": "Scripts/repro/766-math-issue1643-eigenvalue-offdiagonal/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "Swift wrapper passes the pre-#1643 convention (first entry lost, last slot zero)", "failing_expectation": ":52 `abs(got - want) < 1e-12`"},
+    "green": true
+  },
+  {
+    "test_name": "Issue #1643: eigenvalues take the n-1 real off-diagonal entries::An asymmetric diagonal pins the off-diagonal ORDER as well as its magnitudes",
+    "bridge_function": "OCCTMathEigenValues",
+    "bridge_output": {"type": "observed", "data": "-0.14510269120042221 1.4760236029181337 4.6690790882822881 (reversed order: -0.669 2.524 4.145)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "-0.14510269120042221 1.4760236029181337 4.6690790882822881 (reversed order: -0.669 2.524 4.145)", "source": "Scripts/repro/766-math-issue1643-eigenvalue-offdiagonal/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "off-diagonal order reversed (the case the test names); also red under the old convention", "failing_expectation": ":75 `abs(got - want) < 1e-12`; :75 `abs(got - want) < 1e-12`"},
+    "green": true
+  },
+  {
+    "test_name": "Issue #1643: eigenvalues take the n-1 real off-diagonal entries::Each eigenvector solves A v = lambda v for the matrix the caller described",
+    "bridge_function": "OCCTMathEigenValuesAndVectors",
+    "bridge_output": {"type": "observed", "data": "max|Av - lambda v| = 3.18e-16, max||v|-1| = 3.33e-16", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "max|Av - lambda v| = 3.18e-16, max||v|-1| = 3.33e-16", "source": "Scripts/repro/766-math-issue1643-eigenvalue-offdiagonal/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "Swift wrapper passes the pre-#1643 convention to the vectors path", "failing_expectation": ":100 `abs(av[i] - lambda * vector[i]) < 1e-12`"},
+    "green": true
+  },
+  {
+    "test_name": "Issue #1643: eigenvalues take the n-1 real off-diagonal entries::A 1x1 matrix takes an empty offDiagonal and returns its single entry",
+    "bridge_function": "OCCTMathEigenValues",
+    "bridge_output": {"type": "observed", "data": "dim=1 value 5", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "dim=1 value 5", "source": "Scripts/repro/766-math-issue1643-eigenvalue-offdiagonal/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "Swift result gate count > 1 instead of count > 0 (off by one)", "failing_expectation": ":108 `ev != nil`"},
+    "green": true
+  },
+  {
+    "test_name": "Issue #1643: eigenvalues take the n-1 real off-diagonal entries::offDiagonal.count must be diagonal.count - 1, so the old n-element call returns nil",
+    "bridge_function": "none (Swift guard MathDimension.tridiagonal before OCCTMathEigenValues)",
+    "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
+    "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: N/A: a Swift-side argument guard, no kernel counterpart"},
+    "comparison": {"equal": null, "differences": []},
+    "status": "N/A",
+    "red": {"injection": "tridiagonal accepts count >= n - 1 (too-long arrays pass)", "failing_expectation": ":124 `MathSolver.eigenvalues(diagonal: [2, 2, 2], offDiagonal: [1, 1, 0]) == nil`"},
+    "green": true
+  },
+  {
+    "test_name": "Issue #1643: eigenvalues take the n-1 real off-diagonal entries::MathDimension.tridiagonal is the shared check, not a hand-written == at each site",
+    "bridge_function": "none (pure Swift MathDimension.tridiagonal)",
+    "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
+    "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: N/A: pure Swift validator, no kernel counterpart"},
+    "comparison": {"equal": null, "differences": []},
+    "status": "N/A",
+    "red": {"injection": "tridiagonal accepts count >= n - 1", "failing_expectation": ":141 `!MathDimension.tridiagonal(3, offDiagonal: 3)`"},
+    "green": true
   }
 ]
