@@ -95,6 +95,15 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Face Surface Properties Tests** | UV bounds of box face | Face UV bounds | Swap u and v bounds in OCCTFaceGetUVBounds |
+| **Face Surface Properties Tests** | Evaluate point on box face at UV center | Surface evaluation | Evaluate D0(v, u) in OCCTFaceEvaluateAtUV |
+| **Face Surface Properties Tests** | Normal at UV on box face is axis-aligned | Face normal orientation | Drop the REVERSED flip in OCCTFaceGetNormalAtUV |
+| **Face Surface Properties Tests** | Gaussian curvature of plane face is zero | Gaussian curvature | Report curvature undefined (return false) |
+| **Face Surface Properties Tests** | Gaussian curvature of sphere is 1/r² | Gaussian curvature | Return MeanCurvature() as Gaussian |
+| **Face Surface Properties Tests** | Mean curvature of sphere is 1/r | Mean curvature sign | Negate MeanCurvature() |
+| **Face Surface Properties Tests** | Principal curvatures of cylinder | Principal curvatures | Exchange MinCurvature()/MaxCurvature() |
+| **Face Surface Properties Tests** | Surface type detection | Surface classification | Map GeomAbs_Cylinder to the cone ordinal |
+| **Face Surface Properties Tests** | Face area of box face | Face area | LinearProperties (perimeter) in place of SurfaceProperties |
 | **CanonicalRecognition Detailed Tests** | recognizePlane | Canonical surface recognition | Skip IsPlane |
 | **CanonicalRecognition Detailed Tests** | recognizeCylinder | Canonical surface recognition | Remove ClearStatus (#1509) |
 | **CanonicalRecognition Detailed Tests** | recognizeSphere | Canonical surface recognition | Remove ClearStatus (#1509) |
