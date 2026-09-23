@@ -4501,5 +4501,245 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Curvature getters report definedness (#595)::A cusp's infinite curvature is still an answer, not an absence",
+    "bridge_function": "OCCTCurve3DGetCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "cusp_u0": 1.7976931348623157e+308
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "cusp_u0": 1.7976931348623157e+308
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue595-curvature-definedness-g4/"
+  },
+  {
+    "test_name": "Curvature getters report definedness (#595)::Curve2D separates a straight segment's 0 from a degenerate curve's absence",
+    "bridge_function": "OCCTCurve2DGetCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "segment": 0.0,
+        "dead": null,
+        "circle_r4": 0.25,
+        "cusp": 1.7976931348623157e+308
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "segment": 0.0,
+        "dead": null,
+        "circle_r4": 0.25,
+        "cusp": 1.7976931348623157e+308
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue595-curvature-definedness-g4/"
+  },
+  {
+    "test_name": "Curvature getters report definedness (#595)::A sphere's degenerate pole edge has no curvature, where a box edge has 0",
+    "bridge_function": "OCCTEdgeLPropCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "box_edges": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "sphere_degenerated": [
+          null,
+          null
+        ],
+        "solid": null
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "box_edges": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "sphere_degenerated": [
+          null,
+          null
+        ],
+        "solid": "TopoDS::Edge throws"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue595-curvature-definedness-g4/"
+  },
+  {
+    "test_name": "Curvature getters report definedness (#595)::A plane, cylinder and cone report a real 0 where a cone apex reports nothing",
+    "bridge_function": "OCCTSurfaceGetGaussianCurvature / OCCTSurfaceGetMeanCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "plane": [
+          0,
+          0
+        ],
+        "cylinder": [
+          -0.0,
+          -0.16666666666666666
+        ],
+        "cone_v1_K": -0.0,
+        "cone_apex": null,
+        "sphere_pole": null
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "plane": [
+          0,
+          0
+        ],
+        "cylinder": [
+          -0.0,
+          -0.16666666666666666
+        ],
+        "cone_v1_K": -0.0,
+        "cone_apex": null,
+        "sphere_pole": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue595-curvature-definedness-g4/"
+  },
+  {
+    "test_name": "Curvature getters report definedness (#595)::The pair form agrees with the singles on definedness, not just on value",
+    "bridge_function": "OCCTSurfaceCurvatures",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "cone_apex": null,
+        "cone_v1": [
+          -0.0,
+          -0.8660254037844388
+        ],
+        "plane": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "cone_apex": null,
+        "cone_v1": [
+          -0.0,
+          -0.8660254037844388
+        ],
+        "plane": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue595-curvature-definedness-g4/"
+  },
+  {
+    "test_name": "Curvature getters report definedness (#595)::A circle reports torsion 0; a straight line reports nothing",
+    "bridge_function": "OCCTCurve3DGetTorsion",
+    "bridge_output": {
+      "type": "torsion",
+      "data": {
+        "circle": 0.0,
+        "line": null,
+        "helix": 0.2297292687936763
+      }
+    },
+    "kernel_output": {
+      "type": "torsion",
+      "data": {
+        "circle": 0.0,
+        "line": null,
+        "helix": 0.2297292687936763
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue595-curvature-definedness-g4/"
+  },
+  {
+    "test_name": "Curvature getters report definedness (#595)::A wire with a null derivative reports nothing, where a straight wire reports 0",
+    "bridge_function": "OCCTWireGetCurvatureAt",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "straight": 0.0,
+        "circle_r10": 0.10000000000000002,
+        "cusp": null
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "straight": 0.0,
+        "circle_r10": 0.10000000000000002,
+        "cusp": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue595-curvature-definedness-g4/"
   }
 ]

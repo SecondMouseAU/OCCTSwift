@@ -235,6 +235,13 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Curvature getters report definedness (#595)** | A cusp's infinite curvature is still an answer, not an absence | Curve curvature definedness | OCCTCurve3DGetCurvature |
+| **Curvature getters report definedness (#595)** | Curve2D separates a straight segment's 0 from a degenerate curve's absence | Curve2D curvature definedness | OCCTCurve2DGetCurvature |
+| **Curvature getters report definedness (#595)** | A sphere's degenerate pole edge has no curvature, where a box edge has 0 | Edge curvature definedness | OCCTEdgeLPropCurvature |
+| **Curvature getters report definedness (#595)** | A plane, cylinder and cone report a real 0 where a cone apex reports nothing | Surface curvature definedness | OCCTSurfaceGetGaussianCurvature |
+| **Curvature getters report definedness (#595)** | The pair form agrees with the singles on definedness, not just on value | Surface curvature definedness | OCCTSurfaceCurvatures |
+| **Curvature getters report definedness (#595)** | A circle reports torsion 0; a straight line reports nothing | Curve torsion definedness | OCCTCurve3DGetTorsion |
+| **Curvature getters report definedness (#595)** | A wire with a null derivative reports nothing, where a straight wire reports 0 | Wire curvature definedness | OCCTWireGetCurvatureAt |
 
 ---
 
@@ -424,6 +431,13 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| A cusp's infinite curvature is still an answer, not an absence | OCCTCurve3DGetCurvature | Curve curvature definedness | refuse a RealLast() curvature | ✅ | ✅ |  |
+| Curve2D separates a straight segment's 0 from a degenerate curve's absence | OCCTCurve2DGetCurvature | Curve2D curvature definedness | answer 0 where the tangent is undefined (the #595 sentinel) | ✅ | ✅ |  |
+| A sphere's degenerate pole edge has no curvature, where a box edge has 0 | OCCTEdgeLPropCurvature | Edge curvature definedness | answer 0 where the tangent is undefined and in the catch | ✅ | ✅ |  |
+| A plane, cylinder and cone report a real 0 where a cone apex reports nothing | OCCTSurfaceGetGaussianCurvature / OCCTSurfaceGetMeanCurvature | Surface curvature definedness | answer 0 where IsCurvatureDefined() is false | ✅ | ✅ |  |
+| The pair form agrees with the singles on definedness, not just on value | OCCTSurfaceCurvatures | Surface curvature definedness | the pair alone answers (0, 0) where curvature is undefined | ✅ | ✅ |  |
+| A circle reports torsion 0; a straight line reports nothing | OCCTCurve3DGetTorsion | Curve torsion definedness | answer 0 where d1 x d2 vanishes | ✅ | ✅ |  |
+| A wire with a null derivative reports nothing, where a straight wire reports 0 | OCCTWireGetCurvatureAt | Wire curvature definedness | answer 0 where the first derivative is null | ✅ | ✅ |  |
 
 ---
 
