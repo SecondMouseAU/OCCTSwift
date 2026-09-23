@@ -95,6 +95,9 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **LProp3dCurve** | tangentOfCircle | Curve local tangent | OCCTCurve3DLocalTangent reverses the tangent (value pinned, #766) |
+| **LProp3dCurve** | normalOfCircle | Curve principal normal | OCCTCurve3DLocalNormal reverses the normal (value pinned, #766) |
+| **LProp3dCurve** | centreOfCurvature | Centre of curvature | OCCTCurve3DLocalCentreOfCurvature shifts x by 1 |
 | **Curvature getters report definedness (#595)** | A straight curve reports 0; a curve with no tangent reports nothing | Curve3D curvature definedness | Restore the #595 zero sentinel |
 | **BRepExtrema_ExtCF Tests** | Edge to sphere face distance | Edge-face extrema (rewritten: could not fail) | distance + 1 in OCCTBRepExtremaExtCF; empty result |
 | **BRepExtrema_ExtCF Tests** | Box edge to box face | Edge-face extrema (rewritten: could not fail) | distance + 1 in OCCTBRepExtremaExtCF; empty result |

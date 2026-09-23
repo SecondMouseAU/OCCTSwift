@@ -3277,5 +3277,98 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "LProp3dCurve::tangentOfCircle",
+    "bridge_function": "OCCTCurve3DLocalTangent",
+    "bridge_output": {
+      "type": "direction",
+      "data": {
+        "is_defined": true,
+        "value": [
+          -0.0,
+          1.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": {
+        "is_defined": true,
+        "value": [
+          -0.0,
+          1.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LProp3dCurve::normalOfCircle",
+    "bridge_function": "OCCTCurve3DLocalNormal",
+    "bridge_output": {
+      "type": "direction",
+      "data": {
+        "is_defined": true,
+        "value": [
+          -1.0,
+          -0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": {
+        "is_defined": true,
+        "value": [
+          -1.0,
+          -0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LProp3dCurve::centreOfCurvature",
+    "bridge_function": "OCCTCurve3DLocalCentreOfCurvature",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "is_defined": true,
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "is_defined": true,
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
