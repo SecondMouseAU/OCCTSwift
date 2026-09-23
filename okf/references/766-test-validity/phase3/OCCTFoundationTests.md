@@ -94,3 +94,26 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 200 tests
+
+---
+
+## Measured runs (#1987)
+
+Rows below were run: each test was turned red by the injection named, the injection was reverted, and the test was re-run green. Parity is against the probe named in each section.
+
+### Path Parsing Contract (#499), PathParsingContractTests.swift, 10 tests
+
+Probe: `Scripts/repro/766-path-parsing-contract/` (`OSD_Path` on the same inputs). All injections were in `OCCTBridge_IO_OSDUtilities.mm` and applied together; every test failed on the line listed.
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity |
+|---|---|---|---|---|---|---|
+| Path Parsing Contract (#499) | nonASCIIPathSurvivesParsing | `OCCTOSDPathName` | Name accessor reads the Extension component | PathParsingContractTests.swift:16 OSDPath.name("/home/üser/mødel.step") == "mødel" | passed (22/22 with the two sibling files) | MATCH |
+| Path Parsing Contract (#499) | extensionKeepsItsLeadingDot | `OCCTOSDPathExtension` | Extension accessor reads the Name component | PathParsingContractTests.swift:23 OSDPath.fileExtension("/home/user/model.step") == ".step" | passed (22/22 with the two sibling files) | MATCH |
+| Path Parsing Contract (#499) | nameDropsBothDirectoryAndExtension | `OCCTOSDPathName` | Name accessor reads the Extension component | PathParsingContractTests.swift:29 OSDPath.name("/home/user/model.step") == "model" | passed (22/22 with the two sibling files) | MATCH |
+| Path Parsing Contract (#499) | trekIsPortableSyntaxNotAFilesystemPath | `OCCTOSDPathTrek` | Trek accessor reads the SystemName component | PathParsingContractTests.swift:37 OSDPath.trek("/home/user/model.step") == "\|home\|user\|" | passed (22/22 with the two sibling files) | MATCH |
+| Path Parsing Contract (#499) | folderAndFileSplitOnTheLastSeparator | `OCCTOSDPathFolderAndFile` | folder and file outputs swapped | PathParsingContractTests.swift:44 result?.folder == "/home/user/" | passed (22/22 with the two sibling files) | MATCH |
+| Path Parsing Contract (#499) | folderIsARealPathUnlikeTrek | `OCCTOSDPathFolderAndFile` | folder and file outputs swapped | PathParsingContractTests.swift:50 OSDPath.folder("/home/user/model.step") == "/home/user/" | passed (22/22 with the two sibling files) | MATCH |
+| Path Parsing Contract (#499) | folderAndFileRecomposeTheInput | `OCCTOSDPathFolderAndFile` | folder and file outputs swapped | PathParsingContractTests.swift:62 (split.map { $0.folder + $0.file }) == path, for 3 of the 4 paths ("model.step" has an empty folder, so a swap still recomposes it) | passed (22/22 with the two sibling files) | MATCH |
+| Path Parsing Contract (#499) | systemNameRoundTripsTheInput | `OCCTOSDPathSystemName` | SystemName result drops its first character | PathParsingContractTests.swift:67 OSDPath.systemName("/home/user/model.step") == "/home/user/model.step" | passed (22/22 with the two sibling files) | MATCH |
+| Path Parsing Contract (#499) | absoluteAndRelativeAreSyntaxOnly | `OCCTOSDPathIsAbsolute` | IsAbsolute returns OSD_Path::IsRelativePath | PathParsingContractTests.swift:72 OSDPath.isAbsolute("/home/user/model.step") | passed (22/22 with the two sibling files) | MATCH |
+| Path Parsing Contract (#499) | validityCheckAcceptsAnythingParsable | `OCCTOSDPathIsValid` | IsValid result negated | PathParsingContractTests.swift:82 OSDPath.isValid("/tmp/test.txt") | passed (22/22 with the two sibling files) | MATCH |
