@@ -124,3 +124,22 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Curve2DProjectionParityTests.swift`, `Curve2DSimplifyBSplineTests.swift`, `Curve2DTransformTests.swift`, `Direction2DUtilityTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-projection-simplify-transform/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Curve2D projection entry points agree (#413)::All five entry points agree for an ordinary projection | `occtNearestProjectionOnCurve2d (OCCTCurve2DProjectPoint, OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve, OCCTCurve2DNearestParameter)` | shift the shared helper: parameter + 0.1, distance + 0.5 | ✅ | ✅ | MATCH | compared the spellings only with each other; now pins each case to the kernel |
+| Curve2D projection entry points agree (#413)::The four nearest-point entry points agree where there is no perpendicular foot | `occtNearestProjectionOnCurve2d` | shift the shared helper: parameter + 0.1, distance + 0.5 | ✅ | ✅ | MATCH |  |
+| Curve2D projection entry points agree (#413)::Parameter zero is a success, not a failure signal | `occtNearestProjectionOnCurve2d` | shift the shared helper: parameter + 0.1, distance + 0.5 | ✅ | ✅ | MATCH | `guard ... else { return }` and `if let`; now `#require` |
+| Curve2D SimplifyBSpline Tests::Simplify a BSpline curve | `OCCTCurve2DSimplifyBSpline` | return true without simplifying | ✅ | ✅ | MATCH | `_ = simplified`, no assertion; now pins the simplification |
+| Curve2D Transform::Translate 2D curve | `OCCTCurve2DTransform` | translation dx + 1 | ✅ | ✅ | MATCH | only the returned Bool, inside `if let` |
+| Curve2D Transform::Rotate 2D curve | `OCCTCurve2DTransform` | half the angle | ✅ | ✅ | MATCH | only the returned Bool, inside `if let` |
+| Curve2D Transform::Scale 2D curve | `OCCTCurve2DTransform` | factor + 1 | ✅ | ✅ | MATCH | only the returned Bool, inside `if let` |
+| Curve2D Transform::Mirror 2D curve through point | `OCCTCurve2DTransform` | mirror point x + 1 | ✅ | ✅ | MATCH | only the returned Bool, inside `if let` |
+| Curve2D Transform::Mirror 2D curve through axis | `OCCTCurve2DTransform` | swap the axis direction components | ✅ | ✅ | MATCH | only the returned Bool, inside `if let` |
+| Direction2D Utilities::normalize | `OCCTDirection2DNormalize` | swap the components | ✅ | ✅ | MATCH | unit length only; now pins (0.6, 0.8) |
+| Direction2D Utilities::angle | `OCCTDirection2DAngle` | half the angle | ✅ | ✅ | MATCH |  |
+| Direction2D Utilities::cross | `OCCTDirection2DCross` | negate | ✅ | ✅ | MATCH |  |

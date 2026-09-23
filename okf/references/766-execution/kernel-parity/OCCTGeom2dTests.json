@@ -94,5 +94,437 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve2D projection entry points agree (#413)::All five entry points agree for an ordinary projection",
+    "bridge_function": "occtNearestProjectionOnCurve2d (OCCTCurve2DProjectPoint, OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve, OCCTCurve2DNearestParameter)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "(5,3) on segment": [
+          5,
+          3
+        ],
+        "(0.5,-2)": [
+          0.5,
+          2
+        ],
+        "(10,0) on circle": [
+          0,
+          5
+        ],
+        "(3,4)": [
+          0.927295218002,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "(5,3) on segment": [
+          5,
+          3
+        ],
+        "(0.5,-2)": [
+          0.5,
+          2
+        ],
+        "(10,0) on circle": [
+          0,
+          5
+        ],
+        "(3,4)": [
+          0.927295218002,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "shift the shared helper: parameter + 0.1, distance + 0.5",
+      "red": "Curve2DProjectionParityTests.swift:48:13: Expectation failed: abs(nearest.parameter - param) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projection-simplify-transform/",
+      "rewritten": "compared the spellings only with each other; now pins each case to the kernel"
+    }
+  },
+  {
+    "test_name": "Curve2D projection entry points agree (#413)::The four nearest-point entry points agree where there is no perpendicular foot",
+    "bridge_function": "occtNearestProjectionOnCurve2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distances": [
+          90,
+          50.0899191455,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "distances": [
+          90,
+          50.0899191455,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "shift the shared helper: parameter + 0.1, distance + 0.5",
+      "red": "Curve2DProjectionParityTests.swift:87:13: Expectation failed: abs(nearest.distance - truth) < 1e-4",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projection-simplify-transform/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D projection entry points agree (#413)::Parameter zero is a success, not a failure signal",
+    "bridge_function": "occtNearestProjectionOnCurve2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "parameter": 0,
+        "distance": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "parameter": 0,
+        "distance": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "shift the shared helper: parameter + 0.1, distance + 0.5",
+      "red": "Curve2DProjectionParityTests.swift:111:9: Expectation failed: asTuple.parameter == 0",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projection-simplify-transform/",
+      "rewritten": "`guard ... else { return }` and `if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Curve2D SimplifyBSpline Tests::Simplify a BSpline curve",
+    "bridge_function": "OCCTCurve2DSimplifyBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poles_before": 8,
+        "poles_after": 6,
+        "knots_after": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poles_before": 8,
+        "poles_after": 6,
+        "knots_after": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return true without simplifying",
+      "red": "Curve2DSimplifyBSplineTests.swift:23:9: Expectation failed: curve.bspline.poleCount == 6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projection-simplify-transform/",
+      "rewritten": "`_ = simplified`, no assertion; now pins the simplification"
+    }
+  },
+  {
+    "test_name": "Curve2D Transform::Translate 2D curve",
+    "bridge_function": "OCCTCurve2DTransform",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          5,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          5,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "translation dx + 1",
+      "red": "Curve2DTransformTests.swift:16:9: Expectation failed: simd_distance(c.point(at: 0), SIMD2(5, 3)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projection-simplify-transform/",
+      "rewritten": "only the returned Bool, inside `if let`"
+    }
+  },
+  {
+    "test_name": "Curve2D Transform::Rotate 2D curve",
+    "bridge_function": "OCCTCurve2DTransform",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          0,
+          1
+        ],
+        "point(1)": [
+          0,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          0,
+          1
+        ],
+        "point(1)": [
+          0,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "half the angle",
+      "red": "Curve2DTransformTests.swift:23:9: Expectation failed: simd_distance(c.point(at: 0), SIMD2(0, 1)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projection-simplify-transform/",
+      "rewritten": "only the returned Bool, inside `if let`"
+    }
+  },
+  {
+    "test_name": "Curve2D Transform::Scale 2D curve",
+    "bridge_function": "OCCTCurve2DTransform",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          2,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          2,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "factor + 1",
+      "red": "Curve2DTransformTests.swift:31:9: Expectation failed: simd_distance(c.point(at: 0), SIMD2(2, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projection-simplify-transform/",
+      "rewritten": "only the returned Bool, inside `if let`"
+    }
+  },
+  {
+    "test_name": "Curve2D Transform::Mirror 2D curve through point",
+    "bridge_function": "OCCTCurve2DTransform",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          -1,
+          0
+        ],
+        "point(1)": [
+          -2,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          -1,
+          0
+        ],
+        "point(1)": [
+          -2,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "mirror point x + 1",
+      "red": "Curve2DTransformTests.swift:38:9: Expectation failed: simd_distance(c.point(at: 0), SIMD2(-1, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projection-simplify-transform/",
+      "rewritten": "only the returned Bool, inside `if let`"
+    }
+  },
+  {
+    "test_name": "Curve2D Transform::Mirror 2D curve through axis",
+    "bridge_function": "OCCTCurve2DTransform",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          1,
+          -1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          1,
+          -1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "swap the axis direction components",
+      "red": "Curve2DTransformTests.swift:46:9: Expectation failed: simd_distance(c.point(at: 0), SIMD2(1, -1)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projection-simplify-transform/",
+      "rewritten": "only the returned Bool, inside `if let`"
+    }
+  },
+  {
+    "test_name": "Direction2D Utilities::normalize",
+    "bridge_function": "OCCTDirection2DNormalize",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "dir": [
+          0.6,
+          0.8
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "dir": [
+          0.6,
+          0.8
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "swap the components",
+      "red": "Direction2DUtilityTests.swift:14:9: Expectation failed: abs(d.x - 0.6) < 1e-15",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projection-simplify-transform/",
+      "rewritten": "unit length only; now pins (0.6, 0.8)"
+    }
+  },
+  {
+    "test_name": "Direction2D Utilities::angle",
+    "bridge_function": "OCCTDirection2DAngle",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "angle": 1.5707963267948966
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "angle": 1.5707963267948966
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "half the angle",
+      "red": "Direction2DUtilityTests.swift:20:9: Expectation failed: abs(a - .pi / 2) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projection-simplify-transform/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Direction2D Utilities::cross",
+    "bridge_function": "OCCTDirection2DCross",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "cross": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "cross": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "negate",
+      "red": "Direction2DUtilityTests.swift:25:9: Expectation failed: abs(c - 1.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projection-simplify-transform/",
+      "rewritten": ""
+    }
   }
 ]
