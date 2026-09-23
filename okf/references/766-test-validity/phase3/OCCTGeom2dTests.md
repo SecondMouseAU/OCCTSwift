@@ -124,3 +124,19 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `WireFromCurve2DOnPlaneTests.swift`, `Section2DTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-projlib-wire-tbezier/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Wire fromCurve2D on Plane Tests::Segment on XY plane lifts to horizontal 3D wire | `OCCTWireFromCurve2DOnPlane` | pcurve trimmed to half its range | ✅ | ✅ | MATCH | nested `if let`s, 0.01 slack |
+| Wire fromCurve2D on Plane Tests::Circle arc on XY plane lifts correctly | `OCCTWireFromCurve2DOnPlane` | pcurve trimmed to half its range | ✅ | ✅ | MATCH | nested `if let`s, 0.05 slack |
+| Wire fromCurve2D on Plane Tests::Segment on XY plane at Z offset | `OCCTWireFromCurve2DOnPlane` | plane origin ignored | ✅ | ✅ | MATCH | nested `if let`s, force-unwrapped bounds |
+| Wire fromCurve2D on Plane Tests::Segment on YZ plane (normal = X axis) | `OCCTWireFromCurve2DOnPlane` | plane origin ignored | ✅ | ✅ | MATCH | nested `if let`s, force-unwrapped bounds |
+| Wire fromCurve2D on Plane Tests::BSpline interpolated curve lifts to 3D wire | `OCCTWireFromCurve2DOnPlane` | pcurve trimmed to half its range | ✅ | ✅ | MATCH | `isValid` only; now the 2D length |
+| Wire fromCurve2D on Plane Tests::Resulting 3D wire can be used as profile for extrusion | `OCCTWireFromCurve2DOnPlane` | pcurve trimmed to half its range | ✅ | ✅ | MATCH | nested `if let`s; now area 78 pi |
+| v0.144 Shape.section2D::Section of a box with the XY plane returns a Drawing | `Shape.section2D (Swift)` | section plane moved off the box | ✅ | ✅ | MATCH | `!= nil` only |
+| v0.144 Shape.section2D::section2DView includes hatch and label | `Shape.section2DView (Swift)` | label dropped | ✅ | ✅ | MATCH | `if let`; now `#require`, counts pinned |
+| v0.144 Shape.section2D::section2DView on a box with a through-hole keeps both the outer and inner contour loops | `Shape.section2DView (Swift)` | section plane moved off the box | ✅ | ✅ | MATCH | `if let`, `>= 5`; now `== 20` (measured) |

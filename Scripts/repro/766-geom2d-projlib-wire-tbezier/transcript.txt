@@ -1,0 +1,12 @@
+ProjLib line on XY plane: loc=(0, 0) dir=(1, 0)
+ProjLib circle on XY plane: center=(0, 0) r=5
+ProjLib axis line on r5 cylinder: loc=(0, 0) dir=(0, 1)
+ProjLib_ProjectOnSurface (5,0,0)+(0,1,1) [0,10] on r5 cylinder: done=1 domain=[0, 10] poles=17 degree=8
+  value(0) = (4.08248290464, 2.88675134595, 3.53553390593) radius=5
+  value(5) = (0, 0, 0) radius=0
+  value(10) = (0, 0, 0) radius=0
+  value(0) = (4.08248290464, 2.88675134595, 3.53553390593) radius=5
+  value(10) = (0, 0, 0) radius=0
+Geom2dEval_TBezierCurve (0,0)(1,1)(2,0) alpha 1: domain=[0, 3.14159265359] start=(2, 0) mid=(1, 1) end=(-2, 1.22464679915e-16)
+ChFi2d_Builder fillet r1 on one corner of the 10x5 rectangle: status=5 edges=5 length=29.5707963268
+ChFi2d_Builder chamfer 1x1 on one corner of the 10x5 rectangle: status=5 edges=5 length=29.4142135624

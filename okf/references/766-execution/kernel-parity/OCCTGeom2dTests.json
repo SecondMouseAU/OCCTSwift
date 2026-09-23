@@ -94,5 +94,261 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Wire fromCurve2D on Plane Tests::Segment on XY plane lifts to horizontal 3D wire",
+    "bridge_function": "OCCTWireFromCurve2DOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": 10
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pcurve trimmed to half its range",
+      "red": "WireFromCurve2DOnPlaneTests.swift:19:9: Expectation failed: abs((w.length ?? 0) - 10.0) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "nested `if let`s, 0.01 slack"
+    }
+  },
+  {
+    "test_name": "Wire fromCurve2D on Plane Tests::Circle arc on XY plane lifts correctly",
+    "bridge_function": "OCCTWireFromCurve2DOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": 7.85398163397
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": 7.85398163397
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pcurve trimmed to half its range",
+      "red": "WireFromCurve2DOnPlaneTests.swift:32:9: Expectation failed: abs((w.length ?? 0) - .pi / 2.0 * 5.0) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "nested `if let`s, 0.05 slack"
+    }
+  },
+  {
+    "test_name": "Wire fromCurve2D on Plane Tests::Segment on XY plane at Z offset",
+    "bridge_function": "OCCTWireFromCurve2DOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "z": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "z": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "plane origin ignored",
+      "red": "WireFromCurve2DOnPlaneTests.swift:49:9: Expectation failed: abs(bb.min.z - 5.0) < 0.01",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "nested `if let`s, force-unwrapped bounds"
+    }
+  },
+  {
+    "test_name": "Wire fromCurve2D on Plane Tests::Segment on YZ plane (normal = X axis)",
+    "bridge_function": "OCCTWireFromCurve2DOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "x": 3,
+        "max y": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "x": 3,
+        "max y": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "plane origin ignored",
+      "red": "WireFromCurve2DOnPlaneTests.swift:65:9: Expectation failed: abs(bb.min.x - 3.0) < 0.01",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "nested `if let`s, force-unwrapped bounds"
+    }
+  },
+  {
+    "test_name": "Wire fromCurve2D on Plane Tests::BSpline interpolated curve lifts to 3D wire",
+    "bridge_function": "OCCTWireFromCurve2DOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": 15.5494532204
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": 15.5494532204
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pcurve trimmed to half its range",
+      "red": "WireFromCurve2DOnPlaneTests.swift:81:9: Expectation failed: abs((w.length ?? 0) - expected) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`isValid` only; now the 2D length"
+    }
+  },
+  {
+    "test_name": "Wire fromCurve2D on Plane Tests::Resulting 3D wire can be used as profile for extrusion",
+    "bridge_function": "OCCTWireFromCurve2DOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "area": 245.04422698
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "area": 245.04422698
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pcurve trimmed to half its range",
+      "red": "WireFromCurve2DOnPlaneTests.swift:97:9: Expectation failed: extruded.isValid",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "nested `if let`s; now area 78 pi"
+    }
+  },
+  {
+    "test_name": "v0.144 Shape.section2D::Section of a box with the XY plane returns a Drawing",
+    "bridge_function": "Shape.section2D (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "visible edges": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "visible edges": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "section plane moved off the box",
+      "red": "Section2DTests.swift:18:27: Expectation failed: box.section2D(planeOrigin: SIMD3(5, 5, 5), planeNormal: SIMD3(0, 0, 1))",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "v0.144 Shape.section2D::section2DView includes hatch and label",
+    "bridge_function": "Shape.section2DView (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "annotations": 2,
+        "edges": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "annotations": 2,
+        "edges": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "label dropped",
+      "red": "Section2DTests.swift:47:9: Expectation failed: hasLabel",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`if let`; now `#require`, counts pinned"
+    }
+  },
+  {
+    "test_name": "v0.144 Shape.section2D::section2DView on a box with a through-hole keeps both the outer and inner contour loops",
+    "bridge_function": "Shape.section2DView (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 20
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 20
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "section plane moved off the box",
+      "red": "Section2DTests.swift:77:21: Expectation failed: view",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`if let`, `>= 5`; now `== 20` (measured)"
+    }
   }
 ]
