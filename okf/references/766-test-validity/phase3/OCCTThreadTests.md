@@ -1,68 +1,23 @@
-# Phase 3: OCCTThreadTests Injection Matrix
+# Phase 3: OCCTThreadTests Red→Green record (#1990)
 
-**Target**: `OCCTThreadTests` (12 tests) — ThreadSpec parsing, threadedHole, threadedShaft, ThreadForm v2
-**Policy**: `prove-the-test-fails.md` — inject defect → confirm fail (red) → restore → confirm pass (green)
-**Priority**: 🟢 High (core thread feature, multiple OCCT bridge entry points)
+Every row below was run: injection applied, `swift test --filter` captured red, injection reverted,
+captured green. The previous version of this file (12 rows, PR #2022) was removed: the #1990 audit
+found every row a stub, three of its Red claims impossible given the code, and its parity values
+copied from bridge to kernel. Sections are one per PR.
 
----
+## Thread::Issue181-189 (PR #TBD, files: Issue181RobustnessTests.swift, Issue185HelicalSweepTests.swift, Issue187ScrewThreadTests.swift, Issue189ThreadGuardTests.swift)
 
-## Test Inventory by Suite
+Injections are the named entries of the PR body's injection table; every one was applied with `Sources/` otherwise clean and reverted with `git checkout -- Sources` before the green run.
 
-| Suite | Tests | Primary Category |
-|-------|-------|------------------|
-| ThreadSpecParsingTests | 4 | WR¹ |
-| ThreadedFeatureTests | 4 | CR¹ |
-| ThreadSpecTruncationTests | 4 | WR¹ |
-
-**Total**: 12 tests across 3 suites
-
-**Legend**: **WR** = Wrong Result (tests producing incorrect results without crashing); **CR** = Crash Risk (tests exercising bridge functions where defects can trigger OCCT-level crashes or assertion failures).
-
----
-
-## Injection Matrix: Critical Crash-Related Tests First
-
-### ThreadedFeatureTests (Bridge Functions: `OCCTShapeBuildThreadCutter`, `Shape.loft`, `Shape.sew`, `Shape.subtracting`, `Shape.union`, `Shape.filleted`, `Shape.screwSweptThreadCutter`)
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| threadedHole cuts material from a bored block | `OCCTShapeBuildThreadCutter` + boolean cut | Cutter returns null | Return null from `OCCTShapeBuildThreadCutter` | ✅ | ✅ | Analytic cutter path |
-| threadedShaft cuts helical V-grooves into the shaft | `Shape.threadedRodSolid` (direct) | Direct build fails | Return nil from `buildThreadedRodDirect` | ✅ | ✅ | Direct build path |
-| threadedHole respects left-handed helix parameter | `OCCTShapeBuildThreadCutter` | Handedness ignored | Force same result for both | ✅ | ✅ | Mirror symmetry test |
-| Multi-start thread (starts: 2) removes more material than single-start | `OCCTShapeBuildThreadCutter` + boolean | Multi-start treated as single | Ignore `starts` parameter | ✅ | ✅ | Volume comparison |
-
-### ThreadSpecParsingTests (Pure Swift — no bridge calls)
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| Metric M5x0.8 | N/A (Swift) | Parse returns nil | Force `parse` to return nil | ✅ | ✅ | No bridge involvement |
-| Metric M6 uses coarse pitch | N/A (Swift) | Wrong default pitch | Return wrong pitch | ✅ | ✅ | Table lookup test |
-| UNC 1/4-20 converts to metric | N/A (Swift) | Conversion wrong | Return wrong diameter/pitch | ✅ | ✅ | Fraction parsing |
-| Theoretical and cut depths | N/A (Swift) | Math wrong | Return wrong values | ✅ | ✅ | Pure computation |
-
-### ThreadSpecTruncationTests (Pure Swift — no bridge calls)
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| ISO-68 crest flat = P/8 | N/A (Swift) | Wrong constant | Return wrong value | ✅ | ✅ | Property getter |
-| ISO-68 root flat = P/4 | N/A (Swift) | Wrong constant | Return wrong value | ✅ | ✅ | Property getter |
-| cutDepth = 5H/8 | N/A (Swift) | Wrong relation | Return wrong value | ✅ | ✅ | Derived property |
-| minorDiameter consistent with cut depth | N/A (Swift) | Wrong calculation | Return wrong value | ✅ | ✅ | Derived property |
-
----
-
-## Progress Tracking
-
-| Suite | Tests | Injected | Red ✓ | Green ✓ | PR Ready |
-|-------|-------|----------|-------|---------|----------|
-| ThreadSpecParsingTests | 4 | 4 | 4 | 4 | ✅ |
-| ThreadedFeatureTests | 4 | 4 | 4 | 4 | ✅ |
-| ThreadSpecTruncationTests | 4 | 4 | 4 | 4 | ✅ |
-
-**Total**: 12 tests - **All Red→Green verified**
-
----
-
-## Kernel Parity Verification
-
-All 12 tests have kernel parity evidence in `okf/references/766-execution/kernel-parity/OCCTThreadTests.json` with `comparison.equal: true` for every test where kernel comparison applies (ThreadedFeatureTests only; ThreadSpecParsingTests and ThreadSpecTruncationTests are pure Swift computations with no OCCT kernel equivalent).
+| Test (Suite::func) | Code under test | Injection | Red (failing line) | Green | Parity |
+|---|---|---|---|---|---|
+| Issue #181 robustness, threaded shaft envelope + STEP writer :: threadedShaft is always nil or within the blank envelope, never garbage (#181-C) | `threadedShaft` direct build (Swift) | `balloon`: crest radius x1.4 in `buildThreadedRodDirect` and its `v1 < v0 * 1.001` ceiling dropped | `Issue181RobustnessTests.swift:42` `c.max.x <= b.max.x + tol` (also :43 :45 :46), all 4 pitches | passed | PASS: Optimal box max x 6.0000017 on the 6.0 blank, p = 1.0. A nil-returning defect stays green by design (the test accepts nil); `nodirect` (cut path) also stays green because the cut path's own envelope guard holds |
+| Issue #181 robustness, threaded shaft envelope + STEP writer :: Single STEP export still succeeds after writer serialization (#181-B) | `Exporter.writeSTEP` -> `OCCTExportSTEP` | `stepskip`: `Exporter.writeSTEP` reports success without calling `OCCTExportSTEP` | `Issue181RobustnessTests.swift:62` `FileManager.default.fileExists(atPath: url.path)` (and :64 size) | passed | PASS: 15454 bytes both |
+| Issue #185 helical sweep, worm-thread helicoid :: helicalSweep builds a valid, radial worm helicoid (not nil), both handedness | `Shape.helicalSweep` (Swift) + pipe-shell bridge | `sweepframe`: auxiliary-spine framing replaced by corrected Frenet | `Issue185HelicalSweepTests.swift:48` `b.max.x <= maxR` (and :49-:51), both handedness cases | passed | PASS: Bounds max y 6.797 (cw false), 6.902 (cw true), inside 7. Note: `sweepbulge` (helix radius x1.5) stayed green, the sweep is insensitive to the helix radius here |
+| Issue #185 helical sweep, worm-thread helicoid :: helicalSweep rejects degenerate parameters | `Shape.helicalSweep` guard | `sweepguard`: the degenerate-input guard returns a 1 mm box instead of nil | `Issue185HelicalSweepTests.swift:67` and `:71` `Shape.helicalSweep(...) == nil` | passed | N/A: N/A |
+| Issue #187, screw-motion thread cutter (tight envelope) :: threadedShaft cuts a TIGHT in-envelope thread (crest ~= nominal radius) | `threadedShaft` direct build | `balloon` | `Issue187ScrewThreadTests.swift:48` `c.max.x <= b.max.x + tol` (and :49-:51, :54 `vThread < vBlank`), all 5 cases | passed | PASS: e.g. M12x1.75: volume 2187.458 of 2488.141, optimal max x 6.0000017 |
+| Issue #187, screw-motion thread cutter (tight envelope) :: threadedShaft is deterministic (same bounds across runs) | `threadedShaft` direct build | `nondet`: loft sections per pitch alternate 16 / 7 between calls | `Issue187ScrewThreadTests.swift:75` `abs(a - b) < 1e-4` | passed | PASS: bounds max x 3.5085256 both runs, both sides |
+| Issue #187, screw-motion thread cutter (tight envelope) :: Thread surface is SMOOTH (analytic helicoid), few faces, not hundreds of facets | `threadedShaft` path selection | `nodirect`: direct build disabled, so the boolean cut path runs | `Issue187ScrewThreadTests.swift:97` `faces < 40` | passed | PASS: 9 faces both sides |
+| Issue #187, screw-motion thread cutter (tight envelope) :: threadedHole cuts a valid in-envelope thread into a bore wall | `threadedHole` cut path | `cutnil`: `applyThreadCut` returns nil | `Issue187ScrewThreadTests.swift:115` `tapped != nil` | passed | PASS: Valid, 17 faces, volume 5708.981 from 5954.920. `nosmoothinternal` stayed green: for ISO-68 the analytic cutter succeeds first |
+| Issue #189, thread guard regression (fastener threads) :: threadedShaft builds valid external threads for standard fasteners (not nil) | `threadedShaft` direct build | `balloon` | `Issue189ThreadGuardTests.swift:39` `vThread < vBlank`, all 4 cases | passed | PASS: e.g. M5x0.8: 426.871 of 490.874 |
+| Issue #189, thread guard regression (fastener threads) :: Coarse worm-pitch result is still rejected or in (loosened) envelope (#181-C kept) | `threadedShaft` direct build | `balloon` | `Issue189ThreadGuardTests.swift:63` `c.max.x <= b.max.x + tol` (and :64) | passed | PASS: bounds max x 6.776 against 6 + 1.750. Like #181-C, nil is accepted by design |
