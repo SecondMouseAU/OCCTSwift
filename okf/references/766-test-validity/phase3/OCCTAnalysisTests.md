@@ -235,6 +235,10 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Total surface area: two BRepGProp overloads can disagree (#885)** | surfaceArea, surfaceInertiaProperties, and surfaceInertia are the same number | Whole-shape surface area | OCCTShapeSurfaceInertia |
+| **Total surface area: two BRepGProp overloads can disagree (#885)** | at the default tolerance the two totals agree closely | Per-face total area | OCCTFaceGetArea |
+| **Total surface area: two BRepGProp overloads can disagree (#885)** | loosening past the adaptive/non-adaptive boundary makes the two totals genuinely diverge | Per-face total area | OCCTFaceGetArea |
+| **Total surface area: two BRepGProp overloads can disagree (#885)** | totalFaceArea itself moves with linearTolerance | Per-face total area | OCCTFaceGetArea |
 
 ---
 
@@ -424,6 +428,10 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| surfaceArea, surfaceInertiaProperties, and surfaceInertia are the same number | OCCTShapeGetSurfaceArea / OCCTShapeSurfaceInertiaProperties / OCCTShapeSurfaceInertia | Whole-shape surface area | surfaceInertia area + 1e-9 | ✅ | ✅ |  |
+| at the default tolerance the two totals agree closely | OCCTFaceGetArea / OCCTShapeGetSurfaceArea | Per-face total area | face area x 1.001 | ✅ | ✅ |  |
+| loosening past the adaptive/non-adaptive boundary makes the two totals genuinely diverge | OCCTFaceGetArea | Per-face total area | ignore the tolerance (always 1e-6) | ✅ | ✅ |  |
+| totalFaceArea itself moves with linearTolerance | OCCTFaceGetArea | Per-face total area | ignore the tolerance (always 1e-6) | ✅ | ✅ |  |
 
 ---
 
