@@ -124,3 +124,22 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Curve2DBezierCompletionsTests.swift`, `Curve2DBezierTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-bezier/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| v0.126.0 — Curve2D Bezier completions::InsertPoleAfter increases pole count | `OCCTCurve2DBezierInsertPoleAfter` | insert (x, y + 1) | ✅ | ✅ | MATCH | nested in `if let c`, so a nil curve passed; now pins the poles |
+| v0.126.0 — Curve2D Bezier completions::RemovePole decreases pole count | `OCCTCurve2DBezierRemovePole` | remove index - 1 | ✅ | ✅ | MATCH | nested in `if let c`, so a nil curve passed; now pins the poles |
+| v0.126.0 — Curve2D Bezier completions::Segment restricts domain | `OCCTCurve2DBezierSegment` | segment to u2 + 0.1 | ✅ | ✅ | MATCH | only the returned Bool; now pins the segmented poles |
+| v0.126.0 — Curve2D Bezier completions::IncreaseDegree succeeds | `OCCTCurve2DBezierIncreaseDegree` | return true without raising the degree | ✅ | ✅ | MATCH | nested in `if let c`, so a nil curve passed; now also pins the poles |
+| v0.126.0 — Curve2D Bezier completions::StartPoint and EndPoint | `OCCTCurve2DBezierStartPoint / OCCTCurve2DBezierEndPoint` | swap StartPoint and EndPoint | ✅ | ✅ | MATCH | nested in `if let c`, so a nil curve passed |
+| v0.126.0 — Curve2D Bezier completions::GetPoles returns correct poles | `OCCTCurve2DBezierGetPoles` | shift each x by 1 | ✅ | ✅ | MATCH | nested in `if let c`, so a nil curve passed; now checks y as well as x |
+| v0.126.0 — Curve2D Bezier completions::Reverse swaps start and end | `OCCTCurve2DBezierReverse` | return true without reversing | ✅ | ✅ | MATCH | nested in `if let c`, so a nil curve passed |
+| Curve2D_Bezier_Properties::degreeAndPoleCount | `OCCTCurve2DBezierDegree / OCCTCurve2DBezierPoleCount` | degree + 1 and pole count + 1 | ✅ | ✅ | MATCH | nested in `if let c`, so a nil curve passed |
+| Curve2D_Bezier_Properties::getPole | `OCCTCurve2DBezierGetPole` | read pole index + 1 | ✅ | ✅ | MATCH | nested in `if let c`, so a nil curve passed; now also pins pole 2 |
+| Curve2D_Bezier_Properties::setPole | `OCCTCurve2DBezierSetPole` | store y + 1 | ✅ | ✅ | MATCH | nested in `if let c`, so a nil curve passed |
+| Curve2D_Bezier_Properties::isRational | `OCCTCurve2DBezierIsRational` | negate IsRational() | ✅ | ✅ | MATCH | nested in `if let c`, so a nil curve passed |
+| Curve2D_Bezier_Properties::resolution | `OCCTCurve2DBezierResolution` | double the resolution | ✅ | ✅ | MATCH | `r > 0`, nested in `if let c`, so a nil curve passed |
