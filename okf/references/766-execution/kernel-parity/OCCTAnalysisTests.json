@@ -497,5 +497,52 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_LocateExtCC Tests::localExtremum",
+    "bridge_function": "OCCTExtremaLocateExtCC",
+    "bridge_output": {
+      "type": "local_extremum_cc",
+      "data": {
+        "isDone": true,
+        "squareDistance": 34.0,
+        "p1": {
+          "x": 5.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "param1": 0.0,
+        "p2": {
+          "x": 10.0,
+          "y": 0.0,
+          "z": 3.0
+        },
+        "param2": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "local_extremum_cc",
+      "data": {
+        "isDone": true,
+        "squareDistance": 34.0,
+        "p1": {
+          "x": 5.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "param1": 0.0,
+        "p2": {
+          "x": 10.0,
+          "y": 0.0,
+          "z": 3.0
+        },
+        "param2": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
