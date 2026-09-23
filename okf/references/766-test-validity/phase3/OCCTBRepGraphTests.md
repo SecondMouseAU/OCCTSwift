@@ -90,3 +90,53 @@ For each test, run ground-truth C++ comparison:
 | deferredModeToggle | ✅ | ✅ | ✅ |
 
 **Total**: 18 tests
+---
+
+## Measured: Face Queries, Face Shells, History and History Readback (#1986)
+
+Measured on the pinned kernel: every row below was run red under the injection shown and
+green once it was reverted. Probes and transcripts are under `Scripts/repro/766-brepgraph-*/`.
+
+### Test Inventory
+
+| Suite | Test | Defect Category | Injection Target |
+|-------|------|-----------------|------------------|
+| **BRepGraph Face Queries** | faceAdjacency | Face adjacency | face not excluded from its own adjacency |
+| **BRepGraph Face Queries** | sharedEdges | Shared edges | edges of either face |
+| **BRepGraph Face Queries** | outerWire | Outer wire | wire index + 1 |
+| **BRepGraph Face Shells** | faceShells | Face shells | shell index + 1 |
+| **BRepGraph Face Shells** | faceCompoundCount | Face compounds | count + 1 |
+| **BRepGraph History** | historyDefaults | History state | IsEnabled negated |
+| **BRepGraph History** | historyToggle | History state | IsEnabled negated |
+| **BRepGraph History** | historyClear | History clear | Clear dropped |
+| **v0.141 BRepGraph history record readback** | oneToOneReadback | History record | stray extra replacement recorded |
+| **v0.141 BRepGraph history record readback** | splitMapping | History record | stray extra replacement recorded |
+| **v0.141 BRepGraph history record readback** | deletionMapping | History record | stray extra replacement recorded |
+| **v0.141 BRepGraph history record readback** | findDerivedWalksForward | History walk | stray extra replacement recorded |
+| **v0.141 BRepGraph history record readback** | hasHistoryRecordDistinguishesNamedFromUntouched | History lookup (Swift) | Swift hasHistoryRecord reads first record only |
+| **v0.141 BRepGraph history record readback** | findDerivedOrSelfDisambiguates | History lookup | stray extra replacement recorded |
+| **v0.141 BRepGraph history record readback** | findDerivedOrSelfMatchesFindDerivedWhenNonEmpty | History lookup (Swift) | Swift findDerivedOrSelf appends original |
+| **v0.141 BRepGraph history record readback** | findOriginalWalksBackward | History walk | original index + 1 |
+| **v0.141 BRepGraph history record readback** | findOriginalPassthrough | History walk | original index + 1 |
+
+### Injection Matrix
+
+| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
+|------|-----------------|--------|-----------|------|--------|-------|
+| faceAdjacency | OCCTBRepGraphFaceAdjacentIndices | Face adjacency | face not excluded from its own adjacency | ✅ :14 `adjacentFaces(of: 0) == [2, 3, 4, 5]` | ✅ | Original also red (count); list pinned |
+| sharedEdges | OCCTBRepGraphFaceSharedEdgeIndices | Shared edges | edges of either face | ✅ :24 `sharedEdges(...) == [0]` | ✅ | Original also red; `if adj.count > 0` guard now #require |
+| outerWire | OCCTBRepGraphFaceOuterWire | Outer wire | wire index + 1 | ✅ :31 outer wire list | ✅ | Rewritten: `wire >= 0` stayed green |
+| faceShells | OCCTBRepGraphFaceShellIndices | Face shells | shell index + 1 | ✅ :17 `faceShells(i) == [0]` | ✅ | Original also red (range check); pinned |
+| faceCompoundCount | OCCTBRepGraphFaceCompoundCount | Face compounds | count + 1 | ✅ :27 | ✅ | Original also red; #require only |
+| historyDefaults | OCCTBRepGraphHistoryIsEnabled | History state | IsEnabled negated | ✅ :12 | ✅ | Original also red; #require only |
+| historyToggle | OCCTBRepGraphHistorySetEnabled | History state | IsEnabled negated | ✅ :20, :22 | ✅ | Original also red; #require only |
+| historyClear | OCCTBRepGraphHistoryClear | History clear | Clear dropped | ✅ :35 `historyRecordCount == 0` | ✅ | Rewritten: cleared an already-empty history |
+| oneToOneReadback | OCCTBRepGraphHistoryRecord | History record | stray extra replacement recorded | ✅ :33 `rec.mapping[orig] == [repl]` | ✅ | Original also red |
+| splitMapping | OCCTBRepGraphHistoryRecord | History record | stray extra replacement recorded | ✅ :54 | ✅ | Original also red |
+| deletionMapping | OCCTBRepGraphHistoryRecord | History record | stray extra replacement recorded | ✅ :72 | ✅ | Original also red |
+| findDerivedWalksForward | OCCTBRepGraphHistoryFindDerived | History walk | stray extra replacement recorded | ✅ :98 `derived == [a, b, c]` | ✅ | Rewritten: `isSuperset(of: [b, c])` passed a stray extra node; kernel returns the intermediate a too |
+| hasHistoryRecordDistinguishesNamedFromUntouched | OCCTBRepGraphHistoryGetRecordOriginals | History lookup (Swift) | Swift hasHistoryRecord reads first record only | ✅ :124 | ✅ | Original also red |
+| findDerivedOrSelfDisambiguates | OCCTBRepGraphHistoryFindDerived | History lookup | stray extra replacement recorded | ✅ :158 `deletedResult.isEmpty` | ✅ | Original also red. Untouched -> [self] is the Swift fallback; the kernel FindDerived is [] for it |
+| findDerivedOrSelfMatchesFindDerivedWhenNonEmpty | OCCTBRepGraphHistoryFindDerived | History lookup (Swift) | Swift findDerivedOrSelf appends original | ✅ :189 | ✅ | Original also red |
+| findOriginalWalksBackward | OCCTBRepGraphHistoryFindOriginal | History walk | original index + 1 | ✅ :211 | ✅ | Original also red |
+| findOriginalPassthrough | OCCTBRepGraphHistoryFindOriginal | History walk | original index + 1 | ✅ :226 | ✅ | Original also red |

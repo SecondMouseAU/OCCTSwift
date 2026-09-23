@@ -142,5 +142,459 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Face Queries::faceAdjacency",
+    "bridge_function": "OCCTBRepGraphFaceAdjacentIndices",
+    "bridge_output": {
+      "type": "indices",
+      "data": [
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": [
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Face Queries::sharedEdges",
+    "bridge_function": "OCCTBRepGraphFaceSharedEdgeIndices",
+    "bridge_output": {
+      "type": "indices",
+      "data": {
+        "first": 2,
+        "shared": [
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": {
+        "first": 2,
+        "shared": [
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Face Queries::outerWire",
+    "bridge_function": "OCCTBRepGraphFaceOuterWire",
+    "bridge_output": {
+      "type": "indices",
+      "data": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Face Shells::faceShells",
+    "bridge_function": "OCCTBRepGraphFaceShellIndices",
+    "bridge_output": {
+      "type": "indices",
+      "data": "every face: [0]"
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": "every face: [0]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Face Shells::faceCompoundCount",
+    "bridge_function": "OCCTBRepGraphFaceCompoundCount",
+    "bridge_output": {
+      "type": "counts",
+      "data": "every face: 0"
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": "every face: 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph History::historyDefaults",
+    "bridge_function": "OCCTBRepGraphHistoryIsEnabled",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "enabled": true,
+        "records": 0
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "layer": true,
+        "enabled": true,
+        "records": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph History::historyToggle",
+    "bridge_function": "OCCTBRepGraphHistorySetEnabled",
+    "bridge_output": {
+      "type": "bools",
+      "data": {
+        "afterDisable": false,
+        "afterEnable": true
+      }
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "afterDisable": false,
+        "afterEnable": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph History::historyClear",
+    "bridge_function": "OCCTBRepGraphHistoryClear",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "before": 1,
+        "after": 0
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "before": 1,
+        "after": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.141 BRepGraph history record readback::oneToOneReadback",
+    "bridge_function": "OCCTBRepGraphHistoryRecord",
+    "bridge_output": {
+      "type": "record",
+      "data": {
+        "count": 1,
+        "op": "TestFillet",
+        "mapping": "face 0 -> [face 42]"
+      }
+    },
+    "kernel_output": {
+      "type": "record",
+      "data": {
+        "count": 1,
+        "op": "TestFillet",
+        "mapping": "face 0 -> [face 42]"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.141 BRepGraph history record readback::splitMapping",
+    "bridge_function": "OCCTBRepGraphHistoryRecord",
+    "bridge_output": {
+      "type": "mapping",
+      "data": "edge 3 -> [edge 100, 101, 102]"
+    },
+    "kernel_output": {
+      "type": "derived",
+      "data": [
+        [
+          4,
+          100
+        ],
+        [
+          4,
+          101
+        ],
+        [
+          4,
+          102
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.141 BRepGraph history record readback::deletionMapping",
+    "bridge_function": "OCCTBRepGraphHistoryRecord",
+    "bridge_output": {
+      "type": "mapping",
+      "data": "face 5 -> []"
+    },
+    "kernel_output": {
+      "type": "derived",
+      "data": []
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.141 BRepGraph history record readback::findDerivedWalksForward",
+    "bridge_function": "OCCTBRepGraphHistoryFindDerived",
+    "bridge_output": {
+      "type": "derived",
+      "data": [
+        [
+          4,
+          10
+        ],
+        [
+          4,
+          20
+        ],
+        [
+          4,
+          21
+        ]
+      ]
+    },
+    "kernel_output": {
+      "type": "derived",
+      "data": [
+        [
+          4,
+          10
+        ],
+        [
+          4,
+          20
+        ],
+        [
+          4,
+          21
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.141 BRepGraph history record readback::hasHistoryRecordDistinguishesNamedFromUntouched",
+    "bridge_function": "OCCTBRepGraphHistoryGetRecordOriginals",
+    "bridge_output": {
+      "type": "bools",
+      "data": {
+        "modified": true,
+        "deleted": true,
+        "untouched": false
+      }
+    },
+    "kernel_output": {
+      "type": "records",
+      "data": 2
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.141 BRepGraph history record readback::findDerivedOrSelfDisambiguates",
+    "bridge_function": "OCCTBRepGraphHistoryFindDerived",
+    "bridge_output": {
+      "type": "derived",
+      "data": {
+        "modified": [
+          [
+            2,
+            100
+          ]
+        ],
+        "deleted": [],
+        "untouched": [
+          [
+            2,
+            2
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "derived",
+      "data": {
+        "modified": [
+          [
+            2,
+            100
+          ]
+        ],
+        "deleted": [],
+        "untouched": []
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.141 BRepGraph history record readback::findDerivedOrSelfMatchesFindDerivedWhenNonEmpty",
+    "bridge_function": "OCCTBRepGraphHistoryFindDerived",
+    "bridge_output": {
+      "type": "derived",
+      "data": [
+        [
+          4,
+          10
+        ],
+        [
+          4,
+          20
+        ],
+        [
+          4,
+          21
+        ]
+      ]
+    },
+    "kernel_output": {
+      "type": "derived",
+      "data": [
+        [
+          4,
+          10
+        ],
+        [
+          4,
+          20
+        ],
+        [
+          4,
+          21
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.141 BRepGraph history record readback::findOriginalWalksBackward",
+    "bridge_function": "OCCTBRepGraphHistoryFindOriginal",
+    "bridge_output": {
+      "type": "node",
+      "data": [
+        2,
+        7
+      ]
+    },
+    "kernel_output": {
+      "type": "node",
+      "data": [
+        2,
+        7
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.141 BRepGraph history record readback::findOriginalPassthrough",
+    "bridge_function": "OCCTBRepGraphHistoryFindOriginal",
+    "bridge_output": {
+      "type": "node",
+      "data": [
+        2,
+        3
+      ]
+    },
+    "kernel_output": {
+      "type": "node",
+      "data": [
+        2,
+        3
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
