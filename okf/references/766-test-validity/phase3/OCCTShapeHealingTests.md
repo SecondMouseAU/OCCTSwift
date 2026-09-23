@@ -327,3 +327,19 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: Issue1636 fixedFreeBounds shape, Issue1637 restriction parameters (9 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-1636-1637/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `resultIsTheModifiedSourceShape` | Issue1636FixedFreeBoundsShapeTests.swift | `OCCTShapeFixFreeBounds` | FIXFBWIRES: return the closed-wire compound instead of GetShape() (the #1636 defect) | Issue1636FixedFreeBoundsShapeTests.swift:37 `faces == 2` | pass | PASS |
+| `openShellKeepsItsFaces` | Issue1636FixedFreeBoundsShapeTests.swift | `OCCTShapeFixFreeBounds` | FIXFBWIRES (and closedWireCount reported 0: `:52`) | Issue1636FixedFreeBoundsShapeTests.swift:51 `faces == 5` | pass | PASS |
+| `wiresAreStillAvailable` | Issue1636FixedFreeBoundsShapeTests.swift | `OCCTShapeFixFreeBounds` | FIXFBCOUNT: closed-wire count reported as 0 | Issue1636FixedFreeBoundsShapeTests.swift:60 `closedWireCount == 1` | pass | PASS |
+| `gapWiderThanTheSewingToleranceIsNotSewn` | Issue1636FixedFreeBoundsShapeTests.swift | `OCCTShapeFixFreeBounds` | FIXFBTOL: sewing and closing tolerances passed swapped | Issue1636FixedFreeBoundsShapeTests.swift:79 `closedWireCount == 2` | pass | PASS |
+| `defaultsMatchTheKernel` | Issue1637BSplineRestrictionParametersTests.swift | `occtDefaultBSplineRestrictionParameters` | RDEFREPORT: convertPlane reported inverted | Issue1637BSplineRestrictionParametersTests.swift:31 `swift.convertPlane == kernel.convertPlane` | pass | PASS |
+| `occtDefaultsConvertNothingOnACylinder` | Issue1637BSplineRestrictionParametersTests.swift | `OCCTShapeCustomBSplineRestriction` | RCYL: ConvertCylindricalSurf forced on | Issue1637BSplineRestrictionParametersTests.swift:53 `bsplineFaceCount == 0` | pass | PASS |
+| `allSurfaceTypesConvertsEverything` | Issue1637BSplineRestrictionParametersTests.swift | `OCCTShapeCustomBSplineRestriction` | RPARAMS: caller's parameters ignored, class defaults used (the #1637 defect) | Issue1637BSplineRestrictionParametersTests.swift:71 `bsplineFaceCount == faceCount` | pass | PASS |
+| `perKindSwitchesActIndependently` | Issue1637BSplineRestrictionParametersTests.swift | `OCCTShapeCustomBSplineRestriction` | RPARAMS | Issue1637BSplineRestrictionParametersTests.swift:84 `bsplineFaceCount(wall) == 1` | pass | PASS |
+| `conversionPreservesTheSolid` | Issue1637BSplineRestrictionParametersTests.swift | `OCCTShapeCustomBSplineRestriction` | RTOL: both tolerances scaled x1000 (a unit slip); tol3d alone left it green | Issue1637BSplineRestrictionParametersTests.swift:104 `abs(after - before) / before < 0.01` | pass | PASS |
