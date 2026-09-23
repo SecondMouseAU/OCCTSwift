@@ -197,3 +197,25 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| BSpline Curve 3D Manipulation Tests | knotCount | `OCCTCurve3DBSplineKnotCount` | NbKnots() + 1 | `BSplineCurve3DManipulationTests.swift:38 bsp.bspline.knotCount == 5` | ✅ | MATCH | Rewritten: knotCount > 0 |
+| BSpline Curve 3D Manipulation Tests | poleCount | `OCCTCurve3DBSplinePoleCount` | NbPoles() + 1 | `BSplineCurve3DManipulationTests.swift:43 bsp.bspline.poleCount == 7` | ✅ | MATCH | Rewritten: poleCount >= 5 |
+| BSpline Curve 3D Manipulation Tests | degree | `OCCTCurve3DBSplineDegree` | Degree() + 1 | `BSplineCurve3DManipulationTests.swift:48 bsp.bspline.degree == 3` | ✅ | MATCH | Rewritten: degree >= 1 |
+| BSpline Curve 3D Manipulation Tests | isRational | `OCCTCurve3DBSplineIsRational` | IsRational() negated | `BSplineCurve3DManipulationTests.swift:54 !bsp.bspline.isRational` | ✅ | MATCH | Rewritten: asserted nothing |
+| BSpline Curve 3D Manipulation Tests | knotsArray | `OCCTCurve3DBSplineGetKnots` | knots doubled | `BSplineCurve3DManipulationTests.swift:59 Self.near(bsp.bspline.knots, Self.knots)` | ✅ | MATCH | Rewritten: count > 0 and last > first |
+| BSpline Curve 3D Manipulation Tests | multiplicities | `OCCTCurve3DBSplineGetMults` | multiplicities + 1 | `BSplineCurve3DManipulationTests.swift:64 bsp.bspline.multiplicities == [4, 1, 1, 1, 4]` | ✅ | MATCH | Rewritten: count > 0 and first > 0 |
+| BSpline Curve 3D Manipulation Tests | getPole | `OCCTCurve3DBSplineGetPole` | index + 1 read | `BSplineCurve3DManipulationTests.swift:69 Self.near(bsp.bspline.pole(at: 1), SIMD3(0, 0, 0))` | ✅ | MATCH | Rewritten: \|x\| < 1.0 on pole 1 |
+| BSpline Curve 3D Manipulation Tests | setPole | `OCCTCurve3DBSplineSetPole` | SetPole skipped | `BSplineCurve3DManipulationTests.swift:78 Self.near(bsp.bspline.pole(at: 3), SIMD3(5, 7, 0))` | ✅ | MATCH |  |
+| BSpline Curve 3D Manipulation Tests | getAndSetWeight | `OCCTCurve3DBSplineGetWeight` | Weight() + 0.5 | `BSplineCurve3DManipulationTests.swift:83 bsp.bspline.weight(at: 1) == 1.0` | ✅ | MATCH |  |
+| BSpline Curve 3D Manipulation Tests | insertKnot | `OCCTCurve3DBSplineInsertKnot` | InsertKnot skipped | `BSplineCurve3DManipulationTests.swift:93 bsp.bspline.multiplicities == [4, 1, 2, 1, 4]` | ✅ | MATCH | Rewritten: knotCount >= before passed a skipped insert |
+| BSpline Curve 3D Manipulation Tests | segment | `OCCTCurve3DBSplineSegment` | Segment skipped | `BSplineCurve3DManipulationTests.swift:103 abs(bsp.domain.lowerBound - 3.6055512754639891) < 1e-12` | ✅ | MATCH | Rewritten: checked only the returned Bool |
+| BSpline Curve 3D Manipulation Tests | increaseDegree | `OCCTCurve3DBSplineIncreaseDegree` | IncreaseDegree skipped | `BSplineCurve3DManipulationTests.swift:114 bsp.bspline.degree == 4` | ✅ | MATCH |  |
+| BSpline Curve 3D Manipulation Tests | resolution | `OCCTCurve3DBSplineResolution` | resolution doubled | `BSplineCurve3DManipulationTests.swift:122 abs(res - 0.00059678090076645284) < 1e-15` | ✅ | MATCH | Rewritten: res > 0 |
+| BSpline Curve 3D Manipulation Tests | setPeriodic | `OCCTCurve3DBSplineSetPeriodic` | periodic flag inverted | `BSplineCurve3DManipulationTests.swift:129 !bsp.isPeriodic` | ✅ | MATCH | Rewritten: checked only the returned Bool |
+| BSpline Curve 3D Manipulation Tests | removeKnot | `OCCTCurve3DBSplineRemoveKnot` | report success without removing | `BSplineCurve3DManipulationTests.swift:141 bsp.bspline.knotCount == 4` | ✅ | MATCH | Rewritten: asserted nothing |
