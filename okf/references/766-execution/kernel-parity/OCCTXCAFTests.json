@@ -126,5 +126,270 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "TDataStd Real Attribute::Set and get real",
+    "bridge_function": "OCCTDocumentGetRealAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 3.14
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 3.14
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd Real Attribute::Change real value",
+    "bridge_function": "OCCTDocumentGetRealAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 2.718
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 2.718
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "ReferenceArray Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetReferenceArray",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "tags": [
+          400,
+          401,
+          402
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tags": [
+          400,
+          401,
+          402
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "ReferenceArray Tests::hasReferenceArray",
+    "bridge_function": "OCCTDocumentHasReferenceArray",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "ReferenceList Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetReferenceList",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "tags": [
+          410,
+          411
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tags": [
+          410,
+          411
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "ReferenceList Tests::appendAndClear",
+    "bridge_function": "OCCTDocumentReferenceListClear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "after_clear": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "after_clear": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "ReferenceList Tests::hasReferenceList",
+    "bridge_function": "OCCTDocumentHasReferenceList",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "Relation Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetRelation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "s": "a = b"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "s": "a = b"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "Relation Tests::hasRelation",
+    "bridge_function": "OCCTDocumentHasRelation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd TreeNode::Create tree node",
+    "bridge_function": "OCCTDocumentTreeNodeDepth",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has_father": false,
+        "depth": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "has_father": false,
+        "depth": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd TreeNode::Parent-child tree structure",
+    "bridge_function": "OCCTDocumentTreeNodeNbChildren",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "child_depth": 1,
+        "children": 2,
+        "first_is_c1": true,
+        "next_is_c2": true,
+        "c2_next": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "child_depth": 1,
+        "children": 2,
+        "first_is_c1": true,
+        "next_is_c2": true,
+        "c2_next_null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
   }
 ]

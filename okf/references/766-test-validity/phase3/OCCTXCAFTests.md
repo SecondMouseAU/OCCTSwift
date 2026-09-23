@@ -99,3 +99,43 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `TDataStdRealTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setGetReal` | `OCCTDocumentGetRealAttr` answers 0 | :16 Expectation failed: abs(val - 3.14) < 1e-10 | passed | `OCCTDocumentGetRealAttr` | PASS: 3.14 |
+| `changeReal` | `OCCTDocumentGetRealAttr` answers 0 | :27 Expectation failed: abs(val - 2.718) < 1e-10 | passed | `OCCTDocumentGetRealAttr` | PASS: 2.718 |
+
+### `TDataStdReferenceArrayTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentSetReferenceArray` stores the first tag plus 1 | :13 Expectation failed: result[0] == 400 | passed | `OCCTDocumentGetReferenceArray` | PASS: 400 401 402 |
+| `hasReferenceArray` | `OCCTDocumentHasReferenceArray` returns true | :21 Expectation failed: !doc.hasReferenceArray(tag: 371) | passed | `OCCTDocumentHasReferenceArray` | PASS: absent before Set |
+
+### `TDataStdReferenceListTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentSetReferenceList` stores the first tag plus 1 | :13 Expectation failed: result[0] == 410 | passed | `OCCTDocumentGetReferenceList` | PASS: 410 411 |
+| `appendAndClear` | `OCCTDocumentReferenceListClear` returns true without clearing | :28 Expectation failed: result.count == 0 | passed | `OCCTDocumentReferenceListClear` | PASS: 0 after Clear |
+| `hasReferenceList` | `OCCTDocumentHasReferenceList` returns true | :34 Expectation failed: !doc.hasReferenceList(tag: 382) | passed | `OCCTDocumentHasReferenceList` | PASS: absent before Set |
+
+### `TDataStdRelationTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentGetRelation` answers "X" | :11 Expectation failed: rel == "x + y = z" | passed | `OCCTDocumentGetRelation` | PASS: a = b |
+| `hasRelation` | `OCCTDocumentHasRelation` returns true | :17 Expectation failed: !doc.hasRelation(tag: 391) | passed | `OCCTDocumentHasRelation` | PASS: absent before Set |
+
+### `TDataStdTreeNodeTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `createTreeNode` | `OCCTDocumentTreeNodeDepth` returns 1 | :18 Expectation failed: label.treeNodeDepth == 0 | passed | `OCCTDocumentTreeNodeDepth` | PASS: no father, depth 0 |
+| `parentChild` | `OCCTDocumentTreeNodeNbChildren` returns 1 | :37 Expectation failed: root.treeNodeChildCount == 2 | passed | `OCCTDocumentTreeNodeNbChildren` | PASS: depth 1, 2 children, first/next chain |
