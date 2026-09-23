@@ -94,5 +94,229 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib MakeEdge::Edge from line with parameters",
+    "bridge_function": "OCCTBRepLibMakeEdgeFromLine",
+    "bridge_output": {
+      "type": "edge",
+      "data": {
+        "length": 10,
+        "start": [
+          0,
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "length": 10,
+        "start": [
+          0,
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib MakeEdge::Edge from two points",
+    "bridge_function": "OCCTBRepLibMakeEdgeFromPoints",
+    "bridge_output": {
+      "type": "edge",
+      "data": {
+        "length": 11.575836902790225,
+        "end": [
+          10,
+          5,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "length": 11.575836902790225,
+        "end": [
+          10,
+          5,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib MakeEdge::Edge from circle arc",
+    "bridge_function": "OCCTBRepLibMakeEdgeFromCircle",
+    "bridge_output": {
+      "type": "edge",
+      "data": {
+        "length": 15.707963267948966
+      }
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "length": 15.707963267948966
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib MakeFace::Face from plane with UV bounds",
+    "bridge_function": "OCCTBRepLibMakeFaceFromPlane",
+    "bridge_output": {
+      "type": "area",
+      "data": {
+        "area": 100
+      }
+    },
+    "kernel_output": {
+      "type": "area",
+      "data": {
+        "area": 99.99999999999999
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib MakeFace::Face from cylinder with UV bounds",
+    "bridge_function": "OCCTBRepLibMakeFaceFromCylinder",
+    "bridge_output": {
+      "type": "area",
+      "data": {
+        "area": 157.07963267948966
+      }
+    },
+    "kernel_output": {
+      "type": "area",
+      "data": {
+        "area": 157.07963267948966
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib MakeShell::Shell from plane surface",
+    "bridge_function": "OCCTBRepLibMakeShellFromPlane",
+    "bridge_output": {
+      "type": "shell",
+      "data": {
+        "faces": 1,
+        "area": 100
+      }
+    },
+    "kernel_output": {
+      "type": "shell",
+      "data": {
+        "faces": 1,
+        "area": 99.99999999999999
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib PointCloudShape::Point cloud by triangulation",
+    "bridge_function": "OCCTBRepLibPointCloudByTriangulation",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "points": 24,
+        "normals": 24
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "points": 24,
+        "normals": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib PointCloudShape::Point cloud by density",
+    "bridge_function": "OCCTBRepLibPointCloudByDensity",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "points": 600
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "points": 600
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib ToolTriangulatedShape::Compute normals on meshed shape",
+    "bridge_function": "OCCTBRepLibComputeNormals",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "computed": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "computed": true,
+        "faces_with_normals": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

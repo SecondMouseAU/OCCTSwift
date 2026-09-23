@@ -22,6 +22,15 @@
 | **Transient/Persistent Tests** | Transient/Persistent Tests | Transient/persistent | Remove transient/persistent |
 | **History/Mapping Tests** | History/Mapping Tests | History/mapping | Remove history/mapping |
 | **Naming/Label Tests** | Naming/Label Tests | Naming/label | Remove naming/label |
+| **BRepLib MakeEdge** | Edge from line with parameters | BRepLib_MakeEdge line | OCCTBRepLibMakeEdgeFromLine |
+| **BRepLib MakeEdge** | Edge from two points | BRepLib_MakeEdge points | OCCTBRepLibMakeEdgeFromPoints |
+| **BRepLib MakeEdge** | Edge from circle arc | BRepLib_MakeEdge circle | OCCTBRepLibMakeEdgeFromCircle |
+| **BRepLib MakeFace** | Face from plane with UV bounds | BRepLib_MakeFace plane | OCCTBRepLibMakeFaceFromPlane |
+| **BRepLib MakeFace** | Face from cylinder with UV bounds | BRepLib_MakeFace cylinder | OCCTBRepLibMakeFaceFromCylinder |
+| **BRepLib MakeShell** | Shell from plane surface | BRepLib_MakeShell plane | OCCTBRepLibMakeShellFromPlane |
+| **BRepLib PointCloudShape** | Point cloud by triangulation | BRepLib_PointCloudShape triangulation | OCCTBRepLibPointCloudByTriangulation |
+| **BRepLib PointCloudShape** | Point cloud by density | BRepLib_PointCloudShape density | OCCTBRepLibPointCloudByDensity |
+| **BRepLib ToolTriangulatedShape** | Compute normals on meshed shape | BRepLib_ToolTriangulatedShape::ComputeNormals | OCCTBRepLibComputeNormals |
 
 ---
 
@@ -41,6 +50,15 @@
 | Transient/Persistent Tests | OCCTTransientPersistent | Transient/persistent | Remove transient/persistent | ✅ | ✅ |  |
 | History/Mapping Tests | OCCTHistoryMapping | History/mapping | Remove history/mapping | ✅ | ✅ |  |
 | Naming/Label Tests | OCCTNamingLabel | Naming/label | Remove naming/label | ✅ | ✅ |  |
+| Edge from line with parameters | OCCTBRepLibMakeEdgeFromLine | BRepLib_MakeEdge line | p2 + 1 | ✅ | ✅ | Rewritten: asserted only non-nil and isValid |
+| Edge from two points | OCCTBRepLibMakeEdgeFromPoints | BRepLib_MakeEdge points | second point x + 1 | ✅ | ✅ | Rewritten: asserted only non-nil and isValid |
+| Edge from circle arc | OCCTBRepLibMakeEdgeFromCircle | BRepLib_MakeEdge circle | p2 = (p1 + p2) / 2 | ✅ | ✅ | Rewritten: asserted only non-nil and isValid |
+| Face from plane with UV bounds | OCCTBRepLibMakeFaceFromPlane | BRepLib_MakeFace plane | uMax + 1 | ✅ | ✅ | Rewritten: asserted only non-nil and isValid |
+| Face from cylinder with UV bounds | OCCTBRepLibMakeFaceFromCylinder | BRepLib_MakeFace cylinder | radius + 1 | ✅ | ✅ | Rewritten: asserted only non-nil and isValid |
+| Shell from plane surface | OCCTBRepLibMakeShellFromPlane | BRepLib_MakeShell plane | uMax + 1 | ✅ | ✅ | Rewritten: asserted only non-nil and isValid |
+| Point cloud by triangulation | OCCTBRepLibPointCloudByTriangulation | BRepLib_PointCloudShape triangulation | drop the last point | ✅ | ✅ | Rewritten: asserted count > 0 |
+| Point cloud by density | OCCTBRepLibPointCloudByDensity | BRepLib_PointCloudShape density | density x 2 | ✅ | ✅ | Rewritten: asserted count > 0 |
+| Compute normals on meshed shape | OCCTBRepLibComputeNormals | BRepLib_ToolTriangulatedShape::ComputeNormals | report false after computing | ✅ | ✅ |  |
 
 ---
 
