@@ -302,5 +302,276 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.123.0, Curve3D queries::Period of circle",
+    "test_file": "Tests/OCCTCurveTests/Curve3DQueriesV123Tests.swift",
+    "bridge_function": "OCCTCurve3DGetPeriod",
+    "bridge_output": {
+      "type": "value",
+      "data": "2 pi"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Period = 6.2831853071795862"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Period + 1",
+    "red": "Curve3DQueriesV123Tests.swift:21 abs((c.period ?? -1) - 2.0 * .pi) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-queries-transform-approx/transcript.txt",
+    "note": "Rewritten: nested `if let` skipped the check on nil"
+  },
+  {
+    "test_name": "v0.123.0, Curve3D queries::FirstParameter and LastParameter",
+    "test_file": "Tests/OCCTCurveTests/Curve3DQueriesV123Tests.swift",
+    "bridge_function": "OCCTCurve3DFirstParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": "0 and 2 pi"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "first 0, last 6.2831853071795862"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "both + 0.5",
+    "red": "Curve3DQueriesV123Tests.swift:27 abs(c.firstParameter) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-queries-transform-approx/transcript.txt"
+  },
+  {
+    "test_name": "v0.123.0, Curve3D queries::Line first/last parameters",
+    "test_file": "Tests/OCCTCurveTests/Curve3DQueriesV123Tests.swift",
+    "bridge_function": "OCCTCurve3DFirstParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": "-2e100 and 2e100"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Line first -2e+100, last 2e+100"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "infinite first parameter reported as -1e10",
+    "red": "Curve3DQueriesV123Tests.swift:38 l.firstParameter == -2e100",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-queries-transform-approx/transcript.txt",
+    "note": "Rewritten: bounds past 1e10 passed a finite 1e10"
+  },
+  {
+    "test_name": "Curve3D Transform Family Parity::translate vs translated",
+    "test_file": "Tests/OCCTCurveTests/Curve3DTransformFamilyParityTests.swift",
+    "bridge_function": "OCCTCurve3DTransform",
+    "bridge_output": {
+      "type": "value",
+      "data": "in-place and copying families agree at 5 samples; start (3,-2,1.5)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "one gp_Trsf, Geom_Curve::Transform"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "in-place transform composed with a 0.25 x translation",
+    "red": "Curve3DTransformFamilyParityTests.swift:30 abs(p.x - q.x) < tolerance",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-queries-transform-approx/transcript.txt",
+    "note": "Strengthened: absolute start point added"
+  },
+  {
+    "test_name": "Curve3D Transform Family Parity::rotate vs rotated",
+    "test_file": "Tests/OCCTCurveTests/Curve3DTransformFamilyParityTests.swift",
+    "bridge_function": "OCCTCurve3DTransform",
+    "bridge_output": {
+      "type": "value",
+      "data": "in-place and copying families agree at 5 samples; start (2.5, 4.330, 0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "in place and copy start (2.5000000000000004, 4.3301270189221928)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "in-place transform composed with a 0.25 x translation",
+    "red": "Curve3DTransformFamilyParityTests.swift:30 abs(p.x - q.x) < tolerance",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-queries-transform-approx/transcript.txt",
+    "note": "Strengthened: absolute start point added"
+  },
+  {
+    "test_name": "Curve3D Transform Family Parity::scale vs scaled",
+    "test_file": "Tests/OCCTCurveTests/Curve3DTransformFamilyParityTests.swift",
+    "bridge_function": "OCCTCurve3DTransform",
+    "bridge_output": {
+      "type": "value",
+      "data": "in-place and copying families agree at 5 samples"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Curve::Transform"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "in-place transform composed with a 0.25 x translation",
+    "red": "Curve3DTransformFamilyParityTests.swift:30 abs(p.x - q.x) < tolerance",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-queries-transform-approx/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Transform Family Parity::mirrorPoint vs mirrored(acrossPoint:)",
+    "test_file": "Tests/OCCTCurveTests/Curve3DTransformFamilyParityTests.swift",
+    "bridge_function": "OCCTCurve3DTransform",
+    "bridge_output": {
+      "type": "value",
+      "data": "in-place and copying families agree at 5 samples"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Curve::Transform"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "in-place transform composed with a 0.25 x translation",
+    "red": "Curve3DTransformFamilyParityTests.swift:30 abs(p.x - q.x) < tolerance",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-queries-transform-approx/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Transform Family Parity::mirrorAxis vs mirrored(acrossAxis:direction:)",
+    "test_file": "Tests/OCCTCurveTests/Curve3DTransformFamilyParityTests.swift",
+    "bridge_function": "OCCTCurve3DTransform",
+    "bridge_output": {
+      "type": "value",
+      "data": "in-place and copying families agree at 5 samples"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Curve::Transform"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "in-place transform composed with a 0.25 x translation",
+    "red": "Curve3DTransformFamilyParityTests.swift:30 abs(p.x - q.x) < tolerance",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-queries-transform-approx/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Transform Family Parity::mirrorPlane vs mirrored(acrossPlane:normal:)",
+    "test_file": "Tests/OCCTCurveTests/Curve3DTransformFamilyParityTests.swift",
+    "bridge_function": "OCCTCurve3DTransform",
+    "bridge_output": {
+      "type": "value",
+      "data": "in-place and copying families agree at 5 samples"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Curve::Transform"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "in-place transform composed with a 0.25 x translation",
+    "red": "Curve3DTransformFamilyParityTests.swift:30 abs(p.x - q.x) < tolerance",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-queries-transform-approx/transcript.txt"
+  },
+  {
+    "test_name": "Curve Approximation Tests::Approximate circle edge to BSpline",
+    "test_file": "Tests/OCCTCurveTests/CurveApproximationTests.swift",
+    "bridge_function": "OCCTEdgeApproxCurve",
+    "bridge_output": {
+      "type": "value",
+      "data": "every sample within 1e-3 of radius 5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Approx_Curve3d: degree 7, 13 poles, MaxError 3.38e-4"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "result moved 0.01 in x and z",
+    "red": "CurveApproximationTests.swift:32 abs(simd_length(SIMD2(p.x, p.y)) - 5) < 1e-3",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-queries-transform-approx/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Curve Approximation Tests::Approximation info returns valid data",
+    "test_file": "Tests/OCCTCurveTests/CurveApproximationTests.swift",
+    "bridge_function": "OCCTEdgeApproxCurveInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": "maxError 3.3800541390782121e-4, degree 7, 13 poles"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "same"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "MaxError x 2, poles + 1",
+    "red": "CurveApproximationTests.swift:54 abs(info.maxError - 0.00033800541390782121) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-queries-transform-approx/transcript.txt",
+    "note": "Rewritten: maxError < 0.01, degree >= 2, poles > 0"
+  },
+  {
+    "test_name": "Curve Approximation Tests::Approximate straight edge",
+    "test_file": "Tests/OCCTCurveTests/CurveApproximationTests.swift",
+    "bridge_function": "OCCTEdgeApproxCurve",
+    "bridge_output": {
+      "type": "value",
+      "data": "(-5,-5,-5) -> (-5,-5,5)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "degree 1, 2 poles, (-5,-5,-5) -> (-5,-5,5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "result moved 0.01 in x and z",
+    "red": "CurveApproximationTests.swift:72 simd_distance(bspline.startPoint, SIMD3(-5, -5, -5)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-queries-transform-approx/transcript.txt",
+    "note": "Rewritten: checked only != nil"
   }
 ]

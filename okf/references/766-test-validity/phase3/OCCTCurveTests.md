@@ -197,3 +197,22 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| v0.123.0, Curve3D queries | Period of circle | `OCCTCurve3DGetPeriod` | Period + 1 | `Curve3DQueriesV123Tests.swift:21 abs((c.period ?? -1) - 2.0 * .pi) < 1e-10` | ✅ | MATCH | Rewritten: nested `if let` skipped the check on nil |
+| v0.123.0, Curve3D queries | FirstParameter and LastParameter | `OCCTCurve3DFirstParameter` | both + 0.5 | `Curve3DQueriesV123Tests.swift:27 abs(c.firstParameter) < 1e-10` | ✅ | MATCH |  |
+| v0.123.0, Curve3D queries | Line first/last parameters | `OCCTCurve3DFirstParameter` | infinite first parameter reported as -1e10 | `Curve3DQueriesV123Tests.swift:38 l.firstParameter == -2e100` | ✅ | MATCH | Rewritten: bounds past 1e10 passed a finite 1e10 |
+| Curve3D Transform Family Parity | translate vs translated | `OCCTCurve3DTransform` | in-place transform composed with a 0.25 x translation | `Curve3DTransformFamilyParityTests.swift:30 abs(p.x - q.x) < tolerance` | ✅ | MATCH | Strengthened: absolute start point added |
+| Curve3D Transform Family Parity | rotate vs rotated | `OCCTCurve3DTransform` | in-place transform composed with a 0.25 x translation | `Curve3DTransformFamilyParityTests.swift:30 abs(p.x - q.x) < tolerance` | ✅ | MATCH | Strengthened: absolute start point added |
+| Curve3D Transform Family Parity | scale vs scaled | `OCCTCurve3DTransform` | in-place transform composed with a 0.25 x translation | `Curve3DTransformFamilyParityTests.swift:30 abs(p.x - q.x) < tolerance` | ✅ | MATCH |  |
+| Curve3D Transform Family Parity | mirrorPoint vs mirrored(acrossPoint:) | `OCCTCurve3DTransform` | in-place transform composed with a 0.25 x translation | `Curve3DTransformFamilyParityTests.swift:30 abs(p.x - q.x) < tolerance` | ✅ | MATCH |  |
+| Curve3D Transform Family Parity | mirrorAxis vs mirrored(acrossAxis:direction:) | `OCCTCurve3DTransform` | in-place transform composed with a 0.25 x translation | `Curve3DTransformFamilyParityTests.swift:30 abs(p.x - q.x) < tolerance` | ✅ | MATCH |  |
+| Curve3D Transform Family Parity | mirrorPlane vs mirrored(acrossPlane:normal:) | `OCCTCurve3DTransform` | in-place transform composed with a 0.25 x translation | `Curve3DTransformFamilyParityTests.swift:30 abs(p.x - q.x) < tolerance` | ✅ | MATCH |  |
+| Curve Approximation Tests | Approximate circle edge to BSpline | `OCCTEdgeApproxCurve` | result moved 0.01 in x and z | `CurveApproximationTests.swift:32 abs(simd_length(SIMD2(p.x, p.y)) - 5) < 1e-3` | ✅ | MATCH | Rewritten: checked only != nil |
+| Curve Approximation Tests | Approximation info returns valid data | `OCCTEdgeApproxCurveInfo` | MaxError x 2, poles + 1 | `CurveApproximationTests.swift:54 abs(info.maxError - 0.00033800541390782121) < 1e-12` | ✅ | MATCH | Rewritten: maxError < 0.01, degree >= 2, poles > 0 |
+| Curve Approximation Tests | Approximate straight edge | `OCCTEdgeApproxCurve` | result moved 0.01 in x and z | `CurveApproximationTests.swift:72 simd_distance(bspline.startPoint, SIMD3(-5, -5, -5)) < 1e-9` | ✅ | MATCH | Rewritten: checked only != nil |
