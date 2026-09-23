@@ -124,3 +124,21 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `ChFi2dBuilderTests.swift`, `ChFi2dChamferAPITests.swift`, `ChFi2dFilletAlgoTests.swift`, `ChFi2dFilletAPITests.swift`, `CompBezier2dToBSpline2dTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-chfi2d-compbezier/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| ChFi2d_Builder Tests::add fillet at vertex | `OCCTChFi2dAddFillet` | fillet radius x 1.5 | ✅ | ✅ | MATCH | `if let` on face and result, and `newEdges > origEdges`; now pins 5 edges and area 96 + pi |
+| ChFi2d_Builder Tests::add chamfer between edges | `OCCTChFi2dAddChamfer` | second distance x 1.5 | ✅ | ✅ | MATCH | same `if let` + count gap; now pins area 98 |
+| ChFi2d_Builder Tests::add chamfer with angle | `OCCTChFi2dAddChamferAngle` | angle x 1.2 | ✅ | ✅ | MATCH | same `if let` + count gap; now pins area 98 |
+| ChFi2d_ChamferAPI Tests::chamfer between two linear edges | `OCCTChFi2dChamferEdges` | second distance x 1.5 | ✅ | ✅ | MATCH | `isValid` inside `if let r`; now pins the chamfer and trimmed edge lengths |
+| ChFi2d FilletAlgo Tests::Iterative 2D fillet between two line edges | `OCCTChFi2dFilletAlgo` | radius x 1.5 | ✅ | ✅ | MATCH | `isValid` and `resultCount >= 1`; now pins one solution, fillet pi, edges 8 and 8 |
+| ChFi2d_FilletAPI Tests::fillet between two edges | `OCCTChFi2dFilletEdges` | radius x 1.5 | ✅ | ✅ | MATCH | `solutionCount >= 1` inside `if let r`; now pins the fillet and both trimmed edges |
+| ChFi2d_FilletAPI Tests::fillet plane origin off world origin stays connected to the input edges (#1459) | `OCCTChFi2dFilletEdges` | radius x 1.5 | ✅ | ✅ | MATCH | strengthened: `solutionCount >= 1` is now `== 1` and the fillet length (pi/2) is pinned |
+| Convert_CompBezierCurves2dToBSplineCurve2d Tests::singleQuadraticSegment2D | `OCCTConvertCompBezier2dToBSpline2d` | shift every pole x by 0.5 | ✅ | ✅ | MATCH | `if let` and `poles.last!` inside `#expect`; now pins every pole, knot and multiplicity |
+| Convert_CompBezierCurves2dToBSplineCurve2d Tests::twoCubicSegments2D | `OCCTConvertCompBezier2dToBSpline2d` | shift every pole x by 0.5 | ✅ | ✅ | MATCH | `poles.count >= 4` inside `if let`; now pins the six poles and the multiplicity-2 junction knot |
+| Convert_CompBezierCurves2dToBSplineCurve2d Tests::emptySegmentsReturnsNil2D | `OCCTConvertCompBezier2dToBSpline2d` | Swift wrapper returns an empty result instead of nil for no segments | ✅ | ✅ | MATCH |  |
+| Convert_CompBezierCurves2dToBSplineCurve2d Tests::manySegmentsExceedingCapacityReturnsNil2D | `OCCTConvertCompBezier2dToBSpline2d` | report success with the counts clamped to the 100-pole/50-knot buffers | ✅ | ✅ | MATCH |  |
