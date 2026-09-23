@@ -124,3 +124,18 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `GccAnaCirc2d3TanTests.swift`, `GccAnaLin2d2TanTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-gccana-circ3tan-lines/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| GccAna Circ2d3Tan Tests::threePoints | `OCCTGccAnaCirc2d3TanPoints` | third point y + 1 | ✅ | ✅ | MATCH | `radius > 0`; now centre and radius |
+| GccAna Circ2d3Tan Tests::threeLines | `OCCTGccAnaCirc2d3TanLines` | third line x + 2 | ✅ | ✅ | MATCH | `count >= 1`; now pins the solution set |
+| GccAna Circ2d3Tan Tests::threeCircles | `OCCTGccAnaCirc2d3TanCircles` | third radius + 1 | ✅ | ✅ | MATCH | `count >= 1`; now pins the solution set |
+| GccAna Circ2d3Tan Tests::twoCirclesPoint | `OCCTGccAnaCirc2d2CirclesPoint` | point y + 1 | ✅ | ✅ | MATCH | `count >= 1`; now pins the solution set |
+| GccAna Circ2d3Tan Tests::circleAndTwoPoints | `OCCTGccAnaCirc2dCircle2Points` | second point x + 1 | ✅ | ✅ | MATCH | `count >= 1`; now pins the solution set |
+| GccAna Circ2d3Tan Tests::twoLinesPoint | `OCCTGccAnaCirc2d2LinesPoint` | point x + 1 | ✅ | ✅ | MATCH | `count >= 1`; now pins the solution set |
+| GccAna Lin2d2Tan Tests::line through two points | `OCCTGccAnaLin2d2TanPntPnt` | second point y + 1 | ✅ | ✅ | MATCH | `|dx| == |dy|` inside `if let`; now the signed direction |
+| GccAna Lin2d2Tan Tests::lines tangent to circle through point | `OCCTGccAnaLin2d2TanCircPnt` | point x + 1 | ✅ | ✅ | MATCH | `count >= 1`; now pins the solution set |
