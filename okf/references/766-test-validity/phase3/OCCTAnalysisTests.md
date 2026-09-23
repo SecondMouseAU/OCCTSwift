@@ -161,6 +161,10 @@
 | **v0.114.0 - Mass Properties** | principalAxes | Principal axes of inertia | Swap axes |
 | **v0.114.0 - Mass Properties** | radiusOfGyration | Radius of gyration | Shift axis |
 | **Extrema_ExtElCS Line-Sphere** | lineSphereDistance | Line-sphere extrema | Negate surface point z |
+| **Extrema extras v0.112** | locateOnCurve | Windowed point-curve locate | LowerDistance() + 1 in OCCTExtremaLocateOnCurve |
+| **Extrema extras v0.112** | projectPointOnCurve | Point-curve projection | Distance(i) * 2 in OCCTExtremaPointCurve |
+| **Extrema extras v0.112** | locateOnSurface | Local point-surface locate | u and v swapped in OCCTExtremaLocateOnSurface |
+| **Extrema extras v0.112** | projectPointOnSurface | Point-surface projection | count - 1 returned by OCCTExtremaPointSurface |
 
 ---
 
