@@ -126,5 +126,238 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "TFunction Logbook::Create logbook and mark labels",
+    "bridge_function": "OCCTDocumentLogbookIsModified",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "fresh_empty": true,
+        "touched_t1": true,
+        "t2": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_empty": true,
+        "modified_t1": true,
+        "modified_t2": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction Logbook::Logbook impacted and clear",
+    "bridge_function": "OCCTDocumentLogbookClear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "empty_after_clear": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "empty_after_clear": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction Scope Tests::setFunctionScope",
+    "bridge_function": "OCCTDocumentSetFunctionScope",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "set": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction Scope Tests::addAndHasFunction",
+    "bridge_function": "OCCTDocumentFunctionScopeHas",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "added": true,
+        "has": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "added": true,
+        "has": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction Scope Tests::removeFunction",
+    "bridge_function": "OCCTDocumentFunctionScopeRemove",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "removed": true,
+        "has": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "removed": true,
+        "has": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction Scope Tests::removeAllFunctions",
+    "bridge_function": "OCCTDocumentFunctionScopeRemoveAll",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": 2,
+        "after": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": 2,
+        "after": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction Scope Tests::freeID",
+    "bridge_function": "OCCTDocumentFunctionScopeGetFreeID",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "first_at_least": 1,
+        "increasing": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "free_id_after_two_adds": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TDataStd_Tick Tests::setAndHas",
+    "bridge_function": "OCCTDocumentSetTick",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TDataStd_Tick Tests::remove",
+    "bridge_function": "OCCTDocumentRemoveTick",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "after": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "after_forget": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TDataStd_Tick Tests::removeNonExistent",
+    "bridge_function": "OCCTDocumentRemoveTick",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "removed": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "present": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
   }
 ]

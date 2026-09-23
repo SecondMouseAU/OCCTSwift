@@ -99,3 +99,32 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `TFunctionLogbookTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `logbookBasic` | `OCCTDocumentLogbookIsModified` returns false | :23 Expectation failed: logLabel.logbookIsModified(target1) | passed | `OCCTDocumentLogbookIsModified` | PASS: true / false |
+| `logbookImpactedAndClear` | `OCCTDocumentLogbookClear` returns true without clearing | :36 Expectation failed: logLabel.logbookIsEmpty | passed | `OCCTDocumentLogbookClear` | PASS: empty |
+
+### `TFunctionScopeTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setFunctionScope` | `OCCTDocumentSetFunctionScope` returns false | :14 Expectation failed: ok | passed | `OCCTDocumentSetFunctionScope` | PASS: set |
+| `addAndHasFunction` | `OCCTDocumentFunctionScopeHas` returns false | :24 Expectation failed: doc.functionScopeHas(labelId: node.labelId) | passed | `OCCTDocumentFunctionScopeHas` | PASS: true |
+| `removeFunction` | `OCCTDocumentFunctionScopeRemove` returns true without removing | :36 Expectation failed: !doc.functionScopeHas(labelId: node.labelId) | passed | `OCCTDocumentFunctionScopeRemove` | PASS: removed |
+| `removeAllFunctions` | `OCCTDocumentFunctionScopeRemoveAll` returns true without removing | :49 Expectation failed: doc.functionScopeCount == 0 | passed | `OCCTDocumentFunctionScopeRemoveAll` | PASS: 2 then 0 |
+| `freeID` | `OCCTDocumentFunctionScopeGetFreeID` answers 0 | :58 Expectation failed: freeId >= 1; :62 Expectation failed: freeId2 > freeId | passed | `OCCTDocumentFunctionScopeGetFreeID` | PASS: IDs from 1 up |
+
+### `TickTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndHas` | `OCCTDocumentSetTick` returns true without setting | :14 Expectation failed: doc.hasTick(tag: 500) | passed | `OCCTDocumentSetTick` | PASS: false, true |
+| `remove` | `OCCTDocumentRemoveTick` returns true without removing | :21 Expectation failed: !doc.hasTick(tag: 501) | passed | `OCCTDocumentRemoveTick` | PASS: gone |
+| `removeNonExistent` | `OCCTDocumentRemoveTick` returns true without removing | :26 Expectation failed: !doc.removeTick(tag: 502) | passed | `OCCTDocumentRemoveTick` | PASS: nothing to remove |
