@@ -126,5 +126,231 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Attributes::attachAndReadMixedAttributes",
+    "bridge_function": "OCCTBRepGraphCreate",
+    "bridge_output": {
+      "type": "attributes",
+      "data": {
+        "annotated_nodes": 3
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": {
+        "reason": "the attribute store is pure Swift; no kernel counterpart"
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
+  },
+  {
+    "test_name": "BRepGraph Attributes::clearingLastAttributeDropsNode",
+    "bridge_function": "OCCTBRepGraphCreate",
+    "bridge_output": {
+      "type": "attributes",
+      "data": {
+        "after_clear_all": 0
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": {
+        "reason": "pure Swift store"
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
+  },
+  {
+    "test_name": "BRepGraph Attributes::snapshotJSONRoundTrip",
+    "bridge_function": "OCCTBRepGraphCreate",
+    "bridge_output": {
+      "type": "graph",
+      "data": {
+        "faces": 6,
+        "vertices": 8
+      }
+    },
+    "kernel_output": {
+      "type": "graph",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
+  },
+  {
+    "test_name": "BRepGraph Attributes::encodingIsDeterministic",
+    "bridge_function": "OCCTBRepGraphCreate",
+    "bridge_output": {
+      "type": "json",
+      "data": {
+        "bytes": "6 face entries sorted by index, keys sorted"
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": {
+        "reason": "Codable output is pure Swift"
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
+  },
+  {
+    "test_name": "BRepGraph Attributes::nodeIndexingDeterministicAcrossRebuild",
+    "bridge_function": "OCCTBRepGraphVertexPoint",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "max_distance_lt": 1e-09
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "max_vertex_distance": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
+  },
+  {
+    "test_name": "BRepGraph Attributes::futureFormatVersionRejected",
+    "bridge_function": "OCCTBRepGraphCreate",
+    "bridge_output": {
+      "type": "error",
+      "data": {
+        "thrown": "unsupportedFormatVersion"
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": {
+        "reason": "the version check is pure Swift"
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
+  },
+  {
+    "test_name": "BRepGraph Attributes::invalidBREPThrows",
+    "bridge_function": "OCCTShapeFromBREPString",
+    "bridge_output": {
+      "type": "error",
+      "data": {
+        "thrown": "invalidBREP"
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "read_is_null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
+  },
+  {
+    "test_name": "TDataStd_Expression Tests::setExpression",
+    "bridge_function": "OCCTDocumentExpressionSet",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "set_is_null": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-driver-table-expression/"
+  },
+  {
+    "test_name": "TDataStd_Expression Tests::setAndGetString",
+    "bridge_function": "OCCTDocumentExpressionGetString",
+    "bridge_output": {
+      "type": "string",
+      "data": {
+        "s": "x^2 + y^2"
+      }
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": {
+        "s": "x^2 + y^2"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-driver-table-expression/"
+  },
+  {
+    "test_name": "TDataStd_Expression Tests::getName",
+    "bridge_function": "OCCTDocumentExpressionGetName",
+    "bridge_output": {
+      "type": "string",
+      "data": {
+        "non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": {
+        "name": "a + b"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-driver-table-expression/"
   }
 ]
