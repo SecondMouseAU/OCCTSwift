@@ -302,5 +302,196 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.162 EditorView geometric, location, PCurve setters::Per-(edge, face1, face2) regularity setter reports failure on the pinned kernel",
+    "test_file": "Tests/OCCTCurveTests/EditorViewV162Tests.swift",
+    "bridge_function": "OCCTBRepGraphSetEdgeRegularity",
+    "bridge_output": {
+      "type": "value",
+      "data": "false (stub)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: BRepGraph_LayerRegularity is absent from the 8.0.1 library, so the bridge is a stub by design"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "Strengthened: nested `if let` let a nil box or graph pass unchecked"
+      ]
+    },
+    "status": "N/A",
+    "injection": "stub reports success",
+    "red": "EditorViewV162Tests.swift:34 graph.setEdgeRegularity(0, face1: 0, face2: 1, continuity: 1) == false",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-editorview-polyline/transcript.txt",
+    "note": "Strengthened: nested `if let` let a nil box or graph pass unchecked"
+  },
+  {
+    "test_name": "v0.162 EditorView geometric, location, PCurve setters::coEdgeSetPCurve binds and clears the PCurve that the UV endpoints derive from",
+    "test_file": "Tests/OCCTCurveTests/EditorViewV162Tests.swift",
+    "bridge_function": "OCCTBRepGraphCoEdgeSetPCurve",
+    "bridge_output": {
+      "type": "value",
+      "data": "cleared, then bound"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "NOT RUN: BRepGraph editor state, not probed in this pass"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "NOT RUN",
+    "injection": "SetPCurve skipped",
+    "red": "EditorViewV162Tests.swift:63 graph.coedgeHasPCurve(0) == false",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-editorview-polyline/transcript.txt"
+  },
+  {
+    "test_name": "v0.162 EditorView geometric, location, PCurve setters::coEdgeAddPCurve appends a coedge carrying the requested parameter range",
+    "test_file": "Tests/OCCTCurveTests/EditorViewV162Tests.swift",
+    "bridge_function": "OCCTBRepGraphCoEdgeAddPCurve",
+    "bridge_output": {
+      "type": "value",
+      "data": "coedge added with range [0, 4]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "NOT RUN: BRepGraph editor state, not probed in this pass"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "NOT RUN",
+    "injection": "last parameter halved",
+    "red": "EditorViewV162Tests.swift:92 abs(range.last - 4.0) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-editorview-polyline/transcript.txt"
+  },
+  {
+    "test_name": "v0.162 EditorView geometric, location, PCurve setters::Face triangulation rep binding",
+    "test_file": "Tests/OCCTCurveTests/EditorViewV162Tests.swift",
+    "bridge_function": "OCCTBRepGraphSetFaceTriangulationRep",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil before, a rep id after"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "NOT RUN: BRepGraph editor state, not probed in this pass"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "NOT RUN",
+    "injection": "SetCachedTriangulation skipped",
+    "red": "EditorViewV162Tests.swift:121 graph.meshFaceActiveTriangulationRepId(0) != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-editorview-polyline/transcript.txt"
+  },
+  {
+    "test_name": "Edge Polyline Consistency Tests::Lofted shape edge polylines match edge count",
+    "test_file": "Tests/OCCTCurveTests/EdgePolylineConsistencyTests.swift",
+    "bridge_function": "OCCTShapeComputeAllEdgePolylines",
+    "bridge_output": {
+      "type": "value",
+      "data": "one polyline per edge"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A for the loft (not probed); see the other shapes' counts"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "Unchanged. A second injection (skipping BuildCurves3d) stayed green: the loft's edges already carry 3D curves"
+      ]
+    },
+    "status": "NOT RUN",
+    "injection": "Swift: polyline 0 dropped",
+    "red": "EdgePolylineConsistencyTests.swift:27 polylines.count == edgeCount",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-editorview-polyline/transcript.txt",
+    "note": "Unchanged. A second injection (skipping BuildCurves3d) stayed green: the loft's edges already carry 3D curves"
+  },
+  {
+    "test_name": "Edge Polyline Consistency Tests::Extruded rectangle all 12 edges recovered",
+    "test_file": "Tests/OCCTCurveTests/EdgePolylineConsistencyTests.swift",
+    "bridge_function": "OCCTShapeComputeAllEdgePolylines",
+    "bridge_output": {
+      "type": "value",
+      "data": "12"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "TopExp: 12 edges, all with a 3D curve"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: polyline 0 dropped",
+    "red": "EdgePolylineConsistencyTests.swift:53 polylines.count == 12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-editorview-polyline/transcript.txt",
+    "note": "Unchanged"
+  },
+  {
+    "test_name": "Edge Polyline Consistency Tests::Extruded circle seam edges handled",
+    "test_file": "Tests/OCCTCurveTests/EdgePolylineConsistencyTests.swift",
+    "bridge_function": "OCCTShapeComputeAllEdgePolylines",
+    "bridge_output": {
+      "type": "value",
+      "data": "one polyline per edge"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "cylinder: 3 edges, all with a 3D curve"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: polyline 0 dropped",
+    "red": "EdgePolylineConsistencyTests.swift:70 polylines.count == edgeCount",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-editorview-polyline/transcript.txt",
+    "note": "Unchanged"
+  },
+  {
+    "test_name": "Edge Polyline Consistency Tests::allEdgePolylines count matches edgeCount for various shapes",
+    "test_file": "Tests/OCCTCurveTests/EdgePolylineConsistencyTests.swift",
+    "bridge_function": "OCCTShapeComputeAllEdgePolylines",
+    "bridge_output": {
+      "type": "value",
+      "data": "box 12, cylinder 3, sphere 1 of 3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "box 12/12, cylinder 3/3, sphere 3 edges, 1 with a 3D curve, 2 degenerated"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: polyline 0 dropped",
+    "red": "EdgePolylineConsistencyTests.swift:91 polylines.count == edgeCount",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-editorview-polyline/transcript.txt",
+    "note": "Unchanged"
   }
 ]

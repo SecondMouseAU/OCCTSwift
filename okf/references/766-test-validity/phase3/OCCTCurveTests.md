@@ -197,3 +197,18 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| v0.162 EditorView geometric, location, PCurve setters | Per-(edge, face1, face2) regularity setter reports failure on the pinned kernel | `OCCTBRepGraphSetEdgeRegularity` | stub reports success | `EditorViewV162Tests.swift:34 graph.setEdgeRegularity(0, face1: 0, face2: 1, continuity: 1) == false` | ✅ | N/A | Strengthened: nested `if let` let a nil box or graph pass unchecked |
+| v0.162 EditorView geometric, location, PCurve setters | coEdgeSetPCurve binds and clears the PCurve that the UV endpoints derive from | `OCCTBRepGraphCoEdgeSetPCurve` | SetPCurve skipped | `EditorViewV162Tests.swift:63 graph.coedgeHasPCurve(0) == false` | ✅ | NOT RUN |  |
+| v0.162 EditorView geometric, location, PCurve setters | coEdgeAddPCurve appends a coedge carrying the requested parameter range | `OCCTBRepGraphCoEdgeAddPCurve` | last parameter halved | `EditorViewV162Tests.swift:92 abs(range.last - 4.0) < 1e-9` | ✅ | NOT RUN |  |
+| v0.162 EditorView geometric, location, PCurve setters | Face triangulation rep binding | `OCCTBRepGraphSetFaceTriangulationRep` | SetCachedTriangulation skipped | `EditorViewV162Tests.swift:121 graph.meshFaceActiveTriangulationRepId(0) != nil` | ✅ | NOT RUN |  |
+| Edge Polyline Consistency Tests | Lofted shape edge polylines match edge count | `OCCTShapeComputeAllEdgePolylines` | Swift: polyline 0 dropped | `EdgePolylineConsistencyTests.swift:27 polylines.count == edgeCount` | ✅ | NOT RUN | Unchanged. A second injection (skipping BuildCurves3d) stayed green: the loft's edges already carry 3D curves |
+| Edge Polyline Consistency Tests | Extruded rectangle all 12 edges recovered | `OCCTShapeComputeAllEdgePolylines` | Swift: polyline 0 dropped | `EdgePolylineConsistencyTests.swift:53 polylines.count == 12` | ✅ | MATCH | Unchanged |
+| Edge Polyline Consistency Tests | Extruded circle seam edges handled | `OCCTShapeComputeAllEdgePolylines` | Swift: polyline 0 dropped | `EdgePolylineConsistencyTests.swift:70 polylines.count == edgeCount` | ✅ | MATCH | Unchanged |
+| Edge Polyline Consistency Tests | allEdgePolylines count matches edgeCount for various shapes | `OCCTShapeComputeAllEdgePolylines` | Swift: polyline 0 dropped | `EdgePolylineConsistencyTests.swift:91 polylines.count == edgeCount` | ✅ | MATCH | Unchanged |
