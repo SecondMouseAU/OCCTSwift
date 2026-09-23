@@ -6,5 +6,233 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Issue #1669, the 3D GeomEval evaluators distinguish a refusal from the origin::A helix at u = 0 answers with the point on the radius",
+    "bridge_function": "OCCTGeomEvalCircularHelixD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0)": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0)": [
+          5,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-issue1669-geomeval3d/transcript.txt helix(5, 2) D0(0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1669, the 3D GeomEval evaluators distinguish a refusal from the origin::An ellipsoid at (0,0) answers with the point on the a-axis",
+    "bridge_function": "OCCTGeomEvalEllipsoidD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,0)": [
+          3,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,0)": [
+          3,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-issue1669-geomeval3d/transcript.txt ellipsoid(3, 4, 5) D0(0, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1669, the 3D GeomEval evaluators distinguish a refusal from the origin::A sine wave through the origin answers the origin rather than refusing",
+    "bridge_function": "OCCTGeomEvalSineWaveD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0)": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0)": [
+          0,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-issue1669-geomeval3d/transcript.txt sineWave(2, 3, 0) D0(0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1669, the 3D GeomEval evaluators distinguish a refusal from the origin::NaN arguments are refused across all ten evaluators",
+    "bridge_function": "OCCTGeomEvalCircularHelixD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": "nil for all ten"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": "nil for all ten"
+      },
+      "source": "Scripts/repro/766-issue1669-geomeval3d/transcript.txt: the kernel does not throw, it evaluates to (nan, nan, nan)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1669, the 3D GeomEval evaluators distinguish a refusal from the origin::A NaN parameter is refused as well as a NaN construction argument",
+    "bridge_function": "OCCTGeomEvalCircularHelixD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-issue1669-geomeval3d/transcript.txt helix(5, 2) D0(NaN) = (nan, nan, nan)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1669, the 3D GeomEval evaluators distinguish a refusal from the origin::An infinite argument is refused",
+    "bridge_function": "OCCTGeomEvalCircularHelixD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-issue1669-geomeval3d/transcript.txt helix(inf, 2) D0(0) = (nan, nan, nan)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1669, the 3D GeomEval evaluators distinguish a refusal from the origin::A refused D1 yields no point either, not a point with a zero derivative",
+    "bridge_function": "OCCTGeomEvalCircularHelixD1",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-issue1669-geomeval3d/transcript.txt helix(NaN, 2) D0(0) = (nan, nan, nan)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1669, the 3D GeomEval evaluators distinguish a refusal from the origin::A well-formed D2 answers all three components",
+    "bridge_function": "OCCTGeomEvalCircularHelixD2",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "P": [
+          5,
+          0,
+          0
+        ],
+        "D1": [
+          0,
+          5,
+          0.318309886184
+        ],
+        "D2": [
+          -5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "P": [
+          5,
+          0,
+          0
+        ],
+        "D1": [
+          0,
+          5,
+          0.318309886184
+        ],
+        "D2": [
+          -5,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-issue1669-geomeval3d/transcript.txt helix(5, 2) D2(0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
