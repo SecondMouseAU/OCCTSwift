@@ -95,6 +95,10 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Geom_Plane Properties** | planeCoefficients | Plane equation coefficients | Drop D |
+| **Geom_Plane Properties** | planeUIso | Plane U iso-curve | Wrong iso direction |
+| **Geom_Plane Properties** | planeVIso | Plane V iso-curve | Wrong iso direction |
+| **Geom_Plane Properties** | planePln | Plane gp_Pln data | Drop location Z |
 
 ---
 
@@ -202,6 +206,10 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| planeCoefficients | OCCTSurfacePlaneCoefficients | Plane equation coefficients | Zero *D after Geom_Plane::Coefficients | ✅ | ✅ | Rewritten: fixture moved to z = 2 so D is nonzero; if-let wrapper removed |
+| planeUIso | OCCTSurfacePlaneUIso | Plane U iso-curve | Call VIso(u) instead of UIso(u) | ✅ | ✅ | Rewritten: asserted nothing (let _ = iso.domain) |
+| planeVIso | OCCTSurfacePlaneVIso | Plane V iso-curve | Call UIso(v) instead of VIso(v) | ✅ | ✅ | Rewritten: asserted nothing (let _ = iso.domain) |
+| planePln | OCCTSurfacePlanePln | Plane gp_Pln data | Write 0 to *pz | ✅ | ✅ | Rewritten: origin now asserted; if-let wrapper removed |
 
 ---
 
