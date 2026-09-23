@@ -5,7 +5,7 @@ captured green. The previous version of this file (12 rows, PR #2022) was remove
 found every row a stub, three of its Red claims impossible given the code, and its parity values
 copied from bridge to kernel. Sections are one per PR.
 
-## Thread-safety suites (PR #TSPR, files: Issue298FilletThreadSafetyTests, Issue341MeshCafThreadSafetyTests, Issue359STEPThreadSafetyTests, Issue361SharedSingletonThreadSafetyTests, Issue367FuseMultiThreadSafetyTests, Issue1404TObjApplicationThreadSafetyTests)
+## Thread-safety suites (PR #2362, files: Issue298FilletThreadSafetyTests, Issue341MeshCafThreadSafetyTests, Issue359STEPThreadSafetyTests, Issue361SharedSingletonThreadSafetyTests, Issue367FuseMultiThreadSafetyTests, Issue1404TObjApplicationThreadSafetyTests)
 
 Injections are in `Sources/OCCTBridge/src/`, applied by script and reverted with
 `git checkout -- Sources/` (`git diff --stat Sources/` empty before every green run). "Static"
