@@ -156,6 +156,10 @@
 | **Geom_Hyperbola Properties** | hyperbolaFocal | Hyperbola focal distance (rewritten: sign-only) | Return 2 * MajorRadius() in OCCTCurve3DHyperbolaFocal |
 | **Geom_Hyperbola Properties** | hyperbolaFocus1 | Hyperbola focus (rewritten: sign-only) | Report the vertex (MajorRadius, 0, 0) in OCCTCurve3DHyperbolaFocus1 |
 | **Geom_Hyperbola Properties** | hyperbolaAsymptote1 | Hyperbola asymptote | Read Asymptote2() in OCCTCurve3DHyperbolaAsymptote1 |
+| **v0.114.0 - Mass Properties** | linearProperties | Linear mass properties | Offset centre of mass |
+| **v0.114.0 - Mass Properties** | momentOfInertia | Volume inertia tensor | Scale Ixx |
+| **v0.114.0 - Mass Properties** | principalAxes | Principal axes of inertia | Swap axes |
+| **v0.114.0 - Mass Properties** | radiusOfGyration | Radius of gyration | Shift axis |
 
 ---
 
@@ -312,6 +316,10 @@
 | recognizeSphere | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | Remove ClearStatus() before IsSphere | ✅ | ✅ |  |
 | recognizeEdgeLine | OCCTShapeRecognizeCanonicalCurve | Canonical curve recognition | if (false && recog.IsLine(...)) | ✅ | ✅ | Rewritten: if-let wrapper removed, all twelve edges asserted |
 | Integration: Assembly Interference: shaftHousingClearanceAndInterference | OCCTShapeDistance | Clearance and interference | Distance + 1; volume scaled by 1.01 | ✅ | ✅ | rewritten: distance >= 0 and vol > 0 stayed green under the injection; also reaches OCCTShapeSubtractEx, OCCTShapeIntersectEx, OCCTShapeGetVolume |
+| linearProperties | OCCTShapeLinearProperties | Linear mass properties | Write com.X() + 1.0 to *cx | ✅ | ✅ | Rewritten: if-let removed, centre asserted, tolerance 1e-9 (y = -5.55e-17 on both sides) |
+| momentOfInertia | OCCTShapeMomentOfInertia | Volume inertia tensor | Write 2.0 * mat(1, 1) to *ixx | ✅ | ✅ | Rewritten: asserted only > 0; now pinned to m(b^2+c^2)/12 |
+| principalAxes | OCCTShapePrincipalAxes | Principal axes of inertia | Read ThirdAxisOfInertia into axis1 | ✅ | ✅ | Rewritten: cube fixture has isotropic inertia, so any frame is principal; now 10x20x30 with unique axes |
+| radiusOfGyration | OCCTShapeRadiusOfGyration | Radius of gyration | Build the axis through (ax + 1, ay, az) | ✅ | ✅ | Rewritten: asserted only > 0; now pinned to sqrt(50/3) |
 
 ---
 
