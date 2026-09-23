@@ -99,3 +99,37 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `TDataStdExtStringArrayTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentGetExtStringArrayValue` answers "X" | :15 Expectation failed: v == "Hello"; :18 Expectation failed: v == "World" | passed | `OCCTDocumentGetExtStringArrayValue` | PASS: 3; Hello, World |
+| `hasExtStringArray` | `OCCTDocumentHasExtStringArray` returns true | :24 Expectation failed: !doc.hasExtStringArray(tag: 351) | passed | `OCCTDocumentHasExtStringArray` | PASS: absent before Set |
+
+### `TDataStdExtStringListTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentGetExtStringListValue` answers "X" | :15 Expectation failed: v == "Alpha"; :18 Expectation failed: v == "Gamma" | passed | `OCCTDocumentGetExtStringListValue` | PASS: 3; Alpha .. Gamma |
+| `appendAndClear` | `OCCTDocumentExtStringListClear` returns true without clearing | :32 Expectation failed: count == 0 | passed | `OCCTDocumentExtStringListClear` | PASS: 0 after Clear |
+| `hasExtStringList` | `OCCTDocumentHasExtStringList` returns true | :38 Expectation failed: !doc.hasExtStringList(tag: 362) | passed | `OCCTDocumentHasExtStringList` | PASS: absent before Set |
+
+### `TDataStdIntegerArrayTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `initAndUse` | `OCCTDocumentGetIntegerArrayValue` answers -1 for any index | :27 Expectation failed: label.integerArrayValue(at: 1) == 10; :28 Expectation failed: label.integerArrayValue(at: 3) == 30 | passed | `OCCTDocumentGetIntegerArrayValue` | PASS: 1..5; 10, 30, 50 |
+| `outOfBounds` | `OCCTDocumentGetIntegerArrayValue` answers -1 for any index | :37 Expectation failed: label.integerArrayValue(at: 99) == nil | passed | `OCCTDocumentGetIntegerArrayValue` | PASS: 99 outside 1..5 |
+
+### `TDataStdIntegerListTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentSetIntegerList` stores the first value plus 1 | :13 Expectation failed: result[0] == 10 | passed | `OCCTDocumentGetIntegerList` | PASS: 10 .. 30 |
+| `appendAndClear` | `OCCTDocumentIntegerListClear` returns true without clearing | :29 Expectation failed: result.count == 0 | passed | `OCCTDocumentIntegerListClear` | PASS: 0 after Clear |
+| `hasIntegerList` | `OCCTDocumentHasIntegerList` returns true | :35 Expectation failed: !doc.hasIntegerList(tag: 332) | passed | `OCCTDocumentHasIntegerList` | PASS: absent before Set |
