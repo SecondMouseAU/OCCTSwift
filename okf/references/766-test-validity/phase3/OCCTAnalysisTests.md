@@ -102,6 +102,8 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **Make Volume** | Make volume from faces | Volume from faces | Return nullptr; return the first argument |
+| **Make Volume** | Two coincident faces enclose no volume | Volume from faces | Return nullptr |
 
 ---
 
@@ -216,6 +218,8 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| Make volume from faces | OCCTShapeMakeVolume | Volume from faces | Return nullptr; return the first argument | ✅ | ✅ | Rewritten: discarded the result, no assertion |
+| Two coincident faces enclose no volume | OCCTShapeMakeVolume | Volume from faces | Return nullptr | ✅ | ✅ | New: the original test's input, with its result asserted |
 
 ---
 

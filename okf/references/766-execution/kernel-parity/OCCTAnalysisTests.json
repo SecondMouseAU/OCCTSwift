@@ -497,5 +497,53 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Make Volume::Make volume from faces",
+    "bridge_function": "OCCTShapeMakeVolume",
+    "bridge_output": {
+      "type": "volume_result",
+      "data": {
+        "solids": 1,
+        "volume": 1000
+      }
+    },
+    "kernel_output": {
+      "type": "volume_result",
+      "data": {
+        "hasErrors": false,
+        "solids": 1,
+        "volume": 999.9999999999998
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Make Volume::Two coincident faces enclose no volume",
+    "bridge_function": "OCCTShapeMakeVolume",
+    "bridge_output": {
+      "type": "volume_result",
+      "data": {
+        "nil": false,
+        "solids": 0
+      }
+    },
+    "kernel_output": {
+      "type": "volume_result",
+      "data": {
+        "hasErrors": false,
+        "shapeType": "TopAbs_COMPOUND",
+        "solids": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
