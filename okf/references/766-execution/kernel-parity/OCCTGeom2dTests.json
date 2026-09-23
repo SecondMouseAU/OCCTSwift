@@ -94,5 +94,263 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve2D Bisector Tests::Bisector between two lines",
+    "bridge_function": "OCCTCurve2DBisectorCC",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "IsEmpty": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return the curve even when IsEmpty()",
+      "red": "Curve2DBisectorTests.swift:23:9: Expectation failed: bis == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-bbox-weights/",
+      "rewritten": "the assertion sat inside `if let bis` and the kernel returns empty, so nothing was ever checked; now pins nil"
+    }
+  },
+  {
+    "test_name": "Curve2D Bisector Tests::Bisector between point and line",
+    "bridge_function": "OCCTCurve2DBisectorPC",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "domain_upper": 20,
+        "point(10)": [
+          0,
+          2.5
+        ],
+        "point(0)": [
+          -10,
+          12.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "domain_upper": 20,
+        "point(10)": [
+          0,
+          2.5
+        ],
+        "point(0)": [
+          -10,
+          12.5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "move the point 1 up",
+      "red": "Curve2DBisectorTests.swift:35:9: Expectation failed: simd_distance(bis.point(at: 10), SIMD2(0, 2.5)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-bbox-weights/",
+      "rewritten": "`pts.count >= 2` inside `if let bis`; now pins the parabola y = (x^2 + 25) / 10"
+    }
+  },
+  {
+    "test_name": "Curve2D Bounding Box Tests::Bounding box of segment",
+    "bridge_function": "OCCTCurve2DGetBoundingBox",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "min": [
+          1,
+          2
+        ],
+        "max": [
+          5,
+          8
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "min": [
+          1,
+          2
+        ],
+        "max": [
+          5,
+          8
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "BndLib_Add2dCurve gap 0 -> 1",
+      "red": "Curve2DBoundingBoxTests.swift:19:9: Expectation failed: abs(bb.min.x - 1) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-bbox-weights/",
+      "rewritten": "one-sided bounds; now pins all four"
+    }
+  },
+  {
+    "test_name": "Curve2D Bounding Box Tests::Bounding box of circle",
+    "bridge_function": "OCCTCurve2DGetBoundingBox",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "min": [
+          5,
+          5
+        ],
+        "max": [
+          15,
+          15
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "min": [
+          5,
+          5
+        ],
+        "max": [
+          15,
+          15
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "BndLib_Add2dCurve gap 0 -> 1",
+      "red": "Curve2DBoundingBoxTests.swift:30:9: Expectation failed: abs(bb.min.x - (10 - r)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-bbox-weights/",
+      "rewritten": "one-sided bounds; now pins all four"
+    }
+  },
+  {
+    "test_name": "Curve2D_BSpline_Extras::getWeight",
+    "bridge_function": "OCCTCurve2DBSplineGetWeight",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "weight(1)": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "weight(1)": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "weight + 1",
+      "red": "Curve2DBSplineExtrasTests.swift:20:9: Expectation failed: abs(w - 1.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-bbox-weights/",
+      "rewritten": "nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "Curve2D_BSpline_Extras::getAllWeights",
+    "bridge_function": "OCCTCurve2DBSplineGetWeights",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "weights": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "weights": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "each weight + 1",
+      "red": "Curve2DBSplineExtrasTests.swift:29:13: Expectation failed: abs(w - 1.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-bbox-weights/",
+      "rewritten": "`!weights.isEmpty` inside `if let c`; now pins six weights of 1"
+    }
+  },
+  {
+    "test_name": "Curve2D_BSpline_Extras::setPeriodic",
+    "bridge_function": "OCCTCurve2DBSplineSetPeriodic",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "periodic_before": false,
+        "periodic_after": true,
+        "poles_after": 6
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "periodic_before": false,
+        "periodic_after": true,
+        "poles_after": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return true without SetPeriodic()",
+      "red": "Curve2DBSplineExtrasTests.swift:43:9: Expectation failed: c.isPeriodic",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-bbox-weights/",
+      "rewritten": "`#expect(true)`; now pins the non-periodic -> periodic change and 6 poles"
+    }
   }
 ]

@@ -1,0 +1,13 @@
+BisecCC segments from origin: empty=1
+BisecPC point (0,5) / segment y=0: empty=0
+  bisector domain=[0, 20]
+  value(0)=(-10, 12.5)
+  value(5)=(-5, 5)
+  value(10)=(0, 2.5)
+  value(15)=(5, 5)
+  value(20)=(10, 12.5)
+BndLib segment (1,2)-(5,8): [1, 2] - [5, 8]
+BndLib circle c(10,10) r5: [5, 5] - [15, 15]
+interpolant weights: poles=6 rational=0 w(1)=1
+closed-point interpolant: closed=1 periodic=0 poles=7
+  SetPeriodic: ok periodic=1 poles=6 domain=[0, 28.2842712475]
