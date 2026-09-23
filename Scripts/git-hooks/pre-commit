@@ -157,6 +157,11 @@ run "census-comment-staleness.py --self-test" Scripts/census-comment-staleness.p
 # #1679's census. Self-test only, like the four above and for the same reason: a bare run lists
 # docs/API_REFERENCE.md category rows that resolve to no declaration, for a human to adjudicate.
 run "census-api-reference-rows.py --self-test" Scripts/census-api-reference-rows.py --self-test
+# #2196's release check. Self-test only, and for a different reason than the censuses above: its
+# bare run reads Libraries/OCCT.xcframework and reaches a real verdict, but that verdict belongs to
+# the pin step rather than to every commit, and a fresh clone has no asset to read. Matching CI,
+# which runs the same one invocation.
+run "check-pinned-asset-patches.py --self-test" Scripts/check-pinned-asset-patches.py --self-test
 
 # The bridge's clang-format check, from a DIFFERENT CI job (`code-style`, not `gate-scripts`) and
 # not a Python gate, so it does not go through run() either. Here because it is the check that was
