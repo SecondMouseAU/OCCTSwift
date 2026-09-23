@@ -124,3 +124,23 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Geom2dLPropTests.swift`, `Geom2dOffsetTests.swift`, `Geom2dParabolaTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-conic-props-sine-lprop/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Geom2dLProp Curvature Analysis::Curvature extrema on ellipse | `OCCTCurve2DGetCurvatureExtrema` | last extremum dropped | ✅ | ✅ | MATCH | `count >= 1` inside `if let`; now four typed extrema |
+| Geom2dLProp Curvature Analysis::Inflection points on S-curve | `OCCTCurve2DGetInflectionPoints` | inflections never collected | ✅ | ✅ | MATCH | `count >= 0`, which cannot fail; now one inflection at u = 20.638 |
+| Geom2dLProp Curvature Analysis::CurInfType mirrors Curve2DSpecialPointType case-for-case | `CurInfType.init (Swift)` | .minCurvature mapped to .curvatureMaximum | ✅ | ✅ | MATCH |  |
+| Geom2dLProp Curvature Analysis::curvatureExtremaDetailed() agrees with curvatureExtrema() on the same curve | `OCCTCurve2DGetCurvatureExtrema` | last extremum dropped | ✅ | ✅ | MATCH | `count >= 2` inside `if let`; now 4 |
+| Geom2dLProp Curvature Analysis::inflectionPointsDetailed() agrees with inflectionPoints() on the same curve | `OCCTCurve2DGetInflectionPoints` | inflections never collected | ✅ | ✅ | MATCH | `count >= 1` inside `if let`; now 1 |
+| Geom2d_OffsetCurve Properties::offset2DValue | `OCCTCurve2DOffsetValue` | offset + 1 | ✅ | ✅ | MATCH | two `if let`s; now `#require` |
+| Geom2d_OffsetCurve Properties::offset2DSetValue | `OCCTCurve2DOffsetSetValue` | SetOffsetValue skipped | ✅ | ✅ | MATCH | two `if let`s; now `#require` |
+| Geom2d_OffsetCurve Properties::offset2DBasisCurve | `OCCTCurve2DOffsetBasisCurve` | returns the offset curve, not its basis | ✅ | ✅ | MATCH | asserted nothing (`let _ = basis.domain`); now pins basis(2) |
+| Geom2d_Parabola Properties::parabola2DFocal | `OCCTCurve2DParabolaFocal` | focal + 1 | ✅ | ✅ | MATCH | `focal > 0` inside `if let`; now 3 |
+| Geom2d_Parabola Properties::parabola2DSetFocal | `OCCTCurve2DParabolaSetFocal` | SetFocal skipped | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Geom2d_Parabola Properties::parabola2DFocus | `OCCTCurve2DParabolaFocus` | focus x + 1 | ✅ | ✅ | MATCH | asserted nothing (`let _ = f`); now (0, 0) |
+| Geom2d_Parabola Properties::parabola2DEccentricity | `OCCTCurve2DParabolaEccentricity` | eccentricity + 0.1 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Geom2d_Parabola Properties::parabola2DParameter | `OCCTCurve2DParabolaParameter` | parameter + 1 | ✅ | ✅ | MATCH | `p > 0` inside `if let`; now 6 |

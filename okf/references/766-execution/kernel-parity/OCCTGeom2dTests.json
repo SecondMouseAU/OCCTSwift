@@ -94,5 +94,407 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Geom2dLProp Curvature Analysis::Curvature extrema on ellipse",
+    "bridge_function": "OCCTCurve2DGetCurvatureExtrema",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "n": 4,
+        "types": [
+          "Min",
+          "Max",
+          "Min",
+          "Max"
+        ],
+        "u1": 1.57079632679
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "n": 4,
+        "types": [
+          "Min",
+          "Max",
+          "Min",
+          "Max"
+        ],
+        "u1": 1.57079632679
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "last extremum dropped",
+      "red": "Geom2dLPropTests.swift:15:13: Expectation failed: extrema.count == 4",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`count >= 1` inside `if let`; now four typed extrema"
+    }
+  },
+  {
+    "test_name": "Geom2dLProp Curvature Analysis::Inflection points on S-curve",
+    "bridge_function": "OCCTCurve2DGetInflectionPoints",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "n": 1,
+        "u": 20.6383455361
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "n": 1,
+        "u": 20.6383455361
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "inflections never collected",
+      "red": "Geom2dLPropTests.swift:31:13: Expectation failed: inflections.count == 1",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`count >= 0`, which cannot fail; now one inflection at u = 20.638"
+    }
+  },
+  {
+    "test_name": "Geom2dLProp Curvature Analysis::CurInfType mirrors Curve2DSpecialPointType case-for-case",
+    "bridge_function": "CurInfType.init (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "mapping": "case-for-case"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "mapping": "case-for-case"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": ".minCurvature mapped to .curvatureMaximum",
+      "red": "Geom2dLPropTests.swift:44:9: Expectation failed: CurInfType(.minCurvature) == .curvatureMinimum",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Geom2dLProp Curvature Analysis::curvatureExtremaDetailed() agrees with curvatureExtrema() on the same curve",
+    "bridge_function": "OCCTCurve2DGetCurvatureExtrema",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "n": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "n": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "last extremum dropped",
+      "red": "Geom2dLPropTests.swift:55:9: Expectation failed: plain.count == 4",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`count >= 2` inside `if let`; now 4"
+    }
+  },
+  {
+    "test_name": "Geom2dLProp Curvature Analysis::inflectionPointsDetailed() agrees with inflectionPoints() on the same curve",
+    "bridge_function": "OCCTCurve2DGetInflectionPoints",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "n": 1,
+        "u": 10.3042200457
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "n": 1,
+        "u": 10.3042200457
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "inflections never collected",
+      "red": "Geom2dLPropTests.swift:72:9: Expectation failed: plain.count == 1",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`count >= 1` inside `if let`; now 1"
+    }
+  },
+  {
+    "test_name": "Geom2d_OffsetCurve Properties::offset2DValue",
+    "bridge_function": "OCCTCurve2DOffsetValue",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "offset": 3,
+        "value(0)": [
+          0,
+          -3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "offset": 3,
+        "value(0)": [
+          0,
+          -3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "offset + 1",
+      "red": "Geom2dOffsetTests.swift:19:9: Expectation failed: abs(oc.offsetProperties.offset - 3) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "two `if let`s; now `#require`"
+    }
+  },
+  {
+    "test_name": "Geom2d_OffsetCurve Properties::offset2DSetValue",
+    "bridge_function": "OCCTCurve2DOffsetSetValue",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "offset": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "offset": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "SetOffsetValue skipped",
+      "red": "Geom2dOffsetTests.swift:26:9: Expectation failed: abs(oc.offsetProperties.offset - 5) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "two `if let`s; now `#require`"
+    }
+  },
+  {
+    "test_name": "Geom2d_OffsetCurve Properties::offset2DBasisCurve",
+    "bridge_function": "OCCTCurve2DOffsetBasisCurve",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "basis value(2)": [
+          2,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "basis value(2)": [
+          2,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "returns the offset curve, not its basis",
+      "red": "Geom2dOffsetTests.swift:34:9: Expectation failed: simd_distance(basis.point(at: 2), SIMD2(2, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "asserted nothing (`let _ = basis.domain`); now pins basis(2)"
+    }
+  },
+  {
+    "test_name": "Geom2d_Parabola Properties::parabola2DFocal",
+    "bridge_function": "OCCTCurve2DParabolaFocal",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "focal": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "focal": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "focal + 1",
+      "red": "Geom2dParabolaTests.swift:18:9: Expectation failed: abs(p.parabolaProperties.focal - 3) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`focal > 0` inside `if let`; now 3"
+    }
+  },
+  {
+    "test_name": "Geom2d_Parabola Properties::parabola2DSetFocal",
+    "bridge_function": "OCCTCurve2DParabolaSetFocal",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "focal": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "focal": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "SetFocal skipped",
+      "red": "Geom2dParabolaTests.swift:25:9: Expectation failed: abs(p.parabolaProperties.focal - 5) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Geom2d_Parabola Properties::parabola2DFocus",
+    "bridge_function": "OCCTCurve2DParabolaFocus",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "focus": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "focus": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "focus x + 1",
+      "red": "Geom2dParabolaTests.swift:31:9: Expectation failed: simd_length(p.parabolaProperties.focus) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "asserted nothing (`let _ = f`); now (0, 0)"
+    }
+  },
+  {
+    "test_name": "Geom2d_Parabola Properties::parabola2DEccentricity",
+    "bridge_function": "OCCTCurve2DParabolaEccentricity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "e": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "e": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "eccentricity + 0.1",
+      "red": "Geom2dParabolaTests.swift:36:9: Expectation failed: abs(p.parabolaProperties.eccentricity - 1.0) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Geom2d_Parabola Properties::parabola2DParameter",
+    "bridge_function": "OCCTCurve2DParabolaParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "p": 6
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "p": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "parameter + 1",
+      "red": "Geom2dParabolaTests.swift:42:9: Expectation failed: abs(p.parabolaProperties.parameter - 6) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`p > 0` inside `if let`; now 6"
+    }
   }
 ]
