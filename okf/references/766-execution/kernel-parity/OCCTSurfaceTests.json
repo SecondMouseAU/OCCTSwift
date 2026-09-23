@@ -6,5 +6,621 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Surface Curve Projection Tests::Project line onto plane returns valid 2D curve",
+    "bridge_function": "OCCTSurfaceProjectCurve2D",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-curve-projection/transcript.txt projectLineOntoPlane"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Curve Projection Tests::Project circle onto cylinder returns 2D curve",
+    "bridge_function": "OCCTSurfaceProjectCurve2D",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "type": "Geom2d_Line",
+        "domain": [
+          -2e+100,
+          2e+100
+        ],
+        "value at 1": [
+          1,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "type": "Geom2d_Line",
+        "domain": [
+          -2e+100,
+          2e+100
+        ],
+        "value at 1": [
+          1,
+          3
+        ]
+      },
+      "source": "Scripts/repro/766-surface-curve-projection/transcript.txt projectCircleOntoCylinder"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Curve Projection Tests::Project 3D curve onto plane returns 3D curve on surface",
+    "bridge_function": "OCCTSurfaceProjectCurve3D",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "mid": [
+          5,
+          3.5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "mid": [
+          5,
+          3.5,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-curve-projection/transcript.txt projectCurve3DOntoPlane"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Curve Projection Tests::Project point onto plane surface",
+    "bridge_function": "OCCTSurfaceProjectPoint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "distance": 7,
+        "u": 5,
+        "v": 3
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "distance": 7,
+        "u": 5,
+        "v": 3
+      },
+      "source": "Scripts/repro/766-surface-curve-projection/transcript.txt projectPointOntoPlane"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Curve Projection Tests::Project point onto sphere surface",
+    "bridge_function": "OCCTSurfaceProjectPoint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "distance": 5,
+        "u": 0,
+        "v": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "distance": 5,
+        "u": 0,
+        "v": 0
+      },
+      "source": "Scripts/repro/766-surface-curve-projection/transcript.txt projectPointOntoSphere"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Curve Projection Tests::Project point onto cylinder surface",
+    "bridge_function": "OCCTSurfaceProjectPoint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "distance": 3,
+        "u": 0,
+        "v": 5
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "distance": 3,
+        "u": 0,
+        "v": 5
+      },
+      "source": "Scripts/repro/766-surface-curve-projection/transcript.txt projectPointOntoCylinder"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Curve Projection Tests::Project segment onto plane returns 2D curve with correct length",
+    "bridge_function": "OCCTSurfaceProjectCurve2D",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          4,
+          3
+        ],
+        "length": 5
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          4,
+          3
+        ],
+        "length": 5
+      },
+      "source": "Scripts/repro/766-surface-curve-projection/transcript.txt projectSegmentOntoPlaneLength"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Curve Projection Tests::Composite projection returns multiple segments when needed",
+    "bridge_function": "OCCTSurfaceProjectCurveSegments",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "count": 1,
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "count": 1,
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-curve-projection/transcript.txt compositeProjectionBasic"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Curve Projection Tests::Projection with nil-producing inputs returns nil",
+    "bridge_function": "OCCTCurve3DCreateSegment",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "segment": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "segment": null
+      },
+      "source": "Scripts/repro/766-surface-curve-projection/transcript.txt (GC_MakeSegment on coincident points faulted an earlier probe run)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Draw Methods::Draw grid returns iso lines",
+    "bridge_function": "OCCTSurfaceDrawGrid",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "max|r-5|": 8.88e-16,
+        "grid[0][10]": [
+          4.982922465033349,
+          0,
+          0.4128967273616617
+        ],
+        "grid[7][5]": [
+          -0.41289672736166133,
+          4.982922465033349,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "max|r-5|": 8.88e-16,
+        "grid[0][10]": [
+          4.982922465033349,
+          0,
+          0.4128967273616617
+        ],
+        "grid[7][5]": [
+          -0.41289672736166133,
+          4.982922465033349,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-draw-eval-extras/transcript.txt drawGrid"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Draw Methods::Draw mesh returns grid points",
+    "bridge_function": "OCCTSurfaceDrawMesh",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "at(0,0)": [
+          0,
+          0,
+          -5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "at(0,0)": [
+          0,
+          0,
+          -5
+        ]
+      },
+      "source": "Scripts/repro/766-surface-draw-eval-extras/transcript.txt drawMesh"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Draw Methods::Draw mesh on an asymmetric grid indexes .at(u:v:) correctly",
+    "bridge_function": "OCCTSurfaceDrawMesh",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "agrees with D0": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "agrees with D0": true
+      },
+      "source": "Scripts/repro/766-surface-draw-eval-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Evaluation v0.110::evalD0Sphere",
+    "bridge_function": "OCCTSurfaceEvalD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,0)": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,0)": [
+          5,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-draw-eval-extras/transcript.txt evalD0Sphere"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Evaluation v0.110::evalD1Sphere",
+    "bridge_function": "OCCTSurfaceEvalD1",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D1U": [
+          0,
+          3.5355339059327378,
+          0
+        ],
+        "D1V": [
+          -3.5355339059327373,
+          0,
+          3.5355339059327378
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D1U": [
+          0,
+          3.5355339059327378,
+          0
+        ],
+        "D1V": [
+          -3.5355339059327373,
+          0,
+          3.5355339059327378
+        ]
+      },
+      "source": "Scripts/repro/766-surface-draw-eval-extras/transcript.txt evalD1Sphere"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Evaluation v0.110::evalD2BoxFace",
+    "bridge_function": "OCCTSurfaceEvalD2",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "P": [
+          -5,
+          -5.5,
+          -4.5
+        ],
+        "D1U": [
+          0,
+          0,
+          1
+        ],
+        "|D2U|": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "P": [
+          -5,
+          -5.5,
+          -4.5
+        ],
+        "D1U": [
+          0,
+          0,
+          1
+        ],
+        "|D2U|": 0
+      },
+      "source": "Scripts/repro/766-surface-draw-eval-extras/transcript.txt evalD2BoxFace"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Extras v0.109::surfaceBounds",
+    "bridge_function": "OCCTSurfaceBounds",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          -2e+100,
+          2e+100,
+          -2e+100,
+          2e+100
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          -2e+100,
+          2e+100,
+          -2e+100,
+          2e+100
+        ]
+      },
+      "source": "Scripts/repro/766-surface-draw-eval-extras/transcript.txt surfaceBounds"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Extras v0.109::planeContinuityClass",
+    "bridge_function": "OCCTSurfaceGetContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "continuity": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "continuity": 6
+      },
+      "source": "Scripts/repro/766-surface-draw-eval-extras/transcript.txt planeContinuityClass"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Extras v0.109::copySurface",
+    "bridge_function": "OCCTSurfaceCopy",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "distinct": true,
+        "S(1,2)": [
+          -5,
+          -7,
+          -4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "distinct": true,
+        "S(1,2)": [
+          -5,
+          -7,
+          -4
+        ]
+      },
+      "source": "Scripts/repro/766-surface-draw-eval-extras/transcript.txt copySurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface extras v0.112::surfaceTypePlane",
+    "bridge_function": "OCCTSurfaceGetType",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "type": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "type": 0
+      },
+      "source": "Scripts/repro/766-surface-draw-eval-extras/transcript.txt surfaceTypePlane"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface extras v0.112::surfaceTypeSphere",
+    "bridge_function": "OCCTSurfaceGetType",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "type": 3
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "type": 3
+      },
+      "source": "Scripts/repro/766-surface-draw-eval-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
