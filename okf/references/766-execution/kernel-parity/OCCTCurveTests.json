@@ -302,5 +302,208 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Integration: Geodesic Path Approximation::sphereUVPathLength",
+    "test_file": "Tests/OCCTCurveTests/IntegrationGeodesicPathApproximationTests.swift",
+    "bridge_function": "OCCTSurfaceGetPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "polyline 80.002912490963794, chord 58.094750193111253"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_SphericalSurface::Value: polyline 80.002912490963794, chord 58.094750193111253"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "sphpt: Surface.point scaled by 1.000001",
+    "red": "IntegrationGeodesicPathApproximationTests.swift:50 abs(straightDist - 58.094750193111253) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt",
+    "note": "REWRITTEN: finite / >= chord / < pi*R held for any point near a sphere of this size; now pinned to the probed values"
+  },
+  {
+    "test_name": "Integration: Golden Shape Baseline::boxKnownMeasurements",
+    "test_file": "Tests/OCCTCurveTests/IntegrationGoldenShapeBaselineTests.swift",
+    "bridge_function": "OCCTShapeGetVolume, OCCTShapeGetSurfaceArea",
+    "bridge_output": {
+      "type": "value",
+      "data": "volume 6000, area 2200, 6/12/8"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepGProp: volume 6000, area 2200; TopExp 6 faces 12 edges 8 vertices"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "volnil: Shape.volume returns nil",
+    "red": "IntegrationGoldenShapeBaselineTests.swift:27 Issue recorded (nil volume)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt",
+    "note": "A nil volume or area skipped its check; now records an issue"
+  },
+  {
+    "test_name": "Integration: Involute Gear Approximation::gearWithSlotsAndBore",
+    "test_file": "Tests/OCCTCurveTests/IntegrationInvoluteGearApproximationTests.swift",
+    "bridge_function": "OCCTShapeSubtract, OCCTShapeDrillHole, OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "value",
+      "data": "11060.972450961723 (= 3750pi - 720)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAlgoAPI_Cut x7: 11060.972450961723"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "drillnil: drilled returns nil; volnil",
+    "red": "IntegrationInvoluteGearApproximationTests.swift:47 Issue recorded (bore not drilled)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt",
+    "note": "REWRITTEN: failed cuts and drill were skipped and the only check was volume < hub; now every cut must succeed and the volume is pinned to 3750pi - 720"
+  },
+  {
+    "test_name": "Unbounded elementary curves are not parameter-clipped (#1020)::pointToLineBeyondOldBound",
+    "test_file": "Tests/OCCTCurveTests/Issue1020ExtremaBoundsTests.swift",
+    "bridge_function": "OCCTExtremaExtPElCLin",
+    "bridge_output": {
+      "type": "value",
+      "data": "1 extremum, sq 9, foot x 2e10"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Extrema_ExtPElC full range: sq 9, foot x 2e10; old bound: not done"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "linebound: old -1e10..1e10 range; lineoff",
+    "red": "Issue1020ExtremaBoundsTests.swift:20 results.count == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt"
+  },
+  {
+    "test_name": "Unbounded elementary curves are not parameter-clipped (#1020)::pointToLineInsideOldBound",
+    "test_file": "Tests/OCCTCurveTests/Issue1020ExtremaBoundsTests.swift",
+    "bridge_function": "OCCTExtremaExtPElCLin",
+    "bridge_output": {
+      "type": "value",
+      "data": "sq 16, foot x 7"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "sq 16, foot x 7 (both ranges)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lineoff: line origin moved 1 in y",
+    "red": "Issue1020ExtremaBoundsTests.swift:36 abs(r.squareDistance - 16.0) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt"
+  },
+  {
+    "test_name": "Unbounded elementary curves are not parameter-clipped (#1020)::pointToParabolaBeyondOldBound",
+    "test_file": "Tests/OCCTCurveTests/Issue1020ExtremaBoundsTests.swift",
+    "bridge_function": "OCCTExtremaExtPElCParab",
+    "bridge_output": {
+      "type": "value",
+      "data": "1 extremum, foot (3412957.1013, 3694838.0757)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "1 extremum, sq 51403343067711.656, foot (3412957.1013468201, 3694838.0756654656); old bound: done, 0 extrema"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "parabbound: old -1e6..1e6 range; parabfoc",
+    "red": "Issue1020ExtremaBoundsTests.swift:53 results.count == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt",
+    "note": "REWRITTEN: pinned to the kernel foot instead of |y| > 1e6. The comment put the root at 4.3e6; it is 3.69e6"
+  },
+  {
+    "test_name": "Unbounded elementary curves are not parameter-clipped (#1020)::pointToParabolaInsideOldBound",
+    "test_file": "Tests/OCCTCurveTests/Issue1020ExtremaBoundsTests.swift",
+    "bridge_function": "OCCTExtremaExtPElCParab",
+    "bridge_output": {
+      "type": "value",
+      "data": "3 extrema: sq 64, 64, 100"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "3 extrema: (6, +-6.9282) sq 64, (0, 0) sq 100"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "parabfoc: focal scaled by 1.001",
+    "red": "Issue1020ExtremaBoundsTests.swift:73 squared distances 64, 64, 100",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt",
+    "note": "REWRITTEN: was !results.isEmpty"
+  },
+  {
+    "test_name": "Law knot-splitting factory reach (#1399)::bsplineBackedLawsAreReadable",
+    "test_file": "Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitting, OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": ">= 2 splits for all four factories"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_S DownCasts to Law_BSpFunc, 2 splits at C0..C3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawnone: knot splitting always -1",
+    "red": "Issue1399LawKnotSplitFactoryReachTests.swift:70 indices.count >= 2",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt"
+  },
+  {
+    "test_name": "Law knot-splitting factory reach (#1399)::nonBSplineLawsReportNothing",
+    "test_file": "Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty for constant, linear, composite"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Constant, Law_Linear: DownCast to Law_BSpFunc is null"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawall: non-BSpFunc law reports 2 splits",
+    "red": "Issue1399LawKnotSplitFactoryReachTests.swift:82 knotSplitting(...).isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt"
   }
 ]

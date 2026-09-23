@@ -197,3 +197,19 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Integration: Geodesic Path Approximation | sphereUVPathLength | `OCCTSurfaceGetPoint` | sphpt: Surface.point scaled by 1.000001 | `IntegrationGeodesicPathApproximationTests.swift:50 abs(straightDist - 58.094750193111253) < 1e-9` | ✅ | MATCH | REWRITTEN: finite / >= chord / < pi*R held for any point near a sphere of this size; now pinned to the probed values |
+| Integration: Golden Shape Baseline | boxKnownMeasurements | `OCCTShapeGetVolume, OCCTShapeGetSurfaceArea` | volnil: Shape.volume returns nil | `IntegrationGoldenShapeBaselineTests.swift:27 Issue recorded (nil volume)` | ✅ | MATCH | A nil volume or area skipped its check; now records an issue |
+| Integration: Involute Gear Approximation | gearWithSlotsAndBore | `OCCTShapeSubtract, OCCTShapeDrillHole, OCCTShapeGetVolume` | drillnil: drilled returns nil; volnil | `IntegrationInvoluteGearApproximationTests.swift:47 Issue recorded (bore not drilled)` | ✅ | MATCH | REWRITTEN: failed cuts and drill were skipped and the only check was volume < hub; now every cut must succeed and the volume is pinned to 3750pi - 720 |
+| Unbounded elementary curves are not parameter-clipped (#1020) | pointToLineBeyondOldBound | `OCCTExtremaExtPElCLin` | linebound: old -1e10..1e10 range; lineoff | `Issue1020ExtremaBoundsTests.swift:20 results.count == 1` | ✅ | MATCH |  |
+| Unbounded elementary curves are not parameter-clipped (#1020) | pointToLineInsideOldBound | `OCCTExtremaExtPElCLin` | lineoff: line origin moved 1 in y | `Issue1020ExtremaBoundsTests.swift:36 abs(r.squareDistance - 16.0) < 1e-9` | ✅ | MATCH |  |
+| Unbounded elementary curves are not parameter-clipped (#1020) | pointToParabolaBeyondOldBound | `OCCTExtremaExtPElCParab` | parabbound: old -1e6..1e6 range; parabfoc | `Issue1020ExtremaBoundsTests.swift:53 results.count == 1` | ✅ | MATCH | REWRITTEN: pinned to the kernel foot instead of \|y\| > 1e6. The comment put the root at 4.3e6; it is 3.69e6 |
+| Unbounded elementary curves are not parameter-clipped (#1020) | pointToParabolaInsideOldBound | `OCCTExtremaExtPElCParab` | parabfoc: focal scaled by 1.001 | `Issue1020ExtremaBoundsTests.swift:73 squared distances 64, 64, 100` | ✅ | MATCH | REWRITTEN: was !results.isEmpty |
+| Law knot-splitting factory reach (#1399) | bsplineBackedLawsAreReadable | `OCCTLawBSplineKnotSplitting, OCCTLawBSplineKnotSplitParams` | lawnone: knot splitting always -1 | `Issue1399LawKnotSplitFactoryReachTests.swift:70 indices.count >= 2` | ✅ | MATCH |  |
+| Law knot-splitting factory reach (#1399) | nonBSplineLawsReportNothing | `OCCTLawBSplineKnotSplitting` | lawall: non-BSpFunc law reports 2 splits | `Issue1399LawKnotSplitFactoryReachTests.swift:82 knotSplitting(...).isEmpty` | ✅ | MATCH |  |
