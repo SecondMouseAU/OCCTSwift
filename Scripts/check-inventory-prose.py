@@ -162,20 +162,45 @@ def hook_invocations(text=None):
     return len(re.findall(r'^run "[^"]+"\s+Scripts/[A-Za-z0-9_.-]+\.py', text, re.MULTILINE))
 
 
-def classify():
-    """The gate/census/audit split, derived from the job rather than from a hand-kept list."""
-    bare, selftest = gate_job_scripts()
+def classify(text=None):
+    """The gate/census/audit/release-check split, derived from the job, not a hand-kept list.
+
+    #2196 added the fourth bucket. `gate-scripts` runs a script bare unless the script cannot
+    answer there: a census cannot, because its answer is a list of sites for a human rather than a
+    verdict; a release check cannot, because its input is not in the checkout. Both therefore
+    appear in the job as a `--self-test` and nothing else, and before this the second kind fell
+    into no bucket at all, so "N gates, M censuses and one merge-history audit" would have
+    described fewer scripts than the job runs while every claim on this page still passed.
+    """
+    bare, selftest = gate_job_scripts(text)
     everything = bare | selftest
     censuses = {n for n in everything if n.startswith("census-")}
     audits = {n for n in everything if n == "check-changelog-transcription.py"}
     gates = {n for n in bare if n not in censuses and n not in audits}
+    releases = {n for n in selftest if n not in bare and n not in censuses and n not in audits}
     return {
         "gates": gates,
         "censuses": censuses,
         "audits": audits,
+        "releases": releases,
         "all": everything,
         "selftest": selftest,
     }
+
+
+def script_declares_require_flag(name, text=None):
+    """True when `Scripts/<name>` defines a `--require-...` flag, #2098's "examined nothing" mode.
+
+    This is what distinguishes a release check from a gate that somebody forgot to invoke bare: a
+    script whose real run needs an input CI does not have carries the flag that turns a run which
+    examined nothing into an error, rather than reporting clean about a population it never read.
+    """
+    if text is None:
+        try:
+            text = read(os.path.join("Scripts", name))
+        except OSError:
+            return False
+    return bool(re.search(r"""add_argument\(\s*['"]--require-[a-z-]+['"]""", text))
 
 
 def facts():
@@ -193,6 +218,10 @@ def facts():
         "gate_scripts": len(split["gates"]),
         "census_scripts": len(split["censuses"]),
         "audit_scripts": len(split["audits"]),
+        # #2196: the fourth kind. A script whose real run belongs to the release process and whose
+        # `--self-test` alone runs in the job, counted separately because it is neither a gate nor
+        # a census and folding it into either would make the sentence untrue.
+        "release_check_scripts": len(split["releases"]),
         "job_scripts": len(split["all"]),
         "job_scripts_minus_one": len(split["all"]) - 1,
         "gates_with_selftest": len(gates_with_selftest),
@@ -234,6 +263,12 @@ CLAIMS = [
     ("CLAUDE.md", r"(\S+) gates, \S+ censuses and \S+ merge-history audit", "gate_scripts"),
     ("CLAUDE.md", r"\S+ gates, (\S+) censuses and \S+ merge-history audit", "census_scripts"),
     ("CLAUDE.md", r"\S+ gates, \S+ censuses and (\S+) merge-history audit", "audit_scripts"),
+    # #2196: the fourth kind, stated in its own sentence in both files rather than folded into the
+    # one above. It is not a gate (its real run is not in this job at all) and not a census (its
+    # real run reaches a verdict), so counting it as either would make a checked sentence untrue,
+    # which is the failure this gate exists to prevent rather than to commit.
+    ("CLAUDE.md", r"also runs (\S+) release check", "release_check_scripts"),
+    ("okf/policies/static-gates.md", r"runs (\S+) release check", "release_check_scripts"),
     (".github/workflows/ci.yml", r"because all (\S+) are pure Python", "job_scripts"),
     (".github/workflows/ci.yml", r"does not hide the\s*#\s*other (\S+)\.", "job_scripts_minus_one"),
     ("okf/policies/static-gates.md", r"(\S+) of the \S+ gates, all \S+ censuses", "gates_with_selftest"),
@@ -448,9 +483,34 @@ def check_patch_naming():
     return problems
 
 
+def check_release_checks():
+    """A self-test-only script that is not a census must say why its real run is not in the job.
+
+    #2196. The bucket is derived from the job's shape, so anything the job runs only as a
+    `--self-test` lands in it, including a gate whose bare invocation somebody forgot to add. Then
+    the counted sentence would say "one release check" about a gate that is not running, and every
+    claim would pass. The discriminator is the one #2098 already asked every such script for: a
+    `--require-...` flag, meaning the script refuses to report clean when its input is absent.
+    A script that carries no such flag is not a release check, and this says so rather than
+    quietly counting it as one.
+    """
+    problems = []
+    for name in sorted(classify()["releases"]):
+        if script_declares_require_flag(name):
+            continue
+        problems.append(
+            "Scripts/%s: ci.yml's gate-scripts job runs it only as --self-test, which is how a "
+            "release check is recognised, but it defines no `--require-...` flag saying its real "
+            "run needs an input this job does not have. Either add the bare invocation (it is a "
+            "gate), or give it that flag and a comment saying where its real run lives (#2196)."
+            % name)
+    return problems
+
+
 def run():
     problems = (check_claims() + check_patch_rows() + check_carried_sequence()
-                + check_tsan_suppressions() + check_patch_naming() + check_wasi_patch_rows())
+                + check_tsan_suppressions() + check_patch_naming() + check_wasi_patch_rows()
+                + check_release_checks())
     if problems:
         print("check-inventory-prose: %d problem(s)\n" % len(problems))
         for problem in problems:
@@ -462,9 +522,10 @@ def run():
     print("check-inventory-prose: clean")
     print("  patches: %d on disk, %d pinned" % (values["patches_on_disk"], values["patches_pinned"]))
     print("  patches-wasi: %d on disk, each with a README row" % values["wasi_patches_on_disk"])
-    print("  gate-scripts job: %d gates, %d censuses, %d merge-history audit, %d scripts total"
+    print("  gate-scripts job: %d gates, %d censuses, %d merge-history audit, %d release check, "
+          "%d scripts total"
           % (values["gate_scripts"], values["census_scripts"], values["audit_scripts"],
-             values["job_scripts"]))
+             values["release_check_scripts"], values["job_scripts"]))
     print("  %d claims checked across %d files"
           % (len(CLAIMS), len({c[0] for c in CLAIMS})))
     return 0
@@ -481,7 +542,8 @@ def self_test():
 
     # 1. The real repo is clean, which is what the gate asserts in CI.
     problems = (check_claims() + check_patch_rows() + check_carried_sequence()
-                + check_tsan_suppressions() + check_patch_naming() + check_wasi_patch_rows())
+                + check_tsan_suppressions() + check_patch_naming() + check_wasi_patch_rows()
+                + check_release_checks())
     case("live-tree-clean", not problems, "; ".join(problems[:2]))
 
     # 2. A stated count that disagrees with the derived one is caught.
@@ -533,6 +595,55 @@ def self_test():
         'fi\n')
     case("hook-invocation-counter-bounded", hook_invocations(hook_sample) == 2,
          str(hook_invocations(hook_sample)))
+
+    # 5c. #2196: the fourth bucket. A script the job runs ONLY as --self-test and that is not a
+    #     census is a release check. Before this it landed in no bucket at all, so the sentence
+    #     "N gates, M censuses and one merge-history audit" would have described one script fewer
+    #     than the job runs with every claim passing, which is the exact shape #1408 exists to end.
+    fourth = (
+        "jobs:\n"
+        "  gate-scripts:\n"
+        "    steps:\n"
+        "      - run: python3 Scripts/check-a.py --self-test\n"
+        "      - run: python3 Scripts/check-a.py\n"
+        "      - run: python3 Scripts/census-b.py --self-test\n"
+        "      - run: python3 Scripts/check-changelog-transcription.py --self-test\n"
+        "      - run: python3 Scripts/check-changelog-transcription.py\n"
+        "      - run: python3 Scripts/check-c.py --self-test\n")
+    split = classify(fourth)
+    case("release-check-bucketed-apart-from-gate-census-and-audit",
+         split["releases"] == {"check-c.py"} and split["gates"] == {"check-a.py"}
+         and split["censuses"] == {"census-b.py"}
+         and split["audits"] == {"check-changelog-transcription.py"},
+         str({k: sorted(v) for k, v in split.items() if k != "selftest"}))
+    # Against the REAL job, not the fixture: a script the live job runs that falls into none of the
+    # four buckets is precisely what went unnoticed, and a fixture cannot see it.
+    live = classify()
+    case("four-buckets-partition-the-live-job",
+         len(live["gates"]) + len(live["censuses"]) + len(live["audits"]) + len(live["releases"])
+         == len(live["all"]),
+         "%d+%d+%d+%d vs %d" % (len(live["gates"]), len(live["censuses"]), len(live["audits"]),
+                                len(live["releases"]), len(live["all"])))
+
+    # 5d. The bucket is derived from the job's shape, so a gate whose bare invocation nobody added
+    #     lands in it too and would be counted, and described in prose, as a release check. The
+    #     `--require-...` flag #2098 already asks such a script for is what tells the two apart.
+    case("require-flag-reader-reads-the-flag",
+         script_declares_require_flag("x", "parser.add_argument('--require-asset', action='store_true')")
+         and not script_declares_require_flag("x", 'parser.add_argument("--self-test")'))
+    saved_flag = globals()["script_declares_require_flag"]
+    try:
+        globals()["script_declares_require_flag"] = lambda name, text=None: False
+        case("release-check-without-a-require-flag-detected",
+             any("defines no `--require-...` flag" in problem
+                 for problem in check_release_checks()))
+    finally:
+        globals()["script_declares_require_flag"] = saved_flag
+
+    values_release = dict(values)
+    values_release["release_check_scripts"] += 1
+    case("release-check-count-mismatch-detected",
+         any("release_check_scripts" in problem for problem in check_claims(values_release)))
 
     # 6. The pinned-list parser reads the enumerated numbers, not every four-digit run in the file.
     pkg = ("// survive, all present in Scripts/patches/, are:\n"

@@ -35,14 +35,16 @@ jobs:
   #     job would be red for a reason that has nothing to do with it, which is the same as not
   #     having it. That state is fixable by bumping the pin, and is fixed today, but the
   #     separation is what makes the gate survive the next time it happens.
-  #   - ubuntu-latest, because all twenty are pure Python over the repo's own text: no Xcode, no
+  #   - ubuntu-latest, because all twenty-one are pure Python over the repo's own text: no Xcode, no
   #     OCCT, no swift build. A macOS runner would cost 10x the minutes to run the identical checks.
+  #     The twenty-first is here as its `--self-test` alone for exactly that reason: the real run of
+  #     check-pinned-asset-patches.py reads the pinned xcframework, which is not text (#2196).
   #   - each script's --self-test runs alongside its real invocation. A gate whose detector is
   #     wrong reports "all clear" just as confidently as a gate whose subject is clean; this branch
   #     shipped three gate scripts that were confidently wrong (#618, #624/#630, #626), so the
   #     detector's own fixtures are part of what CI checks, not a developer-only convenience.
   #   - `if: '!cancelled()'` on every step after the first, so one failing gate does not hide the
-  #     other nineteen. Without it a contributor fixes them one CI round trip at a time. It is
+  #     other twenty. Without it a contributor fixes them one CI round trip at a time. It is
   #     `!cancelled()` rather than `always()` so the concurrency group's cancel-in-progress still
   #     takes effect.
   #
@@ -308,6 +310,25 @@ jobs:
       - name: census-api-reference-rows.py --self-test
         if: '!cancelled()'
         run: python3 Scripts/census-api-reference-rows.py --self-test
+
+      # #2196. The one RELEASE CHECK in this job, and the only entry here whose bare run is not a
+      # thing this runner could do: check-pinned-asset-patches.py reads Libraries/OCCT.xcframework,
+      # 157 MB of static archive per slice across three slices, which nothing checks out here and
+      # which this job's whole property is not needing. Its real verdict is taken at the pin step
+      # (CLAUDE.md's Release Process, okf/policies/pinned-kernel-patch-check.md), where the
+      # question is live.
+      #
+      # Its --self-test is a different thing: pure Python, no asset, 0.4 s, and it is the half that
+      # can rot between pins. A detector consulted once a release is the one whose blindness costs
+      # most, because a false clean there is what #2190 actually was: every count agreed with every
+      # other count and the asset shipped with two patches nobody had reverted.
+      #
+      # Counted as neither a gate nor a census, in ci.yml's own comment above and in CLAUDE.md:
+      # a gate's bare run gates here and this one is absent, a census's bare run exits 0 whatever
+      # it finds and this one reaches a verdict. See okf/policies/static-gates.md.
+      - name: check-pinned-asset-patches.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-pinned-asset-patches.py --self-test
 
   build-and-test:
     name: swift build + test (macOS)
