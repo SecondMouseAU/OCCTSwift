@@ -3879,5 +3879,89 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck Analyzer Tests::Box passes analyzer validation",
+    "bridge_function": "OCCTBRepCheckAnalyzerIsValid",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck Analyzer Tests::Sphere passes analyzer validation",
+    "bridge_function": "OCCTBRepCheckAnalyzerIsValid",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck Analyzer Tests::Cylinder passes analyzer validation",
+    "bridge_function": "OCCTBRepCheckAnalyzerIsValid",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck Analyzer Tests::Analyzer without geometry checks",
+    "bridge_function": "OCCTBRepCheckAnalyzerIsValid",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

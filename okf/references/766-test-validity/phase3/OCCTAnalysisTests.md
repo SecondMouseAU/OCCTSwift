@@ -201,6 +201,10 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **BRepCheck Analyzer Tests** | Box passes analyzer validation | Validity analysis | IsValid result replaced by false |
+| **BRepCheck Analyzer Tests** | Sphere passes analyzer validation | Validity analysis | IsValid result replaced by false |
+| **BRepCheck Analyzer Tests** | Cylinder passes analyzer validation | Validity analysis | IsValid result replaced by false |
+| **BRepCheck Analyzer Tests** | Analyzer without geometry checks | Validity analysis | IsValid result replaced by false |
 | **Extrema_ExtElSS Plane-Plane** | parallelPlanesReportTheSquareDistance | Plane-plane extrema | SquareDistance(1) + 1 |
 | **Extrema_ExtElSS Plane-Plane** | crossingPlanesReportNoDistance | Plane-plane extrema | Crossing planes reported as distance 0 |
 | **GProp Weighted Tests** | weightedCentroid | Weighted point-set centroid | OCCTGPropPointSetWeightedCentroid drops the weight (AddPoint(p)) |
@@ -387,6 +391,10 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| Box passes analyzer validation | OCCTBRepCheckAnalyzerIsValid | Validity analysis | IsValid result replaced by false | ✅ | ✅ | One injection turns all four tests red; a bridge that always answers true would pass all four (positive-only) |
+| Sphere passes analyzer validation | OCCTBRepCheckAnalyzerIsValid | Validity analysis | IsValid result replaced by false | ✅ | ✅ |  |
+| Cylinder passes analyzer validation | OCCTBRepCheckAnalyzerIsValid | Validity analysis | IsValid result replaced by false | ✅ | ✅ |  |
+| Analyzer without geometry checks | OCCTBRepCheckAnalyzerIsValid | Validity analysis | IsValid result replaced by false | ✅ | ✅ | Does not detect a bridge that ignores geometryChecks: the box is valid either way |
 | parallelPlanesReportTheSquareDistance | OCCTExtremaElSSPlanePlane | Plane-plane extrema | SquareDistance(1) + 1 | ✅ | ✅ | Issue #1878 names it parallelPlanes, renamed by #1632; second construction via OCCTExtremaExtPElSPlane |
 | crossingPlanesReportNoDistance | OCCTExtremaElSSPlanePlane | Plane-plane extrema | Crossing planes reported as distance 0 | ✅ | ✅ | Issue #1879 names it intersectingPlanes, renamed by #1632 |
 | createAndQuery | OCCTRangeGetBounds | Bnd_Range construction | OCCTRangeCreate builds a void range; GetBounds returns false | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped the bounds assertions under if-let |
@@ -497,6 +505,10 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Box passes analyzer validation | ✅ | ✅ | ✅ |
+| Sphere passes analyzer validation | ✅ | ✅ | ✅ |
+| Cylinder passes analyzer validation | ✅ | ✅ | ✅ |
+| Analyzer without geometry checks | ✅ | ✅ | ✅ |
 | createAndQuery | ✅ | ✅ | ✅ |
 | contains | ✅ | ✅ | ✅ |
 | addValue | ✅ | ✅ | ✅ |
