@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Extrema_ExtCS Tests** | curveSurfaceParallel | Curve-surface extrema | Invert IsParallel() |
+| **Extrema_ExtCS Tests** | curveSurfaceDistance | Curve-surface extrema | Invert IsParallel(); read extrema in reverse order |
 | **Shape distance to Wire/Edge/Face** | Shape distance to Wire | Shape distance overload | Distance + 1 |
 | **Shape distance to Wire/Edge/Face** | Shape intersects Wire | Shape intersects overload | Invert Value() <= tolerance |
 | **Shape distance to Wire/Edge/Face** | Shape distance to Edge | Shape distance overload | Distance + 1 |
@@ -240,6 +242,8 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| Extrema_ExtCS: curveSurfaceParallel | OCCTExtremaExtCS | Curve-surface extrema | Invert IsParallel() | ✅ | ✅ |  |
+| Extrema_ExtCS: curveSurfaceDistance | OCCTExtremaExtCSPoint | Curve-surface extrema | Invert IsParallel(); read extrema in reverse order | ✅ | ✅ | rewritten: conditional version stayed green under the injection |
 | Shape distance to Wire | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: distance > 0 stayed green under the injection |
 | Shape intersects Wire | OCCTShapeIntersects | Shape intersects overload | Invert Value() <= tolerance | ✅ | ✅ | strengthened: positive case added |
 | Shape distance to Edge | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
@@ -380,6 +384,8 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Extrema_ExtCS: curveSurfaceParallel | ✅ | ✅ | ✅ |
+| Extrema_ExtCS: curveSurfaceDistance | ✅ | ✅ | ✅ |
 | Shape distance to Wire | ✅ | ✅ | ✅ |
 | Shape intersects Wire | ✅ | ✅ | ✅ |
 | Shape distance to Edge | ✅ | ✅ | ✅ |
@@ -403,4 +409,4 @@ For each test, run ground-truth C++ comparison:
 | Measurement Tests: Get vertex at index | ✅ | ✅ | ✅ |
 | Measurement Tests: Vertex out of bounds | ✅ | ✅ | ✅ |
 
-**Total**: 581 tests
+**Total**: 583 tests
