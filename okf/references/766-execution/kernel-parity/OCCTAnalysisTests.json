@@ -2432,5 +2432,119 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema extras v0.112::locateOnCurve",
+    "bridge_function": "OCCTExtremaLocateOnCurve",
+    "bridge_output": {
+      "type": "curve_projection",
+      "data": {
+        "parameter": 0.0,
+        "distance": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "curve_projection",
+      "data": {
+        "parameter": 0.0,
+        "distance": 1.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema extras v0.112::projectPointOnCurve",
+    "bridge_function": "OCCTExtremaPointCurve",
+    "bridge_output": {
+      "type": "curve_projection",
+      "data": {
+        "count": 1,
+        "parameter": 5.0,
+        "distance": 3.0
+      }
+    },
+    "kernel_output": {
+      "type": "curve_projection",
+      "data": {
+        "count": 1,
+        "parameter": 5.0,
+        "distance": 3.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema extras v0.112::locateOnSurface",
+    "bridge_function": "OCCTExtremaLocateOnSurface",
+    "bridge_output": {
+      "type": "surface_projection",
+      "data": {
+        "u": 5.0,
+        "v": 3.0,
+        "distance": 10.0
+      }
+    },
+    "kernel_output": {
+      "type": "surface_projection",
+      "data": {
+        "u": 5.0,
+        "v": 3.0,
+        "distance": 10.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema extras v0.112::projectPointOnSurface",
+    "bridge_function": "OCCTExtremaPointSurface",
+    "bridge_output": {
+      "type": "surface_projection",
+      "data": {
+        "count": 2,
+        "first": {
+          "u": 0.0,
+          "v": 0.0,
+          "distance": 5.0
+        },
+        "second": {
+          "u": 3.141592653589793,
+          "v": 0.0,
+          "distance": 15.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "surface_projection",
+      "data": {
+        "count": 2,
+        "first": {
+          "u": 0.0,
+          "v": 0.0,
+          "distance": 5.0
+        },
+        "second": {
+          "u": 3.141592653589793,
+          "v": 0.0,
+          "distance": 15.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

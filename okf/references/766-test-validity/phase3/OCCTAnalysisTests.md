@@ -95,6 +95,10 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Extrema extras v0.112** | locateOnCurve | Windowed point-curve locate | LowerDistance() + 1 in OCCTExtremaLocateOnCurve |
+| **Extrema extras v0.112** | projectPointOnCurve | Point-curve projection | Distance(i) * 2 in OCCTExtremaPointCurve |
+| **Extrema extras v0.112** | locateOnSurface | Local point-surface locate | u and v swapped in OCCTExtremaLocateOnSurface |
+| **Extrema extras v0.112** | projectPointOnSurface | Point-surface projection | count - 1 returned by OCCTExtremaPointSurface |
 | **Extrema_ExtElCS Line-Sphere** | lineSphereDistance | Line-sphere extrema | Negate surface point z |
 | **v0.114.0 - Mass Properties** | linearProperties | Linear mass properties | Offset centre of mass |
 | **v0.114.0 - Mass Properties** | momentOfInertia | Volume inertia tensor | Scale Ixx |
