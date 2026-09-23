@@ -288,7 +288,7 @@ does. `Scripts/repro/2173/run.sh negative` proves the flag by hiding one patch a
 
 | Toolkit | File | Gap | Closed by |
 |---|---|---|---|
-| `TKDESTEP` | `STEPConstruct/STEPConstruct_AP203Context.cxx` | `<pwd.h>` at `:63`, `getpwnam()` at `:181`, `timezone` at `:125` | `wasi-stepconstruct-ap203context.patch` ([#2266](https://github.com/SecondMouseAU/OCCTSwift/issues/2266)) |
+| `TKDESTEP` | `STEPConstruct/STEPConstruct_AP203Context.cxx` | `<pwd.h>` at `:64`, `getpwnam()` at `:181`, `timezone` at `:125` | `wasi-stepconstruct-ap203context.patch` ([#2266](https://github.com/SecondMouseAU/OCCTSwift/issues/2266)) |
 
 **With it the 49-toolkit build is 5,488 of 5,488, 0 missing, 0 unruled**, and
 `Scripts/build-occt-wasm.sh` goes on to install, combine and copy headers, which its census had

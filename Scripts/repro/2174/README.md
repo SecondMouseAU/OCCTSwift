@@ -509,7 +509,17 @@ section carries the numbers that moved.
     >>> COMPLETE: every toolkit built every source file it has a rule for.
 
 `TKDESTEP` is 1,735 of 1,735, which
-`Scripts/build-occt-wasm.sh --toolkit TKDESTEP --require-complete` asserts on its own.
+`Scripts/build-occt-wasm.sh --toolkit TKDESTEP --require-complete` asserts on its own. That flag was
+watched to fail, the way `Scripts/repro/2173/run.sh negative` proves it: with the patch moved out of
+`Scripts/patches-wasi/` and the object deleted, the same command is
+
+    /.../STEPConstruct_AP203Context.cxx:64:12: fatal error: 'pwd.h' file not found
+    >>> TKDESTEP: 1734 of 1735 source files compiled.
+    ERROR: --require-complete was given and TKDESTEP is INCOMPLETE:
+           1734 of 1735 source files compiled, 1 short.
+
+and exit 1. **One error, and that is the point**: it is the include, and closing it is what reveals
+the other two.
 
 The one file needed three guards, not one, and they were found one error at a time exactly as
 #2173 predicted here: `<pwd.h>` is fatal, so closing it uncovered `getpwnam()` in
