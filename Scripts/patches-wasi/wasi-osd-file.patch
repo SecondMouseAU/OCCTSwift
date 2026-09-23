@@ -1,0 +1,219 @@
+OSD_File: no mkstemp() and no POSIX record locking on wasm32-wasip1.
+
+Both sites get a new arm INSIDE the platform chain that is already there, never a parallel block
+beside it: SetLock() and UnLock() gain `#elif defined(__wasi__)` between the Windows arm and
+`#elif defined(POSIX)`, and BuildTemporary() gains one between the VMS arm and the mkstemp `#else`.
+No existing arm could be widened instead. WASI shares neither Windows' LockFileEx, nor Solaris'
+lockf(), nor SYSV's fcntl(), nor BSD's flock(), and it has no mkstemp() to share with the generic
+branch.
+
+--- The lock ---
+
+wasi-libc has no file locking of any kind. Its <fcntl.h> declares struct flock and, under
+__wasilibc_unmodified_upstream, defines none of F_RDLCK, F_WRLCK, F_UNLCK, F_SETLK or F_SETLKW; the
+header's own comments say "WASI has no POSIX file locking". There is nothing to call and nothing to
+emulate.
+
+WHAT THE WASI BRANCH DOES: SetLock() records the requested lock in myLock and makes no system call.
+UnLock() sets myLock back to OSD_NoLock.
+
+myError is deliberately NOT set, and that is the part that matters for callers. OSD_File::Read(),
+Write(), Seek() and Close() all open with `if (Failed()) { Perror(); }`, and OSD_Error::Perror()
+raises. Recording a refusal in myError would therefore convert "this platform has no file locking"
+into "the next read on this file throws", which is a worse answer than the absent lock and one no
+caller asked for. Every caller of SetLock() instead gets Failed() == false, IsLocked() == true, and
+no lock, which is the truth of the platform: a wasip1 instance is one process with one thread, so
+there is no second holder for an advisory lock to exclude. The single in-tree consumer is
+~OSD_File(), which calls UnLock() when IsLocked(); that pairing is preserved exactly.
+
+A hand-rolled substitute is NOT used, and PR #2076's is why this is worth stating. It declared a
+separate `static thread_local std::atomic_flag` inside SetLock() and another inside UnLock(), so
+UnLock() cleared an object SetLock() had never touched. An in-process flag cannot implement an
+inter-process advisory lock even when it is the same object.
+
+--- The temporary file ---
+
+wasi-libc declares no mkstemp(): <stdlib.h> keeps it inside __wasilibc_unmodified_upstream under
+the comment "WASI has no temp directories".
+
+WHAT THE WASI BRANCH DOES: the six placeholder characters of "/tmp/CSFXXXXXX" are filled from
+getentropy(), which wasi-libc does declare and does define, and the file is created with
+open(O_CREAT | O_EXCL | O_RDWR, 0600), retried up to 100 times. O_EXCL is the part of mkstemp() that
+carries the guarantee and it is kept, so a name that already exists is never adopted.
+
+On failure the result is the same as a failing mkstemp(): myFileChannel stays -1, fdopen(-1)
+returns null, and the OSD_File is left unopened, so the next Write() throws
+Standard_ProgramError("OSD_File::Write(): file is not open") rather than writing somewhere
+unexpected. /tmp has to be a preopened directory in the host's WASI configuration or every open()
+fails that way. wasi-osd-directory.patch on this branch already assumes the same /tmp for
+OSD_Directory::BuildTemporary().
+
+ONE WARNING THIS BRANCH LEAVES: -Wunused-private-field on OSD_File::ImperativeFlag, because only
+the Windows and SYSV lock paths read it. The Solaris `#elif defined(POSIX)` branch has the same
+property today, so the warning is a property of the member rather than of this patch.
+
+Issue: https://github.com/SecondMouseAU/OCCTSwift/issues/2173
+
+diff --git a/src/FoundationClasses/TKernel/OSD/OSD_File.cxx b/src/FoundationClasses/TKernel/OSD/OSD_File.cxx
+index 19983384..9ceb639b 100644
+--- a/src/FoundationClasses/TKernel/OSD/OSD_File.cxx
++++ b/src/FoundationClasses/TKernel/OSD/OSD_File.cxx
+@@ -745,40 +745,65 @@ void OSD_File::BuildTemporary()
+   if (IsOpen())
+   {
+     Close();
+   }
+ 
+   SetPath(OSD_Path(TCollection_AsciiString(aTmpPathW)));
+   Build(OSD_ReadWrite, OSD_Protection());
+ 
+ #else /* _WIN32 */
+ 
+   if (IsOpen())
+   {
+     Close();
+   }
+   #if defined(vax) || defined(__vms) || defined(VAXVMS)
+   FILE* fic     = tmpfile();
+   int   dummy   = open("dummy", O_RDWR | O_CREAT); // open a dummy file
+   myFileChannel = dummy - 1;                       // this is file channel of "fic" +1
+   close(dummy);                                    // close dummy file
+   unlink("dummy");                                 // removes dummy file
++  #elif defined(__wasi__)
++  // wasi-libc declares no mkstemp(): "WASI has no temp directories". The six placeholder
++  // characters are drawn from getentropy() and the file is created with O_EXCL, which is the part
++  // of mkstemp() that matters; /tmp has to be a preopened directory or every open() fails and the
++  // file is left unopened, exactly as a failing mkstemp() would leave it.
++  char aTmpName[] = "/tmp/CSFXXXXXX";
++  myFileChannel   = -1;
++  for (int aTryIter = 0; aTryIter < 100 && myFileChannel < 0; ++aTryIter)
++  {
++    static const char THE_NAME_CHARS[] = "abcdefghijklmnopqrstuvwxyz0123456789";
++    unsigned char     aRandom[6]       = {};
++    if (getentropy(aRandom, sizeof(aRandom)) != 0)
++    {
++      break;
++    }
++    for (size_t aCharIter = 0; aCharIter < sizeof(aRandom); ++aCharIter)
++    {
++      aTmpName[8 + aCharIter] = THE_NAME_CHARS[aRandom[aCharIter] % (sizeof(THE_NAME_CHARS) - 1)];
++    }
++    myFileChannel = open(aTmpName, O_CREAT | O_EXCL | O_RDWR, 0600);
++  }
++  const TCollection_AsciiString aName(aTmpName);
++  const OSD_Path                aPath(aName);
++  SetPath(aPath);
++  myFILE = fdopen(myFileChannel, "w+");
+   #else
+   char aTmpName[] = "/tmp/CSFXXXXXX";
+   myFileChannel   = mkstemp(aTmpName);
+   const TCollection_AsciiString aName(aTmpName);
+   const OSD_Path                aPath(aName);
+   SetPath(aPath);
+   myFILE = fdopen(myFileChannel, "w+");
+   #endif
+   myMode = OSD_ReadWrite;
+ 
+ #endif
+ }
+ 
+ //=================================================================================================
+ 
+ void OSD_File::Read(TCollection_AsciiString& theBuffer, const int theNbBytes)
+ {
+   if (OSD_File::KindOfFile() == OSD_DIRECTORY)
+   {
+     throw Standard_ProgramError("OSD_File::Read(): it is a directory");
+@@ -1334,40 +1359,48 @@ void OSD_File::SetLock(const OSD_LockType theLock)
+     dwFlags = LOCKFILE_EXCLUSIVE_LOCK;
+   }
+ 
+   OVERLAPPED anOverlapped;
+   ZeroMemory(&anOverlapped, sizeof(OVERLAPPED));
+   __try
+   {
+     LARGE_INTEGER aSize;
+     aSize.QuadPart = Size();
+     if (!LockFileEx(myFileHandle, dwFlags, 0, aSize.LowPart, aSize.HighPart, &anOverlapped))
+     {
+       _osd_wnt_set_error(myError, OSD_WFile);
+       __leave;
+     }
+     ImperativeFlag = true;
+   }
+   __finally
+   {
+   }
+ 
++#elif defined(__wasi__)
++  // wasi-libc has no POSIX record locking: <fcntl.h> declares struct flock and defines none of
++  // F_RDLCK, F_WRLCK, F_UNLCK, F_SETLK or F_SETLKW. A wasip1 instance is one process with one
++  // thread, so no second holder exists for an advisory lock to exclude; the request is recorded
++  // and no system call is made. myError is deliberately left untouched: an error recorded here
++  // would make the next Read() or Write() on this file throw from its own `if (Failed()) Perror();`
++  // preamble, turning an absent lock into a failed read.
++  myLock = theLock;
+ #elif defined(POSIX)
+   int aLock = 0;
+   switch (theLock)
+   {
+     case OSD_ExclusiveLock:
+     case OSD_WriteLock:
+       aLock = F_LOCK;
+       break;
+     case OSD_ReadLock:
+       return;
+     default:
+       myError.SetValue(EINVAL, Iam, "SetLock");
+       return;
+   }
+ 
+   struct stat aStatBuf;
+   if (fstat(myFileChannel, &aStatBuf) == -1)
+   {
+     myError.SetValue(errno, Iam, "SetLock");
+     return;
+@@ -1460,40 +1493,43 @@ void OSD_File::UnLock()
+ {
+   if (!IsOpen())
+   {
+     throw Standard_ProgramError("OSD_File::UnLock(): file is not open");
+   }
+ #ifdef _WIN32
+   if (ImperativeFlag)
+   {
+     LARGE_INTEGER aSize;
+     aSize.QuadPart = Size();
+ 
+     OVERLAPPED anOverlappedArea;
+     anOverlappedArea.Offset     = 0;
+     anOverlappedArea.OffsetHigh = 0;
+     if (!UnlockFileEx(myFileHandle, 0, aSize.LowPart, aSize.HighPart, &anOverlappedArea))
+     {
+       _osd_wnt_set_error(myError, OSD_WFile);
+     }
+     ImperativeFlag = false;
+   }
++#elif defined(__wasi__)
++  // nothing was locked; see SetLock()
++  myLock = OSD_NoLock;
+ #elif defined(POSIX)
+   struct stat aStatBuf;
+   if (fstat(myFileChannel, &aStatBuf) == -1)
+   {
+     myError.SetValue(errno, Iam, "UnsetLock");
+     return;
+   }
+ 
+   const int aStatus = lockf(myFileChannel, F_ULOCK, aStatBuf.st_size);
+   if (aStatus == -1)
+   {
+     myError.SetValue(errno, Iam, "SetLock");
+   }
+   else
+   {
+     myLock = OSD_NoLock;
+   }
+ #elif defined(SYSV)
+   if (ImperativeFlag)
+   {

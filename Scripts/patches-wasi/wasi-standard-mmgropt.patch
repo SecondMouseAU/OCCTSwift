@@ -1,0 +1,110 @@
+Standard_MMgrOpt: no mmap() on wasm32-wasip1, and the emulation that would supply one does not fit.
+
+THE DECISION, stated because this is the one file of the eight that a build flag could have
+answered. Recompiled with -D_WASI_EMULATED_MMAN and no source change at all, it produces ZERO
+errors; that is #2172's measurement and it is correct. It is patched anyway, for two reasons:
+
+  1. The define makes it compile and does not make it work. wasi-libc's emulated mmap() serves
+     anonymous private mappings out of malloc() and refuses everything else. This file's generic
+     non-Windows branch defines MMAP_FLAGS as (MAP_PRIVATE), with no MAP_ANON, and passes
+     myMMap == -1 as the file descriptor, so every call returns MAP_FAILED. AllocMemory() then
+     calls Purge(false) and throws Standard_OutOfMemory, on every large block, for as long as
+     MMGT_OPT=1 is set in the host environment. Scripts/repro/2173/run.sh compiles, links and RUNS
+     that exact call under the pinned toolchain rather than arguing it from the headers.
+  2. The other half of the define is -lwasi-emulated-mman, a link-time flag nothing can verify
+     until the full library links (#2174). docs/WASI_GUARD_SITES.md reserves adding an emulation
+     flag to the build script for evidence, and evidence that covers only the compile half is not
+     the evidence it asks for.
+
+Two of the four sites EXTEND the condition already there:
+
+  * Initialize()'s `#if defined(IRIX) || ... || defined(__ANDROID__) ... #else myMMap = -1;` chain
+    gains an `#elif defined(__wasi__)` arm.
+  * FreeMemory()'s `#ifndef _WIN32` around the aSize parameter name becomes
+    `#if !defined(_WIN32) && !defined(__wasi__)`, so the parameter stays unnamed and unused rather
+    than named and unused.
+
+Two are new conditions, because none was available: the `#include <sys/mman.h>` sits with
+`#include <unistd.h>` under one `#ifndef _WIN32` and WASI needs the second of the two, and the
+mapped arms of AllocMemory() and FreeMemory() are `#ifndef _WIN32` / `#else` pairs with no third
+arm to widen.
+
+WHAT THE WASI BRANCH RETURNS: Initialize() leaves myMMap at 0. That is not a new state invented for
+this platform: it is the state the class is in on every platform where MMGT_MMAP is off, and the
+one Initialize() already forces for itself when getpagesize() returns 0. AllocMemory() and
+FreeMemory() then take their calloc/malloc and free() paths, which are complete implementations
+rather than fallbacks, and every caller gets ordinary heap memory with the same alignment,
+clearing and Purge()-on-failure behaviour as before. The two mapped branches become unreachable and
+are compiled to a raise and a no-op rather than deleted, so a later change that makes one reachable
+fails loudly instead of returning a null block.
+
+Worth recording, because it bounds the blast radius: this build never instantiates the class at
+all. OCCT selects Standard_MMgrOpt only under OCCT_MMGT_OPT_FLEXIBLE, which
+src/FoundationClasses/TKernel/CMakeLists.txt defines only when USE_MMGR_TYPE is FLEXIBLE, and
+Scripts/build-occt-wasm.sh leaves that at OCCT's NATIVE default. The patch is written to be correct
+under FLEXIBLE, not to be correct only in this configuration.
+
+Issue: https://github.com/SecondMouseAU/OCCTSwift/issues/2173
+
+diff --git a/src/FoundationClasses/TKernel/Standard/Standard_MMgrOpt.cxx b/src/FoundationClasses/TKernel/Standard/Standard_MMgrOpt.cxx
+index 5e2d64d1..79d820eb 100644
+--- a/src/FoundationClasses/TKernel/Standard/Standard_MMgrOpt.cxx
++++ b/src/FoundationClasses/TKernel/Standard/Standard_MMgrOpt.cxx
+@@ -27,7 +27,9 @@
+ 
+ #ifndef _WIN32
+   #include <unistd.h>
+-  #include <sys/mman.h> /* mmap() */
++  #ifndef __wasi__
++    #include <sys/mman.h> /* mmap() */
++  #endif
+ #endif
+ 
+ #include <fcntl.h>
+@@ -262,6 +264,10 @@ void Standard_MMgrOpt::Initialize()
+     {
+       perror("ERR_MMAP_FAIL");
+     }
++#elif defined(__wasi__)
++    // wasip1 has no mmap(); leave myMMap at 0 so that AllocMemory() and FreeMemory() take the
++    // malloc/free path this class already implements for every platform where mapping is off
++    myMMap = 0;
+ #else
+     myMMap = -1;
+ #endif
+@@ -755,7 +761,13 @@ retry:
+   // if MMap option is ON, allocate using memory mapped files
+   if (myMMap)
+   {
+-#ifndef _WIN32
++#if defined(__wasi__)
++
++    // unreachable: Initialize() leaves myMMap at 0 on wasip1, which has no mmap(). Raising rather
++    // than returning null keeps a future reachable path loud instead of silently allocating zero.
++    throw Standard_OutOfMemory("Standard_MMgrOpt::AllocMemory(): no mmap() on wasm32-wasip1");
++
++#elif !defined(_WIN32)
+ 
+     // align size to page size
+     const size_t AlignedSize = PAGE_ALIGN(Size, myPageSize);
+@@ -859,7 +871,7 @@ retry:
+ 
+ void Standard_MMgrOpt::FreeMemory(void* aBlock,
+                                   const size_t
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+                                     aSize
+ #endif
+ )
+@@ -867,7 +879,10 @@ void Standard_MMgrOpt::FreeMemory(void* aBlock,
+   // release memory (either free or unmap)
+   if (myMMap)
+   {
+-#ifndef _WIN32
++#if defined(__wasi__)
++    // unreachable: AllocMemory() never returns a mapped block on wasip1, see there
++    (void)aBlock;
++#elif !defined(_WIN32)
+     // align size to page size, just the same as in AllocMemory()
+     const size_t AlignedSize = PAGE_ALIGN(aSize, myPageSize);
+     munmap((char*)aBlock, AlignedSize);

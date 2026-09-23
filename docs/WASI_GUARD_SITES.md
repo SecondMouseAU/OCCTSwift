@@ -117,13 +117,28 @@ editing the installed SDK, which is out of scope. Measured in #2170.
 
 ## What is patched today
 
-| File | Site | Gap in wasi-libc | Patch |
-|---|---|---|---|
-| `src/FoundationClasses/TKernel/OSD/OSD_Chronometer.cxx` | `#include <sys/times.h>` at `:27`, and `GetProcessCPU()` | `<sys/times.h>` itself, `times()`, `struct tms` | `wasi-osd-chronometer.patch` |
-| `src/FoundationClasses/TKernel/OSD/OSD_Directory.cxx` | `Build()` | `umask()` | `wasi-osd-directory.patch` |
-| `src/FoundationClasses/TKernel/OSD/OSD_Directory.cxx` | `BuildTemporary()` | `mkdtemp()` | `wasi-osd-directory.patch` |
+Ten patches, one per file, all under `src/FoundationClasses/TKernel/`. The last column is what the
+WASI branch does; each patch's own header says why that is safe for every in-tree caller, names
+them, and says whether it extended a condition that was already there or had to add one.
 
-One property of that set is settled, and one is not.
+| File | Gap in wasi-libc | What the WASI branch does | Patch |
+|---|---|---|---|
+| `Message/Message_PrinterSystemLog.cxx` | `<syslog.h>`, `openlog`, `syslog` | `send()` writes the message to stderr; the constructor and destructor hold nothing | `wasi-message-printersyslog.patch` |
+| `OSD/OSD_Chronometer.cxx` | `<sys/times.h>`, `times()`, `struct tms` | `GetProcessCPU()` reports 0.0 user and 0.0 system | `wasi-osd-chronometer.patch` |
+| `OSD/OSD_Directory.cxx` | `umask()`, `mkdtemp()` | `Build()` skips the umask; `BuildTemporary()` names the directory itself | `wasi-osd-directory.patch` |
+| `OSD/OSD_File.cxx` | `mkstemp()`, `F_RDLCK`/`F_WRLCK`/`F_UNLCK`/`F_SETLK`/`F_SETLKW` | `BuildTemporary()` creates the name from `getentropy()` with `O_EXCL`; `SetLock()`/`UnLock()` record the lock and call nothing, leaving `myError` untouched | `wasi-osd-file.patch` |
+| `OSD/OSD_Host.cxx` | `<netdb.h>`, `gethostbyname()`, `struct hostent` | `InternetAddress()` returns an empty string; `uname()` and `gethostname()` are untouched and still work | `wasi-osd-host.patch` |
+| `OSD/OSD_Path.cxx` | a populated `struct utsname` in the fallback branch | joins the `__EMSCRIPTEN__` arm and returns `OSD_LinuxREDHAT`, so paths parse with the Unix grammar | `wasi-osd-path.patch` |
+| `OSD/OSD_Process.cxx` | `<pwd.h>`, `getpwuid()`, `getuid()` | `UserName()` returns an empty string, as it already does on Emscripten; `IsSuperUser()` returns false | `wasi-osd-process.patch` |
+| `OSD/OSD_signal.cxx` | `<signal.h>`, `sigaction`, `sigemptyset`, `sigaddset`, `sigprocmask` | a third top-level arm installs no handler; `SetSignal()` leaves `OSD::SignalMode()` at `OSD_SignalMode_AsIs` and `ControlBreak()` never raises | `wasi-osd-signal.patch` |
+| `Standard/Standard_MMgrOpt.cxx` | `<sys/mman.h>`, `mmap()`, `munmap()` | `Initialize()` leaves `myMMap` at 0, so `AllocMemory()`/`FreeMemory()` take the malloc/free path the class already implements | `wasi-standard-mmgropt.patch` |
+| `Standard/Standard_StackTrace.cxx` | `<execinfo.h>`, `backtrace()` | joins the arm `OCCT_UWP` and iOS already take: a `Message_Trace` and `false` | `wasi-standard-stacktrace.patch` |
+
+**`TKernel` builds 127 of 127 with these applied**, which is the whole of the toolkit and not a
+sample; `Scripts/build-occt-wasm.sh --toolkit TKernel --require-complete` is the command that says
+so and fails rather than prints if it ever stops being true.
+
+Two properties of that set are worth keeping on the page.
 
 **Settled: `wasi-osd-chronometer.patch` compiles, and until
 [#2179](https://github.com/SecondMouseAU/OCCTSwift/issues/2179) it could not, in either
@@ -146,10 +161,21 @@ from that sends WASI into the Windows branch below. The measurement is
 `Scripts/repro/2179/run.sh`, which compiles the reduced probe and the real file, before and after,
 in both configurations, and checks that the guards change nothing on native macOS.
 
-**Unverified: `BuildTemporary()`'s WASI branch calls `getpid()`**, which wasi-libc supplies only
-under `-D_WASI_EMULATED_GETPID` with `-lwasi-emulated-getpid`. See the next section. Unlike the
-chronometer site, this one has not been reduced to a probe, so it stays a question for the first
-compile that reaches it.
+**Settled at compile, open at link: `getpid()` has two sites.**
+`OSD_Directory::BuildTemporary()`, from `wasi-osd-directory.patch`, and `OSD_Process::ProcessId()`,
+which `wasi-osd-process.patch` deliberately leaves alone. wasi-libc declares `getpid()`
+unconditionally and, without `-D_WASI_EMULATED_GETPID`, only marks it `__deprecated__`, so both
+compile with one warning each and the build is not blocked. The library half,
+`-lwasi-emulated-getpid`, is real and unverifiable until something links (#2174).
+
+**The complete 127-file build emits four warnings and no more**, which is small enough to list:
+those two `getpid` deprecations; `-Wunused-private-field` on `OSD_File::ImperativeFlag`, which
+`wasi-osd-file.patch`'s header explains; and `unknown pragma ignored` at
+`OSD_Chronometer.cxx:111`, which is upstream's own `#pragma error "OS is not supported yet"` in
+`GetThreadCPU()`'s final `#else`. That last one is not ours: it fires for any OS OCCT's chain does
+not name, and it is a warning rather than an error because clang does not implement
+`#pragma error`. `GetThreadCPU()` zeroes both out-parameters on its own first line before the
+chain runs, so WASI gets 0.0 and 0.0, the same answer `GetProcessCPU()` gives here.
 
 ## CMake flags: none are passed
 
@@ -167,8 +193,22 @@ guard the include and stop needing the define at all, which is what the patch no
 emulation define is required by anything currently patched**, and the episode is the argument for
 this section's rule rather than an exception to it.
 
-`_WASI_EMULATED_GETPID` remains genuinely open, with `getpid()` in the directory patch as the one
-concrete candidate. Nothing should be added to the build script on the strength of this page.
+**`_WASI_EMULATED_MMAN` was the strongest candidate and it was rejected, on a measurement rather
+than on taste.** #2172 established that `Standard_MMgrOpt.cxx` compiles with **zero** errors under
+that define and no source change, which is true and is not the question. `Scripts/repro/2173/run.sh
+mman` builds, links and **runs** the `mmap()` call that file actually makes, under the pinned
+toolchain: `mmap(0x60000000, 65536, PROT_READ | PROT_WRITE, MAP_PRIVATE, -1, 0)` returns
+`MAP_FAILED` with `EBADF`, while the control, the same call with `MAP_ANON`, succeeds. The
+emulation serves anonymous private mappings out of `malloc()` and refuses everything else, and
+OCCT's generic branch passes no `MAP_ANON` and a file descriptor of -1. The define would therefore
+have bought a file that compiles and an `AllocMemory()` that throws `Standard_OutOfMemory` on every
+large block whenever `MMGT_OPT=1` is set. `wasi-standard-mmgropt.patch` leaves `myMMap` at 0
+instead, which is a state the class already supports, and the build still passes no emulation
+define and links no emulation library.
+
+`_WASI_EMULATED_GETPID` remains genuinely open, with two concrete sites now rather than one:
+`OSD_Directory::BuildTemporary()` and `OSD_Process::ProcessId()`. Both compile without it. Nothing
+should be added to the build script on the strength of this page.
 
 What the script **does** pass, since #2172, is the exception and setjmp flags: `WASM_CXX_EH_FLAGS`
 from `Scripts/wasm-toolchain-versions.txt` plus `-mllvm -wasm-enable-sjlj`, in `CMAKE_CXX_FLAGS`,
@@ -177,40 +217,53 @@ cover them. They are there because #2171 measured that their absence is silent, 
 the 119 `TKernel` objects that compile carry a compiled catch handler and 6 carry a lowered `setjmp`
 pair. A preflight asserts they produce a handler before CMake starts.
 
-## Gaps that are known and not yet closed
+## Gaps that are closed, and what is left
 
-**Complete for `TKernel`, and measured rather than noticed.**
-[#2172](https://github.com/SecondMouseAU/OCCTSwift/issues/2172) compiled all 127 of its source
-files against the pinned toolchain in one pass: 119 compiled and 8 did not. Not one threading
-diagnostic appears anywhere in the 127. The eight are below, with every diagnostic each one
-produces at `-ferror-limit=0`, which is what makes this a list rather than a sample. They are the
-subject of [#2173](https://github.com/SecondMouseAU/OCCTSwift/issues/2173), which writes them one
-file per patch. `Scripts/repro/2172/run.sh guards` regenerates the list.
+**`TKernel` is complete: 127 of 127.** [#2172](https://github.com/SecondMouseAU/OCCTSwift/issues/2172)
+compiled all 127 of its source files against the pinned toolchain in one pass and found that 119
+compiled and 8 did not, with not one threading diagnostic anywhere in the 127.
+[#2173](https://github.com/SecondMouseAU/OCCTSwift/issues/2173) closed all eight, one patch per
+file, and the table under "What is patched today" is that list. `Scripts/repro/2173/run.sh guards`
+recompiles each of the eight twice, once from its pre-image and once from the patched tree, so the
+before and after numbers are re-derivable rather than remembered:
 
-| File | Symbol or header at fault |
-|---|---|
-| `Message/Message_PrinterSystemLog.cxx` | `<syslog.h>` at `:89` |
-| `OSD/OSD_File.cxx` | `mkstemp` at `:767`; `fcntl` record locking `F_WRLCK` `:1394`, `F_RDLCK` `:1397`, `F_SETLKW` `:1404`, `F_UNLCK` `:1509`, `F_SETLK` `:1510` |
-| `OSD/OSD_Host.cxx` | `<netdb.h>` at `:29` |
-| `OSD/OSD_Path.cxx` | `struct utsname` incomplete at `:44` |
-| `OSD/OSD_Process.cxx` | `<pwd.h>` at `:44` |
-| `OSD/OSD_signal.cxx` | `<signal.h>` refuses without `_WASI_EMULATED_SIGNAL`; then `struct sigaction` `:799` `:1053` `:1099`, `sigemptyset` `:823`, `sigaddset` `:850` `:866`, `SIG_UNBLOCK` `:851` `:867`, `SIG_DFL` `:1068` `:1097`, and `SIGHUP` `SIGINT` `SIGQUIT` `SIGILL` `SIGKILL` `SIGBUS` `SIGSEGV` `SIGFPE` `SIGSYS` throughout |
-| `Standard/Standard_MMgrOpt.cxx` | `<sys/mman.h>` refuses without `_WASI_EMULATED_MMAN`; then `PROT_READ` `PROT_WRITE` `MAP_PRIVATE` `:766`, `MAP_FAILED` `:767`, `munmap` `:873` |
-| `Standard/Standard_StackTrace.cxx` | `<execinfo.h>` at `:34` |
+| File | Errors before its patch | After |
+|---|---|---|
+| `Message/Message_PrinterSystemLog.cxx` | 1 | 0 |
+| `OSD/OSD_File.cxx` | 6 | 0 |
+| `OSD/OSD_Host.cxx` | 1 | 0 |
+| `OSD/OSD_Path.cxx` | 1 | 0 |
+| `OSD/OSD_Process.cxx` | 1 | 0 |
+| `OSD/OSD_signal.cxx` | 43 | 0 |
+| `Standard/Standard_MMgrOpt.cxx` | 6 | 0 |
+| `Standard/Standard_StackTrace.cxx` | 1 | 0 |
 
-`Message/Message_PrinterSystemLog.cxx` was on no list before this compile, which is the argument
-for running one.
+The five one-error rows are one-error because a missing header is a **fatal** diagnostic that ends
+the translation unit, so nothing below it is ever reached. That is why each of those patches had to
+be written iteratively rather than from the #2172 list alone: guarding `<pwd.h>` in
+`OSD_Process.cxx` uncovered `getuid()` in `IsSuperUser()`, which wasi-libc does not declare either,
+and guarding `<netdb.h>` in `OSD_Host.cxx` uncovered `struct hostent` in `InternetAddress()`. **A
+guard-site list produced by compiling is complete for the files it names and not for the sites
+inside them.**
 
-**`Standard/Standard_MMgrOpt.cxx` needs no source change.** Recompiled with `-D_WASI_EMULATED_MMAN`
-and nothing else altered, it produces zero errors. That is a candidate for the emulation define the
-section above reserves for evidence, and the evidence is in `Scripts/repro/2172/README.md`; the link
-half, `-lwasi-emulated-mman`, cannot be verified until #2174. At the other end, `_WASI_EMULATED_SIGNAL`
-leaves `OSD/OSD_signal.cxx` with seventeen errors, because it supplies the `SIG*` constants and no
-`struct sigaction`, `sigemptyset`, `sigaddset` or `SIG_UNBLOCK`, and OCCT's handling there is
-`sigaction`-based throughout.
+`OSD/OSD_signal.cxx`'s 43 is measured without any emulation define, which is how the build runs;
+#2172's figure of 17 for the same file is with `-D_WASI_EMULATED_SIGNAL`, which supplies the `SIG*`
+constants and `signal()` and supplies no `sigaction`, `sigemptyset`, `sigaddset` or `SIG_UNBLOCK`.
+Neither number is wrong and they measure different configurations.
 
-The modules beyond `TKernel` have not been compiled. Their gaps are #2174's to enumerate the same
-way.
+**`Scripts/build-occt-wasm.sh --toolkit TKernel --require-complete` is now the command.** The flag
+is new in #2173 and turns the "N of M source files compiled" line from something printed into
+something asserted: it exits non-zero, naming the shortfall, unless every source file of the
+toolkit produced an object and a real (not `-partial`) archive was linked. While eight failures
+were the expected, intended result of #2172, exiting on the build tool's own status was right;
+from #2173 onwards a regression would otherwise hand a reader the same status a complete build
+does. `Scripts/repro/2173/run.sh negative` proves the flag by hiding one patch and rebuilding:
+126 of 127 and exit 1.
+
+**The modules beyond `TKernel` have not been compiled.** `FoundationClasses` beyond `TKernel`,
+`ModelingData`, `ModelingAlgorithms` and `DataExchange` are all still unmeasured, and their gaps
+are #2174's to enumerate the same way, by compiling rather than by reading. Nothing on this page
+predicts how many there are.
 
 ## How a new guard is written
 
@@ -230,6 +283,21 @@ these sites already. So:
   cautionary case.
 - **Author and verify against the patched tree**, meaning `Libraries/occt-src` after
   `Scripts/patches/` has been applied, not a pristine `V8_0_1` checkout.
+- **When no condition exists to extend, say so in the patch header.** Three of the ten patches are
+  in that position and each one names the site and the reason: extending the file-wide
+  `#ifndef _WIN32` would send WASI into the Windows branch. An unexplained new `#ifdef` reads the
+  same as the mistake.
+- **Widen the hunk until every member it touches appears in context.**
+  `check-wasi-patch-base.py`'s `FOREIGN_MEMBER` rule fails a patch whose added lines use a `my<Name>`
+  member that no context line shows, because that is what a hunk pasted into the wrong class looks
+  like. `wasi-osd-file.patch` is cut with `git diff -U20` for exactly this reason; the default three
+  lines of context left `myFILE`, `myError` and `myLock` unattested.
+- **Refuse honestly, and check what "refuse" costs the caller first.** `OSD_File::SetLock()` on WASI
+  records the lock and sets no error, because `OSD_File::Read()`, `Write()`, `Seek()` and `Close()`
+  all open with `if (Failed()) { Perror(); }` and `Perror()` raises. Recording a truthful refusal
+  there would have turned "this platform has no file locking" into "the next read on this file
+  throws". Which of the two is honest depends on what the class does with the error, so read that
+  before choosing.
 
 ## Related
 

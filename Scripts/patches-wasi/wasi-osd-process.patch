@@ -1,0 +1,72 @@
+OSD_Process: no <pwd.h>, no user database and no getuid() on wasm32-wasip1.
+
+Two of the three sites EXTEND a condition that is already there, because upstream already excludes
+Emscripten from exactly this surface:
+
+  * `#if !defined(__EMSCRIPTEN__)` around `#include <pwd.h>` gains `&& !defined(__wasi__)`
+  * UserName()'s `#if defined(__EMSCRIPTEN__)` gains `|| defined(__wasi__)`
+
+Guarding the include alone is what PR #2076 did here, and it left `getpwuid(getuid())` compiling
+below it. The call site is guarded too.
+
+The third site, IsSuperUser(), has no condition to extend and gets a new one. getuid() is not
+merely unlinkable on WASI: wasi-libc keeps its declaration inside __wasilibc_unmodified_upstream,
+so the call does not compile at all.
+
+WHAT THE WASI BRANCH RETURNS:
+
+  * UserName() returns an empty TCollection_AsciiString, which is what the Emscripten arm beside it
+    already returns. Both in-tree consumers tolerate that today for that reason: IGESData.cxx:72
+    passes it as the default value of the "write.iges.header.author" Interface_Static string, and
+    STEPConstruct_AP203Context.cxx:177 uses it to build a person's name. Neither parses it nor
+    requires it to be non-empty; an IGES or STEP file written from wasm carries an empty author.
+  * IsSuperUser() returns false. A wasip1 instance runs under no user at all, so "not the
+    superuser" is the truthful answer rather than a fallback. It has no in-tree caller: measured at
+    zero occurrences outside this file.
+
+NOT CHANGED, deliberately: ProcessId() still calls getpid(). wasi-libc declares getpid()
+unconditionally and, without -D_WASI_EMULATED_GETPID, only marks it deprecated, so the call
+compiles with one warning and needs -lwasi-emulated-getpid at link. The WASI build already carries
+that link dependency through wasi-osd-directory.patch's OSD_Directory::BuildTemporary(), so
+guarding it here would remove nothing. Both sites are recorded in docs/WASI_GUARD_SITES.md.
+
+Issue: https://github.com/SecondMouseAU/OCCTSwift/issues/2173
+
+diff --git a/src/FoundationClasses/TKernel/OSD/OSD_Process.cxx b/src/FoundationClasses/TKernel/OSD/OSD_Process.cxx
+index dd9bc29e..138d173d 100644
+--- a/src/FoundationClasses/TKernel/OSD/OSD_Process.cxx
++++ b/src/FoundationClasses/TKernel/OSD/OSD_Process.cxx
+@@ -40,7 +40,7 @@ const OSD_WhoAmI Iam = OSD_WProcess;
+   #include <cstdlib>
+   #include <sys/param.h>
+   #include <sys/time.h>
+-  #if !defined(__EMSCRIPTEN__)
++  #if !defined(__EMSCRIPTEN__) && !defined(__wasi__)
+     #include <pwd.h> // For command getpwuid
+   #endif
+   #include <unistd.h>
+@@ -102,8 +102,9 @@ int OSD_Process::ProcessId()
+ 
+ TCollection_AsciiString OSD_Process::UserName()
+ {
+-  #if defined(__EMSCRIPTEN__)
+-  // Emscripten SDK raises TODO exception in runtime while calling getpwuid()
++  #if defined(__EMSCRIPTEN__) || defined(__wasi__)
++  // Emscripten SDK raises TODO exception in runtime while calling getpwuid();
++  // wasi-libc has no <pwd.h> and no user database at all
+   return TCollection_AsciiString();
+   #else
+   struct passwd* anInfos = getpwuid(getuid());
+@@ -113,7 +114,12 @@ TCollection_AsciiString OSD_Process::UserName()
+ 
+ bool OSD_Process::IsSuperUser()
+ {
++  #if defined(__wasi__)
++  // wasi-libc declares no getuid(): a WASI instance runs under no user
++  return false;
++  #else
+   return getuid() == 0;
++  #endif
+ }
+ 
+ OSD_Path OSD_Process::CurrentDirectory()
