@@ -99,3 +99,43 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `TDataStdAsciiStringTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setGetAsciiString` | `OCCTDocumentGetAsciiStringAttr` returns null | :15 Expectation failed: label.asciiString == "hello" | passed | `OCCTDocumentGetAsciiStringAttr` | PASS: hello |
+| `changeAsciiString` | `OCCTDocumentSetAsciiStringAttr` returns true without storing | :24 Expectation failed: label.asciiString == "world" | passed | `OCCTDocumentSetAsciiStringAttr` | PASS: world after the second Set |
+
+### `TDataStdBooleanArrayTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentSetBooleanArray` stores the first value inverted | :16 Expectation failed: result[0] == true | passed | `OCCTDocumentGetBooleanArray` | PASS: 1 0 1 0 1 |
+| `hasBooleanArray` | `OCCTDocumentHasBooleanArray` returns true | :24 Expectation failed: !doc.hasBooleanArray(tag: 301) | passed | `OCCTDocumentHasBooleanArray` | PASS: absent before Set |
+| `emptyArrayReturnsNil` | `OCCTDocumentGetBooleanArray` reports one value where there is no array | :31 Expectation failed: doc.booleanArray(tag: 302) == nil | passed | `OCCTDocumentGetBooleanArray` | PASS: no array on tag 302 |
+
+### `TDataStdBooleanListTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentSetBooleanList` stores the first value inverted | :14 Expectation failed: result[0] == true | passed | `OCCTDocumentGetBooleanList` | PASS: first true |
+| `appendAndClear` | `OCCTDocumentBooleanListClear` returns true without clearing | :29 Expectation failed: result.count == 0 | passed | `OCCTDocumentBooleanListClear` | PASS: 2, then 0 |
+| `hasBooleanList` | `OCCTDocumentHasBooleanList` returns true | :35 Expectation failed: !doc.hasBooleanList(tag: 312) | passed | `OCCTDocumentHasBooleanList` | PASS: absent before Set (fresh tag) |
+
+### `TDataStdByteArrayTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentSetByteArray` stores the first byte with its low bit flipped | :13 Expectation failed: result[0] == 42 | passed | `OCCTDocumentGetByteArray` | PASS: 42 255 0 128 |
+| `hasByteArray` | `OCCTDocumentHasByteArray` returns true | :21 Expectation failed: !doc.hasByteArray(tag: 321) | passed | `OCCTDocumentHasByteArray` | PASS: absent before Set |
+
+### `TDataStdCommentTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setGetComment` | `OCCTDocumentGetCommentAttr` returns null | :15 Expectation failed: label.comment == "my comment" | passed | `OCCTDocumentGetCommentAttr` | PASS: my comment |

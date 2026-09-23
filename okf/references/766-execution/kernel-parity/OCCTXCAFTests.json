@@ -126,5 +126,273 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "TDataStd AsciiString Attribute::Set and get ASCII string",
+    "bridge_function": "OCCTDocumentGetAsciiStringAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "s": "hello"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "s": "hello"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd AsciiString Attribute::Change ASCII string",
+    "bridge_function": "OCCTDocumentSetAsciiStringAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "s": "world"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "s": "world"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "BooleanArray Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetBooleanArray",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": [
+          true,
+          false,
+          true
+        ],
+        "count": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": [
+          1,
+          0,
+          1,
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "BooleanArray Tests::hasBooleanArray",
+    "bridge_function": "OCCTDocumentHasBooleanArray",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "BooleanArray Tests::emptyArrayReturnsNil",
+    "bridge_function": "OCCTDocumentGetBooleanArray",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "present": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "BooleanList Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetBooleanList",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 3,
+        "v": [
+          true,
+          false
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "first": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "BooleanList Tests::appendAndClear",
+    "bridge_function": "OCCTDocumentBooleanListClear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "after_append": 2,
+        "after_clear": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "after_append": 2,
+        "after_clear": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "BooleanList Tests::hasBooleanList",
+    "bridge_function": "OCCTDocumentHasBooleanList",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "ByteArray Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetByteArray",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": [
+          42,
+          255,
+          0,
+          128
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": [
+          42,
+          255,
+          0,
+          128
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "ByteArray Tests::hasByteArray",
+    "bridge_function": "OCCTDocumentHasByteArray",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd Comment Attribute::Set and get comment",
+    "bridge_function": "OCCTDocumentGetCommentAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "s": "my comment"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "s": "my comment"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
   }
 ]
