@@ -4501,5 +4501,272 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue 1635: an analytic contour carries its geometry::cylinderRulingsHaveGeometry",
+    "bridge_function": "OCCTContapContourLineAsLine",
+    "bridge_output": {
+      "type": "lines",
+      "data": {
+        "lines": [
+          {
+            "origin": [
+              0,
+              5,
+              0
+            ],
+            "dir": [
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "origin": [
+              0,
+              -5,
+              0
+            ],
+            "dir": [
+              0,
+              0,
+              1
+            ]
+          }
+        ],
+        "vertex_z": [
+          0,
+          20
+        ],
+        "parameterOnArc": [
+          1.5707963267948966,
+          4.71238898038469
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "lines",
+      "data": {
+        "lines": [
+          {
+            "origin": [
+              0,
+              5,
+              0
+            ],
+            "dir": [
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "origin": [
+              0,
+              -5,
+              0
+            ],
+            "dir": [
+              0,
+              0,
+              1
+            ]
+          }
+        ],
+        "vertex_z": [
+          0,
+          20
+        ],
+        "parameterOnArc": [
+          1.5707963267948966,
+          4.71238898038469
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue1635-contap-geometry/"
+  },
+  {
+    "test_name": "Issue 1635: an analytic contour carries its geometry::sphereSilhouetteIsAGreatCircle",
+    "bridge_function": "OCCTContapContourLineAsCircle",
+    "bridge_output": {
+      "type": "circle",
+      "data": {
+        "center": [
+          0,
+          0,
+          0
+        ],
+        "axis": [
+          0,
+          0,
+          1
+        ],
+        "xdir": [
+          0,
+          1,
+          0
+        ],
+        "radius": 7
+      }
+    },
+    "kernel_output": {
+      "type": "circle",
+      "data": {
+        "center": [
+          0,
+          0,
+          0
+        ],
+        "axis": [
+          0,
+          0,
+          1
+        ],
+        "xdir": [
+          0,
+          1,
+          0
+        ],
+        "radius": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue1635-contap-geometry/"
+  },
+  {
+    "test_name": "Issue 1635: an analytic contour carries its geometry::walkingContourAgreesWithThePointAccessors",
+    "bridge_function": "OCCTContapContourLinePointCount / OCCTContapContourLinePoint",
+    "bridge_output": {
+      "type": "walking",
+      "data": {
+        "lines": 12,
+        "line1_points": 51,
+        "first": [
+          0,
+          13,
+          -7.347880794884119e-16
+        ],
+        "vertices": 2
+      }
+    },
+    "kernel_output": {
+      "type": "walking",
+      "data": {
+        "lines": 12,
+        "line1_points": 51,
+        "first": [
+          0,
+          13,
+          -7.347880794884119e-16
+        ],
+        "vertices": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue1635-contap-geometry/"
+  },
+  {
+    "test_name": "Issue 1635: an analytic contour carries its geometry::restrictionContourHasAnArc",
+    "bridge_function": "OCCTContapContourLineArcRange / OCCTContapContourLineArcPoint",
+    "bridge_output": {
+      "type": "arc",
+      "data": {
+        "range": [
+          0,
+          10
+        ],
+        "ends_uv": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            10
+          ]
+        ],
+        "vertices_uv": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            10
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "arc",
+      "data": {
+        "range": [
+          0,
+          10
+        ],
+        "ends_uv": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            10
+          ]
+        ],
+        "vertices_uv": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            10
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue1635-contap-geometry/"
+  },
+  {
+    "test_name": "Issue 1635: an analytic contour carries its geometry::accessorsRefuseTheWrongLineType",
+    "bridge_function": "OCCTContapContourLineArcRange",
+    "bridge_output": {
+      "type": "refusal",
+      "data": {
+        "arcRange_on_line": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "refusal",
+      "data": {
+        "line1_type": "Contap_Lin",
+        "Arc()": "valid only on Contap_Restriction"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue1635-contap-geometry/"
   }
 ]

@@ -1,0 +1,80 @@
+cylinder r5 h20 along +X, first .line: face 0, NbLines=2
+  line 1 type=line NbVertex=2
+    Line origin=(0, 5, 0) dir=(0, 0, 1)
+    vertex 1 (3.0616169978683831e-16, 5, 0) uv=(1.5707963267948966, 0) onArc=1 parameterOnArc=1.5707963267948966
+    vertex 2 (3.0616169978683831e-16, 5, 20) uv=(1.5707963267948966, 20) onArc=1 parameterOnArc=1.5707963267948966
+  line 2 type=line NbVertex=2
+    Line origin=(0, -5, 0) dir=(0, 0, 1)
+    vertex 1 (-9.1848509936051479e-16, -5, 0) uv=(4.7123889803846897, 0) onArc=1 parameterOnArc=4.7123889803846897
+    vertex 2 (-9.1848509936051479e-16, -5, 20) uv=(4.7123889803846897, 20) onArc=1 parameterOnArc=4.7123889803846897
+sphere r7 along +Z, first .circle: face 0, NbLines=1
+  line 1 type=circle NbVertex=2
+    Circle centre=(0, 0, 0) axis=(0, 0, 1) xdir=(0, 1, 0) r=7
+    vertex 1 (7, -1.7145055188062944e-15, 0) uv=(6.2831853071795862, 0) onArc=1 parameterOnArc=6.2831853071795862
+    vertex 2 (7, 0, 0) uv=(0, 0) onArc=1 parameterOnArc=6.2831853071795862
+torus R10 r3 along +X, first .walking: face 0, NbLines=12
+  line 1 type=walking NbVertex=2 NbPnts=51
+    Point(1)=(0, 13, -7.3478807948841188e-16)
+    vertex 1 (0, 13, -7.3478807948841188e-16) uv=(1.5707963267948979, 6.2831853071795862) onArc=1 parameterOnArc=1.5707963267948979
+    vertex 2 (0, 10.000000000000027, -3) uv=(1.5707963267948979, 4.7123889803846986) onArc=0
+  line 2 type=walking NbVertex=2 NbPnts=51
+    Point(1)=(0, -13, -7.3478807948841188e-16)
+    vertex 1 (0, -13, -7.3478807948841188e-16) uv=(4.7123889803846897, 6.2831853071795862) onArc=1 parameterOnArc=4.7123889803846897
+    vertex 2 (0, -10.000000000000027, -3) uv=(4.7123889803846897, 4.7123889803846986) onArc=0
+  line 3 type=walking NbVertex=2 NbPnts=51
+    Point(1)=(10, 0, 3)
+    vertex 1 (10, 0, 3) uv=(6.2831853071795862, 1.5707963267948966) onArc=1 parameterOnArc=1.5707963267948966
+    vertex 2 (8.6980871771291496e-14, -10, 3) uv=(4.7123889803846986, 1.5707963267948966) onArc=0
+  line 4 type=walking NbVertex=2 NbPnts=51
+    Point(1)=(10, 0, -3)
+    vertex 1 (10, 0, -3) uv=(6.2831853071795862, 4.7123889803846897) onArc=1 parameterOnArc=4.7123889803846897
+    vertex 2 (0, -10.000000000000027, -3) uv=(4.7123889803846897, 4.7123889803846986) onArc=0
+  line 5 type=walking NbVertex=2 NbPnts=51
+    Point(1)=(0, 13, 0)
+    vertex 1 (0, 13, 0) uv=(1.5707963267948979, 0) onArc=1 parameterOnArc=1.5707963267948979
+    vertex 2 (0, 9.9999999999999964, 3) uv=(1.5707963267948979, 1.5707963267948979) onArc=0
+  line 6 type=walking NbVertex=2 NbPnts=51
+    Point(1)=(0, -13, 0)
+    vertex 1 (0, -13, 0) uv=(4.7123889803846897, 0) onArc=1 parameterOnArc=4.7123889803846897
+    vertex 2 (8.6980871771291496e-14, -10, 3) uv=(4.7123889803846986, 1.5707963267948966) onArc=0
+  line 7 type=walking NbVertex=2 NbPnts=52
+    Point(1)=(0, 9.9999999999999964, 3)
+    vertex 1 (0, 9.9999999999999964, 3) uv=(1.5707963267948979, 1.5707963267948979) onArc=0
+    vertex 2 (10, 0, 3) uv=(0, 1.5707963267948966) onArc=0
+  line 8 type=walking NbVertex=2 NbPnts=102
+    Point(1)=(0, 9.9999999999999964, 3)
+    vertex 1 (0, 9.9999999999999964, 3) uv=(1.5707963267948979, 1.5707963267948979) onArc=0
+    vertex 2 (8.6980871771291496e-14, -10, 3) uv=(4.7123889803846986, 1.5707963267948966) onArc=0
+  line 9 type=walking NbVertex=2 NbPnts=102
+    Point(1)=(0, 10.000000000000027, -3)
+    vertex 1 (0, 10.000000000000027, -3) uv=(1.5707963267948979, 4.7123889803846986) onArc=0
+    vertex 2 (0, 9.9999999999999964, 3) uv=(1.5707963267948979, 1.5707963267948979) onArc=0
+  line 10 type=walking NbVertex=2 NbPnts=102
+    Point(1)=(8.6980871771291496e-14, -10, 3)
+    vertex 1 (8.6980871771291496e-14, -10, 3) uv=(4.7123889803846986, 1.5707963267948966) onArc=0
+    vertex 2 (0, -10.000000000000027, -3) uv=(4.7123889803846897, 4.7123889803846986) onArc=0
+  line 11 type=walking NbVertex=2 NbPnts=52
+    Point(1)=(10, 0, -3)
+    vertex 1 (10, 0, -3) uv=(0, 4.7123889803846897) onArc=0
+    vertex 2 (0, 10.000000000000027, -3) uv=(1.5707963267948979, 4.7123889803846986) onArc=0
+  line 12 type=walking NbVertex=2 NbPnts=102
+    Point(1)=(0, -10.000000000000027, -3)
+    vertex 1 (0, -10.000000000000027, -3) uv=(4.7123889803846897, 4.7123889803846986) onArc=0
+    vertex 2 (0, 10.000000000000027, -3) uv=(1.5707963267948979, 4.7123889803846986) onArc=0
+box 10 centred along +X, first .restriction: face 2, NbLines=4
+  line 1 type=restriction NbVertex=2
+    Arc range=[0, 10] Value(first)=(0, 0) Value(last)=(0, 10)
+    vertex 1 (-5, -5, -5) uv=(0, 0) onArc=0
+    vertex 2 (5, -5, -5) uv=(0, 10) onArc=0
+  line 2 type=restriction NbVertex=2
+    Arc range=[0, 10] Value(first)=(0, 10) Value(last)=(10, 10)
+    vertex 1 (5, -5, -5) uv=(0, 10) onArc=0
+    vertex 2 (5, -5, 5) uv=(10, 10) onArc=0
+  line 3 type=restriction NbVertex=2
+    Arc range=[0, 10] Value(first)=(10, 0) Value(last)=(10, 10)
+    vertex 1 (-5, -5, 5) uv=(10, 0) onArc=0
+    vertex 2 (5, -5, 5) uv=(10, 10) onArc=0
+  line 4 type=restriction NbVertex=2
+    Arc range=[0, 10] Value(first)=(0, 0) Value(last)=(10, 0)
+    vertex 1 (-5, -5, -5) uv=(0, 0) onArc=0
+    vertex 2 (-5, -5, 5) uv=(10, 0) onArc=0

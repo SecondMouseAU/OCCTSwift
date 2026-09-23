@@ -235,6 +235,11 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Issue 1635: an analytic contour carries its geometry** | cylinderRulingsHaveGeometry | Contap line geometry | OCCTContapContourLineAsLine |
+| **Issue 1635: an analytic contour carries its geometry** | sphereSilhouetteIsAGreatCircle | Contap circle geometry | OCCTContapContourLineAsCircle |
+| **Issue 1635: an analytic contour carries its geometry** | walkingContourAgreesWithThePointAccessors | Contap walking points | OCCTContapContourLinePointCount |
+| **Issue 1635: an analytic contour carries its geometry** | restrictionContourHasAnArc | Contap restriction arc | OCCTContapContourLineArcRange |
+| **Issue 1635: an analytic contour carries its geometry** | accessorsRefuseTheWrongLineType | Contap accessor refusal | OCCTContapContourLineArcRange |
 
 ---
 
@@ -424,6 +429,11 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| cylinderRulingsHaveGeometry | OCCTContapContourLineAsLine | Contap line geometry | origin y written as 0 | ✅ | ✅ |  |
+| sphereSilhouetteIsAGreatCircle | OCCTContapContourLineAsCircle | Contap circle geometry | radius + 1 | ✅ | ✅ |  |
+| walkingContourAgreesWithThePointAccessors | OCCTContapContourLinePointCount / OCCTContapContourLinePoint | Contap walking points | point count capped at 2 | ✅ | ✅ |  |
+| restrictionContourHasAnArc | OCCTContapContourLineArcRange / OCCTContapContourLineArcPoint | Contap restriction arc | arc last parameter + 1 | ✅ | ✅ |  |
+| accessorsRefuseTheWrongLineType | OCCTContapContourLineArcRange | Contap accessor refusal | answer (0, 0) instead of refusing a non-restriction line | ✅ | ✅ |  |
 
 ---
 
