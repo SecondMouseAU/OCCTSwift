@@ -308,5 +308,62 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtPElC Point-Ellipse::pointToEllipse",
+    "bridge_function": "OCCTExtremaExtPElCElips",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "extrema": [
+          {
+            "squareDistance": 25.0,
+            "point": [
+              5.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "squareDistance": 225.0,
+            "point": [
+              -5.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "extrema": [
+          {
+            "squareDistance": 25.0,
+            "point": [
+              5.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "squareDistance": 225.0,
+            "point": [
+              -5.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

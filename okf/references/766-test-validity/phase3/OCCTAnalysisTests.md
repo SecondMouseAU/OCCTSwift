@@ -95,6 +95,7 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Extrema_ExtPElC Point-Ellipse** | pointToEllipse | Point-ellipse extrema | Report distance as squared distance |
 
 ---
 
@@ -202,6 +203,7 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| pointToEllipse | OCCTExtremaExtPElCElips | Point-ellipse extrema | Write sqrt(SquareDistance(i)) to squareDistance | ✅ | ✅ | Rewritten: asserted only count > 0; now pins both extrema |
 
 ---
 
