@@ -94,3 +94,27 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 200 tests
+
+## Measured rows, #766 execution (#1987)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|-------|------|-----------------|-----------|-----|-------|--------|-------|
+| OSD_Host Tests | hostName | `OCCTHostName` | return "localhost" (A) | ✅ `:928` (original: green) | ✅ | MATCH, HostName() == gethostname | Rewritten: non-empty only; now pinned to gethostname |
+| OSD_Host Tests | systemVersion | `OCCTSystemVersion` | return "Darwin" (A) | ✅ `:937` (original: green) | ✅ | MATCH, "Darwin 27.0.0" == uname sysname + release | Rewritten: `contains("Darwin")` |
+| OSD_Host Tests | internetAddress | `OCCTInternetAddress` | return nullptr (C) | ✅ `:946` (original: green) | ✅ | MATCH, 127.0.0.1, parses as IPv4 | Rewritten: had no assertion at all |
+| OSD_PerfMeter Tests | measureTime | `OCCTPerfMeterElapsed` | Create skips Start() (C) | ✅ `:969` `elapsed > 0.01` (original: green) | ✅ | MATCH in kind: CPU time, 0.0000 s over a 50 ms sleep, 0.0484 s over a 100 ms spin | Rewritten: `elapsed >= 0` |
+| OSD_Directory Tests | tempDirectory | `OCCTDirectoryRemove` | Remove returns true without removing (A) | ✅ `:985` (original: green) | ✅ | MATCH, under /tmp, Exists 1, then 0 after Remove | Strengthened: removal was unchecked |
+| OSD_Directory Tests | createAndRemoveDirectory | `OCCTDirectoryCreate` | Remove returns true without removing (A) | ✅ `:996` | ✅ | MATCH, Build then Exists 1, Remove then Exists 0 |  |
+| Resource_Unicode Tests | setAndGetFormat | `OCCTUnicodeSetFormat` | SetFormat no-op (A) | ✅ `:1011` `sjis == .sjis` (original: green) | ✅ | MATCH, SJIS then ANSI read back | Rewritten: set only the default `.ansi` |
+| Resource_Unicode Tests | convertToUnicode | `OCCTUnicodeConvertToUnicode` | drop the first code unit (A) | ✅ `:1022` | ✅ | MATCH "hello" |  |
+| Resource_Unicode Tests | convertFromUnicode | `OCCTUnicodeConvertFromUnicode` | length - 1 (A) | ✅ `:1033` | ✅ | MATCH "hello" |  |
+| OSD_DirectoryIterator Tests | countDirectories | `OCCTDirectoryIteratorCount` | count starts at 1 (B) | ✅ `:1068` (original: green) | ✅ | MATCH 4 (".", "..", a, b) | Rewritten: /tmp with `count >= 0`; now a fixture |
+| OSD_DirectoryIterator Tests | nameAtIndex | `OCCTDirectoryIteratorName` | index off by one (B) | ✅ `:1078` (original: green) | ✅ | MATCH | Rewritten, fixture |
+| OSD_DirectoryIterator Tests | listDirectories | `OCCTDirectoryList` | skip the first entry (B) | ✅ `:1089` (original: green) | ✅ | MATCH | Rewritten, fixture |
+| OSD_FileIterator Tests | countFiles | `OCCTFileIteratorCount` | count starts at 1 (B) | ✅ `:1102`, `:1103` (original: green) | ✅ | MATCH 3 | Rewritten, fixture; adds a `*.txt` mask case |
+| OSD_FileIterator Tests | nameAtIndex | `OCCTFileIteratorName` | index off by one (B) | ✅ `:1113` (original: green) | ✅ | MATCH | Rewritten, fixture |
+| OSD_FileIterator Tests | listFiles | `OCCTFileList` | skip the first entry (B) | ✅ `:1124` (original: green) | ✅ | MATCH | Rewritten, fixture |
+| OSD_Disk | diskSize | `OCCTDiskSize` | drop the `/ 2` (A) | ✅ `:1138` (original: green) | ✅ | MATCH 971350180 KB == statvfs | Rewritten: `size >= 0` |
+| OSD_Disk | diskFreeSpace | `OCCTDiskFree` | return 0 (A) | ✅ `:1143` (original: green) | ✅ | MATCH in kind: > 0 and <= size | Rewritten: `free >= 0` |
+| OSD_Disk | diskIsValid | `OCCTDiskIsValid` | negate Failed() (A) | ✅ `:1149` | ✅ | MATCH, Failed() 0 |  |
+| OSD_Disk | diskName | `OCCTDiskName` | return nullptr (A) | ✅ `:1156` | ✅ | MATCH "" | Pinned to the kernel's empty name (#1442) |

@@ -94,5 +94,386 @@
     "kernel_output": {"type": "bool", "data": true},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "OSD_Host Tests::hostName",
+    "bridge_function": "OCCTHostName",
+    "bridge_output": {
+      "type": "string",
+      "data": "== gethostname()"
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": "== gethostname()"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_Host Tests::systemVersion",
+    "bridge_function": "OCCTSystemVersion",
+    "bridge_output": {
+      "type": "string",
+      "data": "Darwin 27.0.0"
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": "Darwin 27.0.0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_Host Tests::internetAddress",
+    "bridge_function": "OCCTInternetAddress",
+    "bridge_output": {
+      "type": "string",
+      "data": "IPv4 dotted quad"
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": "127.0.0.1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_PerfMeter Tests::measureTime",
+    "bridge_function": "OCCTPerfMeterElapsed",
+    "bridge_output": {
+      "type": "seconds",
+      "data": "> 0.01 and <= wall time after a 200 ms spin"
+    },
+    "kernel_output": {
+      "type": "seconds",
+      "data": {
+        "sleep_50ms": 0.0,
+        "spin_100ms": 0.0484
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_Directory Tests::tempDirectory",
+    "bridge_function": "OCCTDirectoryRemove",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "exists": true,
+        "removed": true,
+        "exists_after": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "exists": true,
+        "exists_after": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_Directory Tests::createAndRemoveDirectory",
+    "bridge_function": "OCCTDirectoryCreate",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "created": true,
+        "exists_after_remove": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "created": true,
+        "exists_after_remove": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Resource_Unicode Tests::setAndGetFormat",
+    "bridge_function": "OCCTUnicodeSetFormat",
+    "bridge_output": {
+      "type": "formats",
+      "data": [
+        "sjis",
+        "ansi"
+      ]
+    },
+    "kernel_output": {
+      "type": "formats",
+      "data": [
+        "SJIS",
+        "ANSI"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Resource_Unicode Tests::convertToUnicode",
+    "bridge_function": "OCCTUnicodeConvertToUnicode",
+    "bridge_output": {
+      "type": "string",
+      "data": "hello"
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": "hello"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Resource_Unicode Tests::convertFromUnicode",
+    "bridge_function": "OCCTUnicodeConvertFromUnicode",
+    "bridge_output": {
+      "type": "string",
+      "data": "hello"
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": "hello"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_DirectoryIterator Tests::countDirectories",
+    "bridge_function": "OCCTDirectoryIteratorCount",
+    "bridge_output": {
+      "type": "int",
+      "data": 4
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 4
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_DirectoryIterator Tests::nameAtIndex",
+    "bridge_function": "OCCTDirectoryIteratorName",
+    "bridge_output": {
+      "type": "names",
+      "data": [
+        ".",
+        "..",
+        "a",
+        "b"
+      ]
+    },
+    "kernel_output": {
+      "type": "names",
+      "data": [
+        ".",
+        "..",
+        "a",
+        "b"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_DirectoryIterator Tests::listDirectories",
+    "bridge_function": "OCCTDirectoryList",
+    "bridge_output": {
+      "type": "names",
+      "data": [
+        ".",
+        "..",
+        "a",
+        "b"
+      ]
+    },
+    "kernel_output": {
+      "type": "names",
+      "data": [
+        ".",
+        "..",
+        "a",
+        "b"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_FileIterator Tests::countFiles",
+    "bridge_function": "OCCTFileIteratorCount",
+    "bridge_output": {
+      "type": "int",
+      "data": 3
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 3
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_FileIterator Tests::nameAtIndex",
+    "bridge_function": "OCCTFileIteratorName",
+    "bridge_output": {
+      "type": "names",
+      "data": [
+        "x.txt",
+        "y.txt",
+        "z.dat"
+      ]
+    },
+    "kernel_output": {
+      "type": "names",
+      "data": [
+        "x.txt",
+        "y.txt",
+        "z.dat"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_FileIterator Tests::listFiles",
+    "bridge_function": "OCCTFileList",
+    "bridge_output": {
+      "type": "names",
+      "data": [
+        "x.txt",
+        "y.txt",
+        "z.dat"
+      ]
+    },
+    "kernel_output": {
+      "type": "names",
+      "data": [
+        "x.txt",
+        "y.txt",
+        "z.dat"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_Disk::diskSize",
+    "bridge_function": "OCCTDiskSize",
+    "bridge_output": {
+      "type": "kb",
+      "data": 971350180
+    },
+    "kernel_output": {
+      "type": "kb",
+      "data": 971350180
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_Disk::diskFreeSpace",
+    "bridge_function": "OCCTDiskFree",
+    "bridge_output": {
+      "type": "kb",
+      "data": "> 0, <= size"
+    },
+    "kernel_output": {
+      "type": "kb",
+      "data": 66712552
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_Disk::diskIsValid",
+    "bridge_function": "OCCTDiskIsValid",
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_Disk::diskName",
+    "bridge_function": "OCCTDiskName",
+    "bridge_output": {
+      "type": "string",
+      "data": ""
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": ""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

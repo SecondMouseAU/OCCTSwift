@@ -919,34 +919,56 @@ struct ResourceManagerTests {
 @Suite("OSD_Host Tests")
 struct OSDHostTests {
 
+    // #1987: OSD_Host::HostName() is gethostname(2); pinned to it rather than to "non-empty".
     @Test func hostName() {
-        let name = HostInfo.hostName
-        #expect(name != nil)
-        if let n = name { #expect(!n.isEmpty) }
+        var buf = [CChar](repeating: 0, count: 256)
+        #expect(gethostname(&buf, buf.count) == 0)
+        let expected = String(cString: buf)
+        #expect(!expected.isEmpty)
+        #expect(HostInfo.hostName == expected)
     }
 
+    // #1987: OSD_Host::SystemVersion() is uname(3)'s sysname and release joined by a space.
     @Test func systemVersion() {
-        let ver = HostInfo.systemVersion
-        #expect(ver != nil)
-        if let v = ver { #expect(v.contains("Darwin")) }
+        var u = utsname()
+        #expect(uname(&u) == 0)
+        let sysname = withUnsafeBytes(of: &u.sysname) { String(cString: $0.bindMemory(to: CChar.self).baseAddress!) }
+        let release = withUnsafeBytes(of: &u.release) { String(cString: $0.bindMemory(to: CChar.self).baseAddress!) }
+        #expect(HostInfo.systemVersion == "\(sysname) \(release)")
+        #expect(sysname == "Darwin")
     }
 
+    // #1987: this used to be `let _ = HostInfo.internetAddress`, with no assertion at all. The
+    // kernel returns a dotted-quad IPv4 address (127.0.0.1 on the machine it was probed on), so
+    // the result must parse as one.
     @Test func internetAddress() {
-        // May be nil on some systems
-        let _ = HostInfo.internetAddress
+        let address = HostInfo.internetAddress
+        #expect(address != nil)
+        guard let address else { return }
+        var parsed = in_addr()
+        #expect(inet_pton(AF_INET, address, &parsed) == 1)
     }
 }
 
 @Suite("OSD_PerfMeter Tests")
 struct PerfMeterTests {
 
+    // #1987: this asserted `elapsed >= 0` after a 10,000-iteration loop, which a meter that never
+    // started also satisfies. OSD_PerfMeter measures CPU time, not wall time: in the probe a
+    // 50 ms sleep reads 0.0000 s and a 100 ms spin reads 0.0484 s. The test spins for 200 ms of
+    // wall time and expects a clearly nonzero reading that does not exceed the wall time spent.
     @Test func measureTime() {
-        let meter = PerfMeter(name: "swift_test")
+        let start = Date()
+        let meter = PerfMeter(name: "swift_test_766")
         var sum = 0.0
-        for i in 0..<10000 { sum += Double(i) }
+        while Date().timeIntervalSince(start) < 0.2 {
+            for i in 0..<1000 { sum += Double(i) }
+        }
         meter.stop()
-        #expect(meter.elapsed >= 0)
-        _ = sum
+        let wall = Date().timeIntervalSince(start)
+        #expect(meter.elapsed > 0.01)
+        #expect(meter.elapsed <= wall + 0.01)
+        #expect(sum > 0)
     }
 }
 
@@ -958,7 +980,9 @@ struct OSDDirectoryTests {
         #expect(tmpDir != nil)
         if let dir = tmpDir {
             #expect(DirectoryUtils.exists(dir))
-            DirectoryUtils.remove(dir)
+            // #1987: the removal used to go unchecked.
+            #expect(DirectoryUtils.remove(dir))
+            #expect(!DirectoryUtils.exists(dir))
         }
     }
 
@@ -976,11 +1000,16 @@ struct OSDDirectoryTests {
 @Suite("Resource_Unicode Tests")
 struct ResourceUnicodeTests {
 
+    // #1987: this set and read back `.ansi`, which is also the default, so a setFormat that did
+    // nothing passed. It now goes through `.sjis` first and restores `.ansi`.
     @Test func setAndGetFormat() {
         OCCTSerial.withLock {
+            UnicodeUtils.setFormat(.sjis)
+            let sjis = UnicodeUtils.format
             UnicodeUtils.setFormat(.ansi)
-            let fmt = UnicodeUtils.format
-            #expect(fmt == .ansi)
+            let ansi = UnicodeUtils.format
+            #expect(sjis == .sjis)
+            #expect(ansi == .ansi)
         }
     }
 
@@ -1007,26 +1036,57 @@ struct ResourceUnicodeTests {
     }
 }
 
+/// A fresh directory holding subdirectories `a` and `b` and files `x.txt`, `y.txt`, `z.dat`.
+///
+/// #1987: the iterator tests used to walk /tmp and assert `count >= 0`, which nothing can fail.
+private func makeIteratorFixture() -> String? {
+    let root = NSTemporaryDirectory() + "occt_766_iter_\(UUID().uuidString)"
+    let fm = FileManager.default
+    do {
+        try fm.createDirectory(atPath: root + "/a", withIntermediateDirectories: true)
+        try fm.createDirectory(atPath: root + "/b", withIntermediateDirectories: true)
+        for f in ["x.txt", "y.txt", "z.dat"] {
+            guard fm.createFile(atPath: root + "/" + f, contents: Data()) else { return nil }
+        }
+    } catch {
+        return nil
+    }
+    return root
+}
+
 @Suite("OSD_DirectoryIterator Tests")
 struct OSDDirectoryIteratorTests {
 
+    // OSD_DirectoryIterator reports "." and ".." alongside the real subdirectories, and bare
+    // names rather than paths: the probe gives ".", "..", "a", "b" for this fixture.
     @Test func countDirectories() {
-        let count = DirectoryIterator.count(path: "/tmp")
-        #expect(count >= 0)
+        guard let root = makeIteratorFixture() else {
+            Issue.record("fixture")
+            return
+        }
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        #expect(DirectoryIterator.count(path: root) == 4)
     }
 
     @Test func nameAtIndex() {
-        let count = DirectoryIterator.count(path: "/tmp")
-        if count > 0 {
-            if let name = DirectoryIterator.name(path: "/tmp", index: 0) {
-                #expect(!name.isEmpty)
-            }
+        guard let root = makeIteratorFixture() else {
+            Issue.record("fixture")
+            return
         }
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        let names = (0..<4).compactMap { DirectoryIterator.name(path: root, index: $0) }
+        #expect(Set(names) == [".", "..", "a", "b"])
+        #expect(DirectoryIterator.name(path: root, index: 4) == nil)
     }
 
     @Test func listDirectories() {
-        let dirs = DirectoryIterator.list(path: "/tmp", maxCount: 50)
-        #expect(dirs.count >= 0)
+        guard let root = makeIteratorFixture() else {
+            Issue.record("fixture")
+            return
+        }
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        let dirs = DirectoryIterator.list(path: root, maxCount: 50)
+        #expect(dirs.sorted() == [".", "..", "a", "b"])
     }
 }
 
@@ -1034,39 +1094,54 @@ struct OSDDirectoryIteratorTests {
 struct OSDFileIteratorTests {
 
     @Test func countFiles() {
-        let count = FileIterator.count(path: "/tmp")
-        #expect(count >= 0)
+        guard let root = makeIteratorFixture() else {
+            Issue.record("fixture")
+            return
+        }
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        #expect(FileIterator.count(path: root) == 3)
+        #expect(FileIterator.count(path: root, mask: "*.txt") == 2)
     }
 
     @Test func nameAtIndex() {
-        let count = FileIterator.count(path: "/tmp")
-        if count > 0 {
-            if let name = FileIterator.name(path: "/tmp", index: 0) {
-                #expect(!name.isEmpty)
-            }
+        guard let root = makeIteratorFixture() else {
+            Issue.record("fixture")
+            return
         }
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        let names = (0..<3).compactMap { FileIterator.name(path: root, index: $0) }
+        #expect(Set(names) == ["x.txt", "y.txt", "z.dat"])
+        #expect(FileIterator.name(path: root, index: 3) == nil)
     }
 
     @Test func listFiles() {
-        let files = FileIterator.list(path: "/tmp", maxCount: 50)
-        #expect(files.count >= 0)
+        guard let root = makeIteratorFixture() else {
+            Issue.record("fixture")
+            return
+        }
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        let files = FileIterator.list(path: root, maxCount: 50)
+        #expect(files.sorted() == ["x.txt", "y.txt", "z.dat"])
     }
 }
 
 @Suite("OSD_Disk")
 struct OSDDiskTests {
+    // #1987: `size >= 0` and `free >= 0` passed a bridge returning 0. OSD_Disk::DiskSize() is
+    // f_blocks * (f_frsize / 512) 512-byte blocks, which the bridge halves to KB; total size does
+    // not move between two reads, so it is compared exactly. Issue1442DiskUnicodeOSDUtilitiesTests
+    // holds the finer regression coverage for #1442.
     @Test func diskSize() {
-        let size = DiskInfo.size()
-        // Fixed by #1442 (bridge now constructs OSD_Disk from the path string directly
-        // rather than via OSD_Path, whose Disk() component is never populated on
-        // macOS/iOS/Linux): a real path now reports a real, nonzero KB figure. See
-        // Issue1442DiskUnicodeOSDUtilitiesTests for the precise regression coverage.
-        #expect(size >= 0)
+        var vfs = statvfs()
+        #expect(statvfs("/", &vfs) == 0)
+        let blocks = UInt64(vfs.f_blocks) * (UInt64(vfs.f_frsize) / 512)
+        #expect(DiskInfo.size() == Int64(blocks / 2))
     }
 
     @Test func diskFreeSpace() {
         let free = DiskInfo.freeSpace()
-        #expect(free >= 0)
+        #expect(free > 0)
+        #expect(free <= DiskInfo.size())
     }
 
     @Test func diskIsValid() {
@@ -1074,10 +1149,11 @@ struct OSDDiskTests {
         #expect(valid)
     }
 
+    // #1987: `name != nil` passed any string. OSD_Disk built from an OSD_Path, as the bridge
+    // does, has an empty name on macOS because OSD_Path never fills its disk component (#1442);
+    // pinned to what the kernel returns.
     @Test func diskName() {
-        let name = DiskInfo.name()
-        // May return empty string or actual name
-        #expect(name != nil)
+        #expect(DiskInfo.name() == "")
     }
 }
 

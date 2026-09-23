@@ -1,0 +1,25 @@
+== OSD_Host (OCCTHostName / OCCTSystemVersion / OCCTInternetAddress) ==
+HostName() == gethostname(): 1 (length 21)
+SystemVersion() = "Darwin 27.0.0", uname sysname+release = "Darwin 27.0.0"
+InternetAddress() = "127.0.0.1", parses as IPv4: 1
+== OSD_PerfMeter (OCCTPerfMeterCreate / Stop / Elapsed) ==
+Elapsed() after Start, 50 ms sleep, Stop = 0.0000 s
+Elapsed() after Start, 100 ms CPU spin, Stop = 0.0670 s
+== OSD_Directory (OCCTDirectoryBuildTemporary / Create / Exists / Remove) ==
+BuildTemporary() gives a path under /tmp: 1, Exists 1
+after Remove(): Exists 0
+Build(/tmp/occt_766_probe_dir): Exists 1
+Remove(): Exists 0
+== Resource_Unicode (OCCTUnicodeSetFormat / GetFormat / ConvertToUnicode / ConvertFromUnicode) ==
+SetFormat(SJIS) -> GetFormat() == SJIS: 1
+SetFormat(ANSI) -> GetFormat() == ANSI: 1
+ConvertFormatToUnicode("hello") length 5, as ASCII "hello"
+ConvertUnicodeToFormat("hello") ok 1 -> "hello"
+== OSD_DirectoryIterator / OSD_FileIterator on the fixture ==
+DirectoryIterator count 4: "." ".." "a" "b"
+FileIterator count 3: "x.txt" "y.txt" "z.dat"
+== OSD_Disk (OCCTDiskSize / DiskFree / IsValid / Name) ==
+DiskSize()/2 = 971350180 KB, statvfs f_blocks*(f_frsize/512)/2 = 971350180 KB
+DiskFree()/2 = 53869400 KB (> 0: 1)
+Failed() after DiskSize on "/" = 0
+OSD_Disk(OSD_Path("/")).Name() system name = ""
