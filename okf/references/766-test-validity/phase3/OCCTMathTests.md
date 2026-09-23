@@ -109,3 +109,17 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-gauss-householder-integ-jacobi (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **MathGauss Tests** | solve2x2 | `OCCTMathGaussSolve` | swap X(1) and X(n) after math_Gauss::Solve | red | green | PASS |
+| **MathGauss Tests** | determinant | `OCCTMathGaussDeterminant` | negate math_Gauss::Determinant | red | green | PASS |
+| **MathHouseholder Tests** | overdetermindedSolve | `OCCTMathHouseholderSolve` | swap sol(1) and sol(cols) after math_Householder::Value | red | green | PASS |
+| **MathIntegRc4** | gauss | `OCCTMathIntegGauss` | upper bound * 0.99 (integral drops by about 4.9e-4) | red | green | PASS |
+| **MathIntegRc4** | gaussAdaptive | `OCCTMathIntegGaussAdaptive` | upper bound * 0.99 (integral drops by about 4.9e-4) | red | green | PASS |
+| **MathIntegRc4** | kronrod | `OCCTMathIntegKronrod` | upper bound * 0.99 (integral drops by about 4.9e-4) | red | green | PASS |
+| **MathIntegRc4** | kronrodAdaptive | `OCCTMathIntegKronrodAdaptive` | upper bound * 0.99 (integral drops by about 4.9e-4) | red | green | PASS |
+| **MathIntegRc4** | tanhSinh | `OCCTMathIntegTanhSinh` | upper bound * 0.99 (integral drops by about 4.9e-4) | red | green | PASS |
+| **MathJacobi Tests** | eigenvalues | `OCCTMathJacobiEigenvalues` | math_Jacobi::Value(i) + 0.5 | red | green | PASS |
