@@ -235,6 +235,15 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Edge, Properties** | Edge isLine for box edge | Edge curve type | GetType == Line |
+| **Edge, Properties** | Edge isCircle for cylinder edge | Edge curve type | GetType == Circle |
+| **Extended Distance Solutions** | Multiple distance solutions between spheres | Shape distance | Solution distance |
+| **Extended Distance Solutions** | Box distance solutions | Shape distance | Solution distance |
+| **Extended Distance Solutions** | Inner distance detection, non-overlapping shapes | Shape distance | InnerSolution |
+| **Extrema_ExtElC Circle-Circle** | coplanarCircles | Circle-circle extrema | Square distances |
+| **Extrema_ExtElC Circle-Circle** | coaxialCirclesReturnRadiusDifference | Circle-circle extrema | Parallel square distance |
+| **Extrema_ExtElC Line-Ellipse** | lineEllipseDistance | Line-ellipse extrema | Square distances |
+| **Extrema_ExtElC Line-Ellipse** | lineOnEllipseAxisReturnsDistance | Line-ellipse extrema | Parallel square distance |
 
 ---
 
@@ -424,6 +433,15 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Edge isLine for box edge | OCCTEdgeIsLine | Edge curve type | Swap GeomAbs_Line and GeomAbs_Circle in OCCTEdgeIsLine/OCCTEdgeIsCircle | ✅ | ✅ |  |
+| Edge isCircle for cylinder edge | OCCTEdgeIsCircle | Edge curve type | Swap GeomAbs_Line and GeomAbs_Circle | ✅ | ✅ | Rewritten: "some edge is a circle" passed a predicate true for the seam line |
+| Multiple distance solutions between spheres | OCCTShapeAllDistanceSolutions | Shape distance | dist.Value() + 1 | ✅ | ✅ |  |
+| Box distance solutions | OCCTShapeAllDistanceSolutions | Shape distance | dist.Value() + 1 | ✅ | ✅ |  |
+| Inner distance detection, non-overlapping shapes | OCCTShapeIsInnerDistance | Shape distance | Invert InnerSolution() | ✅ | ✅ |  |
+| coplanarCircles | OCCTExtremaElCCircCirc | Circle-circle extrema | SquareDistance + 1 | ✅ | ✅ | Rewritten: count > 0 passed any distance |
+| coaxialCirclesReturnRadiusDifference | OCCTExtremaElCCircCirc | Circle-circle extrema | SquareDistance + 1 | ✅ | ✅ |  |
+| lineEllipseDistance | OCCTExtremaElCLinElips | Line-ellipse extrema | SquareDistance + 1 | ✅ | ✅ | Rewritten: count > 0 passed any distance |
+| lineOnEllipseAxisReturnsDistance | OCCTExtremaElCLinElips | Line-ellipse extrema | SquareDistance + 1 | ✅ | ✅ |  |
 
 ---
 

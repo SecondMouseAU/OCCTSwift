@@ -4501,5 +4501,297 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Edge, Properties::Edge isLine for box edge",
+    "bridge_function": "OCCTEdgeIsLine",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "box_edges_isLine": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "box_edges_isCircle": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "box_edges_isLine": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "box_edges_isCircle": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-edge-distance-elc/"
+  },
+  {
+    "test_name": "Edge, Properties::Edge isCircle for cylinder edge",
+    "bridge_function": "OCCTEdgeIsCircle",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "cylinder_edges_isCircle": [
+          true,
+          false,
+          true
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "cylinder_edges_isCircle": [
+          true,
+          false,
+          true
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-edge-distance-elc/"
+  },
+  {
+    "test_name": "Extended Distance Solutions::Multiple distance solutions between spheres",
+    "bridge_function": "OCCTShapeAllDistanceSolutions",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "count": 2,
+        "distance": 10.0
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "count": 2,
+        "distance": 10.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-edge-distance-elc/"
+  },
+  {
+    "test_name": "Extended Distance Solutions::Box distance solutions",
+    "bridge_function": "OCCTShapeAllDistanceSolutions",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "count": 4,
+        "distance": 10.0
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "count": 4,
+        "distance": 10.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-edge-distance-elc/"
+  },
+  {
+    "test_name": "Extended Distance Solutions::Inner distance detection, non-overlapping shapes",
+    "bridge_function": "OCCTShapeIsInnerDistance",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "inner": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "inner": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-edge-distance-elc/"
+  },
+  {
+    "test_name": "Extrema_ExtElC Circle-Circle::coplanarCircles",
+    "bridge_function": "OCCTExtremaElCCircCirc",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "count": 4,
+        "square_distances": [
+          400,
+          900,
+          100,
+          400
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "count": 4,
+        "square_distances": [
+          400,
+          900,
+          100,
+          400
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-edge-distance-elc/"
+  },
+  {
+    "test_name": "Extrema_ExtElC Circle-Circle::coaxialCirclesReturnRadiusDifference",
+    "bridge_function": "OCCTExtremaElCCircCirc",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": true,
+        "square_distance": 4.0
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": true,
+        "square_distance": 4.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-edge-distance-elc/"
+  },
+  {
+    "test_name": "Extrema_ExtElC Line-Ellipse::lineEllipseDistance",
+    "bridge_function": "OCCTExtremaElCLinElips",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "count": 4,
+        "square_distances": [
+          100,
+          109,
+          100,
+          109
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "count": 4,
+        "square_distances": [
+          100,
+          109,
+          100,
+          109
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-edge-distance-elc/"
+  },
+  {
+    "test_name": "Extrema_ExtElC Line-Ellipse::lineOnEllipseAxisReturnsDistance",
+    "bridge_function": "OCCTExtremaElCLinElips",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": true,
+        "square_distance": 25.0
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": true,
+        "square_distance": 25.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-edge-distance-elc/"
   }
 ]
