@@ -1,173 +1,557 @@
 [
   {
-    "test_name": "integrateSin",
+    "test_name": "KronrodIntegration::integrateSin",
     "bridge_function": "OCCTMathKronrodIntegration",
-    "bridge_output": {"type": "double", "data": 2.000000000000001},
-    "kernel_output": {"type": "double", "data": 2.000000000000001},
-    "comparison": {"equal": true, "differences": [], "relative_error": 5.55e-16},
+    "bridge_output": {
+      "type": "double",
+      "data": {
+        "value": 1.9999999999999962,
+        "errorReached": 7.42465e-15
+      }
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": {
+        "value": 1.9999999999999962,
+        "errorReached": 7.42465e-15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "sin(x) integral on [0,π] = 2.0 exactly. Bridge and kernel match within double precision."
+    "notes": "math_KronrodSingleIntegration(f, 0, pi, 15), f = sin. Bit-identical. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "adaptive",
+    "test_name": "KronrodIntegration::adaptive",
     "bridge_function": "OCCTMathKronrodIntegrationAdaptive",
-    "bridge_output": {"type": "double", "data": 2.0000000000000004},
-    "kernel_output": {"type": "double", "data": 2.0000000000000004},
-    "comparison": {"equal": true, "differences": [], "relative_error": 2.22e-16},
+    "bridge_output": {
+      "type": "double",
+      "data": {
+        "value": 1.9999999999999962,
+        "errorReached": 3.71233e-15,
+        "iterations": 1
+      }
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": {
+        "value": 1.9999999999999962,
+        "errorReached": 3.71233e-15,
+        "iterations": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "Adaptive integration converges to 1e-10 tolerance. Bridge and kernel identical."
+    "notes": "math_KronrodSingleIntegration(f, 0, pi, 15, 1e-10, 100). Converges in one iteration. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "integrate2D",
+    "test_name": "GaussMultipleIntegration::integrate2D",
     "bridge_function": "OCCTMathGaussMultipleIntegration",
-    "bridge_output": {"type": "double", "data": 0.6666666666666666},
-    "kernel_output": {"type": "double", "data": 0.6666666666666666},
-    "comparison": {"equal": true, "differences": [], "relative_error": 1.11e-16},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.666666666666667
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.666666666666667
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "2D integral of x²+y² on [0,1]² = 2/3. Bridge and kernel match exactly."
+    "notes": "x^2 + y^2 over the unit square, order 10 x 10. Same double (Swift prints the shortest form, the probe prints 17 digits). Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "integrateSet",
+    "test_name": "GaussSetIntegration::integrateSet",
     "bridge_function": "OCCTMathGaussSetIntegration",
-    "bridge_output": {"type": "array", "data": [2.0, 2.6666666666666665]},
-    "kernel_output": {"type": "array", "data": [2.0, 2.6666666666666665]},
-    "comparison": {"equal": true, "differences": [], "relative_error": 1.11e-16},
+    "bridge_output": {
+      "type": "double_array",
+      "data": [
+        2.0,
+        2.666666666666667
+      ]
+    },
+    "kernel_output": {
+      "type": "double_array",
+      "data": [
+        2.0,
+        2.666666666666667
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "Set integration of [x, x²] on [0,2] = [2, 8/3]. Bridge and kernel identical."
+    "notes": "[x, x^2] over [0, 2], order 10. The two-variable call is refused by the Swift guard before the bridge, so it has no kernel counterpart. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "mountingBracketFullWorkflow",
-    "bridge_function": "OCCTShapeCreateBox/OCCTShapeUnionEx/OCCTShapeFillet/OCCTShapeDrillHole/OCCTShapeChamfer",
-    "bridge_output": {"type": "shape", "data": {"volume": 16000.0, "faces": 28, "edges": 60, "isValid": true}},
-    "kernel_output": {"type": "shape", "data": {"volume": 16000.0, "faces": 28, "edges": 60, "isValid": true}},
-    "comparison": {"equal": true, "differences": [], "relative_error": 0.0},
+    "test_name": "Integration: Mounting Bracket::mountingBracketFullWorkflow",
+    "bridge_function": "OCCTShapeCreateBox, OCCTShapeCreateBoxAt, OCCTShapeUnionEx, OCCTShapeFillet, OCCTShapeDrillHole, OCCTShapeChamfer",
+    "bridge_output": {
+      "type": "workflow",
+      "data": {
+        "union_volume": 28000.0,
+        "union_faces": 12,
+        "union_edges": 26,
+        "fillet_r1": null,
+        "after_4_holes_volume": 27434.5133223538,
+        "faces": 16,
+        "edges": 38,
+        "chamfer_0_5": null
+      }
+    },
+    "kernel_output": {
+      "type": "workflow",
+      "data": {
+        "union_volume": 28000.0,
+        "union_faces": 12,
+        "union_edges": 26,
+        "fillet_r1": null,
+        "after_4_holes_volume": 27434.5133223538,
+        "faces": 16,
+        "edges": 38,
+        "chamfer_0_5": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "Full workflow: box→union→fillet→4×drill→chamfer. Volume 16000, all topology counts match kernel."
+    "notes": "Fillet r=1 and chamfer 0.5 are both declined by the kernel on this shape; the old test skipped them in if-let. Without OSD::SetSignal the chamfer SIGSEGVs inside BRepFilletAPI_MakeChamfer; with it (as the bridge process runs) it reports not done. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "fluentChainVolumeDecreases",
-    "bridge_function": "OCCTShapeCreateBox/OCCTShapeFillet/OCCTShapeDrillHole/OCCTShapeChamfer/OCCTShapeShell",
-    "bridge_output": {"type": "shape", "data": {"v1": 4000.0, "v2": 3996.4, "v3": 3908.2, "v4": 3905.1, "v5": 3124.1, "volumes_decrease": true}},
-    "kernel_output": {"type": "shape", "data": {"v1": 4000.0, "v2": 3996.4, "v3": 3908.2, "v4": 3905.1, "v5": 3124.1, "volumes_decrease": true}},
-    "comparison": {"equal": true, "differences": [], "relative_error": 0.0},
+    "test_name": "Integration: Fluent Composition Chain::fluentChainVolumeDecreases",
+    "bridge_function": "OCCTShapeCreateBox, OCCTShapeFillet, OCCTShapeDrillHole, OCCTShapeChamfer, OCCTShapeShell",
+    "bridge_output": {
+      "type": "volume_chain",
+      "data": {
+        "box": 4000.0,
+        "fillet": 3958.4188669627,
+        "drill": 3675.6755281397,
+        "chamfer": 3673.922519439,
+        "shell_minus_1": null
+      }
+    },
+    "kernel_output": {
+      "type": "volume_chain",
+      "data": {
+        "box": 4000.0,
+        "fillet": 3958.4188669627,
+        "drill": 3675.6755281397,
+        "chamfer": 3673.922519439,
+        "shell_minus_1": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "Volume strictly decreases at each stage: box(4000)→fillet(3996.4)→drill(3908.2)→chamfer(3905.1)→shell(3124.1)."
+    "notes": "MakeThickSolidBySimple(-1) reports not done, so stage 5 never ran under the old if-let. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "cylinderWithHolesSlicing",
-    "bridge_function": "OCCTShapeCreateCylinder/OCCTShapeDrillHole/OCCTShapeSectionWiresAtZ",
-    "bridge_output": {"type": "shape", "data": {"all_slices_nonempty": true, "mid_wire_count": 4, "mid_wire_lengths": [157.08, 18.85, 18.85, 18.85]}},
-    "kernel_output": {"type": "shape", "data": {"all_slices_nonempty": true, "mid_wire_count": 4, "mid_wire_lengths": [157.08, 18.85, 18.85, 18.85]}},
-    "comparison": {"equal": true, "differences": [], "relative_error": 0.0},
+    "test_name": "Integration: Z-Level Slicing::cylinderWithHolesSlicing",
+    "bridge_function": "OCCTShapeCreateCylinder, OCCTShapeDrillHole, OCCTShapeSectionWiresAtZ, OCCTWireGetLength",
+    "bridge_output": {
+      "type": "section",
+      "data": {
+        "volume": 93933.6203423348,
+        "wires_at_each_z_5_to_50": 4,
+        "lengths": [
+          157.07963267949,
+          18.849555921539,
+          18.849555921539,
+          18.849555921539
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "section",
+      "data": {
+        "volume": 93933.6203423348,
+        "wires_at_each_z_5_to_50": 4,
+        "lengths": [
+          157.07963267949,
+          18.849555921539,
+          18.849555921539,
+          18.849555921539
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "10 Z-level slices all non-empty. Mid-level (Z=25) yields 4 wires: outer cylinder + 3 holes. All lengths match."
+    "notes": "Lengths are 2 pi 25 and 2 pi 3. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "plateWithHolesSection",
-    "bridge_function": "OCCTShapeCreateBox/OCCTShapeDrillHole/OCCTShapeSectionWiresAtZ",
-    "bridge_output": {"type": "shape", "data": {"wire_count": 5, "wire_lengths": [400.0, 31.42, 31.42, 31.42, 31.42]}},
-    "kernel_output": {"type": "shape", "data": {"wire_count": 5, "wire_lengths": [400.0, 31.42, 31.42, 31.42, 31.42]}},
-    "comparison": {"equal": true, "differences": [], "relative_error": 0.0},
+    "test_name": "Integration: Hole Detection::plateWithHolesSection",
+    "bridge_function": "OCCTShapeCreateBox, OCCTShapeDrillHole, OCCTShapeSectionWiresAtZ",
+    "bridge_output": {
+      "type": "section",
+      "data": {
+        "volume": 96858.4073464102,
+        "wires": 5,
+        "lengths": [
+          400.0,
+          31.415926535898,
+          31.415926535898,
+          31.415926535898,
+          31.415926535898
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "section",
+      "data": {
+        "volume": 96858.4073464102,
+        "wires": 5,
+        "lengths": [
+          400.0,
+          31.415926535898,
+          31.415926535898,
+          31.415926535898,
+          31.415926535898
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "Section at Z=0 yields 5 wires: outer boundary (400) + 4 holes (4×31.42). Exact kernel match."
+    "notes": "Test unchanged; it could already fail (count == 5). Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "oversizedFilletReturnsNil",
+    "test_name": "Integration: Degenerate Resilience::oversizedFilletReturnsNil",
     "bridge_function": "OCCTShapeFillet",
-    "bridge_output": {"type": "null", "data": null},
-    "kernel_output": {"type": "null", "data": null},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "optional_shape",
+      "data": {
+        "r20": null,
+        "r5_1": "non-nil, BRepCheck invalid, volume 0 (Swift nil)"
+      }
+    },
+    "kernel_output": {
+      "type": "optional_shape",
+      "data": {
+        "r20": null,
+        "r5_1": "IsDone, BRepCheck invalid, volume 0"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "Radius 20 on 10×10×10 box (half-edge=5) correctly returns nil. Kernel also declines."
+    "notes": "r=20 is refused. Side finding: r=5.1 and r=6 on the 10-cube are not refused; the kernel reports done and returns an invalid zero-volume shape, which OCCTShapeFillet passes through. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "zeroDepthDrill",
+    "test_name": "Integration: Degenerate Resilience::zeroDepthDrill",
     "bridge_function": "OCCTShapeDrillHole",
-    "bridge_output": {"type": "shape", "data": {"isValid": true, "volume": 7999.99, "original_volume": 8000.0}},
-    "kernel_output": {"type": "shape", "data": {"isValid": true, "volume": 7999.99, "original_volume": 8000.0}},
-    "comparison": {"equal": true, "differences": [], "relative_error": 1.25e-5},
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "volume": 7434.5133223538,
+        "faces": 7,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "volume": 7434.5133223538,
+        "faces": 7,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "depth=0 creates through-hole. Volume reduction matches kernel exactly (π×3²×20 = 565.49 removed)."
+    "notes": "8000 - pi 9 20. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "selfUnion",
+    "test_name": "Integration: Degenerate Resilience::selfUnion",
     "bridge_function": "OCCTShapeUnionEx",
-    "bridge_output": {"type": "shape", "data": {"isValid": true, "volume": 1000.0, "original_volume": 1000.0, "ratio": 1.0}},
-    "kernel_output": {"type": "shape", "data": {"isValid": true, "volume": 1000.0, "original_volume": 1000.0, "ratio": 1.0}},
-    "comparison": {"equal": true, "differences": [], "relative_error": 0.0},
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "volume": 1000.0,
+        "faces": 6,
+        "solids": 1,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "volume": 1000.0,
+        "faces": 6,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "Self-union of 10×10×10 box preserves volume exactly. Kernel handles identity case identically."
+    "notes": "Fuse of a box with itself. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "obbTighterThanAABBForRotatedShape",
-    "bridge_function": "OCCTShapeOBB",
-    "bridge_output": {"type": "double", "data": 0.5},
-    "kernel_output": {"type": "double", "data": 0.5},
-    "comparison": {"equal": true, "differences": [], "relative_error": 0.0},
+    "test_name": "Integration: OBB Tightness::obbTighterThanAABBForRotatedShape",
+    "bridge_function": "OCCTShapeOrientedBoundingBox, OCCTShapeGetBounds",
+    "bridge_output": {
+      "type": "bounding_boxes",
+      "data": {
+        "aabb_half_xy": 17.67766962966369,
+        "aabb_volume": 12500.000391421363,
+        "obb_half_sizes": [
+          5.000000100000002,
+          20.000000100000005,
+          5.0000001
+        ],
+        "obb_volume": 4000.0001800000055
+      }
+    },
+    "kernel_output": {
+      "type": "bounding_boxes",
+      "data": {
+        "aabb_half_xy": 17.6776696297,
+        "aabb_volume": 12500.000391,
+        "obb_half_sizes": [
+          5.0000001,
+          20.0000001,
+          5.0000001
+        ],
+        "obb_volume": 4000.00018
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "40×10×10 box rotated 45°: AABB volume = 4000, OBB volume = 2000. OBB exactly half AABB, well within 1.01 factor."
+    "notes": "The old records claimed AABB 4000 and OBB 2000; both were impossible. The OBB is the box itself (40 x 10 x 10 = 4000), the AABB of the 45-degree box is about 12500. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "thousandBoxesNoLeak",
-    "bridge_function": "OCCTShapeCreateBox",
-    "bridge_output": {"type": "bool", "data": true, "first_volume": 6000.0, "last_volume": 6000.0, "difference": 0.0},
-    "kernel_output": {"type": "bool", "data": true, "first_volume": 6000.0, "last_volume": 6000.0, "difference": 0.0},
-    "comparison": {"equal": true, "differences": [], "relative_error": 0.0},
+    "test_name": "Integration: Memory Stress::thousandBoxesNoLeak",
+    "bridge_function": "OCCTShapeCreateBox, OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "double",
+      "data": 6000.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 6000.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "1000 boxes created sequentially. First and last volume identical (6000). No memory growth detected."
+    "notes": "Volume parity only. The leak half of the test name has no kernel counterpart and no assertion: nothing here can observe a leak. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "pocketSectionAndOffset",
-    "bridge_function": "OCCTShapeCreateBox/OCCTShapeSubtractEx/OCCTShapeSectionWiresAtZ/OCCTWireOffset",
-    "bridge_output": {"type": "shape", "data": {"pocket_volume": 24000.0, "outer_volume": 30000.0, "wire_count": 2, "offset_success": true}},
-    "kernel_output": {"type": "shape", "data": {"pocket_volume": 24000.0, "outer_volume": 30000.0, "wire_count": 2, "offset_success": true}},
-    "comparison": {"equal": true, "differences": [], "relative_error": 0.0},
+    "test_name": "Integration: Pocket Clearing::pocketSectionAndOffset",
+    "bridge_function": "OCCTShapeSubtractEx, OCCTShapeSectionWiresAtZ, OCCTWireGetLength, OCCTWireOffset",
+    "bridge_output": {
+      "type": "section_offset",
+      "data": {
+        "pocket_volume": 228000.0,
+        "wires": 2,
+        "lengths": [
+          400.0,
+          240.0
+        ],
+        "outer_offset_minus5_length": 360.0
+      }
+    },
+    "kernel_output": {
+      "type": "section_offset",
+      "data": {
+        "pocket_volume": 228000.0,
+        "wires": 2,
+        "lengths": [
+          400.0,
+          240.0
+        ],
+        "outer_offset_minus5_length": 360.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "100×100×30 outer, 60×60×20 inner pocket at Z=0. Pocket volume 24000 < 30000. Section yields 2 wires, offset succeeds."
+    "notes": "Offset of the outer square 5 inward is a 90 x 90 square. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "surfaceCurvatureVariation",
-    "bridge_function": "OCCTSurfaceGaussianCurvature",
-    "bridge_output": {"type": "array", "data": [0.0025, 0.0025, 0.0025, 0.0025, 0.0025], "bezier_g1": 0.0012, "bezier_g2": 0.0034},
-    "kernel_output": {"type": "array", "data": [0.0025, 0.0025, 0.0025, 0.0025, 0.0025], "bezier_g1": 0.0012, "bezier_g2": 0.0034},
-    "comparison": {"equal": true, "differences": [], "relative_error": 2.22e-16},
+    "test_name": "Integration: Scallop Analysis::surfaceCurvatureVariation",
+    "bridge_function": "OCCTSurfaceGetGaussianCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "sphere_r20": [
+          0.0024999999999999996,
+          0.0025,
+          0.0025000000000000005,
+          0.002500000000000001,
+          0.0024999999999999996
+        ],
+        "bezier_g1": 0.0001704944671363803,
+        "bezier_g2": 0.00033147947382027704
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "sphere_r20": [
+          0.0024999999999999996,
+          0.0025,
+          0.0025000000000000005,
+          0.002500000000000001,
+          0.0024999999999999996
+        ],
+        "bezier_g1": 0.0001704944671363803,
+        "bezier_g2": 0.00033147947382027704
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "Sphere radius 20: Gaussian curvature = 1/400 = 0.0025 constant at all 5 points. Bezier surface shows variation (0.0012 vs 0.0034). Bridge matches kernel exactly."
+    "notes": "GeomLProp_SLProps order 2 at Precision::Confusion(). Same doubles; the two columns differ only in print format. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "bottleShapeWorkflow",
-    "bridge_function": "OCCTShapeCreateCylinder/OCCTShapeCreateSphere/OCCTShapeTranslate/OCCTShapeUnionEx/OCCTShapeFillet/OCCTShapeShell",
-    "bridge_output": {"type": "shape", "data": {"solid_volume": 31415.9, "shelled_volume": 24321.7, "volume_reduced": true}},
-    "kernel_output": {"type": "shape", "data": {"solid_volume": 31415.9, "shelled_volume": 24321.7, "volume_reduced": true}},
-    "comparison": {"equal": true, "differences": [], "relative_error": 0.0},
+    "test_name": "Integration: Bottle Profile::bottleShapeWorkflow",
+    "bridge_function": "OCCTShapeCreateCylinder, OCCTShapeCreateSphere, OCCTShapeTranslate, OCCTShapeUnionEx, OCCTShapeFillet, OCCTShapeShell",
+    "bridge_output": {
+      "type": "volume_chain",
+      "data": {
+        "union": 35342.9173528852,
+        "fillet_r2": 35264.4238509306,
+        "shell_minus_2": null
+      }
+    },
+    "kernel_output": {
+      "type": "volume_chain",
+      "data": {
+        "union": 35342.9173528852,
+        "fillet_r2": 35264.4238509306,
+        "shell_minus_2": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "Cylinder(r=15,h=40) + sphere(r=15) union → fillet → shell(-2mm). Solid 31415.9, shelled 24321.7 (reduced). Exact kernel match."
+    "notes": "Shell at -2 is declined filleted or not; the old test skipped it in if-let. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "cylinderConsistentCircularSections",
-    "bridge_function": "OCCTShapeCreateCylinder/OCCTShapeSectionWiresAtZ",
-    "bridge_output": {"type": "array", "data": {"lengths": [157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08], "max_deviation": 0.001}},
-    "kernel_output": {"type": "array", "data": {"lengths": [157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08, 157.08], "max_deviation": 0.001}},
-    "comparison": {"equal": true, "differences": [], "relative_error": 0.0},
+    "test_name": "Integration: Cross-Section Regression::cylinderConsistentCircularSections",
+    "bridge_function": "OCCTShapeSectionWiresAtZ, OCCTWireGetLength",
+    "bridge_output": {
+      "type": "section",
+      "data": {
+        "wires_each_level": 1,
+        "length_each_level": 157.07963267949
+      }
+    },
+    "kernel_output": {
+      "type": "section",
+      "data": {
+        "wires_each_level": 1,
+        "length_each_level": 157.07963267949
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "20 Z-levels of cylinder radius 25. All circumferences = 2π×25 = 157.08. Max deviation from mean < 0.01. Kernel identical."
+    "notes": "20 levels, all one wire of 2 pi 25. Test unchanged. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "booleanWithSharedEdgeAndGap",
+    "test_name": "Integration: Tolerance Cascade::booleanWithSharedEdgeAndGap",
     "bridge_function": "OCCTShapeUnionEx",
-    "bridge_output": {"type": "shape", "data": {"adjacent_union_volume": 2000.0, "gapped_union_volume": 2000.00002, "expected_sum": 2000.0}},
-    "kernel_output": {"type": "shape", "data": {"adjacent_union_volume": 2000.0, "gapped_union_volume": 2000.00002, "expected_sum": 2000.0}},
-    "comparison": {"equal": true, "differences": [], "relative_error": 1e-8},
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "shared": {
+          "volume": 2000.0,
+          "solids": 1,
+          "faces": 10
+        },
+        "gap_1e-6": {
+          "volume": 2000.0,
+          "solids": 2,
+          "faces": 12
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "shared": {
+          "volume": 2000.0,
+          "solids": 1,
+          "faces": 10
+        },
+        "gap_1e-6": {
+          "volume": 2000.0,
+          "solids": 2,
+          "faces": 12
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "Adjacent boxes (shared edge): union volume = 2000 exactly. Gapped boxes (1e-6 gap): union volume = 2000.00002 ≈ sum. Both within 1.0 tolerance. Kernel identical."
+    "notes": "A 1e-6 gap keeps the boxes as two solids. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   },
   {
-    "test_name": "brepStringRoundTrip",
-    "bridge_function": "OCCTShapeWriteBREP/OCCTShapeReadBREP",
-    "bridge_output": {"type": "shape", "data": {"orig_volume": 9000.0, "orig_area": 3600.0, "orig_faces": 12, "orig_edges": 30, "recon_volume": 9000.0, "recon_area": 3600.0, "recon_faces": 12, "recon_edges": 30}},
-    "kernel_output": {"type": "shape", "data": {"orig_volume": 9000.0, "orig_area": 3600.0, "orig_faces": 12, "orig_edges": 30, "recon_volume": 9000.0, "recon_area": 3600.0, "recon_faces": 12, "recon_edges": 30}},
-    "comparison": {"equal": true, "differences": [], "relative_error": 0.0},
+    "test_name": "Integration: Format Fidelity BREP::brepStringRoundTrip",
+    "bridge_function": "OCCTShapeToBREPString, OCCTShapeFromBREPString",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "volume": 8363.4129559647,
+        "area": 2698.4777960769,
+        "faces": 27,
+        "edges": 59,
+        "brep_chars": 17248
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "volume": 8363.4129559647,
+        "area": 2698.4777960769,
+        "faces": 27,
+        "edges": 59,
+        "brep_chars": 17248
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "notes": "Box(30×20×15) → fillet(2) → drill(3) round-trip via BREP string. Volume/area/faces/edges all match exactly. Kernel BREP I/O identical."
+    "notes": "Round trip exact. Side finding: BRepTools::Read on the first half of this string SIGSEGVs and aborts the process even with OSD::SetSignal, so Shape.fromBREPString on a truncated string crashes the caller. Kernel values: Scripts/repro/766-integration-tests/transcript.txt."
   }
 ]

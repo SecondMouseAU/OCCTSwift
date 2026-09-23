@@ -1,110 +1,92 @@
 # Phase 3: OCCTIntegrationTests Injection Matrix
 
-**Target**: `OCCTIntegrationTests` (19 tests) — Cross-domain workflows, numerical integration
-**Policy**: `prove-the-test-fails.md` — inject defect → confirm fail (red) → restore → confirm pass (green)
-**Priority**: 🟢 P3 (isolated cross-domain workflows)
+**Target**: `OCCTIntegrationTests` (19 tests, one file: `Tests/OCCTIntegrationTests/OCCTIntegrationTests.swift`)
+**Policy**: `prove-the-test-fails.md`: inject defect, confirm red, restore, confirm green
+**Issue**: #1988
 
----
+Every row below was run. The previous version of this page (PR #2021) was removed rather than
+amended: none of its rows had been run, three named bridge functions that do not exist
+(`OCCTShapeOBB`, `OCCTShapeWriteBREP`/`ReadBREP`, `OCCTSurfaceCurvature`), and its injections
+could not have produced the failures it claimed (a "skip union" injection said to fail
+`vUnion > 0`, which the base plate alone satisfies).
 
-## Test Inventory
+Kernel values: `Scripts/repro/766-integration-tests/probe.mm`, output in `transcript.txt` beside it.
 
-| Suite | Test | Defect Category | Injection Target |
-|-------|------|-----------------|------------------|
-| KronrodIntegration | integrateSin | Numerical accuracy | Remove adaptive quadrature |
-| KronrodIntegration | adaptive | Numerical accuracy | Remove adaptive quadrature |
-| GaussMultipleIntegration | integrate2D | Numerical accuracy | Remove adaptive quadrature |
-| GaussSetIntegration | integrateSet | Numerical accuracy | Remove adaptive quadrature |
-| Integration: Mounting Bracket | mountingBracketFullWorkflow | Cross-domain workflow | Remove workflow step |
-| Integration: Fluent Composition Chain | fluentChainVolumeDecreases | Cross-domain workflow | Remove chain step |
-| Integration: Z-Level Slicing | cylinderWithHolesSlicing | Cross-domain workflow | Remove slicing step |
-| Integration: Hole Detection | plateWithHolesSection | Cross-domain workflow | Remove detection step |
-| Integration: Degenerate Resilience | oversizedFilletReturnsNil | Degenerate handling | Remove nil check |
-| Integration: Degenerate Resilience | zeroDepthDrill | Degenerate handling | Remove nil check |
-| Integration: Degenerate Resilience | selfUnion | Degenerate handling | Remove nil check |
-| Integration: OBB Tightness | obbTighterThanAABBForRotatedShape | Geometry accuracy | Remove OBB computation |
-| Integration: Memory Stress | thousandBoxesNoLeak | Memory management | Remove leak check |
-| Integration: Pocket Clearing | pocketSectionAndOffset | Cross-domain workflow | Remove pocket step |
-| Integration: Scallop Analysis | surfaceCurvatureVariation | Geometry analysis | Remove curvature check |
-| Integration: Bottle Profile | bottleShapeWorkflow | Cross-domain workflow | Remove workflow step |
-| Integration: Cross-Section Regression | cylinderConsistentCircularSections | Geometry accuracy | Remove regression check |
-| Integration: Tolerance Cascade | booleanWithSharedEdgeAndGap | Tolerance handling | Remove cascade check |
-| Integration: Format Fidelity BREP | brepStringRoundTrip | Format fidelity | Remove round-trip check |
+Injections were applied in seven rounds by a script and reverted with a checkout of `Sources/`
+after each; within a round, every test listed is reached by only one of that round's injected
+functions, so each red is attributable. Green after the last revert: 19 of 19. Line numbers are
+those of the committed file; `swift-format` re-wrapped two `guard`s after the runs, a
+whitespace-only change, and the numbers here are shifted to match.
 
----
+## Rewritten tests
+
+Thirteen tests were rewritten or tightened: they had assertions nested in `if let` on the result
+of the step they claimed to check, or thresholds a wrong answer also met. They now assert
+unconditionally against probed values.
+Measured on the original code: the bracket's fillet and chamfer, the fluent chain's shell and the
+bottle's shell all return nil, so those steps never ran; an OBB that fell back to the axis-aligned
+box (volume 12500) passed `obbVolume <= aabbVolume * 1.01` (12625); a union that dropped the wall
+still leaves a drilled plate with more than 6 faces and 12 edges, which was all the old bracket
+test asked of the final shape.
+
+Unchanged: `integrateSin`, `adaptive`, `integrate2D`, `integrateSet`, `plateWithHolesSection`,
+`cylinderConsistentCircularSections`. Each already failed under its injection.
 
 ## Injection Matrix
 
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| KronrodIntegration/integrateSin | OCCTMathKronrodIntegration | Numerical accuracy | Return 0.0 instead of integral | ✅ Yes | ✅ Yes | Basic Kronrod returns ~2.0 for sin(x) on [0,π]; defect makes it return 0.0, test fails on `abs(r.value - 2.0) < 1e-6` |
-| KronrodIntegration/adaptive | OCCTMathKronrodIntegrationAdaptive | Numerical accuracy | Skip adaptive refinement | ✅ Yes | ✅ Yes | Adaptive should converge to 1e-10 tolerance; defect returns coarse result, test fails on `abs(r.value - 2.0) < 1e-8` |
-| GaussMultipleIntegration/integrate2D | OCCTMathGaussMultipleIntegration | Numerical accuracy | Return 0.0 instead of integral | ✅ Yes | ✅ Yes | 2D integral of x²+y² on [0,1]² = 2/3; defect makes it return 0.0, test fails on `abs(r - 2.0/3.0) < 1e-6` |
-| GaussSetIntegration/integrateSet | OCCTMathGaussSetIntegration | Numerical accuracy | Return nil instead of result | ✅ Yes | ✅ Yes | Set integration of [x, x²] on [0,2] = [2, 8/3]; defect returns nil, test fails on `result != nil` |
-| Mounting Bracket | OCCTShapeCreateBox/Union/Fillet/Drill/Chamfer | Cross-domain workflow | Skip union step (return first operand) | ✅ Yes | ✅ Yes | Union of base+wall required; defect returns base only, volume check fails on `vUnion > 0` |
-| Fluent Composition Chain | OCCTShapeFillet/Drill/Chamfer/Shell | Cross-domain workflow | Skip fillet step | ✅ Yes | ✅ Yes | Volume should decrease at each stage; defect skips fillet, v2==v1, test fails on `v3 < v2` |
-| Z-Level Slicing | OCCTShapeSectionWiresAtZ | Cross-domain workflow | Return empty array | ✅ Yes | ✅ Yes | 10 slices should all be non-empty; defect returns [], test fails on `allSlicesNonEmpty` |
-| Hole Detection | OCCTShapeSectionWiresAtZ | Cross-domain workflow | Return only outer wire | ✅ Yes | ✅ Yes | Should detect 5 wires (outer+4 holes); defect returns 1 wire, test fails on `wires.count == 5` |
-| oversizedFilletReturnsNil | OCCTShapeFillet | Degenerate handling | Return shape instead of nil | ✅ Yes | ✅ Yes | Radius 20 > edge/2 (5) should return nil; defect returns shape, test fails on `result == nil` |
-| zeroDepthDrill | OCCTShapeDrillHole | Degenerate handling | Return nil for valid through-hole | ✅ Yes | ✅ Yes | depth=0 means through-hole; defect returns nil, test fails on `drilled.isValid` |
-| selfUnion | OCCTShapeUnionEx | Degenerate handling | Return nil for valid self-union | ✅ Yes | ✅ Yes | Union of box with itself should succeed; defect returns nil, test fails on `result != nil` |
-| OBB Tightness | OCCTShapeOBB | Geometry accuracy | Return AABB as OBB | ✅ Yes | ✅ Yes | OBB should be tighter for rotated box; defect returns AABB, test fails on `obbVolume <= aabbVolume * 1.01` |
-| Memory Stress | OCCTShapeCreateBox | Memory management | Leak handle (don't release) | ✅ Yes | ✅ Yes | Volume should be consistent; defect leaks memory, test may pass but ASan detects leak |
-| Pocket Clearing | OCCTShapeSubtractEx | Cross-domain workflow | Skip subtraction (return outer) | ✅ Yes | ✅ Yes | Pocket volume < outer volume; defect returns outer, test fails on `pv < ov` |
-| Scallop Analysis | OCCTSurfaceCurvature | Geometry analysis | Return 0.0 for all curvatures | ✅ Yes | ✅ Yes | Sphere curvature = 1/R²; defect returns 0, test fails on `abs(gauss - expectedGaussian) < 0.001` |
-| Bottle Profile | OCCTShapeCreateRevolution/Union/Fillet/Shell | Cross-domain workflow | Skip shell step | ✅ Yes | ✅ Yes | Shelled volume < solid volume; defect skips shell, test fails on `shelledVol < solidVolume` |
-| Cross-Section Regression | OCCTShapeSectionWiresAtZ | Geometry accuracy | Return varying lengths | ✅ Yes | ✅ Yes | All sections should have same circumference; defect returns varying, test fails on `abs(len - first) < 0.01` |
-| Tolerance Cascade | OCCTShapeUnionEx/SubtractEx | Tolerance handling | Skip gap check | ✅ Yes | ✅ Yes | Gapped union volume should ≈ sum; defect ignores gap, volume wrong, test fails on `abs(gVol - sum) < 1.0` |
-| BREP Round-trip | OCCTShapeWriteBREP/ReadBREP | Format fidelity | Corrupt BREP string | ✅ Yes | ✅ Yes | Round-trip should preserve volume/area/faces/edges; defect corrupts, test fails on property comparisons |
+| Test | Bridge function | Injection | Red (first failing line) | Green |
+|------|-----------------|-----------|--------------------------|-------|
+| KronrodIntegration::integrateSin | `OCCTMathKronrodIntegration` | value x 0.5 | `:20 abs(r.value - 2.0) < 1e-6` | yes |
+| KronrodIntegration::adaptive | `OCCTMathKronrodIntegrationAdaptive` | value + 1e-6 | `:28 abs(r.value - 2.0) < 1e-8` | yes |
+| GaussMultipleIntegration::integrate2D | `OCCTMathGaussMultipleIntegration` | value + 1e-4 | `:39 abs(r - 2.0 / 3.0) < 1e-6` | yes |
+| GaussSetIntegration::integrateSet | `OCCTMathGaussSetIntegration` | result equations swapped | `:60 abs(r[0] - 2.0) < 1e-9` | yes |
+| Integration: Mounting Bracket::mountingBracketFullWorkflow | `OCCTShapeUnionEx` | return shape1 (fuse skipped) | `:114 near(bracket.volume ?? -1, 28000)` | yes |
+| | `OCCTShapeFillet` | return input (fillet skipped) | `:123 bracket.filleted(radius: 1.0) == nil` | yes |
+| | `OCCTShapeChamfer` | return input (chamfer skipped) | `:151 current.chamfered(distance: 0.5) == nil` | yes |
+| | `OCCTShapeCreateBox` | depth x 1.0001 | `:95 near(basePlate.volume ?? -1, 16000)` | yes |
+| Integration: Fluent Composition Chain::fluentChainVolumeDecreases | `OCCTShapeFillet` | return input | `:176 near(v2, 3958.4188669627, 1e-8)` | yes |
+| | `OCCTShapeChamfer` | return input | `:199 near(v4, 3673.9225194390, 1e-8)` | yes |
+| | `OCCTShapeShell` | return input (shell skipped) | `:204 chamfered.shelled(thickness: -1.0) == nil` | yes |
+| | `OCCTShapeDrillHole` | return nil | `:184 Issue recorded` (drill guard) | yes |
+| Integration: Z-Level Slicing::cylinderWithHolesSlicing | `OCCTShapeSectionWiresAtZ` | plane at z + 1000 | `:241 shape.sectionWiresAtZ(z).count == 4` | yes |
+| | `OCCTShapeDrillHole` | return nil | `:229 Issue recorded` | yes |
+| | `OCCTWireGetLength` | length x 1.01 | `:251 near(lengths[k], 2 * Double.pi * 3, 1e-9)` | yes |
+| Integration: Hole Detection::plateWithHolesSection | `OCCTShapeSectionWiresAtZ` | plane at z + 1000 | `:286 wires.count == 5` | yes |
+| | `OCCTShapeDrillHole` | return nil | `:286 wires.count == 5` | yes |
+| Integration: Degenerate Resilience::oversizedFilletReturnsNil | `OCCTShapeFillet` | return input | `:302 box.filleted(radius: 20) == nil` | yes |
+| Integration: Degenerate Resilience::zeroDepthDrill | `OCCTShapeDrillHole` | return nil | `:315 Issue recorded` | yes |
+| Integration: Degenerate Resilience::selfUnion | `OCCTShapeUnionEx` | return nil | `:329 Issue recorded` | yes |
+| | `OCCTShapeUnionEx` | return shape1 | stays green: shape1 is the right answer to A union A | n/a |
+| Integration: OBB Tightness::obbTighterThanAABBForRotatedShape | `OCCTShapeOrientedBoundingBox` | AABB returned as OBB | `:369 abs(halves[1] - 5) < 1e-6` | yes |
+| Integration: Memory Stress::thousandBoxesNoLeak | `OCCTShapeCreateBox` | depth x 1.0001 | `:393 volumes.allSatisfy { $0 == 6000 }` | yes |
+| Integration: Pocket Clearing::pocketSectionAndOffset | `OCCTShapeSubtractEx` | return shape1 (cut skipped) | `:424 near(pocket.volume ?? -1, 300_000 - 72_000)` | yes |
+| | `OCCTShapeSectionWiresAtZ` | plane at z + 1000 | `:428 wires.count == 2` | yes |
+| | `OCCTWireGetLength` | length x 1.01 | `:431 near(lengths[0], 240)` | yes |
+| | `OCCTWireOffset` | distance sign flipped | `:445 near(offsetWire.length ?? -1, 360)` | yes |
+| Integration: Scallop Analysis::surfaceCurvatureVariation | `OCCTSurfaceGetGaussianCurvature` | mean curvature returned | `:475 abs(gauss - expectedGaussian) < 1e-15` | yes |
+| Integration: Bottle Profile::bottleShapeWorkflow | `OCCTShapeUnionEx` | return shape1 | `:536 near(solidVolume, ...)` | yes |
+| | `OCCTShapeFillet` | return input | `:544 near(filleted.volume ?? -1, 35264.4238509306, 1e-8)` | yes |
+| | `OCCTShapeShell` | return input | `:548 filleted.shelled(thickness: -2.0) == nil` | yes |
+| Integration: Cross-Section Regression::cylinderConsistentCircularSections | `OCCTShapeSectionWiresAtZ` | plane at z + 1000 | `:571 wires.count >= 1` | yes |
+| | `OCCTWireGetLength` | length x 1.01 | `:581 abs(len - expectedCircumference) < 1.0` | yes |
+| Integration: Tolerance Cascade::booleanWithSharedEdgeAndGap | `OCCTShapeUnionEx` | return shape1 | `:615 near(combined.volume ?? -1, 2000)` | yes |
+| Integration: Format Fidelity BREP::brepStringRoundTrip | `OCCTShapeToBREPString` | writes the shape reversed | `:680 abs(rVol - origVolume) < 1e-6` | yes |
+| | `OCCTShapeFillet` | return input | `:659 near(origVolume, 8363.4129559647, 1e-8)` | yes |
 
----
+## Kernel parity
 
-## Bridge-Kernel Parity Checks
+19 of 19 MATCH (records in `okf/references/766-execution/kernel-parity/OCCTIntegrationTests.json`).
+`thousandBoxesNoLeak` has parity for its volume only: nothing in it can observe a leak.
 
-For each test, run ground-truth C++ comparison:
-1. Write C++ test calling OCCT kernel directly
-2. Run same inputs through Swift bridge
-3. Compare outputs bit-for-bit (integers) or 1e-12 relative (doubles)
-4. Document any discrepancies
+## Side findings (not fixed here)
 
----
-
-## Progress Tracking
-
-| Test | Red→Green Done | Parity Done | PR Ready |
-|------|----------------|-------------|----------|
-| KronrodIntegration/integrateSin | ✅ | ✅ | ✅ |
-| KronrodIntegration/adaptive | ✅ | ✅ | ✅ |
-| GaussMultipleIntegration/integrate2D | ✅ | ✅ | ✅ |
-| GaussSetIntegration/integrateSet | ✅ | ✅ | ✅ |
-| Mounting Bracket | ✅ | ✅ | ✅ |
-| Fluent Composition Chain | ✅ | ✅ | ✅ |
-| Z-Level Slicing | ✅ | ✅ | ✅ |
-| Hole Detection | ✅ | ✅ | ✅ |
-| Degenerate Resilience (3) | ✅ | ✅ | ✅ |
-| OBB Tightness | ✅ | ✅ | ✅ |
-| Memory Stress | ✅ | ✅ | ✅ |
-| Pocket Clearing | ✅ | ✅ | ✅ |
-| Scallop Analysis | ✅ | ✅ | ✅ |
-| Bottle Profile | ✅ | ✅ | ✅ |
-| Cross-Section Regression | ✅ | ✅ | ✅ |
-| Tolerance Cascade | ✅ | ✅ | ✅ |
-| BREP Round-trip | ✅ | ✅ | ✅ |
-| KronrodIntegration/integrateSin | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| KronrodIntegration/adaptive | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| GaussMultipleIntegration/integrate2D | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| GaussSetIntegration/integrateSet | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| Mounting Bracket | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| Fluent Composition Chain | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| Z-Level Slicing | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| Hole Detection | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| Degenerate Resilience (3) | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| OBB Tightness | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| Memory Stress | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| Pocket Clearing | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| Scallop Analysis | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| Bottle Profile | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| Cross-Section Regression | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| Tolerance Cascade | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-| BREP Round-trip | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
-
-**Total**: 19 tests
+- **A truncated BREP string crashes the process.** The first injection tried for
+  `brepStringRoundTrip` handed `OCCTShapeFromBREPString` the first half of a valid string, and
+  the test process aborted (`SIGSEGV ... no catch was found`). The probe reproduces it in the
+  kernel: `BRepTools::Read` on that half aborts even with `OSD::SetSignal` installed. So
+  `Shape.fromBREPString` on truncated input takes the caller down.
+- **`OCCTShapeFillet` passes through an invalid shape** for radii just above the half-edge
+  limit: on the 10-cube, r = 5.1 and r = 6 report done and return a shape `BRepCheck_Analyzer`
+  rejects, with zero volume. r = 5 and r = 20 return nil.
+- **The bracket chamfer SIGSEGVs inside `BRepFilletAPI_MakeChamfer`** when `OSD::SetSignal` is
+  not installed. The bridge installs it on the first boolean, so from Swift it reads as nil.
