@@ -221,3 +221,68 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `LocOpeDPrismTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-locope-dprism/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| draftPrismTwoHeights | `OCCTLocOpeDPrism` returns nullptr | `:14 Expectation failed: result != nil` | pass | `OCCTLocOpeDPrism` | PASS |
+| draftPrismSingleHeight | `OCCTLocOpeDPrismSingleHeight` returns nullptr | `:22 Expectation failed: result != nil` | pass | `OCCTLocOpeDPrismSingleHeight` | PASS |
+| draftPrismHasFaces | `OCCTLocOpeDPrism` builds the single-height `LocOpe_DPrism(face, height1, angle)` instead of the two-height one | `:38 Expectation failed: result.faceCount == 10` | pass | `OCCTLocOpeDPrism` | PASS: rewritten: the old `if let` skipped its only assertion on nil and accepted any count |
+
+### `LocOpeFindEdgesTests.swift` (1 tests)
+
+Probe: `Scripts/repro/766-modeling-locope-find-edges/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| findEdgesInFace | `OCCTLocOpeFindEdgesInFace` returns 0 (no edges found) | `:12 Expectation failed: edges.count == 4` | pass | `OCCTLocOpeFindEdgesInFace` | PASS |
+
+### `LocOpeGluerTests.swift` (1 tests)
+
+Probe: `Scripts/repro/766-modeling-locope-gluer/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| glueByFace | `OCCTLocOpeGlue` returns nullptr | `:32 Issue recorded` | pass | `OCCTLocOpeGlue` | PASS: rewritten: the search helper kept the non-touching pair (0,0), whose glue is invalid, and returned silently on nil |
+
+### `LocOpeLinearFormTests.swift` (1 tests)
+
+Probe: `Scripts/repro/766-modeling-locope-linear-form/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| linearForm | `OCCTLocOpeLinearForm` returns nullptr | `:16 Expectation failed: result != nil` | pass | `OCCTLocOpeLinearForm` | PASS |
+
+### `LocOpeSplitShapeTests.swift` (1 tests)
+
+Probe: `Scripts/repro/766-modeling-locope-split-shape/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| splitEdge | `OCCTLocOpeSplitShapeByVertex` maps the normalized parameter at half its value | `:24 Expectation failed: vertices.contains { simd_distance($0, SIMD3(-5, -5, 0)) < 1e-9 }` | pass | `OCCTLocOpeSplitShapeByVertex` | PASS: rewritten: `!r.vertices().isEmpty || true` inside `if let` was a tautology |
+
+### `LocOpeSpliterTests.swift` (1 tests)
+
+Probe: `Scripts/repro/766-modeling-locope-spliter/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| splitByWireOnFace | `OCCTLocOpeSplitByWireOnFace` resolves `faceIndex - 1` (the pre-#541 1-based off-by-one) | `:26 Expectation failed: top.faceCount == 7`, `:32 Expectation failed: box.splitByWireOnFace(wireShape, faceIndex: 6) == nil` | pass | `OCCTLocOpeSplitByWireOnFace` | PASS: rewritten: the loop stopped at the first non-nil result (face 1, unsplit) and accepted no result at all |
+
+### `LocOpeSpliterV71Tests.swift` (2 tests)
+
+Probe: `Scripts/repro/766-modeling-locope-spliter-v71/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| splitByWireOnFace | `OCCTLocOpeSplitByWires` returns nullptr | `:30 Expectation failed: bestFaceCount > origFaceCount` | pass | `OCCTLocOpeSplitByWires` | PASS |
+| autoSplit | `OCCTLocOpeSplitByWiresAuto` returns nullptr | `:53 Issue recorded` | pass | `OCCTLocOpeSplitByWiresAuto` | PASS: rewritten: nested `if let` and `faces >= 6` passed on nil and on no split; its edge was off the centred box |

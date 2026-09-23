@@ -6,5 +6,292 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "LocOpe Draft Prism Tests::draftPrismTwoHeights",
+    "bridge_function": "OCCTLocOpeDPrism",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "type": "SOLID",
+        "faces": 10,
+        "valid": 1,
+        "volume": 64.05064623
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LocOpe Draft Prism Tests::draftPrismSingleHeight",
+    "bridge_function": "OCCTLocOpeDPrismSingleHeight",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "type": "SOLID",
+        "faces": 6,
+        "valid": 1,
+        "volume": 24.08599512
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LocOpe Draft Prism Tests::draftPrismHasFaces",
+    "bridge_function": "OCCTLocOpeDPrism",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "faceCount": 10,
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 10,
+        "valid": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LocOpe FindEdges Tests::findEdgesInFace",
+    "bridge_function": "OCCTLocOpeFindEdgesInFace",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 4,
+        "edgeIndices": [
+          0,
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LocOpe_Gluer Tests::glueByFace",
+    "bridge_function": "OCCTLocOpeGlue",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "faces": 11,
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "coincidentPair(1,0)": {
+          "done": 1,
+          "faces": 11,
+          "valid": 1,
+          "volume": 1000
+        },
+        "firstAcceptedPair(0,0)": {
+          "done": 1,
+          "faces": 11,
+          "valid": 0,
+          "volume": -333.3333333
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LocOpe LinearForm Tests::linearForm",
+    "bridge_function": "OCCTLocOpeLinearForm",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "null": 0,
+        "type": "COMPOUND",
+        "faces": 12,
+        "valid": 1,
+        "volume": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LocOpe SplitShape Tests::splitEdge",
+    "bridge_function": "OCCTLocOpeSplitShapeByVertex",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 2,
+        "vertices": 3,
+        "splitPoint": [
+          -5,
+          -5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "range": [
+          0,
+          10
+        ],
+        "splitPoint": [
+          -5,
+          -5,
+          0
+        ],
+        "descendants": 2,
+        "distinctVertices": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LocOpe Spliter::splitByWireOnFace",
+    "bridge_function": "OCCTLocOpeSplitByWireOnFace",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "face5Faces": 7,
+        "face5Valid": true,
+        "face1Faces": 6,
+        "face6": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "face1": {
+          "done": 1,
+          "faces": 6
+        },
+        "face2": 6,
+        "face3": 6,
+        "face4": 6,
+        "face5": {
+          "done": 1,
+          "faces": 7,
+          "valid": 1
+        },
+        "face6": "no such face"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LocOpe_Spliter v71 Tests::splitByWireOnFace",
+    "bridge_function": "OCCTLocOpeSplitByWires",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "bestFaceCount": "> 6"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "original": 6,
+        "best": 7,
+        "splittingFace": 5,
+        "otherFaces": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LocOpe_Spliter v71 Tests::autoSplit",
+    "bridge_function": "OCCTLocOpeSplitByWiresAuto",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "onTopFaces": 7,
+        "onTopValid": true,
+        "offBoxFaces": 6
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "onTop(z=5)": {
+          "done": 1,
+          "faces": 7,
+          "valid": 1
+        },
+        "offBox(z=10)": {
+          "done": 1,
+          "faces": 6,
+          "valid": 1
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
