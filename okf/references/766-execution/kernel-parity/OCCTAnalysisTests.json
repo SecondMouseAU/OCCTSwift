@@ -4501,5 +4501,107 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Canonical Recognition::Recognizes a cylindrical face",
+    "bridge_function": "OCCTShapeRecognizeCanonical",
+    "bridge_output": {
+      "type": "form",
+      "data": {
+        "type": "cylinder",
+        "radius": 5,
+        "without_ClearStatus": "unknown"
+      }
+    },
+    "kernel_output": {
+      "type": "form",
+      "data": {
+        "type": "cylinder",
+        "radius": 5,
+        "without_ClearStatus": "unknown"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-canonical-recognition-faces/"
+  },
+  {
+    "test_name": "Canonical Recognition::Recognizes a conical face",
+    "bridge_function": "OCCTShapeRecognizeCanonical",
+    "bridge_output": {
+      "type": "form",
+      "data": {
+        "type": "cone",
+        "radius": 5,
+        "without_ClearStatus": "unknown"
+      }
+    },
+    "kernel_output": {
+      "type": "form",
+      "data": {
+        "type": "cone",
+        "radius": 5,
+        "without_ClearStatus": "unknown"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-canonical-recognition-faces/"
+  },
+  {
+    "test_name": "Canonical Recognition::Recognizes a spherical face",
+    "bridge_function": "OCCTShapeRecognizeCanonical",
+    "bridge_output": {
+      "type": "form",
+      "data": {
+        "type": "sphere",
+        "radius": 5,
+        "without_ClearStatus": "unknown"
+      }
+    },
+    "kernel_output": {
+      "type": "form",
+      "data": {
+        "type": "sphere",
+        "radius": 5,
+        "without_ClearStatus": "unknown"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-canonical-recognition-faces/"
+  },
+  {
+    "test_name": "Canonical Recognition::Recognizes a straight-line edge",
+    "bridge_function": "OCCTShapeRecognizeCanonical",
+    "bridge_output": {
+      "type": "form",
+      "data": {
+        "type": "line",
+        "without_ClearStatus": "unknown"
+      }
+    },
+    "kernel_output": {
+      "type": "form",
+      "data": {
+        "type": "line",
+        "without_ClearStatus": "unknown"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-canonical-recognition-faces/"
   }
 ]

@@ -235,6 +235,10 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Canonical Recognition** | Recognizes a cylindrical face | Canonical recognition | ClearStatus between checks |
+| **Canonical Recognition** | Recognizes a conical face | Canonical recognition | ClearStatus between checks |
+| **Canonical Recognition** | Recognizes a spherical face | Canonical recognition | ClearStatus between checks |
+| **Canonical Recognition** | Recognizes a straight-line edge | Canonical recognition | ClearStatus between checks |
 
 ---
 
@@ -424,6 +428,10 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Recognizes a cylindrical face | OCCTShapeRecognizeCanonical | Canonical recognition | skip every ClearStatus() (CR_NOCLEAR) | ✅ | ✅ |  |
+| Recognizes a conical face | OCCTShapeRecognizeCanonical | Canonical recognition | skip every ClearStatus() (CR_NOCLEAR) | ✅ | ✅ |  |
+| Recognizes a spherical face | OCCTShapeRecognizeCanonical | Canonical recognition | skip every ClearStatus() (CR_NOCLEAR) | ✅ | ✅ |  |
+| Recognizes a straight-line edge | OCCTShapeRecognizeCanonical | Canonical recognition | skip every ClearStatus() (CR_NOCLEAR) | ✅ | ✅ |  |
 
 ---
 

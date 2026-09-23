@@ -1,0 +1,8 @@
+cylindrical face with ClearStatus: type=cylinder radius=5 gap=0
+conical face with ClearStatus: type=cone radius=5 gap=0
+spherical face with ClearStatus: type=sphere radius=5 gap=0
+line edge with ClearStatus: type=line radius=0 gap=0
+cylindrical face without ClearStatus: type=unknown radius=0 gap=0
+conical face without ClearStatus: type=unknown radius=0 gap=0
+spherical face without ClearStatus: type=unknown radius=0 gap=0
+line edge without ClearStatus: type=unknown radius=0 gap=-1
