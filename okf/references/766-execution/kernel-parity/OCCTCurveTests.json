@@ -302,5 +302,229 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve3D.extrema returns empty, not SIGSEGV, on parallel curves (#636)::Two bounded parallel segments with overlapping projected ranges: extrema is empty",
+    "test_file": "Tests/OCCTCurveTests/Issue636ExtremaParallelCurvesTests.swift",
+    "bridge_function": "OCCTCurve3DExtrema / OCCTCurve3DMinDistanceToCurve / OCCTUniformAbscissaByDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Extrema_ExtCC: parallel lines and overlapping segments IsParallel 1, SquareDistance(1) 25; the bridge returns no pairs on IsParallel"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "exfill: an empty extrema answer gets one fake result",
+    "red": "Issue636ExtremaParallelCurvesTests.swift:88 a.extrema(with: b).isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extrema-parallel-abscissa/transcript.txt"
+  },
+  {
+    "test_name": "The extrema doc snippet is runnable and its printed values are true (#636)::the snippet's API calls resolve and its stated values hold",
+    "test_file": "Tests/OCCTCurveTests/Issue636ExtremaParallelCurvesTests.swift",
+    "bridge_function": "OCCTCurve3DExtrema / OCCTCurve3DMinDistanceToCurve / OCCTUniformAbscissaByDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Extrema_ExtCC parallel lines: IsParallel 1, distance 5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "exfill: an empty extrema answer gets one fake result",
+    "red": "Issue636ExtremaParallelCurvesTests.swift:153 pairs.isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extrema-parallel-abscissa/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D.extrema returns empty, not SIGSEGV, on parallel curves (#636)::Two unbounded parallel lines: extrema is empty, not a crash",
+    "test_file": "Tests/OCCTCurveTests/Issue636ExtremaParallelCurvesTests.swift",
+    "bridge_function": "OCCTCurve3DExtrema / OCCTCurve3DMinDistanceToCurve / OCCTUniformAbscissaByDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Extrema_ExtCC: parallel lines and overlapping segments IsParallel 1, SquareDistance(1) 25; the bridge returns no pairs on IsParallel"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "exfill: an empty extrema answer gets one fake result",
+    "red": "Issue636ExtremaParallelCurvesTests.swift:79 a.extrema(with: b).isEmpty  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extrema-parallel-abscissa/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D.extrema returns empty, not SIGSEGV, on parallel curves (#636)::Non-parallel curves are unaffected: extrema still reports real solutions",
+    "test_file": "Tests/OCCTCurveTests/Issue636ExtremaParallelCurvesTests.swift",
+    "bridge_function": "OCCTCurve3DExtrema / OCCTCurve3DMinDistanceToCurve / OCCTUniformAbscissaByDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Extrema_ExtCC skew lines: NbExt 1, dist 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "exdup: a single extremum reported twice",
+    "red": "Issue636ExtremaParallelCurvesTests.swift:135 result.count == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extrema-parallel-abscissa/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D.extrema returns empty, not SIGSEGV, on parallel curves (#636)::Parallel segments with disjoint ranges keep their real endpoint solution",
+    "test_file": "Tests/OCCTCurveTests/Issue636ExtremaParallelCurvesTests.swift",
+    "bridge_function": "OCCTCurve3DExtrema / OCCTCurve3DMinDistanceToCurve / OCCTUniformAbscissaByDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Extrema_ExtCC disjoint segments: not parallel, NbExt 1, dist 11.1803399 = sqrt(125)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "exdup: a single extremum reported twice",
+    "red": "Issue636ExtremaParallelCurvesTests.swift:119 found.count == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extrema-parallel-abscissa/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D.extrema returns empty, not SIGSEGV, on parallel curves (#636)::minDistance(to:) keeps reporting the true offset for the same parallel pairs",
+    "test_file": "Tests/OCCTCurveTests/Issue636ExtremaParallelCurvesTests.swift",
+    "bridge_function": "OCCTCurve3DExtrema / OCCTCurve3DMinDistanceToCurve / OCCTUniformAbscissaByDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Extrema_ExtCC: parallel lines and overlapping segments IsParallel 1, SquareDistance(1) 25; the bridge returns no pairs on IsParallel"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "mdoff: minDistance + 1e-3",
+    "red": "Issue636ExtremaParallelCurvesTests.swift:99 abs(d - Self.parallelOffset) < 1e-9  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extrema-parallel-abscissa/transcript.txt"
+  },
+  {
+    "test_name": "Issue #853: uniformAbscissa(distance:) gains the ceiling its pointCount sibling always had::a distance implying more points than the ceiling returns nil, both overloads",
+    "test_file": "Tests/OCCTCurveTests/Issue853UniformAbscissaDistanceCeilingTests.swift",
+    "bridge_function": "OCCTCurve3DExtrema / OCCTCurve3DMinDistanceToCurve / OCCTUniformAbscissaByDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the refusal is Swift-side (Sampling.impliedCount), before the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "uafake: a refused distance answers [0, 1]",
+    "red": "Issue853UniformAbscissaDistanceCeilingTests.swift:35 edge.uniformAbscissa(distance: tinySpacing) == nil  (+1 more",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extrema-parallel-abscissa/transcript.txt"
+  },
+  {
+    "test_name": "Issue #853: uniformAbscissa(distance:) gains the ceiling its pointCount sibling always had::a non-positive or non-finite distance returns nil without reaching the ceiling check",
+    "test_file": "Tests/OCCTCurveTests/Issue853UniformAbscissaDistanceCeilingTests.swift",
+    "bridge_function": "OCCTCurve3DExtrema / OCCTCurve3DMinDistanceToCurve / OCCTUniformAbscissaByDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the refusal is Swift-side (Sampling.impliedCount), before the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "uafake: a refused distance answers [0, 1]",
+    "red": "Issue853UniformAbscissaDistanceCeilingTests.swift:49 edge.uniformAbscissa(distance: 0) == nil  (+4 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extrema-parallel-abscissa/transcript.txt"
+  },
+  {
+    "test_name": "Issue #853: uniformAbscissa(distance:) gains the ceiling its pointCount sibling always had::a plausible distance is unaffected by the new ceiling check, both overloads",
+    "test_file": "Tests/OCCTCurveTests/Issue853UniformAbscissaDistanceCeilingTests.swift",
+    "bridge_function": "OCCTCurve3DExtrema / OCCTCurve3DMinDistanceToCurve / OCCTUniformAbscissaByDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_UniformAbscissa on the 10-unit box edge: distance 3 -> 5 points; 0.2 over [0, 1] -> 6 points"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "uadrop: last abscissa dropped",
+    "red": "Issue853UniformAbscissaDistanceCeilingTests.swift:63 params?.count == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extrema-parallel-abscissa/transcript.txt"
+  },
+  {
+    "test_name": "Issue #853: uniformAbscissa(distance:) gains the ceiling its pointCount sibling always had::pointCount and its range sibling are unaffected by sharing the new helper",
+    "test_file": "Tests/OCCTCurveTests/Issue853UniformAbscissaDistanceCeilingTests.swift",
+    "bridge_function": "OCCTCurve3DExtrema / OCCTCurve3DMinDistanceToCurve / OCCTUniformAbscissaByDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_UniformAbscissa by count honours 5 and 3 (Scripts/repro/766-curve-sample-bound-law-trunc); counts 1 and past the ceiling are refused in Swift"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "samplemin: counts below 2 clamped to 2",
+    "red": "Issue853UniformAbscissaDistanceCeilingTests.swift:76 edge.uniformAbscissa(pointCount: 1) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extrema-parallel-abscissa/transcript.txt"
   }
 ]

@@ -114,6 +114,12 @@ struct Issue636ExtremaParallelCurvesTests {
         let b = try #require(Curve3D.segment(from: SIMD3(20, 5, 0), to: SIMD3(30, 5, 0)))
 
         #expect(!a.extrema(with: b).isEmpty)
+        // #766: pinned to the kernel's single endpoint solution, sqrt(125).
+        let found = a.extrema(with: b)
+        #expect(found.count == 1)
+        if let first = found.first {
+            #expect(abs(first.distance - hypot(10.0, 5.0)) < 1e-6, "distance \(first.distance)")
+        }
         let d = try #require(a.minDistance(to: b))
         #expect(abs(d - hypot(10.0, 5.0)) < 1e-6)  // (10,0,0) to (20,5,0)
     }
@@ -124,6 +130,12 @@ struct Issue636ExtremaParallelCurvesTests {
         let b = try #require(Curve3D.line(through: SIMD3(5, -5, 1), direction: SIMD3(0, 1, 0)))
         let result = a.extrema(with: b)
         #expect(!result.isEmpty)
+        // #766: "not empty" held for any answer. Extrema_ExtCC finds exactly one extremum on these
+        // skew lines, the common perpendicular of length 1 (Scripts/repro/766-curve-extrema-parallel-abscissa).
+        #expect(result.count == 1)
+        if let first = result.first {
+            #expect(abs(first.distance - 1) < 1e-9, "distance \(first.distance)")
+        }
     }
 }
 
