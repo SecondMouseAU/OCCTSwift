@@ -109,3 +109,15 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-geom-vector3d (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **GeomVector3D Tests** | magnitude | `OCCTGeomVector3DMagnitude` | SquareMagnitude instead of Magnitude | red | green | PASS |
+| **GeomVector3D Tests** | from two points | `OCCTGeomVector3DFromPoints` | first point ignored (vector from the origin to p2) | red | green | PASS |
+| **GeomVector3D Tests** | dot product | `OCCTGeomVector3DDot` | dot with itself instead of other (14) | red | green | PASS |
+| **GeomVector3D Tests** | added | `OCCTGeomVector3DAdded` | Subtracted instead of Added | red | green | PASS |
+| **GeomVector3D Tests** | multiplied | `OCCTGeomVector3DMultiplied` | multiplied by 1/scalar | red | green | PASS |
+| **GeomVector3D Tests** | normalized | `OCCTGeomVector3DNormalized` | return an unnormalized copy | red | green | PASS |
+| **GeomVector3D Tests** | crossed | `OCCTGeomVector3DCrossed` | operands swapped (other x self) | red | green | PASS |
