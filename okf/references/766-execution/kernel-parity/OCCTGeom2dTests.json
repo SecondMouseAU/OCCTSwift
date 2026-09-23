@@ -94,5 +94,391 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Transform2D Composition::inverted",
+    "bridge_function": "OCCTTransform2DInverted",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "returns a copy, not the inverse",
+      "red": "Transform2DCompositionTests.swift:13:9: Expectation failed: abs(result.x) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "`guard ... else { return }`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Transform2D Composition::composed",
+    "bridge_function": "OCCTTransform2DComposed",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "composes with itself",
+      "red": "Transform2DCompositionTests.swift:22:9: Expectation failed: abs(result.x - 1.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "`guard ... else { return }`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Transform2D Composition::powered",
+    "bridge_function": "OCCTTransform2DPowered",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          3,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          3,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "power n - 1",
+      "red": "Transform2DCompositionTests.swift:30:9: Expectation failed: abs(result.x - 3.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "`guard ... else { return }`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Transform2D Composition::matrixValues",
+    "bridge_function": "OCCTTransform2DGetValues",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "a11": 1,
+        "a12": 0,
+        "a21": 0,
+        "a22": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "a11": 1,
+        "a12": 0,
+        "a21": 0,
+        "a22": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "a12 + 1e-3",
+      "red": "Transform2DCompositionTests.swift:38:9: Expectation failed: abs(m.a12) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "`guard ... else { return }`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Transform2D Composition::applyToCurve",
+    "bridge_function": "OCCTTransform2DApplyToCurve",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ends": [
+          [
+            5,
+            0
+          ],
+          [
+            6,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "ends": [
+          [
+            5,
+            0
+          ],
+          [
+            6,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "transform not applied to the copy",
+      "red": "Transform2DCompositionTests.swift:49:13: Expectation failed: abs(pts[0].x - 5.0) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "`guard ... else { return }`; now `#require`; far end now pinned"
+    }
+  },
+  {
+    "test_name": "Transform2D Creation::identity",
+    "bridge_function": "OCCTTransform2DCreateIdentity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ScaleFactor": 1,
+        "IsNegative": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "ScaleFactor": 1,
+        "IsNegative": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "scale 2 instead of identity",
+      "red": "Transform2DCreationTests.swift:11:9: Expectation failed: abs(t.scaleFactor - 1.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "`guard ... else { return }`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Transform2D Creation::translation",
+    "bridge_function": "OCCTTransform2DCreateTranslation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          3,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          3,
+          4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "dx + 1",
+      "red": "Transform2DCreationTests.swift:18:9: Expectation failed: abs(result.x - 3.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "`guard ... else { return }`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Transform2D Creation::rotation",
+    "bridge_function": "OCCTTransform2DCreateRotation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "angle negated",
+      "red": "Transform2DCreationTests.swift:26:9: Expectation failed: abs(result.y - 1.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "`guard ... else { return }`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Transform2D Creation::scale",
+    "bridge_function": "OCCTTransform2DCreateScale",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ScaleFactor": 3,
+        "P": [
+          3,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "ScaleFactor": 3,
+        "P": [
+          3,
+          6
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "factor + 1",
+      "red": "Transform2DCreationTests.swift:31:9: Expectation failed: abs(t.scaleFactor - 3.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "`guard ... else { return }`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Transform2D Creation::mirrorPoint",
+    "bridge_function": "OCCTTransform2DCreateMirrorPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          -1,
+          -2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          -1,
+          -2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "mirror point x + 1",
+      "red": "Transform2DCreationTests.swift:40:9: Expectation failed: abs(result.x + 1.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "`guard ... else { return }`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Transform2D Creation::mirrorAxis",
+    "bridge_function": "OCCTTransform2DCreateMirrorAxis",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "IsNegative": true,
+        "P": [
+          1,
+          -2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "IsNegative": true,
+        "P": [
+          1,
+          -2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "rotation by 0.1 instead of the mirror",
+      "red": "Transform2DCreationTests.swift:50:9: Expectation failed: t.isNegative == true",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "`guard ... else { return }`; now `#require`"
+    }
   }
 ]

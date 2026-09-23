@@ -124,3 +124,21 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Transform2DCompositionTests.swift`, `Transform2DCreationTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-transform-vector/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Transform2D Composition::inverted | `OCCTTransform2DInverted` | returns a copy, not the inverse | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Composition::composed | `OCCTTransform2DComposed` | composes with itself | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Composition::powered | `OCCTTransform2DPowered` | power n - 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Composition::matrixValues | `OCCTTransform2DGetValues` | a12 + 1e-3 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Composition::applyToCurve | `OCCTTransform2DApplyToCurve` | transform not applied to the copy | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require`; far end now pinned |
+| Transform2D Creation::identity | `OCCTTransform2DCreateIdentity` | scale 2 instead of identity | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Creation::translation | `OCCTTransform2DCreateTranslation` | dx + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Creation::rotation | `OCCTTransform2DCreateRotation` | angle negated | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Creation::scale | `OCCTTransform2DCreateScale` | factor + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Creation::mirrorPoint | `OCCTTransform2DCreateMirrorPoint` | mirror point x + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Creation::mirrorAxis | `OCCTTransform2DCreateMirrorAxis` | rotation by 0.1 instead of the mirror | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
