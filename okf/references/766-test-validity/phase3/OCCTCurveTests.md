@@ -197,3 +197,22 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Analytical conversion contract (#492) | Curve result does not alias the input curve | `OCCTGeomConvertCurveToAnalytical` | return the input curve handle instead of the Copy() | `AnalyticalConversionContractTests.swift:61 Self.dist(before, after) < 1e-9` | ✅ | MATCH |  |
+| Analytical conversion contract (#492) | Range-aware curve result does not alias the input curve | `OCCTGeomConvertCurveToAnalytical` | return the input curve handle instead of the Copy() | `AnalyticalConversionContractTests.swift:83 Self.dist(before, after) < 1e-9` | ✅ | MATCH |  |
+| Analytical conversion contract (#492) | Surface result does not alias the input surface | `OCCTGeomConvertSurfToAnalytical` | return the input surface handle instead of the Copy() | `AnalyticalConversionContractTests.swift:97 Self.dist(before, after) < 1e-9` | ✅ | MATCH |  |
+| Analytical conversion contract (#492) | Gap-returning surface result does not alias the input surface | `OCCTGeomConvertSurfToAnalytical` | return the input surface handle instead of the Copy() | `AnalyticalConversionContractTests.swift:111 Self.dist(before, after) < 1e-9` | ✅ | MATCH |  |
+| Analytical conversion contract (#492) | Both curve spellings agree over the curve's own range | `OCCTGeomConvertCurveToAnalytical` | Swift toAnalyticalWithGap starts its range 1e-3 late | `AnalyticalConversionContractTests.swift:135 Self.dist(plain.point(at: u), ranged.curve.point(at: u)) < 1e-9` | ✅ | MATCH |  |
+| Analytical conversion contract (#492) | Full-range curve spelling agrees with the explicit-range spelling | `OCCTGeomConvertCurveToAnalytical` | Swift toAnalyticalWithGap starts its range 1e-3 late | `AnalyticalConversionContractTests.swift:160 full.newLast == explicit.newLast` | ✅ | MATCH |  |
+| Analytical conversion contract (#492) | Both surface spellings agree on success and on geometry | `OCCTGeomConvertSurfToAnalytical` | Swift Surface.toAnalytical returns self unconverted | `AnalyticalConversionContractTests.swift:181 (plain == nil) == (withGap == nil)` | ✅ | MATCH |  |
+| Analytical conversion contract (#492) | Already-analytical inputs convert rather than being rejected | `OCCTGeomConvertCurveToAnalytical` | both conversions report failure | `AnalyticalConversionContractTests.swift:201 circle.toAnalytical(tolerance: 1e-4) != nil` | ✅ | MATCH |  |
+| Analytical conversion contract (#492) | Freeform inputs are rejected by every spelling | `OCCTGeomConvertCurveToAnalytical` | Swift toAnalytical returns self unconverted | `AnalyticalConversionContractTests.swift:219 curve.toAnalytical(tolerance: 1e-6) == nil` | ✅ | MATCH |  |
+| Analytical conversion contract (#492) | UV-bounded conversion recognizes a plane over full bounds and over a sub-range | `OCCTGeomConvertSurfToAnalyticalBounded` | both conversions report failure | `AnalyticalConversionContractTests.swift:249 full != nil` | ✅ | MATCH |  |
+| Analytical conversion contract (#492) | UV-bounded conversion rejects inverted bounds instead of trapping | `OCCTGeomConvertSurfToAnalyticalBounded` | bridge swaps inverted UV bounds into order | `AnalyticalConversionContractTests.swift:274 bspline.toAnalyticalWithGap(... inverted ...) == nil` | ✅ | MATCH |  |
+| Analytical conversion contract (#492) | Explicit sub-range reparameterizes the recognized curve | `OCCTGeomConvertCurveToAnalytical` | newLast set to newFirst | `AnalyticalConversionContractTests.swift:304 result.newLast - result.newFirst > 0` | ✅ | MATCH | Pinned newFirst/newLast to the kernel's values |
