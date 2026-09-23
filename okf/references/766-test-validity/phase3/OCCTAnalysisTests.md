@@ -102,6 +102,12 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **Bnd Range Tests** | createAndQuery | Bnd_Range construction | OCCTRangeCreate builds a void range; GetBounds returns false |
+| **Bnd Range Tests** | contains | Bnd_Range membership | Contains returns true |
+| **Bnd Range Tests** | addValue | Bnd_Range add | Add is a no-op |
+| **Bnd Range Tests** | common | Bnd_Range intersection | Common is a no-op |
+| **Bnd Range Tests** | trimFromTo | Bnd_Range trim | TrimFrom is a no-op |
+| **Bnd Range Tests** | voidRange | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) |
 
 ---
 
@@ -216,6 +222,12 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| createAndQuery | OCCTRangeGetBounds | Bnd_Range construction | OCCTRangeCreate builds a void range; GetBounds returns false | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped the bounds assertions under if-let |
+| contains | OCCTRangeContains | Bnd_Range membership | Contains returns true | ✅ | ✅ |  |
+| addValue | OCCTRangeAddValue | Bnd_Range add | Add is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped the only assertion under if-let; lower bound now asserted too |
+| common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
+| trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
+| voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
 
 ---
 
@@ -318,5 +330,11 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| createAndQuery | ✅ | ✅ | ✅ |
+| contains | ✅ | ✅ | ✅ |
+| addValue | ✅ | ✅ | ✅ |
+| common | ✅ | ✅ | ✅ |
+| trimFromTo | ✅ | ✅ | ✅ |
+| voidRange | ✅ | ✅ | ✅ |
 
 **Total**: 559 tests
