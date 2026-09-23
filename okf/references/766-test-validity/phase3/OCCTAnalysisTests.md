@@ -235,6 +235,21 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **ExtremaPC, Point to Curve Distance** | pointToCircle | Point-curve extrema | Closest distance |
+| **ExtremaPC, Point to Curve Distance** | pointToLine | Point-curve extrema | Closest distance and foot |
+| **ExtremaPC, Point to Curve Distance** | minimumDistanceConvenience | Point-curve minimum | Minimum distance |
+| **ExtremaPC, Point to Curve Distance** | pointToCircleOppositeStart | Point-curve extrema | Whole-domain search |
+| **ExtremaPC, Point to Curve Distance** | pointToHelix | Point-curve minimum | Minimum distance |
+| **Issue 1633: point-curve extrema include the domain's ends** | segmentQueriedPastItsEnd | Point-curve endpoints | End reported |
+| **Issue 1633: point-curve extrema include the domain's ends** | segmentQueriedPastItsStart | Point-curve endpoints | Start reported |
+| **Issue 1633: point-curve extrema include the domain's ends** | interiorFootStillWinsAndIsStillReported | Point-curve endpoints | Foot plus ends |
+| **Issue 1633: point-curve extrema include the domain's ends** | arcEndBeatsTheInteriorMaximum | Point-curve endpoints | Arc end beats interior maximum |
+| **Issue 1633: point-curve extrema include the domain's ends** | fullCircleIsUnchanged | Point-curve endpoints | Closed curve control |
+| **Issue 1633: point-curve extrema include the domain's ends** | unboundedLineIsUnchanged | Point-curve endpoints | Unbounded control |
+| **Issue 1633: point-curve extrema include the domain's ends** | boundedOverloadReportsItsOwnBounds | Point-curve endpoints | Bounded overload ends |
+| **Issue 1633: point-curve extrema include the domain's ends** | bezierQueriedPastItsEnd | Point-curve endpoints | Bezier end |
+| **Issue 1633: point-curve extrema include the domain's ends** | bsplineQueriedPastItsEnd | Point-curve endpoints | BSpline end |
+| **Issue 1633: point-curve extrema include the domain's ends** | minimumDistanceAgreesWithTheExtremaArray | Point-curve endpoints | Array and minimum agree |
 
 ---
 
@@ -424,6 +439,21 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| pointToCircle | OCCTExtremaPCCurve | Point-curve extrema | distance + 1 in occtExtremaPCCurveImpl | ✅ | ✅ |  |
+| pointToLine | OCCTExtremaPCCurveBounded | Point-curve extrema | distance + 1 in occtExtremaPCCurveImpl | ✅ | ✅ |  |
+| minimumDistanceConvenience | OCCTExtremaPCMinDistance | Point-curve minimum | MinSquareDistance sqrt + 1 in OCCTExtremaPCMinDistance | ✅ | ✅ |  |
+| pointToCircleOppositeStart | OCCTExtremaPCCurve | Point-curve extrema | distance + 1 in occtExtremaPCCurveImpl | ✅ | ✅ |  |
+| pointToHelix | OCCTExtremaPCMinDistance | Point-curve minimum | MinSquareDistance sqrt + 1 in OCCTExtremaPCMinDistance | ✅ | ✅ | Rewritten: if let d { d >= 4.9 } passed nil and any distance above 4.9 |
+| segmentQueriedPastItsEnd | OCCTExtremaPCCurve | Point-curve endpoints | Perform instead of PerformWithEndpoints (reverts #1633) (red :100); distance + 1 in occtExtremaPCCurveImpl | ✅ | ✅ |  |
+| segmentQueriedPastItsStart | OCCTExtremaPCMinDistance | Point-curve endpoints | Perform instead of PerformWithEndpoints (reverts #1633); MinSquareDistance sqrt + 1 in OCCTExtremaPCMinDistance | ✅ | ✅ |  |
+| interiorFootStillWinsAndIsStillReported | OCCTExtremaPCCurve | Point-curve endpoints | Perform instead of PerformWithEndpoints (reverts #1633) (red :137); distance + 1 in occtExtremaPCCurveImpl | ✅ | ✅ |  |
+| arcEndBeatsTheInteriorMaximum | OCCTExtremaPCCurve | Point-curve endpoints | Perform instead of PerformWithEndpoints (reverts #1633); distance + 1 in occtExtremaPCCurveImpl; MinSquareDistance sqrt + 1 in OCCTExtremaPCMinDistance | ✅ | ✅ |  |
+| fullCircleIsUnchanged | OCCTExtremaPCCurve | Point-curve endpoints | distance + 1 in occtExtremaPCCurveImpl; MinSquareDistance sqrt + 1 in OCCTExtremaPCMinDistance | ✅ | ✅ |  |
+| unboundedLineIsUnchanged | OCCTExtremaPCCurve | Point-curve endpoints | distance + 1 in occtExtremaPCCurveImpl | ✅ | ✅ |  |
+| boundedOverloadReportsItsOwnBounds | OCCTExtremaPCCurveBounded | Point-curve endpoints | Perform instead of PerformWithEndpoints (reverts #1633) (red :231); distance + 1 in occtExtremaPCCurveImpl | ✅ | ✅ |  |
+| bezierQueriedPastItsEnd | OCCTExtremaPCMinDistance | Point-curve endpoints | Perform instead of PerformWithEndpoints (reverts #1633); MinSquareDistance sqrt + 1 in OCCTExtremaPCMinDistance | ✅ | ✅ |  |
+| bsplineQueriedPastItsEnd | OCCTExtremaPCMinDistance | Point-curve endpoints | Perform instead of PerformWithEndpoints (reverts #1633); MinSquareDistance sqrt + 1 in OCCTExtremaPCMinDistance | ✅ | ✅ |  |
+| minimumDistanceAgreesWithTheExtremaArray | OCCTExtremaPCMinDistance | Point-curve endpoints | Perform instead of PerformWithEndpoints (reverts #1633); distance + 1 in occtExtremaPCCurveImpl; MinSquareDistance sqrt + 1 in OCCTExtremaPCMinDistance | ✅ | ✅ |  |
 
 ---
 
