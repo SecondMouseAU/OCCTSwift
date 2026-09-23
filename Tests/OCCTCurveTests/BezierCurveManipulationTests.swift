@@ -4,95 +4,98 @@ import simd
 
 @testable import OCCTSwift
 
+// Every expected value is what Geom_BezierCurve reports after the same edit
+// (Scripts/repro/766-curve-bezier-curve3d/transcript.txt). The earlier versions wrapped each body
+// in `if let`, and most checked only the Bool the bridge returns, which is `true` whether or not
+// the edit happened, so a bridge that skipped Segment, InsertPoleAfter or SetWeight passed (#766).
 @Suite("Bezier Curve Manipulation Tests")
 struct BezierCurveManipulationTests {
+    private static let cubic: [SIMD3<Double>] = [
+        SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
+    ]
+
+    private static func make(_ poles: [SIMD3<Double>] = cubic) -> Curve3D? {
+        let c = Curve3D.bezier(poles: poles)
+        if c == nil { Issue.record("Bezier curve not built") }
+        return c
+    }
+
+    private static func near(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Bool {
+        simd_distance(a, b) < 1e-9
+    }
 
     @Test func degreeAndPoleCount() {
-        if let bez = Curve3D.bezier(poles: [
-            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
-        ]) {
-            let deg = bez.bezier.degree
-            #expect(deg == 3)
-            let pc = bez.bezier.poleCount
-            #expect(pc == 4)
-        }
+        guard let bez = Self.make() else { return }
+        #expect(bez.bezier.degree == 3)
+        #expect(bez.bezier.poleCount == 4)
     }
 
     @Test func isRational() {
-        if let bez = Curve3D.bezier(poles: [
-            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
-        ]) {
-            #expect(!bez.bezier.isRational)
-        }
+        guard let bez = Self.make() else { return }
+        #expect(!bez.bezier.isRational)
     }
 
     @Test func getPole() {
-        if let bez = Curve3D.bezier(poles: [
-            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
-        ]) {
-            let p = bez.bezier.pole(at: 1)
-            #expect(abs(p.x) < 1e-6)
-            #expect(abs(p.y) < 1e-6)
+        guard let bez = Self.make() else { return }
+        for (i, p) in Self.cubic.enumerated() {
+            #expect(Self.near(bez.bezier.pole(at: i + 1), p))
         }
     }
 
     @Test func setPole() {
-        if let bez = Curve3D.bezier(poles: [
-            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
-        ]) {
-            let ok = bez.bezier.setPole(at: 2, to: SIMD3(3, 8, 0))
-            #expect(ok)
-            let p = bez.bezier.pole(at: 2)
-            #expect(abs(p.y - 8.0) < 1e-6)
-        }
+        guard let bez = Self.make() else { return }
+        #expect(bez.bezier.setPole(at: 2, to: SIMD3(3, 8, 0)))
+        #expect(Self.near(bez.bezier.pole(at: 2), SIMD3(3, 8, 0)))
+        #expect(Self.near(bez.bezier.pole(at: 1), SIMD3(0, 0, 0)))
+        #expect(Self.near(bez.bezier.pole(at: 3), SIMD3(7, 5, 0)))
     }
 
     @Test func segment() {
-        if let bez = Curve3D.bezier(poles: [
-            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
-        ]) {
-            let ok = bez.bezier.segment(u1: 0.25, u2: 0.75)
-            #expect(ok)
-        }
+        guard let bez = Self.make() else { return }
+        #expect(bez.bezier.segment(u1: 0.25, u2: 0.75))
+        // The piece between C(0.25) and C(0.75), reparameterised onto [0, 1].
+        #expect(bez.bezier.poleCount == 4)
+        #expect(Self.near(bez.bezier.pole(at: 1), SIMD3(2.40625, 2.8125, 0)))
+        #expect(Self.near(bez.bezier.pole(at: 2), SIMD3(4.09375, 4.0625, 0)))
+        #expect(Self.near(bez.bezier.pole(at: 3), SIMD3(5.90625, 4.0625, 0)))
+        #expect(Self.near(bez.bezier.pole(at: 4), SIMD3(7.59375, 2.8125, 0)))
+        #expect(Self.near(bez.point(at: 0.5), SIMD3(5, 3.75, 0)))
     }
 
     @Test func increaseDegree() {
-        if let bez = Curve3D.bezier(poles: [
-            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
-        ]) {
-            let ok = bez.bezier.increaseDegree(to: 5)
-            #expect(ok)
-            #expect(bez.bezier.degree == 5)
-        }
+        guard let bez = Self.make() else { return }
+        #expect(bez.bezier.increaseDegree(to: 5))
+        #expect(bez.bezier.degree == 5)
+        #expect(bez.bezier.poleCount == 6)
+        #expect(Self.near(bez.bezier.pole(at: 2), SIMD3(1.8, 3, 0)))
+        // Degree elevation keeps the shape.
+        #expect(Self.near(bez.point(at: 0.3), SIMD3(2.916, 3.15, 0)))
     }
 
     @Test func insertPoleAfter() {
-        if let bez = Curve3D.bezier(poles: [
-            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
-        ]) {
-            let ok = bez.bezier.insertPoleAfter(index: 2, point: SIMD3(5, 6, 0))
-            #expect(ok)
-            #expect(bez.bezier.poleCount == 5)
-        }
+        guard let bez = Self.make() else { return }
+        #expect(bez.bezier.insertPoleAfter(index: 2, point: SIMD3(5, 6, 0)))
+        #expect(bez.bezier.poleCount == 5)
+        #expect(bez.bezier.degree == 4)
+        #expect(Self.near(bez.bezier.pole(at: 3), SIMD3(5, 6, 0)))
+        #expect(Self.near(bez.bezier.pole(at: 4), SIMD3(7, 5, 0)))
     }
 
     @Test func removePole() {
-        if let bez = Curve3D.bezier(poles: [
-            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(5, 6, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
-        ]) {
-            let ok = bez.bezier.removePole(at: 3)
-            #expect(ok)
-            #expect(bez.bezier.poleCount == 4)
-        }
+        guard
+            let bez = Self.make([
+                SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(5, 6, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
+            ])
+        else { return }
+        #expect(bez.bezier.removePole(at: 3))
+        #expect(bez.bezier.poleCount == 4)
+        #expect(Self.near(bez.bezier.pole(at: 3), SIMD3(7, 5, 0)))
     }
 
     @Test func setWeight() {
-        if let bez = Curve3D.bezier(poles: [
-            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
-        ]) {
-            let ok = bez.bezier.setWeight(at: 2, to: 2.0)
-            #expect(ok)
-            #expect(bez.bezier.isRational)
-        }
+        guard let bez = Self.make() else { return }
+        #expect(bez.bezier.setWeight(at: 2, to: 2.0))
+        #expect(bez.bezier.isRational)
+        #expect(bez.bezierWeights == [1, 2, 1, 1])
     }
 }
