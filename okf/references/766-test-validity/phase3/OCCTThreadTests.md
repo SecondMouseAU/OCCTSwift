@@ -5,7 +5,7 @@ captured green. The previous version of this file (12 rows, PR #2022) was remove
 found every row a stub, three of its Red claims impossible given the code, and its parity values
 copied from bridge to kernel. Sections are one per PR.
 
-## Thread::Issue784-991 (PR #PRNUM, files: Issue784ThreadBuildCodableCompatTests.swift, Issue988ThreadProfileFactoryTests.swift, Issue989ThreadDesignationParseTests.swift, Issue990ThreadAxisBasisTests.swift, Issue991ThreadProfileFlatWidthTests.swift)
+## Thread::Issue784-991 (PR #2312, files: Issue784ThreadBuildCodableCompatTests.swift, Issue988ThreadProfileFactoryTests.swift, Issue989ThreadDesignationParseTests.swift, Issue990ThreadAxisBasisTests.swift, Issue991ThreadProfileFlatWidthTests.swift)
 
 All injections are in `Sources/OCCTSwift/ThreadFeatures.swift`. Green: all 16 tests pass on the
 untouched tree before the injections and again after the last one was reverted
