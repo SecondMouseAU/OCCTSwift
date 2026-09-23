@@ -124,3 +124,20 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `GccAnaLineSolverTests.swift`, `GccCircleOnConstraintTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-gccana-circ3tan-lines/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| GccAna Line Solvers::Line through point parallel to reference | `OCCTGccAnaLin2dTanParPt` | point y + 1 | ✅ | ✅ | MATCH | `count >= 1`, direction to 0.01 |
+| GccAna Line Solvers::Lines tangent to circle parallel to reference | `OCCTGccAnaLin2dTanParCirc` | circle radius + 1 | ✅ | ✅ | MATCH | count only; now the two lines |
+| GccAna Line Solvers::Line through point perpendicular to reference | `OCCTGccAnaLin2dTanPerPtLin` | point x + 1 | ✅ | ✅ | MATCH | `count >= 1`, `|dy| > 0.9` |
+| GccAna Line Solvers::Lines tangent to circle perpendicular to reference | `OCCTGccAnaLin2dTanPerCircLin` | circle radius + 1 | ✅ | ✅ | MATCH | count only; now the two lines |
+| GccAna Line Solvers::Line through point at angle to reference | `OCCTGccAnaLin2dTanOblPt` | half the angle | ✅ | ✅ | MATCH | `count >= 1` |
+| GccAna Line Solvers::Lines tangent to curve at angle (Geom2dGcc) | `OCCTGeom2dGccLin2dTanObl` | half the angle | ✅ | ✅ | MATCH | `count >= 1` inside `if let` |
+| GccAna/Geom2dGcc Circle On-Constraint Solvers::Circle tangent to 2 lines center on line | `OCCTGccAnaCirc2d2TanOnLinLin` | second line y + 2 | ✅ | ✅ | MATCH | `count >= 1`, radius to 0.1 |
+| GccAna/Geom2dGcc Circle On-Constraint Solvers::Circle tangent to line center on line given radius | `OCCTGccAnaCirc2dTanOnRadLin` | radius + 1 | ✅ | ✅ | MATCH | `count >= 1` |
+| GccAna/Geom2dGcc Circle On-Constraint Solvers::Geom2dGcc circle tangent to 2 curves center on curve | `OCCTGeom2dGccCirc2d2TanOn` | pass the first curve twice | ✅ | ✅ | MATCH | `count >= 1` inside `if let` |
+| GccAna/Geom2dGcc Circle On-Constraint Solvers::Geom2dGcc circle tangent to curve center on curve given radius | `OCCTGeom2dGccCirc2dTanOnRad` | radius + 1 | ✅ | ✅ | MATCH | `count >= 1` inside `if let` |

@@ -94,5 +94,395 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "GccAna Line Solvers::Line through point parallel to reference",
+    "bridge_function": "OCCTGccAnaLin2dTanParPt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          5,
+          5
+        ],
+        "direction": [
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          5,
+          5
+        ],
+        "direction": [
+          1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "point y + 1",
+      "red": "GccAnaLineSolverTests.swift:18:9: Expectation failed: simd_distance(results[0].point, SIMD2(5, 5)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`count >= 1`, direction to 0.01"
+    }
+  },
+  {
+    "test_name": "GccAna Line Solvers::Lines tangent to circle parallel to reference",
+    "bridge_function": "OCCTGccAnaLin2dTanParCirc",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "y": [
+          -5,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "y": [
+          -5,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "circle radius + 1",
+      "red": "GccAnaLineSolverTests.swift:29:9: Expectation failed: results.map(\\.point.y).sorted() == [-5, 5]",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "count only; now the two lines"
+    }
+  },
+  {
+    "test_name": "GccAna Line Solvers::Line through point perpendicular to reference",
+    "bridge_function": "OCCTGccAnaLin2dTanPerPtLin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          5,
+          5
+        ],
+        "direction": [
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          5,
+          5
+        ],
+        "direction": [
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "point x + 1",
+      "red": "GccAnaLineSolverTests.swift:39:9: Expectation failed: simd_distance(results[0].point, SIMD2(5, 5)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`count >= 1`, `|dy| > 0.9`"
+    }
+  },
+  {
+    "test_name": "GccAna Line Solvers::Lines tangent to circle perpendicular to reference",
+    "bridge_function": "OCCTGccAnaLin2dTanPerCircLin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "x": [
+          -5,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "x": [
+          -5,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "circle radius + 1",
+      "red": "GccAnaLineSolverTests.swift:51:9: Expectation failed: results.map(\\.point.x).sorted() == [-5, 5]",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "count only; now the two lines"
+    }
+  },
+  {
+    "test_name": "GccAna Line Solvers::Line through point at angle to reference",
+    "bridge_function": "OCCTGccAnaLin2dTanOblPt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          5,
+          5
+        ],
+        "direction": [
+          0.707106781187,
+          0.707106781187
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          5,
+          5
+        ],
+        "direction": [
+          0.707106781187,
+          0.707106781187
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "half the angle",
+      "red": "GccAnaLineSolverTests.swift:63:9: Expectation failed: simd_distance(results[0].direction, SIMD2(s, s)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`count >= 1`"
+    }
+  },
+  {
+    "test_name": "GccAna Line Solvers::Lines tangent to curve at angle (Geom2dGcc)",
+    "bridge_function": "OCCTGeom2dGccLin2dTanObl",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "tangency": [
+          [
+            3.53553390593,
+            -3.53553390593
+          ],
+          [
+            -3.53553390593,
+            3.53553390593
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tangency": [
+          [
+            3.53553390593,
+            -3.53553390593
+          ],
+          [
+            -3.53553390593,
+            3.53553390593
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "half the angle",
+      "red": "GccAnaLineSolverTests.swift:75:9: Expectation failed: results.allSatisfy { abs(abs($0.point.x) - 3.53553390593) < 1e-6 && abs($0.point.x + $0.point.y) < 1e-6 }",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`count >= 1` inside `if let`"
+    }
+  },
+  {
+    "test_name": "GccAna/Geom2dGcc Circle On-Constraint Solvers::Circle tangent to 2 lines center on line",
+    "bridge_function": "OCCTGccAnaCirc2d2TanOnLinLin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "centre": [
+          5,
+          5
+        ],
+        "radius": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "centre": [
+          5,
+          5
+        ],
+        "radius": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second line y + 2",
+      "red": "GccCircleOnConstraintTests.swift:19:9: Expectation failed: abs(results[0].radius - 5) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`count >= 1`, radius to 0.1"
+    }
+  },
+  {
+    "test_name": "GccAna/Geom2dGcc Circle On-Constraint Solvers::Circle tangent to line center on line given radius",
+    "bridge_function": "OCCTGccAnaCirc2dTanOnRadLin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "centres_y": [
+          -5,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "centres_y": [
+          -5,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1",
+      "red": "GccCircleOnConstraintTests.swift:31:9: Expectation failed: results.map(\\.center.y).sorted() == [-5, 5]",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`count >= 1`"
+    }
+  },
+  {
+    "test_name": "GccAna/Geom2dGcc Circle On-Constraint Solvers::Geom2dGcc circle tangent to 2 curves center on curve",
+    "bridge_function": "OCCTGeom2dGccCirc2d2TanOn",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radii": [
+          5,
+          15
+        ],
+        "centre": [
+          10,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radii": [
+          5,
+          15
+        ],
+        "centre": [
+          10,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pass the first curve twice",
+      "red": "GccCircleOnConstraintTests.swift:43:9: Expectation failed: results.allSatisfy { simd_distance($0.center, SIMD2(10, 0)) < 1e-9 }",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`count >= 1` inside `if let`"
+    }
+  },
+  {
+    "test_name": "GccAna/Geom2dGcc Circle On-Constraint Solvers::Geom2dGcc circle tangent to curve center on curve given radius",
+    "bridge_function": "OCCTGeom2dGccCirc2dTanOnRad",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "centres_y": [
+          -8,
+          -2,
+          2,
+          8
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "centres_y": [
+          -8,
+          -2,
+          2,
+          8
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1",
+      "red": "GccCircleOnConstraintTests.swift:56:13: Expectation failed: abs(y - e) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`count >= 1` inside `if let`"
+    }
   }
 ]
