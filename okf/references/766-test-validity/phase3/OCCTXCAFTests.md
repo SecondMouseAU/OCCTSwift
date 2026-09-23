@@ -99,3 +99,32 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `Issue1481DimensionRefCountTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `singleShapeDimensionRegistersOnce` | the dimension is registered with `SetDimension(seq, seq, dim)` (the #1481 defect) | :40 Expectation failed: doc.refDimensionCount(for: labelId) == 1 | passed | `OCCTDocumentGetRefDimensionCount` | PASS: 1 with the single-shape overload; the sequence overload gives 2 |
+| `singleShapeDimensionWithToleranceRegistersOnce` | the dimension is registered with `SetDimension(seq, seq, dim)` (the #1481 defect) | :66 Expectation failed: doc.refDimensionCount(for: labelId) == 1 | passed | `OCCTDocumentGetRefDimensionCount` | PASS: 1 |
+| `twoShapesEachRegisterOnce` | the dimension is registered with `SetDimension(seq, seq, dim)` (the #1481 defect) | :88 Expectation failed: doc.refDimensionCount(for: label1) == 1; :89 Expectation failed: doc.refDimensionCount(for: label2) == 1 | passed | `OCCTDocumentGetRefDimensionCount` | PASS: 1 each |
+
+### `Issue1588TObjApplicationReleaseTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `singleGetReleaseRoundTrip` | `OCCTTObjApplicationIsVerbose` returns false | :71 Expectation failed: OCCTTObjApplicationIsVerbose(again) | passed | `OCCTTObjApplicationIsVerbose` | PASS: singleton, verbose true |
+| `doubleReleaseDoesNotCorruptSingleton` | `OCCTTObjApplicationIsVerbose` returns true | :89 Expectation failed: !OCCTTObjApplicationIsVerbose(again) | passed | `OCCTTObjApplicationIsVerbose` | PASS: verbose false; `NewDocument("TObjBin")` non-null |
+| `repeatedGetReleaseCyclesDoNotCorruptSingleton` | `OCCTTObjApplicationCreateDocument` returns null | :110 Expectation failed: OCCTTObjApplicationCreateDocument(again) | passed | `OCCTTObjApplicationCreateDocument` | PASS: document created |
+| `repeatedSharedAccessDoesNotCorruptSingleton` | `OCCTTObjApplicationIsVerbose` returns false | :134 Expectation failed: app.isVerbose | passed | `OCCTTObjApplicationIsVerbose` | PASS: verbose true, document created |
+
+### `Issue173AssemblySTEPTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `instancedStructure` | `OCCTDocumentAddComponentMatrix` adds a copy of the part per instance | :42 Expectation failed: count("MANIFOLD_SOLID_BREP") == 1 | passed | `OCCTDocumentAddComponentMatrix` | PASS: 1 BREP, 20 occurrences |
+| `roundTrip` | `OCCTDocumentAddComponentMatrix` returns -1 without adding | :69 Expectation failed: maxChildren == n | passed | `OCCTDocumentAddComponentMatrix` | PASS: 8 components read back |
+| `emptyPathThrows` | `Exporter.writeSTEPAssembly` returns without writing or throwing | :78 Expectation failed: an error was expected but none was thrown | passed | `OCCTDocumentAddComponentMatrix` | N/A: the empty-path check is Swift; no kernel call |

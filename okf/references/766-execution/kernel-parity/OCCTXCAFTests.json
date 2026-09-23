@@ -126,5 +126,235 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Single-shape dimension registers once, not twice (#1481)::A single-shape dimension appears exactly once in GetRefDimensionLabels",
+    "bridge_function": "OCCTDocumentGetRefDimensionCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "refs": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "single_label_overload": 1,
+        "sequence_overload": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "Single-shape dimension registers once, not twice (#1481)::A single-shape dimension created with a tolerance also registers once",
+    "bridge_function": "OCCTDocumentGetRefDimensionCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "refs": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "single_label_overload": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "Single-shape dimension registers once, not twice (#1481)::Two shapes each carrying one dimension report one ref each, not two",
+    "bridge_function": "OCCTDocumentGetRefDimensionCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "refs": [
+          1,
+          1
+        ],
+        "dimensions": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "single_label_overload": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "Issue #1588: TObjApplication release path::a single get + release round-trip does not crash and leaves the singleton usable",
+    "bridge_function": "OCCTTObjApplicationIsVerbose",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "verbose": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "verbose_after_true": true,
+        "same_instance": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "Issue #1588: TObjApplication release path::releasing more times than the singleton was fetched (double-release) does not crash",
+    "bridge_function": "OCCTTObjApplicationIsVerbose",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "verbose": false,
+        "document": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "verbose_after_false": false,
+        "new_document": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "Issue #1588: TObjApplication release path::many repeated get+release cycles leave the singleton alive and functional",
+    "bridge_function": "OCCTTObjApplicationCreateDocument",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "document": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "new_document": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "Issue #1588: TObjApplication release path::TObjApplication.shared accessed and dropped repeatedly (deinit -> Release) stays usable",
+    "bridge_function": "OCCTTObjApplicationIsVerbose",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "verbose": true,
+        "document": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "verbose_after_true": true,
+        "new_document": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "Issue #173, instanced assembly STEP writer::geometry is shared: 1 BREP + N occurrences, size scales with unique parts",
+    "bridge_function": "OCCTDocumentAddComponentMatrix",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "manifold_solid_brep": 1,
+        "nauo": 20
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "manifold_solid_brep": 1,
+        "nauo": 20
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "Issue #173, instanced assembly STEP writer::round-trips: written assembly reads back with the same occurrence count",
+    "bridge_function": "OCCTDocumentAddComponentMatrix",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "max_children": 8
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "max_components": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "Issue #173, instanced assembly STEP writer::empty path throws, not crashes",
+    "bridge_function": "OCCTDocumentAddComponentMatrix",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "thrown": "ExportError"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
   }
 ]
