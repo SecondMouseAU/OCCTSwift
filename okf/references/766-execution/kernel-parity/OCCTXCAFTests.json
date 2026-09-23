@@ -126,5 +126,254 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Create text label",
+    "bridge_function": "OCCTTextLabelGetInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "text": "Hello"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Text label position",
+    "bridge_function": "OCCTTextLabelGetInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "p": [
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Update text label text",
+    "bridge_function": "OCCTTextLabelSetText",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "text": "Updated"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Update text label position",
+    "bridge_function": "OCCTTextLabelSetPosition",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "p": [
+          5,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Text label default height matches OCCT's own default (#1417)",
+    "bridge_function": "OCCTTextLabelGetInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "height": 16.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "Prs3d_TextAspect_default_height": 16
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Text label height round-trips through setHeight (#1417)",
+    "bridge_function": "OCCTTextLabelSetHeight",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "height": 30.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "height_after_set": 30
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Create point cloud",
+    "bridge_function": "OCCTPointCloudGetCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Point cloud bounds",
+    "bridge_function": "OCCTPointCloudGetBounds",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "x": [
+          -1,
+          4
+        ],
+        "y": [
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "x": [
+          -1,
+          4
+        ],
+        "y": [
+          0,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Point cloud retrieval",
+    "bridge_function": "OCCTPointCloudGetPoints",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Colored point cloud",
+    "bridge_function": "OCCTPointCloudGetColors",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Empty point cloud returns nil",
+    "bridge_function": "OCCTPointCloudCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "cloud": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
   }
 ]
