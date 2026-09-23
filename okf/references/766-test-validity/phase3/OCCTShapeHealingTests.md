@@ -327,3 +327,28 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: ShellAnalysis, SplitSurface, SurfaceConvertToAnalytical, SurfaceSplitContinuity, SurfaceValueOfUV, UnifySameDomainBuilder, UpdateTolerances, WireVertexAnalysis (18 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-small-files/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `analyzeBox` | ShellAnalysisTests.swift | `OCCTShapeAnalyzeShell` | SMSHELLINV: hasConnectedEdges inverted | `ShellAnalysisTests.swift:18:9: Expectation failed: result.hasConnectedEdges` | pass | PASS |
+| `analyzeSphere` | ShellAnalysisTests.swift | `OCCTShapeAnalyzeShell` | SMSHELLINV: hasConnectedEdges inverted | `ShellAnalysisTests.swift:29:9: Expectation failed: result.hasConnectedEdges` | pass | PASS |
+| `splitSurfaceByContinuity` | SplitSurfaceTests.swift | `OCCTSplitSurfaceContinuity / Angle / Area` | SMSCONT: continuity criterion forced to C0 | `SplitSurfaceTests.swift:25:9: Expectation failed: r.uSplitCount == 4` | pass | PASS |
+| `splitByAngle` | SplitSurfaceTests.swift | `OCCTSplitSurfaceContinuity / Angle / Area` | SMSANG: maximum angle doubled | `SplitSurfaceTests.swift:34:9: Expectation failed: r.uSplitCount == 5` | pass | PASS |
+| `splitByArea` | SplitSurfaceTests.swift | `OCCTSplitSurfaceContinuity / Angle / Area` | SMSAREA: part count off by 5 | `SplitSurfaceTests.swift:44:9: Expectation failed: r.uSplitCount == 3` | pass | PASS |
+| `recognizeCylinder` | SurfaceConvertToAnalyticalTests.swift | `OCCTSurfaceConvertToAnalytical` | SMANALYTNULL: no analytical surface returned | `SurfaceConvertToAnalyticalTests.swift:18:30: Expectation failed: bspline.convertToAnalytical()` | pass | PASS |
+| `splitByContinuity` | SurfaceSplitContinuityTests.swift | `OCCTSurfaceSplitByContinuity` | SMSSC0: continuity criterion forced to C0 | `SurfaceSplitContinuityTests.swift:20:9: Expectation failed: result.wasSplit` | pass | PASS |
+| `projectOntoPlane` | SurfaceValueOfUVTests.swift | `OCCTSurfaceValueOfUV / NextValueOfUV` | SMUVSWAP: U and V swapped | `SurfaceValueOfUVTests.swift:17:9: Expectation failed: abs(proj.uv.x - 5.0) < 1e-9` | pass | PASS |
+| `projectOntoSphere` | SurfaceValueOfUVTests.swift | `OCCTSurfaceValueOfUV / NextValueOfUV` | SMUVSWAP: U and V swapped | `SurfaceValueOfUVTests.swift:28:9: Expectation failed: abs(proj.uv.y - .pi / 2) < 1e-9` | pass | PASS |
+| `nextValueOfUV` | SurfaceValueOfUVTests.swift | `OCCTSurfaceValueOfUV / NextValueOfUV` | SMNEXTPREV: NextValueOfUV answers with the previous UV | `SurfaceValueOfUVTests.swift:36:9: Expectation failed: abs(proj2.uv.x - 5.5) < 1e-9` | pass | PASS |
+| `basicUnification` | UnifySameDomainBuilderTests.swift | `OCCTUnifySameDomain*` | USDNOBUILD: Build() skipped | `UnifySameDomainBuilderTests.swift:25:9: Expectation failed: result.subShapes(ofType: .face).count == 6` | pass | PASS |
+| `allowInternalEdges` | UnifySameDomainBuilderTests.swift | `OCCTUnifySameDomain*` | USDNOBUILD: Build() skipped | `UnifySameDomainBuilderTests.swift:25:9: Expectation failed: result.subShapes(ofType: .face).count == 6` | pass | PASS |
+| `keepShape` | UnifySameDomainBuilderTests.swift | `OCCTUnifySameDomain*` | SMKEEPNOOP: KeepShape() skipped | `UnifySameDomainBuilderTests.swift:62:9: Expectation failed: result.subShapes(ofType: .face).count == 7` | pass | PASS |
+| `safeInputMode` | UnifySameDomainBuilderTests.swift | `OCCTUnifySameDomain*` | USDNOBUILD: Build() skipped | `UnifySameDomainBuilderTests.swift:25:9: Expectation failed: result.subShapes(ofType: .face).count == 6` | pass | PASS |
+| `tolerances` | UnifySameDomainBuilderTests.swift | `OCCTUnifySameDomain*` | USDNOBUILD: Build() skipped | `UnifySameDomainBuilderTests.swift:25:9: Expectation failed: result.subShapes(ofType: .face).count == 6` | pass | PASS |
+| `updateTolerancesBox` | UpdateTolerancesTests.swift | `OCCTShapeUpdateTolerances` | SMUPDTOLNOOP: BRepLib::UpdateTolerances skipped | `UpdateTolerancesTests.swift:20:9: Expectation failed: abs(r.toleranceValue(mode: .maximum) - 1.00000002e-6) < 1e-12` | pass | PASS |
+| `updateTolerancesPreservesVolume` | UpdateTolerancesTests.swift | `OCCTShapeUpdateTolerances` | SMUPDTOLNOOP: BRepLib::UpdateTolerances skipped | `UpdateTolerancesTests.swift:30:9: Expectation failed: abs(r.toleranceValue(mode: .maximum) - 1.00000002e-6) < 1e-12` | pass | PASS |
+| `wireVertex` | WireVertexAnalysisTests.swift | `OCCTShapeWireVertexAnalysis / Status` | SMWVIDX: vertex status index off by one | `WireVertexAnalysisTests.swift:24:9: Expectation failed: shape.wireVertexStatus(precision: 0.01, index: 0) == .sameCoords` | pass | PASS |
