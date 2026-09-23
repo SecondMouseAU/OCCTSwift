@@ -6,5 +6,273 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Issue #838, findSurface bridge consolidation::findSurface(tolerance:) forwards an explicit non-default tolerance, not a hardcoded one",
+    "bridge_function": "OCCTShapeFindSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "tol 1e-6": null,
+        "tol 5": "plane, ToleranceReached 0.1"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "tol 1e-6": null,
+        "tol 5": "plane, ToleranceReached 0.1"
+      },
+      "source": "Scripts/repro/766-issue838-findsurface/transcript.txt quad"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #838, findSurface bridge consolidation::findSurface(tolerance:) (1-param) behaves as onlyPlane: false, matching the explicit call",
+    "bridge_function": "OCCTShapeFindSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "kind": "cylinder"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "kind": "cylinder"
+      },
+      "source": "Scripts/repro/766-issue838-findsurface/transcript.txt cylinder lateral wire onlyPlane=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #838, findSurface bridge consolidation::findSurface(tolerance:onlyPlane: true) finds nothing on a wire with only a non-planar existing surface",
+    "bridge_function": "OCCTFindSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-issue838-findsurface/transcript.txt cylinder lateral wire onlyPlane=1: Found=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #838, findSurface bridge consolidation::findSurface, findSurface(onlyPlane: false) and findSurfaceEx(onlyPlane: false) agree at matching tolerance",
+    "bridge_function": "OCCTShapeFindSurfaceEx",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "kind": "cylinder",
+        "toleranceReached": 0,
+        "existed": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "kind": "cylinder",
+        "toleranceReached": 0,
+        "existed": true
+      },
+      "source": "Scripts/repro/766-issue838-findsurface/transcript.txt cylinder lateral wire"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface *Properties views keep their parent alive (#965)::every Surface *Properties accessor keeps its parent alive",
+    "bridge_function": "Surface.sphereProperties (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A: object lifetime in the Swift wrapper; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Surface *Properties views keep their parent alive (#965)::a view outliving its parent still reads the right values",
+    "bridge_function": "Surface.sphereProperties (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "radius": 11
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "radius": 11
+      },
+      "source": "N/A: object lifetime in the Swift wrapper; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Surface *Properties views keep their parent alive (#965)::a view outliving its parent survives 400 intervening allocations",
+    "bridge_function": "Surface.sphereProperties (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "radius": 11
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "radius": 11
+      },
+      "source": "N/A: object lifetime in the Swift wrapper; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Surface *Properties views keep their parent alive (#965)::a setter called through a view is visible on the parent",
+    "bridge_function": "OCCTSurfaceSphereSetRadius",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "radius after set": 13
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "radius after set": 13
+      },
+      "source": "N/A: object lifetime in the Swift wrapper; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "NLPlate G2/G3 parameters are live (#999)::The constraint target moves the G2 result",
+    "bridge_function": "OCCTSurfaceNLPlateG2",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A as a comparison: the asserted quantity is a difference between two bridge results. The kernel NLPlate solve for these inputs is sane at the constraint, but the bridge-fitted G2/G3 surface is not (z about -2e12 / -1e21, see the #2568 MISMATCH); the \"tolerance is live\" deltas of ~2e5 come from that"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "NLPlate G2/G3 parameters are live (#999)::Repeating the same G2 request gives the same surface",
+    "bridge_function": "OCCTSurfaceNLPlateG2",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A as a comparison: the asserted quantity is a difference between two bridge results. The kernel NLPlate solve for these inputs is sane at the constraint, but the bridge-fitted G2/G3 surface is not (z about -2e12 / -1e21, see the #2568 MISMATCH); the \"tolerance is live\" deltas of ~2e5 come from that"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "NLPlate G2/G3 parameters are live (#999)::The constraint target moves the G3 result",
+    "bridge_function": "OCCTSurfaceNLPlateG3",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A as a comparison: the asserted quantity is a difference between two bridge results. The kernel NLPlate solve for these inputs is sane at the constraint, but the bridge-fitted G2/G3 surface is not (z about -2e12 / -1e21, see the #2568 MISMATCH); the \"tolerance is live\" deltas of ~2e5 come from that"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "NLPlate G2/G3 parameters are live (#999)::Varying the tolerance changes the G2 result",
+    "bridge_function": "OCCTSurfaceNLPlateG2",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A as a comparison: the asserted quantity is a difference between two bridge results. The kernel NLPlate solve for these inputs is sane at the constraint, but the bridge-fitted G2/G3 surface is not (z about -2e12 / -1e21, see the #2568 MISMATCH); the \"tolerance is live\" deltas of ~2e5 come from that"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "NLPlate G2/G3 parameters are live (#999)::Varying the tolerance changes the G3 result",
+    "bridge_function": "OCCTSurfaceNLPlateG3",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A as a comparison: the asserted quantity is a difference between two bridge results. The kernel NLPlate solve for these inputs is sane at the constraint, but the bridge-fitted G2/G3 surface is not (z about -2e12 / -1e21, see the #2568 MISMATCH); the \"tolerance is live\" deltas of ~2e5 come from that"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
   }
 ]
