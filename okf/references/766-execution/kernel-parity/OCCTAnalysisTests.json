@@ -4501,5 +4501,288 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.113.0 - IntCS Results::lineSphereIntersection",
+    "bridge_function": "OCCTIntCSPoint",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "count": 2,
+        "points": [
+          [
+            5,
+            0,
+            0
+          ],
+          [
+            -5,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "count": 2,
+        "points": [
+          [
+            5,
+            0,
+            0
+          ],
+          [
+            -5,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intcs-inttools/"
+  },
+  {
+    "test_name": "IntCurvesFace ShapeIntersector::Ray intersects box",
+    "bridge_function": "OCCTIntCurvesFaceShapeIntersect",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "count": 2,
+        "points": [
+          [
+            5,
+            5,
+            -5
+          ],
+          [
+            5,
+            5,
+            5
+          ]
+        ],
+        "params": [
+          15,
+          25
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "count": 2,
+        "points": [
+          [
+            5,
+            5,
+            -5
+          ],
+          [
+            5,
+            5,
+            5
+          ]
+        ],
+        "params": [
+          15,
+          25
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intcs-inttools/"
+  },
+  {
+    "test_name": "IntCurvesFace ShapeIntersector::Ray nearest intersection with sphere",
+    "bridge_function": "OCCTIntCurvesFaceShapeIntersectNearest",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "point": [
+          0,
+          0,
+          -5
+        ],
+        "param": 15
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "point": [
+          0,
+          0,
+          -5
+        ],
+        "param": 15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intcs-inttools/"
+  },
+  {
+    "test_name": "IntCurvesFace ShapeIntersector::Ray misses shape",
+    "bridge_function": "OCCTIntCurvesFaceShapeIntersect",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count": 0,
+        "swift": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intcs-inttools/"
+  },
+  {
+    "test_name": "IntTools_BeanFaceIntersector Tests::edge crossing face",
+    "bridge_function": "OCCTIntToolsBeanFaceIntersect",
+    "bridge_output": {
+      "type": "ranges",
+      "data": {
+        "ranges": []
+      }
+    },
+    "kernel_output": {
+      "type": "ranges",
+      "data": {
+        "ranges": []
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intcs-inttools/"
+  },
+  {
+    "test_name": "IntTools_BeanFaceIntersector Tests::edge lying on face - coincident ranges",
+    "bridge_function": "OCCTIntToolsBeanFaceIntersect",
+    "bridge_output": {
+      "type": "ranges",
+      "data": {
+        "ranges": [
+          [
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "ranges",
+      "data": {
+        "ranges": [
+          [
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intcs-inttools/"
+  },
+  {
+    "test_name": "IntTools_FaceFace Tests::Perpendicular box faces produce intersection line",
+    "bridge_function": "OCCTIntToolsFaceFace",
+    "bridge_output": {
+      "type": "curves",
+      "data": {
+        "curves": [
+          [
+            [
+              5,
+              0,
+              0
+            ],
+            [
+              -5,
+              0,
+              0
+            ]
+          ]
+        ],
+        "tangent": false
+      }
+    },
+    "kernel_output": {
+      "type": "curves",
+      "data": {
+        "curves": [
+          [
+            [
+              5,
+              0,
+              0
+            ],
+            [
+              -5,
+              0,
+              0
+            ]
+          ]
+        ],
+        "tangent": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intcs-inttools/"
+  },
+  {
+    "test_name": "IntTools_FaceFace Tests::Coincident planes are tangent",
+    "bridge_function": "OCCTIntToolsFaceFace",
+    "bridge_output": {
+      "type": "flag",
+      "data": {
+        "curves": 0,
+        "tangent": true
+      }
+    },
+    "kernel_output": {
+      "type": "flag",
+      "data": {
+        "curves": 0,
+        "tangent": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intcs-inttools/"
   }
 ]
