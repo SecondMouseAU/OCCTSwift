@@ -4501,5 +4501,139 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Zero curvature is a value, not a sentinel (#583)::A cylinder's zero curvatures are reported as zero, not as absent",
+    "bridge_function": "OCCTFaceLPropGaussianCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "lateral_face_u1.1_v6": {
+          "kMax": 0,
+          "kMin": -0.3333333333333333,
+          "gauss": 0,
+          "mean": -0.16666666666666666,
+          "umbilic": false
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "lateral_face_u1.1_v6": {
+          "kMax": 0,
+          "kMin": -0.3333333333333333,
+          "gauss": 0,
+          "mean": -0.16666666666666666,
+          "umbilic": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-adaptor-curvature-definedness/"
+  },
+  {
+    "test_name": "Zero curvature is a value, not a sentinel (#583)::A planar face reports four zeros and a point, all of them defined",
+    "bridge_function": "OCCTFaceLPropMaxCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "plane_u0_v0": {
+          "kMax": 0,
+          "kMin": 0,
+          "mean": 0,
+          "gauss": 0,
+          "umbilic": true,
+          "value": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "plane_u0_v0": {
+          "kMax": 0,
+          "kMin": 0,
+          "mean": 0,
+          "gauss": 0,
+          "umbilic": true,
+          "value": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-adaptor-curvature-definedness/"
+  },
+  {
+    "test_name": "Zero curvature is a value, not a sentinel (#583)::A cone apex and a sphere pole report nil, not zero",
+    "bridge_function": "OCCTFaceLPropMeanCurvature",
+    "bridge_output": {
+      "type": "definedness",
+      "data": {
+        "cone_apex": {
+          "curvatureDefined": false
+        },
+        "sphere_poles": {
+          "curvatureDefined": false
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "definedness",
+      "data": {
+        "cone_apex": {
+          "curvatureDefined": false
+        },
+        "sphere_poles": {
+          "curvatureDefined": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-adaptor-curvature-definedness/"
+  },
+  {
+    "test_name": "Zero curvature is a value, not a sentinel (#583)::A Shape that is not a face reports nil from all six getters",
+    "bridge_function": "OCCTFaceLPropValue",
+    "bridge_output": {
+      "type": "exception",
+      "data": {
+        "TopoDS::Face(solid)": "Standard_TypeMismatch",
+        "TopoDS::Face(edge)": "Standard_TypeMismatch"
+      }
+    },
+    "kernel_output": {
+      "type": "exception",
+      "data": {
+        "TopoDS::Face(solid)": "Standard_TypeMismatch",
+        "TopoDS::Face(edge)": "Standard_TypeMismatch"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-adaptor-curvature-definedness/"
   }
 ]

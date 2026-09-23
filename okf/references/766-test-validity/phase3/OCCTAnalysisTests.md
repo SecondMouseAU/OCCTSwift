@@ -235,6 +235,10 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Zero curvature is a value, not a sentinel (#583)** | A cylinder's zero curvatures are reported as zero, not as absent | Face LProp curvature definedness | OCCTFaceLProp* 0 reported as undefined |
+| **Zero curvature is a value, not a sentinel (#583)** | A planar face reports four zeros and a point, all of them defined | Face LProp curvature definedness | OCCTFaceLProp* 0 reported as undefined |
+| **Zero curvature is a value, not a sentinel (#583)** | A cone apex and a sphere pole report nil, not zero | Face LProp curvature definedness | Undefined curvature reported as 0 |
+| **Zero curvature is a value, not a sentinel (#583)** | A Shape that is not a face reports nil from all six getters | Face LProp non-face input | catch returns success |
 
 ---
 
@@ -424,6 +428,10 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| A cylinder's zero curvatures are reported as zero, not as absent | OCCTFaceLPropGaussianCurvature | Face LProp curvature definedness | curvature == 0 -> return false (A_ZERO) | ✅ | ✅ |  |
+| A planar face reports four zeros and a point, all of them defined | OCCTFaceLPropMaxCurvature | Face LProp curvature definedness | curvature == 0 -> return false (A_ZERO) | ✅ | ✅ |  |
+| A cone apex and a sphere pole report nil, not zero | OCCTFaceLPropMeanCurvature | Face LProp curvature definedness | !IsCurvatureDefined() -> return true with 0 (A_UNDEF) | ✅ | ✅ |  |
+| A Shape that is not a face reports nil from all six getters | OCCTFaceLPropValue | Face LProp non-face input | catch (...) -> return true (A_NONFACE) | ✅ | ✅ |  |
 
 ---
 
