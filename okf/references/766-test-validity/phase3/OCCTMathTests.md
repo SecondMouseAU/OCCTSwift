@@ -109,3 +109,15 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-matrix-polyroots (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **MathMatrix Tests** | createAndQuery | `OCCTMathMatrixRows` | RowNumber() + 1 | red | green | PASS |
+| **MathMatrix Tests** | setGetValue | `OCCTMathMatrixGetValue` | read row (row % RowNumber) + 1 (off-by-one row) | red | green | PASS |
+| **MathMatrix Tests** | determinant | `OCCTMathMatrixDeterminant` | negate math_Matrix::Determinant | red | green | PASS |
+| **MathMatrix Tests** | invert | `OCCTMathMatrixInvert` | skip math_Matrix::Invert, still return true | red | green | PASS |
+| **MathPolynomialRoots Tests** | quadratic | `OCCTMathPolynomialRoots` | math_DirectPolynomialRoots::Value(i) + 0.5 | red | green | PASS |
+| **MathPolynomialRoots Tests** | linear | `OCCTMathPolynomialRoots` | math_DirectPolynomialRoots::Value(i) + 0.5 | red | green | PASS |
+| **MathPolynomialRoots Tests** | noRealRoots | `OCCTMathPolynomialRoots` | take the IsDone-false path (return -1) for every polynomial | red | green | PASS |

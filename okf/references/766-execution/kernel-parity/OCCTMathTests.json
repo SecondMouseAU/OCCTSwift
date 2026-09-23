@@ -182,5 +182,75 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "MathMatrix Tests::createAndQuery",
+    "bridge_function": "OCCTMathMatrixRows",
+    "bridge_output": {"type": "observed", "data": "rows=3 cols=3", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "rows=3 cols=3", "source": "Scripts/repro/766-math-matrix-polyroots/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "RowNumber() + 1", "failing_expectation": ":14 `m.rows == 3`"},
+    "green": true
+  },
+  {
+    "test_name": "MathMatrix Tests::setGetValue",
+    "bridge_function": "OCCTMathMatrixGetValue",
+    "bridge_output": {"type": "observed", "data": "(1,1)=5 (2,1)=0", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(1,1)=5 (2,1)=0", "source": "Scripts/repro/766-math-matrix-polyroots/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "read row (row % RowNumber) + 1 (off-by-one row)", "failing_expectation": ":21 `abs(m.value(row: 1, col: 1) - 5.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "MathMatrix Tests::determinant",
+    "bridge_function": "OCCTMathMatrixDeterminant",
+    "bridge_output": {"type": "observed", "data": "-2", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "-2", "source": "Scripts/repro/766-math-matrix-polyroots/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "negate math_Matrix::Determinant", "failing_expectation": ":30 `abs(m.determinant - (-2.0)) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "MathMatrix Tests::invert",
+    "bridge_function": "OCCTMathMatrixInvert",
+    "bridge_output": {"type": "observed", "data": "-1.9999999999999998 1 1.4999999999999998 -0.49999999999999994", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "-1.9999999999999998 1 1.4999999999999998 -0.49999999999999994", "source": "Scripts/repro/766-math-matrix-polyroots/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "skip math_Matrix::Invert, still return true", "failing_expectation": "original: **green**; rewritten: :42 `abs(m.value(row: 1, col: 1) - (-2.0)) < 1e-12`"},
+    "green": true
+  },
+  {
+    "test_name": "MathPolynomialRoots Tests::quadratic",
+    "bridge_function": "OCCTMathPolynomialRoots",
+    "bridge_output": {"type": "observed", "data": "n=2 3 2", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "n=2 3 2", "source": "Scripts/repro/766-math-matrix-polyroots/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "math_DirectPolynomialRoots::Value(i) + 0.5", "failing_expectation": ":16 `abs(sorted[0] - 2.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "MathPolynomialRoots Tests::linear",
+    "bridge_function": "OCCTMathPolynomialRoots",
+    "bridge_output": {"type": "observed", "data": "n=1 -2", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "n=1 -2", "source": "Scripts/repro/766-math-matrix-polyroots/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "math_DirectPolynomialRoots::Value(i) + 0.5", "failing_expectation": ":26 `abs(roots[0] + 2.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "MathPolynomialRoots Tests::noRealRoots",
+    "bridge_function": "OCCTMathPolynomialRoots",
+    "bridge_output": {"type": "observed", "data": "done=1 n=0", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "done=1 n=0", "source": "Scripts/repro/766-math-matrix-polyroots/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "take the IsDone-false path (return -1) for every polynomial", "failing_expectation": "original: **green**; rewritten: :35 `roots != nil`"},
+    "green": true
   }
 ]
