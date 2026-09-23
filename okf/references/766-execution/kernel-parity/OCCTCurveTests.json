@@ -302,5 +302,335 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::parameterAtLength(length) still lands on the end of the curve",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:239 abs(end - c.domain.upperBound) < 1e-7  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::The closed forms stay closed forms",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:183 abs(circumference - 2 * .pi * 5) < 1e-12  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A wound range winds an accurate period (#600 preserved)",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:219 abs(two - 2 * one) / two < 1e-9  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::An elliptical edge measures the same as the curve it was built from",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:312 abs(edge.edgeArcLength - curveLength) / truth < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::Accurate sub-ranges stay accurate, and the parts still sum to the whole",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:204 abs(whole - 2 * h) / whole < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A whipping cubic Bezier measures its arc",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:134 abs(measured - truth) / truth < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A short multi-span interpolation gets the accuracy per-span splitting left behind",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:162 abs(measured - truth) / truth < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A whole ellipse measures its own circumference, not 0.3-1.7% more",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:72 abs(measured - truth) / truth < 1e-9  (+4 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A hyperbola over a wide range measures its arc",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclenbetween: ranged length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:113 abs(measured - truth) / truth < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A parabola over a wide range measures its arc, not 3% less",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclenbetween: ranged length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:95 abs(measured - truth) / truth < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A negative abscissa walks backwards accurately",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pal3: parameterAtLength + 1e-5",
+    "red": "Issue603SingleSpanQuadratureTests.swift:272 abs(arc - total / 4) / total < 1e-8",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A fraction of the length is that fraction of the arc",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pal3: parameterAtLength + 1e-5",
+    "red": "Issue603SingleSpanQuadratureTests.swift:257 abs(arc - total * fraction) / total < 1e-8  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A 2D ellipse measures the same as the 3D one, both spellings",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "c2len: Curve2D length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:288 abs(whole - truth) / truth < 1e-9  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A wire containing an elliptical edge measures accurately, and so does its adaptor",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "wclen: WireCurve length x 1.001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:352 abs(wc.length - truth) / truth < 1e-9  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::An EdgeCurve measures accurately and inverts consistently",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "eclen: EdgeCurve length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:371 abs(ec.length - truth) / truth < 1e-9  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
   }
 ]
