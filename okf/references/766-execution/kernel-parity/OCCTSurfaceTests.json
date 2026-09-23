@@ -6,5 +6,401 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "drawMesh honours its documented minimum of one sample per direction (#620)::uCount 1 returns a single V iso-row, not an empty grid",
+    "bridge_function": "OCCTSurfaceDrawMesh",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "grid": "1x20"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "grid": "1x20"
+      },
+      "source": "Scripts/repro/766-issue620-748-791/transcript.txt 620 sphere"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "drawMesh honours its documented minimum of one sample per direction (#620)::vCount 1 returns a single U iso-row, not an empty grid",
+    "bridge_function": "OCCTSurfaceDrawMesh",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "grid": "20x1"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "grid": "20x1"
+      },
+      "source": "Scripts/repro/766-issue620-748-791/transcript.txt 620 sphere"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "drawMesh honours its documented minimum of one sample per direction (#620)::On a bounded surface the single row sits at domain.uMin",
+    "bridge_function": "OCCTSurfaceDrawMesh",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "first": [
+          0,
+          0,
+          -10
+        ],
+        "last": [
+          0,
+          0,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "first": [
+          0,
+          0,
+          -10
+        ],
+        "last": [
+          0,
+          0,
+          10
+        ]
+      },
+      "source": "Scripts/repro/766-issue620-748-791/transcript.txt 620 sphere single u-row at uMin"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "drawMesh honours its documented minimum of one sample per direction (#620)::On an unbounded surface the single row sits at the clamp, not at domain.uMin",
+    "bridge_function": "OCCTSurfaceDrawMesh",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "first": [
+          -100,
+          -100,
+          0
+        ],
+        "last": [
+          -100,
+          100,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "first": [
+          -100,
+          -100,
+          0
+        ],
+        "last": [
+          -100,
+          100,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-issue620-748-791/transcript.txt 620 plane clamped single u-row"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "drawMesh honours its documented minimum of one sample per direction (#620)::A one-row grid equals row 0 of a many-row grid",
+    "bridge_function": "OCCTSurfaceDrawMesh",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Scripts/repro/766-issue620-748-791/transcript.txt 620 sphere"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "drawMesh honours its documented minimum of one sample per direction (#620)::A 1x1 grid is one point, at the sampled-range corner",
+    "bridge_function": "OCCTSurfaceDrawMesh",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "point": [
+          0,
+          0,
+          -10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "point": [
+          0,
+          0,
+          -10
+        ]
+      },
+      "source": "Scripts/repro/766-issue620-748-791/transcript.txt 620 sphere"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "drawMesh honours its documented minimum of one sample per direction (#620)::Counts below 1 and products past the ceiling are still rejected",
+    "bridge_function": "(Swift) Sampling.gridTotal",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "wrapper preconditions, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "drawMesh honours its documented minimum of one sample per direction (#620)::Bezier keeps its minimum of two poles per direction, which is OCCT's own",
+    "bridge_function": "OCCTSurfaceCreateBezier",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-issue620-748-791/transcript.txt 620 Geom_BezierSurface with a single row/column: threw"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "networkSurface places every corner where its input curves say (#748)::a square 2x2 network puts all four corners where the curves do",
+    "bridge_function": "OCCTGeomFillNetworkSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "corners": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            10,
+            0,
+            0
+          ],
+          [
+            0,
+            10,
+            0
+          ],
+          [
+            10,
+            10,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "corners": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            10,
+            0,
+            0
+          ],
+          [
+            0,
+            10,
+            0
+          ],
+          [
+            10,
+            10,
+            0
+          ]
+        ]
+      },
+      "source": "Scripts/repro/766-issue620-748-791/transcript.txt 748 contact grid (the points the bridge feeds GeomFill_NetworkSurface)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "networkSurface places every corner where its input curves say (#748)::a non-square 2x3 network builds at all, which the swapped grid could not",
+    "bridge_function": "OCCTGeomFillNetworkSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "status": "done"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "status": "done"
+      },
+      "source": "Scripts/repro/766-issue620-748-791/transcript.txt 748 contact grid 2x3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue791 Sphere BSpline helper consolidation::unitOriginMatchesPriorBaseline",
+    "bridge_function": "OCCTConvertSphereToBSplineSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "poles": [
+          6,
+          5
+        ],
+        "Pole(2,2)": [
+          5,
+          8.660254037844384,
+          -4.999999999999999
+        ],
+        "Weight(2,2)": 0.3535533905932738
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "poles": [
+          6,
+          5
+        ],
+        "Pole(2,2)": [
+          5,
+          8.660254037844384,
+          -4.999999999999999
+        ],
+        "Weight(2,2)": 0.3535533905932738
+      },
+      "source": "Scripts/repro/766-issue620-748-791/transcript.txt 791 sphere r=5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue791 Sphere BSpline helper consolidation::offsetTiltedMatchesPriorBaseline",
+    "bridge_function": "OCCTConvertSphereToBSplineSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "Pole(1,1)": [
+          1.5566243270259355,
+          -3.4433756729740645,
+          5.5566243270259355
+        ],
+        "Pole(2,2)": [
+          1.5566243270259361,
+          0.09215823295867231,
+          2.0210904210931986
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "Pole(1,1)": [
+          1.5566243270259355,
+          -3.4433756729740645,
+          5.5566243270259355
+        ],
+        "Pole(2,2)": [
+          1.5566243270259361,
+          0.09215823295867231,
+          2.0210904210931986
+        ]
+      },
+      "source": "Scripts/repro/766-issue620-748-791/transcript.txt 791 sphere r=2.5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue791 Sphere BSpline helper consolidation::convertedSphereStaysOnTheAnalyticSphere",
+    "bridge_function": "OCCTConvertSphereToBSplineSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Scripts/repro/766-issue620-748-791/transcript.txt 791"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
