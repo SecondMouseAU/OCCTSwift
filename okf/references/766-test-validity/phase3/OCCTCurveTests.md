@@ -197,3 +197,14 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Curve3D ranged arc-length contract after the #506 bridge removal | reversedRangeMeasuresTheSpan | `OCCTCurve3DGetLengthBetween` | lenrev: reversed range x 1.01 | `Issue506ArcLengthBridgeContractTests.swift:65 reversed == forward` | ✅ | MATCH |  |
+| Curve3D ranged arc-length contract after the #506 bridge removal | overshootingBothEndsClampsToTheDomain | `OCCTCurve3DGetLengthBetween` | noclamp: out-of-domain range x 2; arclenbetween | `Issue506ArcLengthBridgeContractTests.swift:86 overshot == whole` | ✅ | MATCH | The suite's table says 8489.78 for the pre-bounded form; the pinned kernel gives 8489.617 |
+| Curve3D ranged arc-length contract after the #506 bridge removal | rangeOutsideTheDomainMeasuresZero | `OCCTCurve3DGetLengthBetween` | outside1: a wholly outside range answers 1.34 | `Issue506ArcLengthBridgeContractTests.swift:101 == 0` | ✅ | MATCH |  |
+| Curve3D ranged arc-length contract after the #506 bridge removal | everySpellingAgreesOnDivergentRanges | `OCCTCurve3DGetLengthBetween` | arcdrift: arcLength(from:to:) x 1.0001 | `Issue506ArcLengthBridgeContractTests.swift:126 arcLength == canonical` | ✅ | MATCH |  |

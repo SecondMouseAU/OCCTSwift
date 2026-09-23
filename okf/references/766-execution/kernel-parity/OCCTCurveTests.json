@@ -302,5 +302,94 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve3D ranged arc-length contract after the #506 bridge removal::reversedRangeMeasuresTheSpan",
+    "test_file": "Tests/OCCTCurveTests/Issue506ArcLengthBridgeContractTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "173.76 both ways"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length ranged: 173.76262881030638 both directions; pre-bounded adaptor throws on the reversed range"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lenrev: reversed range x 1.01",
+    "red": "Issue506ArcLengthBridgeContractTests.swift:65 reversed == forward",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-contract/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D ranged arc-length contract after the #506 bridge removal::overshootingBothEndsClampsToTheDomain",
+    "test_file": "Tests/OCCTCurveTests/Issue506ArcLengthBridgeContractTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "360.99"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length ranged: 360.98605783984021 (= whole); pre-bounded 8489.6172811772813"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noclamp: out-of-domain range x 2; arclenbetween",
+    "red": "Issue506ArcLengthBridgeContractTests.swift:86 overshot == whole",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-contract/transcript.txt",
+    "note": "The suite's table says 8489.78 for the pre-bounded form; the pinned kernel gives 8489.617"
+  },
+  {
+    "test_name": "Curve3D ranged arc-length contract after the #506 bridge removal::rangeOutsideTheDomainMeasuresZero",
+    "test_file": "Tests/OCCTCurveTests/Issue506ArcLengthBridgeContractTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length ranged: 0; pre-bounded 1.3426120686818346"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "outside1: a wholly outside range answers 1.34",
+    "red": "Issue506ArcLengthBridgeContractTests.swift:101 == 0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-contract/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D ranged arc-length contract after the #506 bridge removal::everySpellingAgreesOnDivergentRanges",
+    "test_file": "Tests/OCCTCurveTests/Issue506ArcLengthBridgeContractTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "equal for all four ranges"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length ranged: one computation under all three spellings"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arcdrift: arcLength(from:to:) x 1.0001",
+    "red": "Issue506ArcLengthBridgeContractTests.swift:126 arcLength == canonical",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-contract/transcript.txt"
   }
 ]
