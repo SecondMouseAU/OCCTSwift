@@ -497,5 +497,421 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Volume of box",
+    "bridge_function": "OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "volume",
+      "data": {
+        "volume": 1000.0
+      }
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "volume": 1000.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Volume of cylinder",
+    "bridge_function": "OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "volume",
+      "data": {
+        "volume": 785.398163397448
+      }
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "volume": 785.398163397448
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Volume of sphere",
+    "bridge_function": "OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "volume",
+      "data": {
+        "volume": 523.598775598299
+      }
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "volume": 523.598775598299
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Surface area of box",
+    "bridge_function": "OCCTShapeGetSurfaceArea",
+    "bridge_output": {
+      "type": "area",
+      "data": {
+        "area": 600.0
+      }
+    },
+    "kernel_output": {
+      "type": "area",
+      "data": {
+        "area": 600.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Surface area of sphere",
+    "bridge_function": "OCCTShapeGetSurfaceArea",
+    "bridge_output": {
+      "type": "area",
+      "data": {
+        "area": 314.159265358979
+      }
+    },
+    "kernel_output": {
+      "type": "area",
+      "data": {
+        "area": 314.159265358979
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Center of mass of box at origin",
+    "bridge_function": "OCCTShapeGetCenterOfMass",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Center of mass of translated box",
+    "bridge_function": "OCCTShapeGetCenterOfMass",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": 100.0,
+        "y": 200.0,
+        "z": 300.0
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": 100.0,
+        "y": 200.0,
+        "z": 300.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Full shape properties",
+    "bridge_function": "OCCTShapeGetProperties",
+    "bridge_output": {
+      "type": "properties",
+      "data": {
+        "volume": 1000.0,
+        "surface_area": 600.0,
+        "mass": 2500.0,
+        "center": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "properties",
+      "data": {
+        "volume": 1000.0,
+        "surface_area": 600.0,
+        "mass": 2500.0,
+        "center": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Distance between separated boxes",
+    "bridge_function": "OCCTShapeDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 10.0
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 10.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Distance between touching boxes",
+    "bridge_function": "OCCTShapeDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Min distance convenience method",
+    "bridge_function": "OCCTShapeDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 7.0
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 7.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Intersects - overlapping shapes",
+    "bridge_function": "OCCTShapeIntersects",
+    "bridge_output": {
+      "type": "intersects",
+      "data": {
+        "distance": 0.0,
+        "intersects": true
+      }
+    },
+    "kernel_output": {
+      "type": "intersects",
+      "data": {
+        "distance": 0.0,
+        "intersects": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Intersects - separated shapes",
+    "bridge_function": "OCCTShapeIntersects",
+    "bridge_output": {
+      "type": "intersects",
+      "data": {
+        "distance": 42.0,
+        "intersects": false
+      }
+    },
+    "kernel_output": {
+      "type": "intersects",
+      "data": {
+        "distance": 42.0,
+        "intersects": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Intersects - touching shapes",
+    "bridge_function": "OCCTShapeIntersects",
+    "bridge_output": {
+      "type": "intersects",
+      "data": {
+        "distance": 1.74e-10,
+        "intersects": true
+      }
+    },
+    "kernel_output": {
+      "type": "intersects",
+      "data": {
+        "distance": 1.74e-10,
+        "intersects": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Vertex count of box",
+    "bridge_function": "OCCTShapeGetVertexCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count": 8
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "count": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Get all vertices",
+    "bridge_function": "OCCTShapeGetVertices",
+    "bridge_output": {
+      "type": "vertices",
+      "data": {
+        "count": 8,
+        "all_corners_of_pm5_cube": true
+      }
+    },
+    "kernel_output": {
+      "type": "vertices",
+      "data": {
+        "count": 8,
+        "all_corners_of_pm5_cube": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Get vertex at index",
+    "bridge_function": "OCCTShapeGetVertexAt",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": -5.0,
+        "y": -5.0,
+        "z": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": -5.0,
+        "y": -5.0,
+        "z": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Vertex out of bounds",
+    "bridge_function": "OCCTShapeGetVertexAt",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "index": 100,
+        "extent": 8,
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "index": 100,
+        "extent": 8,
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
