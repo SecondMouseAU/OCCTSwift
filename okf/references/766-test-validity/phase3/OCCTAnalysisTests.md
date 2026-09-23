@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **BRepExtrema_Poly** | Polyhedral distance between two shapes | Polyhedral distance | Distance - 0.5; report success unconditionally |
+| **BRepExtrema_Poly** | Polyhedral distance needs a mesh | Polyhedral distance | Report success unconditionally |
 | **Extrema extras v0.112** | locateOnCurve | Windowed point-curve locate | LowerDistance() + 1 in OCCTExtremaLocateOnCurve |
 | **Extrema extras v0.112** | projectPointOnCurve | Point-curve projection | Distance(i) * 2 in OCCTExtremaPointCurve |
 | **Extrema extras v0.112** | locateOnSurface | Local point-surface locate | u and v swapped in OCCTExtremaLocateOnSurface |
@@ -281,6 +283,8 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| BRepExtrema_Poly: Polyhedral distance between two shapes | OCCTShapePolyhedralDistance | Polyhedral distance | Distance - 0.5; report success unconditionally | ✅ | ✅ | rewritten: 8...12 band stayed green under the injection |
+| BRepExtrema_Poly: Polyhedral distance needs a mesh | OCCTShapePolyhedralDistance | Polyhedral distance | Report success unconditionally | ✅ | ✅ | new negative case |
 | Extrema_ExtElCS Line-Sphere: lineSphereDistance | OCCTExtremaElCSLinSphere | Line-sphere extrema | Negate surface point z | ✅ | ✅ | rewritten: count > 0 stayed green under the injection |
 | linearProperties | OCCTShapeLinearProperties | Linear mass properties | Write com.X() + 1.0 to *cx | ✅ | ✅ | Rewritten: if-let removed, centre asserted, tolerance 1e-9 (y = -5.55e-17 on both sides) |
 | momentOfInertia | OCCTShapeMomentOfInertia | Volume inertia tensor | Write 2.0 * mat(1, 1) to *ixx | ✅ | ✅ | Rewritten: asserted only > 0; now pinned to m(b^2+c^2)/12 |
@@ -437,6 +441,8 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| BRepExtrema_Poly: Polyhedral distance between two shapes | ✅ | ✅ | ✅ |
+| BRepExtrema_Poly: Polyhedral distance needs a mesh | ✅ | ✅ | ✅ |
 | Extrema_ExtElCS Line-Sphere: lineSphereDistance | ✅ | ✅ | ✅ |
 | Integration: Assembly Interference: shaftHousingClearanceAndInterference | ✅ | ✅ | ✅ |
 | Extrema_ExtCS: curveSurfaceParallel | ✅ | ✅ | ✅ |
@@ -464,4 +470,4 @@ For each test, run ground-truth C++ comparison:
 | Measurement Tests: Get vertex at index | ✅ | ✅ | ✅ |
 | Measurement Tests: Vertex out of bounds | ✅ | ✅ | ✅ |
 
-**Total**: 585 tests
+**Total**: 587 tests

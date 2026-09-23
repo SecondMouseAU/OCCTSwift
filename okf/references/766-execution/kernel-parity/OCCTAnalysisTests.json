@@ -2546,5 +2546,69 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_Poly::Polyhedral distance between two shapes",
+    "bridge_function": "OCCTShapePolyhedralDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 10.123940560713,
+        "p1": [
+          4.963544370490271,
+          0.0,
+          0.6026834012766069
+        ],
+        "p2": [
+          15.046570269818346,
+          0.6808332454812377,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 10.123940560713,
+        "p1": [
+          4.963544370490271,
+          0.0,
+          0.6026834012766069
+        ],
+        "p2": [
+          15.046570269818346,
+          0.6808332454812377,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_Poly::Polyhedral distance needs a mesh",
+    "bridge_function": "OCCTShapePolyhedralDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "ok": false,
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "ok": false,
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
