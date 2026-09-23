@@ -4501,5 +4501,293 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Contap Contour Analysis::Sphere contour with direction",
+    "bridge_function": "OCCTContapSphereDir",
+    "bridge_output": {
+      "type": "circle",
+      "data": {
+        "count": 1,
+        "centre": [
+          0,
+          0,
+          0
+        ],
+        "radius": 10
+      }
+    },
+    "kernel_output": {
+      "type": "circle",
+      "data": {
+        "count": 1,
+        "centre": [
+          0,
+          0,
+          0
+        ],
+        "radius": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-contap-contour/"
+  },
+  {
+    "test_name": "Contap Contour Analysis::Cylinder contour with direction",
+    "bridge_function": "OCCTContapCylinderDir",
+    "bridge_output": {
+      "type": "lines",
+      "data": {
+        "count": 2,
+        "loc1": [
+          0,
+          5,
+          0
+        ],
+        "loc2": [
+          0,
+          -5,
+          0
+        ],
+        "dir": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "lines",
+      "data": {
+        "count": 2,
+        "loc1": [
+          0,
+          5,
+          0
+        ],
+        "loc2": [
+          0,
+          -5,
+          0
+        ],
+        "dir": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-contap-contour/"
+  },
+  {
+    "test_name": "Contap Contour Analysis::Cylinder contour with non-axis-parallel direction returns both tangent lines",
+    "bridge_function": "OCCTContapCylinderDir",
+    "bridge_output": {
+      "type": "lines",
+      "data": {
+        "count": 2,
+        "loc1": [
+          -2.23606797749979,
+          4.47213595499958,
+          0
+        ],
+        "loc2": [
+          2.23606797749979,
+          -4.47213595499958,
+          0
+        ],
+        "dir": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "lines",
+      "data": {
+        "count": 2,
+        "loc1": [
+          -2.23606797749979,
+          4.47213595499958,
+          0
+        ],
+        "loc2": [
+          2.23606797749979,
+          -4.47213595499958,
+          0
+        ],
+        "dir": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-contap-contour/"
+  },
+  {
+    "test_name": "Contap Contour Analysis::Sphere contour with eye point",
+    "bridge_function": "OCCTContapSphereEye",
+    "bridge_output": {
+      "type": "circle",
+      "data": {
+        "count": 1,
+        "centre": [
+          1,
+          0,
+          0
+        ],
+        "radius": 9.9498743710662
+      }
+    },
+    "kernel_output": {
+      "type": "circle",
+      "data": {
+        "count": 1,
+        "centre": [
+          1,
+          0,
+          0
+        ],
+        "radius": 9.9498743710662
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-contap-contour/"
+  },
+  {
+    "test_name": "Contap Contour Full::Contour on cylinder face with direction",
+    "bridge_function": "OCCTContapContourDirection",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "lateral_face_lines": 2,
+        "cap_face_lines": 1
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "lateral_face_lines": 2,
+        "cap_face_lines": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-contap-contour/"
+  },
+  {
+    "test_name": "Curve-Curve Distance::Distance between parallel lines",
+    "bridge_function": "OCCTCurve3DMinDistanceToCurve",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 5,
+        "IsParallel": true
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 5,
+        "IsParallel": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-curve-curve-distance/"
+  },
+  {
+    "test_name": "Curve-Curve Distance::Extrema between skew lines",
+    "bridge_function": "OCCTCurve3DExtrema",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "count": 1,
+        "distance": 3,
+        "p1": [
+          5,
+          0,
+          0
+        ],
+        "p2": [
+          5,
+          3,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "count": 1,
+        "distance": 3,
+        "p1": [
+          5,
+          0,
+          0
+        ],
+        "p2": [
+          5,
+          3,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-curve-curve-distance/"
+  },
+  {
+    "test_name": "Curve-Curve Distance::Curve-surface distance",
+    "bridge_function": "OCCTCurve3DDistanceToSurface",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 5,
+        "IsParallel": true
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 5,
+        "IsParallel": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-curve-curve-distance/"
   }
 ]

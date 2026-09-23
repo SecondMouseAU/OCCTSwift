@@ -235,6 +235,14 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Contap Contour Analysis** | Sphere contour with direction | Analytic contour | Circle radius |
+| **Contap Contour Analysis** | Cylinder contour with direction | Analytic contour | Both rulings |
+| **Contap Contour Analysis** | Cylinder contour with non-axis-parallel direction returns both tangent lines | Analytic contour | Both rulings |
+| **Contap Contour Analysis** | Sphere contour with eye point | Analytic contour | Circle radius |
+| **Contap Contour Full** | Contour on cylinder face with direction | Contap_Contour on a face | Line count |
+| **Curve-Curve Distance** | Distance between parallel lines | Curve-curve distance | LowerDistance |
+| **Curve-Curve Distance** | Extrema between skew lines | Curve-curve extrema | Distance(i) |
+| **Curve-Curve Distance** | Curve-surface distance | Curve-surface distance | LowerDistance |
 
 ---
 
@@ -424,6 +432,14 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Sphere contour with direction | OCCTContapSphereDir | Analytic contour | radius + 1 (CT_RADIUS) | ✅ | ✅ | Rewritten: `if let` passed a nil result |
+| Cylinder contour with direction | OCCTContapCylinderDir | Analytic contour | report one line (CT_CYL1) | ✅ | ✅ | Rewritten: `if let` and `count > 0` |
+| Cylinder contour with non-axis-parallel direction returns both tangent lines | OCCTContapCylinderDir | Analytic contour | report one line (CT_CYL1) | ✅ | ✅ |  |
+| Sphere contour with eye point | OCCTContapSphereEye | Analytic contour | radius + 1 (CT_RADIUS) | ✅ | ✅ | Rewritten: `if let` and `count > 0` |
+| Contour on cylinder face with direction | OCCTContapContourDirection | Contap_Contour on a face | NbLines() + 1 in OCCTContapContourLineCount (CT_LINES) | ✅ | ✅ | Rewritten: returned early on the first non-nil face, passed when every face was nil |
+| Distance between parallel lines | OCCTCurve3DMinDistanceToCurve | Curve-curve distance | return distance squared (D_SQ) | ✅ | ✅ | Force-unwrap in #expect replaced by #require |
+| Extrema between skew lines | OCCTCurve3DExtrema | Curve-curve extrema | return distance squared (D_SQ) | ✅ | ✅ | Unguarded extrema[0] replaced by #require; count pinned to 1 |
+| Curve-surface distance | OCCTCurve3DDistanceToSurface | Curve-surface distance | return distance squared (D_SQ) | ✅ | ✅ | Force-unwrap in #expect replaced by #require |
 
 ---
 
