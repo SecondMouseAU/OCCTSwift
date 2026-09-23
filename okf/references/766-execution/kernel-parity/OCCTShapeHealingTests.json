@@ -2,9 +2,304 @@
   {
     "test_name": "ShapeHealing domain kernel parity",
     "bridge_function": "OCCTShapeHealingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::averageTolerance",
+    "bridge_function": "OCCTShapeToleranceValue / OverCount / InRangeCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": "as asserted; 0 / 0 / 0 from the null-shape guard"
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "avg": 1e-07,
+        "max": 1e-07,
+        "min": 1e-07,
+        "vertexAvg": 1e-07,
+        "edgeAvg": 1e-07,
+        "OverTolerance(1e-3)": 0,
+        "InTolerance(0,1e-3)": 30,
+        "nullShape Tolerance(avg)": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::maximumTolerance",
+    "bridge_function": "OCCTShapeToleranceValue / OverCount / InRangeCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": "as asserted; 0 / 0 / 0 from the null-shape guard"
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "avg": 1e-07,
+        "max": 1e-07,
+        "min": 1e-07,
+        "vertexAvg": 1e-07,
+        "edgeAvg": 1e-07,
+        "OverTolerance(1e-3)": 0,
+        "InTolerance(0,1e-3)": 30,
+        "nullShape Tolerance(avg)": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::minimumTolerance",
+    "bridge_function": "OCCTShapeToleranceValue / OverCount / InRangeCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": "as asserted; 0 / 0 / 0 from the null-shape guard"
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "avg": 1e-07,
+        "max": 1e-07,
+        "min": 1e-07,
+        "vertexAvg": 1e-07,
+        "edgeAvg": 1e-07,
+        "OverTolerance(1e-3)": 0,
+        "InTolerance(0,1e-3)": 30,
+        "nullShape Tolerance(avg)": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::toleranceOrdering",
+    "bridge_function": "OCCTShapeToleranceValue / OverCount / InRangeCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": "as asserted; 0 / 0 / 0 from the null-shape guard"
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "avg": 1e-07,
+        "max": 1e-07,
+        "min": 1e-07,
+        "vertexAvg": 1e-07,
+        "edgeAvg": 1e-07,
+        "OverTolerance(1e-3)": 0,
+        "InTolerance(0,1e-3)": 30,
+        "nullShape Tolerance(avg)": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::overToleranceCount",
+    "bridge_function": "OCCTShapeToleranceValue / OverCount / InRangeCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": "as asserted; 0 / 0 / 0 from the null-shape guard"
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "avg": 1e-07,
+        "max": 1e-07,
+        "min": 1e-07,
+        "vertexAvg": 1e-07,
+        "edgeAvg": 1e-07,
+        "OverTolerance(1e-3)": 0,
+        "InTolerance(0,1e-3)": 30,
+        "nullShape Tolerance(avg)": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::inToleranceRangeCount",
+    "bridge_function": "OCCTShapeToleranceValue / OverCount / InRangeCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": "as asserted; 0 / 0 / 0 from the null-shape guard"
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "avg": 1e-07,
+        "max": 1e-07,
+        "min": 1e-07,
+        "vertexAvg": 1e-07,
+        "edgeAvg": 1e-07,
+        "OverTolerance(1e-3)": 0,
+        "InTolerance(0,1e-3)": 30,
+        "nullShape Tolerance(avg)": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::vertexTolerance",
+    "bridge_function": "OCCTShapeToleranceValue / OverCount / InRangeCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": "as asserted; 0 / 0 / 0 from the null-shape guard"
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "avg": 1e-07,
+        "max": 1e-07,
+        "min": 1e-07,
+        "vertexAvg": 1e-07,
+        "edgeAvg": 1e-07,
+        "OverTolerance(1e-3)": 0,
+        "InTolerance(0,1e-3)": 30,
+        "nullShape Tolerance(avg)": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::edgeTolerance",
+    "bridge_function": "OCCTShapeToleranceValue / OverCount / InRangeCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": "as asserted; 0 / 0 / 0 from the null-shape guard"
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "avg": 1e-07,
+        "max": 1e-07,
+        "min": 1e-07,
+        "vertexAvg": 1e-07,
+        "edgeAvg": 1e-07,
+        "OverTolerance(1e-3)": 0,
+        "InTolerance(0,1e-3)": 30,
+        "nullShape Tolerance(avg)": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::toleranceValueOnNullifiedShapeReturnsZero",
+    "bridge_function": "OCCTShapeToleranceValue / OverCount / InRangeCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": "as asserted; 0 / 0 / 0 from the null-shape guard"
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "avg": 1e-07,
+        "max": 1e-07,
+        "min": 1e-07,
+        "vertexAvg": 1e-07,
+        "edgeAvg": 1e-07,
+        "OverTolerance(1e-3)": 0,
+        "InTolerance(0,1e-3)": 30,
+        "nullShape Tolerance(avg)": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::toleranceOverCountOnNullifiedShapeReturnsZero",
+    "bridge_function": "OCCTShapeToleranceValue / OverCount / InRangeCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": "as asserted; 0 / 0 / 0 from the null-shape guard"
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "avg": 1e-07,
+        "max": 1e-07,
+        "min": 1e-07,
+        "vertexAvg": 1e-07,
+        "edgeAvg": 1e-07,
+        "OverTolerance(1e-3)": 0,
+        "InTolerance(0,1e-3)": 30,
+        "nullShape Tolerance(avg)": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::toleranceInRangeCountOnNullifiedShapeReturnsZero",
+    "bridge_function": "OCCTShapeToleranceValue / OverCount / InRangeCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": "as asserted; 0 / 0 / 0 from the null-shape guard"
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "avg": 1e-07,
+        "max": 1e-07,
+        "min": 1e-07,
+        "vertexAvg": 1e-07,
+        "edgeAvg": 1e-07,
+        "OverTolerance(1e-3)": 0,
+        "InTolerance(0,1e-3)": 30,
+        "nullShape Tolerance(avg)": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

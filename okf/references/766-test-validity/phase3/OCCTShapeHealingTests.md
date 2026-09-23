@@ -327,3 +327,21 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: ShapeTolerance (11 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-shapetolerance/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `averageTolerance` | ShapeToleranceTests.swift | `OCCTShapeToleranceValue / OverCount / InRangeCount` | TOLSCALE: every tolerance value scaled by 10 | `ShapeToleranceTests.swift:18:9: Expectation failed: abs(try box().toleranceValue(mode: .average) - 1e-7) < 1e-15` | pass | PASS |
+| `maximumTolerance` | ShapeToleranceTests.swift | `OCCTShapeToleranceValue / OverCount / InRangeCount` | TOLSCALE: every tolerance value scaled by 10 | `ShapeToleranceTests.swift:22:9: Expectation failed: abs(try box().toleranceValue(mode: .maximum) - 1e-7) < 1e-15` | pass | PASS |
+| `minimumTolerance` | ShapeToleranceTests.swift | `OCCTShapeToleranceValue / OverCount / InRangeCount` | TOLSCALE: every tolerance value scaled by 10 | `ShapeToleranceTests.swift:26:9: Expectation failed: abs(try box().toleranceValue(mode: .minimum) - 1e-7) < 1e-15` | pass | PASS |
+| `toleranceOrdering` | ShapeToleranceTests.swift | `OCCTShapeToleranceValue / OverCount / InRangeCount` | TOLAVGSUM: average mode reports the sum over all 30 sub-shapes | `ShapeToleranceTests.swift:35:9: Expectation failed: avgT <= maxT` | pass | PASS |
+| `overToleranceCount` | ShapeToleranceTests.swift | `OCCTShapeToleranceValue / OverCount / InRangeCount` | TOLOVER: over-tolerance threshold ignored (0) | `ShapeToleranceTests.swift:39:9: Expectation failed: try box().toleranceOverCount(value: 1e-3) == 0` | pass | PASS |
+| `inToleranceRangeCount` | ShapeToleranceTests.swift | `OCCTShapeToleranceValue / OverCount / InRangeCount` | TOLINTYPE: in-range count restricted to vertices | `ShapeToleranceTests.swift:43:9: Expectation failed: try box().toleranceInRangeCount(min: 0, max: 1e-3) == 30` | pass | PASS |
+| `vertexTolerance` | ShapeToleranceTests.swift | `OCCTShapeToleranceValue / OverCount / InRangeCount` | TOLSCALE: every tolerance value scaled by 10 | `ShapeToleranceTests.swift:47:9: Expectation failed: abs(try box().toleranceValue(mode: .average, subShapeType: 7) - 1e-7) < 1e-15` | pass | PASS |
+| `edgeTolerance` | ShapeToleranceTests.swift | `OCCTShapeToleranceValue / OverCount / InRangeCount` | TOLSCALE: every tolerance value scaled by 10 | `ShapeToleranceTests.swift:51:9: Expectation failed: abs(try box().toleranceValue(mode: .average, subShapeType: 6) - 1e-7) < 1e-15` | pass | PASS |
+| `toleranceValueOnNullifiedShapeReturnsZero` | ShapeToleranceTests.swift | `OCCTShapeToleranceValue / OverCount / InRangeCount` | TOLNULLVAL: the null-shape guard's fallback changed from 0 to -1 | `ShapeToleranceTests.swift:68:9: Expectation failed: nullShape.toleranceValue(mode: .average) == 0.0` | pass | PASS: kept as written: it already asserts the value unconditionally and records a fixture failure; the kernel also answers 0 on a null shape (probe), so the guard's fallback matches it |
+| `toleranceOverCountOnNullifiedShapeReturnsZero` | ShapeToleranceTests.swift | `OCCTShapeToleranceValue / OverCount / InRangeCount` | TOLNULLVAL: the null-shape guard's fallback changed from 0 to -1 | `ShapeToleranceTests.swift:77:9: Expectation failed: nullShape.toleranceOverCount(value: 1e-3) == 0` | pass | PASS: kept as written |
+| `toleranceInRangeCountOnNullifiedShapeReturnsZero` | ShapeToleranceTests.swift | `OCCTShapeToleranceValue / OverCount / InRangeCount` | TOLNULLVAL: the null-shape guard's fallback changed from 0 to -1 | `ShapeToleranceTests.swift:86:9: Expectation failed: nullShape.toleranceInRangeCount(min: 0, max: 1e-3) == 0` | pass | PASS: kept as written |
