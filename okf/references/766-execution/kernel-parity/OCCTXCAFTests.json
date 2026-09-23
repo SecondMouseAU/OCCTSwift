@@ -126,5 +126,187 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "TNaming Naming Tests::insertNaming",
+    "bridge_function": "OCCTDocumentInsertNaming",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "inserted": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Naming Tests::namingIsDefined",
+    "bridge_function": "OCCTDocumentNamingIsDefined",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "defined": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "defined": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Scope Tests::validAndIsValid",
+    "bridge_function": "OCCTDocumentNamingScopeIsValid",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Scope Tests::unvalid",
+    "bridge_function": "OCCTDocumentNamingScopeUnvalid",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "valid": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "valid_after_unvalid": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Scope Tests::validCount",
+    "bridge_function": "OCCTDocumentNamingScopeValidCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_at_least": 2,
+        "after_clear": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 2,
+        "after_clear": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Select and Resolve::Select a shape within context",
+    "bridge_function": "OCCTDocumentNamingSelect",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "select": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Select and Resolve::Resolve returns a shape",
+    "bridge_function": "OCCTDocumentNamingResolve",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "resolved": true,
+        "faces_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "select": true,
+        "solve": false,
+        "resolved_type": "FACE (4)",
+        "faces": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Select and Resolve::Selected evolution type",
+    "bridge_function": "OCCTDocumentNamingGetEvolution",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "evolution": "selected"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "evolution": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
   }
 ]

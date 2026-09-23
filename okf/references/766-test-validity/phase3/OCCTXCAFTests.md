@@ -99,3 +99,30 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `TNamingNamingTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `insertNaming` | `OCCTDocumentInsertNaming` returns false | :15 Expectation failed: ok | passed | `OCCTDocumentInsertNaming` | PASS: inserted |
+| `namingIsDefined` | `OCCTDocumentNamingIsDefined` returns true | :25 Expectation failed: !doc.namingIsDefined(labelId: node.labelId) | passed | `OCCTDocumentNamingIsDefined` | PASS: false |
+
+### `TNamingScopeTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `validAndIsValid` | `OCCTDocumentNamingScopeIsValid` returns false | :14 Expectation failed: doc.namingScopeIsValid(labelId: node.labelId) | passed | `OCCTDocumentNamingScopeIsValid` | PASS: true |
+| `unvalid` | `OCCTDocumentNamingScopeUnvalid` returns true without unvalidating | :23 Expectation failed: !doc.namingScopeIsValid(labelId: node.labelId) | passed | `OCCTDocumentNamingScopeUnvalid` | PASS: false after Unvalid |
+| `validCount` | `OCCTDocumentNamingScopeValidCount` answers 1 | :32 Expectation failed: doc.namingScopeValidCount >= 2; :34 Expectation failed: doc.namingScopeValidCount == 0 | passed | `OCCTDocumentNamingScopeValidCount` | PASS: 2, then 0 |
+
+### `TNamingSelectResolveTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `selectSubShape` | `OCCTDocumentNamingSelect` returns false | :22 Expectation failed: ok | passed | `OCCTDocumentNamingSelect` | PASS: `Select(face, box)` true |
+| `resolveShape` | `OCCTDocumentNamingResolve` returns null | :42 `resolved != nil`, :43 the face count (rewritten; the old test asserted `Bool(true)` only when something came back) | passed | `OCCTDocumentNamingResolve` | PASS: `Solve` reports false ("TNaming_Naming::Name: FAILED") yet the named shape holds the face |
+| `selectedEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :47 Expectation failed: evo == .selected | passed | `OCCTDocumentNamingGetEvolution` | PASS: SELECTED (5) |
