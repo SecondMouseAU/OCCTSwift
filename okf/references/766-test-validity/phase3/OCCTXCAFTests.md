@@ -99,3 +99,25 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `TNamingTracingTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `traceForward` | `OCCTDocumentNamingTraceForward` answers 0 | :21 Expectation failed: forward.count >= 1 | passed | `OCCTDocumentNamingTraceForward` | PASS: 2 |
+| `traceBackward` | `OCCTDocumentNamingTraceBackward` answers 0 | :36 Expectation failed: backward.count >= 1 | passed | `OCCTDocumentNamingTraceBackward` | PASS: 1 |
+| `multipleGenerations` | `OCCTDocumentNamingTraceForward` answers 0 | :55 Expectation failed: forward.count >= 2 | passed | `OCCTDocumentNamingTraceForward` | PASS: 2 |
+| `emptyTraceForUnrelated` | `OCCTDocumentNamingTraceForward` answers the source shape | :67 Expectation failed: forward.isEmpty | passed | `OCCTDocumentNamingTraceForward` | PASS: not in the used-shape table, so 0 |
+| `traceModificationChain` | `OCCTDocumentNamingTraceForward` answers 0 | :81 Expectation failed: forward.count >= 1 | passed | `OCCTDocumentNamingTraceForward` | PASS: at least 1 |
+| `forwardTraceExcludesSource` | `OCCTDocumentNamingTraceForward` answers the source shape | :98 Expectation failed: !shape.isSame(as: box) | passed | `OCCTDocumentNamingTraceForward` | PASS: the source is not in its own forward trace |
+| `backwardTraceExcludesGenerated` | `OCCTDocumentNamingTraceBackward` answers the given shape | :116 Expectation failed: !shape.isSame(as: sphere) | passed | `OCCTDocumentNamingTraceBackward` | PASS: the shape is not in its own backward trace |
+
+### `TNamingTranslatorTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `translatorCopy` | `OCCTShapeTranslatorCopy` returns null | :12 Expectation failed: Bool(false) | passed | `OCCTShapeTranslatorCopy` | PASS: copied, a distinct TShape |
