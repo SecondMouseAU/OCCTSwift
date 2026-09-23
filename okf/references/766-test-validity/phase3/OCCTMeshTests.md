@@ -19,7 +19,7 @@ with `swift test --filter`, and the set was reverted (`git diff Sources/` empty)
 run. Kernel values come from the probe under `Scripts/repro/<dir>/`, whose output is committed
 beside it as `transcript.txt`.
 
-**Covered so far**: 79 of 97 tests.
+**Covered so far**: 97 of 97 tests.
 
 ## Findings filed from this execution
 
@@ -104,9 +104,9 @@ Probe: `Scripts/repro/766-mesh-issue613/`.
 | Mesh face indices address faces(), and winding survives a shared wall (#613) | merged mesh nodes keep both sides of a shared wall, oppositely wound | `OCCTPolyMergeNodes` | R4: reversed flag passed to AddTriangulation forced false | :316 `minusX > 0`, :317 `plusX == minusX` | ✔ | MATCH |
 | Mesh face indices address faces(), and winding survives a shared wall (#613) | merged mesh nodes on a plain box are entirely outward | `OCCTPolyMergeNodes` | R4: reversed flag passed to AddTriangulation forced false | :341 `outward == 12`, :342 `inward == 0` | ✔ | MATCH |
 
-## `OCCTMeshTests.swift` (55 tests)
+## `OCCTMeshTests.swift` (73 tests)
 
-Probe: `Scripts/repro/766-mesh-core-1/`, `Scripts/repro/766-mesh-core-2/`, `Scripts/repro/766-mesh-core-3/`.
+Probe: `Scripts/repro/766-mesh-core-1/`, `Scripts/repro/766-mesh-core-2/`, `Scripts/repro/766-mesh-core-3/`, `Scripts/repro/766-mesh-core-4/`.
 
 | Suite | Test | Bridge function | Injection | Red (failing line) | Green | Parity |
 |-------|------|-----------------|-----------|--------------------|-------|--------|
@@ -165,6 +165,24 @@ Probe: `Scripts/repro/766-mesh-core-1/`, `Scripts/repro/766-mesh-core-2/`, `Scri
 | Poly_CoherentTriangulation | convert back to triangulation **(rewritten)** | `OCCTCoherentTriangulationGetResult` | E3: result dropped, reports failure | :848 `#require(ct.getResult())` | ✔ | MATCH |
 | Poly_CoherentTriangulation | create from mesh **(rewritten)** | `OCCTCoherentTriangulationCreateFromMesh` | E1: returns null for a meshed shape | :858 `#require(CoherentTriangulation.createFromMesh(box))` | ✔ | MATCH |
 | Poly_CoherentTriangulation | node coordinates after result **(rewritten)** | `OCCTCoherentTriangulationNodeCoords` | E1: reads Node(index + 1), one past the node asked for | :873, :874, :875 | ✔ | MATCH |
+| Poly_Connect Mesh Adjacency Tests | triangleAdjacency **(rewritten)** | `OCCTMeshTriangleAdjacency` | F1: the first and third neighbour swapped | :893 `adj.0 == 0 && adj.1 == 0 && adj.2 == 2` | ✔ | MATCH |
+| Poly_Connect Mesh Adjacency Tests | nodeTriangle **(rewritten)** | `OCCTMeshNodeTriangle` | F1: Triangle(node) + 1 | :900 `triIdx == 1` | ✔ | MATCH |
+| Poly_Connect Mesh Adjacency Tests | nodeTriangleCount **(rewritten)** | `OCCTMeshNodeTriangleCount` | F1: the fan count starts at 1 | :907 `count == 1` | ✔ | MATCH |
+| v0.115.0 - Triangulation Queries | faceTriangulation **(rewritten)** | `OCCTFaceTriangulationNodeCount (and TriangleCount, Deflection, Node, Triangle)` | F1: NodeCount returns NbTriangles | :919 `face.triangulationNodeCount == 4` | ✔ | MATCH |
+| v0.115.0 - Triangulation Queries | triangulationUVNodes **(rewritten)** | `OCCTFaceTriangulationHasUVNodes, OCCTFaceTriangulationUVNode` | F1: HasUVNodes returns false | :941 `face.triangulationHasUVNodes` | ✔ | MATCH |
+| v0.160 MeshCache write API | Triangulation create from arrays round-trips **(rewritten)** | `OCCTPolyTriangulationCreate` | F1: the 2nd and 3rd index of each triangle swapped | :961 `t0.0 == 0 && t0.1 == 1 && t0.2 == 2` | ✔ | MATCH |
+| v0.160 MeshCache write API | Triangulation rejects malformed inputs | `Triangulation.create (Swift guard) / OCCTPolyTriangulationCreate` | F1: Triangulation.create's index-range guard removed (the bridge does not check range) | :972 `Triangulation.create(nodes:triangles: [0, 1, 99]) == nil` | ✔ | N/A: input validation in the Swift layer; the bridge and kernel accept an out-of-range index |
+| v0.160 MeshCache write API | Create triangulation rep and bind it to a face **(rewritten)** | `OCCTBRepGraphMeshCreateTriangulationRep, OCCTBRepGraphMeshAppendCachedTriangulation, OCCTBRepGraphMeshFaceActiveTriangulationRepId` | F1: AppendCachedTriangulation is a no-op | :993 `graph.meshFaceActiveTriangulationRepId(0) != nil` | ✔ | MATCH |
+| v0.160 MeshCache write API | Create polygon3D rep and bind it to an edge **(rewritten)** | `OCCTBRepGraphMeshCreatePolygon3DRep, OCCTBRepGraphMeshSetCachedPolygon3D, OCCTBRepGraphMeshEdgePolygon3DRepId` | F2 (alone): SetCachedPolygon3D is a no-op | :1006 `graph.meshEdgePolygon3DRepId(0) != nil` | ✔ | MATCH |
+| v0.158 MeshView two-tier mesh storage | Mesh count properties are non-negative on a fresh graph **(rewritten)** | `OCCTBRepGraphNbTriangulations, NbPolygons3D, MeshNbPolygons2D, MeshNbPolygonsOnTri, MeshNbActive*` | F1: BRepGraph.triangulationCount reads the face count | :1018 `graph.triangulationCount == 0` | ✔ | MATCH |
+| v0.158 MeshView two-tier mesh storage | Mesh rep id queries return nil when no mesh is present **(rewritten)** | `OCCTBRepGraphMeshFaceActiveTriangulationRepId, OCCTBRepGraphMeshEdgePolygon3DRepId, OCCTBRepGraphMeshCoEdgeHasMesh` | F1: EdgePolygon3DRepId reports presence unconditionally | :1034 `graph.meshEdgePolygon3DRepId(0) == nil` | ✔ | MATCH |
+| v0.158 MeshView two-tier mesh storage | Mesh counts after incremental meshing **(rewritten)** | `OCCTBRepGraphFaceHasTriangulation, OCCTBRepGraphMeshFaceActiveTriangulationRepId, OCCTBRepGraphNbTriangulations` | F1: face triangulation presence reads the cache tier only (the #1547 regression) | :1051 `graph.faceHasTriangulation(0) == true`, :1052 | ✔ | MATCH |
+| v0.158 MeshView two-tier mesh storage | Mesh edge polygon3D rep id resolves the persistent tier (#1547) **(rewritten)** | `OCCTBRepGraphSetEdgePolygon3DRepId, OCCTBRepGraphEdgeHasPolygon3D` | F1: SetEdgePolygon3DRepId is a no-op | :1065 `graph.edgeHasPolygon3D(0) == true` | ✔ | MATCH |
+| Poly Copy & Mutators | Polygon2D copy preserves contents **(rewritten)** | `OCCTPolyPolygon2DCopy` | F1: copy rebuilt from the nodes alone, dropping the deflection | :1088 `abs(copy.deflection - 0.25) < 1e-12` | ✔ | MATCH |
+| Poly Copy & Mutators | PolygonOnTriangulation copy preserves nodes **(rewritten)** | `OCCTPolyPolygonOnTriCopy` | F1: the copy's first node overwritten | :1098 `copy.nodeIndex(at: i) == Int(indices[i])` | ✔ | MATCH |
+| Poly Copy & Mutators | PolygonOnTriangulation setNodes mutates in place **(rewritten)** | `OCCTPolyPolygonOnTriSetNodes` | F1: size mismatch clamped instead of refused | :1110 `!poly.setNodes([1, 2])` | ✔ | MATCH |
+| Poly Copy & Mutators | PolygonOnTriangulation setParameters mutates in place **(rewritten)** | `OCCTPolyPolygonOnTriSetParameters` | F1: size mismatch clamped instead of refused | :1122 `!poly.setParameters([1.0])` | ✔ | MATCH |
+| Poly Copy & Mutators | setParameters fails when polygon has no parameters **(rewritten)** | `OCCTPolyPolygonOnTriSetParameters` | F1: the HasParameters() refusal returns true | :1130 `!poly.setParameters([0.0, 1.0, 2.0])` | ✔ | MATCH |
 
 Rewritten because the original could not fail for the defect its title names:
 
@@ -195,3 +213,20 @@ Rewritten because the original could not fail for the defect its title names:
 - **convert back to triangulation**: wrapped its assertions in `if let`, so a nil result skipped them; now #require.
 - **create from mesh**: wrapped its assertions in `if let`, so a nil result skipped them; now #require, and pins 2 triangles (it asserted `> 0`).
 - **node coordinates after result**: wrapped its assertions in `if let`, so a nil result skipped them; now #require.
+- **triangleAdjacency**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require, and pins (0, 0, 2) where it asserted every index `>= 0`.
+- **nodeTriangle**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require, and pins 1 where it asserted `>= 1`.
+- **nodeTriangleCount**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require, and pins 1 where it asserted `>= 1`.
+- **faceTriangulation**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require; `mag >= 0` and `n >= 1` could not fail, so node 1 and triangle 1 are pinned, and `defl > 0` (held only by 3e-16 rounding) is now `0 <= defl < 1e-9`.
+- **triangulationUVNodes**: asserted nothing (`let _ = uv`), and only if HasUVNodes; now asserts HasUVNodes and pins UV node 1.
+- **Triangulation create from arrays round-trips**: node and triangle checks sat in `if let`; now #require.
+- **Create triangulation rep and bind it to a face**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require; adds the unbound precondition (nil before binding).
+- **Create polygon3D rep and bind it to an edge**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require; adds the unbound precondition (nil before binding).
+- **Mesh count properties are non-negative on a fresh graph**: asserted each count `>= 0` and active `<=` total, which no count can fail; now pins each to 0.
+- **Mesh rep id queries return nil when no mesh is present**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require.
+- **Mesh counts after incremental meshing**: `triangulationCount + polygon3DCount >= 0` could not fail; now pins 6 triangulations and 24 polygons on triangulation.
+- **Mesh edge polygon3D rep id resolves the persistent tier (#1547)**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require.
+- **Polygon2D copy preserves contents**: returned silently on a nil polygon and compared nodes inside `if let`; now #require.
+- **PolygonOnTriangulation copy preserves nodes**: returned silently on nil; now #require, and compares against the input rather than the source polygon.
+- **PolygonOnTriangulation setNodes mutates in place**: returned silently on nil; now #require.
+- **PolygonOnTriangulation setParameters mutates in place**: returned silently on nil; now #require.
+- **setParameters fails when polygon has no parameters**: returned silently on nil; now #require.

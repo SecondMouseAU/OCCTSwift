@@ -876,106 +876,89 @@ struct CoherentTriangulationTests {
     }
 }
 
+// Epic #766: every suite from here to the end of the file nested its assertions in `if let` (or
+// returned early from a `guard ... else { return }`), so a nil shape, graph or polygon skipped them
+// and the test passed. They now `#require`, and the `>= 0` / `>= 1` checks that no value could fail
+// are pinned to what the kernel gives the same inputs (Scripts/repro/766-mesh-core-4/transcript.txt).
+
 @Suite("Poly_Connect Mesh Adjacency Tests")
 struct PolyConnectTests {
 
-    @Test func triangleAdjacency() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let _ = box.mesh(linearDeflection: 0.1)
-            if let adj = box.meshTriangleAdjacency(faceIndex: 1, triangleIndex: 1) {
-                #expect(adj.0 >= 0 && adj.1 >= 0 && adj.2 >= 0)
-            }
-        }
+    // Face index 1 (x = +5) of a box meshed at 0.1 is two triangles sharing one edge, so triangle 1
+    // has exactly one neighbour, triangle 2, and node 1 belongs to one triangle.
+    @Test func triangleAdjacency() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let _ = box.mesh(linearDeflection: 0.1)
+        let adj = try #require(box.meshTriangleAdjacency(faceIndex: 1, triangleIndex: 1))
+        #expect(adj.0 == 0 && adj.1 == 0 && adj.2 == 2)
     }
 
-    @Test func nodeTriangle() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let _ = box.mesh(linearDeflection: 0.1)
-            if let triIdx = box.meshNodeTriangle(faceIndex: 1, nodeIndex: 1) {
-                #expect(triIdx >= 1)
-            }
-        }
+    @Test func nodeTriangle() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let _ = box.mesh(linearDeflection: 0.1)
+        let triIdx = try #require(box.meshNodeTriangle(faceIndex: 1, nodeIndex: 1))
+        #expect(triIdx == 1)
     }
 
-    @Test func nodeTriangleCount() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let _ = box.mesh(linearDeflection: 0.1)
-            let count = box.meshNodeTriangleCount(faceIndex: 1, nodeIndex: 1)
-            #expect(count >= 1)
-        }
+    @Test func nodeTriangleCount() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let _ = box.mesh(linearDeflection: 0.1)
+        let count = box.meshNodeTriangleCount(faceIndex: 1, nodeIndex: 1)
+        #expect(count == 1)
     }
 }
 
 @Suite("v0.115.0 - Triangulation Queries")
 struct TriangulationQueryTests {
 
-    @Test func faceTriangulation() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            // Mesh the box first
-            if box.mesh(linearDeflection: 1.0) != nil {
-                let faces = box.subShapes(ofType: .face)
-                if faces.count > 0 {
-                    let face = faces[0]
-                    let nodeCount = face.triangulationNodeCount
-                    let triCount = face.triangulationTriangleCount
-                    #expect(nodeCount > 0)
-                    #expect(triCount > 0)
-                    let defl = face.triangulationDeflection
-                    #expect(defl > 0)
+    @Test func faceTriangulation() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        // Mesh the box first
+        _ = try #require(box.mesh(linearDeflection: 1.0))
+        let face = try #require(box.subShapes(ofType: .face).first)
+        #expect(face.triangulationNodeCount == 4)
+        #expect(face.triangulationTriangleCount == 2)
+        // A planar face's triangulation deflection is the kernel's ~3e-16, not a positive
+        // tolerance; `> 0` held only by that rounding.
+        let defl = face.triangulationDeflection
+        #expect(defl >= 0 && defl < 1e-9)
 
-                    // Get first node
-                    let p = face.triangulationNode(at: 1)
-                    // Should be a valid 3D point
-                    let mag = sqrt(p.x * p.x + p.y * p.y + p.z * p.z)
-                    #expect(mag >= 0)  // can be zero if at origin
+        // First node: the (-5, -5, -5) corner. `mag >= 0` held for any point.
+        let p = face.triangulationNode(at: 1)
+        #expect(abs(p.x + 5) < 1e-9 && abs(p.y + 5) < 1e-9 && abs(p.z + 5) < 1e-9)
 
-                    // Get first triangle
-                    let (n1, n2, n3) = face.triangulationTriangle(at: 1)
-                    #expect(n1 >= 1)
-                    #expect(n2 >= 1)
-                    #expect(n3 >= 1)
-                }
-            }
-        }
+        // First triangle, 1-based node numbers.
+        let (n1, n2, n3) = face.triangulationTriangle(at: 1)
+        #expect(n1 == 2 && n2 == 1 && n3 == 3)
     }
 
-    @Test func triangulationUVNodes() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if box.mesh(linearDeflection: 1.0) != nil {
-                let faces = box.subShapes(ofType: .face)
-                if faces.count > 0 {
-                    let face = faces[0]
-                    if face.triangulationHasUVNodes {
-                        let uv = face.triangulationUVNode(at: 1)
-                        // UV should be in some range
-                        let _ = uv
-                    }
-                }
-            }
-        }
+    // This asserted nothing (`let _ = uv`). BRepMesh stores UV nodes, and node 1 sits at the face's
+    // UV origin.
+    @Test func triangulationUVNodes() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        _ = try #require(box.mesh(linearDeflection: 1.0))
+        let face = try #require(box.subShapes(ofType: .face).first)
+        #expect(face.triangulationHasUVNodes)
+        let uv = face.triangulationUVNode(at: 1)
+        #expect(abs(uv.x) < 1e-9 && abs(uv.y) < 1e-9)
     }
 }
 
 @Suite("v0.160 MeshCache write API")
 struct MeshCacheWriteTests {
     @Test("Triangulation create from arrays round-trips")
-    func triangulationRoundTrip() {
+    func triangulationRoundTrip() throws {
         let nodes: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(1, 1, 0),
         ]
         let triangles = [0, 1, 2, 1, 3, 2]
-        guard let tri = Triangulation.create(nodes: nodes, triangles: triangles) else {
-            Issue.record("Triangulation.create returned nil")
-            return
-        }
+        let tri = try #require(Triangulation.create(nodes: nodes, triangles: triangles))
         #expect(tri.nodeCount == 4)
         #expect(tri.triangleCount == 2)
-        if let n0 = tri.node(at: 0) {
-            #expect(abs(n0.x) < 1e-12 && abs(n0.y) < 1e-12 && abs(n0.z) < 1e-12)
-        }
-        if let t0 = tri.triangle(at: 0) {
-            #expect(t0.0 == 0 && t0.1 == 1 && t0.2 == 2)
-        }
+        let n0 = try #require(tri.node(at: 0))
+        #expect(abs(n0.x) < 1e-12 && abs(n0.y) < 1e-12 && abs(n0.z) < 1e-12)
+        let t0 = try #require(tri.triangle(at: 0))
+        #expect(t0.0 == 0 && t0.1 == 1 && t0.2 == 2)
         tri.deflection = 0.01
         #expect(abs(tri.deflection - 0.01) < 1e-12)
     }
@@ -992,137 +975,95 @@ struct MeshCacheWriteTests {
     }
 
     @Test("Create triangulation rep and bind it to a face")
-    func createAndBindTriangulationRep() {
+    func createAndBindTriangulationRep() throws {
         let nodes: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(1, 1, 0),
         ]
         let triangles = [0, 1, 2, 1, 3, 2]
-        guard let tri = Triangulation.create(nodes: nodes, triangles: triangles) else {
-            Issue.record("Triangulation.create nil")
-            return
-        }
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                guard let repId = graph.createTriangulationRep(tri) else {
-                    Issue.record("createTriangulationRep nil")
-                    return
-                }
-                #expect(repId >= 0)
-                // Bind it to face 0; the call must not crash on a valid id.
-                graph.appendCachedTriangulation(faceIndex: 0, triRepId: repId)
-                graph.setCachedActiveIndex(faceIndex: 0, activeIndex: 0)
-                // After append, MeshView should report the rep as the active triangulation for face 0.
-                let active = graph.meshFaceActiveTriangulationRepId(0)
-                #expect(active != nil)
-            }
-        }
+        let tri = try #require(Triangulation.create(nodes: nodes, triangles: triangles))
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        // Unmeshed: face 0 has no triangulation until one is bound.
+        #expect(graph.meshFaceActiveTriangulationRepId(0) == nil)
+        let repId = try #require(graph.createTriangulationRep(tri))
+        #expect(repId == 0)
+        graph.appendCachedTriangulation(faceIndex: 0, triRepId: repId)
+        graph.setCachedActiveIndex(faceIndex: 0, activeIndex: 0)
+        // After append, MeshView should report the rep as the active triangulation for face 0.
+        #expect(graph.meshFaceActiveTriangulationRepId(0) != nil)
     }
 
     @Test("Create polygon3D rep and bind it to an edge")
-    func createAndBindPolygon3DRep() {
+    func createAndBindPolygon3DRep() throws {
         let pts: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 0, 0)]
-        guard let poly = Polygon3D.create(points: pts) else {
-            Issue.record("Polygon3D.create nil")
-            return
-        }
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                guard let repId = graph.createPolygon3DRep(poly) else {
-                    Issue.record("createPolygon3DRep nil")
-                    return
-                }
-                #expect(repId >= 0)
-                graph.setCachedPolygon3D(edgeIndex: 0, polyRepId: repId)
-                let active = graph.meshEdgePolygon3DRepId(0)
-                #expect(active != nil)
-            }
-        }
+        let poly = try #require(Polygon3D.create(points: pts))
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        #expect(graph.meshEdgePolygon3DRepId(0) == nil)
+        let repId = try #require(graph.createPolygon3DRep(poly))
+        #expect(repId == 0)
+        graph.setCachedPolygon3D(edgeIndex: 0, polyRepId: repId)
+        #expect(graph.meshEdgePolygon3DRepId(0) != nil)
     }
 }
 
 @Suite("v0.158 MeshView two-tier mesh storage")
 struct MeshViewCountsTests {
+    // Every count here was checked `>= 0`, which a count cannot fail. An unmeshed box's graph holds
+    // no mesh at all, so each is exactly 0.
     @Test("Mesh count properties are non-negative on a fresh graph")
-    func meshCountsZeroOnFreshGraph() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                // No mesh has been computed yet; all counts should be 0 (or at least non-negative).
-                #expect(graph.polygon2DCount >= 0)
-                #expect(graph.polygonOnTriCount >= 0)
-                #expect(graph.activeTriangulationCount >= 0)
-                #expect(graph.activePolygon3DCount >= 0)
-                #expect(graph.activePolygon2DCount >= 0)
-                #expect(graph.activePolygonOnTriCount >= 0)
-                // Active counts cannot exceed total counts.
-                #expect(graph.activeTriangulationCount <= graph.triangulationCount)
-                #expect(graph.activePolygon3DCount <= graph.polygon3DCount)
-                #expect(graph.activePolygon2DCount <= graph.polygon2DCount)
-                #expect(graph.activePolygonOnTriCount <= graph.polygonOnTriCount)
-            }
-        }
+    func meshCountsZeroOnFreshGraph() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        #expect(graph.triangulationCount == 0)
+        #expect(graph.polygon3DCount == 0)
+        #expect(graph.polygon2DCount == 0)
+        #expect(graph.polygonOnTriCount == 0)
+        #expect(graph.activeTriangulationCount == 0)
+        #expect(graph.activePolygon3DCount == 0)
+        #expect(graph.activePolygon2DCount == 0)
+        #expect(graph.activePolygonOnTriCount == 0)
     }
 
     @Test("Mesh rep id queries return nil when no mesh is present")
-    func meshRepIdsAbsentBeforeMeshing() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                // No incremental mesh has run; cache and persistent tiers are empty.
-                #expect(graph.meshFaceActiveTriangulationRepId(0) == nil)
-                #expect(graph.meshEdgePolygon3DRepId(0) == nil)
-                #expect(graph.meshCoEdgeHasMesh(0) == false)
-            }
-        }
+    func meshRepIdsAbsentBeforeMeshing() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        // No incremental mesh has run; cache and persistent tiers are empty.
+        #expect(graph.meshFaceActiveTriangulationRepId(0) == nil)
+        #expect(graph.meshEdgePolygon3DRepId(0) == nil)
+        #expect(graph.meshCoEdgeHasMesh(0) == false)
     }
 
     @Test("Mesh counts after incremental meshing")
-    func meshCountsAfterIncrementalMesh() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            // Generate triangulation via incremental mesher BEFORE building the graph: construction
-            // ingests the existing triangulation into the persistent tier, not the runtime cache.
-            _ = box.mesh(linearDeflection: 0.5, angularDeflection: 0.5)
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                // After meshing, persistent triangulation tier should report nonzero.
-                #expect(graph.triangulationCount + graph.polygon3DCount >= 0)
-                // #1547: meshFaceActiveTriangulationRepId must resolve mesh data that lives only in
-                // the persistent tier, matching faceHasTriangulation (which already does).
-                #expect(graph.faceHasTriangulation(0) == true)
-                #expect(graph.meshFaceActiveTriangulationRepId(0) != nil)
-            }
-        }
+    func meshCountsAfterIncrementalMesh() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        // Generate triangulation via incremental mesher BEFORE building the graph: construction
+        // ingests the existing triangulation into the persistent tier, not the runtime cache.
+        _ = box.mesh(linearDeflection: 0.5, angularDeflection: 0.5)
+        let graph = try #require(BRepGraph(shape: box))
+        // One triangulation per face, and one polygon-on-triangulation per coedge (4 per face).
+        // The sum `triangulationCount + polygon3DCount >= 0` this replaced could not fail.
+        #expect(graph.triangulationCount == 6)
+        #expect(graph.polygonOnTriCount == 24)
+        // #1547: meshFaceActiveTriangulationRepId must resolve mesh data that lives only in
+        // the persistent tier, matching faceHasTriangulation (which already does).
+        #expect(graph.faceHasTriangulation(0) == true)
+        #expect(graph.meshFaceActiveTriangulationRepId(0) != nil)
     }
 
     @Test("Mesh edge polygon3D rep id resolves the persistent tier (#1547)")
-    func meshEdgePolygon3DRepIdResolvesPersistentTier() {
+    func meshEdgePolygon3DRepIdResolvesPersistentTier() throws {
         let pts: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 0, 0)]
-        guard let poly = Polygon3D.create(points: pts) else {
-            Issue.record("Polygon3D.create nil")
-            return
-        }
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                guard let repId = graph.createPolygon3DRep(poly) else {
-                    Issue.record("createPolygon3DRep nil")
-                    return
-                }
-                // Write directly into the persistent-tier slot (EdgeDef.Polygon3DRepId) rather than
-                // the runtime cache (contrast createAndBindPolygon3DRep's setCachedPolygon3D above).
-                graph.setEdgePolygon3DRepId(0, polygon3DRepId: repId)
-                #expect(graph.edgeHasPolygon3D(0) == true)
-                #expect(graph.meshEdgePolygon3DRepId(0) != nil)
-            }
-        }
+        let poly = try #require(Polygon3D.create(points: pts))
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        let repId = try #require(graph.createPolygon3DRep(poly))
+        // Write directly into the persistent-tier slot (EdgeDef.Polygon3DRepId) rather than
+        // the runtime cache (contrast createAndBindPolygon3DRep's setCachedPolygon3D above).
+        graph.setEdgePolygon3DRepId(0, polygon3DRepId: repId)
+        #expect(graph.edgeHasPolygon3D(0) == true)
+        #expect(graph.meshEdgePolygon3DRepId(0) != nil)
     }
 }
 
@@ -1132,42 +1073,36 @@ struct MeshViewCountsTests {
 struct PolyCopyMutatorTests {
 
     @Test("Polygon2D copy preserves contents")
-    func polygon2DCopy() {
+    func polygon2DCopy() throws {
         let pts = [SIMD2<Double>(0, 0), SIMD2<Double>(1, 0), SIMD2<Double>(1, 1)]
-        guard let poly = Polygon2D.create(points: pts) else { return }
+        let poly = try #require(Polygon2D.create(points: pts))
         poly.deflection = 0.25
-        guard let copy = poly.copy() else {
-            Issue.record("Polygon2D.copy() returned nil")
-            return
-        }
-        #expect(copy.nodeCount == poly.nodeCount)
+        let copy = try #require(poly.copy())
+        #expect(copy.nodeCount == 3)
         for i in 0..<poly.nodeCount {
-            if let a = poly.node(at: i), let b = copy.node(at: i) {
-                #expect(abs(a.x - b.x) < 1e-12)
-                #expect(abs(a.y - b.y) < 1e-12)
-            }
+            let a = try #require(poly.node(at: i))
+            let b = try #require(copy.node(at: i))
+            #expect(abs(a.x - b.x) < 1e-12)
+            #expect(abs(a.y - b.y) < 1e-12)
         }
         #expect(abs(copy.deflection - 0.25) < 1e-12)
     }
 
     @Test("PolygonOnTriangulation copy preserves nodes")
-    func polygonOnTriCopy() {
+    func polygonOnTriCopy() throws {
         let indices: [Int32] = [1, 2, 3, 4]
-        guard let poly = PolygonOnTriangulation.create(nodeIndices: indices) else { return }
-        guard let copy = poly.copy() else {
-            Issue.record("PolygonOnTriangulation.copy() returned nil")
-            return
-        }
-        #expect(copy.nodeCount == poly.nodeCount)
+        let poly = try #require(PolygonOnTriangulation.create(nodeIndices: indices))
+        let copy = try #require(poly.copy())
+        #expect(copy.nodeCount == 4)
         for i in 0..<poly.nodeCount {
-            #expect(copy.nodeIndex(at: i) == poly.nodeIndex(at: i))
+            #expect(copy.nodeIndex(at: i) == Int(indices[i]))
         }
     }
 
     @Test("PolygonOnTriangulation setNodes mutates in place")
-    func polygonOnTriSetNodes() {
+    func polygonOnTriSetNodes() throws {
         let indices: [Int32] = [1, 2, 3, 4]
-        guard let poly = PolygonOnTriangulation.create(nodeIndices: indices) else { return }
+        let poly = try #require(PolygonOnTriangulation.create(nodeIndices: indices))
         #expect(poly.setNodes([5, 6, 7, 8]))
         #expect(poly.nodeIndex(at: 0) == 5)
         #expect(poly.nodeIndex(at: 3) == 8)
@@ -1176,11 +1111,10 @@ struct PolyCopyMutatorTests {
     }
 
     @Test("PolygonOnTriangulation setParameters mutates in place")
-    func polygonOnTriSetParameters() {
+    func polygonOnTriSetParameters() throws {
         let indices: [Int32] = [1, 2, 3]
         let params: [Double] = [0.0, 1.0, 2.0]
-        guard let poly = PolygonOnTriangulation.create(nodeIndices: indices, parameters: params)
-        else { return }
+        let poly = try #require(PolygonOnTriangulation.create(nodeIndices: indices, parameters: params))
         #expect(poly.hasParameters)
         #expect(poly.setParameters([10.0, 20.0, 30.0]))
         #expect(abs(poly.parameter(at: 1) - 20.0) < 1e-12)
@@ -1189,9 +1123,9 @@ struct PolyCopyMutatorTests {
     }
 
     @Test("setParameters fails when polygon has no parameters")
-    func setParametersWithoutParams() {
+    func setParametersWithoutParams() throws {
         let indices: [Int32] = [1, 2, 3]
-        guard let poly = PolygonOnTriangulation.create(nodeIndices: indices) else { return }
+        let poly = try #require(PolygonOnTriangulation.create(nodeIndices: indices))
         #expect(!poly.hasParameters)
         #expect(!poly.setParameters([0.0, 1.0, 2.0]))
     }
