@@ -109,3 +109,19 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-polynomial-precision (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **Polynomial Solvers** | Solve quadratic x²-5x+6=0 | `OCCTSolveQuadratic` | each root + 0.5 in occtSolvePolynomial | red | green | PASS |
+| **Polynomial Solvers** | Quadratic with no real roots | `OCCTSolveQuadratic` | NbSolutions() + 1 reported as the count | red | green | PASS |
+| **Polynomial Solvers** | Quadratic with one root | `OCCTSolveQuadratic` | each root + 0.5 | red | green | PASS |
+| **Polynomial Solvers** | Solve cubic x³-6x²+11x-6=0 | `OCCTSolveCubic` | each root + 0.5 | red | green | PASS |
+| **Polynomial Solvers** | Solve quartic x⁴-10x²+9=0 | `OCCTSolveQuartic` | each root + 0.5 | red | green | PASS |
+| **Precision Tests** | confusion | `OCCTPrecisionConfusion` | Confusion() * 10 | red | green | PASS |
+| **Precision Tests** | angular | `OCCTPrecisionAngular` | returns Confusion() instead of Angular() | red | green | PASS |
+| **Precision Tests** | isInfinite | `OCCTPrecisionIsInfinite` | predicate negated | red | green | PASS |
+| **Precision Tests** | ordering | `OCCTPrecisionIntersection` | Intersection() returns Approximation() | red | green | PASS |
+| **Precision Tests** | infinite | `OCCTPrecisionInfinite` | returns 1e10 instead of Infinite() | red | green | PASS |
+| **Precision Tests** | pConfusion | `OCCTPrecisionPConfusion` | returns Confusion() (drops the /100) | red | green | PASS |
