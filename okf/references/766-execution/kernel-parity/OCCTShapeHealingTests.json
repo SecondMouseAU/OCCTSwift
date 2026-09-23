@@ -2,9 +2,722 @@
   {
     "test_name": "ShapeHealing domain kernel parity",
     "bridge_function": "OCCTShapeHealingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
+  },
+  {
+    "test_name": "ShapeFix_ComposeShell::composeShellPlanar",
+    "bridge_function": "OCCTShapeFixComposeShell",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "source": "Scripts/repro/766-healing-1638-266-318-438",
+        "planar 10x10 1x1": {
+          "faces": 1,
+          "area": 100.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix EdgeConnect Tests::fixEdgeConnect",
+    "bridge_function": "OCCTShapeFixEdgeConnect",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "source": "Scripts/repro/766-healing-1479-1491 (PR #2303)",
+        "EdgeConnect(box)": {
+          "faces": 6,
+          "edges": 24,
+          "volume": 1000.0,
+          "valid": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix Edge Tests::fixSameParameter",
+    "bridge_function": "OCCTShapeFixEdgeSameParameter / VertexTolerance",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "fixEdgeSameParameter": 0,
+        "fixEdgeVertexTolerance": 0
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "FixSameParameter count": 0,
+        "FixVertexTolerance count": 0,
+        "edgesExplored": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix Edge Tests::fixVertexTolerance",
+    "bridge_function": "OCCTShapeFixEdgeSameParameter / VertexTolerance",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "fixEdgeSameParameter": 0,
+        "fixEdgeVertexTolerance": 0
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "FixSameParameter count": 0,
+        "FixVertexTolerance count": 0,
+        "edgesExplored": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, ShapeFix_Edge Extended::addRemoveCurve3d",
+    "bridge_function": "OCCTShapeFixEdge*",
+    "bridge_output": {
+      "type": "bools",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "FixRemoveCurve3d": false,
+        "FixAddCurve3d": false,
+        "FixAddPCurve": false,
+        "FixRemovePCurve": false,
+        "FixReversed2d": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, ShapeFix_Edge Extended::addPCurve",
+    "bridge_function": "OCCTShapeFixEdge*",
+    "bridge_output": {
+      "type": "bools",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "FixRemoveCurve3d": false,
+        "FixAddCurve3d": false,
+        "FixAddPCurve": false,
+        "FixRemovePCurve": false,
+        "FixReversed2d": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, ShapeFix_Edge Extended::removePCurve",
+    "bridge_function": "OCCTShapeFixEdge*",
+    "bridge_output": {
+      "type": "bools",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "FixRemoveCurve3d": false,
+        "FixAddCurve3d": false,
+        "FixAddPCurve": false,
+        "FixRemovePCurve": false,
+        "FixReversed2d": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, ShapeFix_Edge Extended::fixReversed2d",
+    "bridge_function": "OCCTShapeFixEdge*",
+    "bridge_output": {
+      "type": "bools",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "FixRemoveCurve3d": false,
+        "FixAddCurve3d": false,
+        "FixAddPCurve": false,
+        "FixRemovePCurve": false,
+        "FixReversed2d": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix EdgeProjAux Tests::projectEdge",
+    "bridge_function": "OCCTShapeFixEdgeProjAux",
+    "bridge_output": {
+      "type": "range",
+      "data": {
+        "first": 0,
+        "last": 10
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "firstDone": true,
+        "first": 0,
+        "lastDone": true,
+        "last": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.115.0 - ShapeFixer Builder::basicFixer",
+    "bridge_function": "OCCTShapeFixer*",
+    "bridge_output": {
+      "type": "status",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "status",
+      "data": {
+        "Perform": false,
+        "valid": true,
+        "type": "SOLID",
+        "volume": 1000.0,
+        "FAIL": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.115.0 - ShapeFixer Builder::fixerStatus",
+    "bridge_function": "OCCTShapeFixer*",
+    "bridge_output": {
+      "type": "status",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "status",
+      "data": {
+        "Perform": false,
+        "valid": true,
+        "type": "SOLID",
+        "volume": 1000.0,
+        "FAIL": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape Fixing Tests::fixHealthyShape",
+    "bridge_function": "OCCTShapeFixDetailed / OCCTShapeHeal",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "fixSolid=1": {
+          "valid": true,
+          "type": "SOLID",
+          "volume": 1000.0
+        },
+        "fixSolid=0": {
+          "valid": true,
+          "type": "SOLID",
+          "volume": 1000.0
+        },
+        "healed": {
+          "valid": true,
+          "volume": 1000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape Fixing Tests::fixWithSelectiveModes",
+    "bridge_function": "OCCTShapeFixDetailed / OCCTShapeHeal",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "fixSolid=1": {
+          "valid": true,
+          "type": "SOLID",
+          "volume": 1000.0
+        },
+        "fixSolid=0": {
+          "valid": true,
+          "type": "SOLID",
+          "volume": 1000.0
+        },
+        "healed": {
+          "valid": true,
+          "volume": 1000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape Fixing Tests::existingHealStillWorks",
+    "bridge_function": "OCCTShapeFixDetailed / OCCTShapeHeal",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "fixSolid=1": {
+          "valid": true,
+          "type": "SOLID",
+          "volume": 1000.0
+        },
+        "fixSolid=0": {
+          "valid": true,
+          "type": "SOLID",
+          "volume": 1000.0
+        },
+        "healed": {
+          "valid": true,
+          "volume": 1000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix IntersectionTool Tests::fixIntersectingWires",
+    "bridge_function": "OCCTShapeFixIntersectingWires",
+    "bridge_output": {
+      "type": "bools",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "box face0": false,
+        "overlappingHoleFace": {
+          "fixed": true,
+          "edgesBefore": 8,
+          "edgesAfter": 12
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix IntersectionTool Tests::fixIntersectingWiresActuallyAppliesTheFix",
+    "bridge_function": "OCCTShapeFixIntersectingWires",
+    "bridge_output": {
+      "type": "bools",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "box face0": false,
+        "overlappingHoleFace": {
+          "fixed": true,
+          "edgesBefore": 8,
+          "edgesAfter": 12
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix FixSmallSolid Tests::removeSmallSolids",
+    "bridge_function": "OCCTShapeFixSmallSolid*",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "Remove(big+tiny,1.0)": {
+          "solids": 1,
+          "volume": 1000.0
+        },
+        "Merge(big+thinSlab,1.0)": {
+          "solids": 2,
+          "valid": true,
+          "volume": 1001.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix FixSmallSolid Tests::mergeSmallSolids",
+    "bridge_function": "OCCTShapeFixSmallSolid*",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "Remove(big+tiny,1.0)": {
+          "solids": 1,
+          "volume": 1000.0
+        },
+        "Merge(big+thinSlab,1.0)": {
+          "solids": 2,
+          "valid": true,
+          "volume": 1001.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix Solid Tests::fixSolid",
+    "bridge_function": "OCCTShapeFixSolid / OCCTShapeSolidFromShell",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "fixSolid": {
+          "type": "SOLID",
+          "valid": true,
+          "volume": 1000.0
+        },
+        "solidFromShell": {
+          "type": "SOLID",
+          "volume": 1000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix Solid Tests::solidFromShellFixed",
+    "bridge_function": "OCCTShapeFixSolid / OCCTShapeSolidFromShell",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "fixSolid": {
+          "type": "SOLID",
+          "valid": true,
+          "volume": 1000.0
+        },
+        "solidFromShell": {
+          "type": "SOLID",
+          "volume": 1000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix SplitCommonVertex Tests::splitVertices",
+    "bridge_function": "OCCTShapeSplitCommonVertex",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "valid": true,
+        "vertices": 8,
+        "volume": 1000.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix Tolerance Tests::setTolerance",
+    "bridge_function": "OCCTShapeSetTolerance / OCCTShapeLimitTolerance",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "SetTolerance(1e-5)": {
+          "max": 1e-05,
+          "min": 1e-05
+        },
+        "LimitTolerance(1e-7,1e-3)": {
+          "result": false,
+          "max": 1e-07
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix Tolerance Tests::limitTolerance",
+    "bridge_function": "OCCTShapeSetTolerance / OCCTShapeLimitTolerance",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "SetTolerance(1e-5)": {
+          "max": 1e-05,
+          "min": 1e-05
+        },
+        "LimitTolerance(1e-7,1e-3)": {
+          "result": false,
+          "max": 1e-07
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix_Wireframe Extension Tests::fixWireGapsReturnsShape",
+    "bridge_function": "OCCTShapeFixWireGaps / OCCTShapeFixSmallEdges",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "FixWireGaps": {
+          "valid": true,
+          "edges": 12,
+          "volume": 1000.0
+        },
+        "FixSmallEdges(drop)": {
+          "valid": true,
+          "edges": 12,
+          "volume": 1000.0
+        },
+        "FixSmallEdges(merge)": {
+          "valid": true,
+          "edges": 12,
+          "volume": 1000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix_Wireframe Extension Tests::fixSmallEdgesDropMode",
+    "bridge_function": "OCCTShapeFixWireGaps / OCCTShapeFixSmallEdges",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "FixWireGaps": {
+          "valid": true,
+          "edges": 12,
+          "volume": 1000.0
+        },
+        "FixSmallEdges(drop)": {
+          "valid": true,
+          "edges": 12,
+          "volume": 1000.0
+        },
+        "FixSmallEdges(merge)": {
+          "valid": true,
+          "edges": 12,
+          "volume": 1000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix_Wireframe Extension Tests::fixSmallEdgesMergeMode",
+    "bridge_function": "OCCTShapeFixWireGaps / OCCTShapeFixSmallEdges",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "FixWireGaps": {
+          "valid": true,
+          "edges": 12,
+          "volume": 1000.0
+        },
+        "FixSmallEdges(drop)": {
+          "valid": true,
+          "edges": 12,
+          "volume": 1000.0
+        },
+        "FixSmallEdges(merge)": {
+          "valid": true,
+          "edges": 12,
+          "volume": 1000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeFix WireVertex Tests::fixWireVertices",
+    "bridge_function": "OCCTShapeFixWireVertices",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "total": 0
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "total": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
