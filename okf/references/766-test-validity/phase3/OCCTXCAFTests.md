@@ -99,3 +99,20 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `DocumentGDTTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setDimensionBoundsRefusesPlusMinus` | `OCCTDocumentSetDimensionBounds` drops its plus/minus refusal | :39 Expectation failed: dim.bounds == .plusMinus(lowerTolerance: -0.3, upperTolerance: 0.7); :40 Expectation failed: dim.value == 20.0 | passed | `OCCTDocumentSetDimensionBounds` | PASS: kernel shows the corruption the refusal prevents (value 10, lowerTol 12) |
+| `setDimensionBoundsConvertsSimple` | `OCCTDocumentSetDimensionBounds` reports failure after writing | :61 Expectation failed: doc.setDimensionBounds(at: idx, lower: 10.0, upper: 12.0) == true; :63 Expectation failed: dim.bounds == .range(lower: 10.0, upper: 12.0) | passed | `OCCTDocumentSetDimensionBounds` | PASS: range 10..12 |
+| `createAndReadDimension` | `OCCTDocumentGetDimensionInfo` reads the upper tolerance as the lower | :91 Expectation failed: dim.bounds == .plusMinus(lowerTolerance: -0.1, upperTolerance: 0.1); :92 Expectation failed: dim.lowerTolerance.map { abs($0 - (-0.1)) < 1e-9 } == true | passed | `OCCTDocumentGetDimensionInfo` | PASS: radius (ordinal 17) 25 -0.1/+0.1, one label |
+| `createTolerance` | `OCCTDocumentGetGeomToleranceInfo` adds 1.0 to the value | :114 Expectation failed: abs(tol.value - 0.01) < 1e-9 | passed | `OCCTDocumentGetGeomToleranceInfo` | PASS: value 0.01 through `XCAFDimTolObjects_GeomToleranceObject` |
+| `createDatum` | `OCCTDocumentGetDatumInfo` returns an invalid info | :131 Issue recorded | passed | `OCCTDocumentGetDatumInfo` | PASS: name `A` |
+| `fullAuthoring` | `OCCTDocumentGetDatumCount` returns 1 | :156 Expectation failed: doc.datumCount == 2; :160 Expectation failed: doc.datums.map(\.name).sorted() == ["A", "B"] | passed | `OCCTDocumentGetDatumCount` | PASS: two datum labels |
+| `dimensionTypeEnumComplete` | a compile-time extra case (`injected766 = 9999`) added to the Swift enum; removed and rebuilt for green | :165 Expectation failed: Document.DimensionType.allCases.count == 32 | passed | `OCCTDocumentGetDimensionInfo` | PASS: 32 = 32 (Swift `Document.DimensionType`) |
+| `geomToleranceTypeEnumComplete` | a compile-time extra case (`injected766 = 9999`) added to the Swift enum; removed and rebuilt for green | :170 Expectation failed: Document.GeomToleranceType.allCases.count == 16 | passed | `OCCTDocumentGetGeomToleranceInfo` | PASS: 16 = 16 (Swift `Document.GeomToleranceType`) |
