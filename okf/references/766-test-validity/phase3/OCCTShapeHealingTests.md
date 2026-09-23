@@ -327,3 +327,23 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: Issue1638 compose-shell grid, Issue266 face healing control, Issue318, Issue438 (13 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-1638-266-318-438/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `planarFaceSplitsIntoTheRequestedGrid` | Issue1638ComposeShellGridTests.swift | `OCCTShapeFixComposeShell` | CSGRID1: grid forced to 1 x 1 (the pre-#1638 defect) | `Issue1638ComposeShellGridTests.swift:36:13: Expectation failed: composed.subShapes(ofType: .face).count == u * v` | pass | PASS |
+| `defaultGridIsStillAWireRebuild` | Issue1638ComposeShellGridTests.swift | `OCCTShapeFixComposeShell` | CSGRIDPLUS: one extra patch along U | `Issue1638ComposeShellGridTests.swift:46:9: Expectation failed: composed.subShapes(ofType: .face).count == 1` | pass | PASS |
+| `piecesTileTheOriginalArea` | Issue1638ComposeShellGridTests.swift | `OCCTShapeFixComposeShell` | CSGRID1: grid forced to 1 x 1 (the pre-#1638 defect) | `Issue1638ComposeShellGridTests.swift:58:9: Expectation failed: areas.count == 4` | pass | PASS |
+| `cylinderWallSplits` | Issue1638ComposeShellGridTests.swift | `OCCTShapeFixComposeShell` | CSGRID1: grid forced to 1 x 1 (the pre-#1638 defect) | `Issue1638ComposeShellGridTests.swift:71:9: Expectation failed: alongU.subShapes(ofType: .face).count == 4` | pass | PASS |
+| `patchCountsBelowOneAreRefused` | Issue1638ComposeShellGridTests.swift | `OCCTShapeFixComposeShell` | SWIFTPATCH + CSPATCH: drop both the Swift and the bridge `< 1` guard (run P1). Either guard alone is enough: dropping only one stays green (runs Y1, P2) | `the test process dies on signal 11 (SIGSEGV) once `composeShell(uPatches: 0)` reaches the bridge's patch-grid build with a zero extent; nothing is thrown, so no catch can refuse it. The guards are what keep a Swift caller alive` | pass | PASS |
+| `nonFaceInputIsRefused` | Issue1638ComposeShellGridTests.swift | `OCCTShapeFixComposeShell` | CSFIRSTFACE: a non-face input's first face composed instead of refusing | `Issue1638ComposeShellGridTests.swift:92:9: Expectation failed: box.composeShell(uPatches: 2) == nil` | pass | PASS: the type refusal is TopoDS::Face throwing into the catch |
+| `faceFixerControl` | Issue266FaceHealingControlTests.swift | `OCCTFaceFixer*` | FFSTATUS: Status() reports true for every flag | `Issue266FaceHealingControlTests.swift:39:9: Expectation failed: !fixer.status(.done)` | pass | PASS |
+| `faceFixerIndividualPasses` | Issue266FaceHealingControlTests.swift | `OCCTFaceFixer*` | FFPASSES: each individual pass reports it did something | `Issue266FaceHealingControlTests.swift:58:9: Expectation failed: fixer.fixIntersectingWires() == false` | pass | PASS |
+| `checkCleanFace` | Issue266FaceHealingControlTests.swift | `OCCTFaceFixer*` | FACEGUARDINV: type guard inverted: a face is refused (CheckFail) | `Issue266FaceHealingControlTests.swift:71:9: Expectation failed: face.checkFaceIntersectingWires() == .noError` | pass | PASS |
+| `checkNonFace` | Issue266FaceHealingControlTests.swift | `OCCTFaceFixer*` | FACECHECKFIRST: a non-face input's first face checked instead of refusing | `Issue266FaceHealingControlTests.swift:82:9: Expectation failed: box.checkFaceIntersectingWires() == .checkFail` | pass | PASS: dropping the type guard alone stays green: TopoDS::Face throws into the catch |
+| `analyzeSurvivesDegenerateCurveOnSurfaceEdge` | Issue318DegenerateCurveOnSurfaceEdgeTests.swift | `OCCTShapeAnalyze` | DEGENSKIP: degenerate edges no longer skipped by the small-edge count (the #318 guard) | `Issue318DegenerateCurveOnSurfaceEdgeTests.swift:46:9: Expectation failed: result.smallEdgeCount == 0` | pass | PASS |
+| `dividedVariesWithContinuity` | Issue438DivideContinuityUnificationTests.swift | `OCCTShapeDivide` | DIVBOUNDONLY: only the boundary criterion set (the pre-#438 defect) | `Issue438DivideContinuityUnificationTests.swift:77:9: Expectation failed: result?.faceCount == expectedFaces [2 arguments level → .c0, expectedFaces → nil]` | pass | PASS |
+| `dividedContinuityIsObservable` | Issue438DivideContinuityUnificationTests.swift | `OCCTShapeDivide` | DIVBOUNDONLY: only the boundary criterion set (the pre-#438 defect) | `Issue438DivideContinuityUnificationTests.swift:84:9: Expectation failed: atC1.faceCount != atC3.faceCount` | pass | PASS |

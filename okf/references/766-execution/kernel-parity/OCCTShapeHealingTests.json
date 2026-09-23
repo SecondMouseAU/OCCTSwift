@@ -2,9 +2,448 @@
   {
     "test_name": "ShapeHealing domain kernel parity",
     "bridge_function": "OCCTShapeHealingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
+  },
+  {
+    "test_name": "Issue #1638: composeShell splits along a real patch grid::planarFaceSplitsIntoTheRequestedGrid",
+    "bridge_function": "OCCTShapeFixComposeShell",
+    "bridge_output": {
+      "type": "compose_shell",
+      "data": "face counts and areas as asserted"
+    },
+    "kernel_output": {
+      "type": "compose_shell",
+      "data": {
+        "planar": {
+          "1x1": 1,
+          "2x1": 2,
+          "1x2": 2,
+          "3x2": 6,
+          "4x4": 16,
+          "2x2": [
+            25,
+            25,
+            25,
+            25
+          ]
+        },
+        "cylinderWall": {
+          "area": 314.159265359,
+          "4x1": 4,
+          "1x2": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1638: composeShell splits along a real patch grid::defaultGridIsStillAWireRebuild",
+    "bridge_function": "OCCTShapeFixComposeShell",
+    "bridge_output": {
+      "type": "compose_shell",
+      "data": "face counts and areas as asserted"
+    },
+    "kernel_output": {
+      "type": "compose_shell",
+      "data": {
+        "planar": {
+          "1x1": 1,
+          "2x1": 2,
+          "1x2": 2,
+          "3x2": 6,
+          "4x4": 16,
+          "2x2": [
+            25,
+            25,
+            25,
+            25
+          ]
+        },
+        "cylinderWall": {
+          "area": 314.159265359,
+          "4x1": 4,
+          "1x2": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1638: composeShell splits along a real patch grid::piecesTileTheOriginalArea",
+    "bridge_function": "OCCTShapeFixComposeShell",
+    "bridge_output": {
+      "type": "compose_shell",
+      "data": "face counts and areas as asserted"
+    },
+    "kernel_output": {
+      "type": "compose_shell",
+      "data": {
+        "planar": {
+          "1x1": 1,
+          "2x1": 2,
+          "1x2": 2,
+          "3x2": 6,
+          "4x4": 16,
+          "2x2": [
+            25,
+            25,
+            25,
+            25
+          ]
+        },
+        "cylinderWall": {
+          "area": 314.159265359,
+          "4x1": 4,
+          "1x2": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1638: composeShell splits along a real patch grid::cylinderWallSplits",
+    "bridge_function": "OCCTShapeFixComposeShell",
+    "bridge_output": {
+      "type": "compose_shell",
+      "data": "face counts and areas as asserted"
+    },
+    "kernel_output": {
+      "type": "compose_shell",
+      "data": {
+        "planar": {
+          "1x1": 1,
+          "2x1": 2,
+          "1x2": 2,
+          "3x2": 6,
+          "4x4": 16,
+          "2x2": [
+            25,
+            25,
+            25,
+            25
+          ]
+        },
+        "cylinderWall": {
+          "area": 314.159265359,
+          "4x1": 4,
+          "1x2": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1638: composeShell splits along a real patch grid::patchCountsBelowOneAreRefused",
+    "bridge_function": "OCCTShapeFixComposeShell",
+    "bridge_output": {
+      "type": "compose_shell",
+      "data": "face counts and areas as asserted"
+    },
+    "kernel_output": {
+      "type": "compose_shell",
+      "data": {
+        "planar": {
+          "1x1": 1,
+          "2x1": 2,
+          "1x2": 2,
+          "3x2": 6,
+          "4x4": 16,
+          "2x2": [
+            25,
+            25,
+            25,
+            25
+          ]
+        },
+        "cylinderWall": {
+          "area": 314.159265359,
+          "4x1": 4,
+          "1x2": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1638: composeShell splits along a real patch grid::nonFaceInputIsRefused",
+    "bridge_function": "OCCTShapeFixComposeShell",
+    "bridge_output": {
+      "type": "compose_shell",
+      "data": "face counts and areas as asserted"
+    },
+    "kernel_output": {
+      "type": "compose_shell",
+      "data": {
+        "planar": {
+          "1x1": 1,
+          "2x1": 2,
+          "1x2": 2,
+          "3x2": 6,
+          "4x4": 16,
+          "2x2": [
+            25,
+            25,
+            25,
+            25
+          ]
+        },
+        "cylinderWall": {
+          "area": 314.159265359,
+          "4x1": 4,
+          "1x2": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266 follow-up, face healing control & checks::faceFixerControl",
+    "bridge_function": "OCCTFaceFixer*",
+    "bridge_output": {
+      "type": "face_fix",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "face_fix",
+      "data": {
+        "Perform": false,
+        "OK": true,
+        "DONE": false,
+        "FAIL": false,
+        "area": 100.0,
+        "passes": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "BRepCheck_Face": "NoError x3"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266 follow-up, face healing control & checks::faceFixerIndividualPasses",
+    "bridge_function": "OCCTFaceFixer*",
+    "bridge_output": {
+      "type": "face_fix",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "face_fix",
+      "data": {
+        "Perform": false,
+        "OK": true,
+        "DONE": false,
+        "FAIL": false,
+        "area": 100.0,
+        "passes": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "BRepCheck_Face": "NoError x3"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266 follow-up, face healing control & checks::checkCleanFace",
+    "bridge_function": "OCCTFaceFixer*",
+    "bridge_output": {
+      "type": "face_fix",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "face_fix",
+      "data": {
+        "Perform": false,
+        "OK": true,
+        "DONE": false,
+        "FAIL": false,
+        "area": 100.0,
+        "passes": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "BRepCheck_Face": "NoError x3"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266 follow-up, face healing control & checks::checkNonFace",
+    "bridge_function": "OCCTFaceFixer*",
+    "bridge_output": {
+      "type": "face_fix",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "face_fix",
+      "data": {
+        "Perform": false,
+        "OK": true,
+        "DONE": false,
+        "FAIL": false,
+        "area": 100.0,
+        "passes": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "BRepCheck_Face": "NoError x3"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #318 -- degenerate curve-on-surface edge crashes Shape.analyze::analyzeSurvivesDegenerateCurveOnSurfaceEdge",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "analysis",
+      "data": {
+        "smallEdgeCount": 0,
+        "freeEdgeCount": 0
+      }
+    },
+    "kernel_output": {
+      "type": "analysis",
+      "data": {
+        "edges": 65,
+        "degenerate": 61,
+        "smallNonDegenerate": 0,
+        "smallIncludingDegenerate": 60,
+        "shells": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #438: divided(at:) and dividedByContinuity unified over one OCCT class::dividedVariesWithContinuity",
+    "bridge_function": "OCCTShapeDivide",
+    "bridge_output": {
+      "type": "face_count",
+      "data": {
+        "C0": null,
+        "C1": 4,
+        "C2": 4,
+        "C3": 25,
+        "CN": 25,
+        "G1": 4,
+        "G2": 4
+      }
+    },
+    "kernel_output": {
+      "type": "face_count",
+      "data": {
+        "C0": null,
+        "C1": 4,
+        "C2": 4,
+        "C3": 25,
+        "CN": 25,
+        "G1": 4,
+        "G2": 4,
+        "boundaryOnly": "4 at every level"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #438: divided(at:) and dividedByContinuity unified over one OCCT class::dividedContinuityIsObservable",
+    "bridge_function": "OCCTShapeDivide",
+    "bridge_output": {
+      "type": "face_count",
+      "data": {
+        "C0": null,
+        "C1": 4,
+        "C2": 4,
+        "C3": 25,
+        "CN": 25,
+        "G1": 4,
+        "G2": 4
+      }
+    },
+    "kernel_output": {
+      "type": "face_count",
+      "data": {
+        "C0": null,
+        "C1": 4,
+        "C2": 4,
+        "C3": 25,
+        "CN": 25,
+        "G1": 4,
+        "G2": 4,
+        "boundaryOnly": "4 at every level"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
