@@ -197,3 +197,21 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Issue #211, WireCurve arc-length adaptor | length | `OCCTCompCurveLength` | wclen: length x 1.001 | `Issue211WireCurveTests.swift:22 abs(wc.length - 20.0) < 1e-6` | ✅ | MATCH |  |
+| Issue #211, WireCurve arc-length adaptor | pointAtAbscissa | `OCCTCompCurveParamAtAbscissa, OCCTCompCurvePointAtParam` | absdrift: abscissa x 1.01 | `Issue211WireCurveTests.swift:36 near(point(atAbscissa: 5), (5,0,0))` | ✅ | MATCH |  |
+| Issue #211, WireCurve arc-length adaptor | tangentAcrossCorner | `OCCTCompCurveTangentAtParam` | tanflip: tangent negated | `Issue211WireCurveTests.swift:49 t1 == (1,0,0)` | ✅ | MATCH |  |
+| Issue #211, WireCurve arc-length adaptor | evenSampling | `OCCTCompCurveParamAtAbscissa` | absdrift; wclen | `Issue211WireCurveTests.swift:72 each chord == 1` | ✅ | MATCH | REWRITTEN: count only; now every consecutive chord is pinned to 1 |
+| Issue #211, WireCurve arc-length adaptor | uniformPoints | `OCCTCompCurveSampleUniform` | sampdrop: last point dropped; sampmin | `Issue211WireCurveTests.swift:83 pts.count == 5` | ✅ | MATCH | Force-unwraps in #expect replaced with if-let |
+| Issue #211, WireCurve arc-length adaptor | parameterRangeMatchesEndpoints | `OCCTCompCurveParamRange` | wcrange: last = midpoint of range | `Issue211WireCurveTests.swift:108 end == (10,10,0)` | ✅ | MATCH |  |
+| Issue #211, WireCurve arc-length adaptor | pointsSpacing | `OCCTCompCurveSampleUniform` | sampdrop; spc0: spacing <= 0 gives 2 points | `Issue211WireCurveTests.swift:127 pts.count == 6` | ✅ | MATCH |  |
+| Issue #211/#212, EdgeCurve arc-length adaptor | lengthAndSampling | `OCCTEdgeCurve*` | absdrift; sampdrop | `Issue211WireCurveTests.swift:159 \|a - b\| == 10` | ✅ | MATCH | REWRITTEN: mid-abscissa point was only checked non-nil; now it must be the midpoint of the ends, which are 10 apart |
+| Issue #211/#212, EdgeCurve arc-length adaptor | pointsCountBelowTwoIsEmpty | `none: Swift Sampling.requested` | sampmin: count clamped to 2 | `Issue211WireCurveTests.swift:178 points(count: 1).isEmpty` | ✅ | N/A |  |
+| Issue #211/#212, EdgeCurve arc-length adaptor | parameterRangeMatchesEndpoints | `OCCTEdgeCurve*` | absdrift | `Issue211WireCurveTests.swift:201 end == point(atAbscissa: length)` | ✅ | MATCH |  |
+| Issue #211/#212, EdgeCurve arc-length adaptor | pointsSpacing | `OCCTEdgeCurve*` | absdrift; sampdrop; spc0 | `Issue211WireCurveTests.swift:217 pts.count == 3` | ✅ | MATCH | Force-unwraps in #expect replaced with indices |

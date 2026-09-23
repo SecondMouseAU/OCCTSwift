@@ -302,5 +302,253 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue #211, WireCurve arc-length adaptor::length",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTCompCurveLength",
+    "bridge_output": {
+      "type": "value",
+      "data": "20"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_CompCurve + GCPnts_AbscissaPoint: length 20"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "wclen: length x 1.001",
+    "red": "Issue211WireCurveTests.swift:22 abs(wc.length - 20.0) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt"
+  },
+  {
+    "test_name": "Issue #211, WireCurve arc-length adaptor::pointAtAbscissa",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTCompCurveParamAtAbscissa, OCCTCompCurvePointAtParam",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0) (5,0,0) (10,0,0) (10,5,0) (10,10,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_CompCurve + GCPnts_AbscissaPoint: s 0/5/10/15/20 -> (0,0,0) (5,0,0) (10,0,0) (10,5,0) (10,10,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "absdrift: abscissa x 1.01",
+    "red": "Issue211WireCurveTests.swift:36 near(point(atAbscissa: 5), (5,0,0))",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt"
+  },
+  {
+    "test_name": "Issue #211, WireCurve arc-length adaptor::tangentAcrossCorner",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTCompCurveTangentAtParam",
+    "bridge_output": {
+      "type": "value",
+      "data": "(1,0,0) then (0,1,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_CompCurve + GCPnts_AbscissaPoint: s 5 t (1,0,0), s 15 t (0,1,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "tanflip: tangent negated",
+    "red": "Issue211WireCurveTests.swift:49 t1 == (1,0,0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt"
+  },
+  {
+    "test_name": "Issue #211, WireCurve arc-length adaptor::evenSampling",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTCompCurveParamAtAbscissa",
+    "bridge_output": {
+      "type": "value",
+      "data": "21 points, every chord 1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_CompCurve + GCPnts_AbscissaPoint: abscissa is linear in u (u = s/10), so the 21 samples are 1 apart"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "absdrift; wclen",
+    "red": "Issue211WireCurveTests.swift:72 each chord == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt",
+    "note": "REWRITTEN: count only; now every consecutive chord is pinned to 1"
+  },
+  {
+    "test_name": "Issue #211, WireCurve arc-length adaptor::uniformPoints",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTCompCurveSampleUniform",
+    "bridge_output": {
+      "type": "value",
+      "data": "5 points, corner at index 2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_UniformAbscissa(cc, 5): 5 points"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "sampdrop: last point dropped; sampmin",
+    "red": "Issue211WireCurveTests.swift:83 pts.count == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt",
+    "note": "Force-unwraps in #expect replaced with if-let"
+  },
+  {
+    "test_name": "Issue #211, WireCurve arc-length adaptor::parameterRangeMatchesEndpoints",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTCompCurveParamRange",
+    "bridge_output": {
+      "type": "value",
+      "data": "range [0, 2]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_CompCurve + GCPnts_AbscissaPoint: range [0, 2]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "wcrange: last = midpoint of range",
+    "red": "Issue211WireCurveTests.swift:108 end == (10,10,0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt"
+  },
+  {
+    "test_name": "Issue #211, WireCurve arc-length adaptor::pointsSpacing",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTCompCurveSampleUniform",
+    "bridge_output": {
+      "type": "value",
+      "data": "6 points"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_CompCurve + GCPnts_AbscissaPoint: length 20, spacing 4 -> 6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "sampdrop; spc0: spacing <= 0 gives 2 points",
+    "red": "Issue211WireCurveTests.swift:127 pts.count == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt"
+  },
+  {
+    "test_name": "Issue #211/#212, EdgeCurve arc-length adaptor::lengthAndSampling",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTEdgeCurve*",
+    "bridge_output": {
+      "type": "value",
+      "data": "length 10, mid = midpoint"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_Curve + GCPnts_AbscissaPoint: length 10, s 5 at the midpoint"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "absdrift; sampdrop",
+    "red": "Issue211WireCurveTests.swift:159 |a - b| == 10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt",
+    "note": "REWRITTEN: mid-abscissa point was only checked non-nil; now it must be the midpoint of the ends, which are 10 apart"
+  },
+  {
+    "test_name": "Issue #211/#212, EdgeCurve arc-length adaptor::pointsCountBelowTwoIsEmpty",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "none: Swift Sampling.requested",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected in Swift before the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "sampmin: count clamped to 2",
+    "red": "Issue211WireCurveTests.swift:178 points(count: 1).isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt"
+  },
+  {
+    "test_name": "Issue #211/#212, EdgeCurve arc-length adaptor::parameterRangeMatchesEndpoints",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTEdgeCurve*",
+    "bridge_output": {
+      "type": "value",
+      "data": "range [0, 10]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_Curve + GCPnts_AbscissaPoint: range [0, 10], u = s"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "absdrift",
+    "red": "Issue211WireCurveTests.swift:201 end == point(atAbscissa: length)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt"
+  },
+  {
+    "test_name": "Issue #211/#212, EdgeCurve arc-length adaptor::pointsSpacing",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTEdgeCurve*",
+    "bridge_output": {
+      "type": "value",
+      "data": "3 points, 5 apart"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_Curve + GCPnts_AbscissaPoint: length 10, spacing 5 -> 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "absdrift; sampdrop; spc0",
+    "red": "Issue211WireCurveTests.swift:217 pts.count == 3",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt",
+    "note": "Force-unwraps in #expect replaced with indices"
   }
 ]
