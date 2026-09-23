@@ -85,3 +85,23 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 194 tests
+
+---
+
+## Measured records (#766 execution, #1984)
+
+Rows below were run: the injection turned the test red at the line named, the test was green with Sources/ restored, and parity is against the probe transcript under `Scripts/repro/766-drawing-*/`.
+
+| Suite | Test | Bridge / Swift subject | Injection | Red (failing line) | Green | Parity |
+|-------|------|------------------------|-----------|--------------------|-------|--------|
+| Drawing Tests | Create 2D projection of box | `OCCTDrawingCreate` | view forced isometric: **green** as written (`drawing != nil`); rewritten, view direction tilted by (0.1, 0.2, 0) in `OCCTDrawingCreate` | rewritten: `:23` edge count, `:24` extent | ✔ | PASS |
+| Drawing Tests | Get visible edges from projection | `OCCTDrawingGetEdges` | view forced isometric: **green** as written (`visible != nil`); rewritten (now the isometric view), view direction tilted by (0.1, 0.2, 0) in `OCCTDrawingCreate` | rewritten: `:24` extent | ✔ | PASS |
+| Drawing Tests | Get hidden edges from isometric view | `OCCTDrawingGetEdges` | view forced isometric: **green** as written (`hidden != nil`); rewritten, view direction tilted by (0.1, 0.2, 0) in `OCCTDrawingCreate` | rewritten: `:24` extent | ✔ | PASS |
+| Drawing Tests | Hidden edges are nil for a convex shape with no self-occlusion (#1421) | `OCCTDrawingGetEdges` | `OCCTDrawingGetEdges` empty-category guard removed | `:56`, `:67` `hiddenEdges == nil` | ✔ | PASS |
+| Drawing Tests | Outline edges are nil for a shape with no curved surfaces (#1421) | `OCCTDrawingGetEdges` | `OCCTDrawingGetEdges` empty-category guard removed | `:82` `drawing.outlineEdges == nil` | ✔ | PASS |
+| Drawing Tests | Standard views | `OCCTDrawingCreate` | view forced isometric: **green** as written (three `!= nil`); rewritten, view direction tilted by (0.1, 0.2, 0) in `OCCTDrawingCreate` | rewritten: `:23`, `:24` for all three views | ✔ | PASS |
+| #1183 Drawing transform sites share one formula | TransformedDrawing.apply(_:) computes scale*p+translate | `TransformedDrawing.apply` | `TransformedDrawing.apply`: `scale * p - translate` | `:56` | ✔ | N/A (pure Swift: the shared 2D scale*p+translate formula, no OCCT call) |
+| #1183 Drawing transform sites share one formula | DrawingDimension.transformed applies scale*p+translate for .linear | `DrawingDimension.transformed` | `TransformedDrawing.apply`: `scale * p - translate` | `:64`, `:65` | ✔ | N/A (pure Swift: the shared 2D scale*p+translate formula, no OCCT call) |
+| #1183 Drawing transform sites share one formula | DrawingDimension.transformed applies scale*p+translate for .radial | `DrawingDimension.transformed` | `TransformedDrawing.apply`: `scale * p - translate` | `:77` | ✔ | N/A (pure Swift: the shared 2D scale*p+translate formula, no OCCT call) |
+| #1183 Drawing transform sites share one formula | DrawingAnnotation.transformed applies scale*p+translate for .centreline | `DrawingAnnotation.transformed` | `TransformedDrawing.apply`: `scale * p - translate` | `:89`, `:90` | ✔ | N/A (pure Swift: the shared 2D scale*p+translate formula, no OCCT call) |
+| #1183 Drawing transform sites share one formula | collectDrawing's edge path (collectProjectedEdges) applies scale*p+translate | `OCCTDrawingCreate` | `TransformedDrawing.apply`: `scale * p - translate` | `:122` to `:125` | ✔ | PASS |

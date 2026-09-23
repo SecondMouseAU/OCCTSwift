@@ -7,22 +7,50 @@ import simd
 @Suite("Drawing Tests")
 struct DrawingTests {
 
-    @Test("Create 2D projection of box")
-    func project2DBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let drawing = Drawing.project(box, direction: SIMD3(0, 0, 1))
-        #expect(drawing != nil)
+    /// #766: the projection tests below used to assert only that a drawing or an edge category
+    /// was non-nil, so a projection along the wrong direction, or of the wrong shape, passed. They
+    /// now pin the unique edge count and the 2D extent HLRBRep_Algo produces for the same shape
+    /// and view (`Shape.box` is centred on the origin), measured in
+    /// Scripts/repro/766-drawing-core-transform/transcript.txt.
+    private func expectEdges(
+        _ shape: Shape?, count: Int, min: SIMD2<Double>, max: SIMD2<Double>,
+        _ what: String
+    ) {
+        guard let shape, let bb = shape.boundingBox else {
+            Issue.record("\(what): no edges")
+            return
+        }
+        #expect(shape.edges().count == count, "\(what): \(shape.edges().count) edges")
+        #expect(
+            simd_length(SIMD2(bb.min.x, bb.min.y) - min) < 1e-6
+                && simd_length(SIMD2(bb.max.x, bb.max.y) - max) < 1e-6,
+            "\(what): extent \(bb.min) .. \(bb.max)")
     }
 
-    @Test("Get visible edges from projection")
-    func visibleEdges() {
+    @Test("Create 2D projection of box")
+    func project2DBox() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         guard let drawing = Drawing.project(box, direction: SIMD3(0, 0, 1)) else {
             Issue.record("Failed to create projection")
             return
         }
-        let visible = drawing.visibleEdges
-        #expect(visible != nil)
+        expectEdges(
+            drawing.visibleEdges, count: 4,
+            min: SIMD2(-5.0000001, -5.0000001), max: SIMD2(5.0000001, 5.0000001), "top visible")
+    }
+
+    @Test("Get visible edges from projection")
+    func visibleEdges() {
+        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        guard let drawing = Drawing.isometricView(of: box) else {
+            Issue.record("Failed to create projection")
+            return
+        }
+        // Isometric: the three near faces show nine visible edges, the hexagonal silhouette.
+        expectEdges(
+            drawing.visibleEdges, count: 9,
+            min: SIMD2(-7.07106791, -8.16496591), max: SIMD2(7.07106791, 8.16496591),
+            "iso visible")
     }
 
     @Test("Get hidden edges from isometric view")
@@ -32,9 +60,11 @@ struct DrawingTests {
             Issue.record("Failed to create isometric view")
             return
         }
-        let hidden = drawing.hiddenEdges
-        // Isometric view of box should have hidden edges
-        #expect(hidden != nil)
+        // Isometric view of box: the three edges meeting at the far corner are hidden.
+        expectEdges(
+            drawing.hiddenEdges, count: 3,
+            min: SIMD2(-7.07106791, -4.082483), max: SIMD2(7.07106791, 8.16496591),
+            "iso hidden")
     }
 
     // #1421: OCCTDrawingGetEdges' empty-result guard checked `compound.IsNull()`, but
@@ -87,13 +117,16 @@ struct DrawingTests {
     func standardViews() {
         let box = Shape.box(width: 10, height: 20, depth: 30)!
 
-        let top = Drawing.topView(of: box)
-        #expect(top != nil)
-
-        let front = Drawing.frontView(of: box)
-        #expect(front != nil)
-
-        let side = Drawing.sideView(of: box)
-        #expect(side != nil)
+        // Each view is the box's rectangle in that view's gp_Ax2 frame: 10 x 20 from the top,
+        // 30 x 10 from the front, 30 x 20 from the side.
+        expectEdges(
+            Drawing.topView(of: box)?.visibleEdges, count: 4,
+            min: SIMD2(-5.0000001, -10.0000001), max: SIMD2(5.0000001, 10.0000001), "top")
+        expectEdges(
+            Drawing.frontView(of: box)?.visibleEdges, count: 4,
+            min: SIMD2(-15.0000001, -5.0000001), max: SIMD2(15.0000001, 5.0000001), "front")
+        expectEdges(
+            Drawing.sideView(of: box)?.visibleEdges, count: 4,
+            min: SIMD2(-15.0000001, -10.0000001), max: SIMD2(15.0000001, 10.0000001), "side")
     }
 }

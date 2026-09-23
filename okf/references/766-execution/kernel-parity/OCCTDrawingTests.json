@@ -222,5 +222,332 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Drawing Tests::Create 2D projection of box",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "visibleEdges": 4,
+      "extent": [
+        [
+          -5.0000001,
+          -5.0000001
+        ],
+        [
+          5.0000001,
+          5.0000001
+        ]
+      ]
+    },
+    "kernel_output": {
+      "visibleEdges": 4,
+      "extent": [
+        [
+          -5.0000001,
+          -5.0000001
+        ],
+        [
+          5.0000001,
+          5.0000001
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawing Tests::Get visible edges from projection",
+    "bridge_function": "OCCTDrawingGetEdges",
+    "bridge_output": {
+      "visibleEdges": 9,
+      "extent": [
+        [
+          -7.071067911865477,
+          -8.164965909277262
+        ],
+        [
+          7.071067911865476,
+          8.16496590927726
+        ]
+      ]
+    },
+    "kernel_output": {
+      "visibleEdges": 9,
+      "extent": [
+        [
+          -7.07106791,
+          -8.16496591
+        ],
+        [
+          7.07106791,
+          8.16496591
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawing Tests::Get hidden edges from isometric view",
+    "bridge_function": "OCCTDrawingGetEdges",
+    "bridge_output": {
+      "hiddenEdges": 3,
+      "extent": [
+        [
+          -7.071067911865477,
+          -4.082483004638631
+        ],
+        [
+          7.071067911865476,
+          8.16496590927726
+        ]
+      ]
+    },
+    "kernel_output": {
+      "hiddenEdges": 3,
+      "extent": [
+        [
+          -7.07106791,
+          -4.082483
+        ],
+        [
+          7.07106791,
+          8.16496591
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawing Tests::Hidden edges are nil for a convex shape with no self-occlusion (#1421)",
+    "bridge_function": "OCCTDrawingGetEdges",
+    "bridge_output": {
+      "topHidden": null,
+      "topVisibleEdges": 1,
+      "isoHidden": null
+    },
+    "kernel_output": {
+      "topHidden": null,
+      "topVisibleEdges": 1,
+      "isoHidden": null
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawing Tests::Outline edges are nil for a shape with no curved surfaces (#1421)",
+    "bridge_function": "OCCTDrawingGetEdges",
+    "bridge_output": {
+      "outline": null,
+      "visibleEdges": 4
+    },
+    "kernel_output": {
+      "outline": null,
+      "visibleEdges": 4
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawing Tests::Standard views",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "top": [
+        [
+          -5.0000001,
+          -10.0000001
+        ],
+        [
+          5.0000001,
+          10.0000001
+        ]
+      ],
+      "front": [
+        [
+          -15.0000001,
+          -5.0000001
+        ],
+        [
+          15.0000001,
+          5.0000001
+        ]
+      ],
+      "side": [
+        [
+          -15.0000001,
+          -10.0000001
+        ],
+        [
+          15.0000001,
+          10.0000001
+        ]
+      ],
+      "edgesEach": 4
+    },
+    "kernel_output": {
+      "top": [
+        [
+          -5.0000001,
+          -10.0000001
+        ],
+        [
+          5.0000001,
+          10.0000001
+        ]
+      ],
+      "front": [
+        [
+          -15.0000001,
+          -5.0000001
+        ],
+        [
+          15.0000001,
+          5.0000001
+        ]
+      ],
+      "side": [
+        [
+          -15.0000001,
+          -10.0000001
+        ],
+        [
+          15.0000001,
+          10.0000001
+        ]
+      ],
+      "edgesEach": 4
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#1183 Drawing transform sites share one formula::TransformedDrawing.apply(_:) computes scale*p+translate",
+    "bridge_function": "TransformedDrawing.apply",
+    "bridge_output": {
+      "apply(3,4)": [
+        106,
+        208
+      ]
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the shared 2D scale*p+translate formula, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1183 Drawing transform sites share one formula::DrawingDimension.transformed applies scale*p+translate for .linear",
+    "bridge_function": "DrawingDimension.transformed",
+    "bridge_output": {
+      "from": [
+        13,
+        26
+      ],
+      "to": [
+        19,
+        32
+      ],
+      "offset": 15
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the shared 2D scale*p+translate formula, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1183 Drawing transform sites share one formula::DrawingDimension.transformed applies scale*p+translate for .radial",
+    "bridge_function": "DrawingDimension.transformed",
+    "bridge_output": {
+      "centre": [
+        21,
+        21
+      ],
+      "radius": 8
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the shared 2D scale*p+translate formula, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1183 Drawing transform sites share one formula::DrawingAnnotation.transformed applies scale*p+translate for .centreline",
+    "bridge_function": "DrawingAnnotation.transformed",
+    "bridge_output": {
+      "from": [
+        5,
+        5
+      ],
+      "to": [
+        25,
+        5
+      ]
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the shared 2D scale*p+translate formula, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1183 Drawing transform sites share one formula::collectDrawing's edge path (collectProjectedEdges) applies scale*p+translate",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "topViewBounds": [
+        [
+          -5.0,
+          -5.0
+        ],
+        [
+          5.0,
+          5.0
+        ]
+      ]
+    },
+    "kernel_output": {
+      "topVisibleExtent": [
+        [
+          -5.0000001,
+          -5.0000001
+        ],
+        [
+          5.0000001,
+          5.0000001
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
