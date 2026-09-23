@@ -94,5 +94,255 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve2D knot-splitting continuity range (#480)::A cubic 2D BSpline with simple interior knots reports interior splits only at .c3",
+    "bridge_function": "OCCTCurve2DSplitAtDiscontinuities",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "C0..C2": [
+          1,
+          6
+        ],
+        "C3": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "C0..C2": [
+          1,
+          6
+        ],
+        "C3": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "requested continuity passed one lower",
+      "red": "Issue480Curve2DKnotSplitContinuityTests.swift:40:13: Expectation failed: curve.splitIndicesAtDiscontinuities(continuity: continuity) == [1, 6]",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-split-continuity/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D knot-splitting continuity range (#480)::The .c1 default reports a real kink",
+    "bridge_function": "OCCTCurve2DSplitAtDiscontinuities",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "C1 knots": [
+          0,
+          2,
+          5
+        ],
+        "C0": [
+          1,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "C1 knots": [
+          0,
+          2,
+          5
+        ],
+        "C0": [
+          1,
+          6
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "requested continuity passed one lower",
+      "red": "Issue480Curve2DKnotSplitContinuityTests.swift:55:9: Expectation failed: defaulted.map { curve.bsplineKnot(index: $0) } == [0, 2, 5]",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-split-continuity/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D measured continuity (#485)::Knot multiplicity drives the measured class, at GeomAbs_Shape's own ordinals",
+    "bridge_function": "OCCTCurve2DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "mult1": 4,
+        "mult2": 2,
+        "mult3": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "mult1": 4,
+        "mult2": 2,
+        "mult3": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#485 encoding (C2 = 2, G1 = -2, CN = 99)",
+      "red": "Issue485Curve2DContinuityTests.swift:50:9: Expectation failed: c2.continuity == 4",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-split-continuity/",
+      "rewritten": "three `if let`s; now `#require`"
+    }
+  },
+  {
+    "test_name": "Curve2D measured continuity (#485)::Analytic 2D curves report CN as ordinal 6, not 99",
+    "bridge_function": "OCCTCurve2DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "segment": 6
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "segment": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#485 encoding",
+      "red": "Issue485Curve2DContinuityTests.swift:63:9: Expectation failed: segment.continuity == 6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-split-continuity/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Curve2D measured continuity (#485)::A G1-only 2D curve is reachable and reports ordinal 1",
+    "bridge_function": "OCCTCurve2DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "offset of G1 basis": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "offset of G1 basis": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#485 encoding",
+      "red": "Issue485Curve2DContinuityTests.swift:70:9: Expectation failed: g1.continuity == 1",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-split-continuity/",
+      "rewritten": "`guard` + `Issue.record`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Curve2D measured continuity (#485)::continuity and continuityClass agree on the same curve, in every class",
+    "bridge_function": "OCCTCurve2DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ordinals": [
+          4,
+          2,
+          0,
+          6,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "ordinals": [
+          4,
+          2,
+          0,
+          6,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#485 encoding",
+      "red": "Issue485Curve2DContinuityTests.swift:86:13: Expectation failed: curve.continuity == Int(curve.continuityClass.rawValue)",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-split-continuity/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue 486: Curve2D batch-eval spellings agree::empty parameters give an empty result, not one padded with zeroes",
+    "bridge_function": "Curve2D.evaluateGrid (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "OCCT": "not called for an empty grid"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "empty input returns one zero point",
+      "red": "Issue486Curve2DBatchTests.swift:23:9: Expectation failed: curve.evaluateGrid([]).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-split-continuity/",
+      "rewritten": "`guard ... else { return }`; now `#require`"
+    }
   }
 ]
