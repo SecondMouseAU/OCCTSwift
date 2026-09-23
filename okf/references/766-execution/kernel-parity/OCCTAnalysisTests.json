@@ -497,5 +497,79 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_ExtPC Tests::Point to edge distance on box",
+    "bridge_function": "OCCTBRepExtremaExtPC",
+    "bridge_output": {
+      "type": "per_edge_distance",
+      "data": {
+        "edge_count": 12,
+        "all_valid": true,
+        "all_in_0_30": true,
+        "min_distance": 10
+      }
+    },
+    "kernel_output": {
+      "type": "per_edge_distance",
+      "data": {
+        "edge_count": 12,
+        "distances": [
+          17.320508075688775,
+          14.142135623730951,
+          14.142135623730951,
+          22.360679774997898,
+          14.142135623730951,
+          10,
+          10,
+          20,
+          22.360679774997898,
+          14.142135623730951,
+          20,
+          10
+        ],
+        "min_distance": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_ExtPC Tests::Point to wire edge, known distance",
+    "bridge_function": "OCCTBRepExtremaExtPC",
+    "bridge_output": {
+      "type": "nearest_point",
+      "data": {
+        "distance": 3,
+        "parameter": 5,
+        "point": [
+          5,
+          0,
+          0
+        ],
+        "solution_count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "nearest_point",
+      "data": {
+        "distance": 3,
+        "parameter": 5,
+        "point": [
+          5,
+          0,
+          0
+        ],
+        "BRepExtrema_ExtPC_NbExt": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
