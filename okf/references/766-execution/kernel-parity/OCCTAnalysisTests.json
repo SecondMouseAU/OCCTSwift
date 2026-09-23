@@ -3558,5 +3558,69 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Sinert Tests::face surface inertia",
+    "bridge_function": "OCCTBRepGPropSinert",
+    "bridge_output": {
+      "type": "surface_inertia",
+      "data": {
+        "mass": 100.0,
+        "centre_of_mass": [
+          -5.0,
+          2.7755575615628914e-17,
+          2.7755575615628914e-17
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "surface_inertia",
+      "data": {
+        "mass": 100.0,
+        "centre_of_mass": [
+          -5.0,
+          2.7755575615628914e-17,
+          2.7755575615628914e-17
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Sinert Tests::adaptive surface inertia on sphere",
+    "bridge_function": "OCCTBRepGPropSinertAdaptive",
+    "bridge_output": {
+      "type": "surface_inertia",
+      "data": {
+        "mass": 0.0,
+        "epsilon": 0.0,
+        "centre_of_mass": null
+      }
+    },
+    "kernel_output": {
+      "type": "surface_inertia",
+      "data": {
+        "mass": 0.0,
+        "epsilon": 0.0,
+        "centre_of_mass": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "with_face_domain_mass": 1256.637061435917,
+        "expected_4_pi_r2": 1256.6370614359173
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [
+        "bridge matches BRepGProp_Sinert::Perform(face, eps) exactly, and both are wrong: that overload integrates over an empty BRepGProp_Domain. #2204."
+      ]
+    },
+    "status": "PASS"
   }
 ]
