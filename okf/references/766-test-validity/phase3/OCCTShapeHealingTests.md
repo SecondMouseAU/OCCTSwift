@@ -327,3 +327,20 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: BSplineRestrictionAdvanced, ConvertToBSplineAdvanced, Curve* (10 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-curve-custom/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `restrictBox` | BSplineRestrictionAdvancedTests.swift | `OCCTShapeBSplineRestrictionAdvanced` | BSPRESTRADV: treat the modifier as not done | BSplineRestrictionAdvancedTests.swift:16 `#require(Shape.bsplineRestrictionAdvanced(...))` | pass | PASS |
+| `convertCylinder` | ConvertToBSplineAdvancedTests.swift | `OCCTShapeConvertToBSplineAdvanced` | CONVBSPADV: planeMode forced true | ConvertToBSplineAdvancedTests.swift:26 `kinds.filter { $0 == .plane }.count == 2` | pass | PASS |
+| `convertToPeriodic` | CurveConvertToPeriodicTests.swift | `OCCTCurve3DConvertToPeriodic` | PERIODIC: return the input curve unconverted | CurveConvertToPeriodicTests.swift:24 `periodic.isPeriodic` | pass | PASS |
+| `projectOntoLine` | CurveProjectTests.swift | `OCCTCurve3DProjectPoint` | PROJECT: report the squared distance | CurveProjectTests.swift:15 `abs(proj.distance - 3.0) < 1e-9` | pass | PASS |
+| `projectOntoCircle` | CurveProjectTests.swift | `OCCTCurve3DProjectPoint` | PROJECT: report the squared distance | CurveProjectTests.swift:25 `abs(proj.distance - 5.0) < 1e-9` | pass | PASS |
+| `sampleCircle` | CurveSamplePointsTests.swift | `OCCTCurve3DGetSamplePoints3D` | SAMPLES: drop the last point (off by one) | CurveSamplePointsTests.swift:17 `points.count == 360` | pass | PASS |
+| `sampleLine` | CurveSamplePointsTests.swift | `OCCTCurve3DGetSamplePoints3D` | SAMPLES: drop the last point (off by one) | CurveSamplePointsTests.swift:31 `points == [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]` | pass | PASS |
+| `splitCurve` | CurveSplitTests.swift | `OCCTCurve3DSplitAt` | SPLIT: hand the two pieces back swapped | CurveSplitTests.swift:24 `abs(result.first.domain.lowerBound - dom.lowerBound) < 1e-9` | pass | PASS |
+| `validateInBounds` | CurveValidateRangeTests.swift | `OCCTCurve3DValidateRange` | VALIDRANGE: ignore the kernel, echo the inputs with wasAdjusted false | CurveValidateRangeTests.swift:20 `result.wasAdjusted` | pass | PASS: wasAdjusted is ValidateRange's 'OK or corrected' flag, true for an untouched range |
+| `validateOutOfBounds` | CurveValidateRangeTests.swift | `OCCTCurve3DValidateRange` | VALIDRANGE: ignore the kernel, echo the inputs with wasAdjusted false | CurveValidateRangeTests.swift:28 `abs(result.first) < 1e-12` | pass | PASS |
