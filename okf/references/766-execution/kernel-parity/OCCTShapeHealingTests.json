@@ -2,9 +2,783 @@
   {
     "test_name": "ShapeHealing domain kernel parity",
     "bridge_function": "OCCTShapeHealingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
+  },
+  {
+    "test_name": "ShapeBuild Edge::copyEdge",
+    "bridge_function": "OCCTShapeBuildEdge*",
+    "bridge_output": {
+      "type": "edge",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "edge0": {
+          "from": [
+            -5,
+            -5,
+            -5
+          ],
+          "to": [
+            -5,
+            -5,
+            5
+          ],
+          "range": [
+            0,
+            10
+          ]
+        },
+        "copy": {
+          "isSame": false,
+          "range": [
+            0,
+            10
+          ]
+        },
+        "replaceVertices": {
+          "from": [
+            -5,
+            -5,
+            5
+          ],
+          "to": [
+            -5,
+            -5,
+            -5
+          ]
+        },
+        "setRange3d": [
+          0,
+          5
+        ],
+        "copyRangesBack": [
+          0,
+          10
+        ],
+        "BuildCurve3d": true,
+        "removeCurve3d": {
+          "hasCurve3d": false
+        },
+        "cylinderRemovePCurve": {
+          "hasPCurve": false
+        },
+        "cylinderCopyPCurves": {
+          "hasPCurve": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeBuild Edge::copyEdgeNoShare",
+    "bridge_function": "OCCTShapeBuildEdge*",
+    "bridge_output": {
+      "type": "edge",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "edge0": {
+          "from": [
+            -5,
+            -5,
+            -5
+          ],
+          "to": [
+            -5,
+            -5,
+            5
+          ],
+          "range": [
+            0,
+            10
+          ]
+        },
+        "copy": {
+          "isSame": false,
+          "range": [
+            0,
+            10
+          ]
+        },
+        "replaceVertices": {
+          "from": [
+            -5,
+            -5,
+            5
+          ],
+          "to": [
+            -5,
+            -5,
+            -5
+          ]
+        },
+        "setRange3d": [
+          0,
+          5
+        ],
+        "copyRangesBack": [
+          0,
+          10
+        ],
+        "BuildCurve3d": true,
+        "removeCurve3d": {
+          "hasCurve3d": false
+        },
+        "cylinderRemovePCurve": {
+          "hasPCurve": false
+        },
+        "cylinderCopyPCurves": {
+          "hasPCurve": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeBuild Edge::copyEdgeReplaceVertices",
+    "bridge_function": "OCCTShapeBuildEdge*",
+    "bridge_output": {
+      "type": "edge",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "edge0": {
+          "from": [
+            -5,
+            -5,
+            -5
+          ],
+          "to": [
+            -5,
+            -5,
+            5
+          ],
+          "range": [
+            0,
+            10
+          ]
+        },
+        "copy": {
+          "isSame": false,
+          "range": [
+            0,
+            10
+          ]
+        },
+        "replaceVertices": {
+          "from": [
+            -5,
+            -5,
+            5
+          ],
+          "to": [
+            -5,
+            -5,
+            -5
+          ]
+        },
+        "setRange3d": [
+          0,
+          5
+        ],
+        "copyRangesBack": [
+          0,
+          10
+        ],
+        "BuildCurve3d": true,
+        "removeCurve3d": {
+          "hasCurve3d": false
+        },
+        "cylinderRemovePCurve": {
+          "hasPCurve": false
+        },
+        "cylinderCopyPCurves": {
+          "hasPCurve": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeBuild Edge::setRange3d",
+    "bridge_function": "OCCTShapeBuildEdge*",
+    "bridge_output": {
+      "type": "edge",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "edge0": {
+          "from": [
+            -5,
+            -5,
+            -5
+          ],
+          "to": [
+            -5,
+            -5,
+            5
+          ],
+          "range": [
+            0,
+            10
+          ]
+        },
+        "copy": {
+          "isSame": false,
+          "range": [
+            0,
+            10
+          ]
+        },
+        "replaceVertices": {
+          "from": [
+            -5,
+            -5,
+            5
+          ],
+          "to": [
+            -5,
+            -5,
+            -5
+          ]
+        },
+        "setRange3d": [
+          0,
+          5
+        ],
+        "copyRangesBack": [
+          0,
+          10
+        ],
+        "BuildCurve3d": true,
+        "removeCurve3d": {
+          "hasCurve3d": false
+        },
+        "cylinderRemovePCurve": {
+          "hasPCurve": false
+        },
+        "cylinderCopyPCurves": {
+          "hasPCurve": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeBuild Edge::buildCurve3d",
+    "bridge_function": "OCCTShapeBuildEdge*",
+    "bridge_output": {
+      "type": "edge",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "edge0": {
+          "from": [
+            -5,
+            -5,
+            -5
+          ],
+          "to": [
+            -5,
+            -5,
+            5
+          ],
+          "range": [
+            0,
+            10
+          ]
+        },
+        "copy": {
+          "isSame": false,
+          "range": [
+            0,
+            10
+          ]
+        },
+        "replaceVertices": {
+          "from": [
+            -5,
+            -5,
+            5
+          ],
+          "to": [
+            -5,
+            -5,
+            -5
+          ]
+        },
+        "setRange3d": [
+          0,
+          5
+        ],
+        "copyRangesBack": [
+          0,
+          10
+        ],
+        "BuildCurve3d": true,
+        "removeCurve3d": {
+          "hasCurve3d": false
+        },
+        "cylinderRemovePCurve": {
+          "hasPCurve": false
+        },
+        "cylinderCopyPCurves": {
+          "hasPCurve": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeBuild Edge::removeCurve3d",
+    "bridge_function": "OCCTShapeBuildEdge*",
+    "bridge_output": {
+      "type": "edge",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "edge0": {
+          "from": [
+            -5,
+            -5,
+            -5
+          ],
+          "to": [
+            -5,
+            -5,
+            5
+          ],
+          "range": [
+            0,
+            10
+          ]
+        },
+        "copy": {
+          "isSame": false,
+          "range": [
+            0,
+            10
+          ]
+        },
+        "replaceVertices": {
+          "from": [
+            -5,
+            -5,
+            5
+          ],
+          "to": [
+            -5,
+            -5,
+            -5
+          ]
+        },
+        "setRange3d": [
+          0,
+          5
+        ],
+        "copyRangesBack": [
+          0,
+          10
+        ],
+        "BuildCurve3d": true,
+        "removeCurve3d": {
+          "hasCurve3d": false
+        },
+        "cylinderRemovePCurve": {
+          "hasPCurve": false
+        },
+        "cylinderCopyPCurves": {
+          "hasPCurve": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeBuild Edge::copyRanges",
+    "bridge_function": "OCCTShapeBuildEdge*",
+    "bridge_output": {
+      "type": "edge",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "edge0": {
+          "from": [
+            -5,
+            -5,
+            -5
+          ],
+          "to": [
+            -5,
+            -5,
+            5
+          ],
+          "range": [
+            0,
+            10
+          ]
+        },
+        "copy": {
+          "isSame": false,
+          "range": [
+            0,
+            10
+          ]
+        },
+        "replaceVertices": {
+          "from": [
+            -5,
+            -5,
+            5
+          ],
+          "to": [
+            -5,
+            -5,
+            -5
+          ]
+        },
+        "setRange3d": [
+          0,
+          5
+        ],
+        "copyRangesBack": [
+          0,
+          10
+        ],
+        "BuildCurve3d": true,
+        "removeCurve3d": {
+          "hasCurve3d": false
+        },
+        "cylinderRemovePCurve": {
+          "hasPCurve": false
+        },
+        "cylinderCopyPCurves": {
+          "hasPCurve": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeBuild Edge::copyPCurves",
+    "bridge_function": "OCCTShapeBuildEdge*",
+    "bridge_output": {
+      "type": "edge",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "edge0": {
+          "from": [
+            -5,
+            -5,
+            -5
+          ],
+          "to": [
+            -5,
+            -5,
+            5
+          ],
+          "range": [
+            0,
+            10
+          ]
+        },
+        "copy": {
+          "isSame": false,
+          "range": [
+            0,
+            10
+          ]
+        },
+        "replaceVertices": {
+          "from": [
+            -5,
+            -5,
+            5
+          ],
+          "to": [
+            -5,
+            -5,
+            -5
+          ]
+        },
+        "setRange3d": [
+          0,
+          5
+        ],
+        "copyRangesBack": [
+          0,
+          10
+        ],
+        "BuildCurve3d": true,
+        "removeCurve3d": {
+          "hasCurve3d": false
+        },
+        "cylinderRemovePCurve": {
+          "hasPCurve": false
+        },
+        "cylinderCopyPCurves": {
+          "hasPCurve": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeBuild Edge::removePCurve",
+    "bridge_function": "OCCTShapeBuildEdge*",
+    "bridge_output": {
+      "type": "edge",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "edge0": {
+          "from": [
+            -5,
+            -5,
+            -5
+          ],
+          "to": [
+            -5,
+            -5,
+            5
+          ],
+          "range": [
+            0,
+            10
+          ]
+        },
+        "copy": {
+          "isSame": false,
+          "range": [
+            0,
+            10
+          ]
+        },
+        "replaceVertices": {
+          "from": [
+            -5,
+            -5,
+            5
+          ],
+          "to": [
+            -5,
+            -5,
+            -5
+          ]
+        },
+        "setRange3d": [
+          0,
+          5
+        ],
+        "copyRangesBack": [
+          0,
+          10
+        ],
+        "BuildCurve3d": true,
+        "removeCurve3d": {
+          "hasCurve3d": false
+        },
+        "cylinderRemovePCurve": {
+          "hasPCurve": false
+        },
+        "cylinderCopyPCurves": {
+          "hasPCurve": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeBuild Vertex::combineVertices",
+    "bridge_function": "OCCTShapeBuildVertexCombine / OCCTShapeBuildVertexCombineFromPoints",
+    "bridge_output": {
+      "type": "vertex",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "vertex",
+      "data": {
+        "combine": {
+          "point": [
+            -5,
+            -5,
+            0
+          ],
+          "tol": 5.0005001
+        },
+        "fromPoints": {
+          "point": [
+            0.005,
+            0,
+            0
+          ],
+          "tol": 0.0150015
+        },
+        "factor1.5": {
+          "point": [
+            -5,
+            -5,
+            0
+          ],
+          "tol": 7.50000015
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeBuild Vertex::combineFromPoints",
+    "bridge_function": "OCCTShapeBuildVertexCombine / OCCTShapeBuildVertexCombineFromPoints",
+    "bridge_output": {
+      "type": "vertex",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "vertex",
+      "data": {
+        "combine": {
+          "point": [
+            -5,
+            -5,
+            0
+          ],
+          "tol": 5.0005001
+        },
+        "fromPoints": {
+          "point": [
+            0.005,
+            0,
+            0
+          ],
+          "tol": 0.0150015
+        },
+        "factor1.5": {
+          "point": [
+            -5,
+            -5,
+            0
+          ],
+          "tol": 7.50000015
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeBuild Vertex::combineWithTolFactor",
+    "bridge_function": "OCCTShapeBuildVertexCombine / OCCTShapeBuildVertexCombineFromPoints",
+    "bridge_output": {
+      "type": "vertex",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "vertex",
+      "data": {
+        "combine": {
+          "point": [
+            -5,
+            -5,
+            0
+          ],
+          "tol": 5.0005001
+        },
+        "fromPoints": {
+          "point": [
+            0.005,
+            0,
+            0
+          ],
+          "tol": 0.0150015
+        },
+        "factor1.5": {
+          "point": [
+            -5,
+            -5,
+            0
+          ],
+          "tol": 7.50000015
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

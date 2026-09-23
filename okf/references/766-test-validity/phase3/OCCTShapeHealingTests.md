@@ -327,3 +327,22 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: ShapeBuild Edge and Vertex (12 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-shapebuild/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `copyEdge` | ShapeBuildEdgeTests.swift | `OCCTShapeBuildEdge*` | SBECOPYSAME: Copy hands back the original edge | `ShapeBuildEdgeTests.swift:42:9: Expectation failed: !copied.isSame(as: edges[0])` | pass | PASS |
+| `copyEdgeNoShare` | ShapeBuildEdgeTests.swift | `OCCTShapeBuildEdge*` | SBECOPYSAME: Copy hands back the original edge | `ShapeBuildEdgeTests.swift:51:9: Expectation failed: !copied.isSame(as: edges[0])` | pass | PASS |
+| `copyEdgeReplaceVertices` | ShapeBuildEdgeTests.swift | `OCCTShapeBuildEdge*` | SBEREPLSWAP: replacement vertices swapped | `ShapeBuildEdgeTests.swift:66:9: Expectation failed: EdgeAnalysis.firstVertex(result) == SIMD3(-5, -5, 5)` | pass | PASS |
+| `setRange3d` | ShapeBuildEdgeTests.swift | `OCCTShapeBuildEdge*` | SBERANGE: SetRange3d skipped | `ShapeBuildEdgeTests.swift:76:9: Expectation failed: b.first == 0 && b.last == 5` | pass | PASS |
+| `buildCurve3d` | ShapeBuildEdgeTests.swift | `OCCTShapeBuildEdge*` | SBEBUILDINV: BuildCurve3d answer inverted | `ShapeBuildEdgeTests.swift:83:9: Expectation failed: edges[0].buildEdgeCurve3d()` | pass | PASS |
+| `removeCurve3d` | ShapeBuildEdgeTests.swift | `OCCTShapeBuildEdge*` | SBEREMOVENOOP: RemoveCurve3d skipped | `ShapeBuildEdgeTests.swift:92:9: Expectation failed: !EdgeAnalysis.hasCurve3d(copied)` | pass | PASS |
+| `copyRanges` | ShapeBuildEdgeTests.swift | `OCCTShapeBuildEdge*` | SBECOPYRANGESNOOP: CopyRanges skipped | `ShapeBuildEdgeTests.swift:104:9: Expectation failed: b.first == 0 && b.last == 10` | pass | PASS |
+| `copyPCurves` | ShapeBuildEdgeTests.swift | `OCCTShapeBuildEdge*` | SBEREMOVEPCNOOP (the removal it starts with is skipped, `:112`); CopyPCurves skipped also turns it red at `:114` (run B2) | `ShapeBuildEdgeTests.swift:112:9: Expectation failed: !EdgeAnalysis.hasPCurve(copied, face: face)` | pass | PASS |
+| `removePCurve` | ShapeBuildEdgeTests.swift | `OCCTShapeBuildEdge*` | SBEREMOVEPCNOOP: RemovePCurve skipped | `ShapeBuildEdgeTests.swift:123:9: Expectation failed: !EdgeAnalysis.hasPCurve(copied, face: face)` | pass | PASS |
+| `combineVertices` | ShapeBuildVertexTests.swift | `OCCTShapeBuildVertexCombine / OCCTShapeBuildVertexCombineFromPoints` | SBVFACTOR: tolFactor ignored (1.0) | `ShapeBuildVertexTests.swift:28:9: Expectation failed: abs(combined.vertexTolerance - 5.0005001) < 1e-6` | pass | PASS |
+| `combineFromPoints` | ShapeBuildVertexTests.swift | `OCCTShapeBuildVertexCombine / OCCTShapeBuildVertexCombineFromPoints` | SBVFACTOR: tolFactor ignored (1.0) | `ShapeBuildVertexTests.swift:38:9: Expectation failed: abs(combined.vertexTolerance - 0.0150015) < 1e-9` | pass | PASS |
+| `combineWithTolFactor` | ShapeBuildVertexTests.swift | `OCCTShapeBuildVertexCombine / OCCTShapeBuildVertexCombineFromPoints` | SBVFACTOR: tolFactor ignored (1.0) | `ShapeBuildVertexTests.swift:46:9: Expectation failed: abs(combined.vertexTolerance - 7.50000015) < 1e-6` | pass | PASS |
