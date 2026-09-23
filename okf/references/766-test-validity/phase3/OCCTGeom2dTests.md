@@ -124,3 +124,21 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `TransformFactory2DTests.swift`, `Vector2DUtilityTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-transform-vector/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| gce Transform Factory 2D Tests::pointMirror2d | `OCCTMakeMirror2dPoint` | mirror point x + 1 | ✅ | ✅ | MATCH |  |
+| gce Transform Factory 2D Tests::rotation2d | `OCCTMakeRotation2d` | angle negated | ✅ | ✅ | MATCH |  |
+| gce Transform Factory 2D Tests::scale2d | `OCCTMakeScale2d` | factor + 1 | ✅ | ✅ | MATCH |  |
+| gce Transform Factory 2D Tests::translation2d | `OCCTMakeTranslation2dVec` | vy + 1 | ✅ | ✅ | MATCH | x only; y now pinned |
+| gce Transform Factory 2D Tests::direction2d | `OCCTMakeDir2d` | x and y swapped | ✅ | ✅ | MATCH | unit length only, inside `if let`; now the direction |
+| gce Transform Factory 2D Tests::direction2dFromPoints | `OCCTMakeDir2dFromPoints` | second point x + 1 | ✅ | ✅ | MATCH | `!= nil` only; now the direction |
+| Vector2D Utilities::angle | `OCCTVector2DAngle` | angle + 1e-3 | ✅ | ✅ | MATCH |  |
+| Vector2D Utilities::cross | `OCCTVector2DCross` | operands swapped | ✅ | ✅ | MATCH |  |
+| Vector2D Utilities::dot | `OCCTVector2DDot` | y term dropped, + 1 | ✅ | ✅ | MATCH |  |
+| Vector2D Utilities::magnitude | `OCCTVector2DMagnitude` | square instead of root | ✅ | ✅ | MATCH |  |
+| Vector2D Utilities::normalize | `OCCTVector2DNormalize` | x divided by half the magnitude | ✅ | ✅ | MATCH |  |

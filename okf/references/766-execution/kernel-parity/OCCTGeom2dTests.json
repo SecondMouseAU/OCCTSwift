@@ -94,5 +94,355 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "gce Transform Factory 2D Tests::pointMirror2d",
+    "bridge_function": "OCCTMakeMirror2dPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          -3,
+          -4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          -3,
+          -4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "mirror point x + 1",
+      "red": "TransformFactory2DTests.swift:13:9: Expectation failed: abs(p.x + 3) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "gce Transform Factory 2D Tests::rotation2d",
+    "bridge_function": "OCCTMakeRotation2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "angle negated",
+      "red": "TransformFactory2DTests.swift:21:9: Expectation failed: abs(p.y - 1) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "gce Transform Factory 2D Tests::scale2d",
+    "bridge_function": "OCCTMakeScale2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          3,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          3,
+          6
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "factor + 1",
+      "red": "TransformFactory2DTests.swift:27:9: Expectation failed: abs(p.x - 3) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "gce Transform Factory 2D Tests::translation2d",
+    "bridge_function": "OCCTMakeTranslation2dVec",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          11,
+          22
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          11,
+          22
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "vy + 1",
+      "red": "TransformFactory2DTests.swift:35:9: Expectation failed: abs(p.y - 22) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "x only; y now pinned"
+    }
+  },
+  {
+    "test_name": "gce Transform Factory 2D Tests::direction2d",
+    "bridge_function": "OCCTMakeDir2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "d": [
+          0.6,
+          0.8
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "d": [
+          0.6,
+          0.8
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "x and y swapped",
+      "red": "TransformFactory2DTests.swift:44:9: Expectation failed: abs(d.x - 0.6) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "unit length only, inside `if let`; now the direction"
+    }
+  },
+  {
+    "test_name": "gce Transform Factory 2D Tests::direction2dFromPoints",
+    "bridge_function": "OCCTMakeDir2dFromPoints",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "d": [
+          0.707106781186547,
+          0.707106781186547
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "d": [
+          0.707106781186547,
+          0.707106781186547
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second point x + 1",
+      "red": "TransformFactory2DTests.swift:51:9: Expectation failed: abs(d.x - 0.5.squareRoot()) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "`!= nil` only; now the direction"
+    }
+  },
+  {
+    "test_name": "Vector2D Utilities::angle",
+    "bridge_function": "OCCTVector2DAngle",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "angle": 1.5707963267949
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "angle": 1.5707963267949
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "angle + 1e-3",
+      "red": "Vector2DUtilityTests.swift:11:9: Expectation failed: abs(a - .pi / 2) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Vector2D Utilities::cross",
+    "bridge_function": "OCCTVector2DCross",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "cross": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "cross": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "operands swapped",
+      "red": "Vector2DUtilityTests.swift:16:9: Expectation failed: abs(c - 1.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Vector2D Utilities::dot",
+    "bridge_function": "OCCTVector2DDot",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "dot": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "dot": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "y term dropped, + 1",
+      "red": "Vector2DUtilityTests.swift:21:9: Expectation failed: abs(d - 3.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Vector2D Utilities::magnitude",
+    "bridge_function": "OCCTVector2DMagnitude",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "magnitude": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "magnitude": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "square instead of root",
+      "red": "Vector2DUtilityTests.swift:26:9: Expectation failed: abs(m - 5.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Vector2D Utilities::normalize",
+    "bridge_function": "OCCTVector2DNormalize",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "n": [
+          0.6,
+          0.8
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "n": [
+          0.6,
+          0.8
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "x divided by half the magnitude",
+      "red": "Vector2DUtilityTests.swift:31:9: Expectation failed: abs(n.x - 0.6) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
   }
 ]
