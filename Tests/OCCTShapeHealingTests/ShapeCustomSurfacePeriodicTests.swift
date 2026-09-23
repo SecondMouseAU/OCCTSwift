@@ -7,12 +7,12 @@ import simd
 @Suite("ShapeCustom Surface Periodic Tests")
 struct ShapeCustomSurfacePeriodicTests {
     @Test("convert to periodic")
-    func convertToPeriodic() {
-        if let surf = Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5) {
-            // Cylinder surface is already periodic, result may be nil
-            let _ = surf.convertToPeriodic()
-            // Just verify no crash
-        }
+    func convertToPeriodic() throws {
+        // #766: this discarded its answer. A cylindrical surface is already periodic, and the
+        // kernel's ShapeCustom_Surface::ConvertToPeriodic returns null for it (probe
+        // Scripts/repro/766-healing-construct-custom-extend), so the wrapper's nil is pinned.
+        let surf = try #require(Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5))
+        #expect(surf.convertToPeriodic() == nil)
     }
 
     @Test("conversion gap is deprecated and always -1.0 (#1510)")
