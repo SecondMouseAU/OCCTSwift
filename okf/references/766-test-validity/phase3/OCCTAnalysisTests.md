@@ -95,6 +95,24 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Measurement Tests** | Volume of box | Volume | Volume scaled by 1.01 |
+| **Measurement Tests** | Volume of cylinder | Volume | Volume scaled by 1.01 |
+| **Measurement Tests** | Volume of sphere | Volume | Volume scaled by 1.01 |
+| **Measurement Tests** | Surface area of box | Surface area | Area scaled by 1.01 |
+| **Measurement Tests** | Surface area of sphere | Surface area | Area scaled by 1.01 |
+| **Measurement Tests** | Center of mass of box at origin | Centre of mass | Shift centre x by 1 |
+| **Measurement Tests** | Center of mass of translated box | Centre of mass | Shift centre x by 1 |
+| **Measurement Tests** | Full shape properties | Mass properties | Ignore density in mass |
+| **Measurement Tests** | Distance between separated boxes | Shape distance | Distance + 1 |
+| **Measurement Tests** | Distance between touching boxes | Shape distance | Distance + 1 |
+| **Measurement Tests** | Min distance convenience method | Shape distance | Distance + 1 |
+| **Measurement Tests** | Intersects - overlapping shapes | Shape intersects | Invert Value() <= tolerance |
+| **Measurement Tests** | Intersects - separated shapes | Shape intersects | Invert Value() <= tolerance |
+| **Measurement Tests** | Intersects - touching shapes | Shape intersects | Invert Value() <= tolerance |
+| **Measurement Tests** | Vertex count of box | Vertex enumeration | Count + 1 |
+| **Measurement Tests** | Get all vertices | Vertex enumeration | Write zero coordinates |
+| **Measurement Tests** | Get vertex at index | Vertex enumeration | Read index (i + 1) % 8 |
+| **Measurement Tests** | Vertex out of bounds | Vertex enumeration | Read index (i + 1) % 8 |
 
 ---
 
@@ -202,6 +220,24 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| Measurement Tests: Volume of box | OCCTShapeGetVolume | Volume | Volume scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Volume of cylinder | OCCTShapeGetVolume | Volume | Volume scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Volume of sphere | OCCTShapeGetVolume | Volume | Volume scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Surface area of box | OCCTShapeGetSurfaceArea | Surface area | Area scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Surface area of sphere | OCCTShapeGetSurfaceArea | Surface area | Area scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Center of mass of box at origin | OCCTShapeGetCenterOfMass | Centre of mass | Shift centre x by 1 | ✅ | ✅ |  |
+| Measurement Tests: Center of mass of translated box | OCCTShapeGetCenterOfMass | Centre of mass | Shift centre x by 1 | ✅ | ✅ |  |
+| Measurement Tests: Full shape properties | OCCTShapeGetProperties | Mass properties | Ignore density in mass | ✅ | ✅ | strengthened: centre y and z now asserted |
+| Measurement Tests: Distance between separated boxes | OCCTShapeDistance | Shape distance | Distance + 1 | ✅ | ✅ |  |
+| Measurement Tests: Distance between touching boxes | OCCTShapeDistance | Shape distance | Distance + 1 | ✅ | ✅ |  |
+| Measurement Tests: Min distance convenience method | OCCTShapeDistance | Shape distance | Distance + 1 | ✅ | ✅ |  |
+| Measurement Tests: Intersects - overlapping shapes | OCCTShapeIntersects | Shape intersects | Invert Value() <= tolerance | ✅ | ✅ |  |
+| Measurement Tests: Intersects - separated shapes | OCCTShapeIntersects | Shape intersects | Invert Value() <= tolerance | ✅ | ✅ |  |
+| Measurement Tests: Intersects - touching shapes | OCCTShapeIntersects | Shape intersects | Invert Value() <= tolerance | ✅ | ✅ |  |
+| Measurement Tests: Vertex count of box | OCCTShapeGetVertexCount | Vertex enumeration | Count + 1 | ✅ | ✅ |  |
+| Measurement Tests: Get all vertices | OCCTShapeGetVertices | Vertex enumeration | Write zero coordinates | ✅ | ✅ | rewritten: count-only version stayed green under the injection |
+| Measurement Tests: Get vertex at index | OCCTShapeGetVertexAt | Vertex enumeration | Read index (i + 1) % 8 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
+| Measurement Tests: Vertex out of bounds | OCCTShapeGetVertexAt | Vertex enumeration | Read index (i + 1) % 8 | ✅ | ✅ |  |
 
 ---
 
@@ -304,5 +340,23 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Measurement Tests: Volume of box | ✅ | ✅ | ✅ |
+| Measurement Tests: Volume of cylinder | ✅ | ✅ | ✅ |
+| Measurement Tests: Volume of sphere | ✅ | ✅ | ✅ |
+| Measurement Tests: Surface area of box | ✅ | ✅ | ✅ |
+| Measurement Tests: Surface area of sphere | ✅ | ✅ | ✅ |
+| Measurement Tests: Center of mass of box at origin | ✅ | ✅ | ✅ |
+| Measurement Tests: Center of mass of translated box | ✅ | ✅ | ✅ |
+| Measurement Tests: Full shape properties | ✅ | ✅ | ✅ |
+| Measurement Tests: Distance between separated boxes | ✅ | ✅ | ✅ |
+| Measurement Tests: Distance between touching boxes | ✅ | ✅ | ✅ |
+| Measurement Tests: Min distance convenience method | ✅ | ✅ | ✅ |
+| Measurement Tests: Intersects - overlapping shapes | ✅ | ✅ | ✅ |
+| Measurement Tests: Intersects - separated shapes | ✅ | ✅ | ✅ |
+| Measurement Tests: Intersects - touching shapes | ✅ | ✅ | ✅ |
+| Measurement Tests: Vertex count of box | ✅ | ✅ | ✅ |
+| Measurement Tests: Get all vertices | ✅ | ✅ | ✅ |
+| Measurement Tests: Get vertex at index | ✅ | ✅ | ✅ |
+| Measurement Tests: Vertex out of bounds | ✅ | ✅ | ✅ |
 
-**Total**: 559 tests
+**Total**: 577 tests
