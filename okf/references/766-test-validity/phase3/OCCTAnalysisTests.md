@@ -18,7 +18,6 @@
 | **Point Cloud Analysis** | Coplanar points detected as planar | Point cloud classification | Remove point cloud classification |
 | **Point Cloud Analysis** | Collinear points detected as linear | Point cloud classification | Remove point cloud classification |
 | **Point Cloud Analysis** | Coincident points detected as point | Point cloud classification | Remove point cloud classification |
-<<<<<<< HEAD
 | **ShapeRayIntersection Tests** | line intersection with box | Line-shape intersection | Remove line-shape intersection |
 | **ShapeRayIntersection Tests** | curve intersection with sphere | Curve-shape intersection | Remove curve-shape intersection |
 | **Point Cloud Analysis** | Empty points returns nil | Point cloud classification | Remove point cloud classification |
