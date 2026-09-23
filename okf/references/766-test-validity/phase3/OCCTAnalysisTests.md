@@ -95,6 +95,7 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Integration: Assembly Interference** | shaftHousingClearanceAndInterference | Clearance and interference | Distance + 1; volume scaled by 1.01 |
 | **BRepLProp Face v0.111** | faceValue | Face local point | x written from p.Y() in OCCTFaceLPropValue |
 | **BRepLProp Face v0.111** | faceNormal | Face normal | x negated in OCCTFaceLPropNormal |
 | **BRepLProp Face v0.111** | faceCurvature | Principal curvatures | sign flipped in OCCTFaceLPropMaxCurvature / MinCurvature |
@@ -265,6 +266,7 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| Integration: Assembly Interference: shaftHousingClearanceAndInterference | OCCTShapeDistance | Clearance and interference | Distance + 1; volume scaled by 1.01 | ✅ | ✅ | rewritten: distance >= 0 and vol > 0 stayed green under the injection; also reaches OCCTShapeSubtractEx, OCCTShapeIntersectEx, OCCTShapeGetVolume |
 | recognizePlane | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | if (false && recog.IsPlane(...)) | ✅ | ✅ | Rewritten: if-let wrappers removed, plane position asserted |
 | recognizeCylinder | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | Remove ClearStatus() before IsCylinder | ✅ | ✅ |  |
 | recognizeSphere | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | Remove ClearStatus() before IsSphere | ✅ | ✅ |  |
@@ -415,6 +417,7 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Integration: Assembly Interference: shaftHousingClearanceAndInterference | ✅ | ✅ | ✅ |
 | Extrema_ExtCS: curveSurfaceParallel | ✅ | ✅ | ✅ |
 | Extrema_ExtCS: curveSurfaceDistance | ✅ | ✅ | ✅ |
 | Shape distance to Wire | ✅ | ✅ | ✅ |
@@ -440,4 +443,4 @@ For each test, run ground-truth C++ comparison:
 | Measurement Tests: Get vertex at index | ✅ | ✅ | ✅ |
 | Measurement Tests: Vertex out of bounds | ✅ | ✅ | ✅ |
 
-**Total**: 583 tests
+**Total**: 584 tests
