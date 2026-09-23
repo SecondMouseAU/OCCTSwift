@@ -99,3 +99,25 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `XDEColorToolByShapeTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGetColor` | `OCCTDocumentIsShapeColorSet` returns false | :19 Expectation failed: doc.isShapeColorSet(box) | passed | `OCCTDocumentIsShapeColorSet` | PASS: set |
+| `visibility` | `OCCTDocumentSetLabelVisibility` returns without setting | :39 Expectation failed: !node.isVisible | passed | `OCCTDocumentSetLabelVisibility` | PASS: false, true |
+| `shapeColorPreservesAlpha` | `OCCTDocumentSetShapeColorRGBA` stores alpha 1 | :69 Expectation failed: abs(got.alpha - 0.5) < 1e-5 | passed | `OCCTDocumentGetShapeColor` | PASS: (0.2, 0.4, 0.6, 0.5) |
+| `shapeColorOpaqueUnaffected` | `OCCTDocumentSetShapeColorRGBA` stores alpha 0.5 | :89 Expectation failed: abs(got.alpha - 1.0) < 1e-5 | passed | `OCCTDocumentGetShapeColor` | PASS: 1 |
+
+### `XDELayerToolExpansionTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndCheck` | `OCCTDocumentIsLayerSet` returns false | :20 Expectation failed: node.isLayerSet("Layer1") | passed | `OCCTDocumentIsLayerSet` | PASS: true |
+| `getLayers` | `OCCTDocumentGetLabelLayers` answers 0 | :38 Expectation failed: layers.count == 1 | passed | `OCCTDocumentGetLabelLayers` | PASS: 1, TestLayer |
+| `findAndVisibility` | `OCCTDocumentGetLayerVisibility` returns true | :62 Expectation failed: !doc.layerVisibility(layerLabelId: layerLabelId) | passed | `OCCTDocumentGetLayerVisibility` | PASS: found; false, true |
+| `getLayersBeyondBufferCap` | `OCCTDocumentGetLabelLayers` answers 0 | :86 Expectation failed: layers.count == extraCount | passed | `OCCTDocumentGetLabelLayers` | PASS: the kernel list has no cap |
