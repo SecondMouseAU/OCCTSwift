@@ -99,3 +99,22 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `Issue970TransactionAPITests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `namedTransactionNamesTheCommittedDelta` | the pending transaction name is dropped at commit | :23 Expectation failed: delta.name == "add part" | passed | `OCCTDocumentCommitWithDelta` | PASS: `TDF_Delta::SetName` keeps it; 2 attribute deltas |
+| `aPendingNameDoesNotReachTheNextTransaction` | the pending name survives both the commit and the next unnamed open | :39 Expectation failed: delta.name == "" | passed | `OCCTDocumentCommitWithDelta` | PASS: a delta carries no name unless one is set |
+| `anUnnamedOpenSupersedesAPendingName` | `OCCTDocumentOpenTransaction` keeps a pending name | :53 Expectation failed: delta.name == "" | passed | `OCCTDocumentOpenTransaction` | PASS: the second open throws, the delta is unnamed |
+| `aRefusedNamedOpenLeavesTheRunningNameAlone` | `OCCTDocumentOpenNamedTransaction` stores its name before the refused open | :66 Expectation failed: delta.name == "first" | passed | `OCCTDocumentOpenNamedTransaction` | PASS: the refused open throws in the kernel |
+| `abortDiscardsThePendingName` | the pending name survives both the abort and the next unnamed open | :80 Expectation failed: delta.name == "" | passed | `OCCTDocumentAbortTransaction` | PASS: abort leaves no command and no new delta |
+| `commitWithDeltaReturnsADeltaAndKeepsTheUndoLimit` | `OCCTDocumentCommitWithDelta` returns null | :91 Expectation failed: delta != nil; :93 Expectation failed: doc.availableUndos == 1 | passed | `OCCTDocumentCommitWithDelta` | PASS: 1 undo |
+| `transactionNumberTracksTheOpenTransaction` | `OCCTDocumentGetTransactionNumber` returns 0 | :103 Expectation failed: doc.transactionNumber == 1 | passed | `OCCTDocumentGetTransactionNumber` | PASS: 0, 1, 0 |
+| `repeatedOpensDoNotStack` | `OCCTDocumentGetTransactionNumber` returns 2 while a command is open | :117 Expectation failed: doc.transactionNumber == 1 | passed | `OCCTDocumentGetTransactionNumber` | PASS: second open throws; still 1 |
+| `withoutAnUndoLimitNothingOpens` | `OCCTDocumentOpenTransaction` raises a 0 undo limit to 1 | :127 Expectation failed: doc.transactionNumber == 0; :128 Expectation failed: !doc.hasOpenTransaction | passed | `OCCTDocumentOpenTransaction` | PASS: nothing opens at undo limit 0 |
+| `openNamedTransactionReportsTheNumberItOpened` | `OCCTDocumentOpenNamedTransaction` opens but answers 0 | :137 Expectation failed: doc.openNamedTransaction("with undo limit") == 1 | passed | `OCCTDocumentOpenNamedTransaction` | PASS: 0, then 1 |

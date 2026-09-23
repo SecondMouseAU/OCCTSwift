@@ -126,5 +126,243 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::namedTransactionNamesTheCommittedDelta",
+    "bridge_function": "OCCTDocumentCommitWithDelta",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": "add part",
+        "attribute_deltas_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name_after_SetName": "add part",
+        "attribute_deltas": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::aPendingNameDoesNotReachTheNextTransaction",
+    "bridge_function": "OCCTDocumentCommitWithDelta",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": ""
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_delta_name": ""
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::anUnnamedOpenSupersedesAPendingName",
+    "bridge_function": "OCCTDocumentOpenTransaction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": ""
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_delta_name": "",
+        "second_open_throws": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::aRefusedNamedOpenLeavesTheRunningNameAlone",
+    "bridge_function": "OCCTDocumentOpenNamedTransaction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "first": 1,
+        "second": 0,
+        "name": "first"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "second_open_throws": true,
+        "transaction": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::abortDiscardsThePendingName",
+    "bridge_function": "OCCTDocumentAbortTransaction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": ""
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "after_abort_open": false,
+        "undos": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::commitWithDeltaReturnsADeltaAndKeepsTheUndoLimit",
+    "bridge_function": "OCCTDocumentCommitWithDelta",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "delta": true,
+        "undo_limit": 10,
+        "undos": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "undos": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::transactionNumberTracksTheOpenTransaction",
+    "bridge_function": "OCCTDocumentGetTransactionNumber",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "open": 1,
+        "after": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "open": 1,
+        "after": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::repeatedOpensDoNotStack",
+    "bridge_function": "OCCTDocumentGetTransactionNumber",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "after_two_opens": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "second_open_throws": true,
+        "transaction": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::withoutAnUndoLimitNothingOpens",
+    "bridge_function": "OCCTDocumentOpenTransaction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "transaction": 0,
+        "open": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "undo_limit_0_open": false,
+        "transaction": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::openNamedTransactionReportsTheNumberItOpened",
+    "bridge_function": "OCCTDocumentOpenNamedTransaction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "without_limit": 0,
+        "with_limit": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "undo_limit_0": 0,
+        "undo_limit_10": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
   }
 ]
