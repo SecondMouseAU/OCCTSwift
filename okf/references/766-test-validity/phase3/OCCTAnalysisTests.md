@@ -95,6 +95,14 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Geom_SphericalSurface Properties** | sphereRadius | Sphere radius | Radius() + 1 in OCCTSurfaceSphereRadius |
+| **Geom_SphericalSurface Properties** | sphereSetRadius | Sphere radius setter | SetRadius(radius * 2) in OCCTSurfaceSphereSetRadius |
+| **Geom_SphericalSurface Properties** | sphereArea | Sphere area | Area() * 2 in OCCTSurfaceSphereArea |
+| **Geom_SphericalSurface Properties** | sphereVolume | Sphere volume | Volume() * 2 in OCCTSurfaceSphereVolume |
+| **Geom_SphericalSurface Properties** | sphereCenter | Sphere centre | x written from c.Y() in OCCTSurfaceSphereCenter |
+| **Geom_SphericalSurface Properties** | sphereUIso | Sphere U iso (rewritten: asserted nothing) | VIso(u) called in OCCTSurfaceSphereUIso |
+| **Geom_SphericalSurface Properties** | sphereVIso | Sphere V iso (rewritten: asserted nothing) | UIso(v) called in OCCTSurfaceSphereVIso |
+| **Geom_SphericalSurface Properties** | sphereSphere | gp_Sphere readback | radius + 1 in OCCTSurfaceSphereSphere |
 
 ---
 

@@ -308,5 +308,241 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Geom_SphericalSurface Properties::sphereRadius",
+    "bridge_function": "OCCTSurfaceSphereRadius",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "radius": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "radius": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_SphericalSurface Properties::sphereSetRadius",
+    "bridge_function": "OCCTSurfaceSphereSetRadius",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "radius_after_set_10": 10.0
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "radius_after_set_10": 10.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_SphericalSurface Properties::sphereArea",
+    "bridge_function": "OCCTSurfaceSphereArea",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "area": 314.1592653589793
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "area": 314.1592653589793
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_SphericalSurface Properties::sphereVolume",
+    "bridge_function": "OCCTSurfaceSphereVolume",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "volume": 523.5987755982989
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "volume": 523.5987755982989
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_SphericalSurface Properties::sphereCenter",
+    "bridge_function": "OCCTSurfaceSphereCenter",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": 1.0,
+        "y": 2.0,
+        "z": 3.0
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": 1.0,
+        "y": 2.0,
+        "z": 3.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_SphericalSurface Properties::sphereUIso",
+    "bridge_function": "OCCTSurfaceSphereUIso",
+    "bridge_output": {
+      "type": "iso_curve",
+      "data": {
+        "first": 4.71238898038469,
+        "last": 7.853981633974483,
+        "start": [
+          0.0,
+          0.0,
+          -5.0
+        ],
+        "mid": [
+          5.0,
+          0.0,
+          0.0
+        ],
+        "end": [
+          0.0,
+          0.0,
+          5.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "iso_curve",
+      "data": {
+        "first": 4.71238898038469,
+        "last": 7.853981633974483,
+        "start": [
+          0.0,
+          0.0,
+          -5.0
+        ],
+        "mid": [
+          5.0,
+          0.0,
+          0.0
+        ],
+        "end": [
+          0.0,
+          0.0,
+          5.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_SphericalSurface Properties::sphereVIso",
+    "bridge_function": "OCCTSurfaceSphereVIso",
+    "bridge_output": {
+      "type": "iso_curve",
+      "data": {
+        "first": 0.0,
+        "last": 6.283185307179586,
+        "start": [
+          5.0,
+          0.0,
+          0.0
+        ],
+        "mid": [
+          -5.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "iso_curve",
+      "data": {
+        "first": 0.0,
+        "last": 6.283185307179586,
+        "start": [
+          5.0,
+          0.0,
+          0.0
+        ],
+        "mid": [
+          -5.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_SphericalSurface Properties::sphereSphere",
+    "bridge_function": "OCCTSurfaceSphereSphere",
+    "bridge_output": {
+      "type": "sphere",
+      "data": {
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "radius": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "sphere",
+      "data": {
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "radius": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
