@@ -94,5 +94,760 @@
     "kernel_output": {"type": "bool", "data": true},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Thread Safety: OCCTSerial::serialLockBasic",
+    "bridge_function": "OCCTSerialLockAcquire",
+    "bridge_output": {
+      "type": "lock+volume",
+      "data": {
+        "ran_while_held": false,
+        "volume": 1000.0
+      }
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "BRepGProp::VolumeProperties": 1000.0,
+        "lock": "N/A: the mutex is the bridge's own, OCCT has no counterpart"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Thread Safety: OCCTSerial::serialLockReentrant",
+    "bridge_function": "OCCTSerialLockAcquire",
+    "bridge_output": {
+      "type": "volume",
+      "data": 125.0
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": 125.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Thread Safety: OCCTSerial::deepCopyForParallel",
+    "bridge_function": "OCCTShapeDeepCopy",
+    "bridge_output": {
+      "type": "copy",
+      "data": {
+        "is_same": false,
+        "orig_volume": 1000.0,
+        "copy_volume": 1000.0
+      }
+    },
+    "kernel_output": {
+      "type": "copy",
+      "data": {
+        "is_same": false,
+        "orig_volume": 1000.0,
+        "copy_volume": 1000.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Thread Safety: OCCTSerial::serializedConcurrentAccess",
+    "bridge_function": "OCCTSerialLockAcquire",
+    "bridge_output": {
+      "type": "volumes",
+      "data": [
+        1000.0,
+        8000.0,
+        27000.0,
+        64000.0
+      ]
+    },
+    "kernel_output": {
+      "type": "volumes",
+      "data": [
+        1000.0,
+        8000.0,
+        27000.0,
+        64000.0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 Sheet.standardLayout::firstAngleTopBelow",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "type": "hlr_view_bounds_2d",
+      "data": {
+        "front": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -10,
+            10
+          ]
+        },
+        "top": {
+          "x": [
+            -10,
+            10
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ]
+        },
+        "side": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ]
+        },
+        "iso": {
+          "x": [
+            -10.606601717798213,
+            10.606601717798213
+          ],
+          "y": [
+            -12.247448713915894,
+            12.247448713915894
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "hlr_view_bounds_2d",
+      "data": {
+        "front (0,1,0)": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -10,
+            10
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "top (0,0,1)": {
+          "x": [
+            -10,
+            10
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "side (1,0,0)": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "iso (1,1,1)/sqrt3": {
+          "x": [
+            -10.606602,
+            10.606602
+          ],
+          "y": [
+            -12.247449,
+            12.247449
+          ],
+          "visible_sharp": 9,
+          "hidden_sharp": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 Sheet.standardLayout::thirdAngleTopAbove",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "type": "hlr_view_bounds_2d",
+      "data": {
+        "front": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -10,
+            10
+          ]
+        },
+        "top": {
+          "x": [
+            -10,
+            10
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ]
+        },
+        "side": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ]
+        },
+        "iso": {
+          "x": [
+            -10.606601717798213,
+            10.606601717798213
+          ],
+          "y": [
+            -12.247448713915894,
+            12.247448713915894
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "hlr_view_bounds_2d",
+      "data": {
+        "front (0,1,0)": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -10,
+            10
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "top (0,0,1)": {
+          "x": [
+            -10,
+            10
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "side (1,0,0)": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "iso (1,1,1)/sqrt3": {
+          "x": [
+            -10.606602,
+            10.606602
+          ],
+          "y": [
+            -12.247449,
+            12.247449
+          ],
+          "visible_sharp": 9,
+          "hidden_sharp": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 Sheet.standardLayout::viewsFitInsideInnerFrame",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "type": "hlr_view_bounds_2d",
+      "data": {
+        "front": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -10,
+            10
+          ]
+        },
+        "top": {
+          "x": [
+            -10,
+            10
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ]
+        },
+        "side": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ]
+        },
+        "iso": {
+          "x": [
+            -10.606601717798213,
+            10.606601717798213
+          ],
+          "y": [
+            -12.247448713915894,
+            12.247448713915894
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "hlr_view_bounds_2d",
+      "data": {
+        "front (0,1,0)": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -10,
+            10
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "top (0,0,1)": {
+          "x": [
+            -10,
+            10
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "side (1,0,0)": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "iso (1,1,1)/sqrt3": {
+          "x": [
+            -10.606602,
+            10.606602
+          ],
+          "y": [
+            -12.247449,
+            12.247449
+          ],
+          "visible_sharp": 9,
+          "hidden_sharp": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 Sheet.standardLayout::interCellGapIsHalfMargin",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "type": "hlr_view_bounds_2d",
+      "data": {
+        "front": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -10,
+            10
+          ]
+        },
+        "top": {
+          "x": [
+            -10,
+            10
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ]
+        },
+        "side": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ]
+        },
+        "iso": {
+          "x": [
+            -10.606601717798213,
+            10.606601717798213
+          ],
+          "y": [
+            -12.247448713915894,
+            12.247448713915894
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "hlr_view_bounds_2d",
+      "data": {
+        "front (0,1,0)": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -10,
+            10
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "top (0,0,1)": {
+          "x": [
+            -10,
+            10
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "side (1,0,0)": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "iso (1,1,1)/sqrt3": {
+          "x": [
+            -10.606602,
+            10.606602
+          ],
+          "y": [
+            -12.247449,
+            12.247449
+          ],
+          "visible_sharp": 9,
+          "hidden_sharp": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 Sheet.standardLayout::includeIsoFalseOmits",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "type": "hlr_view_bounds_2d",
+      "data": {
+        "front": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -10,
+            10
+          ]
+        },
+        "top": {
+          "x": [
+            -10,
+            10
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ]
+        },
+        "side": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ]
+        },
+        "iso": {
+          "x": [
+            -10.606601717798213,
+            10.606601717798213
+          ],
+          "y": [
+            -12.247448713915894,
+            12.247448713915894
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "hlr_view_bounds_2d",
+      "data": {
+        "front (0,1,0)": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -10,
+            10
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "top (0,0,1)": {
+          "x": [
+            -10,
+            10
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "side (1,0,0)": {
+          "x": [
+            -5,
+            5
+          ],
+          "y": [
+            -7.5,
+            7.5
+          ],
+          "visible_sharp": 4,
+          "hidden_sharp": 4
+        },
+        "iso (1,1,1)/sqrt3": {
+          "x": [
+            -10.606602,
+            10.606602
+          ],
+          "y": [
+            -12.247449,
+            12.247449
+          ],
+          "visible_sharp": 9,
+          "hidden_sharp": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 Sheet.standardLayout::renderEmitsEveryView",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "type": "entity_counts",
+      "data": {
+        "lines": 36,
+        "polylines": 0
+      }
+    },
+    "kernel_output": {
+      "type": "hlr_edge_total",
+      "data": 36
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 Sheet.standardLayout::renderEmitsEveryViewPDF",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "type": "entity_counts",
+      "data": {
+        "lines": 36,
+        "polylines": 0
+      }
+    },
+    "kernel_output": {
+      "type": "hlr_edge_total",
+      "data": 36
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 Sheet.standardLayout::renderEmitsEveryViewSVG",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "type": "entity_counts",
+      "data": {
+        "lines": 36,
+        "polylines": 0
+      }
+    },
+    "kernel_output": {
+      "type": "hlr_edge_total",
+      "data": 36
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.150 BillOfMaterials::emptyBOMHeader",
+    "bridge_function": "none (pure Swift)",
+    "bridge_output": {
+      "type": "none",
+      "data": "pure Swift: BillOfMaterials renders onto DXFWriter with no OCCT call"
+    },
+    "kernel_output": {
+      "type": "none",
+      "data": "pure Swift: BillOfMaterials renders onto DXFWriter with no OCCT call"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.150 BillOfMaterials::threeItemBOM",
+    "bridge_function": "none (pure Swift)",
+    "bridge_output": {
+      "type": "none",
+      "data": "pure Swift: BillOfMaterials renders onto DXFWriter with no OCCT call"
+    },
+    "kernel_output": {
+      "type": "none",
+      "data": "pure Swift: BillOfMaterials renders onto DXFWriter with no OCCT call"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.150 BillOfMaterials::codableRoundTrip",
+    "bridge_function": "none (pure Swift)",
+    "bridge_output": {
+      "type": "none",
+      "data": "pure Swift: BillOfMaterials renders onto DXFWriter with no OCCT call"
+    },
+    "kernel_output": {
+      "type": "none",
+      "data": "pure Swift: BillOfMaterials renders onto DXFWriter with no OCCT call"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.150 BillOfMaterials::sheetRenderBOM",
+    "bridge_function": "none (pure Swift)",
+    "bridge_output": {
+      "type": "none",
+      "data": "pure Swift: BillOfMaterials renders onto DXFWriter with no OCCT call"
+    },
+    "kernel_output": {
+      "type": "none",
+      "data": "pure Swift: BillOfMaterials renders onto DXFWriter with no OCCT call"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
   }
 ]

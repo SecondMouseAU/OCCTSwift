@@ -1,0 +1,12 @@
+== Thread Safety: OCCTSerial ==
+box 10^3 volume = 1000.000000
+box 20^3 volume = 8000.000000
+box 30^3 volume = 27000.000000
+box 40^3 volume = 64000.000000
+box 5^3 volume = 125.000000
+deep copy (TNaming_CopyShape::CopyTool): orig volume 1000.000000, copy volume 1000.000000, IsSame 0
+== Sheet.standardLayout: HLR of box 20 x 15 x 10 ==
+front (0,1,0): visible sharp edges 4, hidden sharp edges 4, 2D bounds x [-5.000000, 5.000000] y [-10.000000, 10.000000]
+top   (0,0,1): visible sharp edges 4, hidden sharp edges 4, 2D bounds x [-10.000000, 10.000000] y [-7.500000, 7.500000]
+side  (1,0,0): visible sharp edges 4, hidden sharp edges 4, 2D bounds x [-5.000000, 5.000000] y [-7.500000, 7.500000]
+iso   (1,1,1)/sqrt3: visible sharp edges 9, hidden sharp edges 3, 2D bounds x [-10.606602, 10.606602] y [-12.247449, 12.247449]

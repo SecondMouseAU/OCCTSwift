@@ -1208,57 +1208,113 @@ struct ColorToolGetAllColorsTests {
 
 // MARK: - Thread Safety Tests
 
+/// Mutable state shared between the test thread and GCD workers, every access under one NSLock.
+private final class SerialLockProbeState: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _otherRan = false
+    private var _inside = 0
+    private var _maxInside = 0
+    private var _volumes: [Int: Double] = [:]
+
+    var otherRan: Bool { lock.withLock { _otherRan } }
+    var maxInside: Int { lock.withLock { _maxInside } }
+    func volume(_ i: Int) -> Double? { lock.withLock { _volumes[i] } }
+
+    func markOtherRan() { lock.withLock { _otherRan = true } }
+    func setVolume(_ i: Int, _ v: Double?) { lock.withLock { _volumes[i] = v } }
+    func enter() {
+        lock.withLock {
+            _inside += 1
+            _maxInside = max(_maxInside, _inside)
+        }
+    }
+    func leave() { lock.withLock { _inside -= 1 } }
+}
+
 @Suite("Thread Safety: OCCTSerial")
 struct ThreadSafetyTests {
+    // #1987: this used to assert only `box != nil` inside the lock, which passes with
+    // OCCTSerialLockAcquire/Release reduced to no-ops. It now checks the lock excludes: while this
+    // thread holds it, a second thread's `withLock` body must not run.
     @Test func serialLockBasic() {
-        OCCTSerial.withLock {
-            let box = Shape.box(width: 10, height: 10, depth: 10)
-            #expect(box != nil)
-        }
-    }
-
-    @Test func serialLockReentrant() {
-        OCCTSerial.withLock {
-            OCCTSerial.withLock {
-                let box = Shape.box(width: 5, height: 5, depth: 5)
-                #expect(box != nil)
+        let state = SerialLockProbeState()
+        let done = DispatchSemaphore(value: 0)
+        let ranWhileHeld = OCCTSerial.withLock { () -> Bool in
+            state.setVolume(0, Shape.box(width: 10, height: 10, depth: 10)?.volume)
+            DispatchQueue.global().async {
+                OCCTSerial.withLock { state.markOtherRan() }
+                done.signal()
             }
+            Thread.sleep(forTimeInterval: 0.2)
+            return state.otherRan
         }
+        let finished = done.wait(timeout: .now() + 10) == .success
+        #expect(!ranWhileHeld)
+        #expect(finished)
+        #expect(abs((state.volume(0) ?? -1) - 1000) < 1e-6)
     }
 
-    @Test func deepCopyForParallel() {
-        if let orig = Shape.box(width: 10, height: 10, depth: 10) {
-            if let copy = orig.deepCopy() {
-                if let origVol = orig.volume, let copyVol = copy.volume {
-                    #expect(abs(origVol - copyVol) < 1e-6)
+    // #1987: the nested call runs on a worker thread with a timeout, so a lock that is not
+    // recursive fails this test instead of hanging the process.
+    @Test func serialLockReentrant() {
+        let state = SerialLockProbeState()
+        let done = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            OCCTSerial.withLock {
+                OCCTSerial.withLock {
+                    state.setVolume(0, Shape.box(width: 5, height: 5, depth: 5)?.volume)
                 }
             }
+            done.signal()
         }
+        let finished = done.wait(timeout: .now() + 10) == .success
+        #expect(finished)
+        #expect(abs((state.volume(0) ?? -1) - 125) < 1e-6)
     }
 
+    // #1987: every assertion used to sit under three `if let`s, so a deepCopy returning nil, or
+    // one handing back the original shape, passed. A copy made for another thread must share no
+    // TShape with the original (TNaming_CopyShape::CopyTool gives IsSame false) and keep its
+    // volume.
+    @Test func deepCopyForParallel() {
+        guard let orig = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil")
+            return
+        }
+        let copy = orig.deepCopy()
+        #expect(copy != nil)
+        guard let copy else { return }
+        #expect(!copy.isSame(as: orig))
+        #expect(abs((orig.volume ?? -1) - 1000) < 1e-6)
+        #expect(abs((copy.volume ?? -1) - 1000) < 1e-6)
+    }
+
+    // #1987: used to assert only that each worker got a volume, which passes with no lock at
+    // all. It now also records how many workers were inside `withLock` at once, which must never
+    // exceed one, and pins each box's volume.
     @Test func serializedConcurrentAccess() {
+        let state = SerialLockProbeState()
         let group = DispatchGroup()
-        var results = [Double?](repeating: nil, count: 4)
-        let resultsLock = NSLock()
         for i in 0..<4 {
             group.enter()
             DispatchQueue.global().async {
                 let vol = OCCTSerial.withLock { () -> Double? in
-                    let box = Shape.box(
-                        width: Double(i + 1) * 10,
-                        height: Double(i + 1) * 10,
-                        depth: Double(i + 1) * 10)
-                    return box?.volume
+                    state.enter()
+                    let edge = Double(i + 1) * 10
+                    let v = Shape.box(width: edge, height: edge, depth: edge)?.volume
+                    Thread.sleep(forTimeInterval: 0.05)
+                    state.leave()
+                    return v
                 }
-                resultsLock.lock()
-                results[i] = vol
-                resultsLock.unlock()
+                state.setVolume(i, vol)
                 group.leave()
             }
         }
         group.wait()
+        #expect(state.maxInside == 1)
         for i in 0..<4 {
-            #expect(results[i] != nil)
+            let edge = Double(i + 1) * 10
+            #expect(abs((state.volume(i) ?? -1) - edge * edge * edge) < 1e-6)
         }
     }
 }
@@ -1291,21 +1347,32 @@ struct SheetStandardLayoutTests {
         #expect(layout.top.offset.y > layout.front.offset.y)
     }
 
+    // #1987: this used to check only each view's offset, the point its centre lands on, at 1:1
+    // where a 20 mm box fits any cell with room to spare. Dropping the fit-to-cell clamp left it
+    // green. It now asks for 100:1, far more than a cell holds, and checks every view's placed
+    // extent, not just its centre.
     @Test("All four placed views fall inside the inner frame")
     func viewsFitInsideInnerFrame() {
         let sheet = Sheet(size: .a3, orientation: .landscape, projection: .first)
         guard let box = Shape.box(width: 20, height: 15, depth: 10),
-            let layout = sheet.standardLayout(of: box, margin: 20)
+            let layout = sheet.standardLayout(of: box, scale: .custom(100), margin: 20)
         else {
             Issue.record("setup nil")
             return
         }
         let frame = sheet.innerFrame
+        #expect(layout.placed.count == 4)
         for placed in layout.placed {
-            #expect(placed.offset.x >= frame.min.x)
-            #expect(placed.offset.x <= frame.max.x)
-            #expect(placed.offset.y >= frame.min.y)
-            #expect(placed.offset.y <= frame.max.y)
+            guard let b = placed.drawing.bounds(includeAnnotations: false) else {
+                Issue.record("placed view has no bounds")
+                continue
+            }
+            let lo = placed.offset + placed.scale * b.min
+            let hi = placed.offset + placed.scale * b.max
+            #expect(lo.x >= frame.min.x)
+            #expect(hi.x <= frame.max.x)
+            #expect(lo.y >= frame.min.y)
+            #expect(hi.y <= frame.max.y)
         }
     }
 
@@ -1381,7 +1448,11 @@ struct SheetStandardLayoutTests {
         let writer = DXFWriter()
         layout.render(into: writer)
         let counts = writer.entityCounts
-        #expect(counts.lines + counts.polylines > 0)
+        // #1987: `> 0` passed with only one of the four views rendered. HLRBRep_Algo gives this
+        // box 4 visible + 4 hidden sharp edges in each of front, top and side and 9 + 3 in the
+        // isometric view, all straight, so every placed view drawn is exactly 36 lines.
+        #expect(counts.lines == 36)
+        #expect(counts.polylines == 0)
     }
 
     // #1180: `StandardLayout.render(into:)` used to accept only `DXFWriter`, even though its
@@ -1399,7 +1470,9 @@ struct SheetStandardLayoutTests {
         let writer = PDFWriter()
         layout.render(into: writer)
         let counts = writer.entityCounts
-        #expect(counts.lines + counts.polylines > 0)
+        // #1987: pinned to all four views' 36 edges, as in the DXFWriter case above.
+        #expect(counts.lines == 36)
+        #expect(counts.polylines == 0)
     }
 
     @Test("render(into:) emits geometry for every placed view onto an SVGWriter")
@@ -1414,7 +1487,9 @@ struct SheetStandardLayoutTests {
         let writer = SVGWriter()
         layout.render(into: writer)
         let counts = writer.entityCounts
-        #expect(counts.lines + counts.polylines > 0)
+        // #1987: pinned to all four views' 36 edges, as in the DXFWriter case above.
+        #expect(counts.lines == 36)
+        #expect(counts.polylines == 0)
     }
 }
 
@@ -1471,7 +1546,13 @@ struct BillOfMaterialsTests {
         let writer = DXFWriter()
         let topRight = sheet.renderBOM(bom, into: writer)
         let frame = sheet.innerFrame
-        #expect(topRight.x <= frame.max.x + 0.001)
-        #expect(topRight.y <= frame.max.y + 0.001)
+        // #1987: this used to bound only the top-right corner from above, so a BOM anchored at
+        // the frame's bottom-left corner, 177 mm of it hanging off the left edge, passed. The
+        // default anchor is the frame's top-right corner, and the table's left edge (the seven
+        // default column widths sum to 177) and bottom edge (2 rows of 6) must be inside too.
+        #expect(abs(topRight.x - frame.max.x) < 1e-9)
+        #expect(abs(topRight.y - frame.max.y) < 1e-9)
+        #expect(topRight.x - 177 >= frame.min.x)
+        #expect(topRight.y - 12 >= frame.min.y)
     }
 }
