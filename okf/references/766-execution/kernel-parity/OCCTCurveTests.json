@@ -302,5 +302,196 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "GeomConvert_CurveToAnaCurve::recognize line from BSpline",
+    "test_file": "Tests/OCCTCurveTests/CurveToAnaCurveTests.swift",
+    "bridge_function": "OCCTGeomConvertCurveToAnalytical",
+    "bridge_output": {
+      "type": "value",
+      "data": "line, newFirst 0, newLast 10, gap < 1e-3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Line, newFirst 0, newLast 10, gap 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "conversion reports failure (and, separately, newLast = newFirst)",
+    "red": "CurveToAnaCurveTests.swift:29 Issue recorded (line not recognized)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-toana-cuttingplane/transcript.txt",
+    "note": "Rewritten: `if let result` skipped the check on failure"
+  },
+  {
+    "test_name": "GeomConvert_CurveToAnaCurve::recognize circle from BSpline",
+    "test_file": "Tests/OCCTCurveTests/CurveToAnaCurveTests.swift",
+    "bridge_function": "OCCTGeomConvertCurveToAnalytical",
+    "bridge_output": {
+      "type": "value",
+      "data": "circle, newLast 3.1415926535897922"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Circle, newLast 3.1415926535897922, gap 3.6e-15"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "conversion reports failure (and, separately, newLast = newFirst)",
+    "red": "CurveToAnaCurveTests.swift:54 Issue recorded (circle not recognized)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-toana-cuttingplane/transcript.txt",
+    "note": "Rewritten: `if let result` skipped the check on failure"
+  },
+  {
+    "test_name": "GeomConvert_CurveToAnaCurve::check points are linear",
+    "test_file": "Tests/OCCTCurveTests/CurveToAnaCurveTests.swift",
+    "bridge_function": "OCCTGeomConvertIsLinear",
+    "bridge_output": {
+      "type": "value",
+      "data": "true, deviation 0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "IsLinear = 1, deviation 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsLinear answer inverted",
+    "red": "CurveToAnaCurveTests.swift:66 isLinear",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-toana-cuttingplane/transcript.txt",
+    "note": "Strengthened: deviation pinned to 0"
+  },
+  {
+    "test_name": "v0.147 DrawingAnnotation.cuttingPlaneLine::addCuttingPlaneLine stores a cutting-plane annotation",
+    "test_file": "Tests/OCCTCurveTests/CuttingPlaneLineTests.swift",
+    "bridge_function": "none: Swift Drawing.addCuttingPlaneLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "trace length 60, unit arrow perpendicular to it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: Swift-only drawing geometry (Drawing.addCuttingPlaneLine), no kernel counterpart"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "Rewritten: checked only the label"
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: trace length halved (and, separately, arrow taken along the trace)",
+    "red": "CuttingPlaneLineTests.swift:34 abs(simd_length(trace) - 60) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-toana-cuttingplane/transcript.txt",
+    "note": "Rewritten: checked only the label"
+  },
+  {
+    "test_name": "v0.147 DrawingAnnotation.cuttingPlaneLine::Cutting plane parallel to view plane returns nil",
+    "test_file": "Tests/OCCTCurveTests/CuttingPlaneLineTests.swift",
+    "bridge_function": "none: Swift Drawing.addCuttingPlaneLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: Swift-only drawing geometry (Drawing.addCuttingPlaneLine), no kernel counterpart"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: parallel-trace guard skipped",
+    "red": "CuttingPlaneLineTests.swift:53 ann == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-toana-cuttingplane/transcript.txt"
+  },
+  {
+    "test_name": "v0.147 DrawingAnnotation.cuttingPlaneLine::Zero-length cuttingPlaneNormal returns nil",
+    "test_file": "Tests/OCCTCurveTests/CuttingPlaneLineTests.swift",
+    "bridge_function": "none: Swift Drawing.addCuttingPlaneLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: Swift-only drawing geometry (Drawing.addCuttingPlaneLine), no kernel counterpart"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: zero-length guard skipped (#1581 path)",
+    "red": "CuttingPlaneLineTests.swift:77 ann == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-toana-cuttingplane/transcript.txt"
+  },
+  {
+    "test_name": "v0.147 DrawingAnnotation.cuttingPlaneLine::Zero-length viewDirection returns nil",
+    "test_file": "Tests/OCCTCurveTests/CuttingPlaneLineTests.swift",
+    "bridge_function": "none: Swift Drawing.addCuttingPlaneLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: Swift-only drawing geometry (Drawing.addCuttingPlaneLine), no kernel counterpart"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: zero-length guard skipped (#1581 path)",
+    "red": "CuttingPlaneLineTests.swift:94 ann == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-toana-cuttingplane/transcript.txt"
+  },
+  {
+    "test_name": "v0.147 DrawingAnnotation.cuttingPlaneLine::DXFWriter emits cutting plane line geometry",
+    "test_file": "Tests/OCCTCurveTests/CuttingPlaneLineTests.swift",
+    "bridge_function": "none: Swift DXF emitter",
+    "bridge_output": {
+      "type": "value",
+      "data": "9 lines and 2 texts added"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: Swift-only drawing geometry (Drawing.addCuttingPlaneLine), no kernel counterpart"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "Rewritten: `lines >= 9` was met by the view's own edges"
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: middle chain segment not emitted",
+    "red": "CuttingPlaneLineTests.swift:119 counts.lines - before.entityCounts.lines == 9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-toana-cuttingplane/transcript.txt",
+    "note": "Rewritten: `lines >= 9` was met by the view's own edges"
   }
 ]

@@ -197,3 +197,18 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| GeomConvert_CurveToAnaCurve | recognize line from BSpline | `OCCTGeomConvertCurveToAnalytical` | conversion reports failure (and, separately, newLast = newFirst) | `CurveToAnaCurveTests.swift:29 Issue recorded (line not recognized)` | ✅ | MATCH | Rewritten: `if let result` skipped the check on failure |
+| GeomConvert_CurveToAnaCurve | recognize circle from BSpline | `OCCTGeomConvertCurveToAnalytical` | conversion reports failure (and, separately, newLast = newFirst) | `CurveToAnaCurveTests.swift:54 Issue recorded (circle not recognized)` | ✅ | MATCH | Rewritten: `if let result` skipped the check on failure |
+| GeomConvert_CurveToAnaCurve | check points are linear | `OCCTGeomConvertIsLinear` | IsLinear answer inverted | `CurveToAnaCurveTests.swift:66 isLinear` | ✅ | MATCH | Strengthened: deviation pinned to 0 |
+| v0.147 DrawingAnnotation.cuttingPlaneLine | addCuttingPlaneLine stores a cutting-plane annotation | `none: Swift Drawing.addCuttingPlaneLine` | Swift: trace length halved (and, separately, arrow taken along the trace) | `CuttingPlaneLineTests.swift:34 abs(simd_length(trace) - 60) < 1e-9` | ✅ | N/A | Rewritten: checked only the label |
+| v0.147 DrawingAnnotation.cuttingPlaneLine | Cutting plane parallel to view plane returns nil | `none: Swift Drawing.addCuttingPlaneLine` | Swift: parallel-trace guard skipped | `CuttingPlaneLineTests.swift:53 ann == nil` | ✅ | N/A |  |
+| v0.147 DrawingAnnotation.cuttingPlaneLine | Zero-length cuttingPlaneNormal returns nil | `none: Swift Drawing.addCuttingPlaneLine` | Swift: zero-length guard skipped (#1581 path) | `CuttingPlaneLineTests.swift:77 ann == nil` | ✅ | N/A |  |
+| v0.147 DrawingAnnotation.cuttingPlaneLine | Zero-length viewDirection returns nil | `none: Swift Drawing.addCuttingPlaneLine` | Swift: zero-length guard skipped (#1581 path) | `CuttingPlaneLineTests.swift:94 ann == nil` | ✅ | N/A |  |
+| v0.147 DrawingAnnotation.cuttingPlaneLine | DXFWriter emits cutting plane line geometry | `none: Swift DXF emitter` | Swift: middle chain segment not emitted | `CuttingPlaneLineTests.swift:119 counts.lines - before.entityCounts.lines == 9` | ✅ | N/A | Rewritten: `lines >= 9` was met by the view's own edges |
