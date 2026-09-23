@@ -124,3 +124,18 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Issue549Curve2DArcLengthRangeTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-arclength-zero-radius/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Curve2D ranged arc-length contract after the #549 bridge removal::A reversed in-domain range measures the span, not the failure sentinel | `OCCTCurve2DGetLengthBetween` | u1 > u2 returns -1 | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::A reversed range on a single-span curve measures the span too | `OCCTCurve2DGetLengthBetween` | u1 > u2 returns -1 | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::Parameters past both ends clamp to the domain instead of extrapolating | `OCCTCurve2DGetLengthBetween` | pre-bounded adaptor over [u1, u2] (the pre-#549 extrapolation) | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::A range wholly outside the domain measures zero, not a fragment of the extrapolation | `OCCTCurve2DGetLengthBetween` | pre-bounded adaptor over [u1, u2] | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::Equal parameters are still a genuine zero, not the failure sentinel | `OCCTCurve2DGetLengthBetween` | u1 == u2 returns -1 | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::The -1.0 sentinel still reports a genuine failure | `OCCTCurve2DGetLengthBetween` | NaN bound measured as 0 | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::The two spellings are one computation, on the ranges that used to diverge | `Curve2D.arcLength (Swift)` | arcLength returns -1 on a reversed range while length(from:to:) measures it | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::2D and 3D answer the same on a reversed and an out-of-domain range | `OCCTCurve2DGetLengthBetween` | u1 > u2 returns -1 | ✅ | ✅ | MATCH |  |
