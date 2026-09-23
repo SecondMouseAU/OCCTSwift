@@ -1,0 +1,15 @@
+fixture: faces=7 filletIndex=2 volume=7982.831853072
+fillet face alone: done=1 faces=6 volume=8000.000000000 warnings=0
+fillet + foreign (kernel ignores the foreign face; bridge now refuses): done=1 faces=6 volume=8000.000000000 warnings=0
+foreign alone: done=0
+compound(fillet, foreign) exploded: done=1 faces=6 volume=8000.000000000 warnings=0
+compound(fillet) exploded: done=1 faces=6 volume=8000.000000000 warnings=0
+twin: faces=7 twinFilletIsSameAsA=0
+twin's fillet alone: done=0
+own fillet + twin's fillet: done=1 faces=6 volume=8000.000000000 warnings=0
+an edge as the only element (not a face): done=0
+fillet face reversed: done=1 faces=6 volume=8000.000000000 warnings=0
+reversed IsSame=1 IsEqual=0
+whole solid (every face): done=1 faces=7 volume=7982.831853072 warnings=1
+its shell (every face): done=1 faces=7 volume=7982.831853072 warnings=1
+by index (withoutFeatures): done=1 faces=6 volume=8000.000000000 warnings=0

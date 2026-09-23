@@ -221,3 +221,23 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `Issue578DefeatureFaceMembershipTests.swift` (7 tests)
+
+Probe: `Scripts/repro/766-modeling-issue578-defeature-face-membership/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| foreignFaceInMixedRequestFails | `occtDefeaturingFacesFromShapes` passes a foreign face on and lets the kernel ignore it (the pre-#578 behaviour) | `:88 Expectation failed: filleted.defeature(faces: [filletFace, foreign]) == nil`, `:91 Expectation failed: filleted.defeature(faces: [foreign, filletFace]) == nil` | pass | `OCCTShapeDefeature` | PASS: the kernel alone accepts the mixed request silently; the refusal is the bridge's membership rule, as intended |
+| mixedCarrierFails | `occtDefeaturingFacesFromShapes` passes a foreign face on and lets the kernel ignore it (the pre-#578 behaviour) | `:113 Expectation failed: filleted.defeature(faces: [mixedCarrier]) == nil` | pass | `OCCTShapeDefeature` | PASS |
+| membershipIsIdentityNotGeometry | `occtDefeaturingFacesFromShapes` passes a foreign face on and lets the kernel ignore it (the pre-#578 behaviour) | `:141 Expectation failed: a.defeature(faces: [aFillet, bFillet]) == nil` | pass | `OCCTShapeDefeature` | PASS |
+| elementWithNoFaceFails | `occtDefeaturingFacesFromShapes` accepts a carrier that contributes no face | `:162 Expectation failed: filleted.defeature(faces: [filletFace, edges[0]]) == nil`, `:165 Expectation failed: filleted.defeature(faces: [filletFace, vertices[0]]) == nil` | pass | `OCCTShapeDefeature` | PASS |
+| reversedFaceStillBelongs | `occtDefeaturingFacesFromShapes` checks membership with `IsEqual` (orientation counts) instead of `IsSame` | `:59 Expectation failed: (a == nil) == (b == nil)` | pass | `OCCTShapeDefeature` | PASS |
+| wholeShapeCarriersAreAccepted | `occtDefeaturingFacesFromShapes` refuses any carrier that is not itself a face | `:204 Expectation failed: Bool(false)` | pass | `OCCTShapeDefeature` | PASS |
+| bothSpellingsRefuseAFaceThatDoesNotBelong | `occtDefeaturingFacesFromShapes` passes a foreign face on and lets the kernel ignore it (the pre-#578 behaviour) | `:241 Expectation failed: filleted.defeature(faces: [filletFace, foreign]) == nil` | pass | `OCCTShapeDefeature` | PASS |

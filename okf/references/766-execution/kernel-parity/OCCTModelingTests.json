@@ -6,5 +6,209 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Issue 578: which faces defeaturing will accept::foreignFaceInMixedRequestFails",
+    "bridge_function": "OCCTShapeDefeature",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "alone.faces": 6,
+        "fillet+foreign": null,
+        "foreign+fillet": null,
+        "foreign": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "alone": {
+          "faces": 6,
+          "volume": 8000.0
+        },
+        "fillet+foreign": {
+          "IsDone": 1,
+          "faces": 6,
+          "warnings": 0
+        },
+        "foreign": {
+          "IsDone": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 578: which faces defeaturing will accept::mixedCarrierFails",
+    "bridge_function": "OCCTShapeDefeature",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "mixedCompound": null,
+        "cleanCompound": "same removal as the bare face"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "mixedCompoundExploded": {
+          "IsDone": 1,
+          "faces": 6
+        },
+        "cleanCompound": {
+          "faces": 6,
+          "volume": 8000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 578: which faces defeaturing will accept::membershipIsIdentityNotGeometry",
+    "bridge_function": "OCCTShapeDefeature",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "twin": null,
+        "own+twin": null,
+        "own": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "twinIsSame": false,
+        "twinAlone": {
+          "IsDone": 0
+        },
+        "own+twin": {
+          "IsDone": 1,
+          "faces": 6
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 578: which faces defeaturing will accept::elementWithNoFaceFails",
+    "bridge_function": "OCCTShapeDefeature",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edge": null,
+        "fillet+edge": null,
+        "fillet+vertex": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edgeAlone": {
+          "IsDone": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 578: which faces defeaturing will accept::reversedFaceStillBelongs",
+    "bridge_function": "OCCTShapeDefeature",
+    "bridge_output": {
+      "type": "value",
+      "data": "same removal as the unreversed face"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "reversed": {
+          "faces": 6,
+          "volume": 8000.0
+        },
+        "IsSame": true,
+        "IsEqual": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 578: which faces defeaturing will accept::wholeShapeCarriersAreAccepted",
+    "bridge_function": "OCCTShapeDefeature",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "viaSolid.faces": 7,
+        "shell": "same removal as the solid"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "wholeSolid": {
+          "IsDone": 1,
+          "faces": 7,
+          "volume": 7982.831853072,
+          "warnings": 1
+        },
+        "shell": {
+          "faces": 7,
+          "volume": 7982.831853072
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 578: which faces defeaturing will accept::bothSpellingsRefuseAFaceThatDoesNotBelong",
+    "bridge_function": "OCCTShapeDefeature",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "byIndexGhost": null,
+        "byShapeForeign": null,
+        "sameRemoval": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "byIndex": {
+          "faces": 6,
+          "volume": 8000.0
+        },
+        "byShape": {
+          "faces": 6,
+          "volume": 8000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
