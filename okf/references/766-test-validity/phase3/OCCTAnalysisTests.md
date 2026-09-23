@@ -11,8 +11,8 @@
 | Suite | Test | Defect Category | Injection Target |
 |-------|------|-----------------|------------------|
 | **BRepGProp Face Tests** | BRepGProp Face Tests | Face properties | Remove face props |
-| **IntCurvesFace Intersection** | Line-face intersection | Curve-face intersection | Return no intersection points |
-| **IntCurvesFace Intersection** | Line parallel to a face does not intersect it | Curve-face intersection | Report a spurious point |
+| **IntCurvesFace Intersection** | Line-face intersection | Curve-face intersection | return 0 points |
+| **IntCurvesFace Intersection** | Line parallel to a face does not intersect it | Curve-face intersection | report one spurious point when NbPoints is 0 |
 | **ShapeRayIntersection Tests** | hit face access | Ray-shape hit iteration | More() returns false |
 | **Point Cloud Analysis** | Single point detected as point | Point cloud classification | Remove point cloud classification |
 | **Point Cloud Analysis** | Coplanar points detected as planar | Point cloud classification | Remove point cloud classification |
@@ -125,8 +125,8 @@
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
 | BRepGProp Face Tests | OCCTBRepGPropFace | Face properties | Remove face props | ✅ | ✅ |  |
-| Line-face intersection | OCCTLocOpeCSIntersectLine | Curve-face intersection | Return no intersection points | ✅ | ✅ |  |
-| Line parallel to a face does not intersect it | OCCTLocOpeCSIntersectLine | Curve-face intersection | Report a spurious point | ✅ | ✅ |  |
+| Line-face intersection | OCCTLocOpeCSIntersectLine | Curve-face intersection | return 0 points | ✅ | ✅ | Red: IntCurvesFaceTests.swift:34 `hits.count == 1`. Parity MATCH, `Scripts/repro/766-intcurvesface/`. Rewritten in #2199; unchanged here. |
+| Line parallel to a face does not intersect it | OCCTLocOpeCSIntersectLine | Curve-face intersection | report one spurious point when NbPoints is 0 | ✅ | ✅ | Red: IntCurvesFaceTests.swift:56 `hits.isEmpty`. Parity MATCH, `Scripts/repro/766-intcurvesface/`. Added in #2199 alongside #1715. |
 | hit face access | OCCTCurveSurfaceInterMore | Ray-shape hit iteration | More() returns false | ✅ | ✅ |  |
 | Single point detected as point | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
 | Coplanar points detected as planar | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
