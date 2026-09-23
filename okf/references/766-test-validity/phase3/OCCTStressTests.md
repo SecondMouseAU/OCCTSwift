@@ -288,3 +288,26 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressBuilderLifecycleTests: UnifySameDomain, ThruSections
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-builder-lifecycle/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: UnifySameDomainBuilder Lifecycle | `normalCycle` | `OCCTUnifySameDomainBuild, OCCTUnifySameDomainShape` | OCCTUnifySameDomainShape returns nil | RED exit 1: StressBuilderLifecycleTests.swift:364 Expectation failed: unifier.shape | ✔ | MATCH | yes |
+| Stress: UnifySameDomainBuilder Lifecycle | `buildWithoutModification` | `OCCTUnifySameDomainShape` | OCCTUnifySameDomainShape returns nil | RED exit 1: StressBuilderLifecycleTests.swift:374 Expectation failed: unifier.shape | ✔ | MATCH | yes |
+| Stress: UnifySameDomainBuilder Lifecycle | `destroyWithoutBuild` | `OCCTUnifySameDomainRelease` | CRASH:OCCTUnifySameDomainRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
+| Stress: UnifySameDomainBuilder Lifecycle | `withTolerances` | `OCCTUnifySameDomainSetLinearTolerance, OCCTUnifySameDomainShape` | OCCTUnifySameDomainShape returns nil | RED exit 1: StressBuilderLifecycleTests.swift:393 Expectation failed: unifier.shape | ✔ | MATCH | yes |
+| Stress: ThruSectionsBuilder Lifecycle | `buildEmpty` | `OCCTThruSectionsBuild` | OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone | RED exit 1: StressBuilderLifecycleTests.swift:408 Expectation failed: !ok | ✔ | MATCH | no |
+| Stress: ThruSectionsBuilder Lifecycle | `normalCycle` | `OCCTThruSectionsBuild, OCCTThruSectionsShape` | EARLY:OCCTThruSectionsShape | RED exit 1: StressBuilderLifecycleTests.swift:423 Expectation failed: loft.shape | ✔ | MATCH | yes |
+| Stress: ThruSectionsBuilder Lifecycle | `singleSection` | `OCCTThruSectionsBuild` | OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone | CRASH exit 139: Segmentation fault: 11 | ✔ | MATCH | no |
+| Stress: ThruSectionsBuilder Lifecycle | `destroyWithoutBuild` | `OCCTThruSectionsRelease` | CRASH:OCCTThruSectionsRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
+| Stress: ThruSectionsBuilder Lifecycle | `doubleBuild` | `OCCTThruSectionsBuild, OCCTThruSectionsShape` | EARLY:OCCTThruSectionsShape | RED exit 1: StressBuilderLifecycleTests.swift:459 Expectation failed: abs((loft.shape?.volume ?? 0) - 513.1268001) < 1e-6 | ✔ | MATCH | yes |
+| Stress: ThruSectionsBuilder Lifecycle | `mismatchedSectionEdgeCountWithoutCheckFailsCleanly` | `OCCTThruSectionsBuild` | OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone | RED exit 1: StressBuilderLifecycleTests.swift:498 Expectation failed: !loft.build() | ✔ | MATCH | no |
+| Stress: ThruSectionsBuilder Lifecycle | `punctualApexWithMatchingSectionsStillSucceedsUnderCreateSmoothed` | `OCCTThruSectionsAddVertex, OCCTThruSectionsShape` | EARLY:OCCTThruSectionsShape | RED exit 1: StressBuilderLifecycleTests.swift:522 Expectation failed: loft.shape != nil | ✔ | MATCH | no |
+| Stress: ThruSectionsBuilder Lifecycle | `generatedFaceNilAfterFailedRebuild` | `OCCTThruSectionsBuild, OCCTThruSectionsGeneratedFace` | OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone | RED exit 1: StressBuilderLifecycleTests.swift:570 Expectation failed: !loft.build() | ✔ | MATCH | no |
+| Stress: ThruSectionsBuilder Lifecycle | `generatedFaceNilAfterWrongUsageOnReusedBuilder` | `OCCTThruSectionsBuild, OCCTThruSectionsGeneratedFace` | OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone | RED exit 1: StressBuilderLifecycleTests.swift:615 Expectation failed: !loft.build() | ✔ | MATCH | no |
+| Stress: ThruSectionsBuilder Lifecycle | `generatedFaceNilAfterFailedRebuildRuledPath` | `OCCTThruSectionsBuild, OCCTThruSectionsGeneratedFace` | OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone | RED exit 1: StressBuilderLifecycleTests.swift:657 Expectation failed: !loft.build() | ✔ | MATCH | no |
+| Stress: ThruSectionsBuilder Lifecycle | `generatedFaceIsMemberOfShapeAfterSuccessFailureSuccessOnReusedBuilder` | `OCCTThruSectionsBuild, OCCTThruSectionsGeneratedFace` | OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone | RED exit 1: StressBuilderLifecycleTests.swift:718 Expectation failed: !loft.build() | ✔ | MATCH | no |
+| Stress: ThruSectionsBuilder Lifecycle | `shapeNilAfterSettingChangedWithoutRebuild` | `OCCTThruSectionsSetContinuity, OCCTThruSectionsShape` | EARLY:OCCTThruSectionsShape | RED exit 1: StressBuilderLifecycleTests.swift:754 Expectation failed: loft.shape != nil | ✔ | MATCH | no |

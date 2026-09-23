@@ -1,6 +1,12 @@
 // StressBuilderLifecycleTests.swift
 // Category 6: Builder lifecycle patterns for all 11 builders + 3 fixers.
 // Tests: build empty, normal cycle, reset, destroy without build, invalid input, double build.
+//
+// Epic #766: most results here sat behind `if let` or were read into `_`, so a nil result or a
+// wrong value passed. They now assert what the wrapped OCCT builder gives for the same input,
+// measured by Scripts/repro/766-stress-builder-lifecycle/probe.mm (transcript.txt beside it). The
+// destroy-without-X tests can only fail by crashing when the builder is released, which is their
+// point; they are left as written.
 
 import Foundation
 import OCCTSwift
@@ -347,24 +353,28 @@ struct StressHatchBuilderLifecycleTests {
 @Suite("Stress: UnifySameDomainBuilder Lifecycle")
 struct StressUnifySameDomainBuilderLifecycleTests {
 
-    @Test func normalCycle() {
+    @Test func normalCycle() throws {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         let b2 = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10)!
-        guard let fused = b1.union(b2) else { return }
+        let fused = try #require(b1.union(b2))
         let unifier = UnifySameDomainBuilder(shape: fused)
         unifier.build()
-        if let result = unifier.shape {
-            #expect(result.isValid)
-        }
+        // b1 is centred (x up to 5) and b2 starts at x = 10: the "fusion" is two disjoint boxes,
+        // so there is nothing to unify and all 12 faces remain.
+        let result = try #require(unifier.shape)
+        #expect(result.isValid)
+        #expect(result.subShapeCount(ofType: .face) == 12)
+        #expect(abs((result.volume ?? 0) - 2000) < 1e-6)
     }
 
-    @Test func buildWithoutModification() {
+    @Test func buildWithoutModification() throws {
         let box = standardBox()
         let unifier = UnifySameDomainBuilder(shape: box)
         unifier.build()
-        if let result = unifier.shape {
-            #expect(result.isValid)
-        }
+        let result = try #require(unifier.shape)
+        #expect(result.isValid)
+        #expect(result.subShapeCount(ofType: .face) == 6)
+        #expect(abs((result.volume ?? 0) - 1000) < 1e-6)
     }
 
     @Test func destroyWithoutBuild() {
@@ -372,7 +382,7 @@ struct StressUnifySameDomainBuilderLifecycleTests {
         _ = UnifySameDomainBuilder(shape: box)
     }
 
-    @Test func withTolerances() {
+    @Test func withTolerances() throws {
         let box = standardBox()
         let unifier = UnifySameDomainBuilder(
             shape: box, unifyEdges: true, unifyFaces: true, concatBSplines: false)
@@ -380,9 +390,9 @@ struct StressUnifySameDomainBuilderLifecycleTests {
         unifier.setAngularTolerance(1e-2)
         unifier.allowInternalEdges(false)
         unifier.build()
-        if let result = unifier.shape {
-            #expect(result.isValid)
-        }
+        let result = try #require(unifier.shape)
+        #expect(result.isValid)
+        #expect(result.subShapeCount(ofType: .face) == 6)
     }
 }
 
@@ -399,18 +409,21 @@ struct StressThruSectionsBuilderLifecycleTests {
         #expect(loft.shape == nil)
     }
 
-    @Test func normalCycle() {
-        guard let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-            let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
-            let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2)
-        else { return }
+    @Test func normalCycle() throws {
+        let w1 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let w2 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let s1 = try #require(Shape.fromWire(w1))
+        let s2 = try #require(Shape.fromWire(w2))
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
         loft.addWire(s2)
-        if loft.build(), let shape = loft.shape {
-            #expect(shape.isValid)
-            if let vol = shape.volume { #expect(vol > 0) }
-        }
+        #expect(loft.build())
+        let shape = try #require(loft.shape)
+        #expect(shape.isValid)
+        // Two coaxial circles 10 apart: the r = 5 to r = 3 frustum, π·10/3·(25 + 15 + 9).
+        #expect(abs((shape.volume ?? 0) - 513.1268001) < 1e-6)
     }
 
     @Test func singleSection() {
@@ -440,8 +453,10 @@ struct StressThruSectionsBuilderLifecycleTests {
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
         loft.addWire(s2)
-        _ = loft.build()
-        _ = loft.build()
+        // Both builds succeed, and the second gives the same frustum (both were read into `_`).
+        #expect(loft.build())
+        #expect(loft.build())
+        #expect(abs((loft.shape?.volume ?? 0) - 513.1268001) < 1e-6)
     }
 
     // #913: checkCompatibility(false) skips BRepFill_CompatibleWires' section reconciliation, so
