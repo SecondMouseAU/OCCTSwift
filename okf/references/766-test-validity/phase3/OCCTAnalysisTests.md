@@ -235,6 +235,14 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Issue #1424: OCCTBndLibFace null guard** | a null OCCTShapeRef returns the zeroed fallback, not a crash | Null handle guard | OCCTBndLibFace |
+| **Issue #1424: OCCTBndLibFace null guard** | a nullified Shape (null TopoDS_Shape, non-null wrapper) is already safe -- not this PR's fix | Null handle guard | OCCTBndLibFace |
+| **Issue #1424: OCCTBndLibFace null guard** | an ordinary face's bounding box is unaffected | Face bounding box | OCCTBndLibFace |
+| **Issue #1493: MedialAxisDistanceOnArc evaluates the real curve, not a linear interpolation** | A curved bisector arc's midpoint distance matches the real curve point, not the linear interpolation of its endpoints | Medial axis distance on arc | OCCTMedialAxisDistanceOnArc |
+| **Issue #1493: MedialAxisDistanceOnArc evaluates the real curve, not a linear interpolation** | Distance on arc still agrees with the endpoint node distances at t=0 and t=1 | Medial axis distance on arc | OCCTMedialAxisDistanceOnArc |
+| **Issue #1511 Finding 1: ellipse curvature extrema MinCur/MaxCur** | major-axis vertices (θ=0, π) report MinCur; minor-axis vertices (θ=π/2, 3π/2) report MaxCur | Curvature extrema classification | OCCTLPropAnalyticCurInf |
+| **Issue #1544: distanceSS(to:deflection:) default near Precision::Confusion()** | default deflection: point1/point2 correspond to the true minimum, not just distance | Shape-shape distance | OCCTBRepExtremaDistanceSS |
+| **Issue #1544: distanceSS(to:deflection:) default near Precision::Confusion()** | deflection: 100.0 (the old default) returns a non-minimal extremum as point1/point2 | Shape-shape distance | OCCTBRepExtremaDistanceSS |
 
 ---
 
@@ -424,6 +432,14 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| a null OCCTShapeRef returns the zeroed fallback, not a crash | OCCTBndLibFace | Null handle guard | write 1s, not 0s, for a null raw pointer | ✅ | ✅ |  |
+| a nullified Shape (null TopoDS_Shape, non-null wrapper) is already safe -- not this PR's fix | OCCTBndLibFace | Null handle guard | write 1s, not 0s, for a null TopoDS_Shape | ✅ | ✅ |  |
+| an ordinary face's bounding box is unaffected | OCCTBndLibFace | Face bounding box | xmin - 1 | ✅ | ✅ |  |
+| A curved bisector arc's midpoint distance matches the real curve point, not the linear interpolation of its endpoints | OCCTMedialAxisDistanceOnArc | Medial axis distance on arc | restore the pre-#1493 linear interpolation of the endpoint distances | ✅ | ✅ |  |
+| Distance on arc still agrees with the endpoint node distances at t=0 and t=1 | OCCTMedialAxisDistanceOnArc | Medial axis distance on arc | distance + 0.5 | ✅ | ✅ |  |
+| major-axis vertices (θ=0, π) report MinCur; minor-axis vertices (θ=π/2, 3π/2) report MaxCur | OCCTLPropAnalyticCurInf | Curvature extrema classification | restore the inverted isMin = (k == 1 || k == 3) | ✅ | ✅ |  |
+| default deflection: point1/point2 correspond to the true minimum, not just distance | OCCTBRepExtremaDistanceSS | Shape-shape distance | deflection forced to 100 (the old default) | ✅ | ✅ |  |
+| deflection: 100.0 (the old default) returns a non-minimal extremum as point1/point2 | OCCTBRepExtremaDistanceSS | Shape-shape distance | deflection forced to Precision::Confusion() | ✅ | ✅ |  |
 
 ---
 

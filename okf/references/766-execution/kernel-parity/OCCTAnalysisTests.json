@@ -4501,5 +4501,258 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1424: OCCTBndLibFace null guard::a null OCCTShapeRef returns the zeroed fallback, not a crash",
+    "bridge_function": "OCCTBndLibFace",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "N/A",
+      "data": {
+        "reason": "A null OCCTShapeRef never reaches OCCT: occtShapeIsPresent refuses it and the bridge writes its own zeroed fallback"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-issue1424-1493-1511-1544/"
+  },
+  {
+    "test_name": "Issue #1424: OCCTBndLibFace null guard::a nullified Shape (null TopoDS_Shape, non-null wrapper) is already safe -- not this PR's fix",
+    "bridge_function": "OCCTBndLibFace",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          0,
+          0,
+          0
+        ],
+        "path": "occtShapeIsPresent guard"
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          0,
+          0,
+          0
+        ],
+        "path": "Bnd_Box void, Get throws, the catch writes 0s"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue1424-1493-1511-1544/"
+  },
+  {
+    "test_name": "Issue #1424: OCCTBndLibFace null guard::an ordinary face's bounding box is unaffected",
+    "bridge_function": "OCCTBndLibFace",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          -5,
+          -5,
+          -5
+        ],
+        "max": [
+          5,
+          5,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          -5,
+          -5,
+          -5
+        ],
+        "max": [
+          5,
+          5,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue1424-1493-1511-1544/"
+  },
+  {
+    "test_name": "Issue #1493: MedialAxisDistanceOnArc evaluates the real curve, not a linear interpolation::A curved bisector arc's midpoint distance matches the real curve point, not the linear interpolation of its endpoints",
+    "bridge_function": "OCCTMedialAxisDistanceOnArc",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "arc": 6,
+        "d0": 2,
+        "d1": 2.3431457505076194,
+        "dmid": 2.085786437626905
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "arc": 6,
+        "d0": 2,
+        "d1": 2.3431457505076194,
+        "dmid": 2.085786437626905
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue1424-1493-1511-1544/"
+  },
+  {
+    "test_name": "Issue #1493: MedialAxisDistanceOnArc evaluates the real curve, not a linear interpolation::Distance on arc still agrees with the endpoint node distances at t=0 and t=1",
+    "bridge_function": "OCCTMedialAxisDistanceOnArc",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "arcs": 11,
+        "endpoint_distances": [
+          0,
+          2,
+          2.3431457505076194
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "arcs": 11,
+        "endpoint_distances": [
+          0,
+          2,
+          2.3431457505076194
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue1424-1493-1511-1544/"
+  },
+  {
+    "test_name": "Issue #1511 Finding 1: ellipse curvature extrema MinCur/MaxCur::major-axis vertices (θ=0, π) report MinCur; minor-axis vertices (θ=π/2, 3π/2) report MaxCur",
+    "bridge_function": "OCCTLPropAnalyticCurInf",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "0": "MinCur",
+        "pi/2": "MaxCur",
+        "pi": "MinCur",
+        "3pi/2": "MaxCur"
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "0": "MinCur",
+        "pi/2": "MaxCur",
+        "pi": "MinCur",
+        "3pi/2": "MaxCur"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue1424-1493-1511-1544/"
+  },
+  {
+    "test_name": "Issue #1544: distanceSS(to:deflection:) default near Precision::Confusion()::default deflection: point1/point2 correspond to the true minimum, not just distance",
+    "bridge_function": "OCCTBRepExtremaDistanceSS",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 10,
+        "solutions": 1,
+        "pairDistance": 10
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 10,
+        "solutions": 1,
+        "pairDistance": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue1424-1493-1511-1544/"
+  },
+  {
+    "test_name": "Issue #1544: distanceSS(to:deflection:) default near Precision::Confusion()::deflection: 100.0 (the old default) returns a non-minimal extremum as point1/point2",
+    "bridge_function": "OCCTBRepExtremaDistanceSS",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 10,
+        "solutions": 3,
+        "pairDistance": 30
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 10,
+        "solutions": 3,
+        "pairDistance": 30
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue1424-1493-1511-1544/"
   }
 ]
