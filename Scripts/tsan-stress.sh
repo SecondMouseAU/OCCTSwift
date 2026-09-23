@@ -103,6 +103,39 @@ SCENARIOS=(
   "1157-interface-static-thread-safety/occt_1157_stress.cpp|iges_write_independent 8 20 @SCRATCH"
   "1157-interface-static-thread-safety/occt_1157_stress.cpp|iges_read_independent 8 20 @SCRATCH"
   "1157-interface-static-thread-safety/occt_1157_stress.cpp|mixed_step_iges_independent 8 20 @SCRATCH"
+
+  # Issues #2074 and #2075, the two surfaces #707 named as having NO TSan scenario at all.
+  # Registered 2026-09-23. Both came back clean, which is the result rather than a non-result:
+  # #707's protocol has now been pointed at both surfaces it named, and neither holds a defect
+  # this harness can reach.
+  #
+  # #2074, Surface/Curve3D evaluation. Carried patch 0031 already found a real defect on exactly
+  # this surface (BSplCLib_Cache/BSplSLib_Cache rebuilding a span in place from a const
+  # evaluator), and 0031 is pinned as of v4.0.0-kernel.1. Every mode drives threads at parameters
+  # in DIFFERENT spans, staggered by thread index, because a harness whose threads all evaluate
+  # one span would find nothing here however many threads it ran.
+  #
+  # KNOWN LIMIT, recorded rather than glossed: this harness has NOT been A/B'd against 0031
+  # unpatched. 0031 adds a mutex member to BSplCLib_Cache and therefore changes the class layout,
+  # so override-linking one unpatched .cxx against an archive built with the patched header is an
+  # ODR violation rather than an experiment. What IS proven is that the binary reports: injecting
+  # a deliberate unsynchronised global makes it abort with a TSan race. So these modes are clean,
+  # not blind, but "would have caught 0031" is not a claim this method can support.
+  # See Scripts/repro/2074-adaptor-evaluation/README.md.
+  "2074-adaptor-evaluation/occt_2074_stress.cpp|curve_independent 8 40"
+  "2074-adaptor-evaluation/occt_2074_stress.cpp|surface_independent 8 40"
+  "2074-adaptor-evaluation/occt_2074_stress.cpp|curve_shared_geometry 8 40"
+  "2074-adaptor-evaluation/occt_2074_stress.cpp|surface_shared_geometry 8 40"
+
+  # #2075, BRepGraph. Exploratory: no known defect, ranked second for that reason. The structural
+  # read agreed with the measurement before it ran, which is worth recording because it rarely
+  # does: across the 83 files of src/ModelingData/TKBRep/BRepGraph there are zero file-scope
+  # mutable statics, zero function-local statics, and exactly three `mutable` members, all three
+  # of them mutexes. The family was written thread-aware.
+  # See Scripts/repro/2075-brepgraph-concurrency/README.md.
+  "2075-brepgraph-concurrency/occt_2075_stress.cpp|graph_build_independent 8 30"
+  "2075-brepgraph-concurrency/occt_2075_stress.cpp|graph_traverse_independent 8 30"
+  "2075-brepgraph-concurrency/occt_2075_stress.cpp|graph_build_traverse_independent 8 30"
 )
 
 MACOS_SDK=$(xcrun --sdk macosx --show-sdk-path)
