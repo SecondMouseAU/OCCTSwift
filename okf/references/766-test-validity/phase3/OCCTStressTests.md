@@ -288,3 +288,26 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressExhaustiveAPITests: Math Utilities, Mesh API, Feature Recognition
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-exhaustive-api/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: Math Utilities | `polynomialSolverQuadratic` | `OCCTMathPolyQuadratic` | EARLY:OCCTMathPolyQuadratic | RED exit 1: StressExhaustiveAPITests.swift:617 Expectation failed: r.count == 2 | ✔ | MATCH | yes |
+| Stress: Math Utilities | `polynomialSolverCubic` | `OCCTMathPolyCubic` | EARLY:OCCTMathPolyCubic | RED exit 1: StressExhaustiveAPITests.swift:631 Expectation failed: (roots ?? []).sorted() == [-1, 0, 1] | ✔ | MATCH | yes |
+| Stress: Math Utilities | `gaussIntegration` | `OCCTMathIntegGauss` | EARLY:OCCTMathIntegGauss | RED exit 1: StressExhaustiveAPITests.swift:636 Expectation failed: result != nil | ✔ | MATCH | no |
+| Stress: Math Utilities | `planeGeometry` | `OCCTPlaneDistanceToPoint` | EARLY:OCCTPlaneDistanceToPoint | RED exit 1: StressExhaustiveAPITests.swift:643 Expectation failed: abs(dist - 5.0) < 0.001 | ✔ | MATCH | no |
+| Stress: Math Utilities | `lineGeometry` | `OCCTLineDistanceToPoint` | EARLY:OCCTLineDistanceToPoint | RED exit 1: StressExhaustiveAPITests.swift:649 Expectation failed: abs(dist - 3.0) < 0.001 | ✔ | MATCH | no |
+| Stress: Math Utilities | `vectorCrossMagnitude` | `OCCTVecCrossMagnitude` | EARLY:OCCTVecCrossMagnitude | RED exit 1: StressExhaustiveAPITests.swift:654 Expectation failed: abs(mag - 1.0) < 0.001 | ✔ | MATCH | no |
+| Stress: Math Utilities | `dirIsOpposite` | `OCCTDirIsOpposite` | EARLY:OCCTDirIsOpposite | RED exit 1: StressExhaustiveAPITests.swift:658 Expectation failed: Shape.dirIsOpposite(SIMD3(1, 0, 0), SIMD3(-1, 0, 0)) | ✔ | MATCH | no |
+| Stress: Math Utilities | `dirIsNormal` | `OCCTDirIsNormal` | EARLY:OCCTDirIsNormal | RED exit 1: StressExhaustiveAPITests.swift:663 Expectation failed: Shape.dirIsNormal(SIMD3(1, 0, 0), SIMD3(0, 1, 0)) | ✔ | MATCH | no |
+| Stress: Mesh API | `meshGeneration` | `OCCTShapeCreateMesh, OCCTMeshGetVertexCount, OCCTMeshGetTriangleCount` | EARLY:OCCTMeshGetTriangleCount | RED exit 1: StressExhaustiveAPITests.swift:678 Expectation failed: m.triangleCount > 0 | ✔ | MATCH | no |
+| Stress: Mesh API | `meshVertices` | `OCCTMeshGetVertices` | EARLY:OCCTMeshGetVertices | RED exit 1: StressExhaustiveAPITests.swift:691 Expectation failed: abs(rad - 5) < 1e-4 | ✔ | MATCH | yes |
+| Stress: Mesh API | `meshNormals` | `OCCTMeshGetNormals` | EARLY:OCCTMeshGetNormals | RED exit 1: StressExhaustiveAPITests.swift:704 Expectation failed: abs(len - 1) < 1e-5 | ✔ | MATCH | yes |
+| Stress: Mesh API | `meshTriangles` | `OCCTMeshGetTriangleCount` | EARLY:OCCTMeshGetTriangleCount | RED exit 1: StressExhaustiveAPITests.swift:710 Expectation failed: m.triangleCount > 0 | ✔ | MATCH | yes |
+| Stress: Mesh API | `meshOnAllShapes` | `OCCTShapeCreateMesh` | OCCTShapeCreateMesh returns nil | RED exit 1: StressExhaustiveAPITests.swift:717 Expectation failed: m != nil | ✔ | MATCH | no |
+| Stress: Feature Recognition | `aagOnBox` | `OCCTShapeGetOrientedFaces` | EARLY:OCCTShapeGetOrientedFaces | RED exit 1: StressExhaustiveAPITests.swift:730 Expectation failed: aag.nodes.count == 6 | ✔ | MATCH | no |
+| Stress: Feature Recognition | `aagOnFilletedBox` | `OCCTShapeGetOrientedFaces` | EARLY:OCCTShapeGetOrientedFaces | RED exit 1: StressExhaustiveAPITests.swift:736 Expectation failed: aag.nodes.count > 6 | ✔ | MATCH | yes |
+| Stress: Feature Recognition | `aagOnDrilledPlate` | `OCCTShapeGetOrientedFaces` | EARLY:OCCTShapeGetOrientedFaces | RED exit 1: StressExhaustiveAPITests.swift:744 Expectation failed: aag.nodes.count > 6 | ✔ | MATCH | yes |
