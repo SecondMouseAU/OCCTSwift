@@ -497,5 +497,62 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtPElS Point-Cone::pointToCone",
+    "bridge_function": "OCCTExtremaExtPElSCone",
+    "bridge_output": {
+      "type": "point_surface_extrema",
+      "data": {
+        "count": 2,
+        "extrema": [
+          {
+            "squareDistance": 112.50000000000001,
+            "point2": {
+              "x": 12.5,
+              "y": 0.0,
+              "z": 7.500000000000001
+            }
+          },
+          {
+            "squareDistance": 312.50000000000006,
+            "point2": {
+              "x": 7.4999999999999964,
+              "y": -9.184850993605144e-16,
+              "z": -12.499999999999998
+            }
+          }
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point_surface_extrema",
+      "data": {
+        "count": 2,
+        "extrema": [
+          {
+            "squareDistance": 112.50000000000001,
+            "point2": {
+              "x": 12.5,
+              "y": 0.0,
+              "z": 7.500000000000001
+            }
+          },
+          {
+            "squareDistance": 312.50000000000006,
+            "point2": {
+              "x": 7.4999999999999964,
+              "y": -9.184850993605144e-16,
+              "z": -12.499999999999998
+            }
+          }
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
