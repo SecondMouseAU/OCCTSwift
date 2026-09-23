@@ -4501,5 +4501,147 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Inertia Properties::Box volume inertia properties",
+    "bridge_function": "OCCTShapeInertiaProperties",
+    "bridge_output": {
+      "type": "inertia",
+      "data": {
+        "observed": {
+          "mass": 6000,
+          "diag": [
+            650000,
+            500000,
+            250000
+          ],
+          "principal": [
+            650000,
+            500000,
+            250000
+          ]
+        },
+        "asserted_within": "mass < 1, tensor 1e-6"
+      }
+    },
+    "kernel_output": {
+      "type": "inertia",
+      "data": {
+        "value": {
+          "mass": 6000,
+          "diag": [
+            650000,
+            500000,
+            250000
+          ],
+          "principal": [
+            650000,
+            500000,
+            250000
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inertia-properties/"
+  },
+  {
+    "test_name": "Inertia Properties::Sphere has symmetry point",
+    "bridge_function": "OCCTShapeInertiaProperties",
+    "bridge_output": {
+      "type": "inertia",
+      "data": {
+        "observed": {
+          "mass": 4188.790204786392,
+          "hasSymmetryPoint": true
+        },
+        "asserted_within": "mass 1% relative"
+      }
+    },
+    "kernel_output": {
+      "type": "inertia",
+      "data": {
+        "value": {
+          "mass": 4188.790204786392,
+          "hasSymmetryPoint": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inertia-properties/"
+  },
+  {
+    "test_name": "Inertia Properties::Surface inertia properties",
+    "bridge_function": "OCCTShapeSurfaceInertiaProperties",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "observed": {
+          "area": 599.9999999999999
+        },
+        "asserted_within": 1
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": {
+          "area": 599.9999999999999
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inertia-properties/"
+  },
+  {
+    "test_name": "Inertia Properties::Cylinder principal moments",
+    "bridge_function": "OCCTShapeInertiaProperties",
+    "bridge_output": {
+      "type": "inertia",
+      "data": {
+        "observed": {
+          "mass": 1570.7963267948965,
+          "principal": [
+            62177.354602298175,
+            62177.354602298,
+            19634.954084936307
+          ],
+          "hasSymmetryAxis": true
+        },
+        "asserted_within": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "inertia",
+      "data": {
+        "value": {
+          "mass": 1570.7963267948965,
+          "principal": [
+            62177.354602298175,
+            62177.354602298,
+            19634.954084936307
+          ],
+          "hasSymmetryAxis": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inertia-properties/"
   }
 ]

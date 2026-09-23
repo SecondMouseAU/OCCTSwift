@@ -235,6 +235,10 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Inertia Properties** | Box volume inertia properties | BRepGProp volume | Mass/MatrixOfInertia/Moments |
+| **Inertia Properties** | Sphere has symmetry point | BRepGProp volume | Mass/HasSymmetryPoint |
+| **Inertia Properties** | Surface inertia properties | BRepGProp surface | Mass() |
+| **Inertia Properties** | Cylinder principal moments | BRepGProp volume | Moments/HasSymmetryAxis |
 
 ---
 
@@ -424,6 +428,10 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Box volume inertia properties | OCCTShapeInertiaProperties | BRepGProp volume | volume * 2; Ixx<->Iyy and principal moments disturbed | ✅ | ✅ | Rewritten: diagonal and principal moments were only checked > 0 |
+| Sphere has symmetry point | OCCTShapeInertiaProperties | BRepGProp volume | volume * 2, symmetry flags false | ✅ | ✅ |  |
+| Surface inertia properties | OCCTShapeSurfaceInertiaProperties | BRepGProp surface | area * 2 | ✅ | ✅ |  |
+| Cylinder principal moments | OCCTShapeInertiaProperties | BRepGProp volume | volume * 2, symmetry flags false; principal moments disturbed | ✅ | ✅ | Rewritten: named for the principal moments but checked only mass > 0 |
 
 ---
 
