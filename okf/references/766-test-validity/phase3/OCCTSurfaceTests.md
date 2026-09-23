@@ -222,3 +222,14 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: BRepFillPipeTests.swift, BRepLibFindSurfaceTests.swift, BSplineSurfaceCompletionsTests.swift (6 tests), probe Scripts/repro/766-pipe-findsurface-bspline/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| BRepFill Pipe Tests | Pipe sweep with error metric | `OCCTBRepFillPipe` | ErrorOnSurface() + 1 (INJ_PIPE_ERR) | BRepFillPipeTests.swift:23 r.errorOnSurface == 0 | ✅ | MATCH | Rewritten: inputs behind `if let`, and `errorOnSurface >= 0` passed any error; pins area and error |
+| BRepLib_FindSurface Tests | findSurfaceFromBoxFaceWire | `OCCTFindSurface` | Found() inverted (INJ_FS_INVERT) | BRepLibFindSurfaceTests.swift:24 surface != nil | ✅ | MATCH | Rewritten: three nested `if let`s; now asserts the wire exists and the plane position |
+| BRepLib_FindSurface Tests | findSurfaceToleranceReturnsValue | `OCCTFindSurfaceTolerance` | Found() inverted (INJ_FS_INVERT) | BRepLibFindSurfaceTests.swift:38 tol == 0 | ✅ | MATCH | Rewritten: `tol != nil` inside three `if let`s; pinned to 0 |
+| BRepLib_FindSurface Tests | findSurfaceExistedTrue | `OCCTFindSurfaceExisted` | Found() inverted (INJ_FS_INVERT) | BRepLibFindSurfaceTests.swift:47 existed | ✅ | MATCH | Rewritten: assertion sat inside three `if let`s |
+| v0.126.0, BSpline Surface completions | U and V multiplicities | `OCCTSurfaceBSplineGetUMultiplicities` | every multiplicity reported as 1 (INJ_BS_MULT_ONE) | BSplineSurfaceCompletionsTests.swift:24 surf.bsplineUMultiplicities == [2, 2] | ✅ | MATCH | Rewritten: `m > 0`, and only when non-empty; also reaches OCCTSurfaceBSplineGetVMultiplicities |
+| v0.126.0, BSpline Surface completions | UReverse and VReverse don't crash | `OCCTSurfaceBSplineUReverse` | reverse is a no-op returning true (INJ_BS_REVERSE_NOOP) | BSplineSurfaceCompletionsTests.swift:38 simd_length(surf.point(atU: 8, v: -3) - before) < 1e-12 | ✅ | MATCH | Rewritten: asserted nothing at all; also reaches OCCTSurfaceBSplineVReverse |
