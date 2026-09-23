@@ -99,3 +99,38 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `XCAFComponentMatrixTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `matrixComponentPlacement` | `OCCTDocumentAddComponentMatrix` returns -1 without adding | :20 Expectation failed: doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: rigid) >= 0; :24 Expectation failed: doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: reflect) >= 0 | passed | `OCCTDocumentAddComponentMatrix` | PASS: both added, 2 components |
+
+### `XCAFDocAssemblyGraphTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `createFromDocument` | `OCCTAssemblyGraphNbNodes` answers -1 | :15 Expectation failed: graph.nodeCount >= 0 | passed | `OCCTAssemblyGraphNbNodes` | PASS: counts non-negative |
+| `nodeTypeMatchesRealOCCTCategories` | `OCCTAssemblyGraphGetNodeType` answers 0 | :64 Expectation failed: graph.nodeType(at: 1) == .assemblyRoot; :65 Expectation failed: graph.nodeType(at: 2) == .occurrence | passed | `OCCTAssemblyGraphGetNodeType` | PASS: 1 3 2 3 4 |
+
+### `XCAFDocAssemblyItemIdTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `createFromString` | `OCCTAssemblyItemIdPathCount` answers 1 | :11 Expectation failed: id.pathCount == 2 | passed | `OCCTAssemblyItemIdPathCount` | PASS: 2 |
+| `emptyIsNull` | `OCCTAssemblyItemIdIsValid` returns true | :16 Expectation failed: !id.isValid | passed | `OCCTAssemblyItemIdIsValid` | PASS: null |
+| `equality` | `OCCTAssemblyItemIdIsEqual` returns false | :22 Expectation failed: id1.isEqual(to: id2) | passed | `OCCTAssemblyItemIdIsEqual` | PASS: equal |
+| `inequality` | `OCCTAssemblyItemIdIsEqual` returns true | :28 Expectation failed: !id1.isEqual(to: id2) | passed | `OCCTAssemblyItemIdIsEqual` | PASS: unequal |
+
+### `XCAFDocAssemblyItemRefTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentGetAssemblyItemRef` returns null | :18 Expectation failed: path != nil | passed | `OCCTDocumentGetAssemblyItemRef` | PASS: path kept |
+| `subshapeIndex` | `OCCTDocumentAssemblyItemRefHasExtra` returns false | :28 Expectation failed: doc.assemblyItemRefHasExtra(labelId: node.labelId) | passed | `OCCTDocumentAssemblyItemRefHasExtra` | PASS: 3 |
+| `clearExtra` | `OCCTDocumentAssemblyItemRefClearExtra` returns true without clearing | :42 Expectation failed: !doc.assemblyItemRefHasExtra(labelId: node.labelId) | passed | `OCCTDocumentAssemblyItemRefClearExtra` | PASS: cleared |
+| `isOrphan` | `OCCTDocumentAssemblyItemRefIsOrphan` returns false | :51 Expectation failed: doc.assemblyItemRefIsOrphan(labelId: node.labelId) | passed | `OCCTDocumentAssemblyItemRefIsOrphan` | N/A: the test's path names no label, so it is orphan; the probe's resolvable path is not |
