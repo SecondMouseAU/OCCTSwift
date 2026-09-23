@@ -1,6 +1,11 @@
 // StressExhaustiveAPITests.swift
 // Category 1: Smoke-call every major public method with standard fixtures.
 // Goal: verify no crash and reasonable output for each API entry point.
+//
+// Epic #766: many of these smoke calls held their result behind `if let` (so a nil result passed)
+// or read it into `_` (so only a crash could fail them). Those now require the result and, where
+// the check was only "positive" or "non-empty", pin the value OCCT gives for the same input,
+// measured by Scripts/repro/766-stress-exhaustive-api/probe.mm (transcript.txt beside it).
 
 import Foundation
 import OCCTSwift
@@ -519,6 +524,7 @@ struct StressSurfaceAPITests {
         let s = standardBezierSurface()
         let dom = s.domain
         #expect(dom.uMax > dom.uMin)
+        #expect(dom.uMin == 0 && dom.uMax == 1 && dom.vMin == 0 && dom.vMax == 1)
     }
 
     @Test func pointEval() {
@@ -526,6 +532,9 @@ struct StressSurfaceAPITests {
         let dom = s.domain
         let pt = s.point(atU: (dom.uMin + dom.uMax) / 2.0, v: (dom.vMin + dom.vMax) / 2.0)
         #expect(pt.x.isFinite)
+        #expect(abs(pt.x - 7.5) < 1e-12)
+        #expect(abs(pt.y - 7.5) < 1e-12)
+        #expect(abs(pt.z - 1.125) < 1e-12)
     }
 
     @Test func gaussianCurvature() {
@@ -560,8 +569,10 @@ struct StressDocumentAPITests {
         #expect(doc != nil)
     }
 
-    @Test func addShape() {
-        guard let doc = Document.create() else { return }
+    // Epic #766: `guard let doc = Document.create() else { return }` passed when creation failed;
+    // these now require the document.
+    @Test func addShape() throws {
+        let doc = try #require(Document.create())
         let label = doc.addShape(standardBox())
         #expect(label >= 0)
     }
@@ -569,35 +580,49 @@ struct StressDocumentAPITests {
     @Test func shapeCount() {
         let doc = standardDocument()
         #expect(doc.shapeCount >= 1)
+        #expect(doc.shapeCount == 1)
     }
 
-    @Test func colorToolAdd() {
-        guard let doc = Document.create() else { return }
+    @Test func colorToolAdd() throws {
+        let doc = try #require(Document.create())
         let id = doc.colorToolAddColor(r: 1, g: 0, b: 0)
-        _ = id
-        #expect(doc.colorToolColorCount >= 1)
+        #expect(id >= 0)
+        #expect(doc.colorToolColorCount == 1)
     }
 
-    @Test func colorToolFind() {
-        guard let doc = Document.create() else { return }
-        doc.colorToolAddColor(r: 0.5, g: 0.5, b: 0.5)
+    // The colour found is the label the add returned (the result was discarded before). A second
+    // colour is added first, so a lookup that answered the first label for anything would show.
+    @Test func colorToolFind() throws {
+        let doc = try #require(Document.create())
+        let other = doc.colorToolAddColor(r: 1, g: 0, b: 0)
+        let added = doc.colorToolAddColor(r: 0.5, g: 0.5, b: 0.5)
+        #expect(added != other)
         let found = doc.colorToolFindColor(r: 0.5, g: 0.5, b: 0.5)
-        _ = found
+        #expect(found >= 0)
+        #expect(found == added)
     }
 
-    @Test func shapeToolQueries() {
-        guard let doc = Document.create() else { return }
+    // A box added at the top level is a free, simple shape, not a component (all three were
+    // discarded before).
+    @Test func shapeToolQueries() throws {
+        let doc = try #require(Document.create())
         let label = doc.addShape(standardBox())
-        _ = doc.shapeToolIsFree(labelId: label)
-        _ = doc.shapeToolIsSimpleShape(labelId: label)
-        _ = doc.shapeToolIsComponent(labelId: label)
+        #expect(doc.shapeToolIsFree(labelId: label))
+        #expect(doc.shapeToolIsSimpleShape(labelId: label))
+        #expect(!doc.shapeToolIsComponent(labelId: label))
     }
 
+    // Epic #766: `try doc.writeSTEP(to: url)` resolves to the non-throwing overload that returns
+    // Bool (`writeSTEP(to:modelType:modes:)`, `@discardableResult`), so the `try` never threw and
+    // the result was discarded: a failed export passed. The result is now asserted, and the file
+    // has to exist with content.
     @Test func stepExport() throws {
         let doc = standardDocument()
         let url = tempURL("step")
         defer { cleanupTemp(url) }
-        try doc.writeSTEP(to: url)
+        #expect(doc.writeSTEP(to: url))
+        let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
+        #expect(size > 0)
     }
 }
 
