@@ -302,5 +302,509 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::the ceiling is declared once and the #479 spelling still resolves to it",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "ceilval: ceiling 10_000_001",
+    "red": "Issue558SamplingCountBoundsTests.swift:57 Sampling.maximumSampleCount == 10_000_000",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::a request is honoured exactly or not at all",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:66 Sampling.requested(1) == nil  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Curve3D request samplers reject a count they cannot serve",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:112 c.drawUniform(pointCount: n).count == 0  (+5 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Curve2D.drawUniform rejects a count it cannot serve",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:122 c.drawUniform(pointCount: n).count == 0  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Edge request samplers reject a count they cannot serve",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:135 e.points(count: n).count == 0  (+5 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Shape.uniformAbscissa rejects a count it cannot serve, both overloads",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:150 edge.uniformAbscissa(pointCount: n) == nil  (+5 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Shape iso-curve evaluators reject a count they cannot serve",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:166 face.uIsoCurvePoints(u: 0.5, count: n).count == 0  (+3 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::BRepGraph.sampleEdgeCurve rejects a count it cannot serve",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:179 graph.sampleEdgeCurve(edgeIndex: 0, count: n).count == 0  (+",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Shape.allEdgePolylines keeps its own lower bound and gains the ceiling",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:189 b.allEdgePolylines(maxPointsPerEdge: n).count == 0  (+2 more",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::MedialAxis fills its buffer exactly, so its maxPoints is a request, not a capacity",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:206 ma.drawArc(at: 1, maxPoints: n).count == 0  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::a capacity is clamped into 0...ceiling rather than rejected",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "capneg: capacity <= 0 answers 2",
+    "red": "Issue558SamplingCountBoundsTests.swift:82 Sampling.capacity(0) == 0  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::a capacity of zero or less yields the entry point's own empty value",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "capneg: capacity <= 0 answers 2",
+    "red": "Issue558SamplingCountBoundsTests.swift:249 c3.drawAdaptive(maxPoints: n).count == 0  (+26 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::an adaptive sampler's capacity is clamped, not rejected: the answer is unchanged",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "capzero: over-ceiling capacity answers 0",
+    "red": "Issue558SamplingCountBoundsTests.swift:230 baseline3D == c3.drawAdaptive(maxPoints: Self.pastInt32).cou",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Shape's own capacity samplers clamp and still answer",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "capzero: over-ceiling capacity answers 0",
+    "red": "Issue558SamplingCountBoundsTests.swift:267 b.edgePolyline(at: 0, maxPoints: Self.pastInt32) != nil  (+2",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::a grid bounds the product and each factor, and cannot overflow into one",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "gridnil: gridTotal always nil",
+    "red": "Issue558SamplingCountBoundsTests.swift:89 Sampling.gridTotal(20, 20) == 400  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Surface.drawMesh bounds the product, and each factor on its own",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "gridnil: gridTotal always nil",
+    "red": "Issue558SamplingCountBoundsTests.swift:296 !s.drawMesh(uCount: 20, vCount: 20).isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Surface.drawGrid bounds the total, and each line count on its own",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "gridnil: gridTotal always nil",
+    "red": "Issue558SamplingCountBoundsTests.swift:313 !s.drawGrid(uLineCount: 4, vLineCount: 4, pointsPerLine: 10)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::BRepGraph.sampleFaceUVGrid bounds the product, and each factor on its own",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "gridnil: gridTotal always nil",
+    "red": "Issue558SamplingCountBoundsTests.swift:329 graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 5, vSamples:",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Shape.coonsAlgPatch bounds the product, and each factor on its own",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "REWRITTEN: every assertion expected nil from a degenerate patch; a real square boundary now has to serve a 3 x 4 grid"
+      ]
+    },
+    "status": "N/A",
+    "injection": "gridnil: gridTotal always nil",
+    "red": "Issue558SamplingCountBoundsTests.swift:353 grid?.count == 12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt",
+    "note": "REWRITTEN: every assertion expected nil from a degenerate patch; a real square boundary now has to serve a 3 x 4 grid"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Wire.orderedEdgePoints keeps nil for zero and gains it for the ceiling",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "oepneg: orderedEdgePoints admits a non-positive maxPoints as 2",
+    "red": "Issue558SamplingCountBoundsTests.swift:287 w.orderedEdgePoints(at: 0, maxPoints: n) == nil  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::QuadricIntersection.coneSpherePoints rejects a count it cannot serve",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "OCCTIntAnaConeSpherePoints",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "IntAna_IntQuadQuad: original sphere (0,0,5) NbCurve 0; replacement (5,0,0) NbCurve 2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:220 served.count == 16",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt",
+    "note": "REWRITTEN: the fixture sphere met the cone nowhere and curveIndex 0 is below the bridge's 1-based range, so the test could only fail by aborting; now an intersecting pair at curveIndex 1 with a served-count control"
   }
 ]
