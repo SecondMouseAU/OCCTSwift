@@ -308,5 +308,71 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "IntAna ConeSphere Tests::coneSphereIntersection",
+    "bridge_function": "OCCTIntAnaConeSphere",
+    "bridge_output": {
+      "type": "curve_count",
+      "data": {
+        "on_axis_r3": 0,
+        "off_axis_r2": 2
+      }
+    },
+    "kernel_output": {
+      "type": "curve_count",
+      "data": {
+        "on_axis_r3": 0,
+        "off_axis_r2": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "IntAna ConeSphere Tests::coneSphereSamplePoints",
+    "bridge_function": "OCCTIntAnaConeSpherePoints",
+    "bridge_output": {
+      "type": "samples",
+      "data": {
+        "count": 10,
+        "first": [
+          3.5450277563209704,
+          -1.5597365825401104,
+          3.8729833462074166
+        ],
+        "last": [
+          3.5450277563209704,
+          1.5597365825401086,
+          3.8729833462074166
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "samples",
+      "data": {
+        "count": 10,
+        "first": [
+          3.545027756,
+          -1.559736583,
+          3.872983346
+        ],
+        "last": [
+          3.545027756,
+          1.559736583,
+          3.872983346
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [
+        "kernel printed to 9 decimals; agree to that precision"
+      ]
+    },
+    "status": "PASS"
   }
 ]

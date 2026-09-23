@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **IntAna ConeSphere Tests** | coneSphereIntersection | Cone-sphere intersection count | Wrong count |
+| **IntAna ConeSphere Tests** | coneSphereSamplePoints | Cone-sphere curve sampling | Off-by-one sample spacing |
 
 ---
 
@@ -202,6 +204,8 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| coneSphereIntersection | OCCTIntAnaConeSphere | Cone-sphere intersection count | Return iqq.NbPnt() in place of iqq.NbCurve() | ✅ | ✅ | Rewritten: asserted count >= 0, which the wrapper guarantees for any non-nil value |
+| coneSphereSamplePoints | OCCTIntAnaConeSpherePoints | Cone-sphere curve sampling | t = first + (last - first) * i / actual | ✅ | ✅ | Rewritten: body never ran (gated on count > 0 for a 0-curve fixture) and asserted pts.count >= 0 |
 
 ---
 
