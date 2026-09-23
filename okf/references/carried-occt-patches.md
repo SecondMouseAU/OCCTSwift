@@ -99,7 +99,7 @@ rather than bookkeeping, and all four now ship:
 
 | Patch | What shipping it closed |
 |---|---|
-| `0029` (#1022) | An uncatchable SIGSEGV on `Document.datums` for any OCAF document whose datum has a point and no annotation plane. **The bridge guard added for #1030 is now due for retirement**, since it refuses a shape the kernel can read. |
+| `0029` (#1022) | An uncatchable SIGSEGV on `Document.datums` for any OCAF document whose datum has a point and no annotation plane. **The bridge guard added for #1030 is retired**, in all six files that carried it, since it was refusing a shape the kernel can read. |
 | `0030` (#1154) | A live data race on `TopoDS_TShape::myState` under ordinary concurrent use of a boolean result, invisible to `swift test`. Its `Scripts/tsan.supp` suppressions were removed at this repin, and `check-inventory-prose.py` is what caught them (#1409). |
 | `0031` (#1153) | The same shape in `BSplCLib_Cache`/`GeomAdaptor_*` for any consumer sharing an adaptor across threads. No suppression existed, so nothing to retire. |
 | `0034` (#1515) | `Shape.coonsAlgPatch` returning a surface collapsed onto its `u == v` diagonal for every off-diagonal sample, silently. The Swift test that asserts the correct surface was impossible before the repin, because `build-and-test` resolved the unpatched asset; it exists now, in `Tests/OCCTSurfaceTests/Issue1515CoonsPatchUParameterTests.swift`. |

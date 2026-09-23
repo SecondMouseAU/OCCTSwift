@@ -1676,10 +1676,15 @@ Carried patch `0029` fixes the kernel read, and the pinned asset carries it from
 wrong answer that was never guarded because it never crashed: a datum written with plane
 location `(6,6,6)` and point `(7,7,7)` read back with point `(6,7,7)`.
 
-`Tests/OCCTXCAFTests/Issue1030DatumGuardRetirementTests.swift` holds the regression, against a
-committed document carrying exactly that shape. The fixture is a file rather than a constructed
-object because the Swift API cannot write a datum's annotation point: only an importer or another
-XCAF application produces it.
+`Tests/OCCTXCAFTests/Issue1030DatumLookupGuardTests.swift` holds the regression. It kept its name
+and its fixtures from when it asserted the refusal and flipped its assertions, which is the only way
+a guard's retirement can be regression tested: a test that merely stops existing proves nothing.
+Re-introduce the guard and that suite goes red.
+
+Its fixture is built through the public label API rather than loaded from a file, by writing the
+point's `TDataStd_RealArray` at the child tag `XCAFDoc_Datum::SetObject` uses. That is worth knowing
+because the datum *write* API cannot produce this shape: only an importer or another XCAF
+application does, so the test authors it the way the kernel stores it.
 
 **There is now a single GD&T table.** The datum accessors, mutators, `dimTolToolToleranceCount`,
 and `rescaleGeometry(labelId:scaleFactor:forceIfNotRoot:)` all read and write the same tool
