@@ -288,3 +288,25 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressBoundaryConditionTests: Near-Degenerate Geometry, Curve and Surface Boundaries
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-boundary/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: Near-Degenerate Geometry | `veryThinBox` | `OCCTShapeCreateBox, OCCTShapeGetVolume` | OCCTShapeGetVolume reports Mass() × 1.5 | StressBoundaryConditionTests.swift:352 Expectation failed: near(thin.volume, 10) | ✔ | MATCH | yes |
+| Stress: Near-Degenerate Geometry | `verySmallFillet` | `OCCTShapeFillet` | OCCTShapeFillet returns nil | StressBoundaryConditionTests.swift:357 Expectation failed: box.filleted(radius: 1e-5) | ✔ | MATCH | yes |
+| Stress: Near-Degenerate Geometry | `verySmallChamfer` | `OCCTShapeChamfer` | OCCTShapeChamfer returns nil | StressBoundaryConditionTests.swift:365 Expectation failed: box.chamfered(distance: 1e-5) | ✔ | MATCH | yes |
+| Stress: Near-Degenerate Geometry | `nearlyTouchingBoxes` | `OCCTShapeUnionEx` | runBooleanEx returns its first argument unchanged (a no-op boolean) | StressBoundaryConditionTests.swift:378 Expectation failed: abs((r.volume ?? 0) - 2000) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Near-Degenerate Geometry | `nearlyCoincidentSubtract` | `OCCTShapeSubtractEx` | runBooleanEx returns its first argument unchanged (a no-op boolean) | StressBoundaryConditionTests.swift:390 Expectation failed: abs((r.volume ?? 0) - 875.00000075) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Near-Degenerate Geometry | `veryThinShell` | `OCCTShapeShell` | OCCTShapeShell returns the input unchanged when not done or on a throw | StressBoundaryConditionTests.swift:397 Expectation failed: box.shelled(thickness: -0.001) == nil | ✔ | MATCH | yes |
+| Stress: Near-Degenerate Geometry | `verySmallDrill` | `OCCTShapeDrillHole` | OCCTShapeSubtract returns its first argument unchanged | StressBoundaryConditionTests.swift:406 Expectation failed: r.subShapeCount(ofType: .face) == 7 | ✔ | MATCH | yes |
+| Stress: Curve and Surface Boundaries | `curveEvalAtDomainBounds` | `OCCTCurve3DGetPoint` | OCCTCurve3DGetPoint: x coordinate set to NaN | StressBoundaryConditionTests.swift:421 Expectation failed: p1.x.isFinite | ✔ | MATCH | no |
+| Stress: Curve and Surface Boundaries | `curveEvalSlightlyOutside` | `OCCTCurve3DGetPoint` | OCCTCurve3DGetPoint clamps u into [First, Last] | StressBoundaryConditionTests.swift:432 Expectation failed: abs(p1.x - 4.9999975000002088) < 1e-12 | ✔ | MATCH | yes |
+| Stress: Curve and Surface Boundaries | `surfaceEvalAtDomainCorners` | `OCCTSurfaceGetPoint` | OCCTSurfaceGetPoint: x coordinate set to NaN | StressBoundaryConditionTests.swift:445 Expectation failed: p1.x.isFinite | ✔ | MATCH | no |
+| Stress: Curve and Surface Boundaries | `curve2DEvalAtDomainBounds` | `OCCTCurve2DGetPoint` | OCCTCurve2DGetPoint: x coordinate set to NaN | StressBoundaryConditionTests.swift:456 Expectation failed: p1.x.isFinite | ✔ | MATCH | no |
+| Stress: Curve and Surface Boundaries | `bezierSurfaceEvalGrid` | `OCCTSurfaceGetPoint` | OCCTSurfaceGetPoint: x coordinate set to NaN | StressBoundaryConditionTests.swift:469 Expectation failed: pt.x.isFinite | ✔ | MATCH | no |
+| Stress: Curve and Surface Boundaries | `curveCurvatureAtBounds` | `OCCTCurve3DGetCurvature` | OCCTCurve3DGetCurvature × 1.5 | StressBoundaryConditionTests.swift:483 Expectation failed: abs((k1 ?? 0) - 0.0674635578751) < 1e-9 | ✔ | MATCH | yes |
+| Stress: Curve and Surface Boundaries | `surfaceCurvatureAtBounds` | `OCCTSurfaceGetGaussianCurvature, OCCTSurfaceGetMeanCurvature` | OCCTSurfaceGetGaussianCurvature + 0.01 | StressBoundaryConditionTests.swift:495 Expectation failed: abs((g ?? 0) - -0.0064) < 1e-9 | ✔ | MATCH | yes |
+| Stress: Curve and Surface Boundaries | `periodicCurveAtPeriodBoundary` | `OCCTCurve3DGetPoint` | OCCTCurve3DGetPoint: x coordinate set to NaN | StressBoundaryConditionTests.swift:508 Expectation failed: dist < 0.01 | ✔ | MATCH | no |

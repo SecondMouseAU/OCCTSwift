@@ -5,6 +5,17 @@ import Foundation
 import OCCTSwift
 import Testing
 
+// Epic #766: most tests in this file used to read a result and assert nothing, or assert only
+// behind `if let`, so a nil result or a wrong value passed. Each now pins what the kernel does
+// with the same input, measured by Scripts/repro/766-stress-boundary/probe.mm (transcript.txt
+// beside it). Volumes are BRepGProp's; an empty or open result has no volume and reads as nil.
+
+/// Relative closeness, for values that span 1e-27 to 1e33 in this file.
+private func near(_ value: Double?, _ expected: Double, rel: Double = 1e-9) -> Bool {
+    guard let value else { return false }
+    return abs(value - expected) <= rel * abs(expected)
+}
+
 // MARK: - Micro Scale
 
 @Suite("Stress: Micro Scale Geometry")
@@ -335,52 +346,65 @@ struct StressDegenerateOperationTests {
 @Suite("Stress: Near-Degenerate Geometry")
 struct StressNearDegenerateTests {
 
-    @Test func veryThinBox() {
-        if let thin = Shape.box(width: 100, height: 100, depth: 0.001) {
-            #expect(thin.isValid)
-            if let vol = thin.volume { #expect(vol > 0) }
-        }
+    @Test func veryThinBox() throws {
+        let thin = try #require(Shape.box(width: 100, height: 100, depth: 0.001))
+        #expect(thin.isValid)
+        #expect(near(thin.volume, 10))
     }
 
-    @Test func verySmallFillet() {
+    @Test func verySmallFillet() throws {
         let box = standardBox()
-        let result = box.filleted(radius: 1e-5)
-        if let r = result { #expect(r.isValid) }
+        let r = try #require(box.filleted(radius: 1e-5))
+        #expect(r.isValid)
+        #expect(r.subShapeCount(ofType: .face) == 26)
+        #expect(abs((r.volume ?? 0) - 999.999999997) < 1e-8)
     }
 
-    @Test func verySmallChamfer() {
+    @Test func verySmallChamfer() throws {
         let box = standardBox()
-        let result = box.chamfered(distance: 1e-5)
-        if let r = result { #expect(r.isValid) }
+        let r = try #require(box.chamfered(distance: 1e-5))
+        #expect(r.isValid)
+        #expect(r.subShapeCount(ofType: .face) == 26)
+        #expect(abs((r.volume ?? 0) - 999.999999994) < 1e-8)
     }
 
-    @Test func nearlyTouchingBoxes() {
+    @Test func nearlyTouchingBoxes() throws {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         // Gap of 1e-6 between boxes
         let b2 = Shape.box(origin: SIMD3(10.000001, 0, 0), width: 10, height: 10, depth: 10)!
-        let result = b1.union(b2)
-        if let r = result { _ = r.isValid }
+        // b1 spans [-5, 5], so b2 at 10.000001 is 5 away: two disjoint boxes.
+        let r = try #require(b1.union(b2))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 2000) < 1e-6)
+        #expect(r.subShapeCount(ofType: .face) == 12)
     }
 
-    @Test func nearlyCoincidentSubtract() {
+    @Test func nearlyCoincidentSubtract() throws {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         // Offset by 1e-8, nearly identical
         let b2 = Shape.box(origin: SIMD3(1e-8, 1e-8, 1e-8), width: 10, height: 10, depth: 10)!
-        let result = b1.subtracting(b2)
-        if let r = result { _ = r.isValid }
+        // b2's corner is at the origin, b1's is at -5: the cut keeps the 5-deep L-shaped rim,
+        // 1000 - 5³ = 875 (plus the 1e-8 sliver), 9 faces.
+        let r = try #require(b1.subtracting(b2))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 875.00000075) < 1e-6)
+        #expect(r.subShapeCount(ofType: .face) == 9)
     }
 
+    // MakeThickSolidBySimple is not done for this wall either.
     @Test func veryThinShell() {
         let box = standardBox()
-        let result = box.shelled(thickness: -0.001)
-        if let r = result { _ = r.isValid }
+        #expect(box.shelled(thickness: -0.001) == nil)
     }
 
-    @Test func verySmallDrill() {
+    // 1e-5 clears occtValidDrillRadius (Precision::Confusion() is 1e-7), so the hole is cut.
+    @Test func verySmallDrill() throws {
         let box = standardBox()
-        let result = box.drilled(
-            at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 1e-5, depth: 0)
-        if let r = result { _ = r.isValid }
+        let r = try #require(
+            box.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 1e-5, depth: 0))
+        #expect(r.isValid)
+        #expect(r.subShapeCount(ofType: .face) == 7)
+        #expect(abs((r.volume ?? 0) - 999.999999997) < 1e-8)
     }
 }
 
@@ -403,9 +427,12 @@ struct StressCurveSurfaceBoundaryTests {
         let domain = curve.domain
         let p1 = curve.point(at: domain.lowerBound - 0.001)
         let p2 = curve.point(at: domain.upperBound + 0.001)
-        // Should return something, not crash
-        _ = p1
-        _ = p2
+        // Geom_Circle is periodic: just outside either end is the angle ∓0.001, not a clamp to
+        // the end point.
+        #expect(abs(p1.x - 4.9999975000002088) < 1e-12)
+        #expect(abs(p1.y - -0.004999999166666708) < 1e-12)
+        #expect(abs(p2.x - 4.9999975000002088) < 1e-12)
+        #expect(abs(p2.y - 0.0049999991666671529) < 1e-12)
     }
 
     @Test func surfaceEvalAtDomainCorners() {
@@ -452,6 +479,9 @@ struct StressCurveSurfaceBoundaryTests {
         let k2 = curve.curvature(at: domain.upperBound)
         #expect(k1?.isFinite == true)
         #expect(k2?.isFinite == true)
+        // GeomLProp_CLProps on the interpolated BSpline, at its two ends.
+        #expect(abs((k1 ?? 0) - 0.0674635578751) < 1e-9)
+        #expect(abs((k2 ?? 0) - 0.0185120076021) < 1e-9)
     }
 
     @Test func surfaceCurvatureAtBounds() {
@@ -461,6 +491,9 @@ struct StressCurveSurfaceBoundaryTests {
         let m = surf.meanCurvature(atU: dom.uMax, v: dom.vMax)
         #expect(g?.isFinite == true)
         #expect(m?.isFinite == true)
+        // GeomLProp_SLProps on the Bezier patch: K = -0.0064 at the (0, 0) corner, H = 0 at (1, 1).
+        #expect(abs((g ?? 0) - -0.0064) < 1e-9)
+        #expect(abs(m ?? 1) < 1e-9)
     }
 
     @Test func periodicCurveAtPeriodBoundary() {
