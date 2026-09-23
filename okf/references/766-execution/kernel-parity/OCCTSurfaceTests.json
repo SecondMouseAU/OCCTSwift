@@ -6,5 +6,295 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Face from Surface::Face from plane surface with full domain",
+    "bridge_function": "OCCTShapeCreateFaceFromSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 99.99999999999999
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 99.99999999999999
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt faceFromPlane"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face from Surface::Face from cylindrical surface with UV bounds",
+    "bridge_function": "OCCTShapeCreateFaceFromSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 157.07963267948966
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 157.07963267948966
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt faceFromCylinder"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face from Surface::Surface toFace convenience",
+    "bridge_function": "OCCTShapeCreateFaceFromSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 113.09733552923255
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 113.09733552923255
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt surfaceToFace"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face from Surface::Surface toFace with trimmed UV range",
+    "bridge_function": "OCCTShapeCreateFaceFromSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 56.548667764616276
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 56.548667764616276
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt surfaceToFaceTrimmed"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Surface Tests::Basic 4-edge filling creates a face",
+    "bridge_function": "OCCTFillingAddEdge",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 100.00000000000001
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 100.00000000000001
+      },
+      "source": "Scripts/repro/766-filling-surface/transcript.txt basicFilling"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Surface Tests::G0 error is small for planar fill",
+    "bridge_function": "OCCTFillingG0Error",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "G0Error": 1.3322676295501878e-15
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "G0Error": 1.3322676295501878e-15
+      },
+      "source": "Scripts/repro/766-filling-surface/transcript.txt basicFilling"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Surface Tests::Filling with point constraint",
+    "bridge_function": "OCCTFillingAddPoint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 1038.9910066176521,
+        "dist to point": 10
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 1038.9910066176521,
+        "dist to point": 10
+      },
+      "source": "Scripts/repro/766-filling-surface/transcript.txt fillingWithPoint"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Surface Tests::G1 and G2 errors are available after build",
+    "bridge_function": "OCCTFillingG1Error",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "G1Error": 0,
+        "G2Error": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "G1Error": 0,
+        "G2Error": 0
+      },
+      "source": "Scripts/repro/766-filling-surface/transcript.txt basicFilling"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Surface Tests::Filling with free edge constraint",
+    "bridge_function": "OCCTFillingAddFreeEdge",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 124.99804710385433
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 124.99804710385433
+      },
+      "source": "Scripts/repro/766-filling-surface/transcript.txt freeEdgeConstraint"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Surface Tests::Unfilled filling is not done",
+    "bridge_function": "OCCTFillingIsDone",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "isDone": false
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "isDone": false
+      },
+      "source": "Scripts/repro/766-filling-surface/transcript.txt notDoneBeforeBuild"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Find Surface Extended::Wire on plane finds surface",
+    "bridge_function": "OCCTShapeFindSurfaceEx",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "plane": "z = 0"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "plane": "z = 0"
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt wireOnPlane"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Find Surface Extended::Plane-only mode works",
+    "bridge_function": "OCCTShapeFindSurfaceEx",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "plane": "z = 0"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "plane": "z = 0"
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt planeOnlyMode"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Find Surface::Find plane from flat wire",
+    "bridge_function": "OCCTShapeFindSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "plane": "z = 0"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "plane": "z = 0"
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt findPlaneFromWire"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
