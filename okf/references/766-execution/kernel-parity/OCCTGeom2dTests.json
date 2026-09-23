@@ -94,5 +94,315 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve2D ConvertToLine Tests::Convert linear BSpline to line",
+    "bridge_function": "OCCTCurve2DConvertToLine",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "newFirst": 0,
+        "newLast": 10,
+        "deviation": 0,
+        "value(newLast)": [
+          10,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "newFirst": 0,
+        "newLast": 10,
+        "deviation": 0,
+        "value(newLast)": [
+          10,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "newLast + 1",
+      "red": "Curve2DConvertToLineTests.swift:20:9: Expectation failed: abs(r.newLast - 10) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-extras/",
+      "rewritten": "`result != nil` inside `if let`; now pins the range, deviation and end point"
+    }
+  },
+  {
+    "test_name": "Curve2D Evaluation v0.110::evalD0Circle",
+    "bridge_function": "OCCTCurve2DEvalD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "x + 1",
+      "red": "Curve2DEvalTests.swift:15:9: Expectation failed: abs(p.x - 5.0) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-extras/",
+      "rewritten": "nested in `if let curve`"
+    }
+  },
+  {
+    "test_name": "Curve2D Evaluation v0.110::evalD1Circle",
+    "bridge_function": "OCCTCurve2DEvalD1",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "D1": [
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "D1": [
+          0,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "D1.y + 1",
+      "red": "Curve2DEvalTests.swift:24:9: Expectation failed: abs(r.d1.y - 5.0) < 1e-4",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-extras/",
+      "rewritten": "nested in `if let curve`"
+    }
+  },
+  {
+    "test_name": "Curve2D Evaluation v0.110::evalD2Circle",
+    "bridge_function": "OCCTCurve2DEvalD2",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "D2": [
+          -5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "D2": [
+          -5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "D2.x + 1",
+      "red": "Curve2DEvalTests.swift:31:9: Expectation failed: abs(r.d2.x + 5.0) < 1e-4",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-extras/",
+      "rewritten": "nested in `if let curve`"
+    }
+  },
+  {
+    "test_name": "Curve2D Extras v0.109::reverseCurve2D",
+    "bridge_function": "OCCTCurve2DReverse",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(1) after reverse": [
+          -1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(1) after reverse": [
+          -1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return true without reversing",
+      "red": "Curve2DExtrasTests.swift:17:9: Expectation failed: simd_distance(c.point(at: 1), SIMD2(-1, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-extras/",
+      "rewritten": "only the returned Bool; now pins the reversed point"
+    }
+  },
+  {
+    "test_name": "Curve2D Extras v0.109::copyCurve2D",
+    "bridge_function": "OCCTCurve2DCopy",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(3)": [
+          3,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(3)": [
+          3,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "translate the copy by (1, 0)",
+      "red": "Curve2DExtrasTests.swift:25:9: Expectation failed: abs(p1.x - p2.x) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-extras/",
+      "rewritten": "nested in `if let`"
+    }
+  },
+  {
+    "test_name": "Curve2D Extras v0.109::copiedCurve2DIndependent",
+    "bridge_function": "OCCTCurve2DCopy",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "original point(pi/2) after reverse": [
+          0,
+          -5
+        ],
+        "copy point(pi/2)": [
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "original point(pi/2) after reverse": [
+          0,
+          -5
+        ],
+        "copy point(pi/2)": [
+          0,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return a wrapper sharing the original geometry",
+      "red": "Curve2DExtrasTests.swift:36:9: Expectation failed: simd_distance(copy.point(at: .pi / 2), SIMD2(0, 5)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-extras/",
+      "rewritten": "`copy.isClosed` passed a shared \"copy\"; now reverses the original and checks the copy is untouched"
+    }
+  },
+  {
+    "test_name": "Curve2D extras v0.112::curveType",
+    "bridge_function": "OCCTCurve2DCurveType",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "line": 0,
+        "circle": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "line": 0,
+        "circle": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "GetType() + 1",
+      "red": "Curve2DExtrasV112Tests.swift:14:9: Expectation failed: line.curveType == 0",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-extras/",
+      "rewritten": "nested in `if let`"
+    }
+  },
+  {
+    "test_name": "Curve2D extras v0.112::nearestParameterOnLine",
+    "bridge_function": "OCCTCurve2DNearestParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "parameter": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "parameter": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "parameter + 0.05 (inside the old 0.1 tolerance)",
+      "red": "Curve2DExtrasV112Tests.swift:22:9: Expectation failed: abs(param - 5.0) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-extras/",
+      "rewritten": "0.1 slack passed a parameter off by 0.05; now 1e-9"
+    }
   }
 ]
