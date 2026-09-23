@@ -497,5 +497,144 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Surface Extrema Tests::Sphere surfaces distance",
+    "bridge_function": "OCCTSurfaceExtrema",
+    "bridge_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 12.000000001961356,
+        "p1": {
+          "x": 2.9999999999068514,
+          "y": -2.3353891282520862e-05,
+          "z": -3.6726259132488495e-06
+        },
+        "p2": {
+          "x": 15.000000001171706,
+          "y": 0.00010113057010444278,
+          "z": -3.8596245878837996e-05
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 12.000000001961356,
+        "p1": {
+          "x": 2.9999999999068514,
+          "y": -2.3353891282520862e-05,
+          "z": -3.6726259132488495e-06
+        },
+        "p2": {
+          "x": 15.000000001171706,
+          "y": 0.00010113057010444278,
+          "z": -3.8596245878837996e-05
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Extrema Tests::Extrema returns nearest points and UV",
+    "bridge_function": "OCCTSurfaceExtrema",
+    "bridge_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 20.000000002303583,
+        "p1": {
+          "x": 3.999999999899847,
+          "y": -2.15998579181621e-05,
+          "z": -1.8294040907514106e-05
+        },
+        "p2": {
+          "x": 24.000000001610637,
+          "y": 0.0001282943928125367,
+          "z": -5.3555754393281796e-05
+        },
+        "uv1": [
+          6.283179907215106,
+          -4.57351022689447e-06
+        ],
+        "uv2": [
+          3.1415712711909887,
+          -8.92595906566549e-06
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 20.000000002303583,
+        "p1": {
+          "x": 3.999999999899847,
+          "y": -2.15998579181621e-05,
+          "z": -1.8294040907514106e-05
+        },
+        "p2": {
+          "x": 24.000000001610637,
+          "y": 0.0001282943928125367,
+          "z": -5.3555754393281796e-05
+        },
+        "uv1": [
+          6.283179907215106,
+          -4.57351022689447e-06
+        ],
+        "uv2": [
+          3.1415712711909887,
+          -8.92595906566549e-06
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Extrema Tests::Cylinder and sphere distance",
+    "bridge_function": "OCCTSurfaceExtrema",
+    "bridge_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 12.0,
+        "p1": {
+          "x": 5.0,
+          "y": 4.596695327168491e-08,
+          "z": 1.8503663659890507e-09
+        },
+        "p2": {
+          "x": 17.0,
+          "y": 2.076669806219026e-08,
+          "z": 1.3759166247828372e-08
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 12.0,
+        "p1": {
+          "x": 5.0,
+          "y": 4.596695327168491e-08,
+          "z": 1.8503663659890507e-09
+        },
+        "p2": {
+          "x": 17.0,
+          "y": 2.076669806219026e-08,
+          "z": 1.3759166247828372e-08
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

@@ -95,6 +95,9 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Surface Extrema Tests** | Sphere surfaces distance | Surface-surface extrema | Exchange NearestPoints(p2, p1) |
+| **Surface Extrema Tests** | Extrema returns nearest points and UV | Surface-surface extrema UV | Exchange the two surfaces' LowerDistanceParameters |
+| **Surface Extrema Tests** | Cylinder and sphere distance | Surface-surface extrema | Exchange NearestPoints(p2, p1) |
 | **Curve3D Local Properties Tests** | Curvature of circle is 1/r | Curve local curvature | Curvature() + 0.5 |
 | **Curve3D Local Properties Tests** | Curvature of line is zero | Curve local curvature | Curvature() + 0.5 |
 | **Curve3D Local Properties Tests** | Tangent of X-axis segment is (1,0,0) | Curve local tangent | Swap tangent X and Y |
