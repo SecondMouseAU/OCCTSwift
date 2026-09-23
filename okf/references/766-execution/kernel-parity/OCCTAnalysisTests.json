@@ -4501,5 +4501,523 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Medial Axis, Rectangle::Rectangle produces non-nil medial axis",
+    "bridge_function": "OCCTMedialAxisCompute",
+    "bridge_output": {
+      "type": "graph",
+      "data": {
+        "computed": true
+      }
+    },
+    "kernel_output": {
+      "type": "graph",
+      "data": {
+        "computed": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Rectangle::Rectangle has correct arc and node counts",
+    "bridge_function": "OCCTMedialAxisGetBasicEltCount",
+    "bridge_output": {
+      "type": "graph",
+      "data": {
+        "arcs": 5,
+        "nodes": 6,
+        "basicElts": 4
+      }
+    },
+    "kernel_output": {
+      "type": "graph",
+      "data": {
+        "arcs": 5,
+        "nodes": 6,
+        "basicElts": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Rectangle::Rectangle min thickness equals half the short side",
+    "bridge_function": "OCCTMedialAxisMinThickness",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "minThickness": 2.0
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "minThickness": 2.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Rectangle::Rectangle nodes have valid positions and distances",
+    "bridge_function": "OCCTMedialAxisGetNode",
+    "bridge_output": {
+      "type": "nodes",
+      "data": {
+        "interior_nodes": [
+          [
+            3,
+            0,
+            2.0
+          ],
+          [
+            -3,
+            0,
+            2.0
+          ]
+        ],
+        "corner_nodes_onBoundary": 4
+      }
+    },
+    "kernel_output": {
+      "type": "nodes",
+      "data": {
+        "interior_nodes": [
+          [
+            3,
+            0,
+            2.0
+          ],
+          [
+            -3,
+            0,
+            2.0
+          ]
+        ],
+        "corner_nodes_onBoundary": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Rectangle::Rectangle arcs have valid node references",
+    "bridge_function": "OCCTMedialAxisGetArc",
+    "bridge_output": {
+      "type": "arcs",
+      "data": {
+        "arc_nodes": [
+          [
+            5,
+            6
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            1,
+            6
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "arcs",
+      "data": {
+        "arc_nodes": [
+          [
+            5,
+            6
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            1,
+            6
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Rectangle::Rectangle arc drawing produces polylines",
+    "bridge_function": "OCCTMedialAxisDrawArc",
+    "bridge_output": {
+      "type": "polyline",
+      "data": {
+        "points": 20
+      }
+    },
+    "kernel_output": {
+      "type": "polyline",
+      "data": {
+        "arc1_trimmed_bisector": "finite, 0 to 2 from the boundary"
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "MISMATCH",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Rectangle::Rectangle draw all produces one polyline per arc",
+    "bridge_function": "OCCTMedialAxisDrawAll",
+    "bridge_output": {
+      "type": "polyline",
+      "data": {
+        "polylines": 5
+      }
+    },
+    "kernel_output": {
+      "type": "polyline",
+      "data": {
+        "arcs": 5
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "MISMATCH",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Rectangle::Rectangle distance on arc interpolates between endpoints",
+    "bridge_function": "OCCTMedialAxisDistanceOnArc",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "arc5_t0": 2.0,
+        "arc5_t0.5": 2.0,
+        "arc5_t1": 2.0
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "arc5_t0": 2.0,
+        "arc5_t0.5": 2.0,
+        "arc5_t1": 2.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Various Shapes::Square medial axis has symmetric structure",
+    "bridge_function": "OCCTMedialAxisMinThickness",
+    "bridge_output": {
+      "type": "graph",
+      "data": {
+        "arcs": 4,
+        "nodes": 5,
+        "minThickness": 3.0
+      }
+    },
+    "kernel_output": {
+      "type": "graph",
+      "data": {
+        "arcs": 4,
+        "nodes": 5,
+        "minThickness": 3.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Various Shapes::L-shaped polygon produces medial axis",
+    "bridge_function": "OCCTMedialAxisGetNodeCount",
+    "bridge_output": {
+      "type": "graph",
+      "data": {
+        "arcs": 11,
+        "nodes": 12
+      }
+    },
+    "kernel_output": {
+      "type": "graph",
+      "data": {
+        "arcs": 11,
+        "nodes": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Various Shapes::Circle face produces medial axis with single central node",
+    "bridge_function": "OCCTMedialAxisCompute",
+    "bridge_output": {
+      "type": "graph",
+      "data": {
+        "ran": false
+      }
+    },
+    "kernel_output": {
+      "type": "N/A",
+      "data": {
+        "reason": "BRepMAT2d on a single-circle boundary is an uncatchable SIGSEGV in OCCT 8.0.1 (probe child process killed by signal 11); the test stays .disabled"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Various Shapes::Narrow rectangle has small min thickness",
+    "bridge_function": "OCCTMedialAxisMinThickness",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "minThickness": 0.5
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "minThickness": 0.5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Various Shapes::Triangle produces medial axis",
+    "bridge_function": "OCCTMedialAxisGetNodeCount",
+    "bridge_output": {
+      "type": "graph",
+      "data": {
+        "arcs": 3,
+        "nodes": 4
+      }
+    },
+    "kernel_output": {
+      "type": "graph",
+      "data": {
+        "arcs": 3,
+        "nodes": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Various Shapes::Nil for shape without faces",
+    "bridge_function": "OCCTMedialAxisCompute",
+    "bridge_output": {
+      "type": "graph",
+      "data": {
+        "computed": false
+      }
+    },
+    "kernel_output": {
+      "type": "graph",
+      "data": {
+        "no_face_to_explore": true
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "MISMATCH",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Various Shapes::Node accessor out of bounds returns nil",
+    "bridge_function": "OCCTMedialAxisGetNode",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "index0": null,
+        "pastEnd": null
+      }
+    },
+    "kernel_output": {
+      "type": "N/A",
+      "data": {
+        "reason": "out-of-range refusal happens in the bridge before any OCCT call; the probe covers the 5-arc/6-node graph the indices are checked against"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Various Shapes::Arc accessor out of bounds returns nil",
+    "bridge_function": "OCCTMedialAxisGetArc",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "index0": null,
+        "pastEnd": null
+      }
+    },
+    "kernel_output": {
+      "type": "N/A",
+      "data": {
+        "reason": "out-of-range refusal happens in the bridge before any OCCT call; the probe covers the 5-arc/6-node graph the indices are checked against"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Various Shapes::Distance on arc with invalid index returns -1",
+    "bridge_function": "OCCTMedialAxisDistanceOnArc",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "index0": -1.0,
+        "pastEnd": -1.0
+      }
+    },
+    "kernel_output": {
+      "type": "N/A",
+      "data": {
+        "reason": "out-of-range refusal happens in the bridge before any OCCT call; the probe covers the 5-arc/6-node graph the indices are checked against"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Various Shapes::Draw arc with invalid index returns empty",
+    "bridge_function": "OCCTMedialAxisDrawArc",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "index0": 0,
+        "pastEnd": 0
+      }
+    },
+    "kernel_output": {
+      "type": "N/A",
+      "data": {
+        "reason": "out-of-range refusal happens in the bridge before any OCCT call; the probe covers the 5-arc/6-node graph the indices are checked against"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-medial-axis/"
+  },
+  {
+    "test_name": "Medial Axis, Various Shapes::Medial axis nodes lie inside the shape boundary",
+    "bridge_function": "OCCTMedialAxisGetNode",
+    "bridge_output": {
+      "type": "nodes",
+      "data": {
+        "x_range": [
+          -5,
+          5
+        ],
+        "y_range": [
+          -2,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "nodes",
+      "data": {
+        "x_range": [
+          -5,
+          5
+        ],
+        "y_range": [
+          -2,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-medial-axis/"
   }
 ]

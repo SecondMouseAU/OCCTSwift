@@ -4,9 +4,10 @@ import simd
 
 @testable import OCCTSwift
 
-@Suite(
-    "Medial Axis, Various Shapes",
-    .disabled("MedialAxis causes segfault in OCCT, pre-existing issue"))
+// Counts and thicknesses are BRepMAT2d_BisectingLocus's on the same faces; see
+// Scripts/repro/766-medial-axis/transcript.txt. The suite-wide `.disabled` this carried is now on
+// the one test that crashes.
+@Suite("Medial Axis, Various Shapes")
 struct MedialAxisVariousShapesTests {
 
     @Test("Square medial axis has symmetric structure")
@@ -37,12 +38,18 @@ struct MedialAxisVariousShapesTests {
             Issue.record("Failed to compute medial axis for L-shape")
             return
         }
-        // L-shape should have more arcs than a simple rectangle
-        #expect(ma.arcCount >= 3, "L-shape should have multiple arcs, got \(ma.arcCount)")
-        #expect(ma.nodeCount >= 3)
+        // L-shape has more arcs than a simple rectangle
+        #expect(ma.arcCount == 11, "L-shape should have 11 arcs, got \(ma.arcCount)")
+        #expect(ma.nodeCount == 12)
     }
 
-    @Test("Circle face produces medial axis with single central node")
+    // BRepMAT2d on a face bounded by one full circle is an uncatchable SIGSEGV inside OCCT: the
+    // probe runs it in a child process, which dies on signal 11 before the locus is computed.
+    // Enabling this test would take down the whole test process, as it did the two suites.
+    // Scripts/repro/766-medial-axis reproduces it in plain C++.
+    @Test(
+        "Circle face produces medial axis with single central node",
+        .disabled("BRepMAT2d_BisectingLocus segfaults on a single-circle boundary"))
     func circleMedialAxis() {
         let wire = Wire.circle(radius: 5)!
         let face = Shape.face(from: wire)!
@@ -79,9 +86,9 @@ struct MedialAxisVariousShapesTests {
             Issue.record("Failed to compute medial axis for triangle")
             return
         }
-        // Triangle medial axis should have 3 arcs (one from each vertex bisector)
-        #expect(ma.arcCount >= 2, "Triangle should have arcs, got \(ma.arcCount)")
-        #expect(ma.nodeCount >= 2)
+        // Triangle medial axis has 3 arcs (one from each vertex bisector) meeting at the incentre
+        #expect(ma.arcCount == 3, "Triangle should have 3 arcs, got \(ma.arcCount)")
+        #expect(ma.nodeCount == 4)
     }
 
     @Test("Nil for shape without faces")
@@ -93,37 +100,37 @@ struct MedialAxisVariousShapesTests {
     }
 
     @Test("Node accessor out of bounds returns nil")
-    func nodeOutOfBounds() {
+    func nodeOutOfBounds() throws {
         let wire = Wire.rectangle(width: 10, height: 4)!
         let face = Shape.face(from: wire)!
-        guard let ma = MedialAxis(of: face) else { return }
+        let ma = try #require(MedialAxis(of: face))
         #expect(ma.node(at: 0) == nil, "Index 0 should be out of bounds (1-based)")
         #expect(ma.node(at: ma.nodeCount + 1) == nil, "Past-end index should be nil")
     }
 
     @Test("Arc accessor out of bounds returns nil")
-    func arcOutOfBounds() {
+    func arcOutOfBounds() throws {
         let wire = Wire.rectangle(width: 10, height: 4)!
         let face = Shape.face(from: wire)!
-        guard let ma = MedialAxis(of: face) else { return }
+        let ma = try #require(MedialAxis(of: face))
         #expect(ma.arc(at: 0) == nil, "Index 0 should be out of bounds (1-based)")
         #expect(ma.arc(at: ma.arcCount + 1) == nil, "Past-end index should be nil")
     }
 
     @Test("Distance on arc with invalid index returns -1")
-    func distanceInvalidArc() {
+    func distanceInvalidArc() throws {
         let wire = Wire.rectangle(width: 10, height: 4)!
         let face = Shape.face(from: wire)!
-        guard let ma = MedialAxis(of: face) else { return }
+        let ma = try #require(MedialAxis(of: face))
         #expect(ma.distanceToBoundary(arcIndex: 0, parameter: 0.5) == -1.0)
         #expect(ma.distanceToBoundary(arcIndex: ma.arcCount + 1, parameter: 0.5) == -1.0)
     }
 
     @Test("Draw arc with invalid index returns empty")
-    func drawArcInvalidIndex() {
+    func drawArcInvalidIndex() throws {
         let wire = Wire.rectangle(width: 10, height: 4)!
         let face = Shape.face(from: wire)!
-        guard let ma = MedialAxis(of: face) else { return }
+        let ma = try #require(MedialAxis(of: face))
         #expect(ma.drawArc(at: 0).isEmpty)
         #expect(ma.drawArc(at: ma.arcCount + 1).isEmpty)
     }

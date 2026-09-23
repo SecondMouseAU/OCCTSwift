@@ -235,6 +235,25 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Medial Axis, Rectangle** | Rectangle produces non-nil medial axis | Medial axis | OCCTMedialAxisCompute |
+| **Medial Axis, Rectangle** | Rectangle has correct arc and node counts | Medial axis | OCCTMedialAxisGetBasicEltCount |
+| **Medial Axis, Rectangle** | Rectangle min thickness equals half the short side | Medial axis | OCCTMedialAxisMinThickness |
+| **Medial Axis, Rectangle** | Rectangle nodes have valid positions and distances | Medial axis | OCCTMedialAxisGetNode |
+| **Medial Axis, Rectangle** | Rectangle arcs have valid node references | Medial axis | OCCTMedialAxisGetArc |
+| **Medial Axis, Rectangle** | Rectangle arc drawing produces polylines | Medial axis | OCCTMedialAxisDrawArc |
+| **Medial Axis, Rectangle** | Rectangle draw all produces one polyline per arc | Medial axis | OCCTMedialAxisDrawAll |
+| **Medial Axis, Rectangle** | Rectangle distance on arc interpolates between endpoints | Medial axis | OCCTMedialAxisDistanceOnArc |
+| **Medial Axis, Various Shapes** | Square medial axis has symmetric structure | Medial axis | OCCTMedialAxisMinThickness |
+| **Medial Axis, Various Shapes** | L-shaped polygon produces medial axis | Medial axis | OCCTMedialAxisGetNodeCount |
+| **Medial Axis, Various Shapes** | Circle face produces medial axis with single central node | Medial axis | OCCTMedialAxisCompute |
+| **Medial Axis, Various Shapes** | Narrow rectangle has small min thickness | Medial axis | OCCTMedialAxisMinThickness |
+| **Medial Axis, Various Shapes** | Triangle produces medial axis | Medial axis | OCCTMedialAxisGetNodeCount |
+| **Medial Axis, Various Shapes** | Nil for shape without faces | Medial axis | OCCTMedialAxisCompute |
+| **Medial Axis, Various Shapes** | Node accessor out of bounds returns nil | Medial axis | OCCTMedialAxisGetNode |
+| **Medial Axis, Various Shapes** | Arc accessor out of bounds returns nil | Medial axis | OCCTMedialAxisGetArc |
+| **Medial Axis, Various Shapes** | Distance on arc with invalid index returns -1 | Medial axis | OCCTMedialAxisDistanceOnArc |
+| **Medial Axis, Various Shapes** | Draw arc with invalid index returns empty | Medial axis | OCCTMedialAxisDrawArc |
+| **Medial Axis, Various Shapes** | Medial axis nodes lie inside the shape boundary | Medial axis | OCCTMedialAxisGetNode |
 
 ---
 
@@ -424,6 +443,25 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Rectangle produces non-nil medial axis | OCCTMedialAxisCompute | Medial axis | Compute returns nullptr | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it |
+| Rectangle has correct arc and node counts | OCCTMedialAxisGetBasicEltCount | Medial axis | basic element count + 1; Compute returns nullptr | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it; counts pinned (> 0 passed a miscount) |
+| Rectangle min thickness equals half the short side | OCCTMedialAxisMinThickness | Medial axis | min thickness doubled | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it |
+| Rectangle nodes have valid positions and distances | OCCTMedialAxisGetNode | Medial axis | node distance -1; node count + 1 | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it |
+| Rectangle arcs have valid node references | OCCTMedialAxisGetArc | Medial axis | second node index past the end | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it |
+| Rectangle arc drawing produces polylines | OCCTMedialAxisDrawArc | Medial axis | one sample fewer than asked | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it |
+| Rectangle draw all produces one polyline per arc | OCCTMedialAxisDrawAll | Medial axis | last arc dropped | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it |
+| Rectangle distance on arc interpolates between endpoints | OCCTMedialAxisDistanceOnArc | Medial axis | distance + 4t(1-t) off the endpoints | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it; now also asserts such an arc exists |
+| Square medial axis has symmetric structure | OCCTMedialAxisMinThickness | Medial axis | min thickness doubled | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it |
+| L-shaped polygon produces medial axis | OCCTMedialAxisGetNodeCount | Medial axis | node count + 1 | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it; counts pinned (>= 3 passed a miscount) |
+| Circle face produces medial axis with single central node | OCCTMedialAxisCompute | Medial axis | none: cannot run | n/a | n/a | Still disabled: kernel SIGSEGV, reproduced in plain C++ |
+| Narrow rectangle has small min thickness | OCCTMedialAxisMinThickness | Medial axis | min thickness doubled | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it |
+| Triangle produces medial axis | OCCTMedialAxisGetNodeCount | Medial axis | node count + 1 | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it; counts pinned (>= 2 passed a miscount) |
+| Nil for shape without faces | OCCTMedialAxisCompute | Medial axis | build a face from the first wire when there is none | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it |
+| Node accessor out of bounds returns nil | OCCTMedialAxisGetNode | Medial axis | out-of-range index accepted | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it; guard-return on a nil axis is #require now |
+| Arc accessor out of bounds returns nil | OCCTMedialAxisGetArc | Medial axis | out-of-range index accepted | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it; guard-return on a nil axis is #require now |
+| Distance on arc with invalid index returns -1 | OCCTMedialAxisDistanceOnArc | Medial axis | out-of-range index returns 0 | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it; guard-return on a nil axis is #require now |
+| Draw arc with invalid index returns empty | OCCTMedialAxisDrawArc | Medial axis | out-of-range index draws zeros | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it; guard-return on a nil axis is #require now |
+| Medial axis nodes lie inside the shape boundary | OCCTMedialAxisGetNode | Medial axis | node x + 100 | ✅ | ✅ | Re-enabled: the suite was .disabled, so no defect could fail it |
 
 ---
 
