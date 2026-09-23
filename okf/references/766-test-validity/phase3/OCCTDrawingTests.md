@@ -85,3 +85,20 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 194 tests
+
+---
+
+## Measured records (#766 execution, #1984)
+
+Rows below were run: the injection turned the test red at the line named, the test was green with Sources/ restored, and parity is against the probe transcript under `Scripts/repro/766-drawing-*/`.
+
+| Suite | Test | Bridge / Swift subject | Injection | Red (failing line) | Green | Parity |
+|-------|------|------------------------|-----------|--------------------|-------|--------|
+| #1185 DrawingDimension.Radial/.Diameter share Circular | DrawingDimension.value: .radial reports radius, .diameter reports 2*radius | `DrawingDimension.value` | `.diameter` value returns the radius | `:21` | ✔ | N/A (pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call) |
+| #1185 DrawingDimension.Radial/.Diameter share Circular | DrawingDimension.id/.label read through for both .radial and .diameter | `DrawingDimension.id` | circular `id` reads nil | `:30`, `:32` | ✔ | N/A (pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call) |
+| #1185 DrawingDimension.Radial/.Diameter share Circular | DrawingDimension.transformed applies scale*p+translate for .diameter | `DrawingDimension.Circular.transformed` | circular transform leaves the radius unscaled | `:45` | ✔ | N/A (pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call) |
+| #1185 DrawingDimension.Radial/.Diameter share Circular | DrawingDimension.keyPoints for .radial and .diameter (previously untested) | `DrawingDimension.Circular.keyPoints` | third key point mirrored to `centre.x + radius` | `:56`, `:57` | ✔ | N/A (pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call) |
+| #1185 DrawingDimension.Radial/.Diameter share Circular | Drawing.addRadialDimension/addDiameterDimension route through Circular correctly | `Drawing.addDiameterDimension` | `.diameter` value returns the radius | `:91` `diameter.value == 12` | ✔ | N/A (pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call) |
+| Radius Dimension | Radius of circle wire | `OCCTDimensionCreateRadiusFromShape` | radius ctor nil: **green** as written (`if let`); rewritten to `guard` | rewritten: `:20` | ✔ | PASS |
+| Radius Dimension | Radius geometry has circle center | `OCCTDimensionGetGeometry` | radius ctor nil: **green** as written; rewritten, `circleRadius > 0` pinned to 5 and the centre pinned | rewritten: `:32` | ✔ | PASS |
+| Radius Dimension | Nil for non-circular shape | `OCCTDimensionIsValid` | `OCCTDimensionIsValid` always true: the old `!isValid || value >= 0` holds for any value 0 (tautology, not run separately); rewritten to `!isValid` | rewritten: `:49` `!dim.isValid` | ✔ | PASS |
