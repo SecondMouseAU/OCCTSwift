@@ -94,5 +94,445 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "GccAna Bisectors::Perpendicular bisector of two points",
+    "bridge_function": "OCCTGccAnaPnt2dBisec",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          5,
+          0
+        ],
+        "direction": [
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          5,
+          0
+        ],
+        "direction": [
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second point x + 2",
+      "red": "GccAnaBisectorTests.swift:20:9: Expectation failed: simd_distance(line.point, SIMD2(5, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-bisector-circ/",
+      "rewritten": "either-axis direction to 0.01 inside `if let`"
+    }
+  },
+  {
+    "test_name": "GccAna Bisectors::Angle bisectors of two lines",
+    "bridge_function": "OCCTGccAnaLin2dBisec",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "directions": [
+          [
+            0.707106781187,
+            0.707106781187
+          ],
+          [
+            -0.707106781187,
+            0.707106781187
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "directions": [
+          [
+            0.707106781187,
+            0.707106781187
+          ],
+          [
+            -0.707106781187,
+            0.707106781187
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second line direction (1, 1)",
+      "red": "GccAnaBisectorTests.swift:33:9: Expectation failed: simd_distance(results[0].direction, SIMD2(r, r)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-bisector-circ/",
+      "rewritten": "count only"
+    }
+  },
+  {
+    "test_name": "GccAna Bisectors::Bisector between line and point",
+    "bridge_function": "OCCTGccAnaLinPnt2dBisec",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "type": "parabola",
+        "vertex": [
+          5,
+          2.5
+        ],
+        "focal": 2.5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "type": "parabola",
+        "vertex": [
+          5,
+          2.5
+        ],
+        "focal": 2.5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "point y + 1",
+      "red": "GccAnaBisectorTests.swift:45:9: Expectation failed: simd_distance(sol.position, SIMD2(5, 2.5)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-bisector-circ/",
+      "rewritten": "type only"
+    }
+  },
+  {
+    "test_name": "GccAna Bisectors::Bisectors between two circles",
+    "bridge_function": "OCCTGccAnaCirc2dBisec",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 4,
+        "type": "hyperbola",
+        "centre": [
+          7.5,
+          0
+        ],
+        "major": [
+          1,
+          1,
+          4,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 4,
+        "type": "hyperbola",
+        "centre": [
+          7.5,
+          0
+        ],
+        "major": [
+          1,
+          1,
+          4,
+          4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second centre x + 1",
+      "red": "GccAnaBisectorTests.swift:57:9: Expectation failed: results.allSatisfy { simd_distance($0.position, SIMD2(7.5, 0)) < 1e-9 }",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-bisector-circ/",
+      "rewritten": "`count >= 1`"
+    }
+  },
+  {
+    "test_name": "GccAna Bisectors::Bisectors between circle and line",
+    "bridge_function": "OCCTGccAnaCircLin2dBisec",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 2,
+        "type": "parabola",
+        "vertices_y": [
+          2.5,
+          7.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 2,
+        "type": "parabola",
+        "vertices_y": [
+          2.5,
+          7.5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "line y + 1",
+      "red": "GccAnaBisectorTests.swift:70:9: Expectation failed: vertexY.count == 2 && abs(vertexY[0] - 2.5) < 1e-9 && abs(vertexY[1] - 7.5) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-bisector-circ/",
+      "rewritten": "`count >= 1`"
+    }
+  },
+  {
+    "test_name": "GccAna Bisectors::Bisectors between circle and point",
+    "bridge_function": "OCCTGccAnaCircPnt2dBisec",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 2,
+        "type": "hyperbola",
+        "centre": [
+          5,
+          0
+        ],
+        "axes": [
+          2.5,
+          4.33012701892
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 2,
+        "type": "hyperbola",
+        "centre": [
+          5,
+          0
+        ],
+        "axes": [
+          2.5,
+          4.33012701892
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "point x + 1",
+      "red": "GccAnaBisectorTests.swift:81:9: Expectation failed: results.allSatisfy { simd_distance($0.position, SIMD2(5, 0)) < 1e-9 }",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-bisector-circ/",
+      "rewritten": "`count >= 1`"
+    }
+  },
+  {
+    "test_name": "GccAna Circ2d2TanRad Tests::circles through two points with radius",
+    "bridge_function": "OCCTGccAnaCirc2d2TanRadPntPnt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "centres": [
+          [
+            1,
+            1.73205080757
+          ],
+          [
+            1,
+            -1.73205080757
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "centres": [
+          [
+            1,
+            1.73205080757
+          ],
+          [
+            1,
+            -1.73205080757
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second point x + 1",
+      "red": "GccAnaCirc2d2TanRadTests.swift:18:13: Expectation failed: abs(r.center.x - 1) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-bisector-circ/",
+      "rewritten": "count and the input radius only; now pins the centres"
+    }
+  },
+  {
+    "test_name": "GccAna Circ2d2TanRad Tests::circles tangent to two perpendicular lines",
+    "bridge_function": "OCCTGccAnaCirc2d2TanRadLineLin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "centres": [
+          [
+            5,
+            5
+          ],
+          [
+            -5,
+            5
+          ],
+          [
+            -5,
+            -5
+          ],
+          [
+            5,
+            -5
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "centres": [
+          [
+            5,
+            5
+          ],
+          [
+            -5,
+            5
+          ],
+          [
+            -5,
+            -5
+          ],
+          [
+            5,
+            -5
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1",
+      "red": "GccAnaCirc2d2TanRadTests.swift:31:9: Expectation failed: results.allSatisfy { abs(abs($0.center.x) - 5) < 1e-9 && abs(abs($0.center.y) - 5) < 1e-9 }",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-bisector-circ/",
+      "rewritten": "count only; now pins the four centres"
+    }
+  },
+  {
+    "test_name": "GccAna Circ2dTanCen Tests::circle through point centered",
+    "bridge_function": "OCCTGccAnaCirc2dTanCenPntPnt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radius": 3,
+        "centre": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radius": 3,
+        "centre": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "centre x + 1",
+      "red": "GccAnaCirc2dTanCenTests.swift:13:9: Expectation failed: abs(r.radius - 3.0) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-bisector-circ/",
+      "rewritten": "nested in `if let r`"
+    }
+  },
+  {
+    "test_name": "GccAna Circ2dTanCen Tests::circle tangent to line centered",
+    "bridge_function": "OCCTGccAnaCirc2dTanCenLinPnt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radius": 5,
+        "centre": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radius": 5,
+        "centre": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "centre x + 1",
+      "red": "GccAnaCirc2dTanCenTests.swift:24:9: Expectation failed: simd_length(r.center) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-bisector-circ/",
+      "rewritten": "nested in `if let r`"
+    }
   }
 ]
