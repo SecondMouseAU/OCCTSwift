@@ -85,3 +85,21 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 194 tests
+
+---
+
+## Measured records (#766 execution, #1984)
+
+Rows below were run: the injection turned the test red at the line named, the test was green with Sources/ restored, and parity is against the probe transcript under `Scripts/repro/766-drawing-*/`.
+
+| Suite | Test | Bridge / Swift subject | Injection | Red (failing line) | Green | Parity |
+|-------|------|------------------------|-----------|--------------------|-------|--------|
+| Length Dimension | Point-to-point distance | `OCCTDimensionCreateLengthFromPoints` | `GetValue() + 0.1` (red as written, `:16`); ctor nil: the old `dim!` inside `#expect` would crash the run rather than fail; rewritten to `guard` | rewritten, ctor nil: `:21` | ✔ | PASS |
+| Length Dimension | Diagonal distance | `OCCTDimensionCreateLengthFromPoints` | `GetValue() + 0.1` (red as written, `:23`); ctor nil: the old `dim!` inside `#expect` would crash the run rather than fail; rewritten to `guard` | rewritten, ctor nil: `:30` | ✔ | PASS |
+| Length Dimension | 3D distance | `OCCTDimensionCreateLengthFromPoints` | `GetValue() + 0.1` (red as written, `:31`); ctor nil: the old `dim!` inside `#expect` would crash the run rather than fail; rewritten to `guard` | rewritten, ctor nil: `:39` | ✔ | PASS |
+| Length Dimension | Edge length measurement | `OCCTDimensionCreateLengthFromEdge` | edge ctor nil: **green** as written, and the original never reached its assertion on a clean tree either (it passed a wire-typed shape, which the bridge refuses); rewritten to pass the edge and pin 7 | rewritten, edge ctor nil: `:57` | ✔ | PASS |
+| Length Dimension | Face-to-face distance equals box dimension | `OCCTDimensionCreateLengthFromFaces` | face ctor nil: **green** as written (`if let`); rewritten to `guard` | rewritten: `:73` | ✔ | PASS |
+| Length Dimension | Geometry contains valid first and second points | `OCCTDimensionGetGeometry` | length geometry second point x + 1 (red as written, `:72`); ctor nil now recorded | rewritten, ctor nil: `:82` | ✔ | PASS |
+| Length Dimension | Custom value overrides measured | `OCCTDimensionSetCustomValue` | `GetValue() + 0.1` (red as written, `:80`, `:82`); ctor nil now recorded | rewritten, ctor nil: `:97` | ✔ | PASS |
+| Normal Projection | Project line onto sphere near surface | `OCCTShapeNormalProjection` | return the input line unprojected: **green** as written (non-nil and `isValid`); rewritten | rewritten: `:22` edge count, `:23` bounds | ✔ | PASS |
+| Normal Projection | Project line outside sphere | `OCCTShapeNormalProjection` | return the input line unprojected: **green** as written (non-nil only); rewritten | rewritten: `:22`, `:23` | ✔ | PASS |

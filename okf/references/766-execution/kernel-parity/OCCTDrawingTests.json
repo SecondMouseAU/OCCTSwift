@@ -222,5 +222,215 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Length Dimension::Point-to-point distance",
+    "bridge_function": "OCCTDimensionCreateLengthFromPoints",
+    "bridge_output": {
+      "value": 10
+    },
+    "kernel_output": {
+      "value": 10,
+      "isValid": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Length Dimension::Diagonal distance",
+    "bridge_function": "OCCTDimensionCreateLengthFromPoints",
+    "bridge_output": {
+      "value": 5
+    },
+    "kernel_output": {
+      "value": 5
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Length Dimension::3D distance",
+    "bridge_function": "OCCTDimensionCreateLengthFromPoints",
+    "bridge_output": {
+      "value": 5
+    },
+    "kernel_output": {
+      "value": 5
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Length Dimension::Edge length measurement",
+    "bridge_function": "OCCTDimensionCreateLengthFromEdge",
+    "bridge_output": {
+      "value": 7
+    },
+    "kernel_output": {
+      "value": 7,
+      "isValid": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Length Dimension::Face-to-face distance equals box dimension",
+    "bridge_function": "OCCTDimensionCreateLengthFromFaces",
+    "bridge_output": {
+      "value": 10
+    },
+    "kernel_output": {
+      "value": 10,
+      "isValid": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Length Dimension::Geometry contains valid first and second points",
+    "bridge_function": "OCCTDimensionGetGeometry",
+    "bridge_output": {
+      "first": [
+        0,
+        0,
+        0
+      ],
+      "second": [
+        5,
+        0,
+        0
+      ],
+      "isValid": true
+    },
+    "kernel_output": {
+      "first": [
+        0,
+        0,
+        0
+      ],
+      "second": [
+        5,
+        0,
+        0
+      ],
+      "isValid": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Length Dimension::Custom value overrides measured",
+    "bridge_function": "OCCTDimensionSetCustomValue",
+    "bridge_output": {
+      "before": 10,
+      "after": 42
+    },
+    "kernel_output": {
+      "before": 10,
+      "after": 42
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Normal Projection::Project line onto sphere near surface",
+    "bridge_function": "OCCTShapeNormalProjection",
+    "bridge_output": {
+      "edges": 2,
+      "bbox": [
+        [
+          9.70142485,
+          -2.4253564,
+          -1.46871406e-07
+        ],
+        [
+          10.0000001,
+          2.4253564,
+          1.46871406e-07
+        ]
+      ],
+      "within": 1e-06
+    },
+    "kernel_output": {
+      "edges": 2,
+      "bbox": [
+        [
+          9.70142485,
+          -2.4253564,
+          -1.46871406e-07
+        ],
+        [
+          10.0000001,
+          2.4253564,
+          1.46871406e-07
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Normal Projection::Project line outside sphere",
+    "bridge_function": "OCCTShapeNormalProjection",
+    "bridge_output": {
+      "edges": 2,
+      "bbox": [
+        [
+          9.48683264,
+          -3.162278,
+          -3.40436912e-07
+        ],
+        [
+          10.0000003,
+          3.162278,
+          3.40436912e-07
+        ]
+      ],
+      "within": 1e-06
+    },
+    "kernel_output": {
+      "edges": 2,
+      "bbox": [
+        [
+          9.48683264,
+          -3.162278,
+          -3.40436912e-07
+        ],
+        [
+          10.0000003,
+          3.162278,
+          3.40436912e-07
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
