@@ -95,6 +95,10 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Hatch Builder Tests** | createHatcher | Hatcher construction | OCCTHatcherCreate returns nullptr |
+| **Hatch Builder Tests** | addLinesAndCount | Hatch X lines | OCCTHatcherAddXLine drops AddXLine |
+| **Hatch Builder Tests** | addYLines | Hatch Y lines | OCCTHatcherAddYLine drops AddYLine |
+| **Hatch Builder Tests** | trimAndIntervals | Hatch trimming (rewritten: could not fail) | OCCTHatcherTrim drops Trim |
 
 ---
 

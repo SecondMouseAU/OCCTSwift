@@ -308,5 +308,113 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Builder Tests::createHatcher",
+    "bridge_function": "OCCTHatcherCreate",
+    "bridge_output": {
+      "type": "handle",
+      "data": {
+        "non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "handle",
+      "data": {
+        "constructed": true,
+        "tolerance": 1e-06
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Builder Tests::addLinesAndCount",
+    "bridge_function": "OCCTHatcherAddXLine",
+    "bridge_output": {
+      "type": "line_count",
+      "data": {
+        "nb_lines": 3
+      }
+    },
+    "kernel_output": {
+      "type": "line_count",
+      "data": {
+        "nb_lines": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Builder Tests::addYLines",
+    "bridge_function": "OCCTHatcherAddYLine",
+    "bridge_output": {
+      "type": "line_count",
+      "data": {
+        "nb_lines": 2
+      }
+    },
+    "kernel_output": {
+      "type": "line_count",
+      "data": {
+        "nb_lines": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Builder Tests::trimAndIntervals",
+    "bridge_function": "OCCTHatcherNbIntervals",
+    "bridge_output": {
+      "type": "interval_counts",
+      "data": {
+        "untrimmed": [
+          0,
+          0,
+          0
+        ],
+        "closed_square": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "interval_counts",
+      "data": {
+        "untrimmed": [
+          0,
+          0,
+          0
+        ],
+        "closed_square": [
+          1,
+          1,
+          1
+        ],
+        "single_diagonal_segment": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
