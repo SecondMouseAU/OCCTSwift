@@ -9,8 +9,9 @@ This doc captures the analysis of building OCCTSwift for WebAssembly so that the
 **OCCTSwift Swift API can be reused inside a SwiftWasm app** (e.g. a browser app
 driven by JavaScriptKit, or a server-side wasm runtime). Written June 2026 as a
 forward plan. The toolchain is now pinned and has been run end to end, see
-[Pinned toolchain](#pinned-toolchain); nothing has been attempted against OCCT
-itself yet.
+[Pinned toolchain](#pinned-toolchain), and one OCCT toolkit compiles and archives
+for `wasm32-unknown-wasip1`. **Nothing containing OCCT has been linked**, which is
+the line every claim below is measured against.
 
 The goal is fixed. The *path* to reach it is deliberately left open, see
 [Three paths](#three-paths-to-one-wasm-module). The path choice is the **output of
@@ -39,11 +40,30 @@ Two structural facts make this more tractable than the `platform-expansion.md`
    ObjC-isms" claim in `platform-expansion.md`, the bridge has since been split
    into per-area files and verified clean.)*
 
-2. **OCCT is already configured headless.** `build-occt.sh` ships
-   Visualization / OpenGL / GLES / FreeType / TBB / VTK / Draw all **OFF**; only
-   FoundationClasses, ModelingData, ModelingAlgorithms, DataExchange + RapidJSON
-   are ON. That is precisely the subset that ports to wasm (no GL context, no
-   native threading).
+2. **OCCT is configured headless, and that buys less than it reads.**
+   `build-occt.sh` ships Visualization / OpenGL / GLES / FreeType / TBB / VTK /
+   Draw all **OFF**; only FoundationClasses, ModelingData, ModelingAlgorithms,
+   DataExchange + RapidJSON are ON. No GL context and no TBB is real and it is
+   what makes the port plausible. **The module list is not, and this paragraph
+   used to claim it was "precisely the subset that ports to wasm".** Measured
+   2026-09-23 against the macOS install tree those flags produce: **49 archives
+   across six modules and 5,495 source files**, because OCCT's CMake pulls a
+   dependency in whether or not its module is switched off.
+
+   | Module | `BUILD_MODULE_*` | Toolkits built |
+   |---|---|---|
+   | FoundationClasses | ON | 2 |
+   | ModelingData | ON | 4 |
+   | ModelingAlgorithms | ON | 14 |
+   | DataExchange | ON | 14 |
+   | **ApplicationFramework** | **OFF** | **13** |
+   | **Visualization** | **OFF** | **2** |
+
+   `DataExchange`'s XCAF toolkits need `TKCAF`, `TKLCAF`, `TKCDF`, the
+   `TKBin*`/`TKXml*`/`TKStd*` persistence set and `TKTObj`; those reach
+   `TKService` and `TKV3d`. `TKV3d` alone is 203 source files. So the
+   platform-gap surface #2174 enumerates, and the code the module size pays for,
+   include 682 files from two modules the flags say are off.
 
 3. **Threading is a non-issue for us.** The bridge serialises all OCCT access
    through one `std::recursive_mutex`; single-threaded wasm satisfies that
@@ -238,18 +258,27 @@ difference between a kernel that reports failures and one that quietly stops.
 `setjmp` is a separate mechanism needing a separate flag and `-lsetjmp` at link.
 It is not hypothetical: OCCT's CMake defines `OCC_CONVERT_SIGNALS` on every
 non-Windows target, so `OCC_CATCH_SIGNALS` expands to a real `setjmp` inside OCCT,
-and 6 of the 119 `TKernel` objects that compile carry a lowered pair.
+and 6 of `TKernel`'s 127 objects carry a lowered pair.
 
 ### What this does not settle
 
 The verification package links Swift built against the Swift SDK's no-exceptions
 C++ runtime together with a C++ target using wasi-sdk's exception-enabled one.
 That holds for one file. #2172 took it as far as compiling and archiving one
-OCCT toolkit, 119 of `TKernel`'s 127 source files, and **linked none of it**.
-Whether the libc++ seam holds across an archive of OCCT's size, and what supplies
-`operator new`, is #2174. The measurement logs are
-[`Scripts/repro/2169/README.md`](../Scripts/repro/2169/README.md) and
-[`Scripts/repro/2172/README.md`](../Scripts/repro/2172/README.md).
+OCCT toolkit, 119 of `TKernel`'s 127 source files; #2173 closed the eight platform
+gaps behind the other eight and took it to **127 of 127**, archived as a real
+`libTKernel.a` under `--require-complete`. Neither **linked any of it**.
+
+So every statement in this document about what an OCCT wasm build does at runtime
+is an argument from the source and its callers, not an observation. In particular
+the libc++ seam rests on weak symbol resolution that a larger link could resolve
+the other way, `operator new` and `std::bad_alloc` are unprobed, and `-lsetjmp`
+and `-lwasi-emulated-getpid` have never been on a link line. Those are #2174's,
+which is why that issue smoke-links a module of its own before #2175 brings Swift
+and the bridge in. The measurement logs are
+[`Scripts/repro/2169/README.md`](../Scripts/repro/2169/README.md),
+[`Scripts/repro/2172/README.md`](../Scripts/repro/2172/README.md) and
+[`Scripts/repro/2173/README.md`](../Scripts/repro/2173/README.md).
 
 ## Plan
 
@@ -263,16 +292,23 @@ before porting 3,500 operations.
    [Pinned toolchain](#pinned-toolchain).
 2. Pick **3 representative bridge functions**: `OCCTShapeBox` (pure compute),
    one boolean (e.g. `OCCTShapeFuse`, exercises the allocator hard), and one
-   STEP/STL export (exercises the virtual FS + string I/O).
-3. Attempt each path far enough to **link and call those 3 functions** from Swift:
+   STEP/STL export (exercises the virtual FS + string I/O). **A fourth was added
+   at #2175's revalidation**: one call that must *fail*, because all three of the
+   above are happy paths and the failure mode [#2171 measured](#c-exceptions-on-wasip1-what-is-proven-2171)
+   is silent. A translation unit that missed the exception flags returns correct
+   boxes, correct fuses and correct STEP files, and answers every error by
+   trapping the module.
+3. Attempt each path far enough to **link and call those functions** from Swift:
    - **A**: build/obtain OCCT-on-emscripten + Swift-on-emscripten, link, call.
    - **B**: cross-build just the bridge + minimal OCCT TKBRep subset with
-     wasi-sdk, link against wasi Swift, call.
-   - **C**: wrap the 3 functions as a WIT interface across two components.
+     wasi-sdk, link against wasi Swift, call. This is the one under way; see
+     [Pinned toolchain](#pinned-toolchain) and
+     [Which sysroot compiles OCCT](#which-sysroot-compiles-occt-and-why-it-is-not-wasi-sdks).
+   - **C**: wrap the functions as a WIT interface across two components.
 4. **Deliverable:** a one-page decision memo recording which path linked and ran,
    binary size, and blockers hit. This selects the path for Phase 1.
 
-> Stop here and reassess if no path links the 3 functions. That is the
+> Stop here and reassess if no path links the spike functions. That is the
 > go/no-go gate.
 
 ### Phase 1. Build pipeline
