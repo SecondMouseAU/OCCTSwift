@@ -1,0 +1,6 @@
+circleRadius: radius=5
+circleSetRadius: radius after SetRadius(10)=10
+circleEccentricity: eccentricity=0
+circleCenter: center=(1, 2, 3)
+circleXAxis: position=(1, 2, 3) direction=(1, 0, -0)
+circleYAxis: position=(1, 2, 3) direction=(-0, 1, 0)

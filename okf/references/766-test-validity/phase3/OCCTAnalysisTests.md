@@ -235,6 +235,12 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Geom_Circle Properties** | circleRadius | Geom_Circle radius | Radius() |
+| **Geom_Circle Properties** | circleSetRadius | Geom_Circle setter | SetRadius() |
+| **Geom_Circle Properties** | circleEccentricity | Geom_Circle eccentricity | Eccentricity() |
+| **Geom_Circle Properties** | circleCenter | Geom_Circle centre | Circ().Location() |
+| **Geom_Circle Properties** | circleXAxis | Geom_Circle XAxis | XAxis() |
+| **Geom_Circle Properties** | circleYAxis | Geom_Circle YAxis | YAxis() |
 
 ---
 
@@ -424,6 +430,12 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| circleRadius | OCCTCurve3DCircleRadius | Geom_Circle radius | Radius() + 1 | ✅ | ✅ | Fixture now #require'd |
+| circleSetRadius | OCCTCurve3DCircleSetRadius | Geom_Circle setter | skip SetRadius | ✅ | ✅ | Fixture now #require'd |
+| circleEccentricity | OCCTCurve3DCircleEccentricity | Geom_Circle eccentricity | Eccentricity() + 0.5 | ✅ | ✅ | Fixture now #require'd |
+| circleCenter | OCCTCurve3DCircleCenter | Geom_Circle centre | centre x + 1 | ✅ | ✅ | Fixture now #require'd |
+| circleXAxis | OCCTCurve3DCircleXAxis | Geom_Circle XAxis | return YAxis() | ✅ | ✅ | Fixture now #require'd |
+| circleYAxis | OCCTCurve3DCircleYAxis | Geom_Circle YAxis | return XAxis() | ✅ | ✅ | Fixture now #require'd |
 
 ---
 
