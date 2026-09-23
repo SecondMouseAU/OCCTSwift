@@ -197,3 +197,17 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Curve3D Extras v0.109 | reverseCurve | `OCCTCurve3DReverse` | Reverse skipped | `Curve3DExtrasTests.swift:20 simd_distance(c.startPoint, SIMD3(10, 0, 0)) < 1e-12` | ✅ | MATCH | Rewritten: discarded both points, could not fail. Fixture is now a segment so its start point is finite |
+| Curve3D Extras v0.109 | copyCurve | `OCCTCurve3DCopy` | copy moved 0.5 in y | `Curve3DExtrasTests.swift:32 simd_distance(c.point(at: u), copy.point(at: u)) < 1e-12` | ✅ | MATCH | Rewritten: one sample inside `if let` |
+| Curve3D Extras v0.109 | copiedCurveIndependent | `OCCTCurve3DCopy` | copy moved 0.5 in y (and, separately, Reverse skipped) | `Curve3DExtrasTests.swift:43 copy.startPoint == c.startPoint` | ✅ | MATCH | Rewritten: checked only isClosed; now checks independence, which the title claims |
+| Curve3D extras v0.112 | curveType | `OCCTCurve3DCurveType` | type + 1 | `Curve3DExtrasV112Tests.swift:19 line.curveType == 0` | ✅ | MATCH |  |
+| Curve3D extras v0.112 | nearestParameterOnLine | `OCCTCurve3DNearestParameter` | parameter + 1 | `Curve3DExtrasV112Tests.swift:32 abs(param - 5.0) < 1e-9` | ✅ | MATCH | Rewritten: 0.1 of slack inside `if let` |
+| Curve3D.interpolate tangent-tolerance reachability (#400) | Bare 3-arg call matches an explicit default-tolerance call exactly | `OCCTCurve3DInterpolateWithTangents` | end tangent loaded as the start tangent | `Curve3DInterpolateTangentToleranceParityTests.swift:53 simd_distance(t0, simd_normalize(Self.startTangent)) < 1e-9` | ✅ | MATCH | Strengthened: the comparison of two calls to one function cannot differ at runtime; tangent directions pinned |
+| Curve3D.interpolate tangent-tolerance reachability (#400) | tolerance: is reachable and actually governs the minimum inter-point distance | `OCCTCurve3DInterpolateWithTangents` | tolerance argument ignored (1e-6 always) | `Curve3DInterpolateTangentToleranceParityTests.swift:73 tighter != nil` | ✅ | MATCH |  |
