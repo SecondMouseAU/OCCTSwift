@@ -1,0 +1,33 @@
+OSD_Path: no populated struct utsname on wasm32-wasip1.
+
+whereAmI()'s final #else branch declares a `struct utsname` local without including
+<sys/utsname.h>, so on any platform that reaches it the type is incomplete and the file does not
+compile. WASI reaches it.
+
+EXTENDS the condition already there, one token: `#elif defined(__EMSCRIPTEN__)` becomes
+`#elif defined(__EMSCRIPTEN__) || defined(__wasi__)`. Upstream's own WebAssembly branch is the one
+being widened, so the next kernel bump has one structure to merge rather than two.
+
+WHAT THE WASI BRANCH RETURNS: OSD_LinuxREDHAT, the same OSD_SysType the Emscripten arm beside it
+already returns. whereAmI() feeds OSD_Path::mySysDep, which selects the path grammar OSD_Path
+parses and prints with (UnixExtract/VmsExtract, and the SystemName/UpTrek family). wasi-libc
+addresses its preopened directories with ordinary POSIX paths, so the Unix grammar is the correct
+one. The alternative, letting WASI fall to the #else, is worse on two counts even if the include
+were fixed: OSD_Default has no grammar of its own, and that branch prints five uname fields to
+std::cout on every OSD_Path construction.
+
+Issue: https://github.com/SecondMouseAU/OCCTSwift/issues/2173
+
+diff --git a/src/FoundationClasses/TKernel/OSD/OSD_Path.cxx b/src/FoundationClasses/TKernel/OSD/OSD_Path.cxx
+index a39c0c84..8beb84c6 100644
+--- a/src/FoundationClasses/TKernel/OSD/OSD_Path.cxx
++++ b/src/FoundationClasses/TKernel/OSD/OSD_Path.cxx
+@@ -36,7 +36,7 @@ static OSD_SysType whereAmI()
+   return OSD_VMS;
+ #elif defined(__linux__) || defined(__linux)
+   return OSD_LinuxREDHAT;
+-#elif defined(__EMSCRIPTEN__)
++#elif defined(__EMSCRIPTEN__) || defined(__wasi__)
+   return OSD_LinuxREDHAT;
+ #elif defined(_AIX) || defined(AIX)
+   return OSD_Aix;

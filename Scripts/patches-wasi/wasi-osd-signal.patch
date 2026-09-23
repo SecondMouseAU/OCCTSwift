@@ -1,0 +1,119 @@
+OSD_signal: no signal delivery at all on wasm32-wasip1.
+
+The largest of the eight files, and the change is one new arm plus one guarded include.
+
+The arm EXTENDS the file's own top-level platform chain: `#ifdef _WIN32 ... #else /* ! _WIN32 */`
+becomes `#ifdef _WIN32 ... #elif defined(__wasi__) ... #else /* ! _WIN32 */`. The POSIX branch is
+left byte for byte unchanged, and that is the point of the shape. It is four hundred lines of
+sigaction() machinery, and the alternative, threading `#ifndef __wasi__` through it, is what PR
+#2076 attempted: that patch pasted one twenty-line stub twenty times and rewrote about twenty
+unrelated `#endif`s into `#else`, leaving nine "#else after #else" errors and two unterminated
+`#if`s, in a file no compiler could preprocess on any platform.
+
+The include is `#include <csignal>`, at the top of the file and outside both platform branches. It
+has no condition to extend and gets `#ifndef __wasi__`. wasi-libc's <signal.h> is an #error without
+-D_WASI_EMULATED_SIGNAL, and that define is measured (#2172) to leave this file with seventeen
+errors rather than zero, because the emulation supplies the SIG* constants and signal() and
+supplies no sigset_t, sigaction, sigemptyset, sigaddset or sigprocmask. OCCT installs its handlers
+with sigaction() throughout, so the emulation answers none of what this file needs.
+
+The WASI arm defines exactly the five OSD members each of the other two arms defines, no more and
+no fewer: SetFloatingSignal, ToCatchFloatingSignals, SetThreadLocalSignal, SetSignal and
+ControlBreak.
+
+WHAT THE WASI BRANCH RETURNS:
+
+  * SetFloatingSignal(bool) does nothing. The POSIX branch already does nothing on every platform
+    that is neither glibc/Linux nor Solaris, so this matches it, and wasm32 has no floating-point
+    exception trapping to enable in any case.
+  * ToCatchFloatingSignals() returns false, the same value the POSIX branch returns off glibc, and
+    a truthful one: nothing is being caught.
+  * SetThreadLocalSignal() forwards to SetFloatingSignal(), which is the POSIX branch's body too.
+    Its two in-tree callers, OSD_ThreadPool.cxx:288 and :301, pass OSD::SignalMode() and ignore the
+    result.
+  * SetSignal() installs nothing and, deliberately, does NOT record theSignalMode in
+    OSD_WasSetSignal. OSD::SignalMode() therefore keeps reporting OSD_SignalMode_AsIs, which is the
+    truthful answer, and the alternative would be a mode with no handler behind it. That value
+    reaches SetThreadLocalSignal(), a no-op here, and Draw_BasicCommands.cxx:952, which this build
+    does not compile.
+  * ControlBreak() never raises. It exists to turn a delivered SIGINT into an
+    OSD_Exception_CTRL_BREAK at a point the algorithm chose; no SIGINT is ever delivered on wasip1,
+    so none is ever pending. Callers poll it inside long loops and read "did not raise" as "keep
+    going", which is correct here.
+
+NOT AFFECTED: OCC_CATCH_SIGNALS. OCCT's own cmake adds -DOCC_CONVERT_SIGNALS for every non-Windows
+target (adm/cmake/occt_defs_flags.cmake:48), so that macro expands to a real setjmp() inside OCCT
+here as it does elsewhere. It is lowered by -mllvm -wasm-enable-sjlj and is independent of this
+file, which never installs the handler the signal-conversion path would have needed.
+
+Issue: https://github.com/SecondMouseAU/OCCTSwift/issues/2173
+
+diff --git a/src/FoundationClasses/TKernel/OSD/OSD_signal.cxx b/src/FoundationClasses/TKernel/OSD/OSD_signal.cxx
+index 66c6002d..9d5b122d 100644
+--- a/src/FoundationClasses/TKernel/OSD/OSD_signal.cxx
++++ b/src/FoundationClasses/TKernel/OSD/OSD_signal.cxx
+@@ -21,7 +21,9 @@
+ 
+ #include <atomic>
+ #include <mutex>
+-#include <csignal>
++#ifndef __wasi__
++  #include <csignal>
++#endif
+ 
+ #include <Standard_WarningDisableFunctionCast.hxx>
+ 
+@@ -723,6 +725,53 @@ LONG _osd_debug(void)
+ } // end _osd_debug
+   #endif /* ! OCCT_UWP && ! __CYGWIN__ && ! __MINGW32__ */
+ 
++#elif defined(__wasi__)
++
++//---------- wasm32-wasip1 : no signal delivery at all ------------------------
++
++// wasi-libc's <signal.h> is an #error without -D_WASI_EMULATED_SIGNAL, and the emulation that
++// define unlocks supplies the SIG* constants and signal() while supplying no sigset_t,
++// sigaction, sigemptyset, sigaddset or sigprocmask, which is what the POSIX branch below installs
++// its handlers with. A wasip1 instance receives no signals, so there is nothing to install.
++
++//=================================================================================================
++
++void OSD::SetFloatingSignal(bool theFloatingSignal)
++{
++  (void)theFloatingSignal;
++}
++
++//=================================================================================================
++
++bool OSD::ToCatchFloatingSignals()
++{
++  return false;
++}
++
++//=================================================================================================
++
++void OSD::SetThreadLocalSignal(OSD_SignalMode /*theSignalMode*/, bool theFloatingSignal)
++{
++  SetFloatingSignal(theFloatingSignal);
++}
++
++//=================================================================================================
++
++void OSD::SetSignal(OSD_SignalMode theSignalMode, bool theFloatingSignal)
++{
++  SetFloatingSignal(theFloatingSignal);
++  (void)theSignalMode;
++  // OSD_WasSetSignal is deliberately left at OSD_SignalMode_AsIs: nothing was installed, and
++  // OSD::SignalMode() reporting a mode that was set would be a claim no handler backs.
++}
++
++//=================================================================================================
++
++void OSD::ControlBreak()
++{
++  // no SIGINT is ever delivered, so no interrupt can be pending
++}
++
+ #else /* ! _WIN32 */
+ 
+ //---------- All Systems except Windows NT : ----------------------------------

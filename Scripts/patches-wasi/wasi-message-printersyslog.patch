@@ -1,0 +1,70 @@
+Message_PrinterSystemLog: no <syslog.h> on wasm32-wasip1.
+
+This file is four parallel platform chains, and the change treats them differently on purpose.
+
+The two chains where WASI wants the answer an existing arm already gives EXTEND that arm rather
+than adding one: the constructor and the destructor become
+`#elif defined(__EMSCRIPTEN__) || defined(__wasi__)`, because there is no openlog()/closelog() pair
+to open or close, which is already true of Emscripten and Android.
+
+The other two chains, the include block and send(), get a new `#elif defined(__wasi__)` arm INSIDE
+the chain that is already there, never a parallel `#ifdef` beside it. The Emscripten arm cannot be
+shared in either: it includes <emscripten/emscripten.h> and calls four EM_JS-defined console
+functions that do not exist on WASI.
+
+WHAT THE WASI BRANCH DOES: send() writes the message and a newline to stderr with fprintf() and
+returns. Message_Printer::send() returns void, so no caller reads a value, and nothing in this
+class reports failure to write. stderr is chosen over dropping the message because it is the one
+sink a wasip1 host is guaranteed to be able to observe, and because a printer whose entire purpose
+is to reach the system log must not silently discard. The message gravity is deliberately not
+encoded into the line: syslog() takes a priority argument that stderr has no equivalent of, and
+inventing a textual prefix would change the text the caller asked to have printed. The constructor
+and destructor hold no resource, so an OSD-level "close" has nothing to do.
+
+This class has no in-tree consumer outside Draw and DRAWEXE, which this build does not compile; it
+is reachable only through an application that registers the printer itself.
+
+Issue: https://github.com/SecondMouseAU/OCCTSwift/issues/2173
+
+diff --git a/src/FoundationClasses/TKernel/Message/Message_PrinterSystemLog.cxx b/src/FoundationClasses/TKernel/Message/Message_PrinterSystemLog.cxx
+index 8f732da0..9bf8f3d6 100644
+--- a/src/FoundationClasses/TKernel/Message/Message_PrinterSystemLog.cxx
++++ b/src/FoundationClasses/TKernel/Message/Message_PrinterSystemLog.cxx
+@@ -85,6 +85,8 @@ EM_JS(void, occJSConsoleError, (const char* theStr), {
+   const aStr = Number(theStr); // bigintToI53Checked(theStr);
+   console.error(UTF8ToString(aStr));
+ });
++#elif defined(__wasi__)
++  #include <cstdio>
+ #else
+   #include <syslog.h>
+ 
+@@ -125,7 +127,7 @@ Message_PrinterSystemLog::Message_PrinterSystemLog(
+   myEventSource = (void*)RegisterEventSourceW(NULL, aWideSrcName.ToWideString());
+ #elif defined(__ANDROID__)
+   //
+-#elif defined(__EMSCRIPTEN__)
++#elif defined(__EMSCRIPTEN__) || defined(__wasi__)
+   //
+ #else
+   openlog(myEventSourceName.ToCString(), LOG_PID | LOG_NDELAY, LOG_USER);
+@@ -145,7 +147,7 @@ Message_PrinterSystemLog::~Message_PrinterSystemLog()
+   }
+ #elif defined(__ANDROID__)
+   //
+-#elif defined(__EMSCRIPTEN__)
++#elif defined(__EMSCRIPTEN__) || defined(__wasi__)
+   //
+ #else
+   closelog();
+@@ -199,6 +201,10 @@ void Message_PrinterSystemLog::send(const TCollection_AsciiString& theString,
+       return;
+   }
+   occJSConsoleWarn(theString.ToCString());
++#elif defined(__wasi__)
++  // wasip1 exposes no system log; stderr is the only sink the host is guaranteed to see
++  (void)theGravity;
++  fprintf(stderr, "%s\n", theString.ToCString());
+ #else
+   syslog(getSysLogPriority(theGravity), "%s", theString.ToCString());
+ #endif

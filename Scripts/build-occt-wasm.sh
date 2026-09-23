@@ -2,7 +2,7 @@
 #
 # Build OpenCASCADE for WebAssembly (WASI)
 #
-# Usage: ./build-occt-wasm.sh [--toolkit NAME]
+# Usage: ./build-occt-wasm.sh [--toolkit NAME] [--require-complete]
 #
 #   --toolkit NAME   Build and archive ONE OCCT toolkit instead of everything, e.g.
 #                    `--toolkit TKernel`. The configure step is unchanged, so the narrow loop and
@@ -12,6 +12,16 @@
 #                    `-k`, so one pass reports EVERY file that fails rather than stopping at the
 #                    first, which is the difference between a complete guard-site list and a list
 #                    discovered one error at a time (#2172).
+#
+#   --require-complete  Fail unless EVERY source file of that toolkit compiled. Requires
+#                    --toolkit, because the full build has no `-k` and stops at the first error
+#                    already, and per #2098 a check that examines nothing must fail rather than
+#                    pass. Without it the count below is printed and not checked, and the exit
+#                    status is whatever the build tool returned: that was the right behaviour
+#                    while eight failures were the expected result of #2172, and the wrong one
+#                    from #2173 onwards, when a regression would hand a reader the same status a
+#                    complete build does. Turn it on wherever the build is expected to be
+#                    complete; Scripts/repro/2173/run.sh does.
 #
 # This script downloads OCCT source and builds it as static libraries
 # for wasm32-wasip1 using wasi-sdk.
@@ -33,8 +43,13 @@ set -e
 # Arguments
 # --------------------
 BUILD_TOOLKIT=""
+REQUIRE_COMPLETE=""
 while [ $# -gt 0 ]; do
     case "$1" in
+        --require-complete)
+            REQUIRE_COMPLETE="1"
+            shift
+            ;;
         --toolkit)
             [ $# -ge 2 ] || { echo "ERROR: --toolkit needs a toolkit name, e.g. --toolkit TKernel." >&2; exit 1; }
             BUILD_TOOLKIT="$2"
@@ -45,15 +60,23 @@ while [ $# -gt 0 ]; do
             shift
             ;;
         -h|--help)
-            sed -n '2,40p' "$0"
+            sed -n '2,38p' "$0"
             exit 0
             ;;
         *)
-            echo "ERROR: unknown argument '$1'. Usage: $0 [--toolkit NAME]" >&2
+            echo "ERROR: unknown argument '$1'. Usage: $0 [--toolkit NAME] [--require-complete]" >&2
             exit 1
             ;;
     esac
 done
+
+if [ -n "$REQUIRE_COMPLETE" ] && [ -z "$BUILD_TOOLKIT" ]; then
+    echo "ERROR: --require-complete needs --toolkit." >&2
+    echo "       The full build runs without \`-k\` under \`set -e\`, so it already stops at the" >&2
+    echo "       first file that does not compile and there is no partial state for this flag to" >&2
+    echo "       reject. Accepting it here would be a check that examines nothing (#2098)." >&2
+    exit 1
+fi
 
 OCCT_VERSION="8.0.1"
 OCCT_RC=""
@@ -541,6 +564,50 @@ if [ -n "$BUILD_TOOLKIT" ]; then
     echo "    members: $("$SWIFT_TOOLCHAIN_BIN/llvm-ar" t "$TOOLKIT_LIB" | wc -l | tr -d ' ')"
     echo "    Inspect it with $SWIFT_TOOLCHAIN_BIN/llvm-nm, not the host's nm: there is no llvm-nm"
     echo "    on the default macOS PATH and host nm misreads a wasm object."
+    # --------------------
+    # Completeness (#2173)
+    # --------------------
+    # The status above is the BUILD TOOL's, not a statement about the toolkit, and the counts above
+    # are printed rather than checked. --require-complete turns the count into the assertion, so
+    # that "every file compiled" is decided by the objects on disk against the rules CMake
+    # generated, and a build that is short of the denominator cannot return the same status a
+    # complete one does. It is checked BEFORE the status, so the message names the real defect.
+    if [ -n "$REQUIRE_COMPLETE" ]; then
+        if [ "$TOOLKIT_EXPECTED" -eq 0 ]; then
+            echo "" >&2
+            echo "ERROR: --require-complete was given and this build tree has no object rule for" >&2
+            echo "       '$BUILD_TOOLKIT', so the check examined nothing. Per #2098 that fails" >&2
+            echo "       rather than passes: a denominator of zero is not a complete build." >&2
+            exit 1
+        fi
+        if [ "$TOOLKIT_ACTUAL" -ne "$TOOLKIT_EXPECTED" ]; then
+            echo "" >&2
+            echo "ERROR: --require-complete was given and $BUILD_TOOLKIT is INCOMPLETE:" >&2
+            echo "       $TOOLKIT_ACTUAL of $TOOLKIT_EXPECTED source files compiled, $((TOOLKIT_EXPECTED - TOOLKIT_ACTUAL)) short." >&2
+            echo "       Every failing file is in the log above, in a single pass. If one of them is" >&2
+            echo "       a platform gap, it belongs in Scripts/patches-wasi/ with a patch header" >&2
+            echo "       saying what its WASI branch returns; see docs/WASI_GUARD_SITES.md." >&2
+            exit 1
+        fi
+        case "$TOOLKIT_LIB" in
+            *-partial.a)
+                echo "" >&2
+                echo "ERROR: --require-complete was given and the archive is the partial one," >&2
+                echo "       '$TOOLKIT_LIB'. CMake produced no lib$BUILD_TOOLKIT.a, so the link" >&2
+                echo "       rule did not run even though every object is present." >&2
+                exit 1
+                ;;
+        esac
+        if [ "$TOOLKIT_STATUS" -ne 0 ]; then
+            echo "" >&2
+            echo "ERROR: --require-complete was given and every object is present, but the build" >&2
+            echo "       tool exited $TOOLKIT_STATUS. Something other than a compile failed; the" >&2
+            echo "       log above is the record." >&2
+            exit 1
+        fi
+        echo ">>> COMPLETE: $TOOLKIT_ACTUAL of $TOOLKIT_EXPECTED, as --require-complete demands."
+    fi
+
     if [ "$TOOLKIT_STATUS" -ne 0 ]; then
         echo "" >&2
         echo ">>> INCOMPLETE. $((TOOLKIT_EXPECTED - TOOLKIT_ACTUAL)) file(s) did not compile; every" >&2

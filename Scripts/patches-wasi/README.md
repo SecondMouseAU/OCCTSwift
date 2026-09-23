@@ -3,14 +3,28 @@
 These are **not** carried upstream-bound patches. They are WASI-specific source changes that only
 `Scripts/build-occt-wasm.sh` applies, on top of everything in [`../patches/`](../patches/README.md).
 
-`Scripts/patches-wasi/` holds two patches, and the table below has one row per file. Both the count
-and the table are checked against the directory by `Scripts/check-inventory-prose.py`, so adding or
-removing a patch without editing this page fails `gate-scripts`.
+`Scripts/patches-wasi/` holds ten patches, one per OCCT source file, and the table below has one
+row per file. Both the count and the table are checked against the directory by
+`Scripts/check-inventory-prose.py`, so adding or removing a patch without editing this page fails
+`gate-scripts`.
+
+Eight of the ten close the platform gaps [#2172](https://github.com/SecondMouseAU/OCCTSwift/issues/2172)
+measured by compiling every one of `TKernel`'s 127 source files, and with them that toolkit builds
+127 of 127. Every one of those eight carries, in its own header, what its WASI branch returns and
+why that value is safe for each of its in-tree callers.
 
 | Patch | What it does |
 |---|---|
+| `wasi-message-printersyslog.patch` | `Message_PrinterSystemLog.cxx`: no `<syslog.h>`, so `send()` writes to stderr |
 | `wasi-osd-chronometer.patch` | `OSD_Chronometer.cxx` for the wasm32-wasi clock surface |
 | `wasi-osd-directory.patch` | `OSD_Directory.cxx` for the wasm32-wasi filesystem surface |
+| `wasi-osd-file.patch` | `OSD_File.cxx`: no `mkstemp()` and no `fcntl` record locking |
+| `wasi-osd-host.patch` | `OSD_Host.cxx`: no `<netdb.h>`, so `InternetAddress()` is empty |
+| `wasi-osd-path.patch` | `OSD_Path.cxx`: joins the Emscripten arm, so paths parse as Unix |
+| `wasi-osd-process.patch` | `OSD_Process.cxx`: no `<pwd.h>` and no `getuid()` |
+| `wasi-osd-signal.patch` | `OSD_signal.cxx`: no signal delivery, so nothing is installed |
+| `wasi-standard-mmgropt.patch` | `Standard_MMgrOpt.cxx`: no `mmap()`, so the malloc path is the only one |
+| `wasi-standard-stacktrace.patch` | `Standard_StackTrace.cxx`: no `<execinfo.h>`, so `StackTrace()` returns false |
 
 ## The threading class is handled by a shim, and never by a patch here
 
@@ -72,8 +86,10 @@ git apply --check ../../Scripts/patches-wasi/wasi-<thing>.patch   # in THIS stat
 A patch that applies to vanilla but not to the patched tree, or the reverse, is a defect. Keep the
 `diff --git` and `index` lines `git diff` emits (`-p1`, prefixes `a/`, `b/`): the `index` pre-image
 blob is the exact identity of the tree the patch was cut from, and
-`check-wasi-patch-base.py --tree` checks it against the real file. The two patches here today were
-hand trimmed and carry no `index` line, which is not a defect, only a weaker patch.
+`check-wasi-patch-base.py --tree` checks it against the real file. The eight #2173 added all carry
+one. The two that predate it, `wasi-osd-chronometer.patch` and `wasi-osd-directory.patch`, were
+hand trimmed and carry no `index` line, which is not a defect, only a weaker patch: `--tree` still
+runs `git apply --check` on them and simply has no blob to compare.
 
 Then add the patch's row to the table above. `build-occt-wasm.sh` applies this directory after the
 carried set, idempotently, and aborts if a patch does not apply cleanly.
@@ -88,9 +104,10 @@ Applies-After: 0033-Interface_Static-thread-safety-mutex-1157.patch
 That is the record that the diff was regenerated in the patched state, and it is what fails loudly
 at the next kernel repin rather than quietly: a retired or renumbered carried patch leaves the
 trailer unresolvable, and the WASI patch gets re-verified instead of sitting on a state that no
-longer exists. No file here collides today, which is why the rule is worth having before
-[#2173](https://github.com/SecondMouseAU/OCCTSwift/issues/2173) writes the patches that may create
-one.
+longer exists. No file here collides today: #2173 added eight patches and not one of their ten target files is
+touched by any of the twenty-nine carried patches, so no `Applies-After:` trailer is needed yet.
+`check-wasi-patch-base.py` reports that as `0 shared target file(s)`, and the day it stops saying
+zero is the day the trailer becomes mandatory.
 
 Numbering is deliberately not used here: these are not upstream-bound, so they have no place in the
 carried sequence and nothing cites them by number.

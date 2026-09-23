@@ -625,9 +625,13 @@ def self_test():
     real_wasi = globals()["wasi_patch_files"]
     saved_read_11 = globals()["read"]
     try:
-        globals()["wasi_patch_files"] = lambda: sorted(real_wasi() + ["wasi-osd-signal"])
+        # The fabricated stem must be one no real patch can carry. It was `wasi-osd-signal`
+        # until #2173 shipped a patch of exactly that name, whereupon the README row it added
+        # satisfied the check and this case reported PASS for the wrong reason, then FAIL. The
+        # sibling case below already used a `-not-on-disk` name for the same reason.
+        globals()["wasi_patch_files"] = lambda: sorted(real_wasi() + ["wasi-selftest-no-row"])
         case("wasi-patch-without-a-row-detected",
-             any("wasi-osd-signal.patch has no row" in problem
+             any("wasi-selftest-no-row.patch has no row" in problem
                  for problem in check_wasi_patch_rows()))
     finally:
         globals()["wasi_patch_files"] = real_wasi
