@@ -302,5 +302,231 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1476: OCCTCurve3DCurveType OtherCurve fallback::nullHandleReturnsOtherCurveNotOffsetCurve",
+    "test_file": "Tests/OCCTCurveTests/Issue1476CurveTypeOtherCurveFallbackTests.swift",
+    "bridge_function": "OCCTCurve3DCurveType",
+    "bridge_output": {
+      "type": "value",
+      "data": "8"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_OtherCurve = 8, GeomAbs_OffsetCurve = 7"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ctnull: null fallback returns 7",
+    "red": "Issue1476CurveTypeOtherCurveFallbackTests.swift:30 type == 8",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue1476-1513-1675/transcript.txt"
+  },
+  {
+    "test_name": "Issue #1476: OCCTCurve3DCurveType OtherCurve fallback::ordinaryLineUnaffected",
+    "test_file": "Tests/OCCTCurveTests/Issue1476CurveTypeOtherCurveFallbackTests.swift",
+    "bridge_function": "OCCTCurve3DCurveType",
+    "bridge_output": {
+      "type": "value",
+      "data": "0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAdaptor_Curve(Geom_Line).GetType() = 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ctype: type ordinal + 1",
+    "red": "Issue1476CurveTypeOtherCurveFallbackTests.swiftline.curveType == 0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue1476-1513-1675/transcript.txt"
+  },
+  {
+    "test_name": "Issue #1513: CPnts UniformDeflection null-shape guard::nullifiedShapeUniformDeflectionReturnsNil",
+    "test_file": "Tests/OCCTCurveTests/Issue1513UniformDeflectionNullGuardTests.swift",
+    "bridge_function": "OCCTCPntsUniformDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: a null TopoDS_Shape has no BRepAdaptor_Curve (the kernel SIGSEGVs, #1513); the guard is bridge-only"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "udnullok: null shape answers one point",
+    "red": "Issue1513UniformDeflectionNullGuardTests.swift:33 == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue1476-1513-1675/transcript.txt"
+  },
+  {
+    "test_name": "Issue #1513: CPnts UniformDeflection null-shape guard::nullifiedShapeUniformDeflectionRangeReturnsNil",
+    "test_file": "Tests/OCCTCurveTests/Issue1513UniformDeflectionNullGuardTests.swift",
+    "bridge_function": "OCCTCPntsUniformDeflectionRange",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: as above"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "udnullok",
+    "red": "Issue1513UniformDeflectionNullGuardTests.swift:40 == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue1476-1513-1675/transcript.txt"
+  },
+  {
+    "test_name": "Issue #1513: CPnts UniformDeflection null-shape guard::ordinaryEdgeUnaffected",
+    "test_file": "Tests/OCCTCurveTests/Issue1513UniformDeflectionNullGuardTests.swift",
+    "bridge_function": "OCCTCPntsUniformDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": "24 points"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "CPnts_UniformDeflection 0.1 on the radius-10 circle edge: 24 points"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "udefl: deflection x4; udnil",
+    "red": "Issue1513UniformDeflectionNullGuardTests.swift:53 result.points.count == 24",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue1476-1513-1675/transcript.txt",
+    "note": "REWRITTEN: count pinned to 24; was > 4"
+  },
+  {
+    "test_name": "Issue #1675, the arc the doc snippets construct is the arc they describe::arcConstructs",
+    "test_file": "Tests/OCCTCurveTests/Issue1675DocSnippetArcTests.swift",
+    "bridge_function": "OCCTCurve3DCreateArcOfCircle",
+    "bridge_output": {
+      "type": "value",
+      "data": "constructs"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfCircle + GeomLProp_CLProps: IsDone"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arcnil: arcOfCircle returns nil",
+    "red": "Issue1675DocSnippetArcTests.swift:25 #require(canonicalArc())",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue1476-1513-1675/transcript.txt"
+  },
+  {
+    "test_name": "Issue #1675, the arc the doc snippets construct is the arc they describe::curvatureMatchesDocumentedValue",
+    "test_file": "Tests/OCCTCurveTests/Issue1675DocSnippetArcTests.swift",
+    "bridge_function": "OCCTCurve3DGetCurvature",
+    "bridge_output": {
+      "type": "value",
+      "data": "0.2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfCircle + GeomLProp_CLProps: 0.20000000000000001"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "kscale: curvature x 1.01",
+    "red": "Issue1675DocSnippetArcTests.swift:32 abs(k - 0.2) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue1476-1513-1675/transcript.txt"
+  },
+  {
+    "test_name": "Issue #1675, the arc the doc snippets construct is the arc they describe::centreOfCurvatureIsOrigin",
+    "test_file": "Tests/OCCTCurveTests/Issue1675DocSnippetArcTests.swift",
+    "bridge_function": "OCCTCurve3DGetCenterOfCurvature",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0, 0, 0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfCircle + GeomLProp_CLProps: (0, 9e-17, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cocshift: centre +1e-3 in x",
+    "red": "Issue1675DocSnippetArcTests.swift:39 centre at origin",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue1476-1513-1675/transcript.txt"
+  },
+  {
+    "test_name": "Issue #1675, the arc the doc snippets construct is the arc they describe::endpointsAreTheHalfCircle",
+    "test_file": "Tests/OCCTCurveTests/Issue1675DocSnippetArcTests.swift",
+    "bridge_function": "OCCTCurve3DCreateArcOfCircle",
+    "bridge_output": {
+      "type": "value",
+      "data": "(5,0,0) to (-5,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfCircle + GeomLProp_CLProps: (5, 0) to (-5, 7.9e-16)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arcswap: start and end swapped",
+    "red": "Issue1675DocSnippetArcTests.swift:47 start (5,0,0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue1476-1513-1675/transcript.txt"
+  },
+  {
+    "test_name": "Issue #1675, the arc the doc snippets construct is the arc they describe::secondArcConstructs",
+    "test_file": "Tests/OCCTCurveTests/Issue1675DocSnippetArcTests.swift",
+    "bridge_function": "OCCTCurve3DCreateArcOfCircle, OCCTCurve3DGetCenterOfCurvature, OCCTCurve3DGetCurvature",
+    "bridge_output": {
+      "type": "value",
+      "data": "centres (10,0,0), (20,0,0), curvature 1/3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfCircle + GeomLProp_CLProps: centres (10, -2.8e-16, 0), (20, -2.8e-16, 0), curvature 0.33333333333333331"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cocshift; kscale; arcnil",
+    "red": "Issue1675DocSnippetArcTests.swift:63 centre == (cx, 0, 0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue1476-1513-1675/transcript.txt",
+    "note": "REWRITTEN: only constructed the two arcs; now pins their centre and radius"
   }
 ]

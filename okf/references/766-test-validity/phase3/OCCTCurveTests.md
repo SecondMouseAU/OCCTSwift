@@ -197,3 +197,20 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Issue #1476: OCCTCurve3DCurveType OtherCurve fallback | nullHandleReturnsOtherCurveNotOffsetCurve | `OCCTCurve3DCurveType` | ctnull: null fallback returns 7 | `Issue1476CurveTypeOtherCurveFallbackTests.swift:30 type == 8` | ✅ | MATCH |  |
+| Issue #1476: OCCTCurve3DCurveType OtherCurve fallback | ordinaryLineUnaffected | `OCCTCurve3DCurveType` | ctype: type ordinal + 1 | `Issue1476CurveTypeOtherCurveFallbackTests.swiftline.curveType == 0` | ✅ | MATCH |  |
+| Issue #1513: CPnts UniformDeflection null-shape guard | nullifiedShapeUniformDeflectionReturnsNil | `OCCTCPntsUniformDeflection` | udnullok: null shape answers one point | `Issue1513UniformDeflectionNullGuardTests.swift:33 == nil` | ✅ | N/A |  |
+| Issue #1513: CPnts UniformDeflection null-shape guard | nullifiedShapeUniformDeflectionRangeReturnsNil | `OCCTCPntsUniformDeflectionRange` | udnullok | `Issue1513UniformDeflectionNullGuardTests.swift:40 == nil` | ✅ | N/A |  |
+| Issue #1513: CPnts UniformDeflection null-shape guard | ordinaryEdgeUnaffected | `OCCTCPntsUniformDeflection` | udefl: deflection x4; udnil | `Issue1513UniformDeflectionNullGuardTests.swift:53 result.points.count == 24` | ✅ | MATCH | REWRITTEN: count pinned to 24; was > 4 |
+| Issue #1675, the arc the doc snippets construct is the arc they describe | arcConstructs | `OCCTCurve3DCreateArcOfCircle` | arcnil: arcOfCircle returns nil | `Issue1675DocSnippetArcTests.swift:25 #require(canonicalArc())` | ✅ | MATCH |  |
+| Issue #1675, the arc the doc snippets construct is the arc they describe | curvatureMatchesDocumentedValue | `OCCTCurve3DGetCurvature` | kscale: curvature x 1.01 | `Issue1675DocSnippetArcTests.swift:32 abs(k - 0.2) < 1e-9` | ✅ | MATCH |  |
+| Issue #1675, the arc the doc snippets construct is the arc they describe | centreOfCurvatureIsOrigin | `OCCTCurve3DGetCenterOfCurvature` | cocshift: centre +1e-3 in x | `Issue1675DocSnippetArcTests.swift:39 centre at origin` | ✅ | MATCH |  |
+| Issue #1675, the arc the doc snippets construct is the arc they describe | endpointsAreTheHalfCircle | `OCCTCurve3DCreateArcOfCircle` | arcswap: start and end swapped | `Issue1675DocSnippetArcTests.swift:47 start (5,0,0)` | ✅ | MATCH |  |
+| Issue #1675, the arc the doc snippets construct is the arc they describe | secondArcConstructs | `OCCTCurve3DCreateArcOfCircle, OCCTCurve3DGetCenterOfCurvature, OCCTCurve3DGetCurvature` | cocshift; kscale; arcnil | `Issue1675DocSnippetArcTests.swift:63 centre == (cx, 0, 0)` | ✅ | MATCH | REWRITTEN: only constructed the two arcs; now pins their centre and radius |
