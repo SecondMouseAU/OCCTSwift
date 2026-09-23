@@ -109,3 +109,17 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-globopt-powell-pso-systems-svd (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **MathSolver GlobOptMin v0.111** | globalMinBowl | `OCCTMathGlobOptMin` | point + 0.3 in every coordinate, minimum + 0.3 | red | green | PASS |
+| **MathSolver GlobOptMin v0.111** | globalMin1D | `OCCTMathGlobOptMin` | point + 0.3, minimum + 0.3 | red | green | PASS |
+| **MathSolver NewtonSystem v0.111** | solveCircleLine | `OCCTMathNewtonFuncSetRoot` | return the start point instead of Root() | red | green | PASS |
+| **MathSolver Powell v0.110** | minimizeBowl | `OCCTMathPowell` | location + 0.5 in every coordinate | red | green | PASS |
+| **MathSolver PSO v0.111** | minimizeBowl | `OCCTMathPSO` | point + 0.5 in every coordinate, minimum + 0.5 | red | green | PASS |
+| **MathSolver PSO v0.111** | minimizeRosenbrock | `OCCTMathPSO` | point + 0.5 in every coordinate, minimum + 0.5 | red | green | PASS |
+| **MathSolver SystemOfEquations v0.110** | solveCircleLine | `OCCTMathFunctionSetRoot` | return the start point instead of Root() | red | green | PASS |
+| **MathSolver SystemOfEquations v0.110** | solveLinearSystem | `OCCTMathFunctionSetRoot` | return the start point instead of Root() | red | green | PASS |
+| **MathSVD Tests** | leastSquares | `OCCTMathSVDSolve` | swap X(1) and X(cols) after math_SVD::Solve | red | green | PASS |

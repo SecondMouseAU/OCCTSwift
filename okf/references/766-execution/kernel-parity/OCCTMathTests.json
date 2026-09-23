@@ -182,5 +182,95 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "MathSolver GlobOptMin v0.111::globalMinBowl",
+    "bridge_function": "OCCTMathGlobOptMin",
+    "bridge_output": {"type": "observed", "data": "point= 3 3.9999999999999964 F=1.2621774483536189e-29", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "point= 3 3.9999999999999964 F=1.2621774483536189e-29", "source": "Scripts/repro/766-math-globopt-powell-pso-systems-svd/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "point + 0.3 in every coordinate, minimum + 0.3", "failing_expectation": "original: **green**; rewritten: :21 `result.minimum < 1e-12`"},
+    "green": true
+  },
+  {
+    "test_name": "MathSolver GlobOptMin v0.111::globalMin1D",
+    "bridge_function": "OCCTMathGlobOptMin",
+    "bridge_output": {"type": "observed", "data": "point= 1.9999999976047156 F=1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "point= 1.9999999976047156 F=1", "source": "Scripts/repro/766-math-globopt-powell-pso-systems-svd/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "point + 0.3, minimum + 0.3", "failing_expectation": "original: **green**; rewritten: :35 `abs(result.minimum - 1.0) < 1e-9`"},
+    "green": true
+  },
+  {
+    "test_name": "MathSolver NewtonSystem v0.111::solveCircleLine",
+    "bridge_function": "OCCTMathNewtonFuncSetRoot",
+    "bridge_output": {"type": "observed", "data": "from (4, 3): 4 3; from (4.5, 3.5): 4 3", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "from (4, 3): 4 3; from (4.5, 3.5): 4 3", "source": "Scripts/repro/766-math-globopt-powell-pso-systems-svd/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "return the start point instead of Root()", "failing_expectation": "original: **green**; rewritten: :18 `abs(eq1) < 1e-4`"},
+    "green": true
+  },
+  {
+    "test_name": "MathSolver Powell v0.110::minimizeBowl",
+    "bridge_function": "OCCTMathPowell",
+    "bridge_output": {"type": "observed", "data": "x=3.0000000000000004 4 min=1.97e-31", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "x=3.0000000000000004 4 min=1.97e-31", "source": "Scripts/repro/766-math-globopt-powell-pso-systems-svd/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "location + 0.5 in every coordinate", "failing_expectation": ":18 `abs(result.point[0] - 3.0) < 1e-3`"},
+    "green": true
+  },
+  {
+    "test_name": "MathSolver PSO v0.111::minimizeBowl",
+    "bridge_function": "OCCTMathPSO",
+    "bridge_output": {"type": "observed", "data": "point= 3.0003586992980869 4.0000816844022422 minimum=1.353375280176667e-07", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "point= 3.0003586992980869 4.0000816844022422 minimum=1.353375280176667e-07", "source": "Scripts/repro/766-math-globopt-powell-pso-systems-svd/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "point + 0.5 in every coordinate, minimum + 0.5", "failing_expectation": "original: **green**; rewritten: :26 `result.minimum < 1e-5`"},
+    "green": true
+  },
+  {
+    "test_name": "MathSolver PSO v0.111::minimizeRosenbrock",
+    "bridge_function": "OCCTMathPSO",
+    "bridge_output": {"type": "observed", "data": "point= 1.000023919963603 1.000029117788175 minimum=3.5626156109880741e-08", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "point= 1.000023919963603 1.000029117788175 minimum=3.5626156109880741e-08", "source": "Scripts/repro/766-math-globopt-powell-pso-systems-svd/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "point + 0.5 in every coordinate, minimum + 0.5", "failing_expectation": "original: **green**; rewritten: :47 `result.minimum < 1e-5`"},
+    "green": true
+  },
+  {
+    "test_name": "MathSolver SystemOfEquations v0.110::solveCircleLine",
+    "bridge_function": "OCCTMathFunctionSetRoot",
+    "bridge_output": {"type": "observed", "data": "from (4, 3): 4 3; from (4.5, 3.5): 4 3", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "from (4, 3): 4 3; from (4.5, 3.5): 4 3", "source": "Scripts/repro/766-math-globopt-powell-pso-systems-svd/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "return the start point instead of Root()", "failing_expectation": "original: **green**; rewritten: :25 `abs(eq1) < 1e-4`"},
+    "green": true
+  },
+  {
+    "test_name": "MathSolver SystemOfEquations v0.110::solveLinearSystem",
+    "bridge_function": "OCCTMathFunctionSetRoot",
+    "bridge_output": {"type": "observed", "data": "x=2 1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "x=2 1", "source": "Scripts/repro/766-math-globopt-powell-pso-systems-svd/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "return the start point instead of Root()", "failing_expectation": ":42 `abs(sol[0] - 2.0) < 1e-4`"},
+    "green": true
+  },
+  {
+    "test_name": "MathSVD Tests::leastSquares",
+    "bridge_function": "OCCTMathSVDSolve",
+    "bridge_output": {"type": "observed", "data": "x=1.3333333333333324 2.3333333333333339", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "x=1.3333333333333324 2.3333333333333339", "source": "Scripts/repro/766-math-globopt-powell-pso-systems-svd/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "swap X(1) and X(cols) after math_SVD::Solve", "failing_expectation": "original: **green**; rewritten: :20 `abs(x[0] - 4.0 / 3.0) < 1e-10`"},
+    "green": true
   }
 ]
