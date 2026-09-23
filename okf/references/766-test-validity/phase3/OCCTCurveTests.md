@@ -197,3 +197,16 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Geom_OffsetCurve Basis Tests | getBasisCurve | `OCCTCurve3DOffsetBasis` | obfake: offsetBasisCurve answers a different line | `OffsetCurveBasisTests.swift:27 basis.point(at: 3) == (3,0,0)` | ✅ | MATCH | REWRITTEN: asserted nothing (`_ = basis`); silent guards now record an issue |
+| Geom_OffsetCurve Basis Tests | nonOffsetCurveReturnsNil | `OCCTCurve3DOffsetBasis` | obfake | `OffsetCurveBasisTests.swift:38 offsetBasisCurve == nil` | ✅ | N/A |  |
+| v0.115.0 - PointsToBSpline Expansion | approximate3DWithParams | `OCCTPointsToBSplineWithParams` | fitshift: every point moved 0.01 in y | `PointsToBSplineExpansionTests.swift:20 start == points[0]` | ✅ | MATCH | REWRITTEN: was `!= nil` |
+| v0.115.0 - PointsToBSpline Expansion | approximate3DWithExplicitParams | `OCCTPointsToBSplineWithParameters` | fitshift | `PointsToBSplineExpansionTests.swift:33 point(at: 0.3) == (3,5,0)` | ✅ | MATCH | REWRITTEN: was `!= nil` |
+| v0.115.0 - PointsToBSpline Expansion | approximate2DWithParams | `OCCTPoints2DToBSplineWithParams` | fitshift | `PointsToBSplineExpansionTests.swift:42 start == points[0]` | ✅ | N/A | REWRITTEN: was `!= nil` |
+| v0.115.0 - PointsToBSpline Expansion | surfaceFromPointGrid | `OCCTPointsToSurfaceBSpline` | fitshift: z + 0.01 | `PointsToBSplineExpansionTests.swift:63 corner == points[0]` | ✅ | N/A | REWRITTEN: was `!= nil` |

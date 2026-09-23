@@ -302,5 +302,148 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Geom_OffsetCurve Basis Tests::getBasisCurve",
+    "test_file": "Tests/OCCTCurveTests/OffsetCurveBasisTests.swift",
+    "bridge_function": "OCCTCurve3DOffsetBasis",
+    "bridge_output": {
+      "type": "value",
+      "data": "basis (3,0,0), offset (3,-2,0) at 3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_OffsetCurve: BasisCurve at 3 (3,0,0), Value at 3 (3,-2,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "obfake: offsetBasisCurve answers a different line",
+    "red": "OffsetCurveBasisTests.swift:27 basis.point(at: 3) == (3,0,0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-pointstobspline/transcript.txt",
+    "note": "REWRITTEN: asserted nothing (`_ = basis`); silent guards now record an issue"
+  },
+  {
+    "test_name": "Geom_OffsetCurve Basis Tests::nonOffsetCurveReturnsNil",
+    "test_file": "Tests/OCCTCurveTests/OffsetCurveBasisTests.swift",
+    "bridge_function": "OCCTCurve3DOffsetBasis",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: a Geom_Line has no BasisCurve; the nil is the bridge's DownCast refusal"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "obfake",
+    "red": "OffsetCurveBasisTests.swift:38 offsetBasisCurve == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-pointstobspline/transcript.txt"
+  },
+  {
+    "test_name": "v0.115.0 - PointsToBSpline Expansion::approximate3DWithParams",
+    "test_file": "Tests/OCCTCurveTests/PointsToBSplineExpansionTests.swift",
+    "bridge_function": "OCCTPointsToBSplineWithParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "passes through (0,0,0) and (10,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_PointsToBSpline: start (0,0), end (10,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "fitshift: every point moved 0.01 in y",
+    "red": "PointsToBSplineExpansionTests.swift:20 start == points[0]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-pointstobspline/transcript.txt",
+    "note": "REWRITTEN: was `!= nil`"
+  },
+  {
+    "test_name": "v0.115.0 - PointsToBSpline Expansion::approximate3DWithExplicitParams",
+    "test_file": "Tests/OCCTCurveTests/PointsToBSplineExpansionTests.swift",
+    "bridge_function": "OCCTPointsToBSplineWithParameters",
+    "bridge_output": {
+      "type": "value",
+      "data": "(3,5,0) at 0.3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_PointsToBSpline with parameters: (3,5) at 0.3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "fitshift",
+    "red": "PointsToBSplineExpansionTests.swift:33 point(at: 0.3) == (3,5,0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-pointstobspline/transcript.txt",
+    "note": "REWRITTEN: was `!= nil`"
+  },
+  {
+    "test_name": "v0.115.0 - PointsToBSpline Expansion::approximate2DWithParams",
+    "test_file": "Tests/OCCTCurveTests/PointsToBSplineExpansionTests.swift",
+    "bridge_function": "OCCTPoints2DToBSplineWithParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "passes through both ends"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: 2D fit not probed; same GeomAPI family as the 3D fit, which passes through its ends"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "REWRITTEN: was `!= nil`"
+      ]
+    },
+    "status": "N/A",
+    "injection": "fitshift",
+    "red": "PointsToBSplineExpansionTests.swift:42 start == points[0]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-pointstobspline/transcript.txt",
+    "note": "REWRITTEN: was `!= nil`"
+  },
+  {
+    "test_name": "v0.115.0 - PointsToBSpline Expansion::surfaceFromPointGrid",
+    "test_file": "Tests/OCCTCurveTests/PointsToBSplineExpansionTests.swift",
+    "bridge_function": "OCCTPointsToSurfaceBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "passes through the (0,0,0) corner"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: GeomAPI_PointsToBSplineSurface not probed"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "REWRITTEN: was `!= nil`"
+      ]
+    },
+    "status": "N/A",
+    "injection": "fitshift: z + 0.01",
+    "red": "PointsToBSplineExpansionTests.swift:63 corner == points[0]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-pointstobspline/transcript.txt",
+    "note": "REWRITTEN: was `!= nil`"
   }
 ]

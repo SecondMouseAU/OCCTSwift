@@ -15,6 +15,11 @@ struct PointsToBSplineExpansionTests {
         let curve = Curve3D.approximate(
             points: points, degMin: 3, degMax: 8, continuity: 2, tolerance: 1e-3)
         #expect(curve != nil)
+        // #766: non-nil alone passed any fit. GeomAPI_PointsToBSpline passes through both ends.
+        if let curve {
+            #expect(simd_distance(curve.point(at: curve.domain.lowerBound), points[0]) < 1e-9)
+            #expect(simd_distance(curve.point(at: curve.domain.upperBound), points[4]) < 1e-9)
+        }
     }
 
     @Test func approximate3DWithExplicitParams() {
@@ -22,12 +27,21 @@ struct PointsToBSplineExpansionTests {
         let params = [0.0, 0.3, 1.0]
         let curve = Curve3D.approximate(points: points, parameters: params, degMin: 2, degMax: 6)
         #expect(curve != nil)
+        // #766: three points and degree 2 are an exact interpolation, so the middle point sits
+        // at its own parameter 0.3.
+        if let curve {
+            #expect(simd_distance(curve.point(at: 0.3), points[1]) < 1e-6)
+        }
     }
 
     @Test func approximate2DWithParams() {
         let points = [SIMD2(0.0, 0.0), SIMD2(2.0, 3.0), SIMD2(5.0, 1.0), SIMD2(10.0, 0.0)]
         let curve = Curve2D.approximate(points: points, degMin: 2, degMax: 6)
         #expect(curve != nil)
+        if let curve {  // #766: pinned to the end points the fit passes through
+            #expect(simd_distance(curve.point(at: curve.domain.lowerBound), points[0]) < 1e-9)
+            #expect(simd_distance(curve.point(at: curve.domain.upperBound), points[3]) < 1e-9)
+        }
     }
 
     @Test func surfaceFromPointGrid() {
@@ -44,5 +58,9 @@ struct PointsToBSplineExpansionTests {
         }
         let surf = Surface.fromPointGrid(points: points, uCount: uCount, vCount: vCount)
         #expect(surf != nil)
+        if let surf {  // #766: the fitted surface passes through the grid's corner (0, 0, 0)
+            let d = surf.domain
+            #expect(simd_distance(surf.point(atU: d.uMin, v: d.vMin), points[0]) < 1e-6)
+        }
     }
 }
