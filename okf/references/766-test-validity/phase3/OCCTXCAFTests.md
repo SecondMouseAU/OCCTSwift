@@ -99,3 +99,39 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `TDataStdNamedDataTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `namedInteger` | `OCCTDocumentNamedDataGetInteger` answers 0 | :19 Expectation failed: label.namedInteger("count") == 42 | passed | `OCCTDocumentNamedDataGetInteger` | PASS: 42 |
+| `namedReal` | `OCCTDocumentNamedDataHasReal` returns false | :29 Expectation failed: label.hasNamedReal("pi") | passed | `OCCTDocumentNamedDataGetReal` | PASS: 3.14159 |
+| `namedString` | `OCCTDocumentNamedDataGetString` answers "X" | :42 Expectation failed: label.namedString("partName") == "MyPart" | passed | `OCCTDocumentNamedDataGetString` | PASS: MyPart |
+| `multipleValues` | `OCCTDocumentNamedDataGetInteger` answers 0 | :55 Expectation failed: label.namedInteger("count") == 5 | passed | `OCCTDocumentNamedDataGetInteger` | PASS: each kind round-trips |
+
+### `TDataStdNoteBookTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `createNoteBook` | `OCCTNoteBookFind` returns false | :11 Expectation failed: doc.noteBookExists(tag: 200) | passed | `OCCTNoteBookFind` | PASS: found |
+| `appendReal` | `OCCTNoteBookAppendReal` returns -1 | :18 Expectation failed: childTag != nil | passed | `OCCTNoteBookAppendReal` | PASS: child tag 1 |
+| `appendInteger` | `OCCTNoteBookAppendInteger` returns -1 | :25 Expectation failed: childTag != nil | passed | `OCCTNoteBookAppendInteger` | PASS: child tag assigned |
+| `multipleAppends` | `OCCTNoteBookAppendReal` answers tag 5 every time | :38 Expectation failed: r1 != r2 | passed | `OCCTNoteBookAppendReal` | PASS: tags 1, 2, 3 |
+
+### `TDataStdRealArrayTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `initAndUse` | `OCCTDocumentGetRealArrayValue` answers 0 for any index | :25 Expectation failed: abs(v0 - 1.1) < 1e-10; :26 Expectation failed: abs(v1 - 2.2) < 1e-10 | passed | `OCCTDocumentGetRealArrayValue` | PASS: 0..2; 1.1 2.2 3.3 |
+
+### `TDataStdRealListTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentSetRealList` stores the first value plus 1 | :13 Expectation failed: abs(result[0] - 1.5) < 1e-10 | passed | `OCCTDocumentGetRealList` | PASS: 1.5 .. 3.14 |
+| `appendAndClear` | `OCCTDocumentRealListClear` returns true without clearing | :28 Expectation failed: result.count == 0 | passed | `OCCTDocumentRealListClear` | PASS: 0 after Clear |
+| `hasRealList` | `OCCTDocumentHasRealList` returns true | :34 Expectation failed: !doc.hasRealList(tag: 342) | passed | `OCCTDocumentHasRealList` | PASS: absent before Set |
