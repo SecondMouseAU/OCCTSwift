@@ -99,3 +99,26 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `Issue1037GDTEnumRangeTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `dimensionModifierOutOfRangeIsRefused` | `OCCTDocumentSetDimensionModifiers` skips its enum range check | :68 Expectation failed: !rejected; :68 Expectation failed: !rejected | passed | `OCCTDocumentSetDimensionModifiers` | PASS: range 0..23, so 24 names nothing |
+| `classOfToleranceOutOfRangeIsRefused` | `OCCTDocumentSetDimensionClassOfTolerance` skips its enum range check | :93 Expectation failed: !OCCTDocumentSetDimensionClassOfTolerance(doc.handle, Int32(index), true, 29, 7); :94 Expectation failed: !OCCTDocumentSetDimensionClassOfTolerance(doc.handle, Int32(index), true, 9999, 7) | passed | `OCCTDocumentSetDimensionClassOfTolerance` | PASS: form variance 0..28, grade 0..19; H 11, IT6 7 |
+| `geomToleranceModifierOutOfRangeIsRefused` | `OCCTDocumentSetGeomToleranceModifiers` skips its enum range check | :128 Expectation failed: !rejected; :128 Expectation failed: !rejected | passed | `OCCTDocumentSetGeomToleranceModifiers` | PASS: range 0..16, so 17 names nothing |
+| `datumModifierOutOfRangeIsRefused` | `OCCTDocumentSetDatumModifiers` skips its enum range check | :152 Expectation failed: !rejected; :152 Expectation failed: !rejected | passed | `OCCTDocumentSetDatumModifiers` | PASS: range 0..21 |
+| `emptyModifierArrayStillClears` | `OCCTDocumentSetDatumModifiers` refuses a count of 0 | :169 Expectation failed: OCCTDocumentSetDatumModifiers(doc.handle, Int32(index), nil, 0); :170 Expectation failed: doc.datum(at: index)?.modifiers.isEmpty == true | passed | `OCCTDocumentSetDatumModifiers` | PASS: an empty sequence clears to 0 |
+
+### `Issue1038DatumTargetPlacementTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `placementOnANonTargetIsRefused` | `OCCTDocumentSetDatumTargetPlacement` skips its is-a-target refusal | :40 Expectation failed: !placement(doc, index, length: 30, width: 18) | passed | `OCCTDocumentSetDatumTargetPlacement` | PASS: a fresh datum is not a target |
+| `placementOnAnAreaTargetIsRefused` | `OCCTDocumentSetDatumTargetPlacement` skips its Area refusal | :53 Expectation failed: !placement(doc, index, length: 30, width: 18) | passed | `OCCTDocumentSetDatumTargetPlacement` | PASS: Area (4) takes a shape, not an axis |
+| `placementOnARectangleTargetStillWorks` | `OCCTDocumentSetDatumTargetPlacement` stores the width as the length | :73 Expectation failed: target?.length == 30 | passed | `OCCTDocumentSetDatumTargetPlacement` | PASS: 30 x 18 |
+| `placementAfterClearingTheTargetIsRefused` | `OCCTDocumentSetDatumTargetPlacement` skips its is-a-target refusal | :87 Expectation failed: !placement(doc, index, length: 44, width: 22) | passed | `OCCTDocumentSetDatumTargetPlacement` | PASS: no longer a target after `IsDatumTarget(false)` |
