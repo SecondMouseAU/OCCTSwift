@@ -102,6 +102,8 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **Extrema_ExtPS Tests** | pointSurfaceDistance | Point-surface extrema | IsDone reported false / point lookup always returns the last extremum |
+| **Extrema_ExtPS Tests** | pointOnSurfaceParams | Point-surface extrema | Point lookup always returns the last extremum (the far pole) |
 
 ---
 
@@ -216,6 +218,8 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| pointSurfaceDistance | OCCTExtremaExtPS | Point-surface extrema | IsDone reported false / point lookup always returns the last extremum | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: a nil OCCTSurfaceCreateSphere skipped every assertion under if-let; count pinned to 2, tolerance 0.1 -> 1e-9; also reaches OCCTExtremaExtPSPoint |
+| pointOnSurfaceParams | OCCTExtremaExtPSPoint | Point-surface extrema | Point lookup always returns the last extremum (the far pole) | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: hid behind if isDone && count >= 1 and accepted either pole (|p| == 5); now pins extremum 1 to the near pole |
 
 ---
 
@@ -318,5 +322,7 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| pointSurfaceDistance | ✅ | ✅ | ✅ |
+| pointOnSurfaceParams | ✅ | ✅ | ✅ |
 
 **Total**: 559 tests

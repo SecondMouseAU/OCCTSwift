@@ -497,5 +497,73 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtPS Tests::pointSurfaceDistance",
+    "bridge_function": "OCCTExtremaExtPS",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "is_done": true,
+        "nb_ext": 2,
+        "square_distances": [
+          25.0,
+          225.0
+        ],
+        "min_distance": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "is_done": true,
+        "nb_ext": 2,
+        "square_distances": [
+          25.0,
+          225.0
+        ],
+        "min_distance": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtPS Tests::pointOnSurfaceParams",
+    "bridge_function": "OCCTExtremaExtPSPoint",
+    "bridge_output": {
+      "type": "extremum_1",
+      "data": {
+        "square_distance": 25.0,
+        "point": [
+          3.061616997868383e-16,
+          0.0,
+          5.0
+        ],
+        "u": 0.0,
+        "v": 1.5707963267948966
+      }
+    },
+    "kernel_output": {
+      "type": "extremum_1",
+      "data": {
+        "square_distance": 25.0,
+        "point": [
+          3.061616997868383e-16,
+          0.0,
+          5.0
+        ],
+        "u": 0.0,
+        "v": 1.5707963267948966
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
