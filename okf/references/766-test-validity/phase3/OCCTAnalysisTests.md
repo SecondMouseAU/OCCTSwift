@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **GProp Torus Tests** | torusSurfaceArea | Torus surface area | Short integration range |
+| **GProp Torus Tests** | torusVolume | Torus volume | Short integration range |
 
 ---
 
@@ -202,6 +204,8 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| torusSurfaceArea | OCCTGPropTorusSurface | Torus surface area | Integrate v over [0, 2 pi - 1e-3] | ✅ | ✅ | Tolerance tightened from 1.0 to 1e-9 relative; the injection is 0.19 off, inside the old tolerance |
+| torusVolume | OCCTGPropTorusVolume | Torus volume | Integrate v over [0, 2 pi - 1e-3] | ✅ | ✅ | Tolerance tightened from 1.0 to 1e-9 relative; the injection is 0.28 off, inside the old tolerance |
 
 ---
 
