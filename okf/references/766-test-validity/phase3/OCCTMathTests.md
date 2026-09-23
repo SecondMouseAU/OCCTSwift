@@ -109,3 +109,13 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-shape-transforms (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **GC_MakeMirror** | Mirror box about point | `OCCTShapeMirrorAboutPoint` | mirror centre replaced by the origin | red | green | PASS |
+| **GC_MakeMirror** | Mirror box about axis | `OCCTShapeMirrorAboutAxis` | axis direction components reversed, (dz, dy, dx): mirrors about X instead of Z | red | green | PASS |
+| **GC_MakeScale** | Scale box about origin | `OCCTShapeScaleAboutPoint` | factor inverted (1 / factor) | red | green | PASS |
+| **GC_MakeScale** | Scale with factor 0.5 | `OCCTShapeScaleAboutPoint` | factor inverted (1 / factor) | red | green | PASS |
+| **GC_MakeTranslation** | Translate box from point to point | `OCCTShapeTranslateByPoints` | from and to points swapped | red | green | PASS |
