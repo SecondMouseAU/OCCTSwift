@@ -6,5 +6,507 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Geom_OffsetSurface Extension Tests::offsetValueRoundTrip",
+    "bridge_function": "OCCTSurfaceOffsetValue",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "offset": 5
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "offset": 5
+      },
+      "source": "Scripts/repro/766-offset-plate-helix/transcript.txt offsetValueRoundTrip"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_OffsetSurface Extension Tests::setOffsetValue",
+    "bridge_function": "OCCTSurfaceSetOffsetValue",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "offset": 7.5
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "offset": 7.5
+      },
+      "source": "Scripts/repro/766-offset-plate-helix/transcript.txt setOffsetValue"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_OffsetSurface Extension Tests::offsetBasisIsNotNil",
+    "bridge_function": "OCCTSurfaceOffsetBasis",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "basis S(1,2)": [
+          1,
+          2,
+          0
+        ],
+        "offset S(1,2)": [
+          1,
+          2,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "basis S(1,2)": [
+          1,
+          2,
+          0
+        ],
+        "offset S(1,2)": [
+          1,
+          2,
+          2
+        ]
+      },
+      "source": "Scripts/repro/766-offset-plate-helix/transcript.txt offsetBasisIsNotNil"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_OffsetSurface Extension Tests::nonOffsetSurfaceOffsetValueIsZero",
+    "bridge_function": "OCCTSurfaceOffsetValue",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "offset": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "offset": 0
+      },
+      "source": "wrapper contract: a Geom_Plane is not a Geom_OffsetSurface, the bridge reports 0"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Geom_OffsetSurface Extension Tests::nonOffsetSurfaceOffsetBasisIsNil",
+    "bridge_function": "OCCTSurfaceOffsetBasis",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "basis": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "basis": null
+      },
+      "source": "wrapper contract: a Geom_Plane is not a Geom_OffsetSurface, the bridge reports nil"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "GeomPlate BuildAveragePlane::planarPoints",
+    "bridge_function": "OCCTGeomPlateBuildAveragePlane",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "normal": [
+          -0.099503719021,
+          0,
+          0.99503719021
+        ],
+        "origin": [
+          0.5,
+          0.5,
+          0.05
+        ],
+        "uv": [
+          -0.502493781056,
+          0.502493781056,
+          -0.5,
+          0.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "normal": [
+          -0.099503719021,
+          0,
+          0.99503719021
+        ],
+        "origin": [
+          0.5,
+          0.5,
+          0.05
+        ],
+        "uv": [
+          -0.502493781056,
+          0.502493781056,
+          -0.5,
+          0.5
+        ]
+      },
+      "source": "Scripts/repro/766-offset-plate-helix/transcript.txt averagePlane planarPoints"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomPlate BuildAveragePlane::collinearPoints",
+    "bridge_function": "OCCTGeomPlateBuildAveragePlane",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "isPlane": true,
+        "isLine": false,
+        "normal": [
+          -0.408248290464,
+          0.816496580928,
+          -0.408248290464
+        ],
+        "origin": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "isPlane": true,
+        "isLine": false,
+        "normal": [
+          -0.408248290464,
+          0.816496580928,
+          -0.408248290464
+        ],
+        "origin": [
+          1,
+          1,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-offset-plate-helix/transcript.txt averagePlane collinearPoints"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomPlate Surface::Plate surface through points",
+    "bridge_function": "OCCTGeomPlateSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 230.283551308,
+        "maxPointDistance": 2.39e-09
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 230.283551308,
+        "maxPointDistance": 2.39e-09
+      },
+      "source": "Scripts/repro/766-offset-plate-helix/transcript.txt plateSurfaceThroughPoints"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomPlate Surface::Plate surface with more points",
+    "bridge_function": "OCCTGeomPlateSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 281.864731907,
+        "maxPointDistance": 3.68e-15
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 281.864731907,
+        "maxPointDistance": 3.68e-15
+      },
+      "source": "Scripts/repro/766-offset-plate-helix/transcript.txt plateSurfaceMorePoints"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomTools_SurfaceSet Tests::serializeDeserializeSurfaces",
+    "bridge_function": "OCCTGeomToolsSurfaceSetRead",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "count": 2,
+        "plane S(1,2)": [
+          1,
+          2,
+          0
+        ],
+        "cylinder S(0,5)": [
+          3,
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "count": 2,
+        "plane S(1,2)": [
+          1,
+          2,
+          0
+        ],
+        "cylinder S(0,5)": [
+          3,
+          0,
+          5
+        ]
+      },
+      "source": "Scripts/repro/766-offset-plate-helix/transcript.txt surfaceSet"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomTools_SurfaceSet Tests::duplicateHandleRefusesTheBatch",
+    "bridge_function": "OCCTGeomToolsSurfaceSetWrite",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-offset-plate-helix/transcript.txt surfaceSet duplicate: Add(plane)=1 Add(plane)=1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "HelixGeom Evaluate::helixCurveEval",
+    "bridge_function": "OCCTHelixCurveEval",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "P(0)": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "P(0)": [
+          10,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-offset-plate-helix/transcript.txt helix eval(0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "HelixGeom Evaluate::helixCurveD1",
+    "bridge_function": "OCCTHelixCurveD1",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "P(0)": [
+          10,
+          0,
+          0
+        ],
+        "D1(0)": [
+          0,
+          -10,
+          0.795774715459
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "P(0)": [
+          10,
+          0,
+          0
+        ],
+        "D1(0)": [
+          0,
+          -10,
+          0.795774715459
+        ]
+      },
+      "source": "Scripts/repro/766-offset-plate-helix/transcript.txt helix D1(0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "HelixGeom Evaluate::helixCurveD2",
+    "bridge_function": "OCCTHelixCurveD2",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "P(pi)": [
+          -10,
+          0,
+          2.5
+        ],
+        "D1(pi)": [
+          0,
+          10,
+          0.795774715459
+        ],
+        "D2(pi)": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "P(pi)": [
+          -10,
+          0,
+          2.5
+        ],
+        "D1(pi)": [
+          0,
+          10,
+          0.795774715459
+        ],
+        "D2(pi)": [
+          10,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-offset-plate-helix/transcript.txt helix D2(pi)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "HelixGeom Evaluate::helixApproxToBSpline",
+    "bridge_function": "OCCTHelixApproxToBSpline",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "maxError": 0.000676011
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "maxError": 0.000676011
+      },
+      "source": "Scripts/repro/766-offset-plate-helix/transcript.txt helix ApprHelix(1e-3)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Integration: UV Surface Evaluation::cylinderPointsAtConstantRadius",
+    "bridge_function": "OCCTSurfaceGetPoint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "max|r-25|": 3.55e-15,
+        "polyline100": 157.053795391
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "max|r-25|": 3.55e-15,
+        "polyline100": 157.053795391
+      },
+      "source": "Scripts/repro/766-offset-plate-helix/transcript.txt cylinder r25"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
