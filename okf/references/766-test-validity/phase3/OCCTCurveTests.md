@@ -197,3 +197,20 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Law_Interpolate Tests | interpolateWithParams | `OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine` | lawval: LawFunction.value + 1e-3 | `LawInterpolateTests.swift:28 abs(law.value(at: 0.25) - 1) < 1e-9  (+1 more)` | ✅ | MATCH |  |
+| Law_Interpolate Tests | interpolateValues | `OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine` | lawval: LawFunction.value + 1e-3 | `LawInterpolateTests.swift:17 abs(law.value(at: 4) - 4) < 1e-9` | ✅ | MATCH |  |
+| Law_Interpolate Tests | interpolatedEndpoints | `OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine` | lawval: LawFunction.value + 1e-3 | `LawInterpolateTests.swift:38 abs(v0) < 1e-4  (+1 more)` | ✅ | MATCH |  |
+| Law_Interpolate Tests | Interpolated law rejects a longer parameters array | `OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine` | lawparm: a mismatched parameters array is replaced by uniform parameters | `LawInterpolateTests.swift:63 law == nil` | ✅ | N/A |  |
+| Law_Interpolate Tests | Interpolated law rejects a shorter parameters array | `OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine` | lawparm: a mismatched parameters array is replaced by uniform parameters | `LawInterpolateTests.swift:55 law == nil` | ✅ | N/A |  |
+| LocalAnalysis CurveContinuity Tests | smoothJunction | `OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine` | c0off: c0Value + 1e-3 | `LocalAnalysisCurveContinuityTests.swift:22 analysis.c0Value < 1e-6` | ✅ | MATCH |  |
+| LocalAnalysis CurveContinuity Tests | sharpCorner | `OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine` | c0off: c0Value + 1e-3 | `LocalAnalysisCurveContinuityTests.swift:58 analysis.c0Value < 1e-6` | ✅ | MATCH |  |
+| LocalAnalysis CurveContinuity Tests | smoothJunctionIsG1 | `OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine` | g1off: g1Angle + 1e-3 | `LocalAnalysisCurveContinuityTests.swift:44 analysis.g1Angle < 1e-9` | ✅ | MATCH |  |
+| LocalAnalysis CurveContinuity Tests | continuityMetrics | `OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine` | c1ratio: c1Ratio x 1.1 | `LocalAnalysisCurveContinuityTests.swift:75 abs(a.c1Ratio - 1) < 1e-9` | ✅ | MATCH |  |
+| LocOpe CurveShapeIntersector | Line intersects box | `OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine` | locope: intersection parameters + 1 | `LocOpeCurveShapeIntersectorTests.swift:24 params.sorted() == [5, 15]` | ✅ | MATCH |  |

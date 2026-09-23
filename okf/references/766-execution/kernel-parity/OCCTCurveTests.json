@@ -302,5 +302,229 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Law_Interpolate Tests::interpolateWithParams",
+    "test_file": "Tests/OCCTCurveTests/LawInterpolateTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Interpolate at 0, 0.25 .. 1: 1 at 0.25, 4 at 0.5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawInterpolateTests.swift:28 abs(law.value(at: 0.25) - 1) < 1e-9  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "Law_Interpolate Tests::interpolateValues",
+    "test_file": "Tests/OCCTCurveTests/LawInterpolateTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Interpolate default parameters: domain [0, 8], 4 at the middle"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawInterpolateTests.swift:17 abs(law.value(at: 4) - 4) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "Law_Interpolate Tests::interpolatedEndpoints",
+    "test_file": "Tests/OCCTCurveTests/LawInterpolateTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Interpolate: 0 at both ends"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawInterpolateTests.swift:38 abs(v0) < 1e-4  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "Law_Interpolate Tests::Interpolated law rejects a longer parameters array",
+    "test_file": "Tests/OCCTCurveTests/LawInterpolateTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the parameter-count check is Swift-side"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "lawparm: a mismatched parameters array is replaced by uniform parameters",
+    "red": "LawInterpolateTests.swift:63 law == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "Law_Interpolate Tests::Interpolated law rejects a shorter parameters array",
+    "test_file": "Tests/OCCTCurveTests/LawInterpolateTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the parameter-count check is Swift-side"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "lawparm: a mismatched parameters array is replaced by uniform parameters",
+    "red": "LawInterpolateTests.swift:55 law == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "LocalAnalysis CurveContinuity Tests::smoothJunction",
+    "test_file": "Tests/OCCTCurveTests/LocalAnalysisCurveContinuityTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocalAnalysis_CurveContinuity smooth junction: C0Value 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "c0off: c0Value + 1e-3",
+    "red": "LocalAnalysisCurveContinuityTests.swift:22 analysis.c0Value < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "LocalAnalysis CurveContinuity Tests::sharpCorner",
+    "test_file": "Tests/OCCTCurveTests/LocalAnalysisCurveContinuityTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocalAnalysis_CurveContinuity sharp corner: C0Value 0 (Scripts/repro/766-curve-analysis-order-nearest)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "c0off: c0Value + 1e-3",
+    "red": "LocalAnalysisCurveContinuityTests.swift:58 analysis.c0Value < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "LocalAnalysis CurveContinuity Tests::smoothJunctionIsG1",
+    "test_file": "Tests/OCCTCurveTests/LocalAnalysisCurveContinuityTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocalAnalysis_CurveContinuity at G1: IsG1 1, G1Angle 1.9e-17"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "g1off: g1Angle + 1e-3",
+    "red": "LocalAnalysisCurveContinuityTests.swift:44 analysis.g1Angle < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "LocalAnalysis CurveContinuity Tests::continuityMetrics",
+    "test_file": "Tests/OCCTCurveTests/LocalAnalysisCurveContinuityTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocalAnalysis_CurveContinuity at C2: C1Ratio 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "c1ratio: c1Ratio x 1.1",
+    "red": "LocalAnalysisCurveContinuityTests.swift:75 abs(a.c1Ratio - 1) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "LocOpe CurveShapeIntersector::Line intersects box",
+    "test_file": "Tests/OCCTCurveTests/LocOpeCurveShapeIntersectorTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocOpe_CurveShapeIntersector: NbPoints 2 at 5 and 15"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "locope: intersection parameters + 1",
+    "red": "LocOpeCurveShapeIntersectorTests.swift:24 params.sorted() == [5, 15]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
   }
 ]
