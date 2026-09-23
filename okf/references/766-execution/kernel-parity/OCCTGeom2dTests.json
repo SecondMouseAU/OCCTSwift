@@ -94,5 +94,345 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1407, 2D evaluator guards::A zero-amplitude sine wave does not abort",
+    "bridge_function": "OCCTGeom2dEvalSineWaveD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "constructor": "throws: amplitude must be > 0"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "amplitude 0 replaced by 1",
+      "red": "Issue1407EvaluatorGuardTests.swift:22:9: Expectation failed: p == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue #1407, 2D evaluator guards::A zero-radius circle involute does not abort",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "constructor": "throws: radius must be > 0"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius 0 replaced by 1",
+      "red": "Issue1407EvaluatorGuardTests.swift:28:9: Expectation failed: p == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue #1407, 2D evaluator guards::A zero-growth Archimedean spiral does not abort",
+    "bridge_function": "OCCTGeom2dEvalArchimedeanSpiralD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "constructor": "throws: growth rate must be > 0"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "growth rate 0 replaced by 1",
+      "red": "Issue1407EvaluatorGuardTests.swift:34:9: Expectation failed: p == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D.approxWithDetails surfaces MaxError (#1474)::approxWithDetails reports the true maxError for a starved (over-tolerance) fit",
+    "bridge_function": "OCCTGeomConvertApproxCurve2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "hasResult": true,
+        "maxError": 5.10851410302,
+        "poles": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "hasResult": true,
+        "maxError": 5.10851410302,
+        "poles": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "MaxError discarded (reported as 0)",
+      "red": "Issue1474Curve2DApproxDetailsTests.swift:57:9: Expectation failed: details.maxError > tolerance * 1000",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
+      "rewritten": "`guard` + `Issue.record`; now `#require`, maxError pinned"
+    }
+  },
+  {
+    "test_name": "Curve2D.approxWithDetails surfaces MaxError (#1474)::approximated and approxWithDetails agree on a well-converged fit",
+    "bridge_function": "OCCTCurve2DApproximate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "maxError": 0.000338005413908,
+        "poles": 13,
+        "degree": 7
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "maxError": 0.000338005413908,
+        "poles": 13,
+        "degree": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "plain entry point tolerance x 1e-4",
+      "red": "Issue1474Curve2DApproxDetailsTests.swift:83:9: Expectation failed: plain.poleCount == detailsCurve.poleCount",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
+      "rewritten": "`guard` + `Issue.record`; now `#require`, poles and degree pinned"
+    }
+  },
+  {
+    "test_name": "#1477: Geom2d_Curves.mm buffer-count and silent-drop fixes::returned count never exceeds a small buffer's capacity, and matches what was written",
+    "bridge_function": "OCCTGeom2dConvertApproxArcsSegments",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "fullCount": 11,
+        "returned": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fullCount": 11,
+        "returned": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "returns written - 1",
+      "red": "Issue1477Geom2dCurvesTests.swift:64:9: Expectation failed: fullCount == 11",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
+      "rewritten": "fixture precondition now `#require`, full count pinned"
+    }
+  },
+  {
+    "test_name": "#1477: Geom2d_Curves.mm buffer-count and silent-drop fixes::join fails (returns nil) when a curve cannot attach, rather than silently dropping it",
+    "bridge_function": "OCCTCurve2DJoinToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "Add": [
+          true,
+          false
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "failed Add ignored",
+      "red": "Issue1477Geom2dCurvesTests.swift:98:9: Expectation failed: joined == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "#1477: Geom2d_Curves.mm buffer-count and silent-drop fixes::join fails when curves are out of order and don't chain end-to-end",
+    "bridge_function": "OCCTCurve2DJoinToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "Add": [
+          true,
+          false,
+          true
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "failed Add ignored",
+      "red": "Issue1477Geom2dCurvesTests.swift:110:9: Expectation failed: joined == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "#1477: Geom2d_Curves.mm buffer-count and silent-drop fixes::join still succeeds for genuinely continuous curves",
+    "bridge_function": "OCCTCurve2DJoinToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "returns nullptr",
+      "red": "Issue1477Geom2dCurvesTests.swift:119:26: Expectation failed: Curve2D.join([c1, c2])",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
+      "rewritten": "`!= nil`; now endpoints pinned"
+    }
+  },
+  {
+    "test_name": "Issue #1511 Finding 2: OCCTCurve2DCurveType OtherCurve fallback::a null OCCTCurve2DRef returns GeomAbs_OtherCurve (8), not GeomAbs_OffsetCurve (7)",
+    "bridge_function": "OCCTCurve2DCurveType",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "type": 8
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "GeomAbs_OffsetCurve": 7,
+        "GeomAbs_OtherCurve": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "null fallback back to 7",
+      "red": "Issue1511Curve2DCurveTypeOtherCurveFallbackTests.swift:29:9: Expectation failed: type == 8",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue #1511 Finding 2: OCCTCurve2DCurveType OtherCurve fallback::an ordinary line's curve type is unaffected (Line = 0)",
+    "bridge_function": "OCCTCurve2DCurveType",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "type": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "type": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "GetType result replaced by 1",
+      "red": "Issue1511Curve2DCurveTypeOtherCurveFallbackTests.swift:36:9: Expectation failed: line.curveType == 0",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
+      "rewritten": ""
+    }
   }
 ]
