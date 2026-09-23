@@ -235,6 +235,13 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Extrema_ExtCC Tests** | curveCurveDistance | Curve-curve extrema | Count and distance |
+| **Extrema_ExtCC Tests** | parallelCurves | Curve-curve extrema | Parallel flag |
+| **Extrema_ExtPElC Point-Line** | pointToLine | Point-line extrema | Square distance |
+| **Extrema_ExtPElC Point-Parabola** | pointToParabola | Point-parabola extrema | Square distance and foot |
+| **Extrema_ExtPElS Point-Cylinder** | pointToCylinder | Point-cylinder extrema | Square distances |
+| **Extrema_ExtPElS Point-Sphere** | pointToSphere | Point-sphere extrema | Square distances |
+| **Extrema_ExtPElS Point-Torus** | pointToTorus | Point-torus extrema | Square distances |
 
 ---
 
@@ -424,6 +431,13 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| curveCurveDistance | OCCTExtremaExtCCPoint | Curve-curve extrema | Invert IsParallel in OCCTExtremaExtCC (red :16); SquareDistance + 1 in OCCTExtremaExtCCPoint (red :21) | ✅ | ✅ |  |
+| parallelCurves | OCCTExtremaExtCC | Curve-curve extrema | Invert IsParallel | ✅ | ✅ |  |
+| pointToLine | OCCTExtremaExtPElCLin | Point-line extrema | SquareDistance + 1 | ✅ | ✅ |  |
+| pointToParabola | OCCTExtremaExtPElCParab | Point-parabola extrema | SquareDistance + 1 | ✅ | ✅ | Rewritten: count > 0 passed any distance |
+| pointToCylinder | OCCTExtremaExtPElSCylinder | Point-cylinder extrema | SquareDistance + 1 | ✅ | ✅ | Rewritten: count > 0 passed any distance |
+| pointToSphere | OCCTExtremaExtPElSSphere | Point-sphere extrema | SquareDistance + 1 | ✅ | ✅ | Rewritten: count > 0 passed any distance |
+| pointToTorus | OCCTExtremaExtPElSTorus | Point-torus extrema | SquareDistance + 1 | ✅ | ✅ | Rewritten: count > 0 passed any distance |
 
 ---
 

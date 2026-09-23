@@ -4501,5 +4501,219 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtCC Tests::curveCurveDistance",
+    "bridge_function": "OCCTExtremaExtCCPoint",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "is_done": true,
+        "is_parallel": false,
+        "count": 1,
+        "square_distance": 25.0
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "is_done": true,
+        "is_parallel": false,
+        "count": 1,
+        "square_distance": 25.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-extcc-pelc-pels/"
+  },
+  {
+    "test_name": "Extrema_ExtCC Tests::parallelCurves",
+    "bridge_function": "OCCTExtremaExtCC",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "is_done": true,
+        "is_parallel": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "is_done": true,
+        "is_parallel": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-extcc-pelc-pels/"
+  },
+  {
+    "test_name": "Extrema_ExtPElC Point-Line::pointToLine",
+    "bridge_function": "OCCTExtremaExtPElCLin",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "count": 1,
+        "square_distance": 25.0,
+        "point": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "count": 1,
+        "square_distance": 25.0,
+        "point": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-extcc-pelc-pels/"
+  },
+  {
+    "test_name": "Extrema_ExtPElC Point-Parabola::pointToParabola",
+    "bridge_function": "OCCTExtremaExtPElCParab",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "count": 1,
+        "square_distance": 34.41825388339705,
+        "point": [
+          3.52859630587839,
+          5.3130754226744346,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "count": 1,
+        "square_distance": 34.41825388339705,
+        "point": [
+          3.52859630587839,
+          5.3130754226744346,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-extcc-pelc-pels/"
+  },
+  {
+    "test_name": "Extrema_ExtPElS Point-Cylinder::pointToCylinder",
+    "bridge_function": "OCCTExtremaExtPElSCylinder",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "count": 2,
+        "square_distances": [
+          225,
+          625
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "count": 2,
+        "square_distances": [
+          225,
+          625
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-extcc-pelc-pels/"
+  },
+  {
+    "test_name": "Extrema_ExtPElS Point-Sphere::pointToSphere",
+    "bridge_function": "OCCTExtremaExtPElSSphere",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "count": 2,
+        "square_distances": [
+          225,
+          625
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "count": 2,
+        "square_distances": [
+          225,
+          625
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-extcc-pelc-pels/"
+  },
+  {
+    "test_name": "Extrema_ExtPElS Point-Torus::pointToTorus",
+    "bridge_function": "OCCTExtremaExtPElSTorus",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "count": 4,
+        "square_distances": [
+          49,
+          169,
+          1089,
+          729
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "count": 4,
+        "square_distances": [
+          49,
+          169,
+          1089,
+          729
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-extcc-pelc-pels/"
   }
 ]
