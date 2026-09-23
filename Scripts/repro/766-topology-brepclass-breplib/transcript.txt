@@ -1,0 +1,16 @@
+pointInsideBox: IN
+pointOutsideBox: OUT
+pointInsideSphere: IN
+pointOutsideSphere: OUT
+pointOnBoxFace: ON
+classifyPoint2D: face 0 uv [0, 10] x [-10, 0], mid IN, (100,100) OUT
+ensureNormalConsistency(0.01) after mesh 0.5: 1
+updateDeflection before: triangulation deflection 3.1401849173675503e-16, face bounds (-5.0000001000000003, -5.0000001000000003, -5.0000001000000003) to (-4.9999998999999997, 5.0000001000000003, 5.0000001000000003)
+updateDeflection after: triangulation deflection 3.1401849173675503e-16, face bounds (-5.0000001000000003, -5.0000001000000003, -5.0000001000000003) to (-4.9999998999999997, 5.0000001000000003, 5.0000001000000003)
+edge 1 faces: 0 2 (0-based)
+continuity(edge 0, face 0, face 1): 0
+continuity(edge 0, its two faces): 0
+sameParameter(1e-5) fresh box: edge tol max 9.9999999999999995e-08
+sameParameter(1e-5, forced) fresh box: edge tol max 9.9999999999999995e-08
+fix 0.01 then sameParameter(1e-5): edge tol max 0.01
+fix 0.01 then sameParameter(1e-5, forced): edge tol max 0.01

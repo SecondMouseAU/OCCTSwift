@@ -94,5 +94,247 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepClass3d Tests::pointInsideBox",
+    "bridge_function": "OCCTShapeClassifyPoint",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "state": "IN"
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "state": "IN"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepClass3d Tests::pointOutsideBox",
+    "bridge_function": "OCCTShapeClassifyPoint",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "state": "OUT"
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "state": "OUT"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepClass3d Tests::pointInsideSphere",
+    "bridge_function": "OCCTShapeClassifyPoint",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "state": "IN"
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "state": "IN"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepClass3d Tests::pointOutsideSphere",
+    "bridge_function": "OCCTShapeClassifyPoint",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "state": "OUT"
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "state": "OUT"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepClass3d Tests::pointOnBoxFace",
+    "bridge_function": "OCCTShapeClassifyPoint",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "state": "ON"
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "state": "ON"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepClass FClassifier Tests::classifyPoint2DInside",
+    "bridge_function": "OCCTShapeClassifyPoint2D",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "state": "IN"
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "state": "IN",
+        "uv_bounds": [
+          0,
+          10,
+          -10,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepClass FClassifier Tests::classifyPoint2DOutside",
+    "bridge_function": "OCCTShapeClassifyPoint2D",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "state": "OUT"
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "state": "OUT"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, BRepLib Extended Statics::Ensure normal consistency",
+    "bridge_function": "OCCTBRepLibEnsureNormalConsistency",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "changed": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "changed": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, BRepLib Extended Statics::Update deflection",
+    "bridge_function": "OCCTBRepLibUpdateDeflection",
+    "bridge_output": {
+      "type": "face_bounds",
+      "data": {
+        "min_x": -5.237718889996033,
+        "max_x": 5.277224495425264
+      }
+    },
+    "kernel_output": {
+      "type": "face_bounds",
+      "data": {
+        "min_x": -5.237718889996033,
+        "max_x": 5.277224495425264,
+        "deflection": 0.3136800249349923
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, BRepLib Extended Statics::Continuity of faces",
+    "bridge_function": "OCCTBRepLibContinuityOfFaces",
+    "bridge_output": {
+      "type": "continuity",
+      "data": {
+        "class": "C0"
+      }
+    },
+    "kernel_output": {
+      "type": "continuity",
+      "data": {
+        "class": "C0"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, BRepLib Extended Statics::Same parameter all",
+    "bridge_function": "OCCTBRepLibSameParameterAll",
+    "bridge_output": {
+      "type": "validity",
+      "data": {
+        "valid_before": false,
+        "valid_after": true
+      }
+    },
+    "kernel_output": {
+      "type": "validity",
+      "data": {
+        "valid_before": false,
+        "valid_after": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
