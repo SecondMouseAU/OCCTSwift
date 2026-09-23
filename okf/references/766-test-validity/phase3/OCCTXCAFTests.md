@@ -99,3 +99,21 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `GDTToleranceDatumAccessorTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `toleranceSemanticsRoundTrip` | `OCCTDocumentGetGeomToleranceInfo` reports material requirement 0 | :59 Expectation failed: tol.materialRequirement == .m | passed | `OCCTDocumentGetGeomToleranceInfo` | PASS: written values read back; value 0.1, type Position (10) |
+| `toleranceZeroValuesAreAbsence` | `OCCTDocumentGetGeomToleranceInfo` treats a zero zone value as present (`>=` for `>`) | :86 Expectation failed: tol.zoneModifierValue == nil | passed | `OCCTDocumentGetGeomToleranceInfo` | PASS: kernel stores 0 and 0 with the zone kept; the bridge maps 0 to absent |
+| `toleranceModifiersRoundTripInOrder` | `OCCTDocumentGetGeomToleranceModifier` swaps modifier indices 0 and 1 | :107 Expectation failed: doc.geomTolerance(at: index)?.modifiers == written | passed | `OCCTDocumentGetGeomToleranceModifier` | PASS: order kept (3, 15, 13) |
+| `datumPositionRoundTrips` | `OCCTDocumentGetDatumInfo` treats position 0 as a place in the frame (`>=` for `>`) | :123 Expectation failed: doc.datum(at: index)?.position == nil; :129 Expectation failed: doc.datum(at: index)?.position == nil | passed | `OCCTDocumentGetDatumInfo` | PASS: 0, 2, 0; the bridge maps 0 to no place |
+| `datumModifiersRoundTrip` | `OCCTDocumentGetDatumInfo` drops the valued modifier's value | :152 Expectation failed: datum.modifierWithValue?.value == 12.5 | passed | `OCCTDocumentGetDatumInfo` | PASS: 2, 3; Projected (3) 12.5; cleared to None |
+| `datumTargetDimensionsFollowTheType` | `OCCTDocumentGetDatumInfo` reports a width for every target type | :208 Expectation failed: target.width == nil; :217 Expectation failed: target.width == nil | passed | `OCCTDocumentGetDatumInfo` | PASS: the kernel keeps 30 and 18 for every type; the bridge reports length unless Point and width only for Rectangle |
+| `degenerateDatumTargetAxisIsRefused` | `OCCTDocumentSetDatumTargetPlacement` substitutes a valid axis for a degenerate one | :235 Expectation failed: !doc.setDatumTargetPlacement(at: index, location: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 0), reference: SIMD3(1, 0, 0), length: 10, width: 0); :244 Expectation failed: doc.datum(at: index)?.target?.length == nil | passed | `OCCTDocumentSetDatumTargetPlacement` | PASS: `gp_Dir(0,0,0)` throws, which the bridge's catch turns into a refusal |
+| `accessorsAreNotSharedBetweenEntries` | `OCCTDocumentSetDatumTarget` writes to datum 0 | :282 Expectation failed: a.target == nil; :285 Expectation failed: b.target?.type == .circle | passed | `OCCTDocumentSetDatumTarget` | PASS: separate objects keep separate values |
+| `outOfRangeIndicesAreRefused` | `OCCTDocumentSetGeomToleranceTypeOfValue` returns true without checking the index | :299 Expectation failed: !doc.setGeomToleranceValueType(at: 5, .diameter) | passed | `OCCTDocumentSetGeomToleranceTypeOfValue` | PASS: one tolerance and no datums, so index 5 and datum 0 are out of range |
