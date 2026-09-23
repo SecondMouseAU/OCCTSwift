@@ -4501,5 +4501,298 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "IntAna LinePlane Tests::linePlaneIntersection",
+    "bridge_function": "OCCTIntAnaLineQuad",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "observed": {
+          "count": 1,
+          "point": [
+            0,
+            0,
+            0
+          ]
+        },
+        "asserted_within": 1e-10
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "value": {
+          "count": 1,
+          "point": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intana-planes-quadrics/"
+  },
+  {
+    "test_name": "IntAna LinePlane Tests::parallelLineAndPlane",
+    "bridge_function": "OCCTIntAnaLineQuad",
+    "bridge_output": {
+      "type": "flags",
+      "data": {
+        "observed": {
+          "isParallel": true,
+          "isInQuadric": false
+        },
+        "asserted_within": "exact"
+      }
+    },
+    "kernel_output": {
+      "type": "flags",
+      "data": {
+        "value": {
+          "isParallel": true,
+          "isInQuadric": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intana-planes-quadrics/"
+  },
+  {
+    "test_name": "IntAna LinePlane Tests::embeddedLineLiesInPlane",
+    "bridge_function": "OCCTIntAnaLineQuad",
+    "bridge_output": {
+      "type": "flags",
+      "data": {
+        "observed": {
+          "isParallel": true,
+          "isInQuadric": true,
+          "points": 0
+        },
+        "asserted_within": "exact"
+      }
+    },
+    "kernel_output": {
+      "type": "flags",
+      "data": {
+        "value": {
+          "isParallel": true,
+          "isInQuadric": true,
+          "points": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intana-planes-quadrics/"
+  },
+  {
+    "test_name": "IntAna PlanePlane Tests::planePlaneIntersection",
+    "bridge_function": "OCCTIntAnaPlanePlane",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "observed": {
+          "count": 1
+        },
+        "asserted_within": "count >= 1"
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "value": {
+          "count": 1
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intana-planes-quadrics/"
+  },
+  {
+    "test_name": "IntAna PlanePlane Tests::planePlaneLine",
+    "bridge_function": "OCCTIntAnaPlanePlane",
+    "bridge_output": {
+      "type": "line",
+      "data": {
+        "observed": {
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            -1,
+            0,
+            0
+          ]
+        },
+        "asserted_within": 1e-12
+      }
+    },
+    "kernel_output": {
+      "type": "line",
+      "data": {
+        "value": {
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            -1,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intana-planes-quadrics/"
+  },
+  {
+    "test_name": "IntAna_IntQuadQuad Tests::cylinderSphereIntersection",
+    "bridge_function": "OCCTIntAnaCylinderSphere",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "observed": {
+          "curves": 2
+        },
+        "asserted_within": "exact"
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "value": {
+          "curves": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intana-planes-quadrics/"
+  },
+  {
+    "test_name": "IntAna_IntQuadQuad Tests::cylinderSphereNotIdentical",
+    "bridge_function": "OCCTIntAnaCylinderSphereIdentical",
+    "bridge_output": {
+      "type": "flag",
+      "data": {
+        "observed": {
+          "identical": false
+        },
+        "asserted_within": "exact"
+      }
+    },
+    "kernel_output": {
+      "type": "flag",
+      "data": {
+        "value": {
+          "identical": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intana-planes-quadrics/"
+  },
+  {
+    "test_name": "IntAna ThreePlanes Tests::threePlanesAtOrigin",
+    "bridge_function": "OCCTIntAna3Planes",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "observed": {
+          "point": [
+            0,
+            0,
+            0
+          ]
+        },
+        "asserted_within": 1e-10
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "value": {
+          "point": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intana-planes-quadrics/"
+  },
+  {
+    "test_name": "IntAna ThreePlanes Tests::offsetPlanes",
+    "bridge_function": "OCCTIntAna3Planes",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "observed": {
+          "point": [
+            1,
+            2,
+            3
+          ]
+        },
+        "asserted_within": 1e-10
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "value": {
+          "point": [
+            1,
+            2,
+            3
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-intana-planes-quadrics/"
   }
 ]
