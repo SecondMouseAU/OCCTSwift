@@ -85,3 +85,20 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 194 tests
+
+---
+
+## Measured records (#766 execution, #1984)
+
+Rows below were run: the injection turned the test red at the line named, the test was green with Sources/ restored, and parity is against the probe transcript under `Scripts/repro/766-drawing-*/`.
+
+| Suite | Test | Bridge / Swift subject | Injection | Red (failing line) | Green | Parity |
+|-------|------|------------------------|-----------|--------------------|-------|--------|
+| v0.149 DrawingDimension.ordinate | 3-feature ordinate emits origin cross + X + Y extensions per feature | `emitOrdinate` | a third origin-cross line; separately the dx/dy block gates loosened | `:29`; gates: `:29`, `:30` | ✔ | N/A (pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call) |
+| v0.149 DrawingDimension.ordinate | Empty features list emits only the origin cross | `emitOrdinate` | a third origin-cross line | `:37` | ✔ | N/A (pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call) |
+| v0.149 DrawingDimension.ordinate | Ordinate applies tolerance to every feature label | `emitOrdinateAxisFeature` | feature labels formatted with `.none` tolerance | `:55` | ✔ | N/A (pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call) |
+| v0.149 DrawingDimension.ordinate | Ordinate transforms translate origin and every feature position | `DrawingDimension.transformed` | feature positions not transformed | `:68` | ✔ | N/A (pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call) |
+| v0.149 DrawingDimension.ordinate | Ordinate Codable round-trip | `DrawingDimension.Ordinate (Codable)` | `CodingKeys` omitting `id` | `:87` `back == ord` | ✔ | N/A (pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call) |
+| v0.149 DrawingDimension.ordinate | Y-only feature (dx == 0) draws only the Y leader/tick/text, isolated from the X block | `emitOrdinate` | a third origin-cross line; separately the X block drawn whenever the feature is off the origin | `:109`; gates: `:109`, `:110` | ✔ | N/A (pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call) |
+| v0.149 DrawingDimension.ordinate | Feature exactly at the origin draws neither axis block | `emitOrdinate` | a third origin-cross line; separately the Y block always drawn | `:122`; gates: `:122`, `:123` | ✔ | N/A (pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call) |
+| v0.149 DrawingDimension.ordinate | X and Y axis blocks draw exact, independently-verified geometry | `emitOrdinateAxisFeature` | tick length 2.0 to 2.5 | `:155`, `:161` | ✔ | N/A (pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call) |
