@@ -222,3 +222,22 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: SurfaceFillingTests.swift, SurfaceFreeformTests.swift, SurfaceFromGridTests.swift, SurfaceKnotSplittingTests.swift, SurfaceNormalParityTests.swift (14 tests), probe Scripts/repro/766-surface-fill-freeform-grid/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| Surface Filling Tests | Fill from closed wire boundary | `OCCTShapeFill` | last boundary edge dropped (INJ_FILL_DROPEDGE) | SurfaceFillingTests.swift:29 surface.isValid | ✅ | MATCH | Rewritten: `if let surface` passed a nil fill |
+| Surface Filling Tests | Fill with polygon boundary | `OCCTShapeFill` | last boundary edge dropped (INJ_FILL_DROPEDGE) | SurfaceFillingTests.swift:61 surface.isValid | ✅ | MATCH | Rewritten: `if let surface` passed a nil fill |
+| Surface Filling Tests | Fill empty boundaries returns nil | `OCCTShapeFill` | Swift and bridge empty guards removed (INJ_FILL_EMPTY_OK): stays GREEN, the bridge finds no edges and returns nil | none: three layers refuse an empty boundary list (Swift guard, bridge count guard, empty edge list); removing the first two leaves the third | ✅ | N/A | Cannot be made red by removing one guard; recorded as such |
+| Surface Freeform | Bezier surface from 3x3 control points | `OCCTSurfaceCreateBezier` | pole grid read transposed (INJ_CREATE_TRANSPOSE) | SurfaceFreeformTests.swift:35 simd_length(bez.point(atU: 0, v: 1) - SIMD3(10, 0, 0)) < 1e-12 | ✅ | MATCH | Rewritten: both corners it checked are fixed under transposition |
+| Surface Freeform | BSpline surface creation | `OCCTSurfaceCreateBSpline` | pole grid read transposed (INJ_CREATE_TRANSPOSE) | SurfaceFreeformTests.swift:58 simd_length(bsp.point(atU: 0.3, v: 0.7) - SIMD3(7.084, 2.916, 1.0269)) < 1e-12 | ✅ | MATCH | Rewritten: pole counts passed any 4 x 4 grid |
+| Surface Freeform | Bezier surface poles round-trip | `OCCTSurfaceGetPoles` | poles read back transposed (INJ_GETPOLES_T) | SurfaceFreeformTests.swift:75 diff < 1e-10 | ✅ | MATCH | Caught as written |
+| v0.115.0 - Surface From Grid | surfaceNormal | `OCCTSurfaceNormal` | normal negated (INJ_NP_NEG) | SurfaceFromGridTests.swift:19 simd_length(n - SIMD3(0.70710678118654757, 0, 0.70710678118654746)) < 1e-12 | ✅ | MATCH | Rewritten: unit length passed any direction |
+| v0.115.0 - Surface From Grid | surfaceCurvatures | `OCCTSurfaceCurvatures` | mean doubled (INJ_CP_SCALE) | SurfaceFromGridTests.swift:31 abs(abs(mean) - 0.2) < 0.01 | ✅ | MATCH | Caught as written; tolerance 0.01 tightened and sign pinned |
+| v0.115.0 - Surface From Grid | surfaceFromGrid | `OCCTPointsToSurfaceBSpline` | tolerance x 1000 (INJ_GRID_TOL) | SurfaceFromGridTests.swift:53 surf.uDegree == 4 && surf.vDegree == 4 | ✅ | MATCH | Rewritten: asserted only non-nil |
+| GeomConvert_BSplineSurfaceKnotSplitting | Knot splitting analysis of BSpline surface | `OCCTSurfaceKnotSplitting` | continuity + 1 (INJ_KS_CONT) | SurfaceKnotSplittingTests.swift:16 result.uSplitCount == 2 | ✅ | MATCH | Rewritten: `>= 1` passed any count |
+| Surface normal entry points agree (#401) | Regular points: both entry points return the same unit normal | `OCCTSurfaceNormal` | plain normal negated (INJ_NP_NEG) | SurfaceNormalParityTests.swift:39 simd_distance(n, plain) < 1e-12 | ✅ | MATCH | Caught as written |
+| Surface normal entry points agree (#401) | Cone apex: nil from the optional entry point, zero vector from the plain one | `OCCTSurfaceNormal` | undefined normal reported as +Z (INJ_NP_APEX) | SurfaceNormalParityTests.swift:49 simd_length(cone.normal(u: 0, v: 0)) < 1e-12 | ✅ | MATCH | Caught as written |
+| Surface normal entry points agree (#401) | Near-apex: a defined normal is no longer reported as a zero vector | `OCCTSurfaceNormal` | hand-rolled D1 cross against a literal 1e-15, the #401 regression (INJ_NP_EPS) | SurfaceNormalParityTests.swift:68 abs(simd_length(plain) - 1) < 1e-9 | ✅ | MATCH | Caught as written |
+| Surface normal entry points agree (#401) | Sphere pole is not a normal singularity | `OCCTSurfaceNormal` | plain normal negated (INJ_NP_NEG) | SurfaceNormalParityTests.swift:85 simd_distance(n, sphere.normal(u: 0, v: v)) < 1e-12 | ✅ | MATCH | Caught as written |
