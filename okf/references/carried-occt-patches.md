@@ -99,10 +99,10 @@ rather than bookkeeping, and all four now ship:
 
 | Patch | What shipping it closed |
 |---|---|
-| `0029` (#1022) | An uncatchable SIGSEGV on `Document.datums` for any OCAF document whose datum has a point and no annotation plane. **The bridge guard added for #1030 is now due for retirement**, since it refuses a shape the kernel can read. |
+| `0029` (#1022) | An uncatchable SIGSEGV on `Document.datums` for any OCAF document whose datum has a point and no annotation plane. **The bridge guard added for #1030 is retired**, in all six files that carried it, since it was refusing a shape the kernel can read. |
 | `0030` (#1154) | A live data race on `TopoDS_TShape::myState` under ordinary concurrent use of a boolean result, invisible to `swift test`. Its `Scripts/tsan.supp` suppressions were removed at this repin, and `check-inventory-prose.py` is what caught them (#1409). |
 | `0031` (#1153) | The same shape in `BSplCLib_Cache`/`GeomAdaptor_*` for any consumer sharing an adaptor across threads. No suppression existed, so nothing to retire. |
-| `0034` (#1515) | `Shape.coonsAlgPatch` returning a surface collapsed onto its `u == v` diagonal for every off-diagonal sample, silently. **A Swift test asserting the correct surface is now writable** and was not before, because `build-and-test` resolved the unpatched asset. |
+| `0034` (#1515) | `Shape.coonsAlgPatch` returning a surface collapsed onto its `u == v` diagonal for every off-diagonal sample, silently. The Swift test that asserts the correct surface was impossible before the repin, because `build-and-test` resolved the unpatched asset; it exists now, in `Tests/OCCTSurfaceTests/Issue1515CoonsPatchUParameterTests.swift`. |
 
 The other eight (`0028`, `0033`, `0036`-`0041`) were either unreachable from the bridge (`0028`'s
 only reader was deleted by #999) or masked by the bridge's own `igesMutex()`, which serialises the
@@ -110,11 +110,21 @@ whole data-exchange surface. Shipping them buys defence in depth for any caller 
 and is what makes narrowing the mutex thinkable later. `0036`-`0041` are the #1403 series: named
 racing globals **16 to 0**, TSan reports **178 to 37**.
 
-**Two bridge-side mitigations are now due for retirement**, both listed in `CLAUDE.md` under Known
-OCCT Bugs as "retire when the kernel is repinned": the datum lookup guard in
-`occtDocumentDatumObjectAt` (#1030, now blocking a datum the kernel can read) and the bridge-side
-arc-length subdivision `occtAdaptorArcLength` (#603, measured redundant against `0021`). Each is a
-behaviour change with its own tests and belongs in its own PR, not in the repin.
+**The three bridge-side mitigations `CLAUDE.md` listed as "retire when the kernel is repinned" are
+retired**, each with a regression test that fails if it comes back:
+
+- the `Scripts/tsan.supp` suppressions for `TopoDS_TShape::myState` (`0030`), removed in the repin
+  itself because `check-inventory-prose.py` fails the moment a cited patch becomes pinned (#1409);
+- the datum lookup guard in `occtDocumentDatumObjectAt` (#1030), which was refusing a datum `0029`
+  makes readable. It was duplicated across six bridge files, and retiring it also removed the
+  `ReadableCheck` template parameter, since every remaining predicate was already always-true;
+- the bridge-side arc-length subdivision in `occtArcConvergedLength` (#603), redundant against
+  `0021`. Retired on measurement: the loop was instrumented to report any convergence past `n=2`
+  or any exhaustion and the full suite run, **6,384 tests and zero reports**.
+
+`Tests/OCCTXCAFTests/Issue1030DatumLookupGuardTests.swift` kept its name and fixtures and flipped
+its assertions, which is the only way a guard's retirement can be regression tested: a test that
+merely stops existing proves nothing.
 
 `kernel-integration.yml` builds these, and nothing else does: it is the only job that compiles an
 unpinned patch, and `build-and-test` resolves the pinned asset instead. It runs on the PR that adds
