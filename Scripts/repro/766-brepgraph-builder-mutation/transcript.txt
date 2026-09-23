@@ -1,0 +1,14 @@
+appendFlattenedShape: faces before=6 after=7
+appendFullShape: faces before=6 after=9
+clearFaceMesh: before effective=1 cache=0
+clearFaceMesh: seeded effective=1 cache=1
+clearFaceMesh: after  effective=1 cache=0
+clearEdgePolygon3D: before effective=0 cache=0
+clearEdgePolygon3D: seeded effective=1 cache=1
+clearEdgePolygon3D: after  effective=0 cache=0
+commitAfterAdd: v=8 vertices=9 active=9 deferred=0
+deferredModeToggle: initial=0 afterBegin=1 afterEnd=0
+deferredModeWithMutations: duringDeferred=1 a=8 b=9 afterEnd=0 afterCommit=0 vertices=10 b=(4, 5, 6)
+removeVertex: index=7 removedBefore=0 removedAfter=1 activeVertices=7
+removeSubgraph: index=5 removedAfter=1 activeFaces=5
+removeShellRef: shellRefs=1 removedBefore=0 returned=1 removedAfter=1 shellRefsAfter=1 secondRemove=0
