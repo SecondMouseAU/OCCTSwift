@@ -57,5 +57,22 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Point Cloud Analysis::3D dispersed points detected as space",
+    "bridge_function": "OCCTAnalyzePointCloud",
+    "bridge_output": {
+      "type": "space",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "space",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
