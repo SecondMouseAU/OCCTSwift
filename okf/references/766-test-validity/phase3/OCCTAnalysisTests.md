@@ -13,13 +13,13 @@
 | **BRepGProp Face Tests** | BRepGProp Face Tests | Face properties | Remove face props |
 | **IntCurvesFace Intersection** | Line-face intersection | Curve-face intersection | Return no intersection points |
 | **IntCurvesFace Intersection** | Line parallel to a face does not intersect it | Curve-face intersection | Report a spurious point |
-| **ShapeRayIntersection Tests** | hit face access | Ray-shape hit iteration | More() returns false |
+| **ShapeRayIntersection Tests** | line intersection with box | Line-shape intersection | More() returns false (red at :33, :36); separately, CreateLine returns nullptr (red at :29) |
+| **ShapeRayIntersection Tests** | curve intersection with sphere | Curve-shape intersection | More() returns false (red at :57, :59); separately, CreateCurve returns nullptr (red at :53) |
+| **ShapeRayIntersection Tests** | hit face access | Ray-shape hit iteration | More() returns false (red at :86); separately, CreateLine returns nullptr (red at :83) |
 | **Point Cloud Analysis** | Single point detected as point | Point cloud classification | Remove point cloud classification |
 | **Point Cloud Analysis** | Coplanar points detected as planar | Point cloud classification | Remove point cloud classification |
 | **Point Cloud Analysis** | Collinear points detected as linear | Point cloud classification | Remove point cloud classification |
 | **Point Cloud Analysis** | Coincident points detected as point | Point cloud classification | Remove point cloud classification |
-| **ShapeRayIntersection Tests** | line intersection with box | Line-shape intersection | Remove line-shape intersection |
-| **ShapeRayIntersection Tests** | curve intersection with sphere | Curve-shape intersection | Remove curve-shape intersection |
 | **Point Cloud Analysis** | Empty points returns nil | Point cloud classification | Remove point cloud classification |
 | **Point Cloud Analysis** | 3D dispersed points detected as space | Point cloud classification | Remove point cloud classification |
 | **ShapeAnalysis_Edge Tests** | ShapeAnalysis_Edge Tests | Edge analysis | Remove edge analysis |
@@ -127,13 +127,13 @@
 | BRepGProp Face Tests | OCCTBRepGPropFace | Face properties | Remove face props | ✅ | ✅ |  |
 | Line-face intersection | OCCTLocOpeCSIntersectLine | Curve-face intersection | Return no intersection points | ✅ | ✅ |  |
 | Line parallel to a face does not intersect it | OCCTLocOpeCSIntersectLine | Curve-face intersection | Report a spurious point | ✅ | ✅ |  |
-| hit face access | OCCTCurveSurfaceInterMore | Ray-shape hit iteration | More() returns false | ✅ | ✅ |  |
+| line intersection with box | OCCTCurveSurfaceInterCreateLine | Line-shape intersection | More() returns false (red at :33, :36); separately, CreateLine returns nullptr (red at :29) | ✅ | ✅ | Red: ShapeRayIntersectionTests.swift:33 `hits.count == 2`; :36 `zs == [-5, 5]`; :29 Issue.record (nil intersector). Parity MATCH, `Scripts/repro/766-shape-ray-intersection/`. Hardened: the old `if let inter` stayed green when CreateLine returned nullptr. Now unconditional and pinned to the probed hits. |
+| curve intersection with sphere | OCCTCurveSurfaceInterCreateCurve | Curve-shape intersection | More() returns false (red at :57, :59); separately, CreateCurve returns nullptr (red at :53) | ✅ | ✅ | Red: ShapeRayIntersectionTests.swift:57 `hits.count == 2`; :59 pole z values; :53 Issue.record (nil intersector). Parity MATCH, `Scripts/repro/766-shape-ray-intersection/`. Hardened: the old `if let line` / `if let inter` nesting stayed green when CreateCurve returned nullptr. |
+| hit face access | OCCTCurveSurfaceInterMore | Ray-shape hit iteration | More() returns false (red at :86); separately, CreateLine returns nullptr (red at :83) | ✅ | ✅ | Red: ShapeRayIntersectionTests.swift:86 `inter.hasMore`; :83 Issue.record (nil intersector). Parity MATCH, `Scripts/repro/766-shape-ray-intersection/`. Rewritten in #2199; unchanged here. Face area differs in the last bits only (1e-6 assertion). |
 | Single point detected as point | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
 | Coplanar points detected as planar | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
 | Collinear points detected as linear | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
 | Coincident points detected as point | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
-| line intersection with box | OCCTCurveSurfaceInterCreateLine | Line-shape intersection | Remove line-shape intersection | ✅ | ✅ |  |
-| curve intersection with sphere | OCCTCurveSurfaceInterCreateCurve | Curve-shape intersection | Remove curve-shape intersection | ✅ | ✅ |  |
 | Empty points returns nil | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
 | 3D dispersed points detected as space | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
 | ShapeAnalysis_Edge Tests | OCCTShapeAnalysisEdge | Edge analysis | Remove edge analysis | ✅ | ✅ |  |
@@ -236,13 +236,13 @@ For each test, run ground-truth C++ comparison:
 | BRepGProp Face Tests | ✅ | ✅ | ✅ |
 | Line-face intersection | ✅ | ✅ | ✅ |
 | Line parallel to a face does not intersect it | ✅ | ✅ | ✅ |
+| line intersection with box | ✅ | ✅ | ✅ |
+| curve intersection with sphere | ✅ | ✅ | ✅ |
 | hit face access | ✅ | ✅ | ✅ |
 | Single point detected as point | ✅ | ✅ | ✅ |
 | Coplanar points detected as planar | ✅ | ✅ | ✅ |
 | Collinear points detected as linear | ✅ | ✅ | ✅ |
 | Coincident points detected as point | ✅ | ✅ | ✅ |
-| line intersection with box | ✅ | ✅ | ✅ |
-| curve intersection with sphere | ✅ | ✅ | ✅ |
 | Empty points returns nil | ✅ | ✅ | ✅ |
 | 3D dispersed points detected as space | ✅ | ✅ | ✅ |
 | ShapeAnalysis_Edge Tests | ✅ | ✅ | ✅ |
