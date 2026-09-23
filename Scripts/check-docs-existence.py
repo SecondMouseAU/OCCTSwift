@@ -84,6 +84,16 @@ using the past tense). `docs/occt-upgrades.md` is in scope: it is prose about OC
 history, essentially no Swift symbol density, and excluding it would just be one more silent carve
 -out to remember.
 
+`okf/`, `Scripts/**/*.md`, `CLAUDE.md` and `AGENTS.md` are **outside** the glob. That started as an
+accident of dates (this script is #802, from the v2.0.0 era; `okf/` was created 2026-09-07) and is
+recorded here as a decision, since an unstated exclusion is indistinguishable from an oversight.
+Measured before writing it down (#2177): `okf/`'s 24 pages hold 13 dotted symbol references in
+total, because they are process prose rather than API documentation; `Scripts/**/*.md` holds 632,
+and scanning them would report 34 stale references, nearly all correct as written, because
+`Scripts/repro/` is a frozen evidence archive whose whole value is saying what was true when the
+investigation ran. Widening the glob is a separate decision with that fallout attached, not a
+tidy-up.
+
 Usage (from the repo root):
 
     python3 Scripts/check-docs-existence.py                # report stale references
@@ -580,9 +590,41 @@ def member_exists_anywhere(member, live_members, live_free):
 SYNTHESIZED_MEMBERS = {'allCases'}
 
 # A dotted `` `Type.tail` `` mention whose tail is a file extension names a FILE
-# (`` `Shape.swift` ``, `` `Wire.md` ``), not a member: common in a page's own "see also"/index
-# prose. Never a legitimate Swift member name in this codebase.
-NON_SYMBOL_TAILS = {'swift', 'md'}
+# (`` `Shape.swift` ``, `` `Wire.md` ``, `` `Units.cxx` ``), not a member: common in a page's own
+# "see also"/index prose, and constant in the wasm work, which names OCCT `.cxx`/`.hxx` files by
+# the hundred.
+#
+# #2177: the set held only `swift` and `md`, so `` `Units.cxx` `` parsed as type `Units` plus
+# member `cxx`. `Sources/OCCTSwift/Units.swift` declares `public enum Units`, so the type resolved,
+# the member did not, and the gate reported a stale symbol against a filename. Seven live Swift
+# type names are also OCCT source stems (`BndLib`, `BRepGraph`, `ElCLib`, `ElSLib`, `IntTools`,
+# `ProjLib`, `Units`), and a first draft of `docs/WASI_GUARD_SITES.md` tripped it twice.
+#
+# The list below is surveyed, not guessed: every lowercase tail following a backtick-initial
+# Capitalized head across `docs/`, `README.md`, `okf/` and `Scripts/**/*.md` was counted, and the
+# file-extension ones are here, plus the near neighbours the same families make inevitable
+# (`cpp`/`hpp` beside `cxx`/`hxx`, `yaml` beside `yml`).
+#
+# Why a flat allowlist rather than "an extension-shaped tail whose head is not used as a receiver
+# nearby": the gate can only fire when the head is a LIVE Swift type and the tail resolves to no
+# member of it, which is already a narrow window, and a heuristic would have to adjudicate
+# `Color.red` against `Icon.png` with no more evidence than spelling. A set is greppable and its
+# blind spots are enumerable, which is the next paragraph.
+#
+# What it costs, measured against the live index rather than assumed: three entries collide with a
+# real member name. `m`, `h` and `c` are ISO tolerance-grade cases on
+# `Document.DimensionFormVariance` (and `m` also on `Document.MaterialRequirement`). No page spells
+# any of them dotted today, so nothing changes now; the residual is that if one were removed while
+# a dotted mention survived, this gate would stay quiet about it. Accepted: `check-docs-defaults.py`
+# reads those enums' case lists directly (#2145), which is the stronger check for an enum case.
+NON_SYMBOL_TAILS = {
+    # this repo's own sources and scripts
+    'swift', 'md', 'mm', 'm', 'h', 'py', 'sh',
+    # OCCT C++ sources, including its template-instantiation extensions
+    'cxx', 'hxx', 'lxx', 'gxx', 'pxx', 'cpp', 'hpp', 'c',
+    # build inputs, config and artifacts
+    'txt', 'cmake', 'json', 'yml', 'yaml', 'plist', 'patch', 'log', 'zip', 'wasm',
+}
 
 
 def paragraph_historical_map(lines):
@@ -669,6 +711,13 @@ def scan_doc_file(path, text, live_types, live_members, live_free, rep):
             dash_suffix = inner_dash_suffix or outer_dash_suffix
             historical = bool(HISTORICAL_RE.search(suffix)) or bool(HISTORICAL_RE.search(inner_dash_suffix))
             cls = classify_symbol(body)
+            # A heading naming a FILE (`### `Units.cxx``, `### `Curve2D.swift``) is the same
+            # #2177 shape as the inline channel's, and reaches the same strict dotted check one
+            # `_check_and_record` call later. Suppressed here rather than inside that function so
+            # the filename never lands in `rep.seen` either: `--coverage` asks which members the
+            # docs mention, and `cxx` is not one.
+            if cls and cls[0] == 'dotted' and cls[2] in NON_SYMBOL_TAILS:
+                cls = None
             resolved_type = None
             if cls:
                 if cls[0] == 'dotted':
@@ -705,7 +754,7 @@ def scan_doc_file(path, text, live_types, live_members, live_free, rep):
         for m in INLINE_DOTTED_RE.finditer(line):
             t, member = m.group(1), m.group(2)
             if member in NON_SYMBOL_TAILS:
-                continue   # `` `Shape.swift` ``, `` `Wire.md` ``: a filename, not a symbol
+                continue   # `` `Shape.swift` ``, `` `Units.cxx` ``: a filename, not a symbol
             historical = para_historical.get(lineno, False)
             rep.checked += 1
             if not doc_type_exists(t, live_types):
@@ -996,6 +1045,35 @@ SELF_TEST_CASES = [
         # `maximumSampleCount` (it is declared only on `ArcLengthCurveAdaptor`), and this reads as
         # a false-positive STALE finding for real, currently-compiling code.
         'clean', 0,
+    ),
+    (
+        '#2177: prose naming an OCCT source file whose stem is a live Swift type is NOT a symbol',
+        {'Sources/OCCTSwift/A.swift': 'public enum Units {\n'
+                                      '    public static func convert(_ v: Double) -> Double'
+                                      ' { v }\n}\n'},
+        {'docs/reference/ZZ.md': 'The conversion tables live in `Units.cxx` upstream.\n'},
+        # Before #2177 `cxx` was not in NON_SYMBOL_TAILS, so this parsed as type `Units` plus
+        # member `cxx`: the type resolved, the member did not, and the gate reported a stale
+        # symbol against a filename. Seven live Swift type names collide with an OCCT source stem.
+        'clean', 0,
+    ),
+    (
+        '#2177: a HEADING naming an OCCT source file is not a symbol either',
+        {'Sources/OCCTSwift/A.swift': 'public enum Units {\n'
+                                      '    public static func convert(_ v: Double) -> Double'
+                                      ' { v }\n}\n'},
+        {'docs/reference/ZZ.md': '### `Units.cxx`\n\nThe upstream guard sites.\n'},
+        'clean', 0,
+    ),
+    (
+        '#2177 did not blunt the gate: a non-extension tail on the SAME head is still stale',
+        {'Sources/OCCTSwift/A.swift': 'public enum Units {\n'
+                                      '    public static func convert(_ v: Double) -> Double'
+                                      ' { v }\n}\n'},
+        {'docs/reference/ZZ.md': 'See `Units.cxx` for the kernel side, and `Units.scale` for ours.\n'},
+        # The filename on the same line must not suppress its neighbour: one mention is skipped,
+        # the other is checked strictly and found missing.
+        'stale', 1,
     ),
 ]
 
