@@ -197,3 +197,24 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Curve3D conic factory families agree (#399) | Circle: both families reject zero and negative radius | `OCCTGceMakeCircFromCenterNormal` | radius precondition skipped in the gce family | `Curve3DConicFactoryParityTests.swift:26 Curve3D.circleFromCenterNormal(...) == nil` | ✅ | MATCH |  |
+| Curve3D conic factory families agree (#399) | Ellipse: both families reject zero radii and inverted radii | `OCCTGceMakeElips` | radii precondition skipped in the gce family | `Curve3DConicFactoryParityTests.swift:41 Curve3D.ellipseFromCenterNormal(...) == nil` | ✅ | MATCH |  |
+| Curve3D conic factory families agree (#399) | Hyperbola: both families reject a zero or negative radius | `OCCTGceMakeHypr` | radii precondition skipped in the gce family | `Curve3DConicFactoryParityTests.swift:56 Curve3D.hyperbolaFromCenterNormal(...) == nil` | ✅ | MATCH |  |
+| Curve3D conic factory families agree (#399) | Parabola: both families reject zero and negative focal length | `OCCTGceMakeParab` | focal precondition skipped in the gce family | `Curve3DConicFactoryParityTests.swift:68 Curve3D.parabolaFromCenterNormal(...) == nil` | ✅ | MATCH |  |
+| Curve3D conic factory families agree (#399) | Valid inputs still build the identical curve in both families | `OCCTGceMakeElips` | gce ellipse moved 0.5 in x | `Curve3DConicFactoryParityTests.swift:101 simd_distance(a.point(at: t), b.point(at: t)) < 1e-9` | ✅ | MATCH |  |
+| Curve3D Continuity Tests | lineContinuity | `OCCTCurve3DGetContinuity` | Continuity() - 1 | `Curve3DContinuityTests.swift:18 line.continuity == 6` | ✅ | MATCH | Rewritten: c >= 0 held for every value |
+| Curve3D Continuity Tests | bsplineContinuity | `OCCTCurve3DGetContinuity` | Continuity() - 1 | `Curve3DContinuityTests.swift:32 bsp.continuity == 4` | ✅ | MATCH | Rewritten: c >= 0 held for every value |
+| Curve3D Continuity Queries v0.120.0 | lineContinuityClass | `OCCTCurve3DGetContinuity` | Continuity() - 1 | `Curve3DContinuityQueriesTests.swift:24 c.continuityClass == .cN` | ✅ | MATCH |  |
+| Curve3D Continuity Queries v0.120.0 | isCN | `OCCTCurve3DIsCN` | IsCN() negated | `Curve3DContinuityQueriesTests.swift:33 c.isCN(0)` | ✅ | MATCH |  |
+| Curve3D Continuity Queries v0.120.0 | reversedParameter | `OCCTCurve3DReversedParameter` | ReversedParameter + 1 | `Curve3DContinuityQueriesTests.swift:45 abs(rp + u) < 1e-10` | ✅ | MATCH |  |
+| Curve3D Continuity Queries v0.120.0 | parametricTransformation | `OCCTCurve3DParametricTransformation` | result x 2 | `Curve3DContinuityQueriesTests.swift:56 abs(scale - 1.0) < 1e-10` | ✅ | MATCH |  |
+| Curve3D Continuity Queries v0.120.0 | bezierResolution | `OCCTCurve3DBezierResolution` | resolution x 2 | `Curve3DContinuityQueriesTests.swift:68 abs(c.bezierResolution(tolerance3d: 0.01) - 0.0025) < 1e-15` | ✅ | MATCH | Rewritten: r > 0 |
+| Curve3D Continuity Queries v0.120.0 | bezierMaxDegree | `OCCTCurve3DBezierMaxDegree` | report 8 | `Curve3DContinuityQueriesTests.swift:73 md == 25` | ✅ | MATCH | Rewritten: md >= 25 |
+| Curve3D Continuity Queries v0.120.0 | bsplineMaxDegree | `OCCTCurve3DBSplineMaxDegree` | report 8 | `Curve3DContinuityQueriesTests.swift:78 md == 25` | ✅ | MATCH | Rewritten: md >= 25 |
