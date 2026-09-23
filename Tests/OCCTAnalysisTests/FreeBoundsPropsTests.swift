@@ -7,54 +7,47 @@ import simd
 @Suite("v0.114.0 - FreeBoundsProperties")
 struct FreeBoundsPropsTests {
 
-    @Test func boxFaceFreeBounds() {
-        // Remove one face from a box to create a shell with a free bound
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let faces = box.subShapes(ofType: .face)
-            if faces.count > 0 {
-                // A single face has free bounds (its wire)
-                if let fbp = FreeBoundsProperties(shape: faces[0], tolerance: 1e-7) {
-                    let ok = fbp.perform()
-                    // May or may not find free bounds depending on face topology
-                    if ok {
-                        let closed = fbp.closedCount
-                        let open = fbp.openCount
-                        #expect(closed >= 0)
-                        #expect(open >= 0)
-                    }
-                }
-            }
-        }
+    // One box face on its own. The two OCCT branches disagree about it, and both answers are
+    // pinned (`Scripts/repro/766-freeboundsprops/`): with a sewing tolerance (1e-7 here, 1e-3
+    // too) ShapeAnalysis_FreeBoundsProperties finds no free bound at all on a lone face, while
+    // tolerance 0, which takes free edges from the shape's own topology, finds its 10 x 10
+    // outline. The old body asserted `closed >= 0 && open >= 0` behind three `if`s and could
+    // not fail.
+    @Test func boxFaceFreeBounds() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let face = try #require(box.subShapes(ofType: .face).first)
+
+        let sewn = try #require(FreeBoundsProperties(shape: face, tolerance: 1e-7))
+        #expect(sewn.perform())
+        #expect(sewn.closedCount == 0)
+        #expect(sewn.openCount == 0)
+
+        let shared = try #require(FreeBoundsProperties(shape: face, tolerance: 0))
+        #expect(shared.perform())
+        #expect(shared.closedCount == 1)
+        #expect(shared.openCount == 0)
+        let bound = try #require(shared.info(.closed, at: 0))
+        #expect(abs(bound.area - 100) < 1e-9)
+        #expect(abs(bound.perimeter - 40) < 1e-9)
     }
 
-    @Test func shellWithHoleFreeBounds() {
-        // Create a compound of 5 faces (open box)
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let faces = box.subShapes(ofType: .face)
-            if faces.count >= 5 {
-                if let compound = Shape.builderMakeCompound() {
-                    for i in 0..<5 {
-                        compound.builderAdd(faces[i])
-                    }
-                    if let fbp = FreeBoundsProperties(shape: compound, tolerance: 1e-3) {
-                        let ok = fbp.perform()
-                        if ok {
-                            let total = fbp.closedCount + fbp.openCount
-                            #expect(total >= 0)
-                            if fbp.closedCount > 0 {
-                                let area = fbp.closedArea(at: 0)
-                                let perimeter = fbp.closedPerimeter(at: 0)
-                                #expect(perimeter >= 0)
-                                // Area can be negative for some orientations
-                                let _ = area
-                                let wire = fbp.closedWire(at: 0)
-                                #expect(wire != nil)
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    // Five faces of a 10 x 10 x 10 box: sewn at 1e-3 they leave exactly one free bound, the
+    // closed 10 x 10 outline of the missing face (`Scripts/repro/766-freeboundsprops/`). The old
+    // body asserted `total >= 0` and `perimeter >= 0` behind nested `if`s, true of any answer.
+    @Test func shellWithHoleFreeBounds() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let faces = box.subShapes(ofType: .face)
+        try #require(faces.count == 6)
+        let compound = try #require(Shape.builderMakeCompound())
+        for i in 0..<5 { #expect(compound.builderAdd(faces[i])) }
+
+        let fbp = try #require(FreeBoundsProperties(shape: compound, tolerance: 1e-3))
+        #expect(fbp.perform())
+        #expect(fbp.closedCount == 1)
+        #expect(fbp.openCount == 0)
+        #expect(abs(fbp.closedArea(at: 0) - 100) < 1e-9)
+        #expect(abs(fbp.closedPerimeter(at: 0) - 40) < 1e-9)
+        #expect(fbp.closedWire(at: 0) != nil)
     }
 
     // Two stacked rectangles: two disjoint closed free bounds, no open ones.

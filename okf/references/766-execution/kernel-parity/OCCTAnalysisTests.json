@@ -4501,5 +4501,231 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - FreeBoundsProperties::boxFaceFreeBounds",
+    "bridge_function": "OCCTFreeBoundsPropsCounts",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "tol_1e-7": {
+          "closed": 0,
+          "open": 0
+        },
+        "tol_0": {
+          "closed": 1,
+          "open": 0,
+          "area": 100.00000000000013,
+          "perimeter": 39.999999999999936
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "tol_1e-7": {
+          "closed": 0,
+          "open": 0
+        },
+        "tol_0": {
+          "closed": 1,
+          "open": 0,
+          "area": 100.00000000000013,
+          "perimeter": 39.999999999999936
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-freeboundsprops/"
+  },
+  {
+    "test_name": "v0.114.0 - FreeBoundsProperties::shellWithHoleFreeBounds",
+    "bridge_function": "OCCTFreeBoundsPropsCounts",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "closed": 1,
+        "open": 0,
+        "area": 100.00000000000013,
+        "perimeter": 39.999999999999936
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "closed": 1,
+        "open": 0,
+        "area": 100.00000000000013,
+        "perimeter": 39.999999999999936
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-freeboundsprops/"
+  },
+  {
+    "test_name": "v0.114.0 - FreeBoundsProperties::performIsIdempotent",
+    "bridge_function": "OCCTFreeBoundsPropsPerform",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "closed": 2,
+        "after_3_performs": 2
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "closed": 2,
+        "raw_second_Perform": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-freeboundsprops/"
+  },
+  {
+    "test_name": "v0.114.0 - FreeBoundsProperties::accessorsRunTheAnalysisOnDemand",
+    "bridge_function": "OCCTFreeBoundsPropsCounts",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "closed": 2
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "closed": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-freeboundsprops/"
+  },
+  {
+    "test_name": "v0.114.0 - FreeBoundsProperties::indexOutOfRange",
+    "bridge_function": "OCCTFreeBoundsPropsInfo",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "closed": 2,
+        "open": 0,
+        "out_of_range": "nil / 0"
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "closed": 2,
+        "open": 0,
+        "out_of_range": "nil / 0"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-freeboundsprops/"
+  },
+  {
+    "test_name": "v0.114.0 - FreeBoundsProperties::ratioAndWidthAreAnAspectRatio",
+    "bridge_function": "OCCTFreeBoundsPropsInfo",
+    "bridge_output": {
+      "type": "bound",
+      "data": {
+        "area": 200.00000000000006,
+        "perimeter": 59.9999999999999,
+        "ratio": 1.9999999999999787,
+        "width": 10.000000000000055,
+        "notches": 0
+      }
+    },
+    "kernel_output": {
+      "type": "bound",
+      "data": {
+        "area": 200.00000000000006,
+        "perimeter": 59.9999999999999,
+        "ratio": 1.9999999999999787,
+        "width": 10.000000000000055,
+        "notches": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-freeboundsprops/"
+  },
+  {
+    "test_name": "v0.114.0 - FreeBoundsProperties::squareBoundReportsNoRatioOrWidth",
+    "bridge_function": "OCCTFreeBoundsPropsInfo",
+    "bridge_output": {
+      "type": "bound",
+      "data": {
+        "area": 100.00000000000003,
+        "perimeter": 39.999999999999936,
+        "ratio": 0,
+        "width": 0
+      }
+    },
+    "kernel_output": {
+      "type": "bound",
+      "data": {
+        "area": 100.00000000000003,
+        "perimeter": 39.999999999999936,
+        "ratio": 0,
+        "width": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-freeboundsprops/"
+  },
+  {
+    "test_name": "v0.114.0 - FreeBoundsProperties::notchesAreCounted",
+    "bridge_function": "OCCTFreeBoundsPropsInfo",
+    "bridge_output": {
+      "type": "bound",
+      "data": {
+        "notches": [
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bound",
+      "data": {
+        "notches": [
+          1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-freeboundsprops/"
   }
 ]
