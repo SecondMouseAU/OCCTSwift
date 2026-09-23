@@ -235,6 +235,15 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Centre of mass (#605)** | centre of mass of an asymmetric solid is not the bounding-box centre | Centre of mass | Volume centroid vs bbox |
+| **Centre of mass (#605)** | properties() reports the same centre of mass as centerOfMass | Centre of mass | Entry points agree |
+| **Centre of mass (#605)** | a cone's centre of mass is at a quarter of its height | Centre of mass | Volume centroid vs bbox |
+| **Centre of mass (#605)** | the inertia tensor is referenced to the centre of mass, not the origin | Inertia tensor | Reference point |
+| **Centre of mass (#605)** | sub-shapes that enclose no volume have no centre of mass | Zero-mass refusal | Mass() == 0 refused |
+| **Centre of mass (#605)** | an open shell has no centre of mass until it is closed | OnlyClosed refusal | OnlyClosed = true |
+| **Centre of mass (#605)** | a closed shell outside a solid still has a centre of mass | Closed shell | Dispatch on closedness |
+| **Centre of mass (#605)** | centerOfMass agrees with centroid | Centre of mass | Entry points agree |
+| **Centre of mass (#605)** | centerOfMass agrees with volumeInertia and inertiaProperties | Centre of mass | Entry points agree |
 
 ---
 
@@ -424,6 +433,15 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| centre of mass of an asymmetric solid is not the bounding-box centre | OCCTShapeGetCenterOfMass | Centre of mass | return bbox centre (M_BBOX) | ✅ | ✅ |  |
+| properties() reports the same centre of mass as centerOfMass | OCCTShapeGetProperties | Centre of mass | GetCenterOfMass returns bbox centre (M_BBOX) | ✅ | ✅ |  |
+| a cone's centre of mass is at a quarter of its height | OCCTShapeGetCenterOfMass | Centre of mass | return bbox centre (M_BBOX) | ✅ | ✅ |  |
+| the inertia tensor is referenced to the centre of mass, not the origin | OCCTShapeGetProperties | Inertia tensor | Iyy += m * (cx^2 + cz^2) (M_INERTIA_ORIGIN) | ✅ | ✅ |  |
+| sub-shapes that enclose no volume have no centre of mass | OCCTShapeGetCenterOfMass | Zero-mass refusal | occtVolumeMassProperties returns true at Mass() == 0 (M_ZEROMASS) | ✅ | ✅ |  |
+| an open shell has no centre of mass until it is closed | OCCTShapeGetCenterOfMass | OnlyClosed refusal | OnlyClosed = false (M_OPEN); zero-mass accepted (M_ZEROMASS) | ✅ | ✅ |  |
+| a closed shell outside a solid still has a centre of mass | OCCTShapeGetCenterOfMass | Closed shell | refuse anything but a solid or compound (M_SOLIDONLY) | ✅ | ✅ |  |
+| centerOfMass agrees with centroid | OCCTShapeCentroid | Centre of mass | GetCenterOfMass returns bbox centre (M_BBOX) | ✅ | ✅ |  |
+| centerOfMass agrees with volumeInertia and inertiaProperties | OCCTShapeVolumeInertia | Centre of mass | GetCenterOfMass returns bbox centre (M_BBOX) | ✅ | ✅ |  |
 
 ---
 
