@@ -95,6 +95,9 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Plane Detection** | Planar wire finds plane | Plane detection | origin z + 1 in OCCTShapeFindPlane |
+| **Plane Detection** | Non-planar 3D wire returns nil | Plane detection | report a plane when FindPlane finds none |
+| **Plane Detection** | Face shape is planar | Plane detection | origin z + 1 in OCCTShapeFindPlane |
 | **IntAna ConeSphere Tests** | coneSphereIntersection | Cone-sphere intersection count | Wrong count |
 | **IntAna ConeSphere Tests** | coneSphereSamplePoints | Cone-sphere curve sampling | Off-by-one sample spacing |
 | **BRepExtrema_Poly** | Polyhedral distance between two shapes | Polyhedral distance | Distance - 0.5; report success unconditionally |
