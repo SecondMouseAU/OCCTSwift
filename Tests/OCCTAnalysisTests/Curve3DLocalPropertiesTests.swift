@@ -53,6 +53,12 @@ struct Curve3DLocalPropertiesTests {
         if let n = n {
             let len = simd_length(n)
             #expect(abs(len - 1.0) < 1e-6)
+            // #1932: a unit-length check alone passes a normal pointing outward, or the tangent
+            // returned in its place. At u = 0 the point is (5, 0, 0), so inward is (-1, 0, 0),
+            // which is what GeomLProp_CLProps::Normal reports (Scripts/repro/766-curve3d-local-properties/).
+            #expect(abs(n.x + 1) < 1e-9)
+            #expect(abs(n.y) < 1e-9)
+            #expect(abs(n.z) < 1e-9)
         }
     }
 
@@ -81,8 +87,16 @@ struct Curve3DLocalPropertiesTests {
         let bb = seg.boundingBox
         #expect(bb != nil)
         if let bb = bb {
-            #expect(bb.min.x <= 1.01)
-            #expect(bb.max.x >= 9.99)
+            // #1935: one-sided bounds on x alone passed a box of any size, including an infinite
+            // one. Pinned to the probed box instead: the segment's endpoints widened by the 0.01
+            // gap BndLib_Add3dCurve::Add is given (Scripts/repro/766-curve3d-local-properties/).
+            let gap = 0.01
+            #expect(abs(bb.min.x - (1 - gap)) < 1e-9)
+            #expect(abs(bb.min.y - (2 - gap)) < 1e-9)
+            #expect(abs(bb.min.z - (3 - gap)) < 1e-9)
+            #expect(abs(bb.max.x - (10 + gap)) < 1e-9)
+            #expect(abs(bb.max.y - (8 + gap)) < 1e-9)
+            #expect(abs(bb.max.z - (6 + gap)) < 1e-9)
         }
     }
 }
