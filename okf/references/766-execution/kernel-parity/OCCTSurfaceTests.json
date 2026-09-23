@@ -6,5 +6,681 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "GeomFill Frenet Trihedron Tests::frenetOnEdge",
+    "bridge_function": "OCCTGeomFillFrenetTrihedron",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "T": [
+          0,
+          1,
+          0
+        ],
+        "N": [
+          -1,
+          0,
+          0
+        ],
+        "B": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "T": [
+          0,
+          1,
+          0
+        ],
+        "N": [
+          -1,
+          0,
+          0
+        ],
+        "B": [
+          0,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-b/transcript.txt frenetOnEdge"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill Frenet Trihedron Tests::constantBiNormal",
+    "bridge_function": "OCCTGeomFillConstantBiNormalTrihedron",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "T": [
+          0,
+          1,
+          0
+        ],
+        "N": [
+          -1,
+          0,
+          0
+        ],
+        "B": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "T": [
+          0,
+          1,
+          0
+        ],
+        "N": [
+          -1,
+          0,
+          0
+        ],
+        "B": [
+          0,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-b/transcript.txt constantBiNormal"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill Frenet Trihedron Tests::fixedTrihedron",
+    "bridge_function": "OCCTGeomFillFixedTrihedron",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "T": [
+          1,
+          0,
+          0
+        ],
+        "N": [
+          0,
+          1,
+          0
+        ],
+        "B": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "T": [
+          1,
+          0,
+          0
+        ],
+        "N": [
+          0,
+          1,
+          0
+        ],
+        "B": [
+          0,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-b/transcript.txt fixedTrihedron"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill Generator::twoCircles",
+    "bridge_function": "OCCTGeomFillGenerator",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(pi,0.5)": [
+          -1.24999998301,
+          0,
+          1
+        ],
+        "S(0,1)": [
+          1.5,
+          0,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(pi,0.5)": [
+          -1.24999998301,
+          0,
+          1
+        ],
+        "S(0,1)": [
+          1.5,
+          0,
+          2
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-b/transcript.txt generator 2 sections"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill Generator::threeSections",
+    "bridge_function": "OCCTGeomFillGenerator",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(pi,1)": [
+          -1.49999997961,
+          0,
+          2
+        ],
+        "S(0,2)": [
+          0.5,
+          0,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(pi,1)": [
+          -1.49999997961,
+          0,
+          2
+        ],
+        "S(0,2)": [
+          0.5,
+          0,
+          4
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-b/transcript.txt generator 3 sections"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill, Gordon Surface::gordonFromLineNetwork",
+    "bridge_function": "OCCTGeomFillGordon",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "corners": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            10,
+            0,
+            0
+          ],
+          [
+            0,
+            10,
+            0
+          ],
+          [
+            10,
+            10,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "corners": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            10,
+            0,
+            0
+          ],
+          [
+            0,
+            10,
+            0
+          ],
+          [
+            10,
+            10,
+            0
+          ]
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-b/transcript.txt gordonFromLineNetwork"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill, Gordon Surface::gordonTooFewCurves",
+    "bridge_function": "OCCTGeomFillGordon",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-geomfill-b/transcript.txt one profile, one guide (unguarded): IsDone=0 Status=2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill, Gordon Surface::gordonRationalQuarterCylinderNetworkMatchesReference",
+    "bridge_function": "OCCTGeomFillGordon",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          5,
+          0,
+          0
+        ],
+        "S(.5,.5)": [
+          3.53553390593,
+          3.53553390593,
+          5
+        ],
+        "S(1,1)": [
+          0,
+          5,
+          10
+        ],
+        "max|S-reference|": 1.33e-15,
+        "rational": [
+          true,
+          true
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          5,
+          0,
+          0
+        ],
+        "S(.5,.5)": [
+          3.53553390593,
+          3.53553390593,
+          5
+        ],
+        "S(1,1)": [
+          0,
+          5,
+          10
+        ],
+        "max|S-reference|": 1.33e-15,
+        "rational": [
+          true,
+          true
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-b/transcript.txt quarterCylinder ExactOnly"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill, Gordon Report & Network Surface::gordonReportDoneForGoodNetwork",
+    "bridge_function": "OCCTGeomFillGordonReport",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          5,
+          0,
+          0
+        ],
+        "S(.5,.5)": [
+          3.53553390593,
+          3.53553390593,
+          5
+        ],
+        "S(1,1)": [
+          0,
+          5,
+          10
+        ],
+        "max|S-reference|": 1.33e-15,
+        "status": "Done",
+        "isApproximate": false
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          5,
+          0,
+          0
+        ],
+        "S(.5,.5)": [
+          3.53553390593,
+          3.53553390593,
+          5
+        ],
+        "S(1,1)": [
+          0,
+          5,
+          10
+        ],
+        "max|S-reference|": 1.33e-15,
+        "status": "Done",
+        "isApproximate": false
+      },
+      "source": "Scripts/repro/766-geomfill-b/transcript.txt quarterCylinder ExactOnly"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill, Gordon Report & Network Surface::gordonReportInvalidInput",
+    "bridge_function": "OCCTGeomFillGordonReport",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "status": "InvalidInput",
+        "surface": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "status": "InvalidInput",
+        "surface": null
+      },
+      "source": "Scripts/repro/766-geomfill-b/transcript.txt one profile, one guide (unguarded): Status=2 (InvalidInput)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill, Gordon Report & Network Surface::gordonReportApproximateFallbackMode",
+    "bridge_function": "OCCTGeomFillGordonReport",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          5,
+          0,
+          0
+        ],
+        "S(.5,.5)": [
+          3.53553390593,
+          3.53553390593,
+          5
+        ],
+        "S(1,1)": [
+          0,
+          5,
+          10
+        ],
+        "max|S-reference|": 1.33e-15,
+        "status": "Done",
+        "isApproximate": false
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          5,
+          0,
+          0
+        ],
+        "S(.5,.5)": [
+          3.53553390593,
+          3.53553390593,
+          5
+        ],
+        "S(1,1)": [
+          0,
+          5,
+          10
+        ],
+        "max|S-reference|": 1.33e-15,
+        "status": "Done",
+        "isApproximate": false
+      },
+      "source": "Scripts/repro/766-geomfill-b/transcript.txt quarterCylinder AllowApproximateFallback"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill, Gordon Report & Network Surface::networkSurfaceBuildsTheQuarterCylinderNetwork",
+    "bridge_function": "OCCTGeomFillNetworkSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "status": "done",
+        "reference": "quarter cylinder"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "status": "done",
+        "reference": "quarter cylinder"
+      },
+      "source": "no separate probe: the kernel call (GeomFill_NetworkSurface) is fed a contact grid the bridge computes itself, so a probe would restate the bridge; the test pins the analytic reference / status instead"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "GeomFill, Gordon Report & Network Surface::networkSurfaceBuildsASimpleBilinearPatch",
+    "bridge_function": "OCCTGeomFillNetworkSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "mid": [
+          5,
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "mid": [
+          5,
+          5,
+          0
+        ]
+      },
+      "source": "no separate probe: the kernel call (GeomFill_NetworkSurface) is fed a contact grid the bridge computes itself, so a probe would restate the bridge; the test pins the analytic reference / status instead"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "GeomFill, Gordon Report & Network Surface::networkSurfaceParallelCurvesDoNotCrash",
+    "bridge_function": "OCCTGeomFillNetworkSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "status": "invalidInput"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "status": "invalidInput"
+      },
+      "source": "no separate probe: the kernel call (GeomFill_NetworkSurface) is fed a contact grid the bridge computes itself, so a probe would restate the bridge; the test pins the analytic reference / status instead"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "GeomFill, Gordon Report & Network Surface::networkSurfaceReportsDoneForTheCookbookDomedNetwork",
+    "bridge_function": "OCCTGeomFillNetworkSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "status": "done"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "status": "done"
+      },
+      "source": "no separate probe: the kernel call (GeomFill_NetworkSurface) is fed a contact grid the bridge computes itself, so a probe would restate the bridge; the test pins the analytic reference / status instead"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "GeomFill, Gordon Report & Network Surface::networkSurfaceTooFewCurves",
+    "bridge_function": "OCCTGeomFillNetworkSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "status": "invalidInput"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "status": "invalidInput"
+      },
+      "source": "wrapper precondition (Swift guard)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "GeomFill, Gordon Report & Network Surface::networkSurfaceRejectsOneDegeneratePairAmongOtherwiseGoodOnes",
+    "bridge_function": "OCCTGeomFillNetworkSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "status": "invalidInput"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "status": "invalidInput"
+      },
+      "source": "no separate probe: the kernel call (GeomFill_NetworkSurface) is fed a contact grid the bridge computes itself, so a probe would restate the bridge; the test pins the analytic reference / status instead"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "GeomFill, Gordon Report & Network Surface::networkSurfaceReportsKnotAlignmentFailedWhenGuidesDoNotSpanProfiles",
+    "bridge_function": "OCCTGeomFillNetworkSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "status": "knotAlignmentFailed"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "status": "knotAlignmentFailed"
+      },
+      "source": "no separate probe: the kernel call (GeomFill_NetworkSurface) is fed a contact grid the bridge computes itself, so a probe would restate the bridge; the test pins the analytic reference / status instead"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
   }
 ]
