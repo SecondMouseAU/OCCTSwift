@@ -5,7 +5,7 @@ captured green. The previous version of this file (12 rows, PR #2022) was remove
 found every row a stub, three of its Red claims impossible given the code, and its parity values
 copied from bridge to kernel. Sections are one per PR.
 
-## Thread::Issue257/1266/1578 (PR #TBD, files: Issue257MultiStartTests.swift, Issue1266CrestRadiusSentinelTests.swift, Issue1578ThreadedHoleMinorDiameterTests.swift)
+## Thread::Issue257/1266/1578 (PR #2351, files: Issue257MultiStartTests.swift, Issue1266CrestRadiusSentinelTests.swift, Issue1578ThreadedHoleMinorDiameterTests.swift)
 
 Source injections are in `Sources/OCCTSwift/ThreadFeatures.swift`; the 1266 injections are in the shared test helper `meshMaxRadialExtent` (`Tests/OCCTThreadTests/OCCTThreadTests.swift`), which is what those tests exist to check.
 
