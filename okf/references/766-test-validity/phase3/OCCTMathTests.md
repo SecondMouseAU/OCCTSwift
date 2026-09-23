@@ -109,3 +109,18 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-transform-factory-trig (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **gce Transform Factory 3D Tests** | pointMirror | `OCCTMakeMirrorPoint` | point mirror built as an axis mirror (Z) through the point | red | green | PASS |
+| **gce Transform Factory 3D Tests** | planeMirror | `OCCTMakeMirrorPlane` | plane mirror built as an axis mirror about the normal | red | green | PASS |
+| **gce Transform Factory 3D Tests** | rotation90 | `OCCTMakeRotation` | angle negated | red | green | PASS |
+| **gce Transform Factory 3D Tests** | scaleBy2 | `OCCTMakeScaleTransform` | factor inverted | red | green | PASS |
+| **gce Transform Factory 3D Tests** | translationVector | `OCCTMakeTranslationVec` | vector x and y swapped | red | green | PASS |
+| **gce Transform Factory 3D Tests** | translationPoints | `OCCTMakeTranslationPoints` | from and to swapped | red | green | PASS |
+| **gce Transform Factory 3D Tests** | axisMirror | `OCCTMakeMirrorAxis` | axis mirror built as a plane mirror with the axis as normal | red | green | PASS |
+| **math_TrigonometricFunctionRoots** | sinZero | `OCCTTrigRoots` | last root dropped (NbSolutions() - 1) | red | green | PASS |
+| **math_TrigonometricFunctionRoots** | cosHalf | `OCCTTrigRoots` | last root dropped | red | green | PASS |
+| **math_TrigonometricFunctionRoots** | infiniteRoots | `OCCTTrigRootsInfinite` | InfiniteRoots() negated | red | green | PASS |
