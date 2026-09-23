@@ -95,6 +95,7 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Extrema_ExtPElS Point-Plane** | pointToPlane | Point-plane extrema | SquareDistance * 2 in OCCTExtremaExtPElSPlane |
 
 ---
 
