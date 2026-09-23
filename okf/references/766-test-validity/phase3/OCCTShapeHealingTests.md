@@ -327,3 +327,27 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: Issue702 solid demotion, Issue772 self-intersection opt-in (17 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-702-999/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `fakeSolidIsInvalid` | Issue702SolidDemotionTests.swift | `OCCTSolidFromShells / OCCTShapeIsValid` | FAKEFIX: solidFromShells heals the solid it builds (the fixture's constructor) | `Issue702SolidDemotionTests.swift:67:9: Expectation failed: fake.shapeType == .solid` | pass | PASS |
+| `fixSolidDemotes` | Issue702SolidDemotionTests.swift | `OCCTShapeFixSolid` | DEMOTEWRAP: fixSolid wraps the demoted shell back into a solid | `Issue702SolidDemotionTests.swift:81:9: Expectation failed: fixed.shapeType == .shell` | pass | PASS |
+| `healedDemotes` | Issue702SolidDemotionTests.swift | `OCCTShapeHeal` | HEALWRAP: healed() wraps a demoted shell back into a solid | `Issue702SolidDemotionTests.swift:95:9: Expectation failed: healed.shapeType == .shell` | pass | PASS |
+| `isValidAloneIsAmbiguous` | Issue702SolidDemotionTests.swift | `OCCTShapeFixSolid / OCCTShapeIsValid` | DEMOTEWRAP: fixSolid wraps the demoted shell back into a solid | `Issue702SolidDemotionTests.swift:110:9: Expectation failed: fixed.isValid` | pass | PASS |
+| `isValidSolidDistinguishesDemotion` | Issue702SolidDemotionTests.swift | `OCCTShapeIsValidSolid` | VALIDSOLIDANY: isValidSolid drops its solid-type check | `Issue702SolidDemotionTests.swift:125:9: Expectation failed: !fixed.isValidSolid` | pass | PASS |
+| `isValidSolidFalseOnNonSolidTypes` | Issue702SolidDemotionTests.swift | `OCCTShapeIsValidSolid` | VALIDSOLIDANY: isValidSolid drops its solid-type check | `Issue702SolidDemotionTests.swift:141:9: Expectation failed: !face.isValidSolid` | pass | PASS |
+| `analyzeReportsFreeEdgesOnOpenShell` | Issue702SolidDemotionTests.swift | `OCCTShapeAnalyze` | FREEEDGES: analyze() drops each shell's free-edge count | `Issue702SolidDemotionTests.swift:161:9: Expectation failed: analysis.freeEdgeCount == shellAnalysis.freeEdgeCount` | pass | PASS |
+| `analyzeReportsFreeEdgesOnDemotedShell` | Issue702SolidDemotionTests.swift | `OCCTShapeAnalyze` | FREEEDGES: analyze() drops each shell's free-edge count | `Issue702SolidDemotionTests.swift:191:9: Expectation failed: analysis.freeEdgeCount == 4` | pass | PASS |
+| `analyzeReportsNoFreeEdgesOnClosedBox` | Issue702SolidDemotionTests.swift | `OCCTShapeAnalyze` | FREEALWAYS: every shell counted as having free edges | `Issue702SolidDemotionTests.swift:213:9: Expectation failed: analysis.freeFaceCount == 0` | pass | PASS |
+| `analyzeCountsFreeFacesPerShell` | Issue702SolidDemotionTests.swift | `OCCTShapeAnalyze` | FREEEDGES: analyze() drops each shell's free-edge count | `Issue702SolidDemotionTests.swift:228:9: Expectation failed: analysis.freeEdgeCount == 8` | pass | PASS |
+| `totalProblemsExcludingFreeFaceIncludesSelfIntersection` | Issue702SolidDemotionTests.swift | `OCCTShapeAnalyze + OCCTShapeSelfIntersectsBounded` | SIINVERT: isSelfIntersecting's answer inverted | `Issue702SolidDemotionTests.swift:291:9: Expectation failed: analysis.hasSelfIntersection == true` | pass | PASS |
+| `analyzeAgreesWithAnalyzeShellOnInternalDuplicate` | Issue702SolidDemotionTests.swift | `OCCTShapeAnalyze` | FREEEDGES: analyze() drops each shell's free-edge count | `Issue702SolidDemotionTests.swift:361:9: Expectation failed: analysis.freeEdgeCount == shellAnalysis.freeEdgeCount` | pass | PASS |
+| `defaultDoesNotCheck` | Issue772SelfIntersectionAnalysisTests.swift | `OCCTShapeSelfIntersectsBounded (via Shape.analyze)` | SIDEFAULT: analyze() checks self-intersection even with no timeout | `Issue772SelfIntersectionAnalysisTests.swift:61:9: Expectation failed: analysis.hasSelfIntersection == nil` | pass | PASS |
+| `nonNilTimeoutOnCleanShapePopulatesFalse` | Issue772SelfIntersectionAnalysisTests.swift | `OCCTShapeSelfIntersectsBounded (via Shape.analyze)` | SIINVERT: isSelfIntersecting's answer inverted | `Issue772SelfIntersectionAnalysisTests.swift:73:9: Expectation failed: analysis.hasSelfIntersection == false` | pass | PASS |
+| `nonNilTimeoutOnSelfIntersectingShapePopulatesTrue` | Issue772SelfIntersectionAnalysisTests.swift | `OCCTShapeSelfIntersectsBounded (via Shape.analyze)` | SIINVERT: isSelfIntersecting's answer inverted | `Issue772SelfIntersectionAnalysisTests.swift:81:9: Expectation failed: analysis.hasSelfIntersection == true` | pass | PASS |
+| `totalProblemsReflectsOnlyWhatWasChecked` | Issue772SelfIntersectionAnalysisTests.swift | `OCCTShapeSelfIntersectsBounded (via Shape.analyze)` | SIINVERT: isSelfIntersecting's answer inverted | `Issue772SelfIntersectionAnalysisTests.swift:94:9: Expectation failed: checked.totalProblems == unchecked.totalProblems + 1` | pass | PASS |
+| `timeoutAloneCannotBeSuppliedWithoutOptingIn` | Issue772SelfIntersectionAnalysisTests.swift | `OCCTShapeSelfIntersectsBounded (via Shape.analyze)` | SIINVERT: isSelfIntersecting's answer inverted | `Issue772SelfIntersectionAnalysisTests.swift:114:9: Expectation failed: analysis.hasSelfIntersection == false` | pass | PASS |

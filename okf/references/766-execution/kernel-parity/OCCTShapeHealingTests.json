@@ -2,9 +2,642 @@
   {
     "test_name": "ShapeHealing domain kernel parity",
     "bridge_function": "OCCTShapeHealingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::fakeSolidIsInvalid",
+    "bridge_function": "OCCTSolidFromShells / OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::fixSolidDemotes",
+    "bridge_function": "OCCTShapeFixSolid",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::healedDemotes",
+    "bridge_function": "OCCTShapeHeal",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::isValidAloneIsAmbiguous",
+    "bridge_function": "OCCTShapeFixSolid / OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::isValidSolidDistinguishesDemotion",
+    "bridge_function": "OCCTShapeIsValidSolid",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::isValidSolidFalseOnNonSolidTypes",
+    "bridge_function": "OCCTShapeIsValidSolid",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::analyzeReportsFreeEdgesOnOpenShell",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::analyzeReportsFreeEdgesOnDemotedShell",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::analyzeReportsNoFreeEdgesOnClosedBox",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::analyzeCountsFreeFacesPerShell",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::totalProblemsExcludingFreeFaceIncludesSelfIntersection",
+    "bridge_function": "OCCTShapeAnalyze + OCCTShapeSelfIntersectsBounded",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::analyzeAgreesWithAnalyzeShellOnInternalDuplicate",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::defaultDoesNotCheck",
+    "bridge_function": "OCCTShapeSelfIntersectsBounded (via Shape.analyze)",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "box": false,
+        "overlappingCompound": true,
+        "unchecked": null
+      }
+    },
+    "kernel_output": {
+      "type": "self_intersection",
+      "data": {
+        "box": 0,
+        "overlappingCompound": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::nonNilTimeoutOnCleanShapePopulatesFalse",
+    "bridge_function": "OCCTShapeSelfIntersectsBounded (via Shape.analyze)",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "box": false,
+        "overlappingCompound": true,
+        "unchecked": null
+      }
+    },
+    "kernel_output": {
+      "type": "self_intersection",
+      "data": {
+        "box": 0,
+        "overlappingCompound": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::nonNilTimeoutOnSelfIntersectingShapePopulatesTrue",
+    "bridge_function": "OCCTShapeSelfIntersectsBounded (via Shape.analyze)",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "box": false,
+        "overlappingCompound": true,
+        "unchecked": null
+      }
+    },
+    "kernel_output": {
+      "type": "self_intersection",
+      "data": {
+        "box": 0,
+        "overlappingCompound": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::totalProblemsReflectsOnlyWhatWasChecked",
+    "bridge_function": "OCCTShapeSelfIntersectsBounded (via Shape.analyze)",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "box": false,
+        "overlappingCompound": true,
+        "unchecked": null
+      }
+    },
+    "kernel_output": {
+      "type": "self_intersection",
+      "data": {
+        "box": 0,
+        "overlappingCompound": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::timeoutAloneCannotBeSuppliedWithoutOptingIn",
+    "bridge_function": "OCCTShapeSelfIntersectsBounded (via Shape.analyze)",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "box": false,
+        "overlappingCompound": true,
+        "unchecked": null
+      }
+    },
+    "kernel_output": {
+      "type": "self_intersection",
+      "data": {
+        "box": 0,
+        "overlappingCompound": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
