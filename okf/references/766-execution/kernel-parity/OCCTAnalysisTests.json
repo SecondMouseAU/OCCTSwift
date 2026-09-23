@@ -497,5 +497,51 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "IntTools_EdgeFace Tests::Edge crossing face produces intersection",
+    "bridge_function": "OCCTIntToolsEdgeFace",
+    "bridge_output": {
+      "type": "common_parts",
+      "data": {
+        "count": 1,
+        "parts": [
+          {
+            "type": "vertex",
+            "param1": 5.0,
+            "point": [
+              -5.0,
+              1.0,
+              2.0
+            ]
+          }
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "common_parts",
+      "data": {
+        "count": 1,
+        "parts": [
+          {
+            "type": "vertex",
+            "range1": [
+              4.99999985,
+              5.00000015
+            ],
+            "point": [
+              -5.0,
+              1.0,
+              2.0
+            ]
+          }
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
