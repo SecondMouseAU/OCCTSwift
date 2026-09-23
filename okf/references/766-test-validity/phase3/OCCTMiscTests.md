@@ -1,69 +1,33 @@
-# Phase 3: OCCTMiscTests Injection Matrix
+# Phase 3: OCCTMiscTests injection matrix (#1989)
 
-**Target**: `OCCTMiscTests` (105 tests): Miscellaneous tests
-**Policy**: `prove-the-test-fails.md`: inject defect → confirm fail (red) → restore → confirm pass (green)
-**Priority**: 🟢 P3 (isolated miscellaneous tests)
+**Target**: every `@Test` in `Tests/OCCTMiscTests/` (119 across six files).
+**Policy**: `okf/policies/prove-the-test-fails.md`: inject a defect in the code the test exercises,
+watch the named expectation fail, restore, watch it pass.
 
----
+This file was rewritten from scratch for #1989. The nine rows it held before named five bridge
+functions that do not exist (`OCCTShapeProject`, `OCCTKDTreeSearch`, `OCCTHatchPatternGenerate`,
+`OCCTUnicodeConvert`, `OCCTDirectoryListing`), ticked every Red and Green cell without quoting a
+single failing expectation, and waived the other 110 tests. Every row below was run: the Red
+column quotes the expectation that failed under the injection, file:line as Swift Testing printed
+it, and Green is the same test passing after the injection was reverted.
 
-## Test Inventory
+Kernel parity for each row is in `../../766-execution/kernel-parity/OCCTMiscTests.json`, with the
+probe that produced it under `Scripts/repro/766-*/`.
 
-| Suite | Test | Defect Category | Injection Target |
-|-------|------|-----------------|------------------|
-| **Issue 622: result buffer capacities clamp rather than trap** | point projection capacities clamp rather than trap | Result buffer handling | Remove clamp |
-| Issue 622: result buffer capacities clamp rather than trap | Shape.allDistanceSolutions clamps maxSolutions rather than trapping | Result buffer handling | Remove clamp |
-| Issue 622: result buffer capacities clamp rather than trap | Shape.selfIntersectionPairs clamps maxPairs rather than trapping | Result buffer handling | Remove clamp |
-| Issue 622: result buffer capacities clamp rather than trap | KDTree search capacities clamp rather than trap | Result buffer handling | Remove clamp |
-| Issue 622: result buffer capacities clamp rather than trap | all three Selector.pick overloads clamp maxResults rather than trapping | Result buffer handling | Remove clamp |
-| Issue 622: result buffer capacities clamp rather than trap | HatchPattern.generate clamps maxSegments rather than trapping | Result buffer handling | Remove clamp |
-| Issue 622: result buffer capacities clamp rather than trap | UnicodeUtils.convertFromUnicode clamps its output buffer rather than trapping | Result buffer handling | Remove clamp |
-| Issue 622: result buffer capacities clamp rather than trap | directory and file listing clamp maxCount rather than trapping | Result buffer handling | Remove clamp |
-| Issue 622: result buffer capacities clamp rather than trap | LogSample.sample fills its buffer exactly, so its count is a request, not a capacity | Result buffer handling | Remove clamp |
+## BridgeExceptionDiagnosticsTests.swift
 
-**Note**: These 9 tests from Issue 622 are the kernel-parity-verified subset. The remaining 96 tests in OCCTMiscTests are bridge/Swift-layer tests with no direct OCCT kernel equivalent (N/A for kernel parity).
+Fixture for every test but one: `IntTools.isDirsCoinside(0,0,0, 0,0,1)`, which reaches `OCCTIntToolsIsDirsCoinside`, whose `gp_Dir(0,0,0)` throws inside the bridge's `try`. The channel itself is `occtRecordCaughtException` and the `OCCTDiagnostics*` accessors in `Sources/OCCTBridge/src/OCCTBridge.mm`, read by `Sources/OCCTSwift/OCCTDiagnostics.swift`. Injections were applied in four builds (I1; I2+I5+I6+I8+I9; I3+I5+I7+I8; I4), and each row quotes the line only its own injection can fail.
 
----
-
-## Injection Matrix
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| point projection capacities clamp | OCCTShapeProject | Result buffer handling | Remove clamp | ✅ | ✅ |  |
-| allDistanceSolutions clamps | OCCTShapeAllDistanceSolutions | Result buffer handling | Remove clamp | ✅ | ✅ |  |
-| selfIntersectionPairs clamps | OCCTShapeSelfIntersectionPairs | Result buffer handling | Remove clamp | ✅ | ✅ |  |
-| KDTree search capacities clamp | OCCTKDTreeSearch | Result buffer handling | Remove clamp | ✅ | ✅ |  |
-| Selector.pick overloads clamp | OCCTSelectorPick | Result buffer handling | Remove clamp | ✅ | ✅ |  |
-| HatchPattern.generate clamp | OCCTHatchPatternGenerate | Result buffer handling | Remove clamp | ✅ | ✅ |  |
-| UnicodeUtils.convertFromUnicode clamp | OCCTUnicodeConvert | Result buffer handling | Remove clamp | ✅ | ✅ |  |
-| directory/file listing clamp | OCCTDirectoryListing | Result buffer handling | Remove clamp | ✅ | ✅ |  |
-| LogSample.sample buffer | OCCTLogSample | Result buffer handling | Remove clamp | ✅ | ✅ |  |
-
----
-
-## Bridge-Kernel Parity Checks
-
-For each test, run ground-truth C++ comparison:
-1. Write C++ test calling OCCT kernel directly
-2. Run same inputs through Swift bridge
-3. Compare outputs bit-for-bit (integers) or 1e-12 relative (doubles)
-4. Document any discrepancies
-
-**Note**: 9 tests have kernel parity verified (Issue 622 clamping tests). The remaining 96 tests are pure Swift/bridge logic with no OCCT kernel equivalent.
-
----
-
-## Progress Tracking
-
-| Test | Red→Green Done | Parity Done | PR Ready |
-|------|----------------|-------------|----------|
-| point projection capacities clamp | ✅ | ✅ | ✅ |
-| allDistanceSolutions clamps | ✅ | ✅ | ✅ |
-| selfIntersectionPairs clamps | ✅ | ✅ | ✅ |
-| KDTree search capacities clamp | ✅ | ✅ | ✅ |
-| Selector.pick overloads clamp | ✅ | ✅ | ✅ |
-| HatchPattern.generate clamp | ✅ | ✅ | ✅ |
-| UnicodeUtils.convertFromUnicode clamp | ✅ | ✅ | ✅ |
-| directory/file listing clamp | ✅ | ✅ | ✅ |
-| LogSample.sample buffer | ✅ | ✅ | ✅ |
-
-**Total**: 105 tests (9 with kernel parity + 96 bridge/Swift-only)
+| Suite | Test | Bridge / Swift function | Injection | Red (failing expectation) | Green | Parity |
+|---|---|---|---|---|---|---|
+| Bridge exception diagnostics (#1161) | recordsTheOCCTFailure | OCCTIntToolsIsDirsCoinside, occtRecordCaughtException | I1: the Standard_Failure clause records kind StdException and an empty type | `BridgeExceptionDiagnosticsTests.swift:41` `record.kind == .occtFailure`, `BridgeExceptionDiagnosticsTests.swift:42` `record.exceptionType == "Standard_ConstructionError"` | passes | PASS: kernel throws Standard_ConstructionError, "gp_Dir() - input vector has zero norm" |
+| Bridge exception diagnostics (#1161) | explainsANilReturnFromAPublicAPI | OCCTShapeHistoryFromRotate | I1 | `BridgeExceptionDiagnosticsTests.swift:61` `record.kind == .occtFailure`, `BridgeExceptionDiagnosticsTests.swift:62` `record.exceptionType == "Standard_ConstructionError"` | passes | PASS: gp_Ax1 with gp_Dir(0,0,0) throws Standard_ConstructionError |
+| Bridge exception diagnostics (#1161) | recordsNothingByDefault | OCCTDiagnosticsCaptureEnabled | I2: thread-local capture flag defaults to true | `BridgeExceptionDiagnosticsTests.swift:69` `OCCTDiagnostics.isCaptureEnabled == false`, `BridgeExceptionDiagnosticsTests.swift:71` `OCCTDiagnostics.records.isEmpty` | passes | N/A (bridge state) |
+| Bridge exception diagnostics (#1161) | recordsNothingOnSuccess | OCCTIntToolsIsDirsCoinside | I9: the success path runs an inner try that records a caught gp_Dir(0,0,0) | `BridgeExceptionDiagnosticsTests.swift:81` `diagnostics.isEmpty` | passes | PASS: kernel returns true, no throw |
+| Bridge exception diagnostics (#1161) | capturesNest | OCCTDiagnostics.capturing (Swift) | I3: capturing returns records(from: 0) instead of from its start index | `BridgeExceptionDiagnosticsTests.swift:97` `innerDiagnostics.count == 1` | passes | N/A (bridge state) |
+| Bridge exception diagnostics (#1161) | clearsTheBuffer | OCCTDiagnosticsClear | I4: clear resets the dropped count but not the records | `BridgeExceptionDiagnosticsTests.swift:112` `OCCTDiagnostics.records.isEmpty` | passes | N/A (bridge state) |
+| Bridge exception diagnostics (#1161) | boundsTheBuffer | occtRecordCaughtException | I5: THE_DIAGNOSTIC_RECORD_LIMIT 256 -> 512 | `BridgeExceptionDiagnosticsTests.swift:132` `diagnostics.count == cap`, `BridgeExceptionDiagnosticsTests.swift:133` `OCCTDiagnostics.droppedRecordCount == attempts - cap` | passes | N/A (bridge state) |
+| Bridge exception diagnostics (#1161) | capturesAStackTraceOnRequest | OCCTDiagnosticsSetStackTraceDepth | I6: the setter ignores its argument | `BridgeExceptionDiagnosticsTests.swift:149` `OCCTDiagnostics.stackTraceDepth == 16`, `BridgeExceptionDiagnosticsTests.swift:154` `!(try #require(withTrace.first).stackTrace.isEmpty)` | passes | PASS: kernel stack string empty at depth 0, non-empty at 16 |
+| Bridge exception diagnostics (#1161) | clampsANegativeStackTraceDepth | OCCTDiagnosticsSetStackTraceDepth | I7: both clamps removed (Swift max(0, _) and the bridge's depth < 0 ? 0). they clamp independently, so removing one alone leaves the other doing the work (not run separately) | `BridgeExceptionDiagnosticsTests.swift:162` `OCCTDiagnostics.stackTraceDepth == 0` | passes | EXPECTED_DIVERGENCE: kernel keeps -5, which is why the clamp exists |
+| Bridge exception diagnostics (#1161) | loggingIsIndependentOfCapture | occtRecordCaughtException | I8: return right after logging, so a logged record is never captured | `BridgeExceptionDiagnosticsTests.swift:177` `whileLogging.count == 1` | passes | N/A (bridge state) |
+| Bridge exception diagnostics (#1161) | describesItself | OCCTDiagnostics.Record.description | I1 | `BridgeExceptionDiagnosticsTests.swift:197` `record.description.hasPrefix("OCCTIntToolsIsDirsCoinside: Standard_ConstructionError: ")` | passes | PASS: exception type matches the kernel's |

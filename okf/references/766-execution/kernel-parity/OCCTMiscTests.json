@@ -1,74 +1,264 @@
 [
   {
-    "test_name": "Issue 622: result buffer capacities clamp rather than trap",
-    "bridge_function": "OCCTShapeProject",
-    "bridge_output": {"type": "int", "data": 5},
-    "kernel_output": {"type": "int", "data": 5},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "Bridge exception diagnostics (#1161)::a caught Standard_Failure reaches Swift with OCCT's own type name and message",
+    "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
+    "bridge_function": "OCCTIntToolsIsDirsCoinside",
+    "bridge_output": {
+      "type": "diagnostic_record",
+      "data": {
+        "value": false,
+        "count": 1,
+        "kind": "occtFailure",
+        "exceptionType": "Standard_ConstructionError",
+        "messageContains": "zero norm",
+        "function": "OCCTIntToolsIsDirsCoinside",
+        "stackTraceEmpty": true
+      }
+    },
+    "kernel_output": {
+      "type": "caught_exception",
+      "data": {
+        "exceptionType": "Standard_ConstructionError",
+        "message": "gp_Dir() - input vector has zero norm",
+        "stackTraceEmpty": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: Shape.allDistanceSolutions clamps maxSolutions",
-    "bridge_function": "OCCTShapeAllDistanceSolutions",
-    "bridge_output": {"type": "int", "data": 10},
-    "kernel_output": {"type": "int", "data": 10},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "Bridge exception diagnostics (#1161)::a nil-returning public API can now say why it refused",
+    "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
+    "bridge_function": "OCCTShapeHistoryFromRotate",
+    "bridge_output": {
+      "type": "diagnostic_record",
+      "data": {
+        "result": null,
+        "kind": "occtFailure",
+        "exceptionType": "Standard_ConstructionError",
+        "function": "OCCTShapeHistoryFromRotate"
+      }
+    },
+    "kernel_output": {
+      "type": "caught_exception",
+      "data": {
+        "exceptionType": "Standard_ConstructionError",
+        "message": "gp_Dir() - input vector has zero norm (gp_Ax1(origin, gp_Dir(0,0,0)))"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: Shape.selfIntersectionPairs clamps maxPairs",
-    "bridge_function": "OCCTShapeSelfIntersectionPairs",
-    "bridge_output": {"type": "int", "data": 3},
-    "kernel_output": {"type": "int", "data": 3},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "Bridge exception diagnostics (#1161)::nothing is recorded unless capture is switched on",
+    "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
+    "bridge_function": "OCCTDiagnosticsCaptureEnabled / occtRecordCaughtException",
+    "bridge_output": {
+      "type": "record_count",
+      "data": {
+        "isCaptureEnabled": false,
+        "records": 0
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bridge-side record bookkeeping (thread-local buffer, capture flag, cap, logging switch); OCCT has no counterpart"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Bridge exception diagnostics (#1161)::a call that succeeds records nothing",
+    "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
+    "bridge_function": "OCCTIntToolsIsDirsCoinside",
+    "bridge_output": {
+      "type": "value_and_records",
+      "data": {
+        "value": true,
+        "records": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "IsDirsCoinside((0,0,1),(0,0,1))": true,
+        "threw": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: KDTree search capacities clamp rather than trap",
-    "bridge_function": "OCCTKDTreeSearch",
-    "bridge_output": {"type": "int", "data": 100},
-    "kernel_output": {"type": "int", "data": 100},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "Bridge exception diagnostics (#1161)::captures nest: the inner scope reports its own, the outer scope reports both",
+    "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
+    "bridge_function": "OCCTDiagnosticsRecordCount (OCCTDiagnostics.capturing)",
+    "bridge_output": {
+      "type": "record_count",
+      "data": {
+        "inner": 1,
+        "outer": 2,
+        "captureAfter": false
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bridge-side record bookkeeping (thread-local buffer, capture flag, cap, logging switch); OCCT has no counterpart"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Bridge exception diagnostics (#1161)::clear() discards the records and the dropped count",
+    "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
+    "bridge_function": "OCCTDiagnosticsClear",
+    "bridge_output": {
+      "type": "record_count",
+      "data": {
+        "before": 1,
+        "after": 0,
+        "dropped": 0
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bridge-side record bookkeeping (thread-local buffer, capture flag, cap, logging switch); OCCT has no counterpart"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Bridge exception diagnostics (#1161)::the buffer is bounded and counts what it dropped",
+    "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
+    "bridge_function": "occtRecordCaughtException (THE_DIAGNOSTIC_RECORD_LIMIT)",
+    "bridge_output": {
+      "type": "record_count",
+      "data": {
+        "attempts": 300,
+        "refusals": 300,
+        "kept": 256,
+        "dropped": 44
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bridge-side record bookkeeping (thread-local buffer, capture flag, cap, logging switch); OCCT has no counterpart"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Bridge exception diagnostics (#1161)::a stack trace appears only when a depth is asked for",
+    "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
+    "bridge_function": "OCCTDiagnosticsSetStackTraceDepth / OCCTDiagnosticsRecordStackTrace",
+    "bridge_output": {
+      "type": "stack_trace",
+      "data": {
+        "depth0Empty": true,
+        "depth": 16,
+        "depth16Empty": false
+      }
+    },
+    "kernel_output": {
+      "type": "stack_trace",
+      "data": {
+        "DefaultStackTraceLength_initial": 0,
+        "depth0Empty": true,
+        "after_SetDefaultStackTraceLength_16": 16,
+        "depth16Empty": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: Selector.pick overloads clamp maxResults",
-    "bridge_function": "OCCTSelectorPick",
-    "bridge_output": {"type": "int", "data": 20},
-    "kernel_output": {"type": "int", "data": 20},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
+    "test_name": "Bridge exception diagnostics (#1161)::a negative stack-trace depth is clamped rather than passed through",
+    "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
+    "bridge_function": "OCCTDiagnosticsSetStackTraceDepth",
+    "bridge_output": {
+      "type": "int",
+      "data": {
+        "set": -5,
+        "read": 0
+      }
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": {
+        "SetDefaultStackTraceLength(-5)": -5
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "Expected divergence, and the reason the clamp exists: the kernel stores -5 as given (DefaultStackTraceLength() reads back -5), the bridge and the Swift setter each clamp it to 0."
+      ]
+    },
+    "status": "EXPECTED_DIVERGENCE"
   },
   {
-    "test_name": "Issue 622: HatchPattern.generate clamps maxSegments",
-    "bridge_function": "OCCTHatchPatternGenerate",
-    "bridge_output": {"type": "int", "data": 50},
-    "kernel_output": {"type": "int", "data": 50},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
+    "test_name": "Bridge exception diagnostics (#1161)::the logging switch is independent of capture, and either order works",
+    "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
+    "bridge_function": "OCCTDiagnosticsSetLoggingEnabled / occtRecordCaughtException",
+    "bridge_output": {
+      "type": "record_count",
+      "data": {
+        "whileLogging": 1,
+        "whileQuiet": 1
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bridge-side record bookkeeping (thread-local buffer, capture flag, cap, logging switch); OCCT has no counterpart"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
   },
   {
-    "test_name": "Issue 622: UnicodeUtils.convertFromUnicode clamps buffer",
-    "bridge_function": "OCCTUnicodeConvert",
-    "bridge_output": {"type": "string", "data": "test"},
-    "kernel_output": {"type": "string", "data": "test"},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "Issue 622: directory and file listing clamp maxCount",
-    "bridge_function": "OCCTDirectoryListing",
-    "bridge_output": {"type": "int", "data": 1000},
-    "kernel_output": {"type": "int", "data": 1000},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "Issue 622: LogSample.sample fills its buffer exactly",
-    "bridge_function": "OCCTLogSample",
-    "bridge_output": {"type": "int", "data": 1000},
-    "kernel_output": {"type": "int", "data": 1000},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "Bridge exception diagnostics (#1161)::a record prints as function, OCCT exception class, message",
+    "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
+    "bridge_function": "OCCTIntToolsIsDirsCoinside",
+    "bridge_output": {
+      "type": "string",
+      "data": "OCCTIntToolsIsDirsCoinside: Standard_ConstructionError: <message> (prefix and suffix asserted)"
+    },
+    "kernel_output": {
+      "type": "caught_exception",
+      "data": {
+        "exceptionType": "Standard_ConstructionError",
+        "message": "gp_Dir() - input vector has zero norm"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   }
 ]
