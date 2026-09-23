@@ -222,5 +222,242 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Default values",
+    "bridge_function": "OCCTZLayerSettingsCreate",
+    "bridge_output": {
+      "depthTest": true,
+      "depthWrite": true,
+      "clearDepth": true,
+      "immediate": false,
+      "raytracable": true,
+      "environmentTexture": true,
+      "renderInDepthPrepass": true
+    },
+    "kernel_output": {
+      "depthTest": true,
+      "depthWrite": true,
+      "clearDepth": true,
+      "immediate": false,
+      "raytracable": true,
+      "environmentTexture": true,
+      "renderInDepthPrepass": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Depth test toggle",
+    "bridge_function": "OCCTZLayerSettingsSetDepthTest",
+    "bridge_output": {
+      "afterFalse": false,
+      "afterTrue": true
+    },
+    "kernel_output": {
+      "afterFalse": false,
+      "afterTrue": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Depth write toggle",
+    "bridge_function": "OCCTZLayerSettingsSetDepthWrite",
+    "bridge_output": {
+      "value": false
+    },
+    "kernel_output": {
+      "value": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Clear depth toggle",
+    "bridge_function": "OCCTZLayerSettingsSetClearDepth",
+    "bridge_output": {
+      "value": false
+    },
+    "kernel_output": {
+      "value": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Polygon offset roundtrip",
+    "bridge_function": "OCCTZLayerSettingsSetPolygonOffset",
+    "bridge_output": {
+      "mode": "fill",
+      "factor": 1.5,
+      "units": 2.0
+    },
+    "kernel_output": {
+      "mode": 1,
+      "factor": 1.5,
+      "units": 2
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Depth offset positive convenience",
+    "bridge_function": "OCCTZLayerSettingsSetDepthOffsetPositive",
+    "bridge_output": {
+      "mode": "fill",
+      "factor": 1,
+      "units": 1
+    },
+    "kernel_output": {
+      "mode": 1,
+      "factor": 1,
+      "units": 1
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Depth offset negative convenience",
+    "bridge_function": "OCCTZLayerSettingsSetDepthOffsetNegative",
+    "bridge_output": {
+      "mode": "fill",
+      "factor": 1,
+      "units": -1
+    },
+    "kernel_output": {
+      "mode": 1,
+      "factor": 1,
+      "units": -1
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Immediate mode toggle",
+    "bridge_function": "OCCTZLayerSettingsSetImmediate",
+    "bridge_output": {
+      "value": true
+    },
+    "kernel_output": {
+      "value": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Raytracable toggle",
+    "bridge_function": "OCCTZLayerSettingsSetRaytracable",
+    "bridge_output": {
+      "value": false
+    },
+    "kernel_output": {
+      "value": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Culling distance",
+    "bridge_function": "OCCTZLayerSettingsSetCullingDistance",
+    "bridge_output": {
+      "value": 1000.0
+    },
+    "kernel_output": {
+      "value": 1000.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Culling size",
+    "bridge_function": "OCCTZLayerSettingsSetCullingSize",
+    "bridge_output": {
+      "value": 5.0
+    },
+    "kernel_output": {
+      "value": 5.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Origin roundtrip",
+    "bridge_function": "OCCTZLayerSettingsSetOrigin",
+    "bridge_output": {
+      "origin": [
+        100,
+        200,
+        300
+      ]
+    },
+    "kernel_output": {
+      "origin": [
+        100,
+        200,
+        300
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Predefined layer IDs",
+    "bridge_function": "ZLayerSettings layer-id constants (Swift) vs Graphic3d_ZLayerId",
+    "bridge_output": {
+      "bottomOSD": -5,
+      "default": 0,
+      "top": -2,
+      "topmost": -3,
+      "topOSD": -4
+    },
+    "kernel_output": {
+      "BotOSD": -5,
+      "Default": 0,
+      "Top": -2,
+      "Topmost": -3,
+      "TopOSD": -4
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

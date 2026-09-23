@@ -85,3 +85,25 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 194 tests
+
+---
+
+## Measured records (#766 execution, #1984)
+
+Rows below were run: the injection turned the test red at the line named, the test was green with Sources/ restored, and parity is against the probe transcript under `Scripts/repro/766-drawing-*/`.
+
+| Suite | Test | Bridge / Swift subject | Injection | Red (failing line) | Green | Parity |
+|-------|------|------------------------|-----------|--------------------|-------|--------|
+| Z-Layer Settings | Default values | `OCCTZLayerSettingsCreate` | create also turns the environment texture off | `:20` `useEnvironmentTexture == true` | ✔ | PASS |
+| Z-Layer Settings | Depth test toggle | `OCCTZLayerSettingsSetDepthTest` | setter no-op | `:28` | ✔ | PASS |
+| Z-Layer Settings | Depth write toggle | `OCCTZLayerSettingsSetDepthWrite` | setter no-op | `:37` | ✔ | PASS |
+| Z-Layer Settings | Clear depth toggle | `OCCTZLayerSettingsSetClearDepth` | setter no-op | `:44` | ✔ | PASS |
+| Z-Layer Settings | Polygon offset roundtrip | `OCCTZLayerSettingsSetPolygonOffset` | factor written as 0 | `:55` | ✔ | PASS |
+| Z-Layer Settings | Depth offset positive convenience | `OCCTZLayerSettingsSetDepthOffsetPositive` | calls `SetDepthOffsetNegative` | `:66` | ✔ | PASS |
+| Z-Layer Settings | Depth offset negative convenience | `OCCTZLayerSettingsSetDepthOffsetNegative` | calls `SetDepthOffsetPositive` | `:76` | ✔ | PASS |
+| Z-Layer Settings | Immediate mode toggle | `OCCTZLayerSettingsSetImmediate` | setter no-op | `:83` | ✔ | PASS |
+| Z-Layer Settings | Raytracable toggle | `OCCTZLayerSettingsSetRaytracable` | setter no-op | `:90` | ✔ | PASS |
+| Z-Layer Settings | Culling distance | `OCCTZLayerSettingsSetCullingDistance` | setter no-op | `:97` | ✔ | PASS |
+| Z-Layer Settings | Culling size | `OCCTZLayerSettingsSetCullingSize` | setter no-op | `:104` | ✔ | PASS |
+| Z-Layer Settings | Origin roundtrip | `OCCTZLayerSettingsSetOrigin` | setter no-op | `:112` to `:114` | ✔ | PASS |
+| Z-Layer Settings | Predefined layer IDs | `ZLayerSettings layer-id constants (Swift) vs Graphic3d_ZLayerId` | Swift `top` constant -1 | `:121` `ZLayerSettings.top == -2` | ✔ | PASS |
