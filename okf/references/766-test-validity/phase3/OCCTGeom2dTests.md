@@ -124,3 +124,23 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Curve2DBSplineLocalTests.swift`, `Curve2DBSplineTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-bspline-local-and-factories/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Curve2D BSpline Local Evaluation::LocalD0 matches global | `OCCTCurve2DBSplineLocalD0` | x + 1 | ✅ | ✅ | MATCH | `guard let ... else { return }` returned early, green, when the span could not be located; now also pins P |
+| Curve2D BSpline Local Evaluation::LocalD1 returns derivative | `OCCTCurve2DBSplineLocalD1` | V1.x + 1 | ✅ | ✅ | MATCH | `simd_length(r.v1) > 0` passes a wrong derivative; `guard let ... else { return }` returned early, green, when the span could not be located |
+| Curve2D BSpline Local Evaluation::LocalD2 returns second derivative | `OCCTCurve2DBSplineLocalD2` | V2.y + 1 | ✅ | ✅ | MATCH | the assertion was `> 0 || == 0`, true for every value |
+| Curve2D BSpline Local Evaluation::LocalD3 and LocalDN | `OCCTCurve2DBSplineLocalD3 / OCCTCurve2DBSplineLocalDN` | V3.y + 1, and DN evaluated at n + 1 | ✅ | ✅ | MATCH | LocalD3 was discarded (`let _ =`) and DN checked only `> 0` |
+| Curve2D BSpline Local Evaluation::LocalValue matches global | `OCCTCurve2DBSplineLocalValue` | evaluate at u + 0.1 | ✅ | ✅ | MATCH | `guard let ... else { return }` returned early, green, when the span could not be located; now also pins P |
+| Curve2D BSpline Tests::Create quadratic Bezier | `OCCTCurve2DGetPoleCount` | Bezier pole count + 1 | ✅ | ✅ | MATCH |  |
+| Curve2D BSpline Tests::Create cubic BSpline | `OCCTCurve2DCreateBSpline` | double every knot | ✅ | ✅ | MATCH | `!= nil` only; now pins the domain and point(1.5) |
+| Curve2D BSpline Tests::Interpolate through points | `OCCTCurve2DInterpolate` | drop the last of four points | ✅ | ✅ | MATCH | start point only; now pins the second point and the end |
+| Curve2D BSpline Tests::Interpolate with end tangents | `OCCTCurve2DInterpolateWithTangents` | skip Load(startTan, endTan) | ✅ | ✅ | MATCH | `!= nil` only; now pins the end derivatives |
+| Curve2D BSpline Tests::Fit points with tolerance | `OCCTCurve2DFitPoints` | tolerance x 100 | ✅ | ✅ | MATCH | `!= nil` only; now pins degree, poles and end |
+| Curve2D BSpline Tests::Pole count query | `OCCTCurve2DGetPoleCount` | Bezier pole count + 1 | ✅ | ✅ | MATCH |  |
+| Curve2D BSpline Tests::Poles roundtrip | `OCCTCurve2DGetPoles` | shift each Bezier pole x by 1 | ✅ | ✅ | MATCH |  |
+| Curve2D BSpline Tests::Draw interpolated curve | `OCCTCurve2DDrawAdaptive` | double the angular deflection | ✅ | ✅ | MATCH | `count >= 3`; now pins 30 points and both ends |
