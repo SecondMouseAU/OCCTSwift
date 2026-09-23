@@ -124,3 +124,20 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Curve2DOperationsTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-localprops-operations/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Curve2D Operations Tests::Trim circle to quarter arc | `OCCTCurve2DTrim` | trim to half the upper bound | ✅ | ✅ | MATCH | nested in `if let arc`; now required |
+| Curve2D Operations Tests::Offset segment | `OCCTCurve2DOffset` | negate the offset | ✅ | ✅ | MATCH | `!= nil` only; now pins the offset segment |
+| Curve2D Operations Tests::Reverse segment swaps endpoints | `OCCTCurve2DReversed` | return a copy, not reversed | ✅ | ✅ | MATCH |  |
+| Curve2D Operations Tests::Translate segment | `OCCTCurve2DTranslate` | dx + 1 | ✅ | ✅ | MATCH |  |
+| Curve2D Operations Tests::Rotate quarter turn | `OCCTCurve2DRotate` | half the angle | ✅ | ✅ | MATCH |  |
+| Curve2D Operations Tests::Scale by 2x | `OCCTCurve2DScale` | factor + 1 | ✅ | ✅ | MATCH |  |
+| Curve2D Operations Tests::Mirror across X axis | `OCCTCurve2DMirrorAxis` | swap the axis direction components | ✅ | ✅ | MATCH |  |
+| Curve2D Operations Tests::Mirror across point | `OCCTCurve2DMirrorPoint` | mirror point x + 1 | ✅ | ✅ | MATCH |  |
+| Curve2D Operations Tests::Circle length approximately 2*pi*r | `OCCTCurve2DGetLength` | length x 1.01 | ✅ | ✅ | MATCH |  |
+| Curve2D Operations Tests::Segment length approximately Euclidean distance | `OCCTCurve2DGetLength` | length x 1.01 | ✅ | ✅ | MATCH |  |
