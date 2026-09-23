@@ -497,5 +497,122 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "IntTools_EdgeEdge Tests::Intersecting edges produce vertex common part",
+    "bridge_function": "OCCTIntToolsEdgeEdge",
+    "bridge_output": {
+      "type": "common_parts",
+      "data": {
+        "count": 1,
+        "parts": [
+          {
+            "type": "vertex",
+            "param1": 1.0,
+            "param2": 1.0,
+            "point": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "common_parts",
+      "data": {
+        "count": 1,
+        "parts": [
+          {
+            "type": "vertex",
+            "param1": 1.0,
+            "param2": 1.0,
+            "point": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "IntTools_EdgeEdge Tests::Overlapping collinear edges produce edge common part",
+    "bridge_function": "OCCTIntToolsEdgeEdge",
+    "bridge_output": {
+      "type": "common_parts",
+      "data": {
+        "count": 1,
+        "parts": [
+          {
+            "type": "edge",
+            "range1": [
+              1.0,
+              2.0
+            ],
+            "point": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "common_parts",
+      "data": {
+        "count": 1,
+        "parts": [
+          {
+            "type": "edge",
+            "range1": [
+              1.0,
+              2.0
+            ],
+            "point": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "IntTools_EdgeEdge Tests::Non-intersecting edges return empty array",
+    "bridge_function": "OCCTIntToolsEdgeEdge",
+    "bridge_output": {
+      "type": "common_parts",
+      "data": {
+        "is_done": true,
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "common_parts",
+      "data": {
+        "is_done": true,
+        "count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

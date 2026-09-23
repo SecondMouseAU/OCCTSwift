@@ -102,6 +102,9 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **IntTools_EdgeEdge Tests** | Intersecting edges produce vertex common part | Edge-edge intersection | fillCommonPart inverts vertex/edge type |
+| **IntTools_EdgeEdge Tests** | Overlapping collinear edges produce edge common part | Edge-edge overlap | fillCommonPart inverts vertex/edge type (range pinned, #766) |
+| **IntTools_EdgeEdge Tests** | Non-intersecting edges return empty array | Edge-edge no hit | OCCTIntToolsEdgeEdge reports failure |
 
 ---
 
