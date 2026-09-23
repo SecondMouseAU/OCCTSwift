@@ -6,5 +6,625 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Surface Analytic Primitives::Create plane and evaluate point",
+    "bridge_function": "OCCTSurfaceGetPoint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          0,
+          0,
+          0
+        ],
+        "S(3,4)": [
+          3,
+          4,
+          0
+        ],
+        "uMin": -2e+100
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          0,
+          0,
+          0
+        ],
+        "S(3,4)": [
+          3,
+          4,
+          0
+        ],
+        "uMin": -2e+100
+      },
+      "source": "Scripts/repro/766-surface-analytic/transcript.txt planeEvaluation"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Analytic Primitives::Plane normal is consistent",
+    "bridge_function": "OCCTSurfaceGetNormal",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "normal": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "normal": [
+          0,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-surface-analytic/transcript.txt planeNormal"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Analytic Primitives::Create sphere and check properties",
+    "bridge_function": "OCCTSurfaceGetUPeriod",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "IsUPeriodic": true,
+        "UPeriod": 6.283185307179586
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "IsUPeriodic": true,
+        "UPeriod": 6.283185307179586
+      },
+      "source": "Scripts/repro/766-surface-analytic/transcript.txt sphereProperties"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Analytic Primitives::Closure flags (isUClosed/isVClosed) match each analytic surface's own documented answer",
+    "bridge_function": "OCCTSurfaceIsUClosed",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "plane": [
+          false,
+          false
+        ],
+        "cylinder": [
+          true,
+          false
+        ],
+        "sphere": [
+          true,
+          false
+        ],
+        "torus": [
+          true,
+          true
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "plane": [
+          false,
+          false
+        ],
+        "cylinder": [
+          true,
+          false
+        ],
+        "sphere": [
+          true,
+          false
+        ],
+        "torus": [
+          true,
+          true
+        ]
+      },
+      "source": "Scripts/repro/766-surface-analytic/transcript.txt closureFlags"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Analytic Primitives::Sphere point evaluation",
+    "bridge_function": "OCCTSurfaceCreateSphere",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          5,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-analytic/transcript.txt sphereEvaluation"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Analytic Primitives::Create cylinder",
+    "bridge_function": "OCCTSurfaceCreateCylinder",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          3,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          3,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-analytic/transcript.txt cylinderCreation"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Analytic Primitives::Create cone",
+    "bridge_function": "OCCTSurfaceCreateCone",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          5,
+          0,
+          0
+        ],
+        "S(0,10)": [
+          10,
+          0,
+          8.660254037844387
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          5,
+          0,
+          0
+        ],
+        "S(0,10)": [
+          10,
+          0,
+          8.660254037844387
+        ]
+      },
+      "source": "Scripts/repro/766-surface-analytic/transcript.txt coneCreation"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Analytic Primitives::Create torus",
+    "bridge_function": "OCCTSurfaceCreateTorus",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          13,
+          0,
+          0
+        ],
+        "periodic": [
+          true,
+          true
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          13,
+          0,
+          0
+        ],
+        "periodic": [
+          true,
+          true
+        ]
+      },
+      "source": "Scripts/repro/766-surface-analytic/transcript.txt torusCreation"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Analytic Primitives::Sphere Gaussian curvature = 1/r²",
+    "bridge_function": "OCCTSurfaceGetGaussianCurvature",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "K": 0.04000000000000001
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "K": 0.04000000000000001
+      },
+      "source": "Scripts/repro/766-surface-analytic/transcript.txt sphereGaussian/MeanCurvature"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Analytic Primitives::Sphere mean curvature = 1/r",
+    "bridge_function": "OCCTSurfaceGetMeanCurvature",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "H": -0.2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "H": -0.2
+      },
+      "source": "Scripts/repro/766-surface-analytic/transcript.txt sphereGaussian/MeanCurvature"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Analytic Primitives::Plane Gaussian curvature = 0",
+    "bridge_function": "OCCTSurfaceGetGaussianCurvature",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "defined": true,
+        "K": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "defined": true,
+        "K": 0
+      },
+      "source": "Scripts/repro/766-surface-analytic/transcript.txt planeGaussianCurvature"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Analytic Primitives::Cylinder principal curvatures = (0, 1/r)",
+    "bridge_function": "OCCTSurfaceGetPrincipalCurvatures",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "kMin": -0.25,
+        "kMax": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "kMin": -0.25,
+        "kMax": 0
+      },
+      "source": "Scripts/repro/766-surface-analytic/transcript.txt cylinderPrincipalCurvatures"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Analytic Primitives::Cylinder principal curvature directions are not transposed",
+    "bridge_function": "OCCTSurfaceGetPrincipalCurvatures",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "dirMin": [
+          -0.479426,
+          0.877583,
+          0
+        ],
+        "dirMax": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "dirMin": [
+          -0.479426,
+          0.877583,
+          0
+        ],
+        "dirMax": [
+          0,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-surface-analytic/transcript.txt cylinderPrincipalCurvatures"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface.approximated defaults match Curve3D/Curve2D (#406)::Default call succeeds and respects the shared maxDegree cap",
+    "bridge_function": "OCCTSurfaceApproximate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          8,
+          8
+        ],
+        "poles": [
+          15,
+          9
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          8,
+          8
+        ],
+        "poles": [
+          15,
+          9
+        ]
+      },
+      "source": "Scripts/repro/766-surface-approx-defaults/transcript.txt sphere tol 1e-3 deg 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface.approximated defaults match Curve3D/Curve2D (#406)::Default call is equivalent to an explicit tolerance: 1e-3, maxDegree: 8 call",
+    "bridge_function": "OCCTSurfaceApproximate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "default": [
+          8,
+          8
+        ],
+        "old default": [
+          10,
+          8
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "default": [
+          8,
+          8
+        ],
+        "old default": [
+          10,
+          8
+        ]
+      },
+      "source": "Scripts/repro/766-surface-approx-defaults/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface.approximated defaults match Curve3D/Curve2D (#406)::Tighter shared defaults still succeed on every primitive the old looser defaults handled",
+    "bridge_function": "OCCTSurfaceApproximate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "torus poles": [
+          23,
+          23
+        ],
+        "cylinder poles": [
+          15,
+          6
+        ],
+        "cone poles": [
+          15,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "torus poles": [
+          23,
+          23
+        ],
+        "cylinder poles": [
+          15,
+          6
+        ],
+        "cone poles": [
+          15,
+          6
+        ]
+      },
+      "source": "Scripts/repro/766-surface-approx-defaults/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface.approximated defaults match Curve3D/Curve2D (#406)::Non-analytic surface (offset of a BSpline base) still approximates at the new default",
+    "bridge_function": "OCCTSurfaceApproximate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "maxDeviation": 0.026897065170123618
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "maxDeviation": 0.026897065170123618
+      },
+      "source": "Scripts/repro/766-surface-approx-defaults/transcript.txt offset approx (base approx deviates 0.300)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Surface.torusAxis / revolutionAxis::Torus surface exposes axis",
+    "bridge_function": "OCCTSurfaceTorusAxis",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "origin": [
+          1,
+          2,
+          3
+        ],
+        "direction": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "origin": [
+          1,
+          2,
+          3
+        ],
+        "direction": [
+          0,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-surface-approx-defaults/transcript.txt torusSurfaceAxis"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Surface.torusAxis / revolutionAxis::Cylinder surface returns nil for torusAxis",
+    "bridge_function": "OCCTSurfaceGetType",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "torusAxis": null,
+        "kind": "cylinder"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "torusAxis": null,
+        "kind": "cylinder"
+      },
+      "source": "N/A for the nil: a Swift-side kind guard; surfaceKind reads Geom_CylindricalSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
