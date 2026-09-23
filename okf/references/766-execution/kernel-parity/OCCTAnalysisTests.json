@@ -4932,5 +4932,93 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Patterns::Triangle boundary",
+    "bridge_function": "OCCTHatchLines",
+    "bridge_output": {
+      "type": "segments",
+      "data": {
+        "count": 9,
+        "y": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "x_from": "y/2",
+        "x_to": "10 - y/2"
+      }
+    },
+    "kernel_output": {
+      "type": "segments",
+      "data": {
+        "count": 9,
+        "y": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "x_from": "y/2",
+        "x_to": "10 - y/2"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Patterns::An island polygon cuts a hole in the hatch fill",
+    "bridge_function": "OCCTHatchLines",
+    "bridge_output": {
+      "type": "segments",
+      "data": {
+        "count": 13,
+        "y10_spans": [
+          [
+            0.0,
+            7.0
+          ],
+          [
+            13.0,
+            20.0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "segments",
+      "data": {
+        "count": 13,
+        "y10_spans": [
+          [
+            0.0,
+            7.0
+          ],
+          [
+            13.0,
+            20.0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
