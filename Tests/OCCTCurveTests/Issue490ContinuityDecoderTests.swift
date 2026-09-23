@@ -69,11 +69,16 @@ struct Issue490CurveContinuityTests {
         #expect(curve.splitByContinuity(criterion: 2).count == 1)
         let atC3 = curve.splitByContinuity(criterion: 3).count
         #expect(atC3 > 1)
-
+        // #766: "more than one" and ">= atC3" held for many wrong answers. Six interpolated points
+        // give five spans, and ShapeUpgrade_SplitCurve3dContinuity splits at every interior knot
+        // at C3 and at CN alike (Scripts/repro/766-curve-continuity-485-486-490).
+        #expect(atC3 == 5)
         // 4 is CN, the top of the same ladder, which is what criterion 4 has always documented,
         // and now what every out-of-range value decodes to, in every entry point.
         #expect(curve.splitByContinuity(criterion: 4).count >= atC3)
         #expect(curve.splitByContinuity(criterion: 99).count >= atC3)
+        #expect(curve.splitByContinuity(criterion: 4).count == 5)
+        #expect(curve.splitByContinuity(criterion: 99).count == 5)
     }
 
     // MARK: - Analysis order: a GeomAbs_Shape ordinal, ceilinged at C2
@@ -82,7 +87,10 @@ struct Issue490CurveContinuityTests {
     func analysisOrderSaturates() throws {
         // Sharp-corner fixture shared via CurveTestFixtures.swift (#1263): this was reimplemented
         // inline here (and at four other sites across three files) before that review.
-        guard let (c1, c2) = sharpCornerCurves() else { return }
+        guard let (c1, c2) = sharpCornerCurves() else {
+            Issue.record("could not build the sharp-corner fixture")  // #766: was a silent return
+            return
+        }
 
         let atC2 = try #require(
             c1.continuityWith(
@@ -105,7 +113,10 @@ struct Issue490CurveContinuityTests {
 
     @Test("each analysis order below the ceiling asks a different question")
     func analysisOrderIsObservable() throws {
-        guard let (c1, c2) = sharpCornerCurves() else { return }
+        guard let (c1, c2) = sharpCornerCurves() else {
+            Issue.record("could not build the sharp-corner fixture")  // #766: was a silent return
+            return
+        }
 
         // The order is echoed back verbatim, so what makes each one a *different question* is the
         // set of classes it measures, see Issue495CurveAnalysisOrderTests for that half.

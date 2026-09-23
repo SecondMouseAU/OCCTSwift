@@ -302,5 +302,261 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve3D measured continuity (#485)::knotMultiplicityDrivesMeasuredClass",
+    "test_file": "Tests/OCCTCurveTests/Issue485Curve3DContinuityTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "4, 2, 0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_Shape: C0 0 G1 1 C1 2 G2 3 C2 4 C3 5 CN 6; Geom_BSplineCurve::Continuity follows the interior multiplicity"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold: the retired hand-mapped encoding",
+    "red": "Issue485Curve3DContinuityTests.swift:58 c2.continuity == 4",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt",
+    "note": "Three silent if-let skips now record an issue"
+  },
+  {
+    "test_name": "Curve3D measured continuity (#485)::analyticCurvesReportCN",
+    "test_file": "Tests/OCCTCurveTests/Issue485Curve3DContinuityTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "6, 6"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Line and Geom_Circle Continuity() = 6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold",
+    "red": "Issue485Curve3DContinuityTests.swift:81 line.continuity == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt",
+    "note": "Two silent if-let skips now record an issue"
+  },
+  {
+    "test_name": "Curve3D measured continuity (#485)::g1CurveReportsOrdinalOne",
+    "test_file": "Tests/OCCTCurveTests/Issue485Curve3DContinuityTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_OffsetCurve over the C0 basis: Continuity() = 1 (basis 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold",
+    "red": "Issue485Curve3DContinuityTests.swift:101 g1.continuity == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D measured continuity (#485)::bothPropertiesAgree",
+    "test_file": "Tests/OCCTCurveTests/Issue485Curve3DContinuityTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "agree on all five"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_Shape: C0 0 G1 1 C1 2 G2 3 C2 4 C3 5 CN 6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold",
+    "red": "Issue485Curve3DContinuityTests.swift:125 continuity == continuityClass.rawValue",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D measured continuity (#485)::retiredSentinelValuesAreGone",
+    "test_file": "Tests/OCCTCurveTests/Issue485Curve3DContinuityTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "none of 99, -2, -3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_Shape: C0 0 G1 1 C1 2 G2 3 C2 4 C3 5 CN 6 (no negative or 99 ordinal exists)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold",
+    "red": "Issue485Curve3DContinuityTests.swift:139 continuity != 99",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt"
+  },
+  {
+    "test_name": "Issue 486: Curve3D batch-eval spellings agree::emptyParametersGiveEmptyResult",
+    "test_file": "Tests/OCCTCurveTests/Issue486Curve3DBatchTests.swift",
+    "bridge_function": "none: Swift early return",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: empty input returns before the bridge"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "A silent `guard ... else { return }` now records an issue"
+      ]
+    },
+    "status": "N/A",
+    "injection": "gridpad: empty input answers one zero point",
+    "red": "Issue486Curve3DBatchTests.swift:26 evaluateGrid([]).isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt",
+    "note": "A silent `guard ... else { return }` now records an issue"
+  },
+  {
+    "test_name": "Issue #490: continuity vocabulary domains (curves)::approximationDomain",
+    "test_file": "Tests/OCCTCurveTests/Issue490ContinuityDecoderTests.swift",
+    "bridge_function": "OCCTCurve3DApproximate",
+    "bridge_output": {
+      "type": "value",
+      "data": "C0/C1/C2 built, C3 and 99 nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert_ApproxCurve: C0, C1, C2 HasResult; C3 throws"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "approxc3: continuity clamped to 2",
+    "red": "Issue490ContinuityDecoderTests.swift:33 approximated(continuity: 3) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt"
+  },
+  {
+    "test_name": "Issue #490: continuity vocabulary domains (curves)::pointFittingDomain",
+    "test_file": "Tests/OCCTCurveTests/Issue490ContinuityDecoderTests.swift",
+    "bridge_function": "OCCTPointsToBSplineWithParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "built at 0...3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: GeomAPI_PointsToBSpline not probed here; the test is a does-not-fail contract"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "fitfail: continuity 3 answers nil",
+    "red": "Issue490ContinuityDecoderTests.swift:56 approximate(points:, continuity: 3) != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt"
+  },
+  {
+    "test_name": "Issue #490: continuity vocabulary domains (curves)::splitCriterionLadder",
+    "test_file": "Tests/OCCTCurveTests/Issue490ContinuityDecoderTests.swift",
+    "bridge_function": "OCCTSplitCurve3dContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "C2 1, C3 5, CN 5, 99 5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "ShapeUpgrade_SplitCurve3dContinuity: C2 1, C3 5, CN 5 pieces"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "splitcrit: criterion - 1",
+    "red": "Issue490ContinuityDecoderTests.swift:71 atC3 > 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt",
+    "note": "REWRITTEN: > 1 and >= atC3 now also pin 5"
+  },
+  {
+    "test_name": "Issue #490: continuity vocabulary domains (curves)::analysisOrderSaturates",
+    "test_file": "Tests/OCCTCurveTests/Issue490ContinuityDecoderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": ".c2 for both"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the C2 ceiling is the bridge's decoder; LocalAnalysis_CurveContinuity has no predicate above C2"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "A silent return now records an issue"
+      ]
+    },
+    "status": "N/A",
+    "injection": "aord: requested order echoed unsaturated",
+    "red": "Issue490ContinuityDecoderTests.swift:106 atC2.order == beyond.order",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt",
+    "note": "A silent return now records an issue"
+  },
+  {
+    "test_name": "Issue #490: continuity vocabulary domains (curves)::analysisOrderIsObservable",
+    "test_file": "Tests/OCCTCurveTests/Issue490ContinuityDecoderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "each order echoed"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the echo is bridge-side; the measured-class half is Issue495's"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "A silent return now records an issue"
+      ]
+    },
+    "status": "N/A",
+    "injection": "aecho: order always reported as .c2",
+    "red": "Issue490ContinuityDecoderTests.swift:128 analysis.order == order",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt",
+    "note": "A silent return now records an issue"
   }
 ]

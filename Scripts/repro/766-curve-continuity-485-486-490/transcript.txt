@@ -1,0 +1,11 @@
+GeomAbs ordinals: C0 0 G1 1 C1 2 G2 3 C2 4 C3 5 CN 6
+G1 fixture: basis continuity 0, offset continuity 1
+line 6 circle 6
+six-point interpolation: degree 3 knots 6 continuity 4
+  split at criterion 4 -> 1 pieces
+  split at criterion 5 -> 5 pieces
+  split at criterion 6 -> 5 pieces
+  GeomConvert_ApproxCurve 0: HasResult 1
+  GeomConvert_ApproxCurve 2: HasResult 1
+  GeomConvert_ApproxCurve 4: HasResult 1
+  GeomConvert_ApproxCurve 5: throws 

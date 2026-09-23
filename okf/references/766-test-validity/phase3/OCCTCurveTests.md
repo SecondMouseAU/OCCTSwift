@@ -197,3 +197,21 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Curve3D measured continuity (#485) | knotMultiplicityDrivesMeasuredClass | `OCCTCurve3DGetContinuity` | contold: the retired hand-mapped encoding | `Issue485Curve3DContinuityTests.swift:58 c2.continuity == 4` | ✅ | MATCH | Three silent if-let skips now record an issue |
+| Curve3D measured continuity (#485) | analyticCurvesReportCN | `OCCTCurve3DGetContinuity` | contold | `Issue485Curve3DContinuityTests.swift:81 line.continuity == 6` | ✅ | MATCH | Two silent if-let skips now record an issue |
+| Curve3D measured continuity (#485) | g1CurveReportsOrdinalOne | `OCCTCurve3DGetContinuity` | contold | `Issue485Curve3DContinuityTests.swift:101 g1.continuity == 1` | ✅ | MATCH |  |
+| Curve3D measured continuity (#485) | bothPropertiesAgree | `OCCTCurve3DGetContinuity` | contold | `Issue485Curve3DContinuityTests.swift:125 continuity == continuityClass.rawValue` | ✅ | MATCH |  |
+| Curve3D measured continuity (#485) | retiredSentinelValuesAreGone | `OCCTCurve3DGetContinuity` | contold | `Issue485Curve3DContinuityTests.swift:139 continuity != 99` | ✅ | MATCH |  |
+| Issue 486: Curve3D batch-eval spellings agree | emptyParametersGiveEmptyResult | `none: Swift early return` | gridpad: empty input answers one zero point | `Issue486Curve3DBatchTests.swift:26 evaluateGrid([]).isEmpty` | ✅ | N/A | A silent `guard ... else { return }` now records an issue |
+| Issue #490: continuity vocabulary domains (curves) | approximationDomain | `OCCTCurve3DApproximate` | approxc3: continuity clamped to 2 | `Issue490ContinuityDecoderTests.swift:33 approximated(continuity: 3) == nil` | ✅ | MATCH |  |
+| Issue #490: continuity vocabulary domains (curves) | pointFittingDomain | `OCCTPointsToBSplineWithParams` | fitfail: continuity 3 answers nil | `Issue490ContinuityDecoderTests.swift:56 approximate(points:, continuity: 3) != nil` | ✅ | N/A |  |
+| Issue #490: continuity vocabulary domains (curves) | splitCriterionLadder | `OCCTSplitCurve3dContinuity` | splitcrit: criterion - 1 | `Issue490ContinuityDecoderTests.swift:71 atC3 > 1` | ✅ | MATCH | REWRITTEN: > 1 and >= atC3 now also pin 5 |
+| Issue #490: continuity vocabulary domains (curves) | analysisOrderSaturates | `OCCTLocalAnalysisCurveContinuity` | aord: requested order echoed unsaturated | `Issue490ContinuityDecoderTests.swift:106 atC2.order == beyond.order` | ✅ | N/A | A silent return now records an issue |
+| Issue #490: continuity vocabulary domains (curves) | analysisOrderIsObservable | `OCCTLocalAnalysisCurveContinuity` | aecho: order always reported as .c2 | `Issue490ContinuityDecoderTests.swift:128 analysis.order == order` | ✅ | N/A | A silent return now records an issue |
