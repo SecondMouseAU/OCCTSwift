@@ -90,3 +90,39 @@ For each test, run ground-truth C++ comparison:
 | deferredModeToggle | ✅ | ✅ | ✅ |
 
 **Total**: 18 tests
+---
+
+## Measured: Compact, Compound, CompSolid, Copy, Counts and Deduplicate (#1986)
+
+Measured on the pinned kernel: every row below was run red under the injection shown and
+green once it was reverted. Probes and transcripts are under `Scripts/repro/766-brepgraph-*/`.
+
+### Test Inventory
+
+| Suite | Test | Defect Category | Injection Target |
+|-------|------|-----------------|------------------|
+| **BRepGraph Compact** | compactBox | Compaction result | nodesAfter + 1 |
+| **BRepGraph Compound Queries** | compoundQueriesOnCompound | Compound relations | child count + 1, parent count + 1 |
+| **BRepGraph CompSolid Count** | compSolidCount | CompSolid count | always 0 |
+| **BRepGraph Copy** | deepCopy | Graph copy | BRepGraph_Copy::Perform skipped |
+| **BRepGraph Copy** | lightCopy | Graph copy | BRepGraph_Copy::Perform skipped |
+| **BRepGraph Copy** | copyFace | Face copy | CopyNode of Kind::Wire |
+| **BRepGraph Counts** | activeCounts | Active count | NbActive faces + 1 |
+| **BRepGraph Counts** | geometryCounts | Geometry count | NbCoEdgeCurves2D + 1 |
+| **BRepGraph Counts** | coedgeCounts | CoEdge count | Nb - 1 |
+| **BRepGraph Deduplicate** | deduplicateBox | Deduplication result | surface/curve counts swapped |
+
+### Injection Matrix
+
+| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
+|------|-----------------|--------|-----------|------|--------|-------|
+| compactBox | OCCTBRepGraphCompact | Compaction result | nodesAfter + 1 | ✅ :19, :25 | ✅ | Rewritten: `nodesAfter > 0` stayed green |
+| compoundQueriesOnCompound | OCCTBRepGraphCompoundChildCount | Compound relations | child count + 1, parent count + 1 | ✅ :18 `compoundChildCount(0) == 2`, :20 | ✅ | `>= 1` / `>= 2` pinned (child +1 was not caught) |
+| compSolidCount | OCCTBRepGraphNbCompSolids | CompSolid count | always 0 | ✅ :16 `compSolidCount == 1` | ✅ | Rewritten: `== 0` alone passed a counter stuck at 0 |
+| deepCopy | OCCTBRepGraphCopy | Graph copy | BRepGraph_Copy::Perform skipped | ✅ :15 to :18 | ✅ | Original also red |
+| lightCopy | OCCTBRepGraphCopy | Graph copy | BRepGraph_Copy::Perform skipped | ✅ :25 to :27 | ✅ | Original also red |
+| copyFace | OCCTBRepGraphCopyFace | Face copy | CopyNode of Kind::Wire | ✅ :35 `faceCount == 1` | ✅ | Original also red |
+| activeCounts | OCCTBRepGraphNbActiveFaces | Active count | NbActive faces + 1 | ✅ :12 | ✅ | Original also red |
+| geometryCounts | OCCTBRepGraphNbCurves2D | Geometry count | NbCoEdgeCurves2D + 1 | ✅ :24 `curve2DCount == 24` | ✅ | Rewritten: `curve2DCount > 0` stayed green |
+| coedgeCounts | OCCTBRepGraphNbCoEdges | CoEdge count | Nb - 1 | ✅ :30 | ✅ | Original also red |
+| deduplicateBox | OCCTBRepGraphDeduplicate | Deduplication result | surface/curve counts swapped | ✅ :15, :16 | ✅ | Original also red; rewrite counts added |
