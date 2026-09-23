@@ -124,3 +124,21 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Issue791ConvertCircleHelperTests.swift`, `Issue815Curve2DExtremaSelfIntersectTests.swift`, `Issue840ClassifyPoint2dToleranceTests.swift`, `Issue881PerpendicularBasisTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-issue-regressions-b/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Issue791 Circle 2D BSpline helper consolidation::fullCircleOriginMatchesPriorBaseline | `OCCTConvertCircleToBSpline2D` | radius + 1e-3 | ✅ | ✅ | MATCH |  |
+| Issue791 Circle 2D BSpline helper consolidation::offsetArcMatchesPriorBaseline | `OCCTConvertCircleToBSpline2D` | radius + 1e-3 | ✅ | ✅ | MATCH |  |
+| Issue791 Circle 2D BSpline helper consolidation::convertedCircleStaysOnTheAnalyticCircle | `OCCTConvertCircleToBSpline2D` | radius + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Extrema and Self-Intersection (#815)::allExtrema between two separated circles: exactly a nearest and a farthest point pair | `OCCTCurve2DAllExtrema` | each distance + 1e-3 | ✅ | ✅ | MATCH | min/max inside `if let`, 0.1 slack; now all four pinned |
+| Curve2D Extrema and Self-Intersection (#815)::Self-intersections of a looped cubic Bezier curve | `OCCTCurve2DSelfIntersect` | result count flipped (none found / phantom one) | ✅ | ✅ | MATCH | `if let`, 0.1 slack; now exact |
+| Curve2D Extrema and Self-Intersection (#815)::A circle (convex, simple) reports no self-intersections | `OCCTCurve2DSelfIntersect` | result count flipped (none found / phantom one) | ✅ | ✅ | MATCH | force-unwrapped fixture; now `#require` |
+| Issue #840: classifyPoint2d default tolerance alignment::classifyPoint2d agrees with Face.classify and classifyPoint2D on a borderline point | `OCCTIntToolsFClass2dPerform` | default tolerance back to 1e-7 (pre-#840) | ✅ | ✅ | MATCH |  |
+| Issue #840: classifyPoint2d default tolerance alignment::well-inside point is unaffected by the tolerance change | `OCCTIntToolsFClass2dPerform` | IN and OUT swapped in the state mapping | ✅ | ✅ | MATCH |  |
+| Issue #840: classifyPoint2d default tolerance alignment::well-outside point is unaffected by the tolerance change | `OCCTIntToolsFClass2dPerform` | IN and OUT swapped in the state mapping | ✅ | ✅ | MATCH |  |
+| perpendicularBasis unification: Section2D (#881)::sectionPlaneBasis's auto-derived (u, v) matches OCCT's gp_Ax2 canonical basis | `Shape.sectionPlaneBasis (Swift)` | u and v swapped | ✅ | ✅ | MATCH |  |
+| perpendicularBasis unification: Section2D (#881)::sectionPlaneBasis with an explicitU is unaffected by the unification | `Shape.sectionPlaneBasis (Swift)` | explicit u not orthogonalised against the normal | ✅ | ✅ | MATCH |  |

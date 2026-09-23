@@ -94,5 +94,361 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue791 Circle 2D BSpline helper consolidation::fullCircleOriginMatchesPriorBaseline",
+    "bridge_function": "OCCTConvertCircleToBSpline2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poles": 7,
+        "degree": 2,
+        "rational": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poles": 7,
+        "degree": 2,
+        "rational": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1e-3",
+      "red": "Issue791ConvertCircleHelperTests.swift:97:13: Expectation failed: p == baseline.point",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue791 Circle 2D BSpline helper consolidation::offsetArcMatchesPriorBaseline",
+    "bridge_function": "OCCTConvertCircleToBSpline2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poles": 5,
+        "degree": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poles": 5,
+        "degree": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1e-3",
+      "red": "Issue791ConvertCircleHelperTests.swift:97:13: Expectation failed: p == baseline.point",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue791 Circle 2D BSpline helper consolidation::convertedCircleStaysOnTheAnalyticCircle",
+    "bridge_function": "OCCTConvertCircleToBSpline2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radial error": "< 1e-6"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radial error": "< 1e-6"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1e-3",
+      "red": "Issue791ConvertCircleHelperTests.swift:128:17: Expectation failed: abs(dist - c.radius) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Extrema and Self-Intersection (#815)::allExtrema between two separated circles: exactly a nearest and a farthest point pair",
+    "bridge_function": "OCCTCurve2DAllExtrema",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distances": [
+          10,
+          20,
+          20,
+          30
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "NbExtrema": 4,
+        "distances": [
+          20,
+          10,
+          30,
+          20
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "each distance + 1e-3",
+      "red": "Issue815Curve2DExtremaSelfIntersectTests.swift:30:9: Expectation failed: abs(distances[0] - 10) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": "min/max inside `if let`, 0.1 slack; now all four pinned"
+    }
+  },
+  {
+    "test_name": "Curve2D Extrema and Self-Intersection (#815)::Self-intersections of a looped cubic Bezier curve",
+    "bridge_function": "OCCTCurve2DSelfIntersect",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "points": [
+          [
+            2.5,
+            3
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "points": [
+          [
+            2.5,
+            3
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "result count flipped (none found / phantom one)",
+      "red": "Issue815Curve2DExtremaSelfIntersectTests.swift:51:13: Expectation failed: hits.count == 1",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": "`if let`, 0.1 slack; now exact"
+    }
+  },
+  {
+    "test_name": "Curve2D Extrema and Self-Intersection (#815)::A circle (convex, simple) reports no self-intersections",
+    "bridge_function": "OCCTCurve2DSelfIntersect",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "points": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "points": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "result count flipped (none found / phantom one)",
+      "red": "Issue815Curve2DExtremaSelfIntersectTests.swift:60:9: Expectation failed: hits.isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": "force-unwrapped fixture; now `#require`"
+    }
+  },
+  {
+    "test_name": "Issue #840: classifyPoint2d default tolerance alignment::classifyPoint2d agrees with Face.classify and classifyPoint2D on a borderline point",
+    "bridge_function": "OCCTIntToolsFClass2dPerform",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "(-5e-7, 5)": "onBoundary"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tol 1e-6": "ON",
+        "tol 1e-7": "OUT"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "default tolerance back to 1e-7 (pre-#840)",
+      "red": "Issue840ClassifyPoint2dToleranceTests.swift:37:9: Expectation failed: viaClassifyPoint2d == .onBoundary",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue #840: classifyPoint2d default tolerance alignment::well-inside point is unaffected by the tolerance change",
+    "bridge_function": "OCCTIntToolsFClass2dPerform",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "(5,5)": "inside"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "(5,5)": "inside"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "IN and OUT swapped in the state mapping",
+      "red": "Issue840ClassifyPoint2dToleranceTests.swift:52:9: Expectation failed: shape.classifyPoint2d(u: 5, v: 5) == .inside",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue #840: classifyPoint2d default tolerance alignment::well-outside point is unaffected by the tolerance change",
+    "bridge_function": "OCCTIntToolsFClass2dPerform",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "(15,15)": "outside"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "(15,15)": "outside"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "IN and OUT swapped in the state mapping",
+      "red": "Issue840ClassifyPoint2dToleranceTests.swift:60:9: Expectation failed: shape.classifyPoint2d(u: 15, v: 15) == .outside",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "perpendicularBasis unification: Section2D (#881)::sectionPlaneBasis's auto-derived (u, v) matches OCCT's gp_Ax2 canonical basis",
+    "bridge_function": "Shape.sectionPlaneBasis (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "u": [
+          0,
+          0.9777876596251666,
+          -0.20959793101254465
+        ],
+        "v": [
+          -0.987868702146798,
+          0.03254876181607849,
+          0.1518420410263285
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "gp_Ax2 X": [
+          3.56876177880591e-18,
+          0.9777876596251667,
+          -0.2095979310125447
+        ],
+        "gp_Ax2 Y": [
+          -0.9878687021467979,
+          0.03254876181607849,
+          0.1518420410263285
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "u and v swapped",
+      "red": "Issue881PerpendicularBasisTests.swift:30:9: Expectation failed: simd_length(u - Self.expectedU) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "perpendicularBasis unification: Section2D (#881)::sectionPlaneBasis with an explicitU is unaffected by the unification",
+    "bridge_function": "Shape.sectionPlaneBasis (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "|u|": 1,
+        "u.n": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "|u|": 1,
+        "u.n": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "explicit u not orthogonalised against the normal",
+      "red": "Issue881PerpendicularBasisTests.swift:41:9: Expectation failed: abs(simd_dot(u, simd_normalize(Self.nearDegenerate))) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
   }
 ]
