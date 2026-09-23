@@ -4673,5 +4673,147 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Geom_CylindricalSurface Properties::cylinderRadius",
+    "bridge_function": "OCCTSurfaceCylinderRadius",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "radius": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "radius": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_CylindricalSurface Properties::cylinderSetRadius",
+    "bridge_function": "OCCTSurfaceCylinderSetRadius",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "radius_after_set": 10.0
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "radius_after_set": 10.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_CylindricalSurface Properties::cylinderAxis",
+    "bridge_function": "OCCTSurfaceCylinderAxis",
+    "bridge_output": {
+      "type": "axis",
+      "data": {
+        "position": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "direction": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "axis",
+      "data": {
+        "position": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "direction": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_CylindricalSurface Properties::cylinderUIso",
+    "bridge_function": "OCCTSurfaceCylinderUIso",
+    "bridge_output": {
+      "type": "iso_line",
+      "data": {
+        "uiso_0": {
+          "type": "Geom_Line",
+          "value_0": [
+            5.0,
+            0.0,
+            0.0
+          ],
+          "value_3": [
+            5.0,
+            0.0,
+            3.0
+          ]
+        },
+        "uiso_pi_2": {
+          "type": "Geom_Line",
+          "value_3": [
+            3.061616997868383e-16,
+            5.0,
+            3.0
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "iso_line",
+      "data": {
+        "uiso_0": {
+          "type": "Geom_Line",
+          "value_0": [
+            5.0,
+            0.0,
+            0.0
+          ],
+          "value_3": [
+            5.0,
+            0.0,
+            3.0
+          ]
+        },
+        "uiso_pi_2": {
+          "type": "Geom_Line",
+          "value_3": [
+            3.061616997868383e-16,
+            5.0,
+            3.0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
