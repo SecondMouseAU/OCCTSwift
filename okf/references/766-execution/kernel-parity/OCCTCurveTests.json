@@ -302,5 +302,160 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::The 3D fit tolerance does change the fitted curve",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpSetConvergenceTol",
+    "bridge_output": {
+      "type": "double",
+      "data": "fits at 1e-1 and 1e-8 differ"
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": "maxDeviation(1e-1 fit, 1e-8 fit) = 0.15018794079369741 (deg 4/5 poles vs deg 3/26 poles)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "setConvergenceTolerance made a no-op",
+    "red": "BSplineApproxInterpContractTests.swift:58 Self.maxDeviation(a, b) > 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+  },
+  {
+    "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::setParametrizationAlpha / setMinPivot / setClosedTolerance / setKnotInsertionTolerance are no-ops",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpSetClosedTol",
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": "the setters never reach GeomAPI_PointsToBSpline: the same call twice, maxDeviation 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "setClosedTolerance wired to the fit tolerance",
+    "red": "BSplineApproxInterpContractTests.swift:80 Self.maxDeviation(a, b) == 0.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt",
+    "note": "A first injection, setMinPivot(1e-3) setting the fit tolerance, stayed green because 1e-3 is already the default tolerance"
+  },
+  {
+    "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::interpolatePoint is a no-op, with or without a kink",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpInterpolatePoint",
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": "same PointsToBSpline call twice, maxDeviation 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "interpolatePoint nudges the constrained point by 0.01 in z",
+    "red": "BSplineApproxInterpContractTests.swift:99 Self.maxDeviation(a, b) == 0.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+  },
+  {
+    "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::performOptimal matches perform and ignores maxIterations",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpPerformOptimal",
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": "same PointsToBSpline call, maxDeviation 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "maxIterations <= 1 loosens the fit tolerance to 1e-1",
+    "red": "BSplineApproxInterpContractTests.swift:117 Self.maxDeviation(a, b) == 0.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+  },
+  {
+    "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::nbControlPoints and continuousIfClosed are advisory",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpCreate",
+    "bridge_output": {
+      "type": "int",
+      "data": "same pole count for 4 and 40 requested"
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": "default fit degree 8, 9 poles, whatever is requested"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "nbControlPoints caps the maximum degree",
+    "red": "BSplineApproxInterpContractTests.swift:138 Self.maxDeviation(a, b) == 0.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+  },
+  {
+    "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::setConvergenceTolerance and setProjectionTolerance drive one shared tolerance",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpSetProjectionTol",
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": "both orders reach tol3D 1e-8: maxDeviation 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "setProjectionTolerance assigns instead of taking the minimum",
+    "red": "BSplineApproxInterpContractTests.swift:166 Self.maxDeviation(a, b) == 0.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+  },
+  {
+    "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::maxError is the worst back-projection distance from an input point to the fit",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpMaxError",
+    "bridge_output": {
+      "type": "double",
+      "data": "within the sampled bound of the true projection distance"
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": "tol3D 1e-6: degree 8, 15 poles, max projection distance 5.3473650477313526e-07"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "maxError doubled plus 1e-6",
+    "red": "BSplineApproxInterpContractTests.swift:208 abs(solver.maxError - 5.3473650477313526e-07) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
   }
 ]
