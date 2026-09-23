@@ -95,6 +95,7 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Extrema_ExtPElS Point-Cone** | pointToCone | Point-cone extrema | Store SquareDistance(1) for every extremum |
 | **BRepExtrema ExtFF Tests** | Face-face distance between separated boxes | Face-face extrema | Return SquareDistance(1) without sqrt |
 | **Bnd_Sphere Tests** | createAndQuery | Bounding sphere construction | Exchange cx and cy in OCCTBndSphereCreate |
 | **Bnd_Sphere Tests** | distanceToPoint | Point distance | SquareDistance in place of Distance |
