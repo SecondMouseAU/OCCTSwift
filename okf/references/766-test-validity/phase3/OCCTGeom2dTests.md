@@ -124,3 +124,20 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `GeomToolsCurve2dSetTests.swift`, `IntAna2dTests.swift`, `IntToolsFClass2dTests.swift`, `InterpolationExpansion2DTests.swift`, `Issue1020Extrema2dBoundsTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-curveset-intana-misc/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| GeomTools_Curve2dSet Tests::serializeDeserialize2D | `OCCTGeomToolsCurve2dSetRead` | read one curve fewer | ✅ | ✅ | MATCH | three `if let`s, count only; now both curves pinned |
+| GeomTools_Curve2dSet Tests::duplicateHandleRefusesTheBatch | `OCCTGeomToolsCurve2dSetWrite` | duplicate-index refusal disabled | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| IntAna2d Analytical Intersections::Intersection of two lines | `OCCTIntAna2dLinLin` | second line x + 2 | ✅ | ✅ | MATCH | 0.1 slack inside `if let`; now exact within 1e-9 |
+| IntAna2d Analytical Intersections::Intersection of line and circle | `OCCTIntAna2dLinCirc` | circle centre x + 1 | ✅ | ✅ | MATCH | count only; now x = 1 and 9 |
+| IntAna2d Analytical Intersections::Intersection of two circles | `OCCTIntAna2dCircCirc` | second centre x + 1 | ✅ | ✅ | MATCH | count only; now both points |
+| IntTools_FClass2d Tests::IsHole check | `OCCTIntToolsFClass2dIsHole` | IsHole negated | ✅ | ✅ | MATCH | two `if let`s; now `#require` |
+| v0.115.0 - Interpolation Expansion 2D::interpolate2DWithTangents | `OCCTCurve2DInterpolateWithTangents` | start and end tangents swapped | ✅ | ✅ | MATCH | `!= nil` only; now pole count and C(2) |
+| v0.115.0 - Interpolation Expansion 2D::interpolate2DPeriodic | `OCCTCurve2DInterpolate` | periodic flag dropped | ✅ | ✅ | MATCH | `!= nil` only; now periodic, domain and C(20) |
+| Issue1020 point-to-line 2D extrema bounds::A point projecting beyond the old 2D line bound still has an extremum | `OCCTExtremaExtPElC2dLin` | line bound back to +-1e10 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Issue1020 point-to-line 2D extrema bounds::A point projecting inside the old 2D line bound is unchanged | `OCCTExtremaExtPElC2dLin` | point y + 1 | ✅ | ✅ | MATCH | `if let`; now `#require` |

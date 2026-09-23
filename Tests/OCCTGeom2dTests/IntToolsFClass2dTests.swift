@@ -12,13 +12,10 @@ import simd
 @Suite("IntTools_FClass2d Tests")
 struct IntToolsFClass2dTests {
     @Test("IsHole check")
-    func isHoleCheck() {
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))
-        if let s = plane {
-            let face = Shape.face(from: s, uRange: 0...10, vRange: 0...10)
-            if let f = face {
-                #expect(!f.isHole())
-            }
-        }
+    func isHoleCheck() throws {
+        // #1979: two nested `if let`s let a nil plane or face pass; now required.
+        let s = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
+        let f = try #require(Shape.face(from: s, uRange: 0...10, vRange: 0...10))
+        #expect(!f.isHole())
     }
 }

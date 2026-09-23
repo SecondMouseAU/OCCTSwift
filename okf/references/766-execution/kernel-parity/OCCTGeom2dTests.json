@@ -94,5 +94,375 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "GeomTools_Curve2dSet Tests::serializeDeserialize2D",
+    "bridge_function": "OCCTGeomToolsCurve2dSetRead",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 2,
+        "line(3)": [
+          3,
+          0
+        ],
+        "circle radius": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 2,
+        "line(3)": [
+          3,
+          0
+        ],
+        "circle radius": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "read one curve fewer",
+      "red": "GeomToolsCurve2dSetTests.swift:18:13: Expectation failed: curves.count == 2",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curveset-intana-misc/",
+      "rewritten": "three `if let`s, count only; now both curves pinned"
+    }
+  },
+  {
+    "test_name": "GeomTools_Curve2dSet Tests::duplicateHandleRefusesTheBatch",
+    "bridge_function": "OCCTGeomToolsCurve2dSetWrite",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "Add(line) again": 1,
+        "result": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "Add(line) again": 1,
+        "result": "nil"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "duplicate-index refusal disabled",
+      "red": "GeomToolsCurve2dSetTests.swift:30:9: Expectation failed: Curve2D.serializeCurves([line, line]) == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curveset-intana-misc/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "IntAna2d Analytical Intersections::Intersection of two lines",
+    "bridge_function": "OCCTIntAna2dLinLin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "points": [
+          [
+            5,
+            5
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "points": [
+          [
+            5,
+            5
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second line x + 2",
+      "red": "IntAna2dTests.swift:18:9: Expectation failed: simd_distance(results[0].point, SIMD2(5, 5)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curveset-intana-misc/",
+      "rewritten": "0.1 slack inside `if let`; now exact within 1e-9"
+    }
+  },
+  {
+    "test_name": "IntAna2d Analytical Intersections::Intersection of line and circle",
+    "bridge_function": "OCCTIntAna2dLinCirc",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "points": [
+          [
+            1,
+            0
+          ],
+          [
+            9,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "points": [
+          [
+            1,
+            0
+          ],
+          [
+            9,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "circle centre x + 1",
+      "red": "IntAna2dTests.swift:29:9: Expectation failed: xs.count == 2 && abs(xs[0] - 1) < 1e-9 && abs(xs[1] - 9) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curveset-intana-misc/",
+      "rewritten": "count only; now x = 1 and 9"
+    }
+  },
+  {
+    "test_name": "IntAna2d Analytical Intersections::Intersection of two circles",
+    "bridge_function": "OCCTIntAna2dCircCirc",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "points": [
+          [
+            3.5,
+            3.57071421427
+          ],
+          [
+            3.5,
+            -3.57071421427
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "points": [
+          [
+            3.5,
+            3.57071421427
+          ],
+          [
+            3.5,
+            -3.57071421427
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second centre x + 1",
+      "red": "IntAna2dTests.swift:39:9: Expectation failed: results.allSatisfy { abs($0.point.x - 3.5) < 1e-9 && abs(abs($0.point.y) - 12.75.squareRoot()) < 1e-9 }",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curveset-intana-misc/",
+      "rewritten": "count only; now both points"
+    }
+  },
+  {
+    "test_name": "IntTools_FClass2d Tests::IsHole check",
+    "bridge_function": "OCCTIntToolsFClass2dIsHole",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "IsHole": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "IsHole": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "IsHole negated",
+      "red": "IntToolsFClass2dTests.swift:19:9: Expectation failed: !f.isHole()",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curveset-intana-misc/",
+      "rewritten": "two `if let`s; now `#require`"
+    }
+  },
+  {
+    "test_name": "v0.115.0 - Interpolation Expansion 2D::interpolate2DWithTangents",
+    "bridge_function": "OCCTCurve2DInterpolateWithTangents",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poles": 5,
+        "value(2)": [
+          1.84960461481,
+          2.06475180106
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poles": 5,
+        "value(2)": [
+          1.84960461481,
+          2.06475180106
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "start and end tangents swapped",
+      "red": "InterpolationExpansion2DTests.swift:20:9: Expectation failed: simd_distance(c.point(at: 2), SIMD2(1.84960461481, 2.06475180106)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curveset-intana-misc/",
+      "rewritten": "`!= nil` only; now pole count and C(2)"
+    }
+  },
+  {
+    "test_name": "v0.115.0 - Interpolation Expansion 2D::interpolate2DPeriodic",
+    "bridge_function": "OCCTCurve2DInterpolate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "periodic": true,
+        "domain": [
+          0,
+          40
+        ],
+        "value(20)": [
+          10,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "periodic": true,
+        "domain": [
+          0,
+          40
+        ],
+        "value(20)": [
+          10,
+          10
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "periodic flag dropped",
+      "red": "InterpolationExpansion2DTests.swift:31:9: Expectation failed: c.isPeriodic",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curveset-intana-misc/",
+      "rewritten": "`!= nil` only; now periodic, domain and C(20)"
+    }
+  },
+  {
+    "test_name": "Issue1020 point-to-line 2D extrema bounds::A point projecting beyond the old 2D line bound still has an extremum",
+    "bridge_function": "OCCTExtremaExtPElC2dLin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "n": 1,
+        "param": 20000000000.0,
+        "sqdist": 9
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "n": 1,
+        "param": 20000000000.0,
+        "sqdist": 9
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "line bound back to +-1e10",
+      "red": "Issue1020Extrema2dBoundsTests.swift:24:9: Expectation failed: !results.isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curveset-intana-misc/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Issue1020 point-to-line 2D extrema bounds::A point projecting inside the old 2D line bound is unchanged",
+    "bridge_function": "OCCTExtremaExtPElC2dLin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "n": 1,
+        "param": 4,
+        "sqdist": 9
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "n": 1,
+        "param": 4,
+        "sqdist": 9
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "point y + 1",
+      "red": "Issue1020Extrema2dBoundsTests.swift:44:13: Expectation failed: abs(r.squareDistance - 9) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curveset-intana-misc/",
+      "rewritten": "`if let`; now `#require`"
+    }
   }
 ]

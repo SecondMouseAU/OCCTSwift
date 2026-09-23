@@ -17,12 +17,13 @@ struct Issue1020Extrema2dBoundsTests {
     ///
     /// Parameter 2e10 along the line, beyond the old 1e10 bound, which discarded it.
     @Test("A point projecting beyond the old 2D line bound still has an extremum")
-    func pointToLineBeyondOldBound() {
+    func pointToLineBeyondOldBound() throws {
         let results = Extrema2d.distanceFromPointToLine(
             point: SIMD2(2e10, 3),
             linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0))
         #expect(!results.isEmpty)
-        if let r = results.first {
+        do {
+            let r = try #require(results.first)  // #1979: was `if let`
             #expect(abs(r.param2 - 2e10) < 1e4)
             #expect(abs(r.squareDistance - 9) < 1e-3)
         }
@@ -32,12 +33,13 @@ struct Issue1020Extrema2dBoundsTests {
     ///
     /// So the fix widened the accepted range rather than moving any answer.
     @Test("A point projecting inside the old 2D line bound is unchanged")
-    func pointToLineInsideOldBound() {
+    func pointToLineInsideOldBound() throws {
         let results = Extrema2d.distanceFromPointToLine(
             point: SIMD2(4, 3),
             linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0))
         #expect(!results.isEmpty)
-        if let r = results.first {
+        do {
+            let r = try #require(results.first)  // #1979: was `if let`
             #expect(abs(r.param2 - 4) < 1e-9)
             #expect(abs(r.squareDistance - 9) < 1e-9)
         }
