@@ -109,3 +109,17 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-trimmed-trsf-extras (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **GC_MakeTrimmedCone** | Trimmed cone from endpoints and radii | `OCCTSurfaceTrimmedCone` | r1 and r2 swapped | red | green | PASS |
+| **GC_MakeTrimmedCylinder** | Trimmed cylinder from axis, radius, height | `OCCTSurfaceTrimmedCylinder` | radius and height swapped | red | green | PASS |
+| **gp_Trsf_Extras** | transformFromMatrix | `OCCTShapeTransformFromMatrix` | translation column (a14, a24, a34) dropped | red | green | PASS |
+| **gp_Trsf_Extras** | transformIsNegative | `OCCTShapeTransformIsNegative` | identity-location branch reports true | red | green | PASS |
+| **gp_Trsf_Extras** | mirrorTransformProducesResult | `OCCTShapeTransformFromMatrix` | a11 read from a22 (identity instead of the X mirror) | red | green | PASS |
+| **gp_Trsf_Extras** | displacement | `OCCTTrsfDisplacement` | from and to frames swapped | red | green | PASS |
+| **gp_Trsf_Extras** | transformation | `OCCTTrsfTransformation` | SetDisplacement used instead of SetTransformation | red | green | PASS |
+| **gp_Trsf_Extras** | invalidMatrixSize | `none (pure Swift: the deprecated transformed(byMatrix: [Double]) overload in Shape+Math.swift refuses before any bridge call)` | Swift injection: a short array padded with the identity instead of refused | red | green | N/A |
+| **gp_Trsf_Extras** | transformFromMatrixInterleavedLayoutTranslatesAsDocumented | `OCCTShapeTransformFromMatrix` | translation column dropped | red | green | PASS |
