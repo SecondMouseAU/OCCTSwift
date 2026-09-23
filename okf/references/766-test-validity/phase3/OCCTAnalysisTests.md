@@ -95,6 +95,7 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Curvature getters report definedness (#595)** | A straight curve reports 0; a curve with no tangent reports nothing | Curve3D curvature definedness | Restore the #595 zero sentinel |
 
 ---
 
@@ -202,6 +203,7 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| A straight curve reports 0; a curve with no tangent reports nothing | OCCTCurve3DGetCurvature | Curve3D curvature definedness | Return true (curvature 0) when IsTangentDefined() is false | ✅ | ✅ |  |
 
 ---
 
