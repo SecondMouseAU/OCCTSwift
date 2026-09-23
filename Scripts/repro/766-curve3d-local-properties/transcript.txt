@@ -1,0 +1,7 @@
+circleRadius: tangentDefined=1 curvature=0.20000000000000001
+lineCurvature: domain=[0, 10] u=5 tangentDefined=1 curvature=0
+segmentTangent: tangent=(1, 0, 0)
+circleNormal: point=(5, 0, 0) normal=(-1, -0, 0)
+circleCenterOfCurvature: centre=(0, 0, 0)
+circularTorsion: |d1 x d2|^2=625.00000000000023 torsion=0
+segmentBoundingBox: min=(0.98999999999999999, 1.99, 2.9900000000000002) max=(10.01, 8.0099999999999998, 6.0099999999999998)
