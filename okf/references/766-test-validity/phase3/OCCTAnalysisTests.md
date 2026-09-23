@@ -235,6 +235,17 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Extrema_ExtElC Line-Line** | parallelLines | Line-line extrema | Parallel flag and distance |
+| **Extrema_ExtElC Line-Line** | intersectingLines | Line-line extrema | Parallel flag and distance |
+| **Extrema_ExtElC Line-Line** | skewLines | Line-line extrema | Parallel flag and distance |
+| **Extrema_ExtElCS Line-Plane** | parallelLinePlane | Line-plane extrema | Parallel flag and distance |
+| **Extrema_ExtElCS Line-Plane** | intersectingLinePlane | Line-plane extrema | Parallel flag |
+| **Extrema_ExtElSS Plane-Plane** | oppositeNormalsAreStillParallel | Plane-plane extrema | Parallel square distance |
+| **Extrema_ExtElSS Plane-Plane** | coincidentPlanesReportZeroRatherThanNil | Plane-plane extrema | Zero is a measurement |
+| **Extrema_ExtElSS Plane-Plane** | degenerateNormalIsRefused | Plane-plane extrema | Refused input |
+| **Issue #1463: OCCTExtremaElSSPlanePlane writes its out-param only when it has an answer** | parallel planes: returns 1 and writes the square distance | Plane-plane out-param | Write on answer |
+| **Issue #1463: OCCTExtremaElSSPlanePlane writes its out-param only when it has an answer** | crossing planes: returns 0 and leaves the out-param untouched | Plane-plane out-param | No write without answer |
+| **Issue #1463: OCCTExtremaElSSPlanePlane writes its out-param only when it has an answer** | a refused input: returns -1 and leaves the out-param untouched | Plane-plane out-param | No write on refusal |
 
 ---
 
@@ -424,6 +435,17 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| parallelLines | OCCTExtremaElCLinLin | Line-line extrema | Invert IsParallel (red :14); SquareDistance + 1 (red :17) | ✅ | ✅ |  |
+| intersectingLines | OCCTExtremaElCLinLin | Line-line extrema | Invert IsParallel (red :26); SquareDistance + 1 (red :28) | ✅ | ✅ |  |
+| skewLines | OCCTExtremaElCLinLin | Line-line extrema | Invert IsParallel (red :37); SquareDistance + 1 (red :39) | ✅ | ✅ |  |
+| parallelLinePlane | OCCTExtremaElCSLinPlane | Line-plane extrema | Invert IsParallel (red :14); SquareDistance + 1 (red :16) | ✅ | ✅ |  |
+| intersectingLinePlane | OCCTExtremaElCSLinPlane | Line-plane extrema | Invert IsParallel | ✅ | ✅ |  |
+| oppositeNormalsAreStillParallel | OCCTExtremaElSSPlanePlane | Plane-plane extrema | Invert IsParallel (red :55); SquareDistance + 1 (red :57) | ✅ | ✅ |  |
+| coincidentPlanesReportZeroRatherThanNil | OCCTExtremaElSSPlanePlane | Plane-plane extrema | Invert IsParallel (red :67); SquareDistance + 1 (red :69) | ✅ | ✅ |  |
+| degenerateNormalIsRefused | OCCTExtremaElSSPlanePlane | Plane-plane extrema | catch(...) writes 0 and returns 1 | ✅ | ✅ |  |
+| parallel planes: returns 1 and writes the square distance | OCCTExtremaElSSPlanePlane | Plane-plane out-param | Invert IsParallel (red :115); SquareDistance + 1 (red :117) | ✅ | ✅ |  |
+| crossing planes: returns 0 and leaves the out-param untouched | OCCTExtremaElSSPlanePlane | Plane-plane out-param | Write 0 on the non-parallel return (red :133) | ✅ | ✅ |  |
+| a refused input: returns -1 and leaves the out-param untouched | OCCTExtremaElSSPlanePlane | Plane-plane out-param | catch(...) writes 0 and returns 1 (red :148, :150) | ✅ | ✅ |  |
 
 ---
 

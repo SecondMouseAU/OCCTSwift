@@ -1,0 +1,13 @@
+parallelLines: IsDone=1 IsParallel=1 SquareDistance(1)=25
+intersectingLines: IsDone=1 IsParallel=0 NbExt=1
+  [1] sq=0 p1=(0, 0, 0) p2=(0, 0, 0)
+skewLines: IsDone=1 IsParallel=0 NbExt=1
+  [1] sq=9 p1=(0, 0, 0) p2=(0, 0, 3)
+parallelLinePlane: IsDone=1 IsParallel=1 SquareDistance(1)=100
+intersectingLinePlane: IsDone=1 IsParallel=0 NbExt=0
+oppositeNormalsAreStillParallel: IsDone=1 IsParallel=1 NbExt=1 SquareDistance(1)=16
+coincidentPlanesReportZeroRatherThanNil: IsDone=1 IsParallel=1 NbExt=1 SquareDistance(1)=0
+degenerateNormalIsRefused: threw 26Standard_ConstructionError (gp_Dir() - input vector has zero norm)
+Issue1463 parallelPlanesWriteTheDistance: IsDone=1 IsParallel=1 NbExt=1 SquareDistance(1)=100
+Issue1463 crossingPlanesLeaveTheOutParamUntouched: IsDone=1 IsParallel=0 NbExt=0
+Issue1463 refusedInputLeavesTheOutParamUntouched: threw 26Standard_ConstructionError (gp_Dir() - input vector has zero norm)

@@ -4501,5 +4501,276 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtElC Line-Line::parallelLines",
+    "bridge_function": "OCCTExtremaElCLinLin",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": true,
+        "square_distance": 25.0
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": true,
+        "square_distance": 25.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/"
+  },
+  {
+    "test_name": "Extrema_ExtElC Line-Line::intersectingLines",
+    "bridge_function": "OCCTExtremaElCLinLin",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": false,
+        "count": 1,
+        "square_distance": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": false,
+        "count": 1,
+        "square_distance": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/"
+  },
+  {
+    "test_name": "Extrema_ExtElC Line-Line::skewLines",
+    "bridge_function": "OCCTExtremaElCLinLin",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": false,
+        "count": 1,
+        "square_distance": 9.0
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": false,
+        "count": 1,
+        "square_distance": 9.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/"
+  },
+  {
+    "test_name": "Extrema_ExtElCS Line-Plane::parallelLinePlane",
+    "bridge_function": "OCCTExtremaElCSLinPlane",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": true,
+        "square_distance": 100.0
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": true,
+        "square_distance": 100.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/"
+  },
+  {
+    "test_name": "Extrema_ExtElCS Line-Plane::intersectingLinePlane",
+    "bridge_function": "OCCTExtremaElCSLinPlane",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "is_parallel": false,
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "is_parallel": false,
+        "count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/"
+  },
+  {
+    "test_name": "Extrema_ExtElSS Plane-Plane::oppositeNormalsAreStillParallel",
+    "bridge_function": "OCCTExtremaElSSPlanePlane",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": true,
+        "square_distance": 16.0
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": true,
+        "square_distance": 16.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/"
+  },
+  {
+    "test_name": "Extrema_ExtElSS Plane-Plane::coincidentPlanesReportZeroRatherThanNil",
+    "bridge_function": "OCCTExtremaElSSPlanePlane",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": true,
+        "square_distance": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "is_parallel": true,
+        "square_distance": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/"
+  },
+  {
+    "test_name": "Extrema_ExtElSS Plane-Plane::degenerateNormalIsRefused",
+    "bridge_function": "OCCTExtremaElSSPlanePlane",
+    "bridge_output": {
+      "type": "refusal",
+      "data": {
+        "is_parallel": false,
+        "square_distance": null
+      }
+    },
+    "kernel_output": {
+      "type": "refusal",
+      "data": {
+        "gp_Dir": "throws Standard_ConstructionError (zero norm)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/"
+  },
+  {
+    "test_name": "Issue #1463: OCCTExtremaElSSPlanePlane writes its out-param only when it has an answer::parallel planes: returns 1 and writes the square distance",
+    "bridge_function": "OCCTExtremaElSSPlanePlane",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "n": 1,
+        "is_parallel": true,
+        "square_distance": 100.0
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "n": 1,
+        "is_parallel": true,
+        "square_distance": 100.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/"
+  },
+  {
+    "test_name": "Issue #1463: OCCTExtremaElSSPlanePlane writes its out-param only when it has an answer::crossing planes: returns 0 and leaves the out-param untouched",
+    "bridge_function": "OCCTExtremaElSSPlanePlane",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "n": 0,
+        "is_parallel": false,
+        "square_distance": "untouched (-999 sentinel)"
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "n": 0,
+        "is_parallel": false,
+        "nb_ext": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/"
+  },
+  {
+    "test_name": "Issue #1463: OCCTExtremaElSSPlanePlane writes its out-param only when it has an answer::a refused input: returns -1 and leaves the out-param untouched",
+    "bridge_function": "OCCTExtremaElSSPlanePlane",
+    "bridge_output": {
+      "type": "refusal",
+      "data": {
+        "n": -1,
+        "is_parallel": false,
+        "square_distance": "untouched (-999 sentinel)"
+      }
+    },
+    "kernel_output": {
+      "type": "refusal",
+      "data": {
+        "gp_Dir": "throws Standard_ConstructionError (zero norm)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/"
   }
 ]
