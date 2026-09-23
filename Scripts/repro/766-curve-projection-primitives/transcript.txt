@@ -1,0 +1,12 @@
+segment (0,0,5)-(10,7,5) onto z=0 along Z: Geom_TrimmedCurve domain=[0, 12.2066] start=(0, 0, 0) mid=(5, 3.4999999999999996, 0) end=(10, 6.9999999999999991, 0)
+circle r=5 at z=10 onto z=0 along Z: Geom_Circle domain=[0, 6.28319] start=(5, 0, 0) mid=(-5, 6.1232339957367663e-16, 0) end=(5, -1.2246467991473533e-15, 0)
+arc (5,0,0)(0,5,0)(-5,0,0) onto y=0 along Y: Geom_TrimmedCurve domain=[0, 3.14159] start=(5, 0, 0) mid=(0, 0, 0) end=(-5, 0, 0)
+interpolated BSpline onto z=0 along Z: Geom_BSplineCurve domain=[0, 18.0836] start=(0, 0, 0) mid=(5.3352706044566114, 3.2784425278710705, 0) end=(10, 8, 0)
+segment (2,3,8)-(12,3,8) onto z=0 along Z: Geom_TrimmedCurve domain=[0, 10] start=(2, 3, 0) mid=(7, 3, 0) end=(12, 3, 0)
+segment (0,0,10)-(10,0,10) onto z=0 along (1,0,1): Geom_TrimmedCurve domain=[0, 10] start=(-10, 0, 0) mid=(-5, 0, 0) end=(0, 0, 0)
+segment (0,0,0)-(10,0,0) onto z=0 along (1,0,0.001): Geom_TrimmedCurve domain=[0, 10] start=(0, 0, 0) mid=(5, 0, 0) end=(10, 0, 0)
+circle r=5: closed=1 periodic=1 period=6.2831853071795862 value(0)=(5, 0) value(pi/2)=(3.06e-16, 5)
+ellipse 10x5: closed=1 periodic=1 period=6.2831853071795862
+line domain=[-2e+100, 2e+100]
+segment (0,0,0)-(10,5,3): domain=[0, 11.575836902790225] D1(first)=(0.86386842558136012, 0.43193421279068006, 0.25916052767440806)
+circle D2(0): P=(5, 0, 0) V2=(-5, -0, 0)
