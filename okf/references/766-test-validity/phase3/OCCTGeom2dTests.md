@@ -124,3 +124,18 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Issue1050BisectorDomainTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-bisector-domain-nonfinite/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Issue1050 bisector intersection domain::A meeting point past the old window is found | `OCCTBisectorInterPointPoint` | both IntRes2d_Domain upper bounds clamped to 100 (the pre-#1050 window) | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Issue1050 bisector intersection domain::A meeting point inside the old window is unchanged | `OCCTBisectorInterPointPoint` | A.y - 2 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Issue1050 bisector intersection domain::Parallel bisectors still report no intersection | `OCCTBisectorInterPointPoint` | returns 1 when nothing was found | ✅ | ✅ | MATCH |  |
+| Issue1050 bisector intersection domain::A crossing on the dead side of the half-line reports no intersection | `OCCTBisectorInterPointPoint` | returns 1 when nothing was found | ✅ | ✅ | MATCH |  |
+| Issue1050 bisector intersection domain::A meeting point past any input-derived bound is found | `OCCTBisectorInterPointPoint` | both IntRes2d_Domain upper bounds clamped to 100 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Issue1050 bisector intersection domain::The documented circumcentre example holds, and its three reorderings do not | `OCCTBisectorInterPointPoint` | A.y - 2 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Issue1050 bisector intersection domain::Coincident points return no intersection rather than crashing | `OCCTBisectorInterPointPoint` | catch returns 1 instead of 0 | ✅ | ✅ | MATCH |  |
+| Issue1050BisectorDomainTests.swift (free function)::Coincident bisectors report intersection segment endpoints | `OCCTBisectorInterPointPoint` | segment endpoints never collected | ✅ | ✅ | MATCH | `#expect(count == 2)` then `hits[0]`: a short result crashed the run; now `#require` |
