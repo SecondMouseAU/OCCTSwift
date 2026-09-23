@@ -85,3 +85,24 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 194 tests
+
+---
+
+## Measured records (#766 execution, #1984)
+
+Rows below were run: the injection turned the test red at the line named, the test was green with Sources/ restored, and parity is against the probe transcript under `Scripts/repro/766-drawing-*/`.
+
+| Suite | Test | Bridge / Swift subject | Injection | Red (failing line) | Green | Parity |
+|-------|------|------------------------|-----------|--------------------|-------|--------|
+| v0.137 Drawing dimensions | Add linear dimension stores measurable value | `DrawingDimension.Linear.value` | `Linear.value` + 1 | `:21` `abs(d.value - 100) < 1e-9` | ✔ | N/A (pure Swift: 2D dimension values and the drawing's stores, no OCCT call) |
+| v0.137 Drawing dimensions | Radial / diameter relate correctly | `DrawingDimension.value` | `.diameter` value returns the radius | `:40` `abs(d.value - 20) < 1e-9` | ✔ | N/A (pure Swift: 2D dimension values and the drawing's stores, no OCCT call) |
+| v0.137 Drawing dimensions | Angular dimension computes angle between rays | `DrawingDimension.Angular.value` | `Angular.value` + 0.1 | `:56` `abs(d.value - .pi / 2) < 1e-9` | ✔ | N/A (pure Swift: 2D dimension values and the drawing's stores, no OCCT call) |
+| v0.137 Drawing dimensions | Annotations separate from dimensions | `Drawing.addTextLabel` | `addTextLabel` does not append | `:70` `drawing.annotations.count == 3` | ✔ | N/A (pure Swift: 2D dimension values and the drawing's stores, no OCCT call) |
+| v0.137 Drawing dimensions | clearAnnotations empties both collections | `DrawingAnnotationStore.clear` | `clear()` keeps annotations | `:86` `drawing.annotations.isEmpty` | ✔ | N/A (pure Swift: 2D dimension values and the drawing's stores, no OCCT call) |
+| v0.144 ISO drawing style constants | DrawingLineWidth values match ISO 128-20 tiers | `DrawingLineWidth.thin` | `thin = .w018` | `:13` `DrawingLineWidth.thin.rawValue == 0.25` | ✔ | N/A (pure Swift: ISO style constants and lookup tables, no OCCT call) |
+| v0.144 ISO drawing style constants | DrawingTextHeight.snap picks nearest ISO 3098 tier | `DrawingTextHeight.snap` | `snap` uses `max(by:)` | `:20`, `:21`, `:22` | ✔ | N/A (pure Swift: ISO style constants and lookup tables, no OCCT call) |
+| v0.144 ISO drawing style constants | DrawingTextHeight.recommended varies by paper | `DrawingTextHeight.recommended` | A0/A1 return `.h70` | `:27` `recommended(forPaper: "A0") == .h50` | ✔ | N/A (pure Swift: ISO style constants and lookup tables, no OCCT call) |
+| v0.144 ISO drawing style constants | DrawingScale factor and label | `DrawingScale.factor` | reduction factor `Double(n)` | `:34` `DrawingScale.reduction(2).factor == 0.5` | ✔ | N/A (pure Swift: ISO style constants and lookup tables, no OCCT call) |
+| v0.144 ISO drawing style constants | strokeWidthMM returns ISO 128-20 line widths | `strokeWidthMM(for:)` | HATCH returns 0.25 | `:45` `strokeWidthMM(for: "HATCH") == 0.18` | ✔ | N/A (pure Swift: ISO style constants and lookup tables, no OCCT call) |
+| v0.144 ISO drawing style constants | ArrowStyle length scales with line width | `DrawingArrowStyle.length(forLineWidth:)` | length `x 5` | `:51` `abs(L - 1.5) < 1e-9` | ✔ | N/A (pure Swift: ISO style constants and lookup tables, no OCCT call) |
+| v0.144 ISO drawing style constants | DrawingScale preferred includes ISO series | `DrawingScale.preferred` | drops `.reduction(100)` | `:60` `labels.contains("1:100")` | ✔ | N/A (pure Swift: ISO style constants and lookup tables, no OCCT call) |
