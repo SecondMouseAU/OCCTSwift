@@ -327,3 +327,18 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: FreeBoundsTests, GeometryConversionTests (8 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-freebounds-geomconv/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `closedSolidNoFreeBounds` | FreeBoundsTests.swift | `OCCTShapeFreeBounds` | FBEMPTYOK: return the empty compound instead of nil when nothing is free | FreeBoundsTests.swift:14 `result == nil` | pass | PASS |
+| `compoundFacesHasFreeBounds` | FreeBoundsTests.swift | `OCCTShapeFreeBounds` | FBSWAP: closed and open counts written to each other's out-param | FreeBoundsTests.swift:29 `result.closedCount == 1` | pass | PASS |
+| `freeBoundsSphere` | FreeBoundsTests.swift | `OCCTShapeFreeBounds` | FBEMPTYOK | FreeBoundsTests.swift:39 `result == nil` | pass | PASS |
+| `fixFreeBoundsCallable` | FreeBoundsTests.swift | `OCCTShapeFixFreeBounds` | FIXFBWIRES: return the closed-wire compound instead of GetShape() (the #1636 defect) | FreeBoundsTests.swift:49 `repair.shape.subShapes(ofType: .face).count == 1` | pass | PASS |
+| `issue310DisjointFacesFreeBounds` | FreeBoundsTests.swift | `OCCTShapeFreeBoundsClosedCount` | FBOPENCLOSED: count GetOpenWires() in the closed-count function | FreeBoundsTests.swift:72 `freeBoundsClosedCount(tolerance: 0.01) == 2` | pass | PASS |
+| `cylinderToBSpline` | GeometryConversionTests.swift | `OCCTShapeCustomConvertToBSpline` | CUSTBSPFLAG: pass !plane | GeometryConversionTests.swift:31 `kinds(result) == [.plane: 2, .cylinder: 1]` | pass | PASS |
+| `toRevolution` | GeometryConversionTests.swift | `OCCTShapeCustomConvertToRevolution` | CUSTREV: return the input unconverted | GeometryConversionTests.swift:40 `kinds(result) == [.plane: 2, .surfaceOfRevolution: 1]` | pass | PASS |
+| `bsplinePreservesVolume` | GeometryConversionTests.swift | `OCCTShapeCustomConvertToBSpline` | CUSTBSPFLAG: pass !plane | GeometryConversionTests.swift:50 `kinds(result) == [.cylinder: 1, .bsplineSurface: 2]` | pass | PASS |

@@ -2,9 +2,223 @@
   {
     "test_name": "ShapeHealing domain kernel parity",
     "bridge_function": "OCCTShapeHealingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
+  },
+  {
+    "test_name": "Free Boundary Analysis::closedSolidNoFreeBounds",
+    "bridge_function": "OCCTShapeFreeBounds",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "closedWires": 0,
+        "openWires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Free Boundary Analysis::compoundFacesHasFreeBounds",
+    "bridge_function": "OCCTShapeFreeBounds",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "closed": 1,
+        "open": 0,
+        "edges": 6
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "closedWires": 1,
+        "closedEdges": 6,
+        "openWires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Free Boundary Analysis::freeBoundsSphere",
+    "bridge_function": "OCCTShapeFreeBounds",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "closedWires": 0,
+        "openWires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Free Boundary Analysis::fixFreeBoundsCallable",
+    "bridge_function": "OCCTShapeFixFreeBounds",
+    "bridge_output": {
+      "type": "free_bounds_fix",
+      "data": {
+        "faces": 1,
+        "closed": 0,
+        "open": 0
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds_fix",
+      "data": {
+        "faces": 1,
+        "closedWires": 0,
+        "openWires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Free Boundary Analysis::issue310DisjointFacesFreeBounds",
+    "bridge_function": "OCCTShapeFreeBoundsClosedCount",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "closedCount": 2,
+        "closedWires": 2,
+        "openWires": 0
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "closedWires": 2,
+        "closedEdges": 8,
+        "openWires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom Geometry Conversion::cylinderToBSpline",
+    "bridge_function": "OCCTShapeCustomConvertToBSpline",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 2,
+          "cylinder": 1
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 2,
+          "cylinder": 1
+        },
+        "volume": 785.398163397
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom Geometry Conversion::toRevolution",
+    "bridge_function": "OCCTShapeCustomConvertToRevolution",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 2,
+          "revolution": 1
+        },
+        "volume": 785.398163397
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 2,
+          "revolution": 1
+        },
+        "volume": 785.398163397
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom Geometry Conversion::bsplinePreservesVolume",
+    "bridge_function": "OCCTShapeCustomConvertToBSpline",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "cylinder": 1,
+          "bspline": 2
+        },
+        "volume": 785.398163397
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "cylinder": 1,
+          "bspline": 2
+        },
+        "volume": 785.398163397
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
