@@ -126,5 +126,204 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::IsFree returns true for top-level shape",
+    "bridge_function": "OCCTDocumentShapeToolIsFree",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::IsSimpleShape returns true for box",
+    "bridge_function": "OCCTDocumentShapeToolIsSimpleShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::IsComponent returns false for simple shape",
+    "bridge_function": "OCCTDocumentShapeToolIsComponent",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::IsCompound returns false for simple box",
+    "bridge_function": "OCCTDocumentShapeToolIsCompound",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::IsSubShape returns false for top-level",
+    "bridge_function": "OCCTDocumentShapeToolIsSubShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::IsExternRef returns false for regular shape",
+    "bridge_function": "OCCTDocumentShapeToolIsExternRef",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::GetUsers returns 0 for unreferenced shape",
+    "bridge_function": "OCCTDocumentShapeToolGetUsers",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::NbComponents returns 0 for simple shape",
+    "bridge_function": "OCCTDocumentShapeToolNbComponents",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::ComputeShapes doesn't crash",
+    "bridge_function": "OCCTDocumentShapeToolComputeShapes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "returned": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "returned": true,
+        "free_after": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
   }
 ]

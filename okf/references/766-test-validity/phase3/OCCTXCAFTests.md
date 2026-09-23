@@ -99,3 +99,21 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `ShapeToolCompletionsTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `isFree` | `OCCTDocumentShapeToolIsFree` returns false | :15 Expectation failed: doc.shapeToolIsFree(labelId: labelId) | passed | `OCCTDocumentShapeToolIsFree` | PASS: true |
+| `isSimpleShape` | `OCCTDocumentShapeToolIsSimpleShape` returns false | :27 Expectation failed: doc.shapeToolIsSimpleShape(labelId: labelId) | passed | `OCCTDocumentShapeToolIsSimpleShape` | PASS: true |
+| `isComponent` | `OCCTDocumentShapeToolIsComponent` returns true | :39 Expectation failed: !doc.shapeToolIsComponent(labelId: labelId) | passed | `OCCTDocumentShapeToolIsComponent` | PASS: false |
+| `isCompound` | `OCCTDocumentShapeToolIsCompound` returns true | :51 Expectation failed: !doc.shapeToolIsCompound(labelId: labelId) | passed | `OCCTDocumentShapeToolIsCompound` | PASS: false |
+| `isSubShape` | `OCCTDocumentShapeToolIsSubShape` returns true | :63 Expectation failed: !doc.shapeToolIsSubShape(labelId: labelId) | passed | `OCCTDocumentShapeToolIsSubShape` | PASS: false |
+| `isExternRef` | `OCCTDocumentShapeToolIsExternRef` returns true | :75 Expectation failed: !doc.shapeToolIsExternRef(labelId: labelId) | passed | `OCCTDocumentShapeToolIsExternRef` | PASS: false |
+| `getUsers` | `OCCTDocumentShapeToolGetUsers` returns 1 | :88 Expectation failed: users == 0 | passed | `OCCTDocumentShapeToolGetUsers` | PASS: 0 |
+| `nbComponents` | `OCCTDocumentShapeToolNbComponents` returns 1 | :101 Expectation failed: nb == 0 | passed | `OCCTDocumentShapeToolNbComponents` | PASS: 0 |
+| `computeShapes` | `OCCTDocumentShapeToolComputeShapes` calls `abort()` | process crash (no expectation in the test; a crash is the only failure it can report) | passed | `OCCTDocumentShapeToolComputeShapes` | PASS: returns; the label is unchanged |

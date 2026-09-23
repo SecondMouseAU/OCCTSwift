@@ -1,0 +1,3 @@
+IsFree=true IsSimpleShape=true IsComponent=false IsCompound=false IsSubShape=false IsExternRef=false
+GetUsers=0 NbComponents=0
+ComputeShapes returned; IsFree still=true
