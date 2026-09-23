@@ -221,3 +221,30 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `FilletBuilderCompletionsV124Tests.swift` (6 tests)
+
+Probe: `Scripts/repro/766-modeling-fillet-builder-completions-v124/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| filletContourAccess | `OCCTFilletBuilderContour` returns -1 | `:36 Expectation failed: fb.contour(for: e) == 1` | pass | `OCCTFilletBuilderContour` | PASS |
+| filletEdgeVertexQueries | `OCCTFilletBuilderFirstVertex` returns the contour's last vertex | `:55 Expectation failed: abs(fb.abscissa(contour: ci, vertex: fv)) < 1e-9`, `:56 Expectation failed: abs(fb.relativeAbscissa(contour: ci, vertex: fv)) < 1e-9` | pass | `OCCTFilletBuilderAbscissa` | PASS |
+| filletClosedAndTangent | `OCCTFilletBuilderClosed` inverts `Closed(IC)` | `:70 Expectation failed: !fb.isClosed(contour: ci)` | pass | `OCCTFilletBuilderClosed` | PASS |
+| filletSurfaces | `OCCTFilletBuilderNbSurfaces` returns -1 | `:81 Expectation failed: fb.surfaceCount == 2` | pass | `OCCTFilletBuilderNbSurfaces` | PASS |
+| filletSetRadius | `OCCTFilletBuilderSetRadiusOnEdge` returns false | `:93 Expectation failed: fb.setRadius(2.0, contour: ci, edge: e)` | pass | `OCCTFilletBuilderSetRadiusOnEdge` | PASS |
+| filletStripeAndFaulty | `OCCTFilletBuilderStripeStatus` returns -1 | `:108 Expectation failed: fb.stripeStatus(contour: ci) == 0` | pass | `OCCTFilletBuilderStripeStatus` | PASS |
+
+### `FilletSurfBuilderTests.swift` (1 tests)
+
+Probe: `Scripts/repro/766-modeling-fillet-surf-builder/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| filletSurface | `OCCTFilletSurfBuild` reports FirstParameter and LastParameter swapped | `:22 Expectation failed: abs(info.firstParameter) < 1e-9`, `:23 Expectation failed: abs(info.lastParameter - 10.0) < 1e-9` | pass | `OCCTFilletSurfBuild` | PASS |
