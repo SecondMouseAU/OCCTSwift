@@ -497,5 +497,70 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "IntAna LineTorus Tests::lineThroughTorus",
+    "bridge_function": "OCCTIntAnaLineTorus",
+    "bridge_output": {
+      "type": "intersection_points",
+      "data": {
+        "count": 4,
+        "points_sorted_by_x": [
+          [
+            -25,
+            0,
+            0
+          ],
+          [
+            -15,
+            0,
+            0
+          ],
+          [
+            15,
+            0,
+            0
+          ],
+          [
+            25,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "intersection_points",
+      "data": {
+        "count": 4,
+        "points": [
+          [
+            -25,
+            0,
+            0
+          ],
+          [
+            -15,
+            0,
+            0
+          ],
+          [
+            25,
+            0,
+            0
+          ],
+          [
+            15,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
