@@ -46,5 +46,525 @@
     "kernel_result": {"status": "success", "result": "unified shape", "note": "Kernel patch 0013 guards null pcurves in ShapeUpgrade_UnifySameDomain::IntUnifyFaces"},
     "bridge_result": {"status": "success", "result": "unified shape", "note": "Bridge calls kernel which now handles null pcurves safely"},
     "comparison": {"equal": true, "differences": [], "note": "Kernel patch 0013 (upstream OCCT#1392) fixes the crash; bridge parity maintained"}
+  },
+  {
+    "test_name": "Stress: Nil Propagation::failedFilletFedToBoolean",
+    "bridge_function": "OCCTShapeFillet",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepFilletAPI_MakeFillet(r=999) IsDone=0 -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepFilletAPI_MakeFillet(r=999) IsDone=0 -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFillet returns the input unchanged when not done or on a throw",
+      "env": "OCCT766=|FILLETPASS|",
+      "red": "StressNullInvalidTests.swift:16 Expectation failed: badFillet == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Nil Propagation::failedBooleanChain",
+    "bridge_function": "OCCTShapeSubtractEx, OCCTShapeFillet",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): cut volume 476.4012244, fillet(0.5) of it 993.7293492, both valid"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "cut volume 476.4012244, fillet(0.5) of it 993.7293492, both valid",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "runBooleanEx returns nil after a successful build",
+      "env": "OCCT766=|BOOLNULL|",
+      "red": "StressNullInvalidTests.swift:25 Expectation failed: box.subtracting(sphere)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Nil Propagation::drillAfterFailedShell",
+    "bridge_function": "OCCTShapeShell",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeThickSolidBySimple(-6) IsDone=0 -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeThickSolidBySimple(-6) IsDone=0 -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeShell returns the input unchanged when not done or on a throw",
+      "env": "OCCT766=|SHELLPASS|",
+      "red": "StressNullInvalidTests.swift:39 Expectation failed: badShell == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Nil Propagation::chamferAfterFailedFillet",
+    "bridge_function": "OCCTShapeFillet, OCCTShapeChamfer",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): fillet(0.5) volume 993.7293492; chamfer(0.3) throws \"no suitable edges\" -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fillet(0.5) volume 993.7293492; chamfer(0.3) throws \"no suitable edges\" -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeChamfer returns the input unchanged when not done or on a throw",
+      "env": "OCCT766=|CHAMFERPASS|",
+      "red": "StressNullInvalidTests.swift:56 Expectation failed: chamfered == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Nil Propagation::unionWithSelf",
+    "bridge_function": "OCCTShapeUnionEx",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): fuse(box, box): valid, volume 1000, 6 faces"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fuse(box, box): valid, volume 1000, 6 faces",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "runBooleanEx returns nil after a successful build",
+      "env": "OCCT766=|BOOLNULL|",
+      "red": "StressNullInvalidTests.swift:61 Expectation failed: box.union(box)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Nil Propagation::subtractSelf",
+    "bridge_function": "OCCTShapeSubtractEx",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): cut(box, box): done, 0 faces, mass 0 -> volume nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "cut(box, box): done, 0 faces, mass 0 -> volume nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetVolume accepts a zero mass as a measured volume",
+      "env": "OCCT766=|ZEROVOL|",
+      "red": "StressNullInvalidTests.swift:73 Expectation failed: r.volume == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Nil Propagation::intersectDisjoint",
+    "bridge_function": "OCCTShapeIntersectEx",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): common of disjoint boxes: done, 0 faces, volume nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "common of disjoint boxes: done, 0 faces, volume nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetVolume accepts a zero mass as a measured volume",
+      "env": "OCCT766=|ZEROVOL|",
+      "red": "StressNullInvalidTests.swift:82 Expectation failed: r.volume == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Zero-Dimension Shapes::zeroBox",
+    "bridge_function": "OCCTShapeCreateBox",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeBox(0,0,0) throws Standard_DomainError -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeBox(0,0,0) throws Standard_DomainError -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateBox: catch returns a wrapper of a null shape instead of nil",
+      "env": "OCCT766=|FAKE:OCCTShapeCreateBox|",
+      "red": "StressNullInvalidTests.swift:99 Expectation failed: box == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Zero-Dimension Shapes::zeroCylinder",
+    "bridge_function": "OCCTShapeCreateCylinder",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeCylinder(0,0) builds without throwing: invalid, volume nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeCylinder(0,0) builds without throwing: invalid, volume nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateCylinder returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeCreateCylinder|",
+      "red": "StressNullInvalidTests.swift:103 Expectation failed: Shape.cylinder(radius: 0, height: 0)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Zero-Dimension Shapes::zeroSphere",
+    "bridge_function": "OCCTShapeCreateSphere",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeSphere(0): invalid, volume nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeSphere(0): invalid, volume nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateSphere returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeCreateSphere|",
+      "red": "StressNullInvalidTests.swift:109 Expectation failed: Shape.sphere(radius: 0)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Zero-Dimension Shapes::zeroCone",
+    "bridge_function": "OCCTShapeCreateCone",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeCone(0,0,0) throws Standard_DomainError -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeCone(0,0,0) throws Standard_DomainError -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateCone: catch returns a wrapper of a null shape instead of nil",
+      "env": "OCCT766=|FAKE:OCCTShapeCreateCone|",
+      "red": "StressNullInvalidTests.swift:116 Expectation failed: cone == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Zero-Dimension Shapes::zeroTorus",
+    "bridge_function": "OCCTShapeCreateTorus",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeTorus(0,0): invalid, volume nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeTorus(0,0): invalid, volume nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateTorus returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeCreateTorus|",
+      "red": "StressNullInvalidTests.swift:120 Expectation failed: Shape.torus(majorRadius: 0, minorRadius: 0)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Zero-Dimension Shapes::zeroWidthBox",
+    "bridge_function": "OCCTShapeCreateBox",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeBox(10,10,0) throws Standard_DomainError -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeBox(10,10,0) throws Standard_DomainError -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateBox: catch returns a wrapper of a null shape instead of nil",
+      "env": "OCCT766=|FAKE:OCCTShapeCreateBox|",
+      "red": "StressNullInvalidTests.swift:128 Expectation failed: box == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Zero-Dimension Shapes::queriesOnZeroBox",
+    "bridge_function": "OCCTShapeGetVolume, OCCTShapeGetSurfaceArea, OCCTShapeGetSubShapeCount, OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): volume 1e-9, area 6e-6, 6/12/8 faces/edges/vertices, valid"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume 1e-9, area 6e-6, 6/12/8 faces/edges/vertices, valid",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetVolume reports Mass() × 1.5",
+      "env": "OCCT766=|VOLSCALE|",
+      "red": "StressNullInvalidTests.swift:133 Expectation failed: abs((box.volume ?? 0) - 1e-9) < 1e-15",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Empty Containers::emptyWireBuilder",
+    "bridge_function": "OCCTWireBuilderWire, OCCTWireBuilderIsDone",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): empty BRepBuilderAPI_MakeWire IsDone=0"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "empty BRepBuilderAPI_MakeWire IsDone=0",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTWireBuilderIsDone always true",
+      "env": "OCCT766=|TRUE:OCCTWireBuilderIsDone|",
+      "red": "StressNullInvalidTests.swift:154 Expectation failed: !builder.isDone",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Empty Containers::thruSectionsNoSections",
+    "bridge_function": "OCCTThruSectionsBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): unguarded ThruSections Build() with 0 wires returns normally, IsDone=0 (no segfault in 8.0.1)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "unguarded ThruSections Build() with 0 wires returns normally, IsDone=0 (no segfault in 8.0.1)",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
+      "env": "OCCT766=|TSGUARD|",
+      "red": "StressNullInvalidTests.swift:165 Expectation failed: !ok",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Empty Containers::sewingNothing",
+    "bridge_function": "OCCTSewingResult",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepBuilderAPI_Sewing with nothing added: SewedShape null -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepBuilderAPI_Sewing with nothing added: SewedShape null -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSewingResult returns a null sewn shape as non-nil",
+      "env": "OCCT766=|FAKE:OCCTSewingResult|",
+      "red": "StressNullInvalidTests.swift:174 Expectation failed: sewing.result == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Empty Containers::sectionBuilderEmpty",
+    "bridge_function": "OCCTSectionBuilderBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepAlgoAPI_Section with no arguments IsDone=0 -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepAlgoAPI_Section with no arguments IsDone=0 -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSectionBuilderBuild returns an empty shape when not done",
+      "env": "OCCT766=|FAKE:OCCTSectionBuilderBuild|",
+      "red": "StressNullInvalidTests.swift:180 Expectation failed: section.build() == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Empty Containers::cellsBuilderEmpty",
+    "bridge_function": "OCCTCellsBuilderCreate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): unguarded BOPAlgo_CellsBuilder Perform with 0 arguments returns normally, HasErrors=1"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "unguarded BOPAlgo_CellsBuilder Perform with 0 arguments returns normally, HasErrors=1",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCellsBuilderCreate: empty-input and HasErrors guards removed",
+      "env": "OCCT766=|SKIP:OCCTCellsBuilderCreate|",
+      "red": "StressNullInvalidTests.swift:189 Expectation failed: builder == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Empty Containers::emptyWireRectangle",
+    "bridge_function": "OCCTWireCreateRectangle",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): 1e-15 < Precision::Confusion() (1e-7): refused before OCCT -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1e-15 < Precision::Confusion() (1e-7): refused before OCCT -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTWireCreateRectangle: Precision::Confusion() guard removed, catch returns an empty wire",
+      "env": "OCCT766=|SKIP:OCCTWireCreateRectangle|FAKE:OCCTWireCreateRectangle|",
+      "red": "StressNullInvalidTests.swift:196 Expectation failed: wire == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]

@@ -288,3 +288,30 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressNullInvalidTests: Nil Propagation, Zero-Dimension Shapes, Empty Containers
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-null-invalid/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: Nil Propagation | `failedFilletFedToBoolean` | `OCCTShapeFillet` | OCCTShapeFillet returns the input unchanged when not done or on a throw | StressNullInvalidTests.swift:16 Expectation failed: badFillet == nil | ✔ | MATCH | no |
+| Stress: Nil Propagation | `failedBooleanChain` | `OCCTShapeSubtractEx, OCCTShapeFillet` | runBooleanEx returns nil after a successful build | StressNullInvalidTests.swift:25 Expectation failed: box.subtracting(sphere) | ✔ | MATCH | yes |
+| Stress: Nil Propagation | `drillAfterFailedShell` | `OCCTShapeShell` | OCCTShapeShell returns the input unchanged when not done or on a throw | StressNullInvalidTests.swift:39 Expectation failed: badShell == nil | ✔ | MATCH | yes |
+| Stress: Nil Propagation | `chamferAfterFailedFillet` | `OCCTShapeFillet, OCCTShapeChamfer` | OCCTShapeChamfer returns the input unchanged when not done or on a throw | StressNullInvalidTests.swift:56 Expectation failed: chamfered == nil | ✔ | MATCH | yes |
+| Stress: Nil Propagation | `unionWithSelf` | `OCCTShapeUnionEx` | runBooleanEx returns nil after a successful build | StressNullInvalidTests.swift:61 Expectation failed: box.union(box) | ✔ | MATCH | yes |
+| Stress: Nil Propagation | `subtractSelf` | `OCCTShapeSubtractEx` | OCCTShapeGetVolume accepts a zero mass as a measured volume | StressNullInvalidTests.swift:73 Expectation failed: r.volume == nil | ✔ | MATCH | yes |
+| Stress: Nil Propagation | `intersectDisjoint` | `OCCTShapeIntersectEx` | OCCTShapeGetVolume accepts a zero mass as a measured volume | StressNullInvalidTests.swift:82 Expectation failed: r.volume == nil | ✔ | MATCH | yes |
+| Stress: Zero-Dimension Shapes | `zeroBox` | `OCCTShapeCreateBox` | OCCTShapeCreateBox: catch returns a wrapper of a null shape instead of nil | StressNullInvalidTests.swift:99 Expectation failed: box == nil | ✔ | MATCH | yes |
+| Stress: Zero-Dimension Shapes | `zeroCylinder` | `OCCTShapeCreateCylinder` | OCCTShapeCreateCylinder returns nil | StressNullInvalidTests.swift:103 Expectation failed: Shape.cylinder(radius: 0, height: 0) | ✔ | MATCH | yes |
+| Stress: Zero-Dimension Shapes | `zeroSphere` | `OCCTShapeCreateSphere` | OCCTShapeCreateSphere returns nil | StressNullInvalidTests.swift:109 Expectation failed: Shape.sphere(radius: 0) | ✔ | MATCH | yes |
+| Stress: Zero-Dimension Shapes | `zeroCone` | `OCCTShapeCreateCone` | OCCTShapeCreateCone: catch returns a wrapper of a null shape instead of nil | StressNullInvalidTests.swift:116 Expectation failed: cone == nil | ✔ | MATCH | yes |
+| Stress: Zero-Dimension Shapes | `zeroTorus` | `OCCTShapeCreateTorus` | OCCTShapeCreateTorus returns nil | StressNullInvalidTests.swift:120 Expectation failed: Shape.torus(majorRadius: 0, minorRadius: 0) | ✔ | MATCH | yes |
+| Stress: Zero-Dimension Shapes | `zeroWidthBox` | `OCCTShapeCreateBox` | OCCTShapeCreateBox: catch returns a wrapper of a null shape instead of nil | StressNullInvalidTests.swift:128 Expectation failed: box == nil | ✔ | MATCH | yes |
+| Stress: Zero-Dimension Shapes | `queriesOnZeroBox` | `OCCTShapeGetVolume, OCCTShapeGetSurfaceArea, OCCTShapeGetSubShapeCount, OCCTShapeIsValid` | OCCTShapeGetVolume reports Mass() × 1.5 | StressNullInvalidTests.swift:133 Expectation failed: abs((box.volume ?? 0) - 1e-9) < 1e-15 | ✔ | MATCH | yes |
+| Stress: Empty Containers | `emptyWireBuilder` | `OCCTWireBuilderWire, OCCTWireBuilderIsDone` | OCCTWireBuilderIsDone always true | StressNullInvalidTests.swift:154 Expectation failed: !builder.isDone | ✔ | MATCH | yes |
+| Stress: Empty Containers | `thruSectionsNoSections` | `OCCTThruSectionsBuild` | OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone | StressNullInvalidTests.swift:165 Expectation failed: !ok | ✔ | MATCH | no |
+| Stress: Empty Containers | `sewingNothing` | `OCCTSewingResult` | OCCTSewingResult returns a null sewn shape as non-nil | StressNullInvalidTests.swift:174 Expectation failed: sewing.result == nil | ✔ | MATCH | yes |
+| Stress: Empty Containers | `sectionBuilderEmpty` | `OCCTSectionBuilderBuild` | OCCTSectionBuilderBuild returns an empty shape when not done | StressNullInvalidTests.swift:180 Expectation failed: section.build() == nil | ✔ | MATCH | yes |
+| Stress: Empty Containers | `cellsBuilderEmpty` | `OCCTCellsBuilderCreate` | OCCTCellsBuilderCreate: empty-input and HasErrors guards removed | StressNullInvalidTests.swift:189 Expectation failed: builder == nil | ✔ | MATCH | no |
+| Stress: Empty Containers | `emptyWireRectangle` | `OCCTWireCreateRectangle` | OCCTWireCreateRectangle: Precision::Confusion() guard removed, catch returns an empty wire | StressNullInvalidTests.swift:196 Expectation failed: wire == nil | ✔ | MATCH | yes |
