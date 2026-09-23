@@ -4501,5 +4501,120 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Self-Intersection Tests::Box has no self-intersection",
+    "bridge_function": "OCCTShapeSelfIntersection",
+    "bridge_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "kernel_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Self-Intersection Tests::Sphere has no self-intersection",
+    "bridge_function": "OCCTShapeSelfIntersection",
+    "bridge_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "kernel_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Self-Intersection Tests::Cylinder has no self-intersection",
+    "bridge_function": "OCCTShapeSelfIntersection",
+    "bridge_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "kernel_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Self-Intersection Tests::Custom tolerance and mesh deflection",
+    "bridge_function": "OCCTShapeSelfIntersection",
+    "bridge_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "kernel_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Self-Intersection Tests::Overlapping boxes in one compound report their overlaps",
+    "bridge_function": "OCCTShapeSelfIntersection",
+    "bridge_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 6
+      }
+    },
+    "kernel_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
