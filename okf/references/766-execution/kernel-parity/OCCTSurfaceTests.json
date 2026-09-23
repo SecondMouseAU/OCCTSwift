@@ -6,5 +6,247 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Approximation at C0 does not collapse or misreport (#522)::A full sphere at C0 is not collapsed to a line across its longitude",
+    "bridge_function": "OCCTGeomConvertApproxSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          7,
+          7
+        ],
+        "poles": [
+          15,
+          8
+        ],
+        "MaxError": 0.000261
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          7,
+          7
+        ],
+        "poles": [
+          15,
+          8
+        ],
+        "MaxError": 0.000261
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 522 sphere r=10 C0/C0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Approximation at C0 does not collapse or misreport (#522)::The same C0 request through approximated() is not collapsed either",
+    "bridge_function": "OCCTSurfaceApproximate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          7,
+          7
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          7,
+          7
+        ]
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 522 sphere r=10 C0/C0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Approximation at C0 does not collapse or misreport (#522)::Mixed continuities with C0 in either direction stay within tolerance",
+    "bridge_function": "OCCTGeomConvertApproxSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "C0/C2": {
+          "MaxError": 7.25e-05
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "C0/C2": {
+          "MaxError": 7.25e-05
+        }
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 522"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Approximation at C0 does not collapse or misreport (#522)::A bicubic Bezier at C0 is reproduced exactly, at every tolerance",
+    "bridge_function": "OCCTGeomConvertApproxSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          3,
+          3
+        ],
+        "MaxError": 7.98e-15
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          3,
+          3
+        ],
+        "MaxError": 7.98e-15
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 522 bicubic Bezier"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Approximation at C0 does not collapse or misreport (#522)::A V-linear cylinder still fits at degree 1 in V",
+    "bridge_function": "OCCTGeomConvertApproxSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          7,
+          1
+        ],
+        "poles": [
+          15,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          7,
+          1
+        ],
+        "poles": [
+          15,
+          2
+        ]
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 522 V-linear trimmed cylinder"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 572: surface conversion through the #522 approximator::A trimmed offset surface converts to within its own tolerance",
+    "bridge_function": "OCCTSurfaceToBSpline",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          14,
+          14
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          14,
+          14
+        ]
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 572 trimmed offset"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 572: surface conversion through the #522 approximator::The untrimmed offset takes the C0 branch without collapsing",
+    "bridge_function": "OCCTSurfaceToBSpline",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          13,
+          14
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          13,
+          14
+        ]
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 572 untrimmed offset"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 572: surface conversion through the #522 approximator::Analytic surfaces convert exactly, before and after",
+    "bridge_function": "OCCTSurfaceToBSpline",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          2,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          2,
+          2
+        ]
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 572 sphere r=5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
