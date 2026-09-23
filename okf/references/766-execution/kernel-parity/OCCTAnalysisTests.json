@@ -1372,5 +1372,149 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Plane Properties::planeCoefficients",
+    "bridge_function": "OCCTSurfacePlaneCoefficients",
+    "bridge_output": {
+      "type": "coefficients",
+      "data": {
+        "a": 0.0,
+        "b": 0.0,
+        "c": 1.0,
+        "d": -2.0
+      }
+    },
+    "kernel_output": {
+      "type": "coefficients",
+      "data": {
+        "a": 0.0,
+        "b": 0.0,
+        "c": 1.0,
+        "d": -2.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Plane Properties::planeUIso",
+    "bridge_function": "OCCTSurfacePlaneUIso",
+    "bridge_output": {
+      "type": "iso_line",
+      "data": {
+        "point_at_0": [
+          3.0,
+          0.0,
+          2.0
+        ],
+        "point_at_1": [
+          3.0,
+          1.0,
+          2.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "iso_line",
+      "data": {
+        "point_at_0": [
+          3.0,
+          0.0,
+          2.0
+        ],
+        "point_at_1": [
+          3.0,
+          1.0,
+          2.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Plane Properties::planeVIso",
+    "bridge_function": "OCCTSurfacePlaneVIso",
+    "bridge_output": {
+      "type": "iso_line",
+      "data": {
+        "point_at_0": [
+          0.0,
+          3.0,
+          2.0
+        ],
+        "point_at_1": [
+          1.0,
+          3.0,
+          2.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "iso_line",
+      "data": {
+        "point_at_0": [
+          0.0,
+          3.0,
+          2.0
+        ],
+        "point_at_1": [
+          1.0,
+          3.0,
+          2.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Plane Properties::planePln",
+    "bridge_function": "OCCTSurfacePlanePln",
+    "bridge_output": {
+      "type": "plane",
+      "data": {
+        "origin": [
+          0.0,
+          0.0,
+          2.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "plane",
+      "data": {
+        "origin": [
+          0.0,
+          0.0,
+          2.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
