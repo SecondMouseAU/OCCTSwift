@@ -497,5 +497,253 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::UV bounds of box face",
+    "bridge_function": "OCCTFaceGetUVBounds",
+    "bridge_output": {
+      "type": "uv_bounds",
+      "data": {
+        "uMin": 0.0,
+        "uMax": 10.0,
+        "vMin": -10.0,
+        "vMax": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "uv_bounds",
+      "data": {
+        "uMin": 0.0,
+        "uMax": 10.0,
+        "vMin": -10.0,
+        "vMax": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Evaluate point on box face at UV center",
+    "bridge_function": "OCCTFaceEvaluateAtUV",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": -5.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": -5.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Normal at UV on box face is axis-aligned",
+    "bridge_function": "OCCTFaceGetNormalAtUV",
+    "bridge_output": {
+      "type": "normal",
+      "data": {
+        "x": -1.0,
+        "y": 0.0,
+        "z": 0.0,
+        "face_orientation": "REVERSED"
+      }
+    },
+    "kernel_output": {
+      "type": "normal",
+      "data": {
+        "x": -1.0,
+        "y": 0.0,
+        "z": 0.0,
+        "face_orientation": "REVERSED"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Gaussian curvature of plane face is zero",
+    "bridge_function": "OCCTFaceGetGaussianCurvature",
+    "bridge_output": {
+      "type": "gaussian_curvature",
+      "data": {
+        "value": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "gaussian_curvature",
+      "data": {
+        "value": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Gaussian curvature of sphere is 1/r²",
+    "bridge_function": "OCCTFaceGetGaussianCurvature",
+    "bridge_output": {
+      "type": "gaussian_curvature",
+      "data": {
+        "value": 0.04
+      }
+    },
+    "kernel_output": {
+      "type": "gaussian_curvature",
+      "data": {
+        "value": 0.04000000000000001,
+        "note": "read after IsCurvatureDefined(), as the bridge does; a first GaussianCurvature() on a fresh GeomLProp_SLProps returns 0 in the pinned kernel (transcript line staleFirstRead)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Mean curvature of sphere is 1/r",
+    "bridge_function": "OCCTFaceGetMeanCurvature",
+    "bridge_output": {
+      "type": "mean_curvature",
+      "data": {
+        "value": -0.2
+      }
+    },
+    "kernel_output": {
+      "type": "mean_curvature",
+      "data": {
+        "value": -0.2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Principal curvatures of cylinder",
+    "bridge_function": "OCCTFaceGetPrincipalCurvatures",
+    "bridge_output": {
+      "type": "principal_curvatures",
+      "data": {
+        "kMin": -0.2,
+        "kMax": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "principal_curvatures",
+      "data": {
+        "kMin": -0.2,
+        "kMax": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Surface type detection",
+    "bridge_function": "OCCTFaceGetSurfaceType",
+    "bridge_output": {
+      "type": "surface_types",
+      "data": {
+        "box": [
+          "plane",
+          "plane",
+          "plane",
+          "plane",
+          "plane",
+          "plane"
+        ],
+        "cylinder": [
+          "cylinder",
+          "plane",
+          "plane"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "surface_types",
+      "data": {
+        "box": [
+          "plane",
+          "plane",
+          "plane",
+          "plane",
+          "plane",
+          "plane"
+        ],
+        "cylinder": [
+          "cylinder",
+          "plane",
+          "plane"
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Face area of box face",
+    "bridge_function": "OCCTFaceGetArea",
+    "bridge_output": {
+      "type": "face_areas",
+      "data": {
+        "areas": [
+          600.0,
+          600.0,
+          300.0,
+          300.0,
+          200.0,
+          200.0
+        ],
+        "total": 2200.0
+      }
+    },
+    "kernel_output": {
+      "type": "face_areas",
+      "data": {
+        "areas": [
+          599.9999999999999,
+          599.9999999999999,
+          299.99999999999994,
+          299.99999999999994,
+          200.0,
+          200.0
+        ],
+        "total": 2200.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
