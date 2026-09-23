@@ -308,5 +308,85 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_ExtCF Tests::Edge to sphere face distance",
+    "bridge_function": "OCCTBRepExtremaExtCF",
+    "bridge_output": {
+      "type": "edge_face_extrema",
+      "data": {
+        "edges": 12,
+        "far_edges": 8,
+        "far_distance": 7.012492197250393,
+        "far_nb_ext": 2,
+        "crossing_edges": 4,
+        "crossing_distance": 0.0,
+        "crossing_nb_ext": 4
+      }
+    },
+    "kernel_output": {
+      "type": "edge_face_extrema",
+      "data": {
+        "edges": 12,
+        "far_edges": 8,
+        "far_distance": 7.012492197250393,
+        "far_nb_ext": 2,
+        "crossing_edges": 4,
+        "crossing_distance": 0.0,
+        "crossing_nb_ext": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_ExtCF Tests::Box edge to box face",
+    "bridge_function": "OCCTBRepExtremaExtCF",
+    "bridge_output": {
+      "type": "edge_face_extrema",
+      "data": {
+        "edge": 1,
+        "face": 2,
+        "nb_ext": 1,
+        "distance": 15.811388300841896,
+        "point_on_edge": [
+          -5.0,
+          0.0,
+          5.0
+        ],
+        "point_on_face": [
+          0.0,
+          0.0,
+          20.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "edge_face_extrema",
+      "data": {
+        "edge": 1,
+        "face": 2,
+        "nb_ext": 1,
+        "distance": 15.811388300841896,
+        "point_on_edge": [
+          -5.0,
+          0.0,
+          5.0
+        ],
+        "point_on_face": [
+          0.0,
+          0.0,
+          20.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
