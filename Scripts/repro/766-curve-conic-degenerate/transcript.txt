@@ -1,0 +1,23 @@
+GC_MakeArcOfEllipse (0,0) IsDone: 1
+GC_MakeArcOfEllipse (5,0) IsDone: 1
+gp_Elips (5,-3): throws gp_Elips() - invalid construction parameters
+gp_Elips (3,5): throws gp_Elips() - invalid construction parameters
+GC_MakeArcOfEllipse (5,0) two-point, first param is NaN: 1
+GC_MakeArcOfHyperbola (5,0) IsDone: 1
+GC_MakeArcOfHyperbola (3,5) IsDone: 1
+GC_MakeArcOfParabola focal 0 IsDone: 1
+GC_MakeEllipse (5,0) IsDone: 1
+GC_MakeHyperbola (0,5) IsDone: 1
+GC_MakeEllipse 3pt coincident IsDone: 0
+GC_MakeEllipse 3pt S2 on axis IsDone: 0
+GC_MakeEllipse 3pt healthy IsDone: 1
+GC_MakeHyperbola 3pt coincident IsDone: 0
+MakeEdge gp_Elips (5,0) IsDone: 1
+MakeEdge gp_Parab focal 0 arc IsDone: 1
+Geom_Ellipse(5,3)::SetMinorRadius(0) accepted: 1
+Geom_Ellipse(5,3)::SetMajorRadius(1): throws 
+Geom_Hyperbola(5,3)::SetMajorRadius(0) accepted: 1
+Geom_Parabola(2)::SetFocal(0) accepted: 1
+Geom_Circle(5)::SetRadius(0) accepted: 1
+ElCLib::Value(1, elips(5,0)) = (2.7015115293406988, 0, 0), 5cos(1) = 2.7015115293406988
+BndLib elips(5,0): x [-5, 5] y [0, 0]

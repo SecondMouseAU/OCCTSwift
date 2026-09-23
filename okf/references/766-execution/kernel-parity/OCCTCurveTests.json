@@ -302,5 +302,583 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfEllipseRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for (0,0) and (5,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfEllipse (0,0) and (5,0): IsDone 1, a live degenerate arc"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:38 Curve3D.arcOfEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfEllipseRejectsNegativeAndInvertedRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "Swift wrapper",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Elips (5,-3) and (3,5) throw: the kernel rejects these itself, so the bridge guard is not what this test proves"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ellfix: arcOfEllipse sorts and abs()es its radii",
+    "red": "Issue554Conic3dDegenerateTests.swift:51 Curve3D.arcOfEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfEllipseAcceptsValidRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Elips (5,3) and (4,4) valid"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "conicnil: every conic validator returns false",
+    "red": "Issue554Conic3dDegenerateTests.swift:64 Curve3D.arcOfEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfEllipseThroughPointsRejectsZeroMinorRadius",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfEllipse (5,0) two-point: IsDone 1 with a NaN first parameter"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:83 Curve3D.arcOfEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfEllipseThroughPointsAcceptsValidRadiiAndIsNotNaN",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "finite range"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "healthy ellipse: finite parameters"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "conicnil: every conic validator returns false",
+    "red": "Issue554Conic3dDegenerateTests.swift:102 arc != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfHyperbolaRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfHyperbola (5,0): IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:110 Curve3D.arcOfHyperbola(  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfHyperbolaAcceptsMinorLargerThanMajor",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfHyperbola (3,5): IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "conicnil: every conic validator returns false",
+    "red": "Issue554Conic3dDegenerateTests.swift:129 Curve3D.arcOfHyperbola(",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfParabolaRejectsZeroFocalDistance",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfParabola focal 0: IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:139 Curve3D.arcOfParabola(",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfParabolaAcceptsPositiveFocalDistance",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "focal 2 valid"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "conicnil: every conic validator returns false",
+    "red": "Issue554Conic3dDegenerateTests.swift:146 Curve3D.arcOfParabola(",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::gcEllipseRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil; (5,3) built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeEllipse (5,0): IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:155 Curve3D.gcEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::gcEllipseFromFullAxisRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil; (5,3) built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeEllipse (5,0): IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:170 Curve3D.gcEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::gcHyperbolaRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil; (5,3) built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeHyperbola (0,5): IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:185 Curve3D.gcHyperbola(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::gcThreePointFormsRejectDegeneratePointTriplesWithoutABridgeGuard",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "Swift wrapper",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for degenerate triples; healthy built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeEllipse 3pt coincident 0, S2 on axis 0, healthy 1; GC_MakeHyperbola 3pt coincident 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "gc3fake: three-point gcEllipse answers a circle on failure",
+    "red": "Issue554Conic3dDegenerateTests.swift:204 Curve3D.gcEllipse(s1: origin, s2: origin, center: origin) == nil  (+1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::edgeFromEllipseRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil; (5,3) built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepBuilderAPI_MakeEdge gp_Elips (5,0): IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:217 Shape.edgeFromEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::edgeFromEllipseArcRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil; (5,3) built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepBuilderAPI_MakeEdge gp_Elips (5,0): IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:232 Shape.edgeFromEllipseArc(",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::edgeFromHyperbolaArcRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil; (5,3) built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfHyperbola (5,0) IsDone 1 (edge form not probed separately)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:243 Shape.edgeFromHyperbolaArc(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::edgeFromParabolaArcRejectsZeroFocalLength",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil; focal > 0 built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepBuilderAPI_MakeEdge gp_Parab focal 0 arc: IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:258 Shape.edgeFromParabolaArc(",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::pointToEllipseRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A for the value: the refusal is the bridge's occtValidEllipseRadii; the kernel builds gp_Elips (5,0) without complaint"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:283 ExtremaPointCurve.pointToEllipse(",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::pointToParabolaRejectsZeroFocalDistance",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A for the value: bridge guard; gp_Parab focal 0 is accepted by the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:301 ExtremaPointCurve.pointToParabola(",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::lineToEllipseRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A for the value: bridge guard; gp_Elips (5,0) accepted by the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:318 ExtremaElC.lineToEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::ellipseSetMinorRadiusRejectsZero",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "false; radius unchanged"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Ellipse::SetMinorRadius(0) accepted by the kernel"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:348 e.ellipseProperties.setMinorRadius(0) == false  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::ellipseSetMajorRadiusKeepsThePairValid",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "false for 1 and 0; 9 accepted"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Ellipse::SetMajorRadius(1) throws on its own"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "conicnil: every conic validator returns false",
+    "red": "Issue554Conic3dDegenerateTests.swift:358 e != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::hyperbolaSettersRejectZero",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "false; minor 8 accepted"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Hyperbola::SetMajorRadius(0) accepted by the kernel"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:375 h.hyperbolaProperties.setMajorRadius(0) == false  (+3 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::parabolaSetFocalRejectsZero",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "false; 6 accepted"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Parabola::SetFocal(0) accepted by the kernel"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:388 p.parabolaProperties.setFocal(0) == false  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::circleSetRadiusRejectsZero",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "false; 7 accepted"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Circle::SetRadius(0) accepted by the kernel"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:398 c.circleProperties.setRadius(0) == false  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::degenerateEllipseStillEvaluatesAndBoundsCorrectly",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "Swift wrapper",
+    "bridge_output": {
+      "type": "value",
+      "data": "x = 5cos(1); box x [-5, 5], y 0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "ElCLib::Value = (2.7015115293406988, 0, 0); BndLib x [-5, 5], y [0, 0]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "elcx: valueOnEllipse x + 1e-3",
+    "red": "Issue554Conic3dDegenerateTests.swift:417 abs(p.x - 5 * Foundation.cos(1.0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
   }
 ]

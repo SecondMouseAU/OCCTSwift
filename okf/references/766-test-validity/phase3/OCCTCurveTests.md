@@ -197,3 +197,36 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Issue554 3D conic degenerate dimensions | arcOfEllipseRejectsZeroRadii | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:38 Curve3D.arcOfEllipse(  (+1 more)` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | arcOfEllipseRejectsNegativeAndInvertedRadii | `Swift wrapper` | ellfix: arcOfEllipse sorts and abs()es its radii | `Issue554Conic3dDegenerateTests.swift:51 Curve3D.arcOfEllipse(  (+1 more)` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | arcOfEllipseAcceptsValidRadii | `conic validators (OCCTBridge_Internal.h)` | conicnil: every conic validator returns false | `Issue554Conic3dDegenerateTests.swift:64 Curve3D.arcOfEllipse(  (+1 more)` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | arcOfEllipseThroughPointsRejectsZeroMinorRadius | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:83 Curve3D.arcOfEllipse(  (+1 more)` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | arcOfEllipseThroughPointsAcceptsValidRadiiAndIsNotNaN | `conic validators (OCCTBridge_Internal.h)` | conicnil: every conic validator returns false | `Issue554Conic3dDegenerateTests.swift:102 arc != nil` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | arcOfHyperbolaRejectsZeroRadii | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:110 Curve3D.arcOfHyperbola(  (+2 more)` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | arcOfHyperbolaAcceptsMinorLargerThanMajor | `conic validators (OCCTBridge_Internal.h)` | conicnil: every conic validator returns false | `Issue554Conic3dDegenerateTests.swift:129 Curve3D.arcOfHyperbola(` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | arcOfParabolaRejectsZeroFocalDistance | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:139 Curve3D.arcOfParabola(` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | arcOfParabolaAcceptsPositiveFocalDistance | `conic validators (OCCTBridge_Internal.h)` | conicnil: every conic validator returns false | `Issue554Conic3dDegenerateTests.swift:146 Curve3D.arcOfParabola(` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | gcEllipseRejectsZeroRadii | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:155 Curve3D.gcEllipse(  (+1 more)` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | gcEllipseFromFullAxisRejectsZeroRadii | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:170 Curve3D.gcEllipse(  (+1 more)` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | gcHyperbolaRejectsZeroRadii | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:185 Curve3D.gcHyperbola(  (+1 more)` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | gcThreePointFormsRejectDegeneratePointTriplesWithoutABridgeGuard | `Swift wrapper` | gc3fake: three-point gcEllipse answers a circle on failure | `Issue554Conic3dDegenerateTests.swift:204 Curve3D.gcEllipse(s1: origin, s2: origin, center: origin) == nil  (+1` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | edgeFromEllipseRejectsZeroRadii | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:217 Shape.edgeFromEllipse(  (+1 more)` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | edgeFromEllipseArcRejectsZeroRadii | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:232 Shape.edgeFromEllipseArc(` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | edgeFromHyperbolaArcRejectsZeroRadii | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:243 Shape.edgeFromHyperbolaArc(  (+1 more)` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | edgeFromParabolaArcRejectsZeroFocalLength | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:258 Shape.edgeFromParabolaArc(` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | pointToEllipseRejectsZeroRadii | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:283 ExtremaPointCurve.pointToEllipse(` | ✅ | N/A |  |
+| Issue554 3D conic degenerate dimensions | pointToParabolaRejectsZeroFocalDistance | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:301 ExtremaPointCurve.pointToParabola(` | ✅ | N/A |  |
+| Issue554 3D conic degenerate dimensions | lineToEllipseRejectsZeroRadii | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:318 ExtremaElC.lineToEllipse(  (+1 more)` | ✅ | N/A |  |
+| Issue554 3D conic degenerate dimensions | ellipseSetMinorRadiusRejectsZero | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:348 e.ellipseProperties.setMinorRadius(0) == false  (+1 more)` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | ellipseSetMajorRadiusKeepsThePairValid | `conic validators (OCCTBridge_Internal.h)` | conicnil: every conic validator returns false | `Issue554Conic3dDegenerateTests.swift:358 e != nil` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | hyperbolaSettersRejectZero | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:375 h.hyperbolaProperties.setMajorRadius(0) == false  (+3 more)` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | parabolaSetFocalRejectsZero | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:388 p.parabolaProperties.setFocal(0) == false  (+1 more)` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | circleSetRadiusRejectsZero | `conic validators (OCCTBridge_Internal.h)` | noconic: every conic validator returns true | `Issue554Conic3dDegenerateTests.swift:398 c.circleProperties.setRadius(0) == false  (+1 more)` | ✅ | MATCH |  |
+| Issue554 3D conic degenerate dimensions | degenerateEllipseStillEvaluatesAndBoundsCorrectly | `Swift wrapper` | elcx: valueOnEllipse x + 1e-3 | `Issue554Conic3dDegenerateTests.swift:417 abs(p.x - 5 * Foundation.cos(1.0)) < 1e-9` | ✅ | MATCH |  |
