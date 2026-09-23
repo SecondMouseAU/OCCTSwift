@@ -6,5 +6,171 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Issue532 cylindrical hole part selection::untilEndAndRangeDrillEveryBody",
+    "bridge_function": "OCCTBRepFeatCylindricalHole",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "untilEnd": "removed within 1.0 of 3141.59, 2 solids, valid",
+        "range(0,70)": "removed within 1.0 of 3141.59, 2 solids, valid"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "untilEnd": {
+          "removed": 3141.592654,
+          "solids": 2,
+          "valid": true
+        },
+        "range(0,70)": {
+          "removed": 3141.592654,
+          "solids": 2,
+          "valid": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue532 cylindrical hole part selection::blindDrillsIntoAStack",
+    "bridge_function": "OCCTBRepFeatCylindricalHole",
+    "bridge_output": {
+      "type": "value",
+      "data": "removed within 1.0 of 1178.10, valid"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "removed": 1178.097245,
+        "solids": 2,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue532 cylindrical hole part selection::threePlateStack",
+    "bridge_function": "OCCTBRepFeatCylindricalHole",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "untilEnd": "removed within 1.0 of 4712.39",
+        "range(0,70)": "removed within 1.0 of 3141.59"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "untilEnd": 4712.38898,
+        "range(0,70)": 3141.592654
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue532 cylindrical hole part selection::singleSolidSeveredByItsOwnBore",
+    "bridge_function": "OCCTBRepFeatCylindricalHole",
+    "bridge_output": {
+      "type": "value",
+      "data": "untilEnd, thruNext, range(0,30): removed within 1.0 of 1407.30, 2 solids each"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "untilEnd": 1407.295218,
+        "thruNext": 1407.295218,
+        "range(0,30)": 1407.295218,
+        "solids": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue532 cylindrical hole part selection::singlePlateUnchanged",
+    "bridge_function": "OCCTBRepFeatCylindricalHole",
+    "bridge_output": {
+      "type": "value",
+      "data": "throughAll/untilEnd/thruNext/range(0,30)/range(10,20) within 1.0 of 1570.80, blind(20) within 1.0 of 1178.10, 1 solid each"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "throughAll": 1570.796327,
+        "untilEnd": 1570.796327,
+        "thruNext": 1570.796327,
+        "range(0,30)": 1570.796327,
+        "range(10,20)": 1570.796327,
+        "blind(20)": 1178.097245,
+        "solids": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue532 cylindrical hole part selection::hollowBoxDrillsBothWalls",
+    "bridge_function": "OCCTBRepFeatCylindricalHole",
+    "bridge_output": {
+      "type": "value",
+      "data": "throughAll/untilEnd/range(0,60) within 1.0 of 785.40, valid"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "throughAll": 785.398163,
+        "untilEnd": 785.398163,
+        "range(0,60)": 785.398163,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue532 cylindrical hole part selection::rangeOverTheGapIsStillRefused",
+    "bridge_function": "OCCTBRepFeatCylindricalHoleStatus",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "status": "invalidPlacement",
+        "shape": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "status": "BRepFeat_InvalidPlacement (1)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

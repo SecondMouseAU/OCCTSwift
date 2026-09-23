@@ -221,3 +221,23 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `Issue532CylindricalHolePartSelectionTests.swift` (7 tests)
+
+Probe: `Scripts/repro/766-modeling-issue532-cylindrical-hole-part-selection/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| untilEndAndRangeDrillEveryBody | `OCCTBRepFeatCylindricalHole` hands back the input shape in place of the drilled result (#532's own symptom: nothing removed, reported as success) | `:71 Expectation failed: abs((v0 - v) - 2 * Self.bore) < 1.0` | pass | `OCCTBRepFeatCylindricalHole` | PASS |
+| blindDrillsIntoAStack | `OCCTBRepFeatCylindricalHole` runs `PerformBlind` with 1.5x the requested depth | `:97 Expectation failed: Bool(false)` | pass | `OCCTBRepFeatCylindricalHole` | PASS |
+| threePlateStack | `OCCTBRepFeatCylindricalHole` hands back the input shape in place of the drilled result (#532's own symptom: nothing removed, reported as success) | `:123 Expectation failed: abs((v0 - va) - 3 * Self.bore) < 1.0`, `:134 Expectation failed: abs((v0 - vt) - 2 * Self.bore) < 1.0` | pass | `OCCTBRepFeatCylindricalHole` | PASS |
+| singleSolidSeveredByItsOwnBore | `OCCTBRepFeatCylindricalHole` hands back the input shape in place of the drilled result (#532's own symptom: nothing removed, reported as success) | `:162 Expectation failed: abs((v0 - v) - expected) < 1.0`, `:165 Expectation failed: d.subShapes(ofType: .solid).count == 2` | pass | `OCCTBRepFeatCylindricalHole` | PASS |
+| singlePlateUnchanged | `OCCTBRepFeatCylindricalHole` hands back the input shape in place of the drilled result (#532's own symptom: nothing removed, reported as success) | `:200 Expectation failed: abs((v0 - v) - want) < 1.0` | pass | `OCCTBRepFeatCylindricalHole` | PASS |
+| hollowBoxDrillsBothWalls | `OCCTBRepFeatCylindricalHole` hands back the input shape in place of the drilled result (#532's own symptom: nothing removed, reported as success) | `:233 Expectation failed: abs((v0 - v) - expected) < 1.0` | pass | `OCCTBRepFeatCylindricalHole` | PASS |
+| rangeOverTheGapIsStillRefused | `OCCTBRepFeatCylindricalHoleStatus` reports NoError without running the feature | `:249 Expectation failed: stack.cylindricalHoleStatus(` | pass | `OCCTBRepFeatCylindricalHoleStatus` | PASS |
