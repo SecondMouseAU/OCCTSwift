@@ -150,6 +150,12 @@
 | **BRepLProp Face v0.111** | faceIsUmbilic | Umbilic definedness | curvature-defined guard inverted in OCCTFaceLPropIsUmbilic |
 | **BRepLProp Face v0.111** | faceTangentU | Face U tangent | x written from tan.Y() in OCCTFaceLPropTangentU |
 | **Integration: Assembly Interference** | shaftHousingClearanceAndInterference | Clearance and interference | Distance + 1; volume scaled by 1.01 |
+| **Geom_Hyperbola Properties** | hyperbolaRadii | Hyperbola radii | MajorRadius() + 1 in OCCTCurve3DHyperbolaMajorRadius |
+| **Geom_Hyperbola Properties** | hyperbolaSetRadii | Hyperbola radius setters | Drop SetMinorRadius in OCCTCurve3DHyperbolaSetMinorRadius (still returns true) |
+| **Geom_Hyperbola Properties** | hyperbolaEccentricity | Hyperbola eccentricity (rewritten: sign-only) | Return Focal()/MajorRadius() (2e) in OCCTCurve3DHyperbolaEccentricity |
+| **Geom_Hyperbola Properties** | hyperbolaFocal | Hyperbola focal distance (rewritten: sign-only) | Return 2 * MajorRadius() in OCCTCurve3DHyperbolaFocal |
+| **Geom_Hyperbola Properties** | hyperbolaFocus1 | Hyperbola focus (rewritten: sign-only) | Report the vertex (MajorRadius, 0, 0) in OCCTCurve3DHyperbolaFocus1 |
+| **Geom_Hyperbola Properties** | hyperbolaAsymptote1 | Hyperbola asymptote | Read Asymptote2() in OCCTCurve3DHyperbolaAsymptote1 |
 
 ---
 
