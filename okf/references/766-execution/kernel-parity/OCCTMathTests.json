@@ -182,5 +182,105 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "GC_MakePlane::Plane from 3 points",
+    "bridge_function": "OCCTSurfacePlaneFromPoints",
+    "bridge_output": {"type": "observed", "data": "point(0,0)=0 0 0 normal=0 0 1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "point(0,0)=0 0 0 normal=0 0 1", "source": "Scripts/repro/766-math-plane-construction-parity/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "pass p2, p1, p3 to GC_MakePlane (origin moves to p2, normal flips)", "failing_expectation": "original: **green**; rewritten: :18 `simd_length(o) < 1e-12`"},
+    "green": true
+  },
+  {
+    "test_name": "GC_MakePlane::Plane from point and normal",
+    "bridge_function": "OCCTSurfacePlaneFromPointNormal",
+    "bridge_output": {"type": "observed", "data": "point(0,0)=5 5 5 normal=0.57735026918962573 0.57735026918962584 0.57735026918962573", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "point(0,0)=5 5 5 normal=0.57735026918962573 0.57735026918962584 0.57735026918962573", "source": "Scripts/repro/766-math-plane-construction-parity/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "negate the normal passed to GC_MakePlane", "failing_expectation": "original: **green**; rewritten: :34 `simd_length(n - SIMD3(k, k, k)) < 1e-12`"},
+    "green": true
+  },
+  {
+    "test_name": "Surface plane factory parity (#421)::Well-separated points: both entry points agree",
+    "bridge_function": "OCCTSurfacePlaneFromPoints",
+    "bridge_output": {"type": "observed", "data": "point(0,0)=0 0 0 normal=0 0 1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "point(0,0)=0 0 0 normal=0 0 1", "source": "Scripts/repro/766-math-plane-construction-parity/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "pass p2, p1, p3 to GC_MakePlane", "failing_expectation": "original: **green**; rewritten: :57 `simd_length(s.point(atU: 0, v: 0) - p1) < 1e-12`"},
+    "green": true
+  },
+  {
+    "test_name": "Surface plane factory parity (#421)::Collinear-but-distinct points: both entry points return nil",
+    "bridge_function": "OCCTSurfacePlaneFromPoints",
+    "bridge_output": {"type": "observed", "data": "IsDone=0", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "IsDone=0", "source": "Scripts/repro/766-math-plane-construction-parity/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "on !IsDone() return a default +Z plane through p1 instead of nil", "failing_expectation": ":61 `Surface.planeFromPoints(p1, p2, p3) == nil`"},
+    "green": true
+  },
+  {
+    "test_name": "Surface plane factory parity (#421)::Collinear, unevenly spaced points: both entry points return nil",
+    "bridge_function": "OCCTSurfacePlaneFromPoints",
+    "bridge_output": {"type": "observed", "data": "IsDone=0", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "IsDone=0", "source": "Scripts/repro/766-math-plane-construction-parity/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "on !IsDone() return a default +Z plane through p1 instead of nil", "failing_expectation": ":70 `Surface.planeFromPoints(p1, p2, p3) == nil`"},
+    "green": true
+  },
+  {
+    "test_name": "Surface plane factory parity (#421)::Two coincident points: both entry points return nil",
+    "bridge_function": "OCCTSurfacePlaneFromPoints",
+    "bridge_output": {"type": "observed", "data": "IsDone=0", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "IsDone=0", "source": "Scripts/repro/766-math-plane-construction-parity/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "on !IsDone() return a default +Z plane through p1 instead of nil", "failing_expectation": ":79 `Surface.planeFromPoints(p1, p2, p3) == nil`"},
+    "green": true
+  },
+  {
+    "test_name": "Surface plane factory parity (#421)::All three points coincident: both entry points return nil",
+    "bridge_function": "OCCTSurfacePlaneFromPoints",
+    "bridge_output": {"type": "observed", "data": "IsDone=0", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "IsDone=0", "source": "Scripts/repro/766-math-plane-construction-parity/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "on !IsDone() return a default +Z plane through p1 instead of nil", "failing_expectation": ":86 `Surface.planeFromPoints(p, p, p) == nil`"},
+    "green": true
+  },
+  {
+    "test_name": "Surface plane factory parity (#421)::Valid normal: both entry points agree",
+    "bridge_function": "OCCTSurfacePlaneFromPointNormal",
+    "bridge_output": {"type": "observed", "data": "point(0,0)=5 5 5 normal=0.577 0.577 0.577", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "point(0,0)=5 5 5 normal=0.577 0.577 0.577", "source": "Scripts/repro/766-math-plane-construction-parity/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "negate the normal passed to GC_MakePlane", "failing_expectation": "original: **green**; rewritten: :114 `simd_length(n - SIMD3(k, k, k)) < 1e-12`"},
+    "green": true
+  },
+  {
+    "test_name": "Surface plane factory parity (#421)::Zero-length normal: both entry points return nil",
+    "bridge_function": "OCCTSurfacePlaneFromPointNormal",
+    "bridge_output": {"type": "observed", "data": "gp_Dir throws \"input vector has zero norm\"", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "gp_Dir throws \"input vector has zero norm\"", "source": "Scripts/repro/766-math-plane-construction-parity/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "substitute a default +Z plane for a zero-length normal instead of letting gp_Dir refuse it", "failing_expectation": ":105 `Surface.planeFromPointNormal(point: origin, normal: zero) == nil`"},
+    "green": true
+  },
+  {
+    "test_name": "Surface plane factory parity (#421)::Near-zero-length normal: both entry points return nil",
+    "bridge_function": "OCCTSurfacePlaneFromPointNormal",
+    "bridge_output": {"type": "observed", "data": "gp_Dir throws \"input vector has zero norm\"", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "gp_Dir throws \"input vector has zero norm\"", "source": "Scripts/repro/766-math-plane-construction-parity/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "substitute a default +Z plane for a zero-length normal instead of letting gp_Dir refuse it", "failing_expectation": ":113 `Surface.planeFromPointNormal(point: origin, normal: tiny) == nil`"},
+    "green": true
   }
 ]

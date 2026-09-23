@@ -109,3 +109,18 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-plane-construction-parity (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **GC_MakePlane** | Plane from 3 points | `OCCTSurfacePlaneFromPoints` | pass p2, p1, p3 to GC_MakePlane (origin moves to p2, normal flips) | red | green | PASS |
+| **GC_MakePlane** | Plane from point and normal | `OCCTSurfacePlaneFromPointNormal` | negate the normal passed to GC_MakePlane | red | green | PASS |
+| **Surface plane factory parity (#421)** | Well-separated points: both entry points agree | `OCCTSurfacePlaneFromPoints` | pass p2, p1, p3 to GC_MakePlane | red | green | PASS |
+| **Surface plane factory parity (#421)** | Collinear-but-distinct points: both entry points return nil | `OCCTSurfacePlaneFromPoints` | on !IsDone() return a default +Z plane through p1 instead of nil | red | green | PASS |
+| **Surface plane factory parity (#421)** | Collinear, unevenly spaced points: both entry points return nil | `OCCTSurfacePlaneFromPoints` | on !IsDone() return a default +Z plane through p1 instead of nil | red | green | PASS |
+| **Surface plane factory parity (#421)** | Two coincident points: both entry points return nil | `OCCTSurfacePlaneFromPoints` | on !IsDone() return a default +Z plane through p1 instead of nil | red | green | PASS |
+| **Surface plane factory parity (#421)** | All three points coincident: both entry points return nil | `OCCTSurfacePlaneFromPoints` | on !IsDone() return a default +Z plane through p1 instead of nil | red | green | PASS |
+| **Surface plane factory parity (#421)** | Valid normal: both entry points agree | `OCCTSurfacePlaneFromPointNormal` | negate the normal passed to GC_MakePlane | red | green | PASS |
+| **Surface plane factory parity (#421)** | Zero-length normal: both entry points return nil | `OCCTSurfacePlaneFromPointNormal` | substitute a default +Z plane for a zero-length normal instead of letting gp_Dir refuse it | red | green | PASS |
+| **Surface plane factory parity (#421)** | Near-zero-length normal: both entry points return nil | `OCCTSurfacePlaneFromPointNormal` | substitute a default +Z plane for a zero-length normal instead of letting gp_Dir refuse it | red | green | PASS |
