@@ -197,3 +197,22 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| The nearest point is on the curve, not on its basis (#539) | pastTheEndProjectsToTheEnd | `OCCTCurve3DProjectPoint` | ppdist; ppparam; pppt | `Issue539NearestPointOnCurveTests.swift:43 beyond.distance == 92` | ✅ | MATCH |  |
+| The nearest point is on the curve, not on its basis (#539) | justPastTheEnd | `OCCTCurve3DProjectPoint` | ppdist; ppparam | `Issue539NearestPointOnCurveTests.swift:65 distance == 0.001` | ✅ | MATCH |  |
+| The nearest point is on the curve, not on its basis (#539) | onTheCircleButOffTheArc | `OCCTCurve3DProjectPoint` | ppdist; ppparam | `Issue539NearestPointOnCurveTests.swift:79 distance == sqrt(20)` | ✅ | MATCH |  |
+| The nearest point is on the curve, not on its basis (#539) | inRangeMaximumDoesNotWin | `OCCTCurve3DProjectPoint` | ppdist; ppparam | `Issue539NearestPointOnCurveTests.swift:103 distance == 19.6023` | ✅ | MATCH |  |
+| The nearest point is on the curve, not on its basis (#539) | ordinaryProjectionUnchanged | `OCCTCurve3DProjectPoint` | ppdist; ppparam; pppt | `Issue539NearestPointOnCurveTests.swift:123 parameter == 5` | ✅ | MATCH |  |
+| The nearest point is on the curve, not on its basis (#539) | closedCurveStillAnswers | `OCCTCurve3DProjectPoint, OCCTCurve3DNearestParameter` | ppdist; pppt; npend | `Issue539NearestPointOnCurveTests.swift:145 centre.distance == 5` | ✅ | MATCH |  |
+| The nearest point is on the curve, not on its basis (#539) | unboundedCurveUnchanged | `OCCTCurve3DProjectPoint` | ppdist; ppparam; pppt | `Issue539NearestPointOnCurveTests.swift:158 parameter == 100` | ✅ | MATCH |  |
+| The nearest point is on the curve, not on its basis (#539) | curveDistanceInheritsTheFix | `OCCTCurve3DProjectPoint` | ppdist | `Issue539NearestPointOnCurveTests.swift:168 distance(to:(100,0,0)) == 92` | ✅ | MATCH |  |
+| The nearest point is on the curve, not on its basis (#539) | edgePastTheEndIsNotNil | `OCCTEdgeProjectPoint` | ednil: nil past distance 7; eddist | `Issue539NearestPointOnCurveTests.swift:191 project(point:(100,0,0)) != nil` | ✅ | MATCH |  |
+| The nearest point is on the curve, not on its basis (#539) | edgeReportsNearestNotFarthest | `OCCTEdgeProjectPoint` | eddist; ednil | `Issue539NearestPointOnCurveTests.swift:210 below.distance == 7.81025` | ✅ | MATCH |  |
+| The nearest point is on the curve, not on its basis (#539) | curveAndEdgeAgree | `OCCTEdgeProjectPoint, OCCTCurve3DProjectPoint` | eddist; pppt; ppdist | `Issue539NearestPointOnCurveTests.swift:233 distances agree` | ✅ | MATCH |  |
+| The nearest point is on the curve, not on its basis (#539) | everyEdgeWithACurveAnswers | `OCCTEdgeProjectPoint` | ednil | `Issue539NearestPointOnCurveTests.swift:247 projected != nil` | ✅ | N/A |  |

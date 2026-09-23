@@ -1,0 +1,14 @@
+segment [3,8] p=(100,0,0): ShapeAnalysis dist 0 param 100 | GeomAPI none | brute min 92 at 8
+segment [3,8] p=(0,0,0): ShapeAnalysis dist 0 param 0 | GeomAPI none | brute min 3 at 3
+segment [3,8] p=(-50,3,0): ShapeAnalysis dist 3 param -50 | GeomAPI none | brute min 53.0848378 at 3
+segment [3,8] p=(8.001,0,0): ShapeAnalysis dist 0 param 8.001 | GeomAPI none | brute min 0.001 at 8
+segment [3,8] p=(5,2,0): ShapeAnalysis dist 2 param 5 | GeomAPI lower 2 at 5 | brute min 2 at 5
+half circle r5 p=(3,-4,0): ShapeAnalysis dist 1.60118642e-15 param -0.927295218 | GeomAPI lower 10 at 2.21429744 | brute min 4.47213595 at 0
+half circle r5 p=(0,-6,0): ShapeAnalysis dist 1 param 4.71238898 | GeomAPI lower 11 at 1.57079633 | brute min 7.81024968 at 0
+half circle r5 p=(0,-1,0): ShapeAnalysis dist 4 param 4.71238898 | GeomAPI lower 6 at 1.57079633 | brute min 5.09901951 at 0
+half circle r5 p=(0,6,0): ShapeAnalysis dist 1 param 1.57079633 | GeomAPI lower 1 at 1.57079633 | brute min 1 at 1.57079633
+half circle r5 p=(6,0,0): ShapeAnalysis dist 1 param 0 | GeomAPI lower 1 at 0 | brute min 1 at 0
+parabola F2 [0,2] p=(20,0,0): ShapeAnalysis dist 20 param 0 | GeomAPI lower 20 at 0 | brute min 19.6022958 at 2
+hyperbola 3x2 [0,1] p=(30,0,0): ShapeAnalysis dist 27 param 0 | GeomAPI lower 27 at 0 | brute min 25.4793987 at 1
+full circle r5 p=(6,0,0): ShapeAnalysis dist 1 param 0 | GeomAPI lower 1 at 0 | brute min 1 at 0
+line p=(100,7,0): ShapeAnalysis dist 7 param 100 | GeomAPI lower 7 at 100

@@ -302,5 +302,271 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::pastTheEndProjectsToTheEnd",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "(100,0,0) 92 at 8; origin 3 at 3; (-50,3,0) 53.0848 at 3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "brute min 92 at 8, 3 at 3, 53.0848378 at 3; raw ShapeAnalysis_Curve::Project says 0 at 100, 0 at 0, 3 at -50; GeomAPI none"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist; ppparam; pppt",
+    "red": "Issue539NearestPointOnCurveTests.swift:43 beyond.distance == 92",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::justPastTheEnd",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "0.001 at 8"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "brute min 0.001 at 8; ShapeAnalysis 0 at 8.001"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist; ppparam",
+    "red": "Issue539NearestPointOnCurveTests.swift:65 distance == 0.001",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::onTheCircleButOffTheArc",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "4.47214 at 0; 7.81025"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "brute min 4.47213595 at 0 and 7.81024968; ShapeAnalysis 1.6e-15 and 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist; ppparam",
+    "red": "Issue539NearestPointOnCurveTests.swift:79 distance == sqrt(20)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::inRangeMaximumDoesNotWin",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "19.6023 at 2; 25.4794"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "brute min 19.6022958 at 2 and 25.4793987 at 1; both raw calls 20 and 27 (the in-range maximum)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist; ppparam",
+    "red": "Issue539NearestPointOnCurveTests.swift:103 distance == 19.6023",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::ordinaryProjectionUnchanged",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "2 at 5; arc 1 at pi/2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "all three sources 2 at 5; arc 1 at 1.57079633"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist; ppparam; pppt",
+    "red": "Issue539NearestPointOnCurveTests.swift:123 parameter == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::closedCurveStillAnswers",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint, OCCTCurve3DNearestParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": "5 at the centre, 1 from (6,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "full circle (6,0,0): 1 at 0 from all sources; the centre has no extremum (Scripts/repro/766-curve-analysis-order-nearest)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist; pppt; npend",
+    "red": "Issue539NearestPointOnCurveTests.swift:145 centre.distance == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::unboundedCurveUnchanged",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "7 at 100"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "line (100,7,0): ShapeAnalysis and GeomAPI 7 at 100"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist; ppparam; pppt",
+    "red": "Issue539NearestPointOnCurveTests.swift:158 parameter == 100",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::curveDistanceInheritsTheFix",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "92, 3, 2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "brute min 92, 3, 2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist",
+    "red": "Issue539NearestPointOnCurveTests.swift:168 distance(to:(100,0,0)) == 92",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::edgePastTheEndIsNotNil",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTEdgeProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "92 at (8,0,0); 3 at (3,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_ProjectPointOnCurve none past either end; brute min 92 and 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ednil: nil past distance 7; eddist",
+    "red": "Issue539NearestPointOnCurveTests.swift:191 project(point:(100,0,0)) != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::edgeReportsNearestNotFarthest",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTEdgeProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "7.81025, 5.09902, 1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI lower 11, 6, 1 (the far extremum); brute min 7.81024968, 5.09901951, 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "eddist; ednil",
+    "red": "Issue539NearestPointOnCurveTests.swift:210 below.distance == 7.81025",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::curveAndEdgeAgree",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTEdgeProjectPoint, OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "agree on all six points"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "brute min on the half circle, see transcript"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "eddist; pppt; ppdist",
+    "red": "Issue539NearestPointOnCurveTests.swift:233 distances agree",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::everyEdgeWithACurveAnswers",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTEdgeProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "12 of 12 answer, distance > 0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: box edges not probed; the bridge answers from the same candidate set"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "ednil",
+    "red": "Issue539NearestPointOnCurveTests.swift:247 projected != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
   }
 ]
