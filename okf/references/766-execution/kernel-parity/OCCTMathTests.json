@@ -182,5 +182,55 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Vector3DMath::modulus",
+    "bridge_function": "OCCTXYZModulus",
+    "bridge_output": {"type": "observed", "data": "3", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "3", "source": "Scripts/repro/766-math-vector3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "SquareModulus() returned", "failing_expectation": ":10 `abs(Vector3DMath.modulus(SIMD3(1, 2, 2)) - 3.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Vector3DMath::cross",
+    "bridge_function": "OCCTXYZCrossed",
+    "bridge_output": {"type": "observed", "data": "(0, 0, 1)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(0, 0, 1)", "source": "Scripts/repro/766-math-vector3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "operands reversed", "failing_expectation": ":15 `abs(c.z - 1.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Vector3DMath::dot",
+    "bridge_function": "OCCTXYZDot",
+    "bridge_output": {"type": "observed", "data": "32", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "32", "source": "Scripts/repro/766-math-vector3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "z term dropped", "failing_expectation": ":19 `abs(Vector3DMath.dot(SIMD3(1, 2, 3), SIMD3(4, 5, 6)) - 32.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Vector3DMath::dotCross",
+    "bridge_function": "OCCTXYZDotCross",
+    "bridge_output": {"type": "observed", "data": "1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "1", "source": "Scripts/repro/766-math-vector3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "b and c swapped in the triple product", "failing_expectation": ":23 `abs(Vector3DMath.dotCross(SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(0, 0, 1)) - 1.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Vector3DMath::normalize",
+    "bridge_function": "OCCTXYZNormalize",
+    "bridge_output": {"type": "observed", "data": "(0.33333333333333331, 0.66666666666666663, 0.66666666666666663), modulus 0.99999999999999989", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(0.33333333333333331, 0.66666666666666663, 0.66666666666666663), modulus 0.99999999999999989", "source": "Scripts/repro/766-math-vector3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "normalized x and y swapped", "failing_expectation": "original: **green**; rewritten: :35 `abs(n.x - 1.0 / 3.0) < 1e-12`"},
+    "green": true
   }
 ]
