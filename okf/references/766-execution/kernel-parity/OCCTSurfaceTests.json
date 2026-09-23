@@ -6,5 +6,195 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Issue #495: surface analysis order selects what is measured::each order measures exactly its own branch",
+    "bridge_function": "OCCTLocalAnalysisSurfaceContinuityFlags",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "C0": [
+          "C0"
+        ],
+        "G1": [
+          "C0",
+          "G1"
+        ],
+        "C1": [
+          "C0",
+          "C1"
+        ],
+        "G2": [
+          "C0",
+          "G1",
+          "G2"
+        ],
+        "C2": [
+          "C0",
+          "C1",
+          "C2"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "C0": [
+          "C0"
+        ],
+        "G1": [
+          "C0",
+          "G1"
+        ],
+        "C1": [
+          "C0",
+          "C1"
+        ],
+        "G2": [
+          "C0",
+          "G1",
+          "G2"
+        ],
+        "C2": [
+          "C0",
+          "C1",
+          "C2"
+        ]
+      },
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 495 identical spheres: IsDone and the status at every order"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #495: surface analysis order selects what is measured::two planes at right angles do not report continuity they were never asked for",
+    "bridge_function": "OCCTLocalAnalysisSurfaceContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "C0 holds c0": true,
+        "G1 holds g1": false,
+        "g1Angle at C0": -1
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "C0 holds c0": true,
+        "G1 holds g1": false,
+        "g1Angle at C0": -1
+      },
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 495 perpendicular planes: G1 IsG1=0 G1Angle=1.57"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #495: surface analysis order selects what is measured::the default order does not measure tangency",
+    "bridge_function": "OCCTLocalAnalysisSurfaceContinuityFlags",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "C2 measured": [
+          "C0",
+          "C1",
+          "C2"
+        ],
+        "G1 holds g1": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "C2 measured": [
+          "C0",
+          "C1",
+          "C2"
+        ],
+        "G1 holds g1": true
+      },
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 495 identical spheres G1: IsG1=1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #495: surface analysis order selects what is measured::order reports the request after saturation",
+    "bridge_function": "OCCTLocalAnalysisSurfaceContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "G2": "G2",
+        "CN": "C2"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "G2": "G2",
+        "CN": "C2"
+      },
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 495: ContinuityStatus echoes the constructed order"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #495: surface analysis order selects what is measured::the flags bitmask never claims a bit outside the measured set",
+    "bridge_function": "OCCTLocalAnalysisSurfaceContinuityFlags",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 495 identical spheres"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #495: surface analysis order selects what is measured::the .c2 default cannot analyse a surface with no second derivative",
+    "bridge_function": "OCCTLocalAnalysisSurfaceContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "planes C2": null,
+        "planes C1": "analysis",
+        "cylinders C2": null,
+        "cylinders G2": "analysis"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "planes C2": null,
+        "planes C1": "analysis",
+        "cylinders C2": null,
+        "cylinders G2": "analysis"
+      },
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 495: planes C2 IsDone=0, cylinders C2 IsDone=0, cylinders G2 IsDone=1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

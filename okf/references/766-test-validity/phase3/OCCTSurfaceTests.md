@@ -222,3 +222,14 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: Issue495AnalysisOrderTests.swift (6 tests), probe Scripts/repro/766-issue485-486-495/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| Issue #495: surface analysis order selects what is measured | each order measures exactly its own branch | `OCCTLocalAnalysisSurfaceContinuityFlags` | measured mask widened to all five classes (INJ_495_MASK_ALL) | Issue495AnalysisOrderTests.swift:55 a.measured == want | ✅ | MATCH | The measured set is the bridge mask; the kernel supplies IsDone and the flags |
+| Issue #495: surface analysis order selects what is measured | two planes at right angles do not report continuity they were never asked for | `OCCTLocalAnalysisSurfaceContinuity` | measured mask widened to all five classes (INJ_495_MASK_ALL) | Issue495AnalysisOrderTests.swift:69 atC0.holds(.g1) == nil | ✅ | MATCH | Also reaches OCCTLocalAnalysisSurfaceContinuityFlags |
+| Issue #495: surface analysis order selects what is measured | the default order does not measure tangency | `OCCTLocalAnalysisSurfaceContinuityFlags` | measured mask widened to all five classes (INJ_495_MASK_ALL) | Issue495AnalysisOrderTests.swift:84 atDefault.measured == [.c0, .c1, .c2] | ✅ | MATCH |  |
+| Issue #495: surface analysis order selects what is measured | order reports the request after saturation | `OCCTLocalAnalysisSurfaceContinuity` | the raw request reported, no saturation (INJ_495_NOSATURATE) | Issue495AnalysisOrderTests.swift:97 beyond.order == .c2 | ✅ | MATCH |  |
+| Issue #495: surface analysis order selects what is measured | the flags bitmask never claims a bit outside the measured set | `OCCTLocalAnalysisSurfaceContinuityFlags` | G1 bit always set (INJ_495_FLAG_G1) | Issue495AnalysisOrderTests.swift:110 a.flags & ~measuredMask == 0 | ✅ | MATCH | `guard let a else { continue }` now has an expectation in front of it |
+| Issue #495: surface analysis order selects what is measured | the .c2 default cannot analyse a surface with no second derivative | `OCCTLocalAnalysisSurfaceContinuity` | order C2 analysed as C1 (INJ_495_C2_AS_C1) | Issue495AnalysisOrderTests.swift:122 analyse(planes, .c2, at: (0, 0)) == nil | ✅ | MATCH |  |
