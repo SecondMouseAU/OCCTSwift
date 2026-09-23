@@ -302,5 +302,271 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve3D *Properties views keep their parent alive (#965)::a view outliving its parent still reads the right values",
+    "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
+    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Circle radius 5; SetRadius(8) reads back 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cpradius: CircleProperties.radius x 1.01",
+    "red": "Issue965Curve3DPropertyLifetimeTests.swift:83 result.view.radius == Self.radius",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D *Properties views keep their parent alive (#965)::a setter called through a view is visible on the parent",
+    "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
+    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Circle radius 5; SetRadius(8) reads back 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cpradius: CircleProperties.radius x 1.01",
+    "red": "Issue965Curve3DPropertyLifetimeTests.swift:112 curve.circleProperties.radius == 8",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D *Properties views keep their parent alive (#965)::the chained access the issue reports reads the right radius",
+    "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
+    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Circle radius 5; SetRadius(8) reads back 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cpradius: CircleProperties.radius x 1.01",
+    "red": "Issue965Curve3DPropertyLifetimeTests.swift:48 edge.curve3D?.circleProperties.radius == Self.radius",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D *Properties views keep their parent alive (#965)::a view outliving its parent survives 400 intervening allocations",
+    "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
+    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Circle radius 5; SetRadius(8) reads back 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cpradius: CircleProperties.radius x 1.01",
+    "red": "Issue965Curve3DPropertyLifetimeTests.swift:100 result.view.radius == Self.radius",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D *Properties views keep their parent alive (#965)::every Curve3D *Properties accessor keeps its parent alive",
+    "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
+    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: parent lifetime is Swift-side (the view's strong owner); no kernel counterpart"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "cpcopy: lineProperties holds a copy, not its parent",
+    "red": "Issue965Curve3DPropertyLifetimeTests.swift:70 result.parentAlive",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 5, mirror through a plane",
+    "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
+    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Trsf on (3,4,5): (3, 4, -3)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trsfid: occtBuildTrsf3D leaves every type as the identity",
+    "red": "Issue995BuildTrsf3DTests.swift:77 abs(got.z - expected.z) < 1e-9  (+3 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 4, mirror through an axis",
+    "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
+    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Trsf on (3,4,5): (-1, 0, 5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trsfid: occtBuildTrsf3D leaves every type as the identity",
+    "red": "Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+7 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 1, rotation",
+    "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
+    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Trsf on (3,4,5): (-4, 3, 5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trsfid: occtBuildTrsf3D leaves every type as the identity",
+    "red": "Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+7 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 3, mirror through a point",
+    "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
+    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Trsf on (3,4,5): (-1, 0, 1)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trsfid: occtBuildTrsf3D leaves every type as the identity",
+    "red": "Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+11 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 0, translation",
+    "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
+    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Trsf on (3,4,5): (13, 24, 35)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trsfid: occtBuildTrsf3D leaves every type as the identity",
+    "red": "Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+11 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 2, scale",
+    "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
+    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Trsf on (3,4,5): (7, 10, 13)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trsfid: occtBuildTrsf3D leaves every type as the identity",
+    "red": "Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+11 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::The six type codes are six different transforms of the same point",
+    "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
+    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Trsf: the six images are six distinct points (see transcript)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trsfid: occtBuildTrsf3D leaves every type as the identity",
+    "red": "Issue995BuildTrsf3DTests.swift:197 sqrt(apart.x * apart.x + apart.y * apart.y + apart.z * apart",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
   }
 ]

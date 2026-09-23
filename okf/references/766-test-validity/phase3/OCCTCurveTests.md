@@ -197,3 +197,22 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Curve3D *Properties views keep their parent alive (#965) | a view outliving its parent still reads the right values | `occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius` | cpradius: CircleProperties.radius x 1.01 | `Issue965Curve3DPropertyLifetimeTests.swift:83 result.view.radius == Self.radius` | ✅ | MATCH |  |
+| Curve3D *Properties views keep their parent alive (#965) | a setter called through a view is visible on the parent | `occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius` | cpradius: CircleProperties.radius x 1.01 | `Issue965Curve3DPropertyLifetimeTests.swift:112 curve.circleProperties.radius == 8` | ✅ | MATCH |  |
+| Curve3D *Properties views keep their parent alive (#965) | the chained access the issue reports reads the right radius | `occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius` | cpradius: CircleProperties.radius x 1.01 | `Issue965Curve3DPropertyLifetimeTests.swift:48 edge.curve3D?.circleProperties.radius == Self.radius` | ✅ | MATCH |  |
+| Curve3D *Properties views keep their parent alive (#965) | a view outliving its parent survives 400 intervening allocations | `occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius` | cpradius: CircleProperties.radius x 1.01 | `Issue965Curve3DPropertyLifetimeTests.swift:100 result.view.radius == Self.radius` | ✅ | MATCH |  |
+| Curve3D *Properties views keep their parent alive (#965) | every Curve3D *Properties accessor keeps its parent alive | `occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius` | cpcopy: lineProperties holds a copy, not its parent | `Issue965Curve3DPropertyLifetimeTests.swift:70 result.parentAlive` | ✅ | N/A |  |
+| 3D transforms: one discriminated gp_Trsf builder (#995) | type 5, mirror through a plane | `occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius` | trsfid: occtBuildTrsf3D leaves every type as the identity | `Issue995BuildTrsf3DTests.swift:77 abs(got.z - expected.z) < 1e-9  (+3 more)` | ✅ | MATCH |  |
+| 3D transforms: one discriminated gp_Trsf builder (#995) | type 4, mirror through an axis | `occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius` | trsfid: occtBuildTrsf3D leaves every type as the identity | `Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+7 more)` | ✅ | MATCH |  |
+| 3D transforms: one discriminated gp_Trsf builder (#995) | type 1, rotation | `occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius` | trsfid: occtBuildTrsf3D leaves every type as the identity | `Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+7 more)` | ✅ | MATCH |  |
+| 3D transforms: one discriminated gp_Trsf builder (#995) | type 3, mirror through a point | `occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius` | trsfid: occtBuildTrsf3D leaves every type as the identity | `Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+11 more)` | ✅ | MATCH |  |
+| 3D transforms: one discriminated gp_Trsf builder (#995) | type 0, translation | `occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius` | trsfid: occtBuildTrsf3D leaves every type as the identity | `Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+11 more)` | ✅ | MATCH |  |
+| 3D transforms: one discriminated gp_Trsf builder (#995) | type 2, scale | `occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius` | trsfid: occtBuildTrsf3D leaves every type as the identity | `Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+11 more)` | ✅ | MATCH |  |
+| 3D transforms: one discriminated gp_Trsf builder (#995) | The six type codes are six different transforms of the same point | `occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius` | trsfid: occtBuildTrsf3D leaves every type as the identity | `Issue995BuildTrsf3DTests.swift:197 sqrt(apart.x * apart.x + apart.y * apart.y + apart.z * apart` | ✅ | MATCH |  |
