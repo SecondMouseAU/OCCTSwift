@@ -765,5 +765,408 @@
     "red": ":341 `outward == 12`, :342 `inward == 0`",
     "injection": "R4: reversed flag passed to AddTriangulation forced false",
     "probe": "Scripts/repro/766-mesh-issue613/"
+  },
+  {
+    "test_name": "Mesh from raw arrays::Round-trip vertices and indices",
+    "bridge_function": "OCCTMeshCreateFromArrays",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "vertexCount": 4,
+        "triangleCount": 4
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: OCCTMeshCreateFromArrays copies and validates caller arrays and calls no OCCT API"
+    },
+    "status": "N/A",
+    "red": ":47 `idxs == Self.tetIndices`",
+    "injection": "C1: second and third index of every triangle swapped on the way in",
+    "probe": null
+  },
+  {
+    "test_name": "Mesh from raw arrays::Computed normals when none provided produce unit-length per-vertex normals",
+    "bridge_function": "OCCTMeshCreateFromArrays",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "normal_lengths": 1.0
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: OCCTMeshCreateFromArrays copies and validates caller arrays and calls no OCCT API"
+    },
+    "status": "N/A",
+    "red": ":72 `abs(len - 1.0) < 1e-5 || len < 1e-9` (all four vertices)",
+    "injection": "C1: accumulated vertex normals never renormalised",
+    "probe": null
+  },
+  {
+    "test_name": "Mesh from raw arrays::Provided normals are preserved verbatim",
+    "bridge_function": "OCCTMeshCreateFromArrays",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "normals": "as supplied"
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: OCCTMeshCreateFromArrays copies and validates caller arrays and calls no OCCT API"
+    },
+    "status": "N/A",
+    "red": ":97, :98, :99 (each vertex)",
+    "injection": "C1: supplied normals ignored",
+    "probe": null
+  },
+  {
+    "test_name": "Mesh from raw arrays::Empty inputs return nil",
+    "bridge_function": "OCCTMeshCreateFromArrays",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: OCCTMeshCreateFromArrays copies and validates caller arrays and calls no OCCT API"
+    },
+    "status": "N/A",
+    "red": ":105 `Mesh(vertices: [], indices: []) == nil`, :106, then process abort (signal 6) on :107's null vertex buffer",
+    "injection": "C1: validation removed from BOTH layers (Mesh.init guard and OCCTMeshCreateFromArrays); removing either layer alone leaves the other rejecting, by design",
+    "probe": null
+  },
+  {
+    "test_name": "Mesh from raw arrays::Index count not divisible by 3 returns nil",
+    "bridge_function": "OCCTMeshCreateFromArrays",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: OCCTMeshCreateFromArrays copies and validates caller arrays and calls no OCCT API"
+    },
+    "status": "N/A",
+    "red": ":112 `Mesh(vertices:indices: [0, 1]) == nil`, :113",
+    "injection": "C1: validation removed from BOTH layers (Mesh.init guard and OCCTMeshCreateFromArrays); removing either layer alone leaves the other rejecting, by design",
+    "probe": null
+  },
+  {
+    "test_name": "Mesh from raw arrays::Out-of-range index returns nil",
+    "bridge_function": "OCCTMeshCreateFromArrays",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: OCCTMeshCreateFromArrays copies and validates caller arrays and calls no OCCT API"
+    },
+    "status": "N/A",
+    "red": "process abort (signal 6) reading vertex 9 of 4",
+    "injection": "C1: validation removed from BOTH layers (Mesh.init guard and OCCTMeshCreateFromArrays); removing either layer alone leaves the other rejecting, by design",
+    "probe": null
+  },
+  {
+    "test_name": "Mesh from raw arrays::Mismatched normals length returns nil",
+    "bridge_function": "OCCTMeshCreateFromArrays",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: OCCTMeshCreateFromArrays copies and validates caller arrays and calls no OCCT API"
+    },
+    "status": "N/A",
+    "red": ":125 `Mesh(vertices:normals:indices:) == nil`",
+    "injection": "C1: Mesh.init's normals-length check removed (the bridge cannot check it: it takes no normals count)",
+    "probe": null
+  },
+  {
+    "test_name": "Mesh Tests::Mesh from shape",
+    "bridge_function": "OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "vertexCount": 24,
+        "triangleCount": 12,
+        "volume": 150.0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "vertexCount": 24,
+        "triangleCount": 12,
+        "volume": 150.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":160 `mesh.vertexCount == 24`, :161 `triangleCount == 12`, :162 volume",
+    "injection": "C2: the first face dropped from the extraction",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::Mesh data access",
+    "bridge_function": "OCCTMeshGetVertices, OCCTMeshGetNormals, OCCTMeshGetIndices",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "vertices": 168,
+        "indices": 918,
+        "normals": 168
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "vertexCount": 168,
+        "triangleCount": 306
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":187 `offSphere.isEmpty`",
+    "injection": "C3: OCCTMeshGetVertices copies the normals buffer",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::Enhanced mesh parameters",
+    "bridge_function": "OCCTShapeCreateMeshWithParams",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "vertexCount": 24,
+        "triangleCount": 12
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "vertexCount": 24,
+        "triangleCount": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":199 `mesh.vertexCount > 0`, :200",
+    "injection": "C2: the parameterised entry point returns an empty mesh",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::Triangles with face info",
+    "bridge_function": "OCCTMeshGetTrianglesWithFaces",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 12,
+        "faceIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 12,
+        "faceIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":217 `tri.faceIndex >= 0` (all 12)",
+    "injection": "C2: every faceIndex reported as -1",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::Mesh to shape conversion",
+    "bridge_function": "OCCTMeshToShapeWithTolerance",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "edges": 18
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "edges": 18,
+        "type": "TopAbs_SHELL"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":228 `shape != nil`",
+    "injection": "C3: the sewn shape dropped (return nullptr on success)",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::toShape weldTolerance: default parity, guards, and large-mesh welding",
+    "bridge_function": "OCCTMeshToShapeWithTolerance",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "gappy_edges_1e-6": 6,
+        "gappy_edges_2.0": 5
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "gappy_edges_1e-6": 6,
+        "gappy_edges_2.0": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":266 `weldedEdges < tightEdges`",
+    "injection": "C2: BRepBuilderAPI_Sewing built at 1e-6 whatever the caller asks",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::Mesh boolean union",
+    "bridge_function": "OCCTMeshUnion",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 72,
+        "volume": 2000.0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 72,
+        "volume": 2000.0,
+        "solid_boolean_volume": 1500.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH bridge vs kernel pipeline; both wrong against the solid Boolean (1500), filed as #2301, asserted under withKnownIssue"
+    },
+    "status": "PASS",
+    "red": ":285 `unionMesh != nil`",
+    "injection": "C2: occtMeshBoolean returns nullptr",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::Mesh boolean subtraction",
+    "bridge_function": "OCCTMeshSubtract",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 120,
+        "volume": 1000.0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 120,
+        "volume": 1000.0,
+        "solid_boolean_volume": 858.628331
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH bridge vs kernel pipeline; nothing is removed against the solid Boolean (858.63), filed as #2301, asserted under withKnownIssue"
+    },
+    "status": "PASS",
+    "red": ":305 `diffMesh != nil`",
+    "injection": "C2: occtMeshBoolean returns nullptr",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::Mesh boolean intersection",
+    "bridge_function": "OCCTMeshIntersect",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 0,
+        "volume": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 0,
+        "volume": 0.0,
+        "solid_boolean_volume": 959.232938
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH bridge vs kernel pipeline; result is EMPTY against the solid Boolean (959.23), filed as #2301, asserted under withKnownIssue"
+    },
+    "status": "PASS",
+    "red": ":323 `intersectMesh != nil`",
+    "injection": "C2: occtMeshBoolean returns nullptr",
+    "probe": "Scripts/repro/766-mesh-core-1/"
   }
 ]
