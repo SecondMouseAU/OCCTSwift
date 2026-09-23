@@ -1,0 +1,15 @@
+sphere r=10 (sphereCurvatures) u=0 v=0.5 curvatureDefined=1 umbilic=1
+  gaussian=0.0099999999999999967 mean=-0.099999999999999992 max=-0.099999999999999992 min=-0.099999999999999992
+cylinder r=5 (cylinderCurvatures, curvatureDirections) u=0 v=0 curvatureDefined=1 umbilic=0
+  gaussian=-0 mean=-0.10000000000000001 max=0 min=-0.20000000000000001
+  maxDir=(0, 0, 1) minDir=(-0, 1, 0)
+ellipse 3x1 (ellipseHasExtrema) IsDone=1
+ellipse 3x1 (ellipseHasExtrema) [0, 6.28319]: NbPoints=4
+  param=0 type=MinCur
+  param=1.5707963267948966 type=MaxCur
+  param=3.1415926535897931 type=MinCur
+  param=4.7123889803846897 type=MaxCur
+line (lineHasNoSpecialPoints) IsDone=1
+line (lineHasNoSpecialPoints) [0, 10]: NbPoints=0
+circle r=2 (circleHasNoSpecialPoints) IsDone=1
+circle r=2 (circleHasNoSpecialPoints) [0, 6.28319]: NbPoints=0
