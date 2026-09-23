@@ -395,11 +395,13 @@ std::mutex& tobjApplicationMutex();
 // booleans, sweep, fillet). Definition lives in OCCTBridge.mm. See issue #175.
 //
 // #1399: this comment used to say the signals "are converted into catchable Standard_Failure
-// exceptions when a try block uses OCC_CATCH_SIGNALS". They are not, in this build, and the
-// #263 note twelve lines below already said so. OCC_CONVERT_SIGNALS is undefined here, so
-// OCC_CATCH_SIGNALS expands to nothing and Standard_ErrorHandler::Abort throws directly from
-// the signal handler, which does not unwind. Treat an OS signal inside OCCT as fatal and guard
-// the input instead.
+// exceptions when a try block uses OCC_CATCH_SIGNALS". Not in a bridge try block, as the #263
+// note further down this file already said. #2188 narrowed the reason: OCC_CONVERT_SIGNALS is
+// undefined for the bridge's own compile, not for OCCT's, whose CMake adds it on every
+// non-Windows target. An OCC_CATCH_SIGNALS written here expands to nothing and registers no
+// handler, while OCCT's own sites register one and Standard_ErrorHandler::Abort longjmps to the
+// nearest of them, or prints and calls exit(1) when there is none. Treat an OS signal inside
+// OCCT as fatal and guard the input instead.
 void occtEnsureSignals();
 
 // === #1161: caught-exception diagnostics ===
@@ -436,9 +438,10 @@ void occtRecordCaughtException(const char* theContext);
 // Returns true if `s` contains a wire that BRepCheck flags as SelfIntersectingWire
 // (and/or a face/shape flagged UnorientableShape). Such a profile extrudes into a
 // prism that crashes OCCT's ShapeFix_Shape with uncatchable heap corruption (#263),
-// and an OS signal raised inside OCCT cannot be caught here (OCC_CATCH_SIGNALS is inert
-// without OCC_CONVERT_SIGNALS in this build). So the prism/heal wrappers must DETECT and
-// refuse the input (return nil) rather than build/heal the crashing solid. Cheap: a pure
+// and an OS signal raised inside OCCT cannot be caught here (OCC_CATCH_SIGNALS is inert in
+// bridge code, which SwiftPM compiles without OCC_CONVERT_SIGNALS). So the prism/heal
+// wrappers must DETECT and refuse the input (return nil) rather than build/heal the
+// crashing solid. Cheap: a pure
 // BRepCheck topology pass, no meshing. Definition lives in OCCTBridge.mm. See issue #263.
 bool occtHasSelfIntersectingWire(const TopoDS_Shape& s);
 

@@ -206,15 +206,28 @@ call. Two comments described what it achieves:
 - `Sources/OCCTBridge/src/OCCTBridge_Internal.h:378` "are converted into catchable
   `Standard_Failure` exceptions when a try block uses `OCC_CATCH_SIGNALS`"
 
-Neither is true here. `OCC_CONVERT_SIGNALS` is not defined in this build, so
-`Standard_ErrorHandler.hxx` expands `OCC_CATCH_SIGNALS` to nothing and
-`Standard_ErrorHandler::Abort` takes its `#ifndef OCC_CONVERT_SIGNALS` branch, a bare `throw` out
-of a POSIX signal handler, which does not unwind. `CLAUDE.md`'s Known OCCT Bugs list and
+Neither is true of a bridge `try` block. `OCC_CONVERT_SIGNALS` is not defined for the bridge's own
+compile, so `Standard_ErrorHandler.hxx` expands `OCC_CATCH_SIGNALS` to nothing there and a bridge
+`try` registers no handler.
+
+**Corrected 2026-09-23 (#2188, #2191).** This paragraph used to read "not defined in this build",
+and to conclude that `Standard_ErrorHandler::Abort` therefore takes its
+`#ifndef OCC_CONVERT_SIGNALS` branch, a bare `throw` out of a POSIX signal handler. Both halves
+were wrong. `adm/cmake/occt_defs_flags.cmake:48` adds `-DOCC_CONVERT_SIGNALS` for every
+non-Windows target, so OCCT's own translation units do define it; and `Abort` is a template whose
+body sits in the header, so the branch is chosen by the translation unit that instantiates it. The
+instantiating caller is `OSD_signal.cxx`, which OCCT compiles with the define, so it takes the
+`longjmp` branch, and prints and calls `exit(1)` when `FindHandler()` finds no handler. The finding
+below stands: a signal raised with only bridge frames above it is still uncatchable from the
+bridge. Only the mechanism was misstated.
+
+`CLAUDE.md`'s Known OCCT Bugs list and
 `okf/references/known-occt-bugs.md` already record the correct fact, and so does
 `OCCTBridge_Internal.h:390`, **twelve lines below the comment that contradicts it**, in the #263
-note: "an OS signal raised inside OCCT cannot be caught here (`OCC_CATCH_SIGNALS` is inert without
-`OCC_CONVERT_SIGNALS` in this build)". A file that states both halves of a contradiction is #811's
-`Surface-Advanced.md` shape exactly.
+note, quoted here as it read in 2026: "an OS signal raised inside OCCT cannot be caught here
+(`OCC_CATCH_SIGNALS` is inert without `OCC_CONVERT_SIGNALS` in this build)". #2191 rephrased that
+parenthesis too, for the same reason as above. A file that states both halves of a contradiction is
+#811's `Surface-Advanced.md` shape exactly.
 
 This channel is invisible to the census twice over: `src/OCCTBridge_Internal.h` is a private header
 in `src/`, and `bridge_header_claims()` reads `include/*.h` only; and the claim is about a macro,
