@@ -6,5 +6,162 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Feature Recognition, AAG::boxAAG",
+    "bridge_function": "OCCTFaceGetSharedEdgeSummary",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nodes": 6,
+        "edges": 12
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 6,
+        "adjacentPairs": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Feature Recognition, AAG::aagNodeNormals",
+    "bridge_function": "OCCTFaceGetNormal",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "normalDefined": "all 6",
+        "isPlanar": "all 6"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "normalDefined": "all 6",
+        "planar": "all 6",
+        "normals": "+-X, +-Y, +-Z"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Feature Recognition, AAG::aagNeighbors",
+    "bridge_function": "OCCTFaceGetSharedEdgeSummary",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "neighborsPerFace": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "degrees": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Feature Recognition, AAG::aagEdgeBetween",
+    "bridge_function": "OCCTFaceGetSharedEdgeSummary",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edgeBetween0AndFirstNeighbor": "non-nil",
+        "sharedEdgeCount": ">0"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "sharedEdgesPerAdjacentPair": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Feature Recognition, AAG::detectPocket",
+    "bridge_function": "OCCTEdgeGetConvexity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "resultVolumeLessThanBox": true,
+        "pockets": ">=1"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "boxVolume": 8000,
+        "resultVolume": 7000,
+        "faces": 11,
+        "concavePairs": 8,
+        "convexPairs": 16
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Feature Recognition, AAG::convexConcaveNeighbors",
+    "bridge_function": "OCCTEdgeGetConvexity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "plainConvex": 12,
+        "filletedNodes": 26,
+        "filletedEdges": 48,
+        "allSmooth": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "plainConvex": 12,
+        "filletedFaces": 26,
+        "adjacentPairs": 48,
+        "tangential": 48
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

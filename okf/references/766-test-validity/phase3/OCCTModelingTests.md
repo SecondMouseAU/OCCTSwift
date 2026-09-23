@@ -221,3 +221,22 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `AAGTests.swift` (6 tests)
+
+Probe: `Scripts/repro/766-modeling-aag/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| boxAAG | `countOrCollectSharedEdges` (behind `OCCTFaceGetSharedEdgeSummary`) reports no shared edge for any face pair | `:16 Expectation failed: aag.edges.count == 12` | pass | `OCCTFaceGetSharedEdgeSummary` | PASS |
+| aagNodeNormals | `OCCTFaceGetNormal` returns false (no normal) | `:24 Expectation failed: node.normal != nil` | pass | `OCCTFaceGetNormal` | PASS |
+| aagNeighbors | `countOrCollectSharedEdges` (behind `OCCTFaceGetSharedEdgeSummary`) reports no shared edge for any face pair | `:36 Expectation failed: nbrs.count == 4` | pass | `OCCTFaceGetSharedEdgeSummary` | PASS |
+| aagEdgeBetween | `countOrCollectSharedEdges` (behind `OCCTFaceGetSharedEdgeSummary`) reports no shared edge for any face pair | `:46 Issue recorded` | pass | `OCCTFaceGetSharedEdgeSummary` | PASS |
+| detectPocket | `OCCTEdgeGetConvexity` reports a concave `ChFi3d::DefineConnectType` result as convex | `:89 Expectation failed: pockets.count >= 1` | pass | `OCCTEdgeGetConvexity` | PASS |
+| convexConcaveNeighbors | `OCCTEdgeGetConvexity` reports a tangential `ChFi3d::DefineConnectType` result as convex | `:116 Expectation failed: aag.edges.allSatisfy { $0.convexity == .smooth }`, `:117 Expectation failed: (0..<aag.nodes.count).allSatisfy { aag.convexNeighbors(of: $0).isEmpty }` | pass | `OCCTEdgeGetConvexity` | PASS: rewritten: the old final assertion `hasAnyNeighbors || aag.nodes.count > 6` held on the node count alone |

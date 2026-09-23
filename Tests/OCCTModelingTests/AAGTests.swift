@@ -95,25 +95,26 @@ struct AAGTests {
 
     @Test("Convex and concave neighbors on filleted box")
     func convexConcaveNeighbors() {
+        // #766: this test used to end in `#expect(hasAnyNeighbors || aag.nodes.count > 6)`, which
+        // the node count alone satisfies, so no convexity defect could fail it. The values below
+        // are the kernel's own (Scripts/repro/766-modeling-aag): the plain box's 12 adjacent
+        // pairs are all convex, and the filleted box has 26 faces (6 + 12 fillet + 8 corner)
+        // and 48 adjacent pairs, every one tangential, so no face has a convex or a concave
+        // neighbor at all.
         let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let plain = box.buildAAG()
+        #expect(plain.edges.filter { $0.convexity == .convex }.count == 12)
+        #expect((0..<plain.nodes.count).allSatisfy { plain.convexNeighbors(of: $0).count == 4 })
+
         guard let filleted = box.filleted(radius: 1) else {
             Issue.record("Fillet failed")
             return
         }
         let aag = filleted.buildAAG()
-        // Filleted box has more faces than plain box (6 original + 12 fillet + 8 corner)
-        #expect(aag.nodes.count > 6)
-        // Check that convex/concave neighbor queries work (return arrays)
-        var hasAnyNeighbors = false
-        for i in 0..<aag.nodes.count {
-            let convex = aag.convexNeighbors(of: i)
-            let concave = aag.concaveNeighbors(of: i)
-            if !convex.isEmpty || !concave.isEmpty {
-                hasAnyNeighbors = true
-                break
-            }
-        }
-        // At minimum, the AAG should have neighbor relationships
-        #expect(hasAnyNeighbors || aag.nodes.count > 6)
+        #expect(aag.nodes.count == 26)
+        #expect(aag.edges.count == 48)
+        #expect(aag.edges.allSatisfy { $0.convexity == .smooth })
+        #expect((0..<aag.nodes.count).allSatisfy { aag.convexNeighbors(of: $0).isEmpty })
+        #expect((0..<aag.nodes.count).allSatisfy { aag.concaveNeighbors(of: $0).isEmpty })
     }
 }
