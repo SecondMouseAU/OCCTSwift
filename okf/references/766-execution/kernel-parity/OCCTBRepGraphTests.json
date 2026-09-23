@@ -142,5 +142,238 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Active Geometry::activeGeometryCounts",
+    "bridge_function": "OCCTBRepGraphNbActiveCurves2D",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "surfaces": 6,
+        "curves3d": 12,
+        "curves2d": 24
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "surfaces": 6,
+        "curves3d": 12,
+        "curves2d": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder AddCompound::addCompoundFromSolids",
+    "bridge_function": "OCCTBRepGraphBuilderAddCompound",
+    "bridge_output": {
+      "type": "index",
+      "data": {
+        "before": 0,
+        "index": 0,
+        "after": 1
+      }
+    },
+    "kernel_output": {
+      "type": "index",
+      "data": {
+        "before": 0,
+        "index": 0,
+        "after": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder AddCompSolid::addCompSolidFromSolids",
+    "bridge_function": "OCCTBRepGraphBuilderAddCompSolid",
+    "bridge_output": {
+      "type": "index",
+      "data": {
+        "before": 0,
+        "index": 0,
+        "after": 1
+      }
+    },
+    "kernel_output": {
+      "type": "index",
+      "data": {
+        "before": 0,
+        "index": 0,
+        "after": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder AddFaceToShell::linkFaceToShell",
+    "bridge_function": "OCCTBRepGraphBuilderAddFaceToShell",
+    "bridge_output": {
+      "type": "index",
+      "data": {
+        "shell": 1,
+        "ref": 6
+      }
+    },
+    "kernel_output": {
+      "type": "index",
+      "data": {
+        "shell": 1,
+        "ref": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder AddShell::addEmptyShell",
+    "bridge_function": "OCCTBRepGraphBuilderAddShell",
+    "bridge_output": {
+      "type": "index",
+      "data": {
+        "before": 1,
+        "index": 1,
+        "after": 2
+      }
+    },
+    "kernel_output": {
+      "type": "index",
+      "data": {
+        "before": 1,
+        "index": 1,
+        "after": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder AddShellToSolid::linkShellToSolid",
+    "bridge_function": "OCCTBRepGraphBuilderAddShellToSolid",
+    "bridge_output": {
+      "type": "index",
+      "data": {
+        "solid": 1,
+        "shell": 1,
+        "ref": 1
+      }
+    },
+    "kernel_output": {
+      "type": "index",
+      "data": {
+        "solid": 1,
+        "shell": 1,
+        "ref": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder AddSolid::addEmptySolid",
+    "bridge_function": "OCCTBRepGraphBuilderAddSolid",
+    "bridge_output": {
+      "type": "index",
+      "data": {
+        "before": 1,
+        "index": 1,
+        "after": 2
+      }
+    },
+    "kernel_output": {
+      "type": "index",
+      "data": {
+        "before": 1,
+        "index": 1,
+        "after": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder AddVertex::addVertexToGraph",
+    "bridge_function": "OCCTBRepGraphBuilderAddVertex",
+    "bridge_output": {
+      "type": "vertex",
+      "data": {
+        "index": 8,
+        "count": 9,
+        "point": [
+          5,
+          5,
+          5
+        ],
+        "tolerance": 1e-07
+      }
+    },
+    "kernel_output": {
+      "type": "vertex",
+      "data": {
+        "index": 8,
+        "count": 9,
+        "point": [
+          5,
+          5,
+          5
+        ],
+        "tolerance": 1e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder AddVertex::addMultipleVertices",
+    "bridge_function": "OCCTBRepGraphBuilderAddVertex",
+    "bridge_output": {
+      "type": "index",
+      "data": {
+        "v1": 8,
+        "v2": 9,
+        "count": 10
+      }
+    },
+    "kernel_output": {
+      "type": "index",
+      "data": {
+        "v1": 8,
+        "v2": 9,
+        "count": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
