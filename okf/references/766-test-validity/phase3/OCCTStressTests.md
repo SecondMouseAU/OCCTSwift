@@ -288,3 +288,29 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressBoundaryConditionTests: Coincident Geometry, Degenerate Operations
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-boundary/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: Coincident Geometry | `identicalBoxUnion` | `OCCTShapeUnionEx` | runBooleanEx returns nil after a successful build | StressBoundaryConditionTests.swift:170 Expectation failed: b1.union(b2) | ✔ | MATCH | yes |
+| Stress: Coincident Geometry | `identicalBoxSubtract` | `OCCTShapeSubtractEx` | runBooleanEx returns its first argument unchanged (a no-op boolean) | StressBoundaryConditionTests.swift:181 Expectation failed: r.subShapeCount(ofType: .face) == 0 | ✔ | MATCH | yes |
+| Stress: Coincident Geometry | `identicalBoxIntersect` | `OCCTShapeIntersectEx` | runBooleanEx returns nil after a successful build | StressBoundaryConditionTests.swift:188 Expectation failed: b1.intersection(b2) | ✔ | MATCH | yes |
+| Stress: Coincident Geometry | `touchingFaceUnion` | `OCCTShapeUnionEx` | runBooleanEx returns its first argument unchanged (a no-op boolean) | StressBoundaryConditionTests.swift:199 Expectation failed: abs((r.volume ?? 0) - 2000) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Coincident Geometry | `touchingFaceSubtract` | `OCCTShapeSubtractEx` | runBooleanEx returns nil after a successful build | StressBoundaryConditionTests.swift:206 Expectation failed: b1.subtracting(b2) | ✔ | MATCH | yes |
+| Stress: Coincident Geometry | `overlappingBoxes` | `OCCTShapeUnionEx, OCCTShapeSubtractEx, OCCTShapeIntersectEx` | runBooleanEx returns its first argument unchanged (a no-op boolean) | StressBoundaryConditionTests.swift:222 Expectation failed: abs((uni?.volume ?? 0) - 2000) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Coincident Geometry | `nestedSpheres` | `OCCTShapeSubtractEx` | runBooleanEx returns its first argument unchanged (a no-op boolean) | StressBoundaryConditionTests.swift:235 Expectation failed: abs((r.volume ?? 0) - expected) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Coincident Geometry | `concentricCylinders` | `OCCTShapeSubtractEx` | runBooleanEx returns its first argument unchanged (a no-op boolean) | StressBoundaryConditionTests.swift:243 Expectation failed: abs((t.volume ?? 0) - .pi * 75 * 20) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Degenerate Operations | `filletRadiusEqualsHalfEdge` | `OCCTShapeFillet` | OCCTShapeFillet returns the input unchanged when not done or on a throw | StressBoundaryConditionTests.swift:256 Expectation failed: box.filleted(radius: 5.0) == nil | ✔ | MATCH | yes |
+| Stress: Degenerate Operations | `filletRadiusExceedsEdge` | `OCCTShapeFillet` | OCCTShapeFillet returns nil | StressBoundaryConditionTests.swift:263 Expectation failed: box.filleted(radius: 6.0) | ✔ | MATCH | yes |
+| Stress: Degenerate Operations | `shellThicknessEqualsHalf` | `OCCTShapeShell` | OCCTShapeShell returns the input unchanged when not done or on a throw | StressBoundaryConditionTests.swift:271 Expectation failed: box.shelled(thickness: -5.0) == nil | ✔ | MATCH | yes |
+| Stress: Degenerate Operations | `shellThicknessExceedsHalf` | `OCCTShapeShell` | OCCTShapeShell returns the input unchanged when not done or on a throw | StressBoundaryConditionTests.swift:276 Expectation failed: box.shelled(thickness: -6.0) == nil | ✔ | MATCH | yes |
+| Stress: Degenerate Operations | `offsetByZero` | `OCCTShapeTranslate` | OCCTShapeTranslate returns nil | StressBoundaryConditionTests.swift:284 Expectation failed: box.translated(by: SIMD3(0, 0, 0)) | ✔ | MATCH | yes |
+| Stress: Degenerate Operations | `rotateByTwoPi` | `OCCTShapeRotate, OCCTShapeGetBounds` | OCCTShapeRotate turns by angle + 0.1 | StressBoundaryConditionTests.swift:296 Expectation failed: abs(b.max.x - 5) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Degenerate Operations | `rotateByLargeAngle` | `OCCTShapeRotate, OCCTShapeGetBounds` | OCCTShapeRotate turns by angle + 0.1 | StressBoundaryConditionTests.swift:306 Expectation failed: abs(b.max.x - 5) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Degenerate Operations | `scaleByVerySmall` | `OCCTShapeScale` | OCCTShapeScale scales by factor × 1.1 | StressBoundaryConditionTests.swift:314 Expectation failed: near(r.volume, 1e-27) | ✔ | MATCH | yes |
+| Stress: Degenerate Operations | `scaleByVeryLarge` | `OCCTShapeScale` | OCCTShapeScale scales by factor × 1.1 | StressBoundaryConditionTests.swift:321 Expectation failed: near(r.volume, 1e33) | ✔ | MATCH | yes |
+| Stress: Degenerate Operations | `drillRadiusLargerThanBox` | `OCCTShapeDrillHole` | OCCTShapeSubtract returns its first argument unchanged | StressBoundaryConditionTests.swift:331 Expectation failed: r.subShapeCount(ofType: .face) == 0 | ✔ | MATCH | yes |
+| Stress: Degenerate Operations | `drillOutsideBox` | `OCCTShapeDrillHole` | OCCTShapeDrillHole returns nil | StressBoundaryConditionTests.swift:340 Expectation failed: result | ✔ | MATCH | yes |
