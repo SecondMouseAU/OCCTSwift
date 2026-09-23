@@ -222,3 +222,15 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: Issue491SurfaceApproxParityTests.swift (7 tests), probe Scripts/repro/766-issue491-522-572/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| Surface approximation parity: approximated vs approxWithDetails (#491) | Both entry points succeed, or neither does, on the same request | `OCCTSurfaceApproximate` | approximated() drops an over-tolerance fit, the pre-#491 behaviour (INJ_491_PLAIN_DROP_OVERTOL) | Issue491SurfaceApproxParityTests.swift:157 (plain != nil) == (detailed.surface != nil) | ✅ | MATCH | Also reaches OCCTGeomConvertApproxSurface |
+| Surface approximation parity: approximated vs approxWithDetails (#491) | Both entry points return the same fitted surface | `OCCTSurfaceApproximate` | approximated() asks one continuity lower (INJ_491_PLAIN_C1) | Issue491SurfaceApproxParityTests.swift:188 plain.uPoleCount == withDetails.uPoleCount | ✅ | MATCH |  |
+| Surface approximation parity: approximated vs approxWithDetails (#491) | The two entry points share their default continuity | `OCCTSurfaceApproximate` | approximated() asks one continuity lower (INJ_491_PLAIN_C1) | Issue491SurfaceApproxParityTests.swift:222 plain.uPoleCount == withDetails.uPoleCount | ✅ | MATCH |  |
+| Surface approximation parity: approximated vs approxWithDetails (#491) | maxError describes the surface both entry points return | `OCCTGeomConvertApproxSurface` | maxError reported as 0 (INJ_491_MAXERR_ZERO) | Issue491SurfaceApproxParityTests.swift:272 deviation <= detailed.maxError + 1e-6 | ✅ | MATCH |  |
+| Surface approximation parity: approximated vs approxWithDetails (#491) | An over-tolerance fit is returned by both, with isDone false | `OCCTGeomConvertApproxSurface` | hasResult reported only when isDone (INJ_491_HASRESULT_ISDONE); also red under INJ_491_PLAIN_DROP_OVERTOL | Issue491SurfaceApproxParityTests.swift:295 detailed.hasResult | ✅ | MATCH | Also reaches OCCTSurfaceApproximate |
+| Surface approximation parity: approximated vs approxWithDetails (#491) | maxDegree and maxSegments are order-sensitive, and both entry points agree on the order | `OCCTSurfaceApproximate` | maxDegree and maxSegments swapped in approximated() (INJ_491_PLAIN_SWAP) | Issue491SurfaceApproxParityTests.swift maxDegreeIsNotSwappedWithMaxSegments a.uPoleCount == withDetails.uPoleCount | ✅ | MATCH |  |
+| Surface approximation parity: approximated vs approxWithDetails (#491) | hasResult and the returned surface agree | `OCCTGeomConvertApproxSurface` | hasResult reported only when isDone (INJ_491_HASRESULT_ISDONE) | Issue491SurfaceApproxParityTests.swift:369 detailed.hasResult == (detailed.surface != nil) | ✅ | MATCH |  |

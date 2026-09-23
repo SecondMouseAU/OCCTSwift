@@ -6,5 +6,223 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Surface approximation parity: approximated vs approxWithDetails (#491)::Both entry points succeed, or neither does, on the same request",
+    "bridge_function": "OCCTSurfaceApproximate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "torus 1e-9": "surface, IsDone false",
+        "sphere 1e-9": "surface, IsDone false"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "torus 1e-9": "surface, IsDone false",
+        "sphere 1e-9": "surface, IsDone false"
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 491 lines"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface approximation parity: approximated vs approxWithDetails (#491)::Both entry points return the same fitted surface",
+    "bridge_function": "OCCTSurfaceApproximate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "sphere 1e-3 C2": {
+          "degree": [
+            8,
+            8
+          ],
+          "poles": [
+            15,
+            9
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "sphere 1e-3 C2": {
+          "degree": [
+            8,
+            8
+          ],
+          "poles": [
+            15,
+            9
+          ]
+        }
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 491 sphere"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface approximation parity: approximated vs approxWithDetails (#491)::The two entry points share their default continuity",
+    "bridge_function": "OCCTSurfaceApproximate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "sphere 1e-3 C2 poles": [
+          15,
+          9
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "sphere 1e-3 C2 poles": [
+          15,
+          9
+        ]
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 491 sphere r=10 tol 1e-3 C2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface approximation parity: approximated vs approxWithDetails (#491)::maxError describes the surface both entry points return",
+    "bridge_function": "OCCTGeomConvertApproxSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "sphere 1e-3 MaxError": 0.000206
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "sphere 1e-3 MaxError": 0.000206
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 491"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface approximation parity: approximated vs approxWithDetails (#491)::An over-tolerance fit is returned by both, with isDone false",
+    "bridge_function": "OCCTGeomConvertApproxSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "IsDone": false,
+        "HasResult": true,
+        "MaxError": 0.000395
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "IsDone": false,
+        "HasResult": true,
+        "MaxError": 0.000395
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 491 torus 20/5 tol 1e-9"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface approximation parity: approximated vs approxWithDetails (#491)::maxDegree and maxSegments are order-sensitive, and both entry points agree on the order",
+    "bridge_function": "OCCTSurfaceApproximate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "deg 4 seg 20": {
+          "degree": [
+            5,
+            5
+          ],
+          "poles": [
+            27,
+            6
+          ]
+        },
+        "deg 20 seg 4": {
+          "degree": [
+            11,
+            5
+          ],
+          "poles": [
+            12,
+            6
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "deg 4 seg 20": {
+          "degree": [
+            5,
+            5
+          ],
+          "poles": [
+            27,
+            6
+          ]
+        },
+        "deg 20 seg 4": {
+          "degree": [
+            11,
+            5
+          ],
+          "poles": [
+            12,
+            6
+          ]
+        }
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 491 cone"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface approximation parity: approximated vs approxWithDetails (#491)::hasResult and the returned surface agree",
+    "bridge_function": "OCCTGeomConvertApproxSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 491: IsDone=0 HasResult=1 for sphere and torus at 1e-9"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
