@@ -95,6 +95,12 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **BRepLProp Face v0.111** | faceValue | Face local point | x written from p.Y() in OCCTFaceLPropValue |
+| **BRepLProp Face v0.111** | faceNormal | Face normal | x negated in OCCTFaceLPropNormal |
+| **BRepLProp Face v0.111** | faceCurvature | Principal curvatures | sign flipped in OCCTFaceLPropMaxCurvature / MinCurvature |
+| **BRepLProp Face v0.111** | faceMeanAndGaussianCurvature | Mean and Gaussian curvature | * 2 in OCCTFaceLPropMeanCurvature / GaussianCurvature |
+| **BRepLProp Face v0.111** | faceIsUmbilic | Umbilic definedness | curvature-defined guard inverted in OCCTFaceLPropIsUmbilic |
+| **BRepLProp Face v0.111** | faceTangentU | Face U tangent | x written from tan.Y() in OCCTFaceLPropTangentU |
 | **Face Surface Properties Tests** | UV bounds of box face | Face UV bounds | Swap u and v bounds in OCCTFaceGetUVBounds |
 | **Face Surface Properties Tests** | Evaluate point on box face at UV center | Surface evaluation | Evaluate D0(v, u) in OCCTFaceEvaluateAtUV |
 | **Face Surface Properties Tests** | Normal at UV on box face is axis-aligned | Face normal orientation | Drop the REVERSED flip in OCCTFaceGetNormalAtUV |

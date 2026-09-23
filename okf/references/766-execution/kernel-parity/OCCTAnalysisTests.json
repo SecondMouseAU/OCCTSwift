@@ -1900,5 +1900,149 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Face v0.111::faceValue",
+    "bridge_function": "OCCTFaceLPropValue",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": 3.8507557646703496,
+        "y": 2.1036774620197414,
+        "z": 2.397127693021015
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": 3.8507557646703496,
+        "y": 2.1036774620197414,
+        "z": 2.397127693021015
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Face v0.111::faceNormal",
+    "bridge_function": "OCCTFaceLPropNormal",
+    "bridge_output": {
+      "type": "direction",
+      "data": {
+        "x": 0.7701511529340699,
+        "y": 0.42073549240394825,
+        "z": 0.479425538604203
+      }
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": {
+        "x": 0.7701511529340699,
+        "y": 0.42073549240394825,
+        "z": 0.479425538604203
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Face v0.111::faceCurvature",
+    "bridge_function": "OCCTFaceLPropMaxCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "max": -0.19999999999999998,
+        "min": -0.2
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "max": -0.19999999999999998,
+        "min": -0.2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Face v0.111::faceMeanAndGaussianCurvature",
+    "bridge_function": "OCCTFaceLPropMeanCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "mean": -0.19999999999999998,
+        "gaussian": 0.039999999999999994
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "mean": -0.19999999999999998,
+        "gaussian": 0.039999999999999994
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Face v0.111::faceIsUmbilic",
+    "bridge_function": "OCCTFaceLPropIsUmbilic",
+    "bridge_output": {
+      "type": "umbilic",
+      "data": {
+        "curvature_defined": true,
+        "is_umbilic": false
+      }
+    },
+    "kernel_output": {
+      "type": "umbilic",
+      "data": {
+        "curvature_defined": true,
+        "is_umbilic": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Face v0.111::faceTangentU",
+    "bridge_function": "OCCTFaceLPropTangentU",
+    "bridge_output": {
+      "type": "direction",
+      "data": {
+        "x": -0.479425538604203,
+        "y": 0.8775825618903728,
+        "z": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": {
+        "x": -0.479425538604203,
+        "y": 0.8775825618903728,
+        "z": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
