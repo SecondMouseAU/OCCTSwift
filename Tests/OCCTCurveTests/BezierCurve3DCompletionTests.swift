@@ -4,114 +4,86 @@ import simd
 
 @testable import OCCTSwift
 
+// Every value is Geom_BezierCurve's for the same poles
+// (Scripts/repro/766-curve-bezier-curve3d/transcript.txt). The earlier versions wrapped each
+// test body in `if let`, so a nil curve passed with nothing checked, and several checked one
+// coordinate of one point, so start and end swapped, or a pole's y wrong, passed (#766).
 @Suite("Bezier Curve 3D Completions")
 struct BezierCurve3DCompletionTests {
+    private static let open: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0)]
+
+    private static func openCurve() -> Curve3D? {
+        let c = Curve3D.bezier(poles: open)
+        if c == nil { Issue.record("Bezier curve not built") }
+        return c
+    }
+
     @Test("StartPoint and EndPoint")
     func startEndPoint() {
-        let poles: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0)]
-        let c = Curve3D.bezier(poles: poles)
-        if let c = c {
-            let sp = c.bezierStartPoint
-            let ep = c.bezierEndPoint
-            #expect(abs(sp.x - 0) < 1e-10)
-            #expect(abs(ep.x - 2) < 1e-10)
-        }
+        guard let c = Self.openCurve() else { return }
+        #expect(simd_distance(c.bezierStartPoint, SIMD3(0, 0, 0)) < 1e-10)
+        #expect(simd_distance(c.bezierEndPoint, SIMD3(2, 0, 0)) < 1e-10)
     }
 
     @Test("GetPoles bulk")
     func poles() {
-        let inputPoles: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0)]
-        let c = Curve3D.bezier(poles: inputPoles)
-        if let c = c {
-            let p = c.bezierPoles
-            #expect(p.count == 3)
-            if p.count == 3 {
-                #expect(abs(p[0].x - 0) < 1e-10)
-                #expect(abs(p[1].x - 1) < 1e-10)
-                #expect(abs(p[2].x - 2) < 1e-10)
-            }
-        }
+        guard let c = Self.openCurve() else { return }
+        let p = c.bezierPoles
+        #expect(p == Self.open)
     }
 
     @Test("GetWeights returns nil for non-rational")
     func weightsNonRational() {
-        let poles: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0)]
-        let c = Curve3D.bezier(poles: poles)
-        if let c = c {
-            let w = c.bezierWeights
-            // Non-rational curve may return nil or all 1.0 weights
-            if let w = w {
-                for weight in w {
-                    #expect(abs(weight - 1.0) < 1e-10)
-                }
-            }
-        }
+        guard let c = Self.openCurve() else { return }
+        // Geom_BezierCurve::Weights() is null for a non-rational curve, so the wrapper says nil.
+        #expect(c.bezierWeights == nil)
     }
 
     @Test("GetWeights returns values for rational")
     func weightsRational() {
-        let poles: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0)]
-        let weights = [1.0, 2.0, 1.0]
-        let c = Curve3D.bezier(poles: poles, weights: weights)
-        if let c = c {
-            let w = c.bezierWeights
-            #expect(w != nil)
-            if let w = w {
-                #expect(w.count == 3)
-                if w.count == 3 {
-                    #expect(abs(w[1] - 2.0) < 1e-10)
-                }
-            }
+        guard let c = Curve3D.bezier(poles: Self.open, weights: [1.0, 2.0, 1.0]) else {
+            Issue.record("rational Bezier curve not built")
+            return
         }
+        #expect(c.bezierWeights == [1.0, 2.0, 1.0])
     }
 
     @Test("IsClosed for open curve")
     func isClosed() {
-        let poles: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0)]
-        let c = Curve3D.bezier(poles: poles)
-        if let c = c {
-            #expect(!c.bezierIsClosed)
-        }
+        guard let c = Self.openCurve() else { return }
+        #expect(!c.bezierIsClosed)
     }
 
     @Test("IsClosed for closed curve")
     func isClosedTrue() {
-        let poles: [SIMD3<Double>] = [
-            SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0), SIMD3(0, 0, 0),
-        ]
-        let c = Curve3D.bezier(poles: poles)
-        if let c = c {
-            #expect(c.bezierIsClosed)
+        guard
+            let c = Curve3D.bezier(poles: [
+                SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0), SIMD3(0, 0, 0),
+            ])
+        else {
+            Issue.record("closed Bezier curve not built")
+            return
         }
+        #expect(c.bezierIsClosed)
     }
 
     @Test("IsPeriodic always false for Bezier")
     func isPeriodic() {
-        let poles: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0)]
-        let c = Curve3D.bezier(poles: poles)
-        if let c = c {
-            #expect(!c.bezierIsPeriodic)
-        }
+        guard let c = Self.openCurve() else { return }
+        #expect(!c.bezierIsPeriodic)
     }
 
     @Test("Continuity is CN for Bezier")
     func continuity() {
-        let poles: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0)]
-        let c = Curve3D.bezier(poles: poles)
-        if let c = c {
-            let cont = c.bezierContinuity
-            #expect(cont == 6)  // CN = 6 in GeomAbs_Shape
-        }
+        guard let c = Self.openCurve() else { return }
+        #expect(c.bezierContinuity == 6)  // CN = 6 in GeomAbs_Shape
     }
 
     @Test("IsCN always true for Bezier")
     func isCN() {
-        let poles: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0)]
-        let c = Curve3D.bezier(poles: poles)
-        if let c = c {
-            #expect(c.bezierIsCN(0))
-            #expect(c.bezierIsCN(1))
-            #expect(c.bezierIsCN(10))
-        }
+        guard let c = Self.openCurve() else { return }
+        #expect(c.bezierIsCN(0))
+        #expect(c.bezierIsCN(1))
+        #expect(c.bezierIsCN(10))
     }
 }
