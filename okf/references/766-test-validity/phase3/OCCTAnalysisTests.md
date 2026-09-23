@@ -95,6 +95,7 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Extrema_ExtElCS Line-Sphere** | lineSphereDistance | Line-sphere extrema | Negate surface point z |
 
 ---
 
@@ -202,6 +203,7 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| Extrema_ExtElCS Line-Sphere: lineSphereDistance | OCCTExtremaElCSLinSphere | Line-sphere extrema | Negate surface point z | ✅ | ✅ | rewritten: count > 0 stayed green under the injection |
 
 ---
 
@@ -304,5 +306,6 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Extrema_ExtElCS Line-Sphere: lineSphereDistance | ✅ | ✅ | ✅ |
 
-**Total**: 559 tests
+**Total**: 560 tests
