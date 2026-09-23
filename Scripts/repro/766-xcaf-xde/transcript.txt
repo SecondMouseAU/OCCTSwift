@@ -1,0 +1,7 @@
+Area=2200 Volume=6000 Centroid=(5, 10, 15)
+assembly: components=2 referred IsEqual part=true users(part)=2 after RemoveComponent=1 after UpdateAssemblies assembly solids=1
+ColorTool by shape: set=true rgba=(0.2, 0.4, 0.6, 0.5) opaque alpha=1 visibility after false=false after true=true
+Editor::Expand(two-body compound)=true components after=2 RescaleGeometry(free box label, 2, force)=true
+LayerTool: IsSet(Layer1)=true layers(other)=1 [0]=TestLayer FindLayer=true visibility after false=false after true=true
+ShapeTool: shapes=10 free=7 FindShape=true Search=true RemoveShape(new)=true IsTopLevel(free)=true IsComponent(free)=false
+XLink: set=true document=/doc/path label=0:1:2

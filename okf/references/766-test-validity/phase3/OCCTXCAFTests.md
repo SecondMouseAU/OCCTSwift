@@ -99,3 +99,25 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `XDEShapeToolQueryTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `addShapeAndCount` | `OCCTDocumentGetShapeCount` answers 0 | :21 Expectation failed: doc.shapeCount > 0 | passed | `OCCTDocumentGetShapeCount` | PASS: positive |
+| `freeShapeCount` | `OCCTDocumentGetFreeShapeCount` answers 0 | :34 Expectation failed: doc.freeShapeCount > 0 | passed | `OCCTDocumentGetFreeShapeCount` | PASS: positive |
+| `findAndSearch` | `OCCTDocumentFindShape` answers -1 | :49 Expectation failed: foundId >= 0 | passed | `OCCTDocumentFindShape` | PASS: true, true |
+| `newAndRemove` | `OCCTDocumentRemoveShape` returns false | :66 Expectation failed: removed | passed | `OCCTDocumentRemoveShape` | PASS: true |
+| `labelQueries` | `OCCTDocumentIsTopLevel` returns false | :82 Expectation failed: root.isTopLevel | passed | `OCCTDocumentIsTopLevel` | PASS: top-level, not a component |
+
+### `XLinkTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setXLink` | `OCCTDocumentXLinkSet` returns false | :11 Expectation failed: ok | passed | `OCCTDocumentXLinkSet` | PASS: set |
+| `documentEntry` | `OCCTDocumentXLinkGetDocumentEntry` returns null | :20 Expectation failed: entry == "/doc/path" | passed | `OCCTDocumentXLinkGetDocumentEntry` | PASS: /doc/path |
+| `labelEntry` | `OCCTDocumentXLinkGetLabelEntry` returns null | :29 Expectation failed: entry == "0:1:2" | passed | `OCCTDocumentXLinkGetLabelEntry` | PASS: 0:1:2 |
