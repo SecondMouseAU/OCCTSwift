@@ -99,3 +99,27 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `Issue1055DatumNameLengthTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `longNameRoundTrips` | `OCCTDocumentGetDatumName` caps the name at 63 bytes (the pre-#1055 bound) | :38 Expectation failed: datum.name.count == 100; :39 Expectation failed: datum.name == name | passed | `OCCTDocumentGetDatumName` | PASS: 100 chars both sides |
+| `namesAroundTheOldBoundRoundTrip` | `OCCTDocumentGetDatumName` caps the name at 63 bytes (the pre-#1055 bound) | :56 Expectation failed: datum.name == name; :56 Expectation failed: datum.name == name | passed | `OCCTDocumentGetDatumName` | PASS: 63, 64, 65 kept |
+| `shortBufferReportsTheFullLength` | `OCCTDocumentGetDatumName` caps the name at 63 bytes (the pre-#1055 bound) | :77 Expectation failed: reported == 100 | passed | `OCCTDocumentGetDatumName` | PASS: full length 100 |
+| `nullBufferReportsTheLength` | `OCCTDocumentGetDatumName` caps the name at 63 bytes (the pre-#1055 bound) | :95 Expectation failed: OCCTDocumentGetDatumName(doc.handle, Int32(index), nil, 0) == 100 | passed | `OCCTDocumentGetDatumName` | PASS: 100 |
+| `malformedBufferArgumentsAreRefused` | `OCCTDocumentGetDatumName` accepts a negative length | :112 Expectation failed: OCCTDocumentGetDatumName(doc.handle, Int32(index), &buffer, -1) == -1 | passed | `OCCTDocumentGetDatumName` | N/A: argument validation is the bridge's own; no kernel call |
+| `datumsEnumerationCarriesWholeNames` | `OCCTDocumentGetDatumName` caps the name at 63 bytes (the pre-#1055 bound) | :125 Expectation failed: doc.datums.map(\.name) == names | passed | `OCCTDocumentGetDatumName` | PASS: 1, 100, 200 |
+
+### `Issue1078LayerNameLengthTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `longNameRoundTrips` | `OCCTDocumentGetLayerName` writes an empty name | :37 Expectation failed: !name.isEmpty; :37 Expectation failed: !name.isEmpty | passed | `OCCTDocumentGetLayerName` | MISMATCH: bridge and kernel agree on what the bridge reads, but it reads the wrong table: #2413 |
+| `nullBufferReportsTheLength` | `OCCTDocumentGetLayerName` clamps any index to 0 | :56 Expectation failed: OCCTDocumentGetLayerName(handle, count, nil, 0) == -1; :57 Expectation failed: OCCTDocumentGetLayerName(handle, -1, nil, 0) == -1 | passed | `OCCTDocumentGetLayerName` | PASS: 3 entries, so index 3 and -1 are out of range |
+| `shortBufferReportsTheFullLength` | `OCCTDocumentGetLayerName` reports the copied length, not the full one | :76 Expectation failed: reported == len | passed | `OCCTDocumentGetLayerName` | PASS: only `VisMaterials` (12) exceeds 10 |
+| `malformedBufferArgumentsAreRefused` | `OCCTDocumentGetLayerName` answers 5 for a negative length | :95 Expectation failed: OCCTDocumentGetLayerName(handle, 0, &buffer, -1) == -1 | passed | `OCCTDocumentGetLayerName` | N/A: bridge-only validation |
