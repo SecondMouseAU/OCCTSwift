@@ -416,3 +416,17 @@
 | **Vector3DMath** | dot | `OCCTXYZDot` | z term dropped | red | green | PASS |
 | **Vector3DMath** | dotCross | `OCCTXYZDotCross` | b and c swapped in the triple product | red | green | PASS |
 | **Vector3DMath** | normalize | `OCCTXYZNormalize` | normalized x and y swapped | red | green | PASS |
+### 766-math-geom-point-transformation (#1983, measured)
+| **GeomPoint3D Tests** | create and read coordinates | `OCCTGeomPoint3DY` | OCCTGeomPoint3DY returns X() | red | green | PASS |
+| **GeomPoint3D Tests** | create from SIMD3 | `OCCTGeomPoint3DCreate / OCCTGeomPoint3DY` | OCCTGeomPoint3DY returns X() | red | green | PASS |
+| **GeomPoint3D Tests** | setCoordinates | `OCCTGeomPoint3DSetCoord` | SetCoord(y, y, z) | red | green | PASS |
+| **GeomPoint3D Tests** | distance between points | `OCCTGeomPoint3DDistance` | return SquareDistance instead of Distance | red | green | PASS |
+| **GeomPoint3D Tests** | translate | `OCCTGeomPoint3DTranslate` | translation vector negated | red | green | PASS |
+| **GeomTransformation Tests** | identity | `OCCTGeomTransformScaleFactor / OCCTGeomTransformIsNegative` | ScaleFactor() + 1; IsNegative negated | red | green | PASS |
+| **GeomTransformation Tests** | translation | `OCCTGeomTransformSetTranslation` | gp_Vec(dx, dz, dy): Y and Z swapped | red | green | PASS |
+| **GeomTransformation Tests** | rotation | `OCCTGeomTransformSetRotation` | angle negated | red | green | PASS |
+| **GeomTransformation Tests** | scale | `OCCTGeomTransformScaleFactor` | ScaleFactor() + 1 | red | green | PASS |
+| **GeomTransformation Tests** | mirror | `OCCTGeomTransformIsNegative` | IsNegative negated | red | green | PASS |
+| **GeomTransformation Tests** | multiply | `OCCTGeomTransformMultiplied` | t1 * t1 instead of t1 * t2 | red | green | PASS |
+| **GeomTransformation Tests** | invert | `OCCTGeomTransformInverted` | return a copy instead of the inverse | red | green | PASS |
+| **GeomTransformation Tests** | matrixValue | `OCCTGeomTransformValue` | translation column misread: col 4 mapped to col 1 | red | green | PASS |
