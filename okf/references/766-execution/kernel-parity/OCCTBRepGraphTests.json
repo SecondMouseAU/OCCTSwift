@@ -3347,5 +3347,208 @@
       "differences": []
     },
     "status": "N/A"
+  },
+  {
+    "test_name": "v0.141 TopologyRef resolver::literalValid",
+    "bridge_function": "none (pure Swift: TopologyRef.literal)",
+    "bridge_output": {
+      "type": "node",
+      "data": {
+        "kind": "face",
+        "index": 2
+      }
+    },
+    "kernel_output": {
+      "type": "node",
+      "data": {
+        "reason": "pure Swift; no graph query"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.141 TopologyRef resolver::literalInvalid",
+    "bridge_function": "none (pure Swift: TopologyRef.literal)",
+    "bridge_output": {
+      "type": "result",
+      "data": "invalid"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "pure Swift sentinel check"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.141 TopologyRef resolver::createdByBasic",
+    "bridge_function": "OCCTBRepGraphHistoryGetRecordMapping",
+    "bridge_output": {
+      "type": "node",
+      "data": {
+        "kind": "face",
+        "index": 100
+      }
+    },
+    "kernel_output": {
+      "type": "node",
+      "data": {
+        "reason": "Swift candidate selection over one recorded replacement"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.141 TopologyRef resolver::createdByMissingOp",
+    "bridge_function": "OCCTBRepGraphHistoryGetRecordInfo",
+    "bridge_output": {
+      "type": "result",
+      "data": "operationNotFound(Nonexistent)"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift error value"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.141 TopologyRef resolver::createdByOutOfRange",
+    "bridge_function": "OCCTBRepGraphHistoryGetRecordMapping",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "available": 1,
+        "requested": 5
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "replacements_recorded": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.141 TopologyRef resolver::createdByForwardWalk",
+    "bridge_function": "OCCTBRepGraphHistoryFindDerived",
+    "bridge_output": {
+      "type": "node",
+      "data": {
+        "kind": "face",
+        "index": 11
+      }
+    },
+    "kernel_output": {
+      "type": "node",
+      "data": {
+        "FindDerived_face10": [
+          [
+            "face",
+            11
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.141 TopologyRef resolver::splitOf",
+    "bridge_function": "OCCTBRepGraphHistoryGetRecordMapping",
+    "bridge_output": {
+      "type": "node",
+      "data": {
+        "kind": "edge",
+        "index": 31
+      }
+    },
+    "kernel_output": {
+      "type": "node",
+      "data": {
+        "FindDerived_edge3": [
+          [
+            "edge",
+            30
+          ],
+          [
+            "edge",
+            31
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.141 TopologyRef resolver::splitOfOutOfRange",
+    "bridge_function": "OCCTBRepGraphHistoryGetRecordMapping",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "available": 2,
+        "requested": 5
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "replacements_recorded": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.141 TopologyRef resolver::ancestorMissing",
+    "bridge_function": "OCCTBRepGraphHistoryGetRecordInfo",
+    "bridge_output": {
+      "type": "result",
+      "data": "ancestorMissing"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift error mapping"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
   }
 ]
