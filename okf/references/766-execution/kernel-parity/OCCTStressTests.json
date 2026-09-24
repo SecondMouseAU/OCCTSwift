@@ -130,11 +130,11 @@
     "bridge_function": "OCCTUnifySameDomainSetLinearTolerance, OCCTUnifySameDomainShape",
     "bridge_output": {
       "type": "observed",
-      "data": "Swift test asserts the kernel value below and passes (green): box: 6 faces"
+      "data": "Swift test asserts the kernel value below and passes (green): box: 6 faces, volume 1000"
     },
     "kernel_output": {
       "type": "probe",
-      "data": "box: 6 faces",
+      "data": "box: 6 faces, volume 1000",
       "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
     },
     "comparison": {
@@ -145,7 +145,7 @@
     "red_green": {
       "injection": "OCCTUnifySameDomainShape returns nil",
       "env": "OCCT766=|NULL:OCCTUnifySameDomainShape|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:393 Expectation failed: unifier.shape",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:393 Expectation failed: unifier.shape; the volume pin is red only under a second injection, OCCTUnifySameDomainShape returning the result scaled by 1.1 (still valid, 6 faces): StressBuilderLifecycleTests.swift:396 Expectation failed: abs((result.volume ?? 0) - 1000) < 1e-6",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -171,7 +171,7 @@
     "red_green": {
       "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
       "env": "OCCT766=|TSGUARD|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:408 Expectation failed: !ok",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:409 Expectation failed: !ok",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -197,7 +197,7 @@
     "red_green": {
       "injection": "EARLY:OCCTThruSectionsShape",
       "env": "OCCT766=|EARLY:OCCTThruSectionsShape|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:423 Expectation failed: loft.shape",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:424 Expectation failed: loft.shape",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -275,7 +275,7 @@
     "red_green": {
       "injection": "EARLY:OCCTThruSectionsShape",
       "env": "OCCT766=|EARLY:OCCTThruSectionsShape|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:459 Expectation failed: abs((loft.shape?.volume ?? 0) - 513.1268001) < 1e-6",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:462 Expectation failed: loft.shape",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -301,7 +301,7 @@
     "red_green": {
       "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
       "env": "OCCT766=|TSGUARD|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:498 Expectation failed: !loft.build()",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:502 Expectation failed: !loft.build()",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -327,7 +327,7 @@
     "red_green": {
       "injection": "EARLY:OCCTThruSectionsShape",
       "env": "OCCT766=|EARLY:OCCTThruSectionsShape|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:522 Expectation failed: loft.shape != nil",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:526 Expectation failed: loft.shape != nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -353,7 +353,7 @@
     "red_green": {
       "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
       "env": "OCCT766=|TSGUARD|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:570 Expectation failed: !loft.build()",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:574 Expectation failed: !loft.build()",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -379,7 +379,7 @@
     "red_green": {
       "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
       "env": "OCCT766=|TSGUARD|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:615 Expectation failed: !loft.build()",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:619 Expectation failed: !loft.build()",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -405,7 +405,7 @@
     "red_green": {
       "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
       "env": "OCCT766=|TSGUARD|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:657 Expectation failed: !loft.build()",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:661 Expectation failed: !loft.build()",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -431,7 +431,7 @@
     "red_green": {
       "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
       "env": "OCCT766=|TSGUARD|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:718 Expectation failed: !loft.build()",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:722 Expectation failed: !loft.build()",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -457,7 +457,7 @@
     "red_green": {
       "injection": "EARLY:OCCTThruSectionsShape",
       "env": "OCCT766=|EARLY:OCCTThruSectionsShape|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:754 Expectation failed: loft.shape != nil",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:758 Expectation failed: loft.shape != nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },

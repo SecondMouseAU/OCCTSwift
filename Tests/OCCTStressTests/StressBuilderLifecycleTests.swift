@@ -393,6 +393,7 @@ struct StressUnifySameDomainBuilderLifecycleTests {
         let result = try #require(unifier.shape)
         #expect(result.isValid)
         #expect(result.subShapeCount(ofType: .face) == 6)
+        #expect(abs((result.volume ?? 0) - 1000) < 1e-6)
     }
 }
 
@@ -445,18 +446,21 @@ struct StressThruSectionsBuilderLifecycleTests {
         loft.addWire(s1)
     }
 
-    @Test func doubleBuild() {
-        guard let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-            let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
-            let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2)
-        else { return }
+    @Test func doubleBuild() throws {
+        let w1 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let w2 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let s1 = try #require(Shape.fromWire(w1))
+        let s2 = try #require(Shape.fromWire(w2))
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
         loft.addWire(s2)
         // Both builds succeed, and the second gives the same frustum (both were read into `_`).
         #expect(loft.build())
         #expect(loft.build())
-        #expect(abs((loft.shape?.volume ?? 0) - 513.1268001) < 1e-6)
+        let shape = try #require(loft.shape)
+        #expect(abs((shape.volume ?? 0) - 513.1268001) < 1e-6)
     }
 
     // #913: checkCompatibility(false) skips BRepFill_CompatibleWires' section reconciliation, so
