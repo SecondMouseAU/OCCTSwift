@@ -314,7 +314,7 @@
       "type": "value",
       "data": {
         "new": true,
-        "old": null
+        "old": false
       }
     },
     "kernel_output": {
@@ -329,6 +329,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether the primitive history entry carries a new shape (new) and an old shape (old). Bridge: Document.newShape(on:at:) and Document.oldShape(on:at:) return nil when the entry has no such shape; the test observed newShape != nil (new true) and oldShape == nil (old false). Kernel: TNaming_Iterator over the primitive NamedShape printed hasNew=true hasOld=false (!NewShape().IsNull(), !OldShape().IsNull()).",
     "probe": "Scripts/repro/766-xcaf-tnaming/"
   },
   {
