@@ -2566,5 +2566,629 @@
       "strengthened": false
     },
     "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip STEP::box",
+    "bridge_function": "OCCTExportSTEPWithMode, OCCTImportSTEPProgress",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): STEP AP214 round trip: volume 1000, area 600, 6 faces, 12 edges"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "STEP AP214 round trip: volume 1000, area 600, 6 faces, 12 edges",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTEPProgress: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTImportSTEPProgress|",
+      "red": "StressFormatRoundTripTests.swift:31 Expectation failed: abs(rArea - origArea) / origArea < 0.01",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip STEP::cylinder",
+    "bridge_function": "OCCTExportSTEPWithMode, OCCTImportSTEPProgress",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): STEP AP214 round trip: volume 785.3981634, 3 faces, 3 edges"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "STEP AP214 round trip: volume 785.3981634, 3 faces, 3 edges",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTEPProgress: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTImportSTEPProgress|",
+      "red": "StressFormatRoundTripTests.swift:31 Expectation failed: abs(rArea - origArea) / origArea < 0.01",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip STEP::sphere",
+    "bridge_function": "OCCTExportSTEPWithMode, OCCTImportSTEPProgress",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): STEP AP214 round trip: volume 523.5987756, 1 face"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "STEP AP214 round trip: volume 523.5987756, 1 face",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTEPProgress returns nil",
+      "env": "OCCT766=|NULL:OCCTImportSTEPProgress|",
+      "red": "StressFormatRoundTripTests.swift:44 Caught error: .readFailed(path: \"/var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/occt-stress-0749DAF5-F71C-4DE1-88B2-6D2071AD0593.step\", status: no OCCT status: the call failed before the data-exchange step ran)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip STEP::cone",
+    "bridge_function": "OCCTExportSTEPWithMode, OCCTImportSTEPProgress",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): STEP AP214 round trip: volume 408.407045, 3 faces"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "STEP AP214 round trip: volume 408.407045, 3 faces",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTEPProgress: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTImportSTEPProgress|",
+      "red": "StressFormatRoundTripTests.swift:31 Expectation failed: abs(rArea - origArea) / origArea < 0.01",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip STEP::torus",
+    "bridge_function": "OCCTExportSTEPWithMode, OCCTImportSTEPProgress",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): STEP AP214 round trip: volume 1776.528792, 1 face"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "STEP AP214 round trip: volume 1776.528792, 1 face",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTEPProgress returns nil",
+      "env": "OCCT766=|NULL:OCCTImportSTEPProgress|",
+      "red": "StressFormatRoundTripTests.swift:46 Caught error: .readFailed(path: \"/var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/occt-stress-120CA9A8-712E-4E00-9754-44B2D7B13A5E.step\", status: no OCCT status: the call failed before the data-exchange step ran)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip STEP::filletedBoxShape",
+    "bridge_function": "OCCTExportSTEPWithMode, OCCTImportSTEPProgress",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): STEP AP214 round trip: volume 975.5870139, 26 faces, 56 edges"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "STEP AP214 round trip: volume 975.5870139, 26 faces, 56 edges",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTEPProgress: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTImportSTEPProgress|",
+      "red": "StressFormatRoundTripTests.swift:31 Expectation failed: abs(rArea - origArea) / origArea < 0.01",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip STEP::drilledPlateShape",
+    "bridge_function": "OCCTExportSTEPWithMode, OCCTImportSTEPProgress",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): STEP AP214 round trip: volume 12358.62833, 7 faces, 15 edges"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "STEP AP214 round trip: volume 12358.62833, 7 faces, 15 edges",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTEPProgress: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTImportSTEPProgress|",
+      "red": "StressFormatRoundTripTests.swift:31 Expectation failed: abs(rArea - origArea) / origArea < 0.01",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip STEP::compound",
+    "bridge_function": "OCCTExportSTEPWithMode, OCCTImportSTEPProgress",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): STEP AP214 round trip: volume 1392.699082, 11 faces, edges 26 -> 22 (within the test tolerance)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "STEP AP214 round trip: volume 1392.699082, 11 faces, edges 26 -> 22 (within the test tolerance)",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTEPProgress: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTImportSTEPProgress|",
+      "red": "StressFormatRoundTripTests.swift:31 Expectation failed: abs(rArea - origArea) / origArea < 0.01",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP::box",
+    "bridge_function": "OCCTExportBREPWithTriangles, OCCTImportBREP",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools round trip: volume 1000, 6 faces, 12 edges"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools round trip: volume 1000, 6 faces, 12 edges",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportBREP: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTImportBREP|",
+      "red": "StressFormatRoundTripTests.swift:71 Expectation failed: reimported.subShapeCount(ofType: .face) == origFaces",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP::cylinder",
+    "bridge_function": "OCCTExportBREPWithTriangles, OCCTImportBREP",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools round trip: volume 785.3981634, 3/3"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools round trip: volume 785.3981634, 3/3",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportBREP: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTImportBREP|",
+      "red": "StressFormatRoundTripTests.swift:71 Expectation failed: reimported.subShapeCount(ofType: .face) == origFaces",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP::sphere",
+    "bridge_function": "OCCTExportBREPWithTriangles, OCCTImportBREP",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools round trip: volume 523.5987756, 1/3"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools round trip: volume 523.5987756, 1/3",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportBREP returns nil",
+      "env": "OCCT766=|NULL:OCCTImportBREP|",
+      "red": "StressFormatRoundTripTests.swift:77 Caught error: .importFailed(\"Failed to import BREP file: occt-stress-8A001FFA-DA3F-41F5-B73F-E6FA50F016F1.brep\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP::cone",
+    "bridge_function": "OCCTExportBREPWithTriangles, OCCTImportBREP",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools round trip: volume 408.407045, 3/3"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools round trip: volume 408.407045, 3/3",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportBREP: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTImportBREP|",
+      "red": "StressFormatRoundTripTests.swift:71 Expectation failed: reimported.subShapeCount(ofType: .face) == origFaces",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP::torus",
+    "bridge_function": "OCCTExportBREPWithTriangles, OCCTImportBREP",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools round trip: volume 1776.528792, 1/2"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools round trip: volume 1776.528792, 1/2",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportBREP returns nil",
+      "env": "OCCT766=|NULL:OCCTImportBREP|",
+      "red": "StressFormatRoundTripTests.swift:79 Caught error: .importFailed(\"Failed to import BREP file: occt-stress-E9215F4D-9D15-4AED-AF35-EF1137089E81.brep\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP::filletedBoxShape",
+    "bridge_function": "OCCTExportBREPWithTriangles, OCCTImportBREP",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools round trip: volume 975.5870139, 26/56"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools round trip: volume 975.5870139, 26/56",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportBREP: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTImportBREP|",
+      "red": "StressFormatRoundTripTests.swift:71 Expectation failed: reimported.subShapeCount(ofType: .face) == origFaces",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP::drilledPlateShape",
+    "bridge_function": "OCCTExportBREPWithTriangles, OCCTImportBREP",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools round trip: volume 12358.62833, 7/15"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools round trip: volume 12358.62833, 7/15",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportBREP: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTImportBREP|",
+      "red": "StressFormatRoundTripTests.swift:71 Expectation failed: reimported.subShapeCount(ofType: .face) == origFaces",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP::compound",
+    "bridge_function": "OCCTExportBREPWithTriangles, OCCTImportBREP",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools round trip: volume 1392.699082, 11/26"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools round trip: volume 1392.699082, 11/26",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportBREP: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTImportBREP|",
+      "red": "StressFormatRoundTripTests.swift:71 Expectation failed: reimported.subShapeCount(ofType: .face) == origFaces",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP String::box",
+    "bridge_function": "OCCTShapeToBREPString, OCCTShapeFromBREPString",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools string round trip: volume 1000, same face count"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools string round trip: volume 1000, same face count",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFromBREPString: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTShapeFromBREPString|",
+      "red": "StressFormatRoundTripTests.swift:108 Expectation failed: restored.subShapeCount(ofType: .face) == origFaces",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP String::cylinder",
+    "bridge_function": "OCCTShapeToBREPString, OCCTShapeFromBREPString",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools string round trip: volume 785.3981634, same face count"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools string round trip: volume 785.3981634, same face count",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFromBREPString: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTShapeFromBREPString|",
+      "red": "StressFormatRoundTripTests.swift:108 Expectation failed: restored.subShapeCount(ofType: .face) == origFaces",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP String::sphere",
+    "bridge_function": "OCCTShapeToBREPString, OCCTShapeFromBREPString",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools string round trip: volume 523.5987756, same face count"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools string round trip: volume 523.5987756, same face count",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFromBREPString returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeFromBREPString|",
+      "red": "StressFormatRoundTripTests.swift:101 Expectation failed: Bool(false)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP String::cone",
+    "bridge_function": "OCCTShapeToBREPString, OCCTShapeFromBREPString",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools string round trip: volume 408.407045, same face count"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools string round trip: volume 408.407045, same face count",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFromBREPString: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTShapeFromBREPString|",
+      "red": "StressFormatRoundTripTests.swift:108 Expectation failed: restored.subShapeCount(ofType: .face) == origFaces",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP String::torus",
+    "bridge_function": "OCCTShapeToBREPString, OCCTShapeFromBREPString",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools string round trip: volume 1776.528792, same face count"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools string round trip: volume 1776.528792, same face count",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFromBREPString returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeFromBREPString|",
+      "red": "StressFormatRoundTripTests.swift:101 Expectation failed: Bool(false)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP String::filletedBoxShape",
+    "bridge_function": "OCCTShapeToBREPString, OCCTShapeFromBREPString",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools string round trip: volume 975.5870139, same face count"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools string round trip: volume 975.5870139, same face count",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFromBREPString: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTShapeFromBREPString|",
+      "red": "StressFormatRoundTripTests.swift:108 Expectation failed: restored.subShapeCount(ofType: .face) == origFaces",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP String::drilledPlateShape",
+    "bridge_function": "OCCTShapeToBREPString, OCCTShapeFromBREPString",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools string round trip: volume 12358.62833, same face count"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools string round trip: volume 12358.62833, same face count",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFromBREPString: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTShapeFromBREPString|",
+      "red": "StressFormatRoundTripTests.swift:108 Expectation failed: restored.subShapeCount(ofType: .face) == origFaces",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip BREP String::compound",
+    "bridge_function": "OCCTShapeToBREPString, OCCTShapeFromBREPString",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepTools string round trip: volume 1392.699082, same face count"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepTools string round trip: volume 1392.699082, same face count",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFromBREPString: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTShapeFromBREPString|",
+      "red": "StressFormatRoundTripTests.swift:108 Expectation failed: restored.subShapeCount(ofType: .face) == origFaces",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]
