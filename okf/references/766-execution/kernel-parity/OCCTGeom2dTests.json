@@ -12107,5 +12107,284 @@
       "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
       "rewritten": ""
     }
+  },
+  {
+    "test_name": "Curve2D *Properties views keep their parent alive (#965)::every Curve2D *Properties accessor keeps its parent alive",
+    "bridge_function": "Curve2D.circleProperties (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "parentAlive": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "parentAlive": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "view built on a different owner, so the parent is released",
+      "red": "Issue965Curve2DPropertyLifetimeTests.swift:54:17: Expectation failed: result.parentAlive",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D *Properties views keep their parent alive (#965)::a view outliving its parent still reads the right values",
+    "bridge_function": "Curve2D.circleProperties (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radius": 7,
+        "center": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radius": 7,
+        "center": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "view built on a different owner",
+      "red": "Issue965Curve2DPropertyLifetimeTests.swift:64:9: Expectation failed: result.parentAlive",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D *Properties views keep their parent alive (#965)::a view outliving its parent survives 400 intervening allocations",
+    "bridge_function": "Curve2D.circleProperties (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radius": 7
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radius": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "view built on a different owner",
+      "red": "Issue965Curve2DPropertyLifetimeTests.swift:76:9: Expectation failed: result.view.radius == Self.radius",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D *Properties views keep their parent alive (#965)::a setter called through a view is visible on the parent",
+    "bridge_function": "OCCTCurve2DCircleSetRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radius": 9
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radius": 9
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "setRadius reports success without setting",
+      "red": "Issue965Curve2DPropertyLifetimeTests.swift:86:9: Expectation failed: curve.circleProperties.radius == 9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D conversion and bisector parameters are live (#999)::Each parameterisation gives a structurally different B-spline",
+    "bridge_function": "OCCTCurve2DToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "tangentHalfAngle": [
+          2,
+          6
+        ],
+        "tangentHalfAngle4": [
+          2,
+          8
+        ],
+        "quasiAngular": [
+          6,
+          6
+        ],
+        "rationalC1": [
+          4,
+          12
+        ],
+        "polynomial": [
+          7,
+          7
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tangentHalfAngle": [
+          2,
+          6
+        ],
+        "tangentHalfAngle4": [
+          2,
+          8
+        ],
+        "quasiAngular": [
+          6,
+          6
+        ],
+        "rationalC1": [
+          4,
+          12
+        ],
+        "polynomial": [
+          7,
+          7
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "requested parameterisation ignored (always TgtThetaOver2)",
+      "red": "Issue999Curve2DParametersTests.swift:30:9: Expectation failed: shape(.tangentHalfAngle4).map { $0 == (2, 8) } == true",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D conversion and bisector parameters are live (#999)::Every parameterisation but polynomial reproduces the circle exactly",
+    "bridge_function": "OCCTCurve2DToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "exact": "< 1e-9",
+        "polynomial": "1e-9 < e < 1e-3"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "exact": "< 1e-9",
+        "polynomial": "1e-9 < e < 1e-3"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "requested parameterisation ignored",
+      "red": "Issue999Curve2DParametersTests.swift:66:13: Expectation failed: e > 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D conversion and bisector parameters are live (#999)::A parameterisation OCCT rejects for this arc returns nil rather than a wrong curve",
+    "bridge_function": "OCCTCurve2DToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "tangentHalfAngle1": "nil",
+        "tangentHalfAngle2": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "TgtThetaOver2_1": "throws",
+        "TgtThetaOver2_2": "throws"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "requested parameterisation ignored",
+      "red": "Issue999Curve2DParametersTests.swift:80:9: Expectation failed: circle.toBSpline(.tangentHalfAngle1) == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D conversion and bisector parameters are live (#999)::The trimming distance bounds the bisector, and a longer one extends it",
+    "bridge_function": "OCCTCurve2DBisectorPC",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "spans": "strictly increasing",
+        "maxDistance 1": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "span 10": 15.9999999992,
+        "span 100": 56.0000000009,
+        "span 500": 126.237870704,
+        "span 5000": 399.919991999,
+        "1": "empty"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "maxDistance ignored (always 500)",
+      "red": "Issue999Curve2DParametersTests.swift:99:13: Expectation failed: span > previousSpan",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
   }
 ]
