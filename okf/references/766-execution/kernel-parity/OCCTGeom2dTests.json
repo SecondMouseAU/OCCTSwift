@@ -173,7 +173,7 @@
     "status": "PASS",
     "evidence": {
       "injection": "return the left operand",
-      "red": "GeneralTransform2DTests.swift:31:9: Expectation failed: zip(r.matrix, [1.0, 0, 0, 1]).allSatisfy { abs($0 - $1) < 1e-12 }",
+      "red": "GeneralTransform2DTests.swift:28:9: Expectation failed: zip(r.matrix, [1.0, 0, 0, 1]).allSatisfy { abs($0 - $1) < 1e-12 }",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
       "rewritten": "`let _ = a.multiplied(by: b)`, no assertion"
@@ -211,7 +211,7 @@
     "status": "PASS",
     "evidence": {
       "injection": "return the input uninverted",
-      "red": "GeneralTransform2DTests.swift:41:9: Expectation failed: zip(inv.matrix, [1.0, 0, 0, 0.5]).allSatisfy { abs($0 - $1) < 1e-12 }",
+      "red": "GeneralTransform2DTests.swift:38:9: Expectation failed: zip(inv.matrix, [1.0, 0, 0, 0.5]).allSatisfy { abs($0 - $1) < 1e-12 }",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
       "rewritten": "`inverted() != nil` only"
@@ -245,7 +245,7 @@
     "status": "PASS",
     "evidence": {
       "injection": "result y + 1",
-      "red": "GeneralTransform2DTests.swift:54:9: Expectation failed: abs(p.y - 2.0) < 1e-10",
+      "red": "GeneralTransform2DTests.swift:47:9: Expectation failed: abs(p.y - 2.0) < 1e-10",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
       "rewritten": "checked only the unchanged x; now y too"
@@ -273,7 +273,7 @@
     "status": "PASS",
     "evidence": {
       "injection": "replace a zero direction with (1, 0)",
-      "red": "GeneralTransform2DTests.swift:64:9: Expectation failed: GeneralTransform2D.affinity(",
+      "red": "GeneralTransform2DTests.swift:57:9: Expectation failed: GeneralTransform2D.affinity(",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
       "rewritten": ""
@@ -301,7 +301,7 @@
     "status": "PASS",
     "evidence": {
       "injection": "replace a zero direction with (1, 0)",
-      "red": "GeneralTransform2DTests.swift:75:9: Expectation failed: GeneralTransform2D.affinity(",
+      "red": "GeneralTransform2DTests.swift:68:9: Expectation failed: GeneralTransform2D.affinity(",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
       "rewritten": ""

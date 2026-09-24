@@ -16,16 +16,13 @@ struct GeneralTransform2DTests {
         #expect(zip(m, [1.0, 0, 0, 2]).allSatisfy { abs($0 - $1) < 1e-12 })
     }
 
-    @Test func multiply() {
-        guard
-            let a = GeneralTransform2D.affinity(
-                axisOrigin: .zero, axisDirection: SIMD2(1, 0), ratio: 2.0),
-            let b = GeneralTransform2D.affinity(
-                axisOrigin: .zero, axisDirection: SIMD2(1, 0), ratio: 0.5)
-        else {
-            Issue.record("affinity construction failed")
-            return
-        }
+    @Test func multiply() throws {
+        let a = try #require(
+            GeneralTransform2D.affinity(
+                axisOrigin: .zero, axisDirection: SIMD2(1, 0), ratio: 2.0))
+        let b = try #require(
+            GeneralTransform2D.affinity(
+                axisOrigin: .zero, axisDirection: SIMD2(1, 0), ratio: 0.5))
         // #1979: the product was discarded. Ratio 2 then 0.5 composes to the identity.
         let r = a.multiplied(by: b)
         #expect(zip(r.matrix, [1.0, 0, 0, 1]).allSatisfy { abs($0 - $1) < 1e-12 })
@@ -41,14 +38,10 @@ struct GeneralTransform2DTests {
         #expect(zip(inv.matrix, [1.0, 0, 0, 0.5]).allSatisfy { abs($0 - $1) < 1e-12 })
     }
 
-    @Test func transformPoint() {
-        guard
-            let gt = GeneralTransform2D.affinity(
-                axisOrigin: .zero, axisDirection: SIMD2(1, 0), ratio: 2.0)
-        else {
-            Issue.record("affinity construction failed")
-            return
-        }
+    @Test func transformPoint() throws {
+        let gt = try #require(
+            GeneralTransform2D.affinity(
+                axisOrigin: .zero, axisDirection: SIMD2(1, 0), ratio: 2.0))
         let p = gt.transformPoint(SIMD2(1.0, 1.0))
         #expect(abs(p.x - 1.0) < 1e-10)  // x unchanged
         #expect(abs(p.y - 2.0) < 1e-10)  // #1979: y doubled; x alone passed an identity transform
