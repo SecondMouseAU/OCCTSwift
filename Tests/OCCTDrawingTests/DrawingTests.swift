@@ -12,15 +12,16 @@ struct DrawingTests {
     /// now pin the unique edge count and the 2D extent HLRBRep_Algo produces for the same shape
     /// and view (`Shape.box` is centred on the origin), measured in
     /// Scripts/repro/766-drawing-core-transform/transcript.txt.
+    ///
+    /// Throws through `#require` when the category or its bounding box is nil, so the calling test
+    /// stops at the first missing shape instead of recording it and carrying on to the next view.
     private func expectEdges(
         _ shape: Shape?, count: Int, min: SIMD2<Double>, max: SIMD2<Double>,
         _ what: String
-    ) {
-        guard let shape, let bb = shape.boundingBox else {
-            Issue.record("\(what): no edges")
-            return
-        }
-        #expect(shape.edges().count == count, "\(what): \(shape.edges().count) edges")
+    ) throws {
+        let found = try #require(shape, "\(what): no edges")
+        let bb = try #require(found.boundingBox, "\(what): edges have no bounding box")
+        #expect(found.edges().count == count, "\(what): \(found.edges().count) edges")
         #expect(
             simd_length(SIMD2(bb.min.x, bb.min.y) - min) < 1e-6
                 && simd_length(SIMD2(bb.max.x, bb.max.y) - max) < 1e-6,
@@ -28,40 +29,40 @@ struct DrawingTests {
     }
 
     @Test("Create 2D projection of box")
-    func project2DBox() {
+    func project2DBox() throws {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         guard let drawing = Drawing.project(box, direction: SIMD3(0, 0, 1)) else {
             Issue.record("Failed to create projection")
             return
         }
-        expectEdges(
+        try expectEdges(
             drawing.visibleEdges, count: 4,
             min: SIMD2(-5.0000001, -5.0000001), max: SIMD2(5.0000001, 5.0000001), "top visible")
     }
 
     @Test("Get visible edges from projection")
-    func visibleEdges() {
+    func visibleEdges() throws {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         guard let drawing = Drawing.isometricView(of: box) else {
             Issue.record("Failed to create projection")
             return
         }
         // Isometric: the three near faces show nine visible edges, the hexagonal silhouette.
-        expectEdges(
+        try expectEdges(
             drawing.visibleEdges, count: 9,
             min: SIMD2(-7.07106791, -8.16496591), max: SIMD2(7.07106791, 8.16496591),
             "iso visible")
     }
 
     @Test("Get hidden edges from isometric view")
-    func hiddenEdgesIsometric() {
+    func hiddenEdgesIsometric() throws {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         guard let drawing = Drawing.isometricView(of: box) else {
             Issue.record("Failed to create isometric view")
             return
         }
         // Isometric view of box: the three edges meeting at the far corner are hidden.
-        expectEdges(
+        try expectEdges(
             drawing.hiddenEdges, count: 3,
             min: SIMD2(-7.07106791, -4.082483), max: SIMD2(7.07106791, 8.16496591),
             "iso hidden")
@@ -114,18 +115,18 @@ struct DrawingTests {
     }
 
     @Test("Standard views")
-    func standardViews() {
+    func standardViews() throws {
         let box = Shape.box(width: 10, height: 20, depth: 30)!
 
         // Each view is the box's rectangle in that view's gp_Ax2 frame: 10 x 20 from the top,
         // 30 x 10 from the front, 30 x 20 from the side.
-        expectEdges(
+        try expectEdges(
             Drawing.topView(of: box)?.visibleEdges, count: 4,
             min: SIMD2(-5.0000001, -10.0000001), max: SIMD2(5.0000001, 10.0000001), "top")
-        expectEdges(
+        try expectEdges(
             Drawing.frontView(of: box)?.visibleEdges, count: 4,
             min: SIMD2(-15.0000001, -5.0000001), max: SIMD2(15.0000001, 5.0000001), "front")
-        expectEdges(
+        try expectEdges(
             Drawing.sideView(of: box)?.visibleEdges, count: 4,
             min: SIMD2(-15.0000001, -10.0000001), max: SIMD2(15.0000001, 10.0000001), "side")
     }
