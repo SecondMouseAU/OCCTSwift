@@ -1,0 +1,8 @@
+projectWireOntoBox: IsDone=1
+projectWireOntoBox: edges=4 bbox=(1.9999999, 1.9999999, -2.5000001)..(5.0000001, 5.0000001, 2.5000001)
+projectEdgeOntoSphere: IsDone=1
+projectEdgeOntoSphere: edges=4 bbox=(-3.0000001, -1.00000001e-07, -10.0000001)..(3.0000001, 1.00000001e-07, 10.0000001)
+diameter r=8: value=16 valid=1 circleRadius=8 anchor=(8, 0, 0) endpointDistance=16
+diameter r=8: after SetCustomValue(99) value=99
+diameter r=5: value=10 valid=1 circleRadius=5 anchor=(5, 0, 0) endpointDistance=10
+diameter r=5: after SetCustomValue(99) value=99

@@ -1,0 +1,10 @@
+pointMirror: (1, 2, 3) -> (-1, -2, -3)
+planeMirror: (1, 2, 3) -> (1, 2, -3)
+rotation90: (1, 0, 0) -> (1.1102230246251565e-16, 1, 0)
+scaleBy2: (1, 2, 3) -> (2, 4, 6)
+translationVector: (1, 2, 3) -> (11, 22, 33)
+translationPoints: (1, 1, 1) -> (6, 6, 6)
+axisMirror: (1, 2, 3) -> (-1, -2, 3)
+sinZero (d = 1): done=1 infinite=0 n=2 roots=[ 0 3.1415926535897931 ]
+cosHalf (c = 1, e = -0.5): done=1 infinite=0 n=2 roots=[ 1.0471975511965976 5.2359877559829888 ]
+infiniteRoots (all zero): done=1 infinite=1

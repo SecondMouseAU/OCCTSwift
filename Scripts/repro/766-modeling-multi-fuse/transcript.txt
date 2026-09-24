@@ -1,0 +1,3 @@
+fuseThreeBoxes: type=0 solids=6 volume=2000
+fuseFourSpheres: type=0 solids=13 volume=1269.522908
+fuseNonOverlapping: type=0 solids=2 volume=250
