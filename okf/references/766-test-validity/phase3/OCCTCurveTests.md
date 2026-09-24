@@ -253,3 +253,12 @@ Rows appended per PR, each run red under the named injection and green once it w
 | Bezier Curve 3D Completions | IsPeriodic always false for Bezier | `OCCTCurve3DBezierIsPeriodic` | IsPeriodic() negated | `BezierCurve3DCompletionTests.swift:73 !c.bezierIsPeriodic` | ✅ | MATCH |  |
 | Bezier Curve 3D Completions | Continuity is CN for Bezier | `OCCTCurve3DBezierContinuity` | Continuity() - 1 | `BezierCurve3DCompletionTests.swift:79 c.bezierContinuity == 6` | ✅ | MATCH |  |
 | Bezier Curve 3D Completions | IsCN always true for Bezier | `OCCTCurve3DBezierIsCN` | IsCN() negated | `BezierCurve3DCompletionTests.swift:85 c.bezierIsCN(0)` | ✅ | MATCH |  |
+| Bezier Curve Manipulation Tests | degreeAndPoleCount | `OCCTCurve3DBezierDegree` | Degree() + 1 | `BezierCurveManipulationTests.swift:29 bez.bezier.degree == 3` | ✅ | MATCH |  |
+| Bezier Curve Manipulation Tests | isRational | `OCCTCurve3DBezierIsRational` | IsRational() negated | `BezierCurveManipulationTests.swift:35 !bez.bezier.isRational` | ✅ | MATCH |  |
+| Bezier Curve Manipulation Tests | getPole | `OCCTCurve3DBezierGetPole` | index + 1 read | `BezierCurveManipulationTests.swift:41 Self.near(bez.bezier.pole(at: i + 1), p)` | ✅ | MATCH | Strengthened: all four poles, not pole 1 alone |
+| Bezier Curve Manipulation Tests | setPole | `OCCTCurve3DBezierSetPole` | SetPole skipped | `BezierCurveManipulationTests.swift:48 Self.near(bez.bezier.pole(at: 2), SIMD3(3, 8, 0))` | ✅ | MATCH |  |
+| Bezier Curve Manipulation Tests | segment | `OCCTCurve3DBezierSegment` | Segment skipped | `BezierCurveManipulationTests.swift:58 Self.near(bez.bezier.pole(at: 1), SIMD3(2.40625, 2.8125, 0))` | ✅ | MATCH | Rewritten: checked only the returned Bool |
+| Bezier Curve Manipulation Tests | increaseDegree | `OCCTCurve3DBezierIncreaseDegree` | Increase skipped | `BezierCurveManipulationTests.swift:68 bez.bezier.degree == 5` | ✅ | MATCH |  |
+| Bezier Curve Manipulation Tests | insertPoleAfter | `OCCTCurve3DBezierInsertPoleAfter` | InsertPoleAfter skipped | `BezierCurveManipulationTests.swift:78 bez.bezier.poleCount == 5` | ✅ | MATCH |  |
+| Bezier Curve Manipulation Tests | removePole | `OCCTCurve3DBezierRemovePole` | RemovePole skipped | `BezierCurveManipulationTests.swift:91 bez.bezier.poleCount == 4` | ✅ | MATCH |  |
+| Bezier Curve Manipulation Tests | setWeight | `OCCTCurve3DBezierSetWeight` | SetWeight skipped | `BezierCurveManipulationTests.swift:98 bez.bezier.isRational` | ✅ | MATCH |  |
