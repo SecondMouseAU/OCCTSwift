@@ -1,0 +1,2 @@
+A two coincident rectangles: hasErrors=0 isNull=0 shapeType=0 solids=0 volume=0
+B six faces of a 10 box: hasErrors=0 isNull=0 shapeType=2 solids=1 volume=999.99999999999977

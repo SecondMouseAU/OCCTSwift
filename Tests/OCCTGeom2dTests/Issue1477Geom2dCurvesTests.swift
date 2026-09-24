@@ -38,7 +38,7 @@ struct Issue1477Geom2dCurvesTests {
     }
 
     @Test("returned count never exceeds a small buffer's capacity, and matches what was written")
-    func returnedCountMatchesWritten() {
+    func returnedCountMatchesWritten() throws {
         let curve = manySegmentCurve()
 
         // First, measure the true (unclipped) piece count with a generously sized buffer, so the
@@ -57,10 +57,11 @@ struct Issue1477Geom2dCurvesTests {
         // The fixture must genuinely need more than the undersized buffer below, or this test
         // proves nothing.
         let maxCurves: Int32 = 2
-        #expect(
+        try #require(
             fullCount > maxCurves,
             "fixture must produce more pieces (\(fullCount)) than the undersized buffer (\(maxCurves)) holds"
         )
+        #expect(fullCount == 11)  // #1979: Geom2dConvert_ApproxArcsSegments' own count
 
         // Now request into a deliberately undersized buffer.
         var smallBuffer = [OCCTCurve2DRef?](repeating: nil, count: Int(maxCurves))
@@ -110,10 +111,13 @@ struct Issue1477Geom2dCurvesTests {
     }
 
     @Test("join still succeeds for genuinely continuous curves")
-    func joinSucceedsOnContinuousCurves() {
+    func joinSucceedsOnContinuousCurves() throws {
         let c1 = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(5, 5))!
         let c2 = Curve2D.segment(from: SIMD2(5, 5), to: SIMD2(10, 0))!
-        let joined = Curve2D.join([c1, c2])
-        #expect(joined != nil)
+        // #1979: `!= nil` only. The joined B-spline runs (0, 0) to (10, 0), as
+        // Geom2dConvert_CompCurveToBSplineCurve gives (Scripts/repro/766-geom2d-issue-regressions-a/).
+        let joined = try #require(Curve2D.join([c1, c2]))
+        #expect(simd_distance(joined.startPoint, SIMD2(0, 0)) < 1e-9)
+        #expect(simd_distance(joined.endPoint, SIMD2(10, 0)) < 1e-9)
     }
 }
