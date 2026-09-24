@@ -133,17 +133,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "set": true,
-        "rgb": [
-          1,
-          0
-        ]
+        "is_set": true,
+        "red": 1.0,
+        "green": 0.0
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "set": true
+        "is_set": true,
+        "red": 1.0,
+        "green": 0.0
       }
     },
     "comparison": {
@@ -151,7 +151,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xde/"
+    "source": "Same quantities on both sides. Bridge: isShapeColorSet true, and shapeColor's red within 1e-5 of 1.0 and green within 1e-5 of 0.0. The test asserts red and green and never blue or alpha, which is why the record holds two channels. Kernel: XCAFDoc_ColorTool IsSet true, and GetColor after SetColor(1, 0, 0, alpha 1) read back rgba (1, 0, 0, 1) exactly (printed %.17g); blue 0 and alpha 1 are not compared because the test does not assert them. Kernel values are from the supplementary probe, which runs the test's own scenario through the XCAFDoc_ColorTool / XCAFDoc_LayerTool calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-color-layer-parity/"
   },
   {
     "test_name": "XDE ColorTool by Shape::Label visibility",
@@ -205,7 +206,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xde/"
+    "source": "Same quantity on both sides: rgba, compared within the test's 1e-5. Bridge: shapeColor's channels were within 1e-5 of 0.2, 0.4, 0.6 and 0.5. Kernel: GetColor read back (0.20000000298023224, 0.40000000596046448, 0.60000002384185791, 0.5) at %.17g, because Quantity_Color stores single-precision floats; each is within 2.4e-8 of the value set, so both sides are recorded as the value set. Kernel values are from the supplementary probe, which runs the test's own scenario through the XCAFDoc_ColorTool / XCAFDoc_LayerTool calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-color-layer-parity/"
   },
   {
     "test_name": "XDE ColorTool by Shape::Shape color round-trips full opacity (#763 regression guard)",
@@ -219,7 +221,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "alpha": 1
+        "alpha": 1.0
       }
     },
     "comparison": {
@@ -227,7 +229,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xde/"
+    "source": "Same quantity on both sides: alpha, as a double. Bridge: shapeColor's alpha was within 1e-5 of 1.0 for an opaque colour. Kernel: GetColor after SetColor(1, 0, 0, alpha 1) read back alpha 1 exactly (printed %.17g). Kernel values are from the supplementary probe, which runs the test's own scenario through the XCAFDoc_ColorTool / XCAFDoc_LayerTool calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-color-layer-parity/"
   },
   {
     "test_name": "XDE LayerTool Expansion::SetLayer and IsLayerSet",
@@ -305,13 +308,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "all_layers": true
+        "layers_set": 19,
+        "layers_reported": 19
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "get_layers_uncapped": true
+        "layers_set": 19,
+        "layers_reported": 19
       }
     },
     "comparison": {
@@ -319,6 +324,7 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xde/"
+    "source": "Same quantities on both sides. Bridge: after setting 16 + 3 layers on the node the test observed layers.count == 19 (OCCTDocumentGetLabelLayers reports the true total even past its 16-entry buffer, #1563). Kernel: XCAFDoc_LayerTool::GetLayers of the label returned a sequence of 19. Kernel values are from the supplementary probe, which runs the test's own scenario through the XCAFDoc_ColorTool / XCAFDoc_LayerTool calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-color-layer-parity/"
   }
 ]

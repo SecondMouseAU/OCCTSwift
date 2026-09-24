@@ -108,10 +108,10 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
-| `setAndGetColor` | `OCCTDocumentIsShapeColorSet` returns false | :19 Expectation failed: doc.isShapeColorSet(box) | passed | `OCCTDocumentIsShapeColorSet` | PASS: set |
+| `setAndGetColor` | `OCCTDocumentIsShapeColorSet` returns false | :19 Expectation failed: doc.isShapeColorSet(box) | passed | `OCCTDocumentIsShapeColorSet` | PASS: colour set, red 1.0 and green 0.0 on both sides (the test asserts red and green only) |
 | `visibility` | `OCCTDocumentSetLabelVisibility` returns without setting | :39 Expectation failed: !node.isVisible | passed | `OCCTDocumentSetLabelVisibility` | PASS: false, true |
-| `shapeColorPreservesAlpha` | `OCCTDocumentSetShapeColorRGBA` stores alpha 1 | :69 Expectation failed: abs(got.alpha - 0.5) < 1e-5 | passed | `OCCTDocumentGetShapeColor` | PASS: (0.2, 0.4, 0.6, 0.5) |
-| `shapeColorOpaqueUnaffected` | `OCCTDocumentSetShapeColorRGBA` stores alpha 0.5 | :89 Expectation failed: abs(got.alpha - 1.0) < 1e-5 | passed | `OCCTDocumentGetShapeColor` | PASS: 1 |
+| `shapeColorPreservesAlpha` | `OCCTDocumentSetShapeColorRGBA` stores alpha 1 | :69 Expectation failed: abs(got.alpha - 0.5) < 1e-5 | passed | `OCCTDocumentGetShapeColor` | PASS: rgba (0.2, 0.4, 0.6, 0.5) within 1e-5 on both sides (kernel stores single-precision floats) |
+| `shapeColorOpaqueUnaffected` | `OCCTDocumentSetShapeColorRGBA` stores alpha 0.5 | :89 Expectation failed: abs(got.alpha - 1.0) < 1e-5 | passed | `OCCTDocumentGetShapeColor` | PASS: alpha 1.0 (a double on both sides) |
 
 ### `XDELayerToolExpansionTests.swift`
 
@@ -120,4 +120,4 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `setAndCheck` | `OCCTDocumentIsLayerSet` returns false | :20 Expectation failed: node.isLayerSet("Layer1") | passed | `OCCTDocumentIsLayerSet` | PASS: true |
 | `getLayers` | `OCCTDocumentGetLabelLayers` answers 0 | :38 Expectation failed: layers.count == 1 | passed | `OCCTDocumentGetLabelLayers` | PASS: 1, TestLayer |
 | `findAndVisibility` | `OCCTDocumentGetLayerVisibility` returns true | :62 Expectation failed: !doc.layerVisibility(layerLabelId: layerLabelId) | passed | `OCCTDocumentGetLayerVisibility` | PASS: found; false, true |
-| `getLayersBeyondBufferCap` | `OCCTDocumentGetLabelLayers` answers 0 | :86 Expectation failed: layers.count == extraCount | passed | `OCCTDocumentGetLabelLayers` | PASS: the kernel list has no cap |
+| `getLayersBeyondBufferCap` | `OCCTDocumentGetLabelLayers` answers 0 | :86 Expectation failed: layers.count == extraCount | passed | `OCCTDocumentGetLabelLayers` | PASS: 19 layers set and 19 reported on both sides (no 16-entry cap) |
