@@ -7217,5 +7217,254 @@
     "green": "passed",
     "probe": "Scripts/repro/766-curve-join-length-split/transcript.txt",
     "note": "Rewritten: count >= 1 inside `if let`"
+  },
+  {
+    "test_name": "Curve3D Operations Tests::Trim circle to quarter arc",
+    "test_file": "Tests/OCCTCurveTests/Curve3DOperationsTests.swift",
+    "bridge_function": "OCCTCurve3DTrim",
+    "bridge_output": {
+      "type": "value",
+      "data": "(5,0,0) -> (0,5,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_TrimmedCurve [0, pi/2]: (5,0,0) -> (3.1e-16, 5, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trimmed to half the requested range",
+    "red": "Curve3DOperationsTests.swift:24 simd_distance(end, SIMD3(0, 5, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-operations/transcript.txt",
+    "note": "Strengthened: whole end points"
+  },
+  {
+    "test_name": "Curve3D Operations Tests::Reverse segment swaps endpoints",
+    "test_file": "Tests/OCCTCurveTests/Curve3DOperationsTests.swift",
+    "bridge_function": "OCCTCurve3DReversed",
+    "bridge_output": {
+      "type": "value",
+      "data": "(10,5,3) -> (0,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Reversed: (10, 5, 3.0000000000000004) -> (0,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "copy returned unreversed",
+    "red": "Curve3DOperationsTests.swift:34 simd_distance(revStart, SIMD3(10, 5, 3)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-operations/transcript.txt",
+    "note": "Strengthened: x only before"
+  },
+  {
+    "test_name": "Curve3D Operations Tests::Translate segment",
+    "test_file": "Tests/OCCTCurveTests/Curve3DOperationsTests.swift",
+    "bridge_function": "OCCTCurve3DTranslate",
+    "bridge_output": {
+      "type": "value",
+      "data": "(5,5,5) -> (15,5,5)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Transformed: (5,5,5) -> (15,5,5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "dz + 1",
+    "red": "Curve3DOperationsTests.swift:43 simd_distance(start, SIMD3(5, 5, 5)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-operations/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Operations Tests::Rotate segment around Z axis",
+    "test_file": "Tests/OCCTCurveTests/Curve3DOperationsTests.swift",
+    "bridge_function": "OCCTCurve3DRotate",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,5,0) -> (0,10,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Transformed: (5.6e-16, 5, 0) -> (1.1e-15, 10, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "angle x 1.01",
+    "red": "Curve3DOperationsTests.swift:53 simd_distance(start, SIMD3(0, 5, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-operations/transcript.txt",
+    "note": "Rewritten: tolerance 0.01 passed a 1% rotation error"
+  },
+  {
+    "test_name": "Curve3D Operations Tests::Scale segment",
+    "test_file": "Tests/OCCTCurveTests/Curve3DOperationsTests.swift",
+    "bridge_function": "OCCTCurve3DScale",
+    "bridge_output": {
+      "type": "value",
+      "data": "(3,0,0) -> (6,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Transformed: (3,0,0) -> (6,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "factor + 1",
+    "red": "Curve3DOperationsTests.swift:63 abs(start.x - 3) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-operations/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Operations Tests::Mirror across XY plane",
+    "test_file": "Tests/OCCTCurveTests/Curve3DOperationsTests.swift",
+    "bridge_function": "OCCTCurve3DMirrorPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,-1) -> (10,0,-1)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Transformed: (0,0,-1) -> (10,0,-1)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "plane moved 0.5 in z",
+    "red": "Curve3DOperationsTests.swift:71 simd_distance(mirrored.startPoint, SIMD3(0, 0, -1)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-operations/transcript.txt",
+    "note": "Strengthened: z only before"
+  },
+  {
+    "test_name": "Curve3D Operations Tests::Mirror across a point",
+    "test_file": "Tests/OCCTCurveTests/Curve3DOperationsTests.swift",
+    "bridge_function": "OCCTCurve3DMirrorPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "(-1,0,0) -> (-2,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Transformed: (-1,0,0) -> (-2,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "centre moved 1 in x",
+    "red": "Curve3DOperationsTests.swift:85 abs(start.x + 1) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-operations/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Operations Tests::Mirror across an axis",
+    "test_file": "Tests/OCCTCurveTests/Curve3DOperationsTests.swift",
+    "bridge_function": "OCCTCurve3DMirrorAxis",
+    "bridge_output": {
+      "type": "value",
+      "data": "(1,-1,0) -> (2,-1,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Transformed: (1,-1,0) -> (2,-1,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "axis moved 0.5 in y",
+    "red": "Curve3DOperationsTests.swift:101 abs(start.y + 1) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-operations/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Operations Tests::Length of segment",
+    "test_file": "Tests/OCCTCurveTests/Curve3DOperationsTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength",
+    "bridge_output": {
+      "type": "value",
+      "data": "5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length = 5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "length x 1.0001",
+    "red": "Curve3DOperationsTests.swift:111 len == 5.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-operations/transcript.txt",
+    "note": "Rewritten: tolerance 0.01"
+  },
+  {
+    "test_name": "Curve3D Operations Tests::Length of circle",
+    "test_file": "Tests/OCCTCurveTests/Curve3DOperationsTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength",
+    "bridge_output": {
+      "type": "value",
+      "data": "10 pi"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "31.415926535897931"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "length x 1.0001",
+    "red": "Curve3DOperationsTests.swift:119 abs((len ?? -1) - 2 * .pi * radius) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-operations/transcript.txt",
+    "note": "Rewritten: tolerance 0.01"
+  },
+  {
+    "test_name": "Curve3D Operations Tests::Partial length",
+    "test_file": "Tests/OCCTCurveTests/Curve3DOperationsTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Length(0, 5) = 5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "length x 1.0001",
+    "red": "Curve3DOperationsTests.swift:127 halfLen == 5.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-operations/transcript.txt",
+    "note": "Rewritten: tolerance 0.01"
   }
 ]
