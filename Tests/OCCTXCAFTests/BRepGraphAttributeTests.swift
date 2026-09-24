@@ -89,8 +89,24 @@ struct BRepGraphAttributeTests {
         }
         let encoder = GraphSnapshot.canonicalEncoder()
         let a = try encoder.encode(graph.attributes)
-        let b = try encoder.encode(graph.attributes)
+        // Encoding one store twice compared a dictionary with itself, which iterates identically
+        // with or without the sort, so it could not fail (#766). A second store holding the same
+        // attributes inserted in reverse order has its own storage, and the pinned bytes fix the
+        // node order and the key order the sort and `.sortedKeys` promise.
+        var reversed = NodeAttributeStore()
+        for i in (0..<graph.faceCount).reversed() {
+            reversed.set("idx", .int(i), for: BRepGraph.NodeRef(kind: .face, index: i))
+        }
+        let b = try encoder.encode(reversed)
         #expect(a == b)
+        let expected =
+            #"[{"attrs":[{"key":"idx","value":{"int":{"_0":0}}}],"node":{"index":0,"kind":2}},"#
+            + #"{"attrs":[{"key":"idx","value":{"int":{"_0":1}}}],"node":{"index":1,"kind":2}},"#
+            + #"{"attrs":[{"key":"idx","value":{"int":{"_0":2}}}],"node":{"index":2,"kind":2}},"#
+            + #"{"attrs":[{"key":"idx","value":{"int":{"_0":3}}}],"node":{"index":3,"kind":2}},"#
+            + #"{"attrs":[{"key":"idx","value":{"int":{"_0":4}}}],"node":{"index":4,"kind":2}},"#
+            + #"{"attrs":[{"key":"idx","value":{"int":{"_0":5}}}],"node":{"index":5,"kind":2}}]"#
+        #expect(String(decoding: a, as: UTF8.self) == expected)
     }
 
     /// NodeRef indexing is deterministic across rebuilds of the same BREP, the property the

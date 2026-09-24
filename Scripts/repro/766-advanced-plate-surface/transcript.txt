@@ -1,0 +1,7 @@
+platePointsAdvancedG0: face=ok area=272.86803196188612 maxPointDistance=1.12e-07
+platePointsMixedOrders(unrefused): face=ok area=270.88137743005177 maxPointDistance=1.14e-07
+platePointsCustomParams: face=ok area=137.30983411355206 maxPointDistance=0.000169
+platePointsTooFew(unrefused): threw Geom_RectangularTrimmedSurface::V1==V2
+plateAdvancedArea: face=ok area=161.0299905620775 maxPointDistance=1.52e-08
+plateMixedPointsAndCurves: face=ok area=266.0526366309989 maxPointDistance=0.000801
+plateMixedPointsOnly: face=ok area=244.4080195083624 maxPointDistance=1.78e-15

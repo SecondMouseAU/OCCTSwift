@@ -1,0 +1,4 @@
+IsDone=1 NbExt=2
+ext 1: SquareDistance=25 dist=5 point=(3.0616169978683831e-16, 0, 5) |p|=5 u=0 v=1.5707963267948966
+ext 2: SquareDistance=225 dist=15 point=(3.0616169978683831e-16, 0, -5) |p|=5 u=0 v=-1.5707963267948966
+pointSurfaceDistance: min distance=5
