@@ -284,3 +284,26 @@ green once it was reverted. Probes and transcripts are under `Scripts/repro/766-
 | sampleEdgeWithoutCurve | OCCTBRepGraphSampleEdgeCurve | Sampling guard | Swift ignores bridge result count | ✅ `points.isEmpty` | ✅ | Original also red |
 | sampleZeroCount | OCCTBRepGraphSampleEdgeCurve | Sampling guard | zero count returns one point | ✅ `points.isEmpty` | ✅ | Original also red |
 | sampleSphereEdge | OCCTBRepGraphSampleEdgeCurve | Edge sampling | step = range / count; result count ignored | ✅ pole edges not empty, `points[19].z == 5` | ✅ | Strengthened: radius check alone passed a sampler stopping short |
+## Measured: Edge Wires/CoEdges, Explorers, Face Def and Face Geometry (#1986)
+| **BRepGraph Edge Wires CoEdges** | edgeWires | Edge wires | every index reported as wire 0 |
+| **BRepGraph Edge Wires CoEdges** | edgeCoEdges | Edge coedges | first coedge repeated |
+| **BRepGraph Edge Wires CoEdges** | edgeFindCoEdge | CoEdge lookup | found index + 1 |
+| **BRepGraph Explorers** | childExplorer | Child explorer | count starts at 1 |
+| **BRepGraph Explorers** | parentExplorer | Parent explorer | count starts at 1 |
+| **BRepGraph Face Def Details** | faceWireCount | Face wire count | NbWires + 1 |
+| **BRepGraph Face Def Details** | faceVertexRefCount | Face vertex refs | always 0 |
+| **BRepGraph Face Geometry** | faceTolerance | Face tolerance | tolerance x 10 |
+| **BRepGraph Face Geometry** | faceHasSurface | Face surface | always false |
+| **BRepGraph Face Geometry** | faceNaturalRestriction | Natural restriction | always true |
+| **BRepGraph Face Geometry** | faceHasTriangulation | Triangulation presence | always false |
+| edgeWires | OCCTBRepGraphEdgeWireIndices | Edge wires | every index reported as wire 0 | ✅ wire list mismatch | ✅ | Rewritten: `!isEmpty` + range check stayed green |
+| edgeCoEdges | OCCTBRepGraphEdgeCoEdgeIndices | Edge coedges | first coedge repeated | ✅ coedge list mismatch | ✅ | Rewritten: `!isEmpty` + range check stayed green |
+| edgeFindCoEdge | OCCTBRepGraphEdgeFindCoEdge | CoEdge lookup | found index + 1 | ✅ `edgeFindCoEdge(...) == coedges[i][0]` | ✅ | Rewritten: `!= nil` + range check passed an off-by-one |
+| childExplorer | OCCTBRepGraphChildCount | Child explorer | count starts at 1 | ✅ `childCount(...) == 6` | ✅ | Original also red; root count pinned |
+| parentExplorer | OCCTBRepGraphParentCount | Parent explorer | count starts at 1 | ✅ `parentCount(...) == 2` | ✅ | Rewritten: `parents > 0` stayed green |
+| faceWireCount | OCCTBRepGraphFaceNbWires | Face wire count | NbWires + 1 | ✅ `faceWireCount(i) == 1` | ✅ | Rewritten: `>= 1` stayed green |
+| faceVertexRefCount | OCCTBRepGraphFaceNbVertexRefs | Face vertex refs | always 0 | ✅ `faceVertexRefCount(0) == 1` | ✅ | Rewritten: `== 0` alone passed a counter stuck at 0 |
+| faceTolerance | OCCTBRepGraphFaceTolerance | Face tolerance | tolerance x 10 | ✅ `faceTolerance(0) == 1e-7` | ✅ | Rewritten: `tol > 0` stayed green |
+| faceHasSurface | OCCTBRepGraphFaceHasSurface | Face surface | always false | ✅ `faceHasSurface(i)` | ✅ | Original also red |
+| faceNaturalRestriction | OCCTBRepGraphFaceIsNaturalRestriction | Natural restriction | always true | ✅ `!isFaceNaturalRestriction(0)` | ✅ | Rewritten: asserted nothing ("returns a bool without crashing") |
+| faceHasTriangulation | OCCTBRepGraphFaceHasTriangulation | Triangulation presence | always false | ✅ `mg.faceHasTriangulation(0)` | ✅ | Rewritten: asserted nothing ("may or may not have triangulation") |
