@@ -1,0 +1,9 @@
+validateCleanGraph: 1
+validateAfterAddVertex: 1
+buildFromBox: faces=6 edges=12 vertices=8 wires=6 shells=1 solids=1 compounds=0 coedges=24 nodes=58 valid=1
+buildParallel: faces=6 edges=12 vertices=8 wires=6 shells=1 solids=1 compounds=0 coedges=24 nodes=58 valid=1
+buildFromSphere: faces=1 edges=3 vertices=2 wires=1 shells=1 solids=1 compounds=0 coedges=4 nodes=13 valid=1
+buildFromComplex: faces=8 edges=15 vertices=10 wires=9 shells=1 solids=1 compounds=1 coedges=30 nodes=75 valid=1
+box coedge0: edge=0 face=0 seamPair=-1 hasPCurve=1 range=(0, 10)
+box coedges: total=24 withPCurve=24 withSeamPair=0
+sphere coedges: total=4 [0 edge=0 pair=-1] [1 edge=1 pair=3] [2 edge=2 pair=-1] [3 edge=1 pair=1]
