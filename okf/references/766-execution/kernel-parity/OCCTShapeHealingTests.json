@@ -1195,5 +1195,208 @@
       "differences": []
     },
     "status": "N/A"
+  },
+  {
+    "test_name": "Issue #1479: Healing_Fix.mm null guards::composeShellOnNullifiedShapeReturnsNil",
+    "bridge_function": "OCCTShapeFixComposeShell",
+    "bridge_output": {
+      "type": "object",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #1479: Healing_Fix.mm null guards::composeShellNullRawPointerReturnsNil",
+    "bridge_function": "OCCTShapeFixComposeShell",
+    "bridge_output": {
+      "type": "object",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #1479: Healing_Fix.mm null guards::composeShellOrdinaryFaceUnaffected",
+    "bridge_function": "OCCTShapeFixComposeShell",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 1,
+        "area": 100.0,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 1,
+        "area": 100.0,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1479: Healing_Fix.mm null guards::edgeConnectNullRawPointerReturnsNil",
+    "bridge_function": "OCCTShapeFixEdgeConnect",
+    "bridge_output": {
+      "type": "object",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #1479: Healing_Fix.mm null guards::edgeConnectOrdinaryShapeUnaffected",
+    "bridge_function": "OCCTShapeFixEdgeConnect",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 6,
+        "volume": 1000.0,
+        "valid": false
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 6,
+        "volume": 1000.0,
+        "valid": false,
+        "invalidWires": 3,
+        "invalidFaces": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1491: OCCTShapeDivideByNumber respects nbU/nbV::exactSplitCountUOnly",
+    "bridge_function": "OCCTShapeDivideByNumber",
+    "bridge_output": {
+      "type": "face_count",
+      "data": 5
+    },
+    "kernel_output": {
+      "type": "face_count",
+      "data": {
+        "withUVSplits": 5,
+        "withoutUVSplits": 44
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1491: OCCTShapeDivideByNumber respects nbU/nbV::exactSplitCountVOnly",
+    "bridge_function": "OCCTShapeDivideByNumber",
+    "bridge_output": {
+      "type": "face_count",
+      "data": 5
+    },
+    "kernel_output": {
+      "type": "face_count",
+      "data": {
+        "withUVSplits": 5,
+        "withoutUVSplits": 44
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1491: OCCTShapeDivideByNumber respects nbU/nbV::exactSplitCountAsymmetric",
+    "bridge_function": "OCCTShapeDivideByNumber",
+    "bridge_output": {
+      "type": "face_count",
+      "data": 6
+    },
+    "kernel_output": {
+      "type": "face_count",
+      "data": {
+        "withUVSplits": 6,
+        "withoutUVSplits": 48
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1491: fixSmallCurves/fixSmallBezierCurves removed, fixSmallEdges is the real replacement::smallEdgeIsActuallyMerged",
+    "bridge_function": "OCCTShapeFixSmallEdges",
+    "bridge_output": {
+      "type": "edge_count",
+      "data": 5
+    },
+    "kernel_output": {
+      "type": "edge_count",
+      "data": 5
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1491: fixSmallCurves/fixSmallBezierCurves removed, fixSmallEdges is the real replacement::largeEdgeIsUntouched",
+    "bridge_function": "OCCTShapeFixSmallEdges",
+    "bridge_output": {
+      "type": "edge_count",
+      "data": 6
+    },
+    "kernel_output": {
+      "type": "edge_count",
+      "data": 6
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
