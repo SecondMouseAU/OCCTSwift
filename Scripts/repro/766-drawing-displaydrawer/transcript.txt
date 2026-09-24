@@ -1,0 +1,10 @@
+defaults: autoTriangulation=1 wireDraw=1 faceBoundaryDraw=0 typeOfDeflection=relative discretisation=30
+deviationCoefficient: 0.0050000000000000001
+deviationAngle: 0.17453292519943295
+maxChordialDeviation: 0.050000000000000003
+deflectionType: absolute=1 then relative=1
+autoTriangulation: 0
+isoOnTriangulation: 1
+discretisation: 50
+faceBoundaryDraw: 1
+wireDraw: 0

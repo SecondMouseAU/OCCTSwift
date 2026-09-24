@@ -1,0 +1,3 @@
+blendMultipleEdges: done=1 valid=1 faces=9 volume=7969.6283
+blendSingleEdge: done=1 valid=1 faces=7 volume=997.8539816
+blendEmptyArray: no kernel call (Swift and the bridge helper both refuse an empty list)
