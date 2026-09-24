@@ -230,7 +230,7 @@
     "kernel_output": {"type": "probe", "data": "volume 3000, ratio 3.0000000000000009", "source": "Scripts/repro/766-math-newton-nonuniformscale/transcript.txt"},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS",
-    "red": {"injection": "drop sz (scale z by 1)", "failing_expectation": ":30 `abs(scaledVol / origVol - 3.0) < 0.1`"},
+    "red": {"injection": "drop sz (scale z by 1)", "failing_expectation": ":31 `abs(scaledVol / origVol - 3.0) < 0.1`"},
     "green": true
   }
 ]
