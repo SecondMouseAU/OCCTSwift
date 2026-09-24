@@ -581,3 +581,15 @@ Probe: `Scripts/repro/766-geom2d-param-at-length-point2d/`. Every row was run re
 | Curve2D Point2D Integration::pointAtParameter | `OCCTCurve2DPointAt` | evaluate at t + 1 | ✅ | ✅ | MATCH | `guard ... else { return }` and `if let` |
 | Curve2D Point2D Integration::segmentFromPoints | `OCCTCurve2DSegmentFromPoints` | half-length segment | ✅ | ✅ | MATCH | `guard ... else { return }`; now checks both samples fully |
 | Curve2D Point2D Integration::projectPoint | `OCCTCurve2DProjectPoint2D` | distance + 1 | ✅ | ✅ | MATCH | `guard ... else { return }` and `if let` |
+### #1979 executed: `GeneralTransform2DTests.swift`, `Geom2dCircleTests.swift`
+| GeneralTransform2D::affinity | `OCCTGTrsf2dAffinity` | ratio + 1 | ✅ | ✅ | MATCH | `matrix.count == 4` passed any matrix |
+| GeneralTransform2D::multiply | `OCCTGTrsf2dMultiply` | return the left operand | ✅ | ✅ | MATCH | `let _ = a.multiplied(by: b)`, no assertion |
+| GeneralTransform2D::invert | `OCCTGTrsf2dInvert` | return the input uninverted | ✅ | ✅ | MATCH | `inverted() != nil` only |
+| GeneralTransform2D::transformPoint | `OCCTGTrsf2dTransformPoint` | result y + 1 | ✅ | ✅ | MATCH | checked only the unchanged x; now y too |
+| GeneralTransform2D::zeroLengthAxisDirectionIsRefused | `OCCTGTrsf2dAffinity` | replace a zero direction with (1, 0) | ✅ | ✅ | MATCH |  |
+| GeneralTransform2D::vanishinglySmallAxisDirectionIsRefused | `OCCTGTrsf2dAffinity` | replace a zero direction with (1, 0) | ✅ | ✅ | MATCH |  |
+| Geom2d_Circle Properties::circle2DRadius | `OCCTCurve2DCircleRadius` | radius + 1 | ✅ | ✅ | MATCH | nested in `if let c` |
+| Geom2d_Circle Properties::circle2DSetRadius | `OCCTCurve2DCircleSetRadius` | skip SetRadius() | ✅ | ✅ | MATCH | nested in `if let c` |
+| Geom2d_Circle Properties::circle2DEccentricity | `OCCTCurve2DCircleEccentricity` | eccentricity + 0.1 | ✅ | ✅ | MATCH | nested in `if let c` |
+| Geom2d_Circle Properties::circle2DCenter | `OCCTCurve2DCircleCenter` | centre x + 1 | ✅ | ✅ | MATCH | nested in `if let c` |
+| Geom2d_Circle Properties::circle2DXAxis | `OCCTCurve2DCircleXAxis` | swap the direction components | ✅ | ✅ | MATCH | nested in `if let c`; checked only the direction x, now position too |
