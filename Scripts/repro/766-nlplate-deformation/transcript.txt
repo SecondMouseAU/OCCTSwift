@@ -1,0 +1,5 @@
+nlPlateG0FlatPlane: IsDone=1 S(0,0)=(0, 0, 5)
+nlPlateG0MultipleConstraints: IsDone=1 S(-5,-5)=(-10, -10, 0.999994575) S(5,5)=(10, 10, 1.99999369) S(0,0)=(0, 0, 4.99999994)
+nlPlateG0Evaluable: IsDone=1 S(0,0)=(0, 0, 3)
+nlPlateG1Deformation: IsDone=1 S(0,0)=(0, 0, 5)
+nlPlateG1MultipleConstraints: IsDone=1 S(-2,0)=(-4, 0, 1) S(2,0)=(4, 0, 1)

@@ -51,6 +51,14 @@ struct PlaneFactoryParityTests {
         expectSamePlane(
             Surface.planeFromPoints(p1, p2, p3),
             Surface.planeFrom3Points(p1: p1, p2: p2, p3: p3))
+        // Both entry points reach one bridge call since #421, so their parity cannot fail on a
+        // wrong plane. Pin the plane: origin p1, normal +Z (plane-construction-parity probe).
+        if let s = Surface.planeFromPoints(p1, p2, p3) {
+            #expect(simd_length(s.point(atU: 0, v: 0) - p1) < 1e-12)
+            let n = s.normal(atU: 0, v: 0)
+            #expect(n != nil)
+            if let n { #expect(abs(n.z - 1.0) < 1e-12) }
+        }
     }
 
     @Test("Collinear-but-distinct points: both entry points return nil")
@@ -96,6 +104,15 @@ struct PlaneFactoryParityTests {
         expectSamePlane(
             Surface.planeFromPointNormal(point: origin, normal: normal),
             Surface.plane(origin: origin, normal: normal))
+        // Same blind spot as the 3-point pair, and expectSamePlane compares normals up to sign.
+        // Pin origin and the signed normal (1, 1, 1) / sqrt(3).
+        if let s = Surface.planeFromPointNormal(point: origin, normal: normal) {
+            #expect(simd_length(s.point(atU: 0, v: 0) - origin) < 1e-12)
+            let k = 1.0 / 3.0.squareRoot()
+            let n = s.normal(atU: 0, v: 0)
+            #expect(n != nil)
+            if let n { #expect(simd_length(n - SIMD3(k, k, k)) < 1e-12) }
+        }
     }
 
     @Test("Zero-length normal: both entry points return nil")
