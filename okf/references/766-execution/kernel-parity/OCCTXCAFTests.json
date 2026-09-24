@@ -7851,5 +7851,248 @@
     "status": "PASS",
     "source": "Same quantity on both sides: whether material info exists at index 0. Bridge: materialInfo(at: 0) was nil on a fresh document (OCCTDocumentGetMaterialInfo returns false for an index outside 0..<labels.Length()). Kernel: GetMaterialLabels returned 0 labels, and Value(1), the 1-based position for index 0, raises Standard_OutOfRange, so no material can be read. Kernel values are from the probe named in the record, which makes the same calls the bridge makes.",
     "probe": "Scripts/repro/766-xcaf-document-material/"
+  },
+  {
+    "test_name": "Single-shape dimension registers once, not twice (#1481)::A single-shape dimension appears exactly once in GetRefDimensionLabels",
+    "bridge_function": "OCCTDocumentGetRefDimensionCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "ref_dimension_count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "ref_dimension_count": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: ref_dimension_count for the shape. Bridge: the test's doc.refDimensionCount(for:) after createDimension observed 1 (OCCTDocumentGetRefDimensionCount over GetRefDimensionLabels). Kernel: the probe registered one dimension with the single-shape overload SetDimension(shape, dim), as occtDocumentCreateDimensionImpl does, and GetRefDimensionLabels returned 1. For contrast, the sequence overload SetDimension(seq, seq, dim) returned 2 (the pre-#1481 defect).",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-parity/"
+  },
+  {
+    "test_name": "Single-shape dimension registers once, not twice (#1481)::A single-shape dimension created with a tolerance also registers once",
+    "bridge_function": "OCCTDocumentGetRefDimensionCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "ref_dimension_count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "ref_dimension_count": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: ref_dimension_count for the shape. Bridge: the test observed refDimensionCount == 1 for a dimension created with lowerTolerance -0.1 and upperTolerance 0.1. Kernel: the probe attached the same tolerance (SetLowerTolValue/SetUpperTolValue) before registering the dimension with the single-shape overload, and GetRefDimensionLabels returned 1.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-parity/"
+  },
+  {
+    "test_name": "Single-shape dimension registers once, not twice (#1481)::Two shapes each carrying one dimension report one ref each, not two",
+    "bridge_function": "OCCTDocumentGetRefDimensionCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "ref_dimension_counts": [
+          1,
+          1
+        ],
+        "dimension_count": 2
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "ref_dimension_counts": [
+          1,
+          1
+        ],
+        "dimension_count": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: ref_dimension_counts for shape 1 and shape 2, and dimension_count. Bridge: the test observed dimensionCount == 2 and refDimensionCount == 1 for each label. Kernel: the probe registered one dimension on each of two boxes with the single-shape overload; GetDimensionLabels returned 2 and GetRefDimensionLabels returned 1 for each shape.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-parity/"
+  },
+  {
+    "test_name": "Issue #1588: TObjApplication release path::a single get + release round-trip does not crash and leaves the singleton usable",
+    "bridge_function": "OCCTTObjApplicationIsVerbose",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "verbose_after_set_true": true
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "verbose_after_set_true": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: verbose_after_set_true. Bridge: the test called OCCTTObjApplicationSetVerbose(again, true) after a get, release and second get, and OCCTTObjApplicationIsVerbose returned true. Kernel: TObj_Application::GetInstance()->SetVerbose(true) then IsVerbose() returned true. The singleton's release path (ref counting, double release, 500 get/release cycles) is bridge-side and has no kernel counterpart, so the compared quantities are the singleton's state after the calls.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-parity/"
+  },
+  {
+    "test_name": "Issue #1588: TObjApplication release path::releasing more times than the singleton was fetched (double-release) does not crash",
+    "bridge_function": "OCCTTObjApplicationIsVerbose",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "verbose_after_set_false": false,
+        "document_created": true
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "verbose_after_set_false": false,
+        "document_created": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: verbose_after_set_false and document_created. Bridge: after a double release and a second get the test observed IsVerbose false after SetVerbose(false) and OCCTTObjApplicationCreateDocument non-nil. Kernel: SetVerbose(false) then IsVerbose() returned false, and CreateNewDocument(doc, BinOcaf), the call the bridge makes, returned true with a non-null document. The singleton's release path (ref counting, double release, 500 get/release cycles) is bridge-side and has no kernel counterpart, so the compared quantities are the singleton's state after the calls.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-parity/"
+  },
+  {
+    "test_name": "Issue #1588: TObjApplication release path::many repeated get+release cycles leave the singleton alive and functional",
+    "bridge_function": "OCCTTObjApplicationCreateDocument",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "document_created": true
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "document_created": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: document_created. Bridge: after 500 get/release cycles the test required OCCTTObjApplicationCreateDocument to return a document. Kernel: CreateNewDocument(doc, BinOcaf), the call the bridge makes, returned true with a non-null document. The singleton's release path (ref counting, double release, 500 get/release cycles) is bridge-side and has no kernel counterpart, so the compared quantities are the singleton's state after the calls.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-parity/"
+  },
+  {
+    "test_name": "Issue #1588: TObjApplication release path::TObjApplication.shared accessed and dropped repeatedly (deinit -> Release) stays usable",
+    "bridge_function": "OCCTTObjApplicationIsVerbose",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "verbose_after_set_true": true,
+        "document_created": true
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "verbose_after_set_true": true,
+        "document_created": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: verbose_after_set_true and document_created. Bridge: after 500 shared-instance accesses the test set isVerbose true, observed it true, and createDocument() returned a document. Kernel: SetVerbose(true) then IsVerbose() returned true, and CreateNewDocument(doc, BinOcaf) returned true with a non-null document. The singleton's release path (ref counting, double release, 500 get/release cycles) is bridge-side and has no kernel counterpart, so the compared quantities are the singleton's state after the calls.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-parity/"
+  },
+  {
+    "test_name": "Issue #173, instanced assembly STEP writer::geometry is shared: 1 BREP + N occurrences, size scales with unique parts",
+    "bridge_function": "OCCTDocumentAddComponentMatrix",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "manifold_solid_brep": 1,
+        "nauo": 20
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "manifold_solid_brep": 1,
+        "nauo": 20
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "Issue #173, instanced assembly STEP writer::round-trips: written assembly reads back with the same occurrence count",
+    "bridge_function": "OCCTDocumentAddComponentMatrix",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "max_components_under_a_root": 8
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "max_components_under_a_root": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: max_components_under_a_root. Bridge: the test wrote an 8-instance assembly, reloaded it, walked every node and observed maxChildren == 8 (node.children.count). Kernel: the probe wrote the same 8-instance assembly with STEPCAFControl_Writer, read it back with STEPCAFControl_Reader and took the maximum XCAFDoc_ShapeTool::GetComponents length over the free shapes, 8.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "Issue #173, instanced assembly STEP writer::empty path throws, not crashes",
+    "bridge_function": "OCCTDocumentWriteSTEP",
+    "bridge_output": {
+      "type": "n/a",
+      "data": {
+        "observed": "Exporter.writeSTEPAssembly throws ExportError.invalidPath"
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": {
+        "reason": "the empty-path check is Swift code in Exporter.writeSTEPAssembly, before any bridge or OCCT call"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "No kernel counterpart. Exporter.writeSTEPAssembly refuses an empty URL path with ExportError.invalidPath before reaching document.writeSTEP (OCCTDocumentWriteSTEP), so no bridge or OCCT call is made and there is nothing to compare.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
   }
 ]
