@@ -171,3 +171,28 @@ green once it was reverted. Probes and transcripts are under `Scripts/repro/766-
 | geometryCounts | OCCTBRepGraphNbCurves2D | Geometry count | NbCoEdgeCurves2D + 1 | ✅ :24 `curve2DCount == 24` | ✅ | Rewritten: `curve2DCount > 0` stayed green |
 | coedgeCounts | OCCTBRepGraphNbCoEdges | CoEdge count | Nb - 1 | ✅ :30 | ✅ | Original also red |
 | deduplicateBox | OCCTBRepGraphDeduplicate | Deduplication result | surface/curve counts swapped | ✅ :15, :16 | ✅ | Original also red; rewrite counts added |
+## Measured: Durable UID (#1986)
+| **BRepGraph Durable UID** | nodeUIDRoundTrip | UID resolution | resolved index + 1; UID mint fails |
+| **BRepGraph Durable UID** | uidFromAnotherGraphDoesNotResolve | UID provenance | Swift provenance guards dropped; UID mint fails |
+| **BRepGraph Durable UID** | uidDoesNotCrossIdenticallyBuiltGraphs | UID provenance | Swift provenance guards dropped; UID mint fails |
+| **BRepGraph Durable UID** | uidSurvivesAFullCopyAndNamesTheSameFace | UID across copy | copy mints fresh instanceID; UID mint fails |
+| **BRepGraph Durable UID** | uidSurvivesATranslationAndNamesTheSameFace | UID across transform | translation mints fresh instanceID; UID mint fails |
+| **BRepGraph Durable UID** | uidDoesNotCrossACopiedOutFace | UID provenance | Swift provenance guards dropped; UID mint fails |
+| **BRepGraph Durable UID** | outOfRangeCounterDoesNotResolve | UID range | HasNodeUID always true |
+| **BRepGraph Durable UID** | unstampedUIDResolvesNowhere | UID provenance | Swift provenance guards dropped; UID mint fails |
+| **BRepGraph Durable UID** | uidSurvivesCompactionOfItsOwnGraph | UID across compaction | compaction re-mints instanceID; UID mint fails |
+| **BRepGraph Durable UID** | uidCodableCarriesProvenance | UID provenance | Swift provenance guards dropped; UID mint fails |
+| **BRepGraph Durable UID** | refAndItemUIDsDoNotCrossGraphs | UID provenance | Swift provenance guards dropped; UID mint fails |
+| **BRepGraph Durable UID** | itemUIDOfNode | Item UID | resolved index + 1; UID mint fails |
+| nodeUIDRoundTrip | OCCTBRepGraphNodeFromUID | UID resolution | resolved index + 1; UID mint fails | ✅ :25 Issue.record / index mismatch | ✅ | Original also red under both |
+| uidFromAnotherGraphDoesNotResolve | OCCTBRepGraphNodeFromUID | UID provenance | Swift provenance guards dropped; UID mint fails | ✅ cross-graph resolve / :48 #require | ✅ | Guards now #require |
+| uidDoesNotCrossIdenticallyBuiltGraphs | OCCTBRepGraphNodeFromUID | UID provenance | Swift provenance guards dropped; UID mint fails | ✅ twin resolve / :66 #require | ✅ | Rewritten: `guard let uid ... else { return }` passed with the mint failing |
+| uidSurvivesAFullCopyAndNamesTheSameFace | OCCTBRepGraphCopy | UID across copy | copy mints fresh instanceID; UID mint fails | ✅ instanceID / :106 #require | ✅ | Rewritten: `guard let uid ... else { continue }` skipped every face with the mint failing |
+| uidSurvivesATranslationAndNamesTheSameFace | OCCTBRepGraphTransformTranslation | UID across transform | translation mints fresh instanceID; UID mint fails | ✅ instanceID / :125 #require | ✅ | Rewritten: `continue` on a missing UID skipped every face |
+| uidDoesNotCrossACopiedOutFace | OCCTBRepGraphCopyFace | UID provenance | Swift provenance guards dropped; UID mint fails | ✅ lifted resolve / :148 #require | ✅ | Guards now #require |
+| outOfRangeCounterDoesNotResolve | OCCTBRepGraphHasNodeUID | UID range | HasNodeUID always true | ✅ `!graph.contains(uid: bogus)` | ✅ | Original also red |
+| unstampedUIDResolvesNowhere | OCCTBRepGraphNodeFromUID | UID provenance | Swift provenance guards dropped; UID mint fails | ✅ unstamped resolve / :175 #require | ✅ | Rewritten: `guard let real ... else { return }` passed with the mint failing |
+| uidSurvivesCompactionOfItsOwnGraph | OCCTBRepGraphCompact | UID across compaction | compaction re-mints instanceID; UID mint fails | ✅ instanceID / :189 #require | ✅ | Rewritten: guard-return passed with the mint failing; resolved index pinned |
+| uidCodableCarriesProvenance | OCCTBRepGraphNodeFromUID | UID provenance | Swift provenance guards dropped; UID mint fails | ✅ legacy resolve / :202 #require | ✅ | Rewritten: guard-return passed with the mint failing |
+| refAndItemUIDsDoNotCrossGraphs | OCCTBRepGraphRefFromUID | UID provenance | Swift provenance guards dropped; UID mint fails | ✅ cross-graph resolve / :226 #require | ✅ | Rewritten: both halves were `if let` and asserted nothing with the mint failing |
+| itemUIDOfNode | OCCTBRepGraphItemFromUID | Item UID | resolved index + 1; UID mint fails | ✅ `resolved.index == 0` / :244 #require | ✅ | Rewritten: `if let item` passed with the mint failing |

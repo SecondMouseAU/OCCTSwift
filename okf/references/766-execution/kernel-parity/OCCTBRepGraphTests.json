@@ -1060,5 +1060,366 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Durable UID::nodeUIDRoundTrip",
+    "bridge_function": "OCCTBRepGraphNodeFromUID",
+    "bridge_output": {
+      "type": "uid_roundtrip",
+      "data": {
+        "counters": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "resolved_index": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "uid_roundtrip",
+      "data": {
+        "counters": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "resolved_index": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Durable UID::uidFromAnotherGraphDoesNotResolve",
+    "bridge_function": "OCCTBRepGraphNodeFromUID",
+    "bridge_output": {
+      "type": "resolution",
+      "data": {
+        "boxFace2Counter": 3,
+        "resolvesInCylinder": false
+      }
+    },
+    "kernel_output": {
+      "type": "resolution",
+      "data": {
+        "boxFace2Counter": 3,
+        "resolvesInCylinder_kernelOnly": true,
+        "cylinderIndex": 2
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "The graph-provenance check (GraphUID.graphID == instanceID) is Swift-side by design (#295); the kernel alone resolves any in-range counter, so there is no kernel value for the rejection itself. The kernel values recorded are the counters and the resolution the Swift check sits on top of."
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "BRepGraph Durable UID::uidDoesNotCrossIdenticallyBuiltGraphs",
+    "bridge_function": "OCCTBRepGraphNodeFromUID",
+    "bridge_output": {
+      "type": "resolution",
+      "data": {
+        "face1Counter": 2,
+        "resolvesInTwin": false
+      }
+    },
+    "kernel_output": {
+      "type": "resolution",
+      "data": {
+        "face1Counter": 2,
+        "resolvesInTwin_kernelOnly": true,
+        "twinIndex": 1
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "The graph-provenance check (GraphUID.graphID == instanceID) is Swift-side by design (#295); the kernel alone resolves any in-range counter, so there is no kernel value for the rejection itself. The kernel values recorded are the counters and the resolution the Swift check sits on top of."
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "BRepGraph Durable UID::uidSurvivesAFullCopyAndNamesTheSameFace",
+    "bridge_function": "OCCTBRepGraphCopy",
+    "bridge_output": {
+      "type": "mapping",
+      "data": {
+        "sameInstanceID": true,
+        "faces": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "mapping",
+      "data": {
+        "copyOk": true,
+        "faces": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Durable UID::uidSurvivesATranslationAndNamesTheSameFace",
+    "bridge_function": "OCCTBRepGraphTransformTranslation",
+    "bridge_output": {
+      "type": "mapping",
+      "data": {
+        "sameInstanceID": true,
+        "faces": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "mapping",
+      "data": {
+        "transformOk": true,
+        "faces": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Durable UID::uidDoesNotCrossACopiedOutFace",
+    "bridge_function": "OCCTBRepGraphCopyFace",
+    "bridge_output": {
+      "type": "resolution",
+      "data": {
+        "liftedFaces": 1,
+        "face0Counter": 1,
+        "resolvesInLifted": false
+      }
+    },
+    "kernel_output": {
+      "type": "resolution",
+      "data": {
+        "liftedFaces": 1,
+        "face0Counter": 1,
+        "resolvesInLifted_kernelOnly": true,
+        "liftedIndex": 0
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "The graph-provenance check (GraphUID.graphID == instanceID) is Swift-side by design (#295); the kernel alone resolves any in-range counter, so there is no kernel value for the rejection itself. The kernel values recorded are the counters and the resolution the Swift check sits on top of."
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "BRepGraph Durable UID::outOfRangeCounterDoesNotResolve",
+    "bridge_function": "OCCTBRepGraphHasNodeUID",
+    "bridge_output": {
+      "type": "bools",
+      "data": {
+        "has999999": false,
+        "resolves": false,
+        "zeroValid": false,
+        "hasZero": false
+      }
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "has999999": false,
+        "resolves": false,
+        "zeroValid": false,
+        "hasZero": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Durable UID::unstampedUIDResolvesNowhere",
+    "bridge_function": "OCCTBRepGraphNodeFromUID",
+    "bridge_output": {
+      "type": "resolution",
+      "data": {
+        "unstampedResolves": false
+      }
+    },
+    "kernel_output": {
+      "type": "resolution",
+      "data": {
+        "counter1Resolves_kernelOnly": true
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "The graph-provenance check (GraphUID.graphID == instanceID) is Swift-side by design (#295); the kernel alone resolves any in-range counter, so there is no kernel value for the rejection itself. The kernel values recorded are the counters and the resolution the Swift check sits on top of."
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "BRepGraph Durable UID::uidSurvivesCompactionOfItsOwnGraph",
+    "bridge_function": "OCCTBRepGraphCompact",
+    "bridge_output": {
+      "type": "resolution",
+      "data": {
+        "counter": 4,
+        "has": true,
+        "index": 3
+      }
+    },
+    "kernel_output": {
+      "type": "resolution",
+      "data": {
+        "counter": 4,
+        "has": true,
+        "index": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Durable UID::uidCodableCarriesProvenance",
+    "bridge_function": "OCCTBRepGraphNodeFromUID",
+    "bridge_output": {
+      "type": "codable",
+      "data": {
+        "roundTripResolves": true,
+        "legacyGraphID": 0,
+        "legacyResolves": false
+      }
+    },
+    "kernel_output": {
+      "type": "codable",
+      "data": {
+        "face0Counter": 1
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "The graph-provenance check (GraphUID.graphID == instanceID) is Swift-side by design (#295); the kernel alone resolves any in-range counter, so there is no kernel value for the rejection itself. The kernel values recorded are the counters and the resolution the Swift check sits on top of. Codable is pure Swift."
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "BRepGraph Durable UID::refAndItemUIDsDoNotCrossGraphs",
+    "bridge_function": "OCCTBRepGraphRefFromUID",
+    "bridge_output": {
+      "type": "resolution",
+      "data": {
+        "refResolvesInBox": true,
+        "refResolvesInCylinder": false,
+        "itemResolvesInCylinder": false
+      }
+    },
+    "kernel_output": {
+      "type": "resolution",
+      "data": {
+        "refResolvesInBox": true,
+        "refResolvesInCylinder_kernelOnly": true,
+        "itemResolvesInCylinder_kernelOnly": true
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "The graph-provenance check (GraphUID.graphID == instanceID) is Swift-side by design (#295); the kernel alone resolves any in-range counter, so there is no kernel value for the rejection itself. The kernel values recorded are the counters and the resolution the Swift check sits on top of."
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "BRepGraph Durable UID::itemUIDOfNode",
+    "bridge_function": "OCCTBRepGraphItemFromUID",
+    "bridge_output": {
+      "type": "item",
+      "data": {
+        "domain": 1,
+        "kind": 2,
+        "counter": 1,
+        "resolved": [
+          1,
+          2,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "item",
+      "data": {
+        "domain": 1,
+        "kind": 2,
+        "counter": 1,
+        "resolved": [
+          1,
+          2,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
