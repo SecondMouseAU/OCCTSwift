@@ -6010,5 +6010,212 @@
     "green": "passed",
     "probe": "Scripts/repro/766-curve-gcpnts-approx/transcript.txt",
     "note": "Rewritten: an empty split skipped every check"
+  },
+  {
+    "test_name": "Geom_OffsetCurve Tests::createFromLine",
+    "test_file": "Tests/OCCTCurveTests/GeomOffsetCurveTests.swift",
+    "bridge_function": "OCCTCurve3DOffsetValue",
+    "bridge_output": {
+      "type": "value",
+      "data": "5, value(0) = (0,-5,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_OffsetCurve: Offset 5, value(0) (0,-5,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Offset() + 0.5",
+    "red": "GeomOffsetCurveTests.swift:24 abs(offset.offsetValue - 5.0) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-curveset-trimmed/transcript.txt",
+    "note": "Strengthened: `if let` removed, a point pinned"
+  },
+  {
+    "test_name": "Geom_OffsetCurve Tests::offsetDirection",
+    "test_file": "Tests/OCCTCurveTests/GeomOffsetCurveTests.swift",
+    "bridge_function": "OCCTCurve3DOffsetDirection",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,1)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Direction (0,0,1)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "direction reversed",
+    "red": "GeomOffsetCurveTests.swift:35 simd_distance(SIMD3(dir.x, dir.y, dir.z), SIMD3(0, 0, 1)) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-curveset-trimmed/transcript.txt",
+    "note": "Rewritten: nested `if let`s"
+  },
+  {
+    "test_name": "GeomTools_CurveSet Tests::serializeDeserialize3D",
+    "test_file": "Tests/OCCTCurveTests/GeomToolsCurveSetTests.swift",
+    "bridge_function": "OCCTGeomToolsCurveSetRead",
+    "bridge_output": {
+      "type": "value",
+      "data": "2 curves, second a circle"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Write/Read: curve 2 is Geom_Circle"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one curve fewer reported",
+    "red": "GeomToolsCurveSetTests.swift:29 curves.count == 2",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-curveset-trimmed/transcript.txt",
+    "note": "Rewritten: nested `if let`s"
+  },
+  {
+    "test_name": "GeomTools_CurveSet Tests::roundtripPreservesGeometry",
+    "test_file": "Tests/OCCTCurveTests/GeomToolsCurveSetTests.swift",
+    "bridge_function": "OCCTGeomToolsCurveSetRead",
+    "bridge_output": {
+      "type": "value",
+      "data": "value(0) = (8,2,3)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "round trip value(0) = (8, 2, 3)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one curve fewer reported",
+    "red": "GeomToolsCurveSetTests.swift:38 Issue recorded (round trip failed)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-curveset-trimmed/transcript.txt",
+    "note": "Rewritten: checked only the count"
+  },
+  {
+    "test_name": "GeomTools_CurveSet Tests::duplicateHandleRefusesTheBatch",
+    "test_file": "Tests/OCCTCurveTests/GeomToolsCurveSetTests.swift",
+    "bridge_function": "OCCTGeomToolsCurveSetWrite",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomTools_CurveSet::Add of one curve twice: indices 1 and 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "dedup refusal skipped",
+    "red": "GeomToolsCurveSetTests.swift:55 Curve3D.serializeCurves([line, line]) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-curveset-trimmed/transcript.txt",
+    "note": "`if let` removed"
+  },
+  {
+    "test_name": "Geom_TrimmedCurve Tests::trimLineCreatesSubset",
+    "test_file": "Tests/OCCTCurveTests/GeomTrimmedCurveTests.swift",
+    "bridge_function": "OCCTCurve3DTrimmed",
+    "bridge_output": {
+      "type": "value",
+      "data": "(2,0,0) -> (8,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_TrimmedCurve [2, 8]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "u2 + 1",
+    "red": "GeomTrimmedCurveTests.swift:23 simd_distance(trimmed.endPoint, SIMD3(8, 0, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-curveset-trimmed/transcript.txt",
+    "note": "Strengthened: whole points"
+  },
+  {
+    "test_name": "Geom_TrimmedCurve Tests::trimmedBasisReturnsOriginal",
+    "test_file": "Tests/OCCTCurveTests/GeomTrimmedCurveTests.swift",
+    "bridge_function": "OCCTCurve3DTrimmedBasis",
+    "bridge_output": {
+      "type": "value",
+      "data": "Geom_Line [-2e100, 2e100]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BasisCurve: Geom_Line [-2e+100, 2e+100]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trimmed curve returned as its own basis",
+    "red": "GeomTrimmedCurveTests.swift:34 basis.domain == -2e100...2e100",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-curveset-trimmed/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Geom_TrimmedCurve Tests::nonTrimmedHasNilBasis",
+    "test_file": "Tests/OCCTCurveTests/GeomTrimmedCurveTests.swift",
+    "bridge_function": "OCCTCurve3DTrimmedBasis",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: a Geom_Line is not a Geom_TrimmedCurve, so the bridge's DownCast refuses it"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "untrimmed curve returned as its own basis",
+    "red": "GeomTrimmedCurveTests.swift:39 line.trimmedBasis == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-curveset-trimmed/transcript.txt",
+    "note": "`if let` removed"
+  },
+  {
+    "test_name": "Geom_TrimmedCurve Tests::setTrimUpdatesRange",
+    "test_file": "Tests/OCCTCurveTests/GeomTrimmedCurveTests.swift",
+    "bridge_function": "OCCTCurve3DSetTrim",
+    "bridge_output": {
+      "type": "value",
+      "data": "(3,0,0) -> (7,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "SetTrim(3, 7): (3,0,0) -> (7,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "SetTrim skipped",
+    "red": "GeomTrimmedCurveTests.swift:45 simd_distance(trimmed.startPoint, SIMD3(3, 0, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-curveset-trimmed/transcript.txt",
+    "note": "Strengthened: end point added"
   }
 ]
