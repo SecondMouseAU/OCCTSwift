@@ -6210,5 +6210,177 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Plate point constraint G2 domain restriction (#437)::Only g0 is supported for a point constraint; g1 and g2 are not",
+    "bridge_function": "(Swift) SurfaceContinuity.isUnsupportedForPointConstraint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "g0": false,
+        "g1": true,
+        "g2": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "g0": false,
+        "g1": true,
+        "g2": true
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 437: order 1 accepted, order 2 throws"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Plate point constraint G2 domain restriction (#437)::The mixed-constraint guard's decision depends only on point orders",
+    "bridge_function": "(Swift) Shape.plateMixedRejectsPointOrders",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Swift predicate, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Plate point constraint G2 domain restriction (#437)::The shared point-order guard is the one implementation both entry points defer to",
+    "bridge_function": "(Swift) Shape.plateRejectsPointOrders",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Swift predicate, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Plate point constraint G2 domain restriction (#437)::All-g2 orders are rejected",
+    "bridge_function": "OCCTShapePlatePointsAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 437 GeomPlate_PointConstraint(point, 2): threw \"the constraint must 0 or -1 with a point\""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate point constraint G2 domain restriction (#437)::A single g2 among otherwise-valid orders poisons the whole call",
+    "bridge_function": "OCCTShapePlatePointsAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 437 GeomPlate_PointConstraint(point, 2): threw \"the constraint must 0 or -1 with a point\""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate point constraint G2 domain restriction (#437)::g0 orders still build",
+    "bridge_function": "OCCTShapePlatePointsAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 272.8680319618861
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 272.8680319618861
+      },
+      "source": "Scripts/repro/766-advanced-plate-surface/transcript.txt platePointsAdvancedG0 (same pentagon)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate point constraint G2 domain restriction (#437)::A g2 point constraint is rejected even alongside otherwise-valid curve constraints",
+    "bridge_function": "OCCTShapePlateMixed",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 437 GeomPlate_PointConstraint(point, 2): threw \"the constraint must 0 or -1 with a point\""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate point constraint G2 domain restriction (#437)::A g0 point constraint alongside a curve constraint still builds",
+    "bridge_function": "OCCTShapePlateMixed",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 264.4934343829981
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 264.4934343829981
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 437 mixed g0 point + rectangle"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
