@@ -1,0 +1,17 @@
+gce_MakeCirc2d radius 0: IsDone=1
+gce_MakeCirc2d radius -1: IsDone=0
+circle gce value(0)=(8, -4)
+circle direct value(0)=(8, -4)
+circle gce value(1.5708)=(3, 1)
+gce_MakeElips2d (0,0) IsDone=1, (8,-4) IsDone=1, (5,5) IsDone=1
+ellipse gce value(0)=(11, -4)
+ellipse direct value(0)=(11, -4)
+ellipse gce value(1.5708)=(3, 0)
+gce_MakeHypr2d (0,0) IsDone=1, (3,6) IsDone=1
+hyperbola gce value(0)=(9, -4)
+hyperbola direct value(0)=(9, -4)
+hyperbola gce value(1)=(12.2584838089, -0.474396419069)
+gce_MakeParab2d focal 0 IsDone=1
+parabola gce value(0)=(3, -4)
+parabola direct value(0)=(3, -4)
+parabola gce value(2)=(3.33333333333, -2)

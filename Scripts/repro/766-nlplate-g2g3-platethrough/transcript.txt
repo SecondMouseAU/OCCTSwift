@@ -1,0 +1,8 @@
+nlPlateG2Deformation: IsDone=1 S(0.5,0.5)=(1, 1, 1)
+nlPlateG3Deformation: IsDone=1 S(0.3,0.3)=(0.6, 0.6, 0.5)
+nlPlateIncrementalSolve: IsDone=1 S(0.5,0.5)=(1, 1, 1)
+nlPlateDerivative: IsDone=1 EvaluateDerivative((0.5,0.5), 1, 0)=(1, 0, 0.99999950000024984)
+plateThroughPoints: bounds=[-7.91905785, 7.79192669]x[-7.77817459, 7.77817459] maxPointDistance=1.12e-07
+plateThroughEvaluable: bounds=[-5.5, 5.5]x[-5.5, 5.5] maxPointDistance=4.44e-16
+plateThroughTooFew: threw Geom_RectangularTrimmedSurface::V1==V2
+plateThroughCustomDegree: bounds=[-5.5, 5.5]x[-5.5, 5.5] maxPointDistance=1.34e-06
