@@ -8,6 +8,10 @@ import simd
 
 @Suite("Surface Analytic Primitives")
 struct SurfaceAnalyticTests {
+
+    // #766: values the weaker tests below now also pin are the kernel's own for the same
+    // Geom_ surfaces (GC_MakePlane, Geom_Spherical/Cylindrical/Conical/ToroidalSurface), see
+    // Scripts/repro/766-surface-analytic/.
     @Test("Create plane and evaluate point")
     func planeEvaluation() {
         let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
@@ -20,6 +24,8 @@ struct SurfaceAnalyticTests {
         #expect(abs(p.x) < 1e-10)
         #expect(abs(p.y) < 1e-10)
         #expect(abs(p.z) < 1e-10)
+        // (0, 0) maps to the origin under any parameterisation; (3, 4) pins the u/v axes.
+        #expect(plane.point(atU: 3, v: 4) == SIMD3(3, 4, 0))
     }
 
     @Test("Plane normal is consistent")
@@ -29,6 +35,8 @@ struct SurfaceAnalyticTests {
         #expect(n != nil)
         if let n = n {
             #expect(abs(abs(n.z) - 1.0) < 1e-10)
+            // `abs(n.z)` passed a flipped normal; the kernel's is +Z, the normal it was built with.
+            #expect(n == SIMD3(0, 0, 1))
         }
     }
 
@@ -62,7 +70,9 @@ struct SurfaceAnalyticTests {
         #expect(plane.isUClosed == false)
         #expect(plane.isVClosed == false)
 
-        if let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 3) {
+        let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 3)
+        #expect(cyl != nil)
+        if let cyl {
             #expect(cyl.isUClosed == true)
             #expect(cyl.isVClosed == false)
         }
@@ -71,9 +81,10 @@ struct SurfaceAnalyticTests {
         #expect(sphere.isUClosed == true)
         #expect(sphere.isVClosed == false)
 
-        if let torus = Surface.torus(
+        let torus = Surface.torus(
             origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 3)
-        {
+        #expect(torus != nil)
+        if let torus {
             #expect(torus.isUClosed == true)
             #expect(torus.isVClosed == true)
         }
@@ -87,6 +98,8 @@ struct SurfaceAnalyticTests {
         let p = sphere.point(atU: 0, v: 0)
         let dist = simd_length(p)
         #expect(abs(dist - r) < 1e-10)
+        // Any point at radius r passed; (0, 0) is (r, 0, 0) on the equator.
+        #expect(simd_length(p - SIMD3(r, 0, 0)) < 1e-12)
     }
 
     @Test("Create cylinder")
@@ -99,6 +112,7 @@ struct SurfaceAnalyticTests {
             // At u=0, v=0 should be at radius distance from Z axis
             let rDist = sqrt(p.x * p.x + p.y * p.y)
             #expect(abs(rDist - 3.0) < 1e-10)
+            #expect(simd_length(p - SIMD3(3, 0, 0)) < 1e-12)
         }
     }
 
@@ -108,6 +122,12 @@ struct SurfaceAnalyticTests {
             origin: .zero, axis: SIMD3(0, 0, 1),
             radius: 5, semiAngle: .pi / 6)
         #expect(cone != nil)
+        // Was non-nil only. The reference circle has radius 5 at v = 0, and v runs along the
+        // generatrix: 10 along it at 30 degrees is (5 + 10 sin 30, 0, 10 cos 30).
+        if let cone {
+            #expect(simd_length(cone.point(atU: 0, v: 0) - SIMD3(5, 0, 0)) < 1e-12)
+            #expect(simd_length(cone.point(atU: 0, v: 10) - SIMD3(10, 0, 8.6602540378443873)) < 1e-12)
+        }
     }
 
     @Test("Create torus")
@@ -119,6 +139,7 @@ struct SurfaceAnalyticTests {
         if let torus = torus {
             #expect(torus.isUPeriodic == true)
             #expect(torus.isVPeriodic == true)
+            #expect(simd_length(torus.point(atU: 0, v: 0) - SIMD3(13, 0, 0)) < 1e-12)
         }
     }
 
@@ -137,7 +158,13 @@ struct SurfaceAnalyticTests {
         let sphere = Surface.sphere(center: .zero, radius: r)!
         let mc = sphere.meanCurvature(atU: 0.5, v: 0.3)
         let expected: Double = 1.0 / r
-        if let mc { #expect(abs(abs(mc) - expected) < 1e-10) } else { Issue.record("no curvature") }
+        // The kernel's mean curvature is signed: -1/r with the sphere's outward normal.
+        if let mc {
+            #expect(abs(abs(mc) - expected) < 1e-10)
+            #expect(abs(mc + expected) < 1e-12)
+        } else {
+            Issue.record("no curvature")
+        }
     }
 
     @Test("Plane Gaussian curvature = 0")

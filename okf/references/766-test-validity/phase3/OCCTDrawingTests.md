@@ -216,6 +216,31 @@ Rows below were run: the injection turned the test red at the line named, the te
 | Polygon-Based HLR | Fast projection has hidden edges | `OCCTDrawingCreatePoly` | view tilted: **green** as written (non-nil only); rewritten (x + 0.1) | `:22`, `:23` | ✔ | PASS |
 | Polygon-Based HLR | Fast vs exact projection both succeed | `OCCTDrawingCreatePoly` | view tilted: **green** as written (non-nil only); rewritten (x + 0.1) | `:22`, `:23` (fast) | ✔ | PASS |
 | Polygon-Based HLR | Custom deflection affects result | `OCCTDrawingCreatePoly` | view tilted: **green** as written (non-nil only); rewritten (x + 0.1) | `:22`, `:23` | ✔ | PASS |
+| Selector Tests | Add and pick box at center | `OCCTSelectorPick` | pick reports every registered shape (a pick that works): green as written (`if !results.isEmpty`), which also passed on no hits; rewritten with the hit expectations in `withKnownIssue` | rewritten: `:47` known issue not recorded | ✔ | PASS |
+| Selector Tests | Pick miss at far corner | `OCCTSelectorPick` | pick reports every registered shape (a pick that works) | `:74` `results.isEmpty` | ✔ | PASS |
+| Selector Tests | Multiple shapes return correct IDs | `OCCTSelectorAddShape` | `OCCTSelectorAddShape` returns false; pick expectations added under `withKnownIssue` | `:96`, `:97` | ✔ | PASS |
+| Selector Tests | Remove shape then pick returns miss | `OCCTSelectorRemoveShape` | pick reports every registered shape (a pick that works), with remove keeping the shape registered | `:128` `results.isEmpty` | ✔ | PASS |
+| Selector Tests | Rectangle pick covers geometry | `OCCTSelectorPickRect` | pick reports every registered shape (a pick that works): green as written; rewritten with `withKnownIssue` | rewritten: `:153` known issue not recorded | ✔ | PASS |
+| Selector Tests | Clear all removes everything | `OCCTSelectorClear` | pick reports every registered shape (a pick that works), with clear keeping every shape registered | `:179` `results.isEmpty` | ✔ | PASS |
+| v0.149 DrawingTolerance | Symmetric tolerance rendered inline on the nominal label | `formatTolerance / DrawingTolerance (Swift)` | symmetric written `+/-` | `:23` | ✔ | N/A (pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call) |
+| v0.149 DrawingTolerance | Bilateral tolerance produces stacked upper + lower TEXT entries | `formatTolerance / DrawingTolerance (Swift)` | bilateral drops the lower value | `:39` | ✔ | N/A (pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call) |
+| v0.149 DrawingTolerance | Unilateral tolerance stacks signed value against a 0 | `formatTolerance / DrawingTolerance (Swift)` | unilateral (>= 0) drops the 0 | `:50` | ✔ | N/A (pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call) |
+| v0.149 DrawingTolerance | Fit class appended inline with space | `formatTolerance / DrawingTolerance (Swift)` | fit class appended without the space | `:65` | ✔ | N/A (pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call) |
+| v0.149 DrawingTolerance | Limits tolerance stacks upper over lower | `formatTolerance / DrawingTolerance (Swift)` | limits drops the lower value | `:77` | ✔ | N/A (pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call) |
+| v0.149 DrawingTolerance | DrawingTolerance Codable round-trip | `formatTolerance / DrawingTolerance (Swift)` | `init(from:)` decoding every case as `.none` | `:95` `back == t` | ✔ | N/A (pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call) |
+| Z-Layer Settings | Default values | `OCCTZLayerSettingsCreate` | create also turns the environment texture off | `:20` `useEnvironmentTexture == true` | ✔ | PASS |
+| Z-Layer Settings | Depth test toggle | `OCCTZLayerSettingsSetDepthTest` | setter no-op | `:28` | ✔ | PASS |
+| Z-Layer Settings | Depth write toggle | `OCCTZLayerSettingsSetDepthWrite` | setter no-op | `:37` | ✔ | PASS |
+| Z-Layer Settings | Clear depth toggle | `OCCTZLayerSettingsSetClearDepth` | setter no-op | `:44` | ✔ | PASS |
+| Z-Layer Settings | Polygon offset roundtrip | `OCCTZLayerSettingsSetPolygonOffset` | factor written as 0 | `:55` | ✔ | PASS |
+| Z-Layer Settings | Depth offset positive convenience | `OCCTZLayerSettingsSetDepthOffsetPositive` | calls `SetDepthOffsetNegative` | `:66` | ✔ | PASS |
+| Z-Layer Settings | Depth offset negative convenience | `OCCTZLayerSettingsSetDepthOffsetNegative` | calls `SetDepthOffsetPositive` | `:76` | ✔ | PASS |
+| Z-Layer Settings | Immediate mode toggle | `OCCTZLayerSettingsSetImmediate` | setter no-op | `:83` | ✔ | PASS |
+| Z-Layer Settings | Raytracable toggle | `OCCTZLayerSettingsSetRaytracable` | setter no-op | `:90` | ✔ | PASS |
+| Z-Layer Settings | Culling distance | `OCCTZLayerSettingsSetCullingDistance` | setter no-op | `:97` | ✔ | PASS |
+| Z-Layer Settings | Culling size | `OCCTZLayerSettingsSetCullingSize` | setter no-op | `:104` | ✔ | PASS |
+| Z-Layer Settings | Origin roundtrip | `OCCTZLayerSettingsSetOrigin` | setter no-op | `:112` to `:114` | ✔ | PASS |
+| Z-Layer Settings | Predefined layer IDs | `ZLayerSettings layer-id constants (Swift) vs Graphic3d_ZLayerId` | Swift `top` constant -1 | `:121` `ZLayerSettings.top == -2` | ✔ | PASS |
 | #1185 DrawingDimension.Radial/.Diameter share Circular | DrawingDimension.value: .radial reports radius, .diameter reports 2*radius | `DrawingDimension.value` | `.diameter` value returns the radius | `:21` | ✔ | N/A (pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call) |
 | #1185 DrawingDimension.Radial/.Diameter share Circular | DrawingDimension.id/.label read through for both .radial and .diameter | `DrawingDimension.id` | circular `id` reads nil | `:30`, `:32` | ✔ | N/A (pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call) |
 | #1185 DrawingDimension.Radial/.Diameter share Circular | DrawingDimension.transformed applies scale*p+translate for .diameter | `DrawingDimension.Circular.transformed` | circular transform leaves the radius unscaled | `:45` | ✔ | N/A (pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call) |

@@ -305,3 +305,268 @@ Probe: `Scripts/repro/766-geom2d-localprops-operations/`. Every row was run red 
 | Curve2D Operations Tests::Mirror across point | `OCCTCurve2DMirrorPoint` | mirror point x + 1 | ✅ | ✅ | MATCH |  |
 | Curve2D Operations Tests::Circle length approximately 2*pi*r | `OCCTCurve2DGetLength` | length x 1.01 | ✅ | ✅ | MATCH |  |
 | Curve2D Operations Tests::Segment length approximately Euclidean distance | `OCCTCurve2DGetLength` | length x 1.01 | ✅ | ✅ | MATCH |  |
+### #1979 executed: `Curve2DProjectionParityTests.swift`, `Curve2DSimplifyBSplineTests.swift`, `Curve2DTransformTests.swift`, `Direction2DUtilityTests.swift`
+Probe: `Scripts/repro/766-geom2d-projection-simplify-transform/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D projection entry points agree (#413)::All five entry points agree for an ordinary projection | `occtNearestProjectionOnCurve2d (OCCTCurve2DProjectPoint, OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve, OCCTCurve2DNearestParameter)` | shift the shared helper: parameter + 0.1, distance + 0.5 | ✅ | ✅ | MATCH | compared the spellings only with each other; now pins each case to the kernel |
+| Curve2D projection entry points agree (#413)::The four nearest-point entry points agree where there is no perpendicular foot | `occtNearestProjectionOnCurve2d` | shift the shared helper: parameter + 0.1, distance + 0.5 | ✅ | ✅ | MATCH |  |
+| Curve2D projection entry points agree (#413)::Parameter zero is a success, not a failure signal | `occtNearestProjectionOnCurve2d` | shift the shared helper: parameter + 0.1, distance + 0.5 | ✅ | ✅ | MATCH | `guard ... else { return }` and `if let`; now `#require` |
+| Curve2D SimplifyBSpline Tests::Simplify a BSpline curve | `OCCTCurve2DSimplifyBSpline` | return true without simplifying | ✅ | ✅ | MATCH | `_ = simplified`, no assertion; now pins the simplification |
+| Curve2D Transform::Translate 2D curve | `OCCTCurve2DTransform` | translation dx + 1 | ✅ | ✅ | MATCH | only the returned Bool, inside `if let` |
+| Curve2D Transform::Rotate 2D curve | `OCCTCurve2DTransform` | half the angle | ✅ | ✅ | MATCH | only the returned Bool, inside `if let` |
+| Curve2D Transform::Scale 2D curve | `OCCTCurve2DTransform` | factor + 1 | ✅ | ✅ | MATCH | only the returned Bool, inside `if let` |
+| Curve2D Transform::Mirror 2D curve through point | `OCCTCurve2DTransform` | mirror point x + 1 | ✅ | ✅ | MATCH | only the returned Bool, inside `if let` |
+| Curve2D Transform::Mirror 2D curve through axis | `OCCTCurve2DTransform` | swap the axis direction components | ✅ | ✅ | MATCH | only the returned Bool, inside `if let` |
+| Direction2D Utilities::normalize | `OCCTDirection2DNormalize` | swap the components | ✅ | ✅ | MATCH | unit length only; now pins (0.6, 0.8) |
+| Direction2D Utilities::angle | `OCCTDirection2DAngle` | half the angle | ✅ | ✅ | MATCH |  |
+| Direction2D Utilities::cross | `OCCTDirection2DCross` | negate | ✅ | ✅ | MATCH |  |
+### #1979 executed: `Extrema2dTests.swift`, `ExtremaLocateExtCC2dTests.swift`, `Fillet2DTests.swift`
+Probe: `Scripts/repro/766-geom2d-extrema-fillet2d/`. Every row was run red with the injection applied and green after it was reverted.
+| Extrema 2D::Distance between parallel lines | `OCCTExtremaExtElC2dLinLin` | squared distance x 1.1 | ✅ | ✅ | MATCH | `if let r = results.first` and 0.1 slack |
+| Extrema 2D::Parallel line matched points actually achieve the reported distance (#1494) | `OCCTExtremaExtElC2dLinLin` | squared distance x 1.1 | ✅ | ✅ | MATCH |  |
+| Extrema 2D::Distance between line and circle | `OCCTExtremaExtElC2dLinCirc` | circle centre y + 1 | ✅ | ✅ | MATCH | `count >= 1`, 0.1 slack; now both extrema |
+| Extrema 2D::Closest point on circle to external point | `OCCTExtremaExtPElC2dCirc` | point x + 1 | ✅ | ✅ | MATCH | `count >= 1`, 0.1 slack; now both extrema |
+| Extrema 2D::Closest point on line to point | `OCCTExtremaExtPElC2dLin` | point y + 1 | ✅ | ✅ | MATCH | `count >= 1`, 0.1 slack |
+| Extrema 2D::Distance between two curves | `OCCTExtremaExtCC2d` | measure curve 1 against itself | ✅ | ✅ | MATCH | `if let` and 0.1 slack on the minimum; now all four extrema |
+| Extrema_LocateExtCC2d Tests::localExtremum2d | `OCCTExtremaLocateExtCC2d` | seed u + pi | ✅ | ✅ | MATCH | `if let` and 0.5 slack |
+| 2D Fillet and Chamfer::Fillet single vertex of rectangular face | `OCCTFace2DFillet` | radius x 1.5 | ✅ | ✅ | MATCH | edge count only; now the area too |
+| 2D Fillet and Chamfer::Fillet multiple vertices | `OCCTFace2DFillet` | radius x 1.5 | ✅ | ✅ | MATCH | edge count only; now the area too |
+| 2D Fillet and Chamfer::Fillet with zero count returns nil | `OCCTFace2DFillet` | Swift wrapper returns the face unchanged for an empty list | ✅ | ✅ | MATCH |  |
+| 2D Fillet and Chamfer::Chamfer between adjacent edges | `OCCTFace2DChamfer` | second distance x 1.5 | ✅ | ✅ | MATCH | edge count only; now the area too |
+| 2D Fillet and Chamfer::Chamfer mismatched arrays returns nil | `OCCTFace2DChamfer` | Swift wrapper pads missing distances with 1.0 | ✅ | ✅ | MATCH |  |
+### #1979 executed: `GccAnaCirc2d3TanTests.swift`, `GccAnaLin2d2TanTests.swift`
+Probe: `Scripts/repro/766-geom2d-gccana-circ3tan-lines/`. Every row was run red with the injection applied and green after it was reverted.
+| GccAna Circ2d3Tan Tests::threePoints | `OCCTGccAnaCirc2d3TanPoints` | third point y + 1 | ✅ | ✅ | MATCH | `radius > 0`; now centre and radius |
+| GccAna Circ2d3Tan Tests::threeLines | `OCCTGccAnaCirc2d3TanLines` | third line x + 2 | ✅ | ✅ | MATCH | `count >= 1`; now pins the solution set |
+| GccAna Circ2d3Tan Tests::threeCircles | `OCCTGccAnaCirc2d3TanCircles` | third radius + 1 | ✅ | ✅ | MATCH | `count >= 1`; now pins the solution set |
+| GccAna Circ2d3Tan Tests::twoCirclesPoint | `OCCTGccAnaCirc2d2CirclesPoint` | point y + 1 | ✅ | ✅ | MATCH | `count >= 1`; now pins the solution set |
+| GccAna Circ2d3Tan Tests::circleAndTwoPoints | `OCCTGccAnaCirc2dCircle2Points` | second point x + 1 | ✅ | ✅ | MATCH | `count >= 1`; now pins the solution set |
+| GccAna Circ2d3Tan Tests::twoLinesPoint | `OCCTGccAnaCirc2d2LinesPoint` | point x + 1 | ✅ | ✅ | MATCH | `count >= 1`; now pins the solution set |
+| GccAna Lin2d2Tan Tests::line through two points | `OCCTGccAnaLin2d2TanPntPnt` | second point y + 1 | ✅ | ✅ | MATCH | `|dx| == |dy|` inside `if let`; now the signed direction |
+| GccAna Lin2d2Tan Tests::lines tangent to circle through point | `OCCTGccAnaLin2d2TanCircPnt` | point x + 1 | ✅ | ✅ | MATCH | `count >= 1`; now pins the solution set |
+### #1979 executed: `GccAnaLineSolverTests.swift`, `GccCircleOnConstraintTests.swift`
+| GccAna Line Solvers::Line through point parallel to reference | `OCCTGccAnaLin2dTanParPt` | point y + 1 | ✅ | ✅ | MATCH | `count >= 1`, direction to 0.01 |
+| GccAna Line Solvers::Lines tangent to circle parallel to reference | `OCCTGccAnaLin2dTanParCirc` | circle radius + 1 | ✅ | ✅ | MATCH | count only; now the two lines |
+| GccAna Line Solvers::Line through point perpendicular to reference | `OCCTGccAnaLin2dTanPerPtLin` | point x + 1 | ✅ | ✅ | MATCH | `count >= 1`, `|dy| > 0.9` |
+| GccAna Line Solvers::Lines tangent to circle perpendicular to reference | `OCCTGccAnaLin2dTanPerCircLin` | circle radius + 1 | ✅ | ✅ | MATCH | count only; now the two lines |
+| GccAna Line Solvers::Line through point at angle to reference | `OCCTGccAnaLin2dTanOblPt` | half the angle | ✅ | ✅ | MATCH | `count >= 1` |
+| GccAna Line Solvers::Lines tangent to curve at angle (Geom2dGcc) | `OCCTGeom2dGccLin2dTanObl` | half the angle | ✅ | ✅ | MATCH | `count >= 1` inside `if let` |
+| GccAna/Geom2dGcc Circle On-Constraint Solvers::Circle tangent to 2 lines center on line | `OCCTGccAnaCirc2d2TanOnLinLin` | second line y + 2 | ✅ | ✅ | MATCH | `count >= 1`, radius to 0.1 |
+| GccAna/Geom2dGcc Circle On-Constraint Solvers::Circle tangent to line center on line given radius | `OCCTGccAnaCirc2dTanOnRadLin` | radius + 1 | ✅ | ✅ | MATCH | `count >= 1` |
+| GccAna/Geom2dGcc Circle On-Constraint Solvers::Geom2dGcc circle tangent to 2 curves center on curve | `OCCTGeom2dGccCirc2d2TanOn` | pass the first curve twice | ✅ | ✅ | MATCH | `count >= 1` inside `if let` |
+| GccAna/Geom2dGcc Circle On-Constraint Solvers::Geom2dGcc circle tangent to curve center on curve given radius | `OCCTGeom2dGccCirc2dTanOnRad` | radius + 1 | ✅ | ✅ | MATCH | `count >= 1` inside `if let` |
+### #1979 executed: `GceMakeCirc2dTests.swift`, `GceMakeElips2dTests.swift`, `GceMakeHypr2dTests.swift`, `GceMakeLin2dTests.swift`, `GceMakeParab2dTests.swift`, `Geom2dAPIInterpolateTests.swift`, `Geom2dAPIPointsToBSplineTests.swift`
+Probe: `Scripts/repro/766-geom2d-gce-geom2dapi/`. Every row was run red with the injection applied and green after it was reverted.
+| gce_MakeCirc2d Tests::circleFromCenterRadius | `OCCTGceMakeCirc2dFromCenterRadius` | centre x + 1 | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed |
+| gce_MakeCirc2d Tests::circleThrough3Points | `OCCTGceMakeCirc2dFrom3Points` | second point y + 1 | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed |
+| gce_MakeElips2d Tests::ellipseFromCenterDir | `OCCTGceMakeElips2d` | centre x + 1 | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed |
+| gce_MakeHypr2d Tests::hyperbolaFromCenterDir | `OCCTGceMakeHypr2d` | centre x + 1 | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed |
+| gce_MakeLin2d Tests::lineFrom2Points | `OCCTGceMakeLin2dFrom2Points` | first point x + 1 | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed |
+| gce_MakeLin2d Tests::lineFromEquation | `OCCTGceMakeLin2dFromEquation` | c - 1 | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed |
+| gce_MakeParab2d Tests::parabolaFromCenterDir | `OCCTGceMakeParab2d` | vertex x + 1 | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed |
+| Geom2dAPI Interpolate Tests::basicInterpolation | `OCCTCurve2DInterpolate2D` | drop the last point | ✅ | ✅ | MATCH | `!= nil` only |
+| Geom2dAPI Interpolate Tests::periodicInterpolation | `OCCTCurve2DInterpolate2D` | ignore periodic | ✅ | ✅ | MATCH | `!= nil` only |
+| Geom2dAPI PointsToBSpline Tests::basicApproximation | `OCCTCurve2DApproximate2D` | last point y + 1 | ✅ | ✅ | MATCH | `!= nil` only |
+### #1979 executed: `GCMake2dConicTests.swift`
+Probe: `Scripts/repro/766-geom2d-gcmake2d-conic/`. Every row was run red with the injection applied and green after it was reverted.
+| GC_Make*2d Conic Tests::circle2dCenterRadius | `OCCTCurve2DMakeCircleCenterRadius` | radius + 1 | ✅ | ✅ | MATCH | `!= nil` and `isClosed` only |
+| GC_Make*2d Conic Tests::circle2d3Points | `OCCTCurve2DMakeCircle3Points` | second point y + 1 | ✅ | ✅ | MATCH | `!= nil` and `isClosed` only |
+| GC_Make*2d Conic Tests::circle2dCenterPoint | `OCCTCurve2DMakeCircleCenterPoint` | point x + 1 | ✅ | ✅ | MATCH | `!= nil` and `isClosed` only |
+| GC_Make*2d Conic Tests::circle2dAxis | `OCCTCurve2DMakeCircleAxis` | radius + 1 | ✅ | ✅ | MATCH | `!= nil` and `isClosed` only |
+| GC_Make*2d Conic Tests::circle2dParallel | `OCCTCurve2DMakeCircleParallel` | negate the distance | ✅ | ✅ | MATCH | nested in `if let c` |
+| GC_Make*2d Conic Tests::circle2dParallelInward | `OCCTCurve2DMakeCircleParallel` | negate the distance | ✅ | ✅ | MATCH | nested in `if let c` |
+| GC_Make*2d Conic Tests::ellipse2dFromAxis | `OCCTCurve2DMakeEllipse` | minor radius - 1 | ✅ | ✅ | MATCH | `!= nil` and `isClosed` only |
+| GC_Make*2d Conic Tests::ellipse2dFrom3Points | `OCCTCurve2DMakeEllipse3Points` | second point y + 1 | ✅ | ✅ | MATCH | nested in `if let e` |
+| GC_Make*2d Conic Tests::ellipse2dFromAx22d | `OCCTCurve2DMakeEllipseAxis22d` | reverse the y direction | ✅ | ✅ | MATCH | `!= nil` and `isClosed` only |
+| GC_Make*2d Conic Tests::hyperbola2dFromAxis | `OCCTCurve2DMakeHyperbola` | major radius + 1 | ✅ | ✅ | MATCH | `!= nil` only |
+| GC_Make*2d Conic Tests::hyperbola2dFrom3Points | `OCCTCurve2DMakeHyperbola3Points` | second point y + 1 | ✅ | ✅ | MATCH | nested in `if let h` |
+| GC_Make*2d Conic Tests::parabola2dFromAxis | `OCCTCurve2DMakeParabola` | focal + 1 | ✅ | ✅ | MATCH | `!= nil` only |
+| GC_Make*2d Conic Tests::parabola2dFromDirectrixFocus | `OCCTCurve2DMakeParabolaDirectrixFocus` | focus x + 1 | ✅ | ✅ | MATCH | `!= nil` only |
+### #1979 executed: `Geom2dEllipseTests.swift`, `Geom2dEvalArchimedeanSpiralTests.swift`
+Probe: `Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/`. Every row was run red with the injection applied and green after it was reverted.
+| Geom2d_Ellipse Properties::ellipse2DRadii | `OCCTCurve2DEllipseMajorRadius / OCCTCurve2DEllipseMinorRadius` | major radius + 1 | ✅ | ✅ | MATCH | nested in `if let e` |
+| Geom2d_Ellipse Properties::ellipse2DSetRadii | `OCCTCurve2DEllipseSetMajorRadius` | skip SetMajorRadius() | ✅ | ✅ | MATCH | nested in `if let e` |
+| Geom2d_Ellipse Properties::ellipse2DEccentricity | `OCCTCurve2DEllipseEccentricity` | eccentricity + 0.01 | ✅ | ✅ | MATCH | `> 0`, nested in `if let e` |
+| Geom2d_Ellipse Properties::ellipse2DFocal | `OCCTCurve2DEllipseFocal` | focal + 0.01 | ✅ | ✅ | MATCH | `> 0`, nested in `if let e` |
+| Geom2d_Ellipse Properties::ellipse2DFocus1 | `OCCTCurve2DEllipseFocus1` | negate x (report focus 2) | ✅ | ✅ | MATCH | `let _ = f`, no assertion |
+| Geom2dEval — Archimedean Spiral::spiralD0AtZero | `OCCTGeom2dEvalArchimedeanSpiralD0` | initial radius + 1 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — Archimedean Spiral::spiralD0AtTwoPi | `OCCTGeom2dEvalArchimedeanSpiralD0` | initial radius + 1 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — Archimedean Spiral::spiralD1 | `OCCTGeom2dEvalArchimedeanSpiralD1` | growth rate + 1 | ✅ | ✅ | MATCH | `speed > 0`; now D1 = (b, a) |
+| Geom2dEval — Archimedean Spiral::spiralWithInitialRadius | `OCCTGeom2dEvalArchimedeanSpiralD0` | initial radius + 1 | ✅ | ✅ | MATCH |  |
+### #1979 executed: `Geom2dEvalCircleInvolutePlacementTests.swift`, `Geom2dEvalCircleInvoluteTests.swift`, `Geom2dEvalLogSpiralTests.swift`
+Probe: `Scripts/repro/766-geom2d-eval-involute-logspiral/`. Every row was run red with the injection applied and green after it was reverted.
+| Geom2dEval — Circle Involute with Placement::involuteD0WithPlacementAtOrigin | `OCCTGeom2dEvalCircleInvoluteD0WithPlacement` | origin x + 1 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — Circle Involute with Placement::involuteD0WithPlacementTranslated | `OCCTGeom2dEvalCircleInvoluteD0WithPlacement` | origin x + 1 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — Circle Involute with Placement::involuteD0WithPlacementRotated | `OCCTGeom2dEvalCircleInvoluteD0WithPlacement` | origin x + 1 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — Circle Involute with Placement::involuteD0PlacementDiffersFromIdentity | `OCCTGeom2dEvalCircleInvoluteD0WithPlacement` | origin x + 1 | ✅ | ✅ | MATCH | "differ" only; now both points pinned |
+| Geom2dEval — Circle Involute with Placement::involuteD1WithPlacement | `OCCTGeom2dEvalCircleInvoluteD1WithPlacement` | radius + 1 | ✅ | ✅ | MATCH | `speed > 0`; now |D1| = R t and D1 pinned |
+| Geom2dEval — Circle Involute::involuteD0AtZero | `OCCTGeom2dEvalCircleInvoluteD0` | radius + 1 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — Circle Involute::involuteGrows | `OCCTGeom2dEvalCircleInvoluteD0` | radius + 1 | ✅ | ✅ | MATCH | `r2 > r1` only |
+| Geom2dEval — Circle Involute::involuteD1 | `OCCTGeom2dEvalCircleInvoluteD1` | radius + 1 | ✅ | ✅ | MATCH | `speed > 0` only |
+| Geom2dEval — Logarithmic Spiral::logSpiralD0AtZero | `OCCTGeom2dEvalLogSpiralD0` | scale + 1 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — Logarithmic Spiral::logSpiralGrows | `OCCTGeom2dEvalLogSpiralD0` | scale + 1 | ✅ | ✅ | MATCH | `r2 > r1` only |
+| Geom2dEval — Logarithmic Spiral::logSpiralD1 | `OCCTGeom2dEvalLogSpiralD1` | growth exponent + 0.1 | ✅ | ✅ | MATCH | `speed > 0` only |
+### #1979 executed: `Geom2dEvalSineWaveTests.swift`, `Geom2dHyperbolaTests.swift`, `Geom2dLineTests.swift`
+Probe: `Scripts/repro/766-geom2d-conic-props-sine-lprop/`. Every row was run red with the injection applied and green after it was reverted.
+| Geom2dEval — 2D Sine Wave::sineWave2DD0AtZero | `OCCTGeom2dEvalSineWaveD0` | phase + 0.5 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — 2D Sine Wave::sineWave2DD0Peak | `OCCTGeom2dEvalSineWaveD0` | phase + 0.5 | ✅ | ✅ | MATCH | y only; x = t now pinned too |
+| Geom2dEval — 2D Sine Wave::sineWave2DD1 | `OCCTGeom2dEvalSineWaveD1` | omega + 1 | ✅ | ✅ | MATCH |  |
+| Geom2d_Hyperbola Properties::hyperbola2DRadii | `OCCTCurve2DHyperbolaMajorRadius` | major radius + 1 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Geom2d_Hyperbola Properties::hyperbola2DEccentricity | `OCCTCurve2DHyperbolaEccentricity` | eccentricity + 0.01 | ✅ | ✅ | MATCH | `e > 1` inside `if let`; now sqrt(34)/5 |
+| Geom2d_Hyperbola Properties::hyperbola2DFocal | `OCCTCurve2DHyperbolaFocal` | focal + 0.01 | ✅ | ✅ | MATCH | `focal > 0` inside `if let`; now 2 sqrt(34) |
+| Geom2d_Hyperbola Properties::hyperbola2DFocus1 | `OCCTCurve2DHyperbolaFocus1` | focus x + 0.5 | ✅ | ✅ | MATCH | `x > 0` inside `if let`; now (sqrt 34, 0) |
+| Geom2d_Line Properties::line2DDirection | `OCCTCurve2DLineDirection` | direction components swapped | ✅ | ✅ | MATCH | `if let`; now `#require` and both components |
+| Geom2d_Line Properties::line2DLocation | `OCCTCurve2DLineLocation` | location x + 1 | ✅ | ✅ | MATCH | `if let`; now `#require` and both components |
+| Geom2d_Line Properties::line2DSetDirection | `OCCTCurve2DLineSetDirection` | SetDirection skipped | ✅ | ✅ | MATCH | `if let`; now `#require` and both components |
+| Geom2d_Line Properties::line2DSetLocation | `OCCTCurve2DLineSetLocation` | SetLocation skipped | ✅ | ✅ | MATCH | `if let`; now `#require` and both components |
+| Geom2d_Line Properties::line2DDistance | `OCCTCurve2DLineDistance` | distance + 1 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Geom2d_Line Properties::line2DLin2d | `OCCTCurve2DLineLin2d` | location x + 1 | ✅ | ✅ | MATCH | `if let`; now `#require` and location pinned |
+### #1979 executed: `Geom2dLPropTests.swift`, `Geom2dOffsetTests.swift`, `Geom2dParabolaTests.swift`
+| Geom2dLProp Curvature Analysis::Curvature extrema on ellipse | `OCCTCurve2DGetCurvatureExtrema` | last extremum dropped | ✅ | ✅ | MATCH | `count >= 1` inside `if let`; now four typed extrema |
+| Geom2dLProp Curvature Analysis::Inflection points on S-curve | `OCCTCurve2DGetInflectionPoints` | inflections never collected | ✅ | ✅ | MATCH | `count >= 0`, which cannot fail; now one inflection at u = 20.638 |
+| Geom2dLProp Curvature Analysis::CurInfType mirrors Curve2DSpecialPointType case-for-case | `CurInfType.init (Swift)` | .minCurvature mapped to .curvatureMaximum | ✅ | ✅ | MATCH |  |
+| Geom2dLProp Curvature Analysis::curvatureExtremaDetailed() agrees with curvatureExtrema() on the same curve | `OCCTCurve2DGetCurvatureExtrema` | last extremum dropped | ✅ | ✅ | MATCH | `count >= 2` inside `if let`; now 4 |
+| Geom2dLProp Curvature Analysis::inflectionPointsDetailed() agrees with inflectionPoints() on the same curve | `OCCTCurve2DGetInflectionPoints` | inflections never collected | ✅ | ✅ | MATCH | `count >= 1` inside `if let`; now 1 |
+| Geom2d_OffsetCurve Properties::offset2DValue | `OCCTCurve2DOffsetValue` | offset + 1 | ✅ | ✅ | MATCH | two `if let`s; now `#require` |
+| Geom2d_OffsetCurve Properties::offset2DSetValue | `OCCTCurve2DOffsetSetValue` | SetOffsetValue skipped | ✅ | ✅ | MATCH | two `if let`s; now `#require` |
+| Geom2d_OffsetCurve Properties::offset2DBasisCurve | `OCCTCurve2DOffsetBasisCurve` | returns the offset curve, not its basis | ✅ | ✅ | MATCH | asserted nothing (`let _ = basis.domain`); now pins basis(2) |
+| Geom2d_Parabola Properties::parabola2DFocal | `OCCTCurve2DParabolaFocal` | focal + 1 | ✅ | ✅ | MATCH | `focal > 0` inside `if let`; now 3 |
+| Geom2d_Parabola Properties::parabola2DSetFocal | `OCCTCurve2DParabolaSetFocal` | SetFocal skipped | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Geom2d_Parabola Properties::parabola2DFocus | `OCCTCurve2DParabolaFocus` | focus x + 1 | ✅ | ✅ | MATCH | asserted nothing (`let _ = f`); now (0, 0) |
+| Geom2d_Parabola Properties::parabola2DEccentricity | `OCCTCurve2DParabolaEccentricity` | eccentricity + 0.1 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Geom2d_Parabola Properties::parabola2DParameter | `OCCTCurve2DParabolaParameter` | parameter + 1 | ✅ | ✅ | MATCH | `p > 0` inside `if let`; now 6 |
+### #1979 executed: `Issue1407EvaluatorGuardTests.swift`, `Issue1474Curve2DApproxDetailsTests.swift`, `Issue1477Geom2dCurvesTests.swift`, `Issue1511Curve2DCurveTypeOtherCurveFallbackTests.swift`
+Probe: `Scripts/repro/766-geom2d-issue-regressions-a/`. Every row was run red with the injection applied and green after it was reverted.
+| Issue #1407, 2D evaluator guards::A zero-amplitude sine wave does not abort | `OCCTGeom2dEvalSineWaveD0` | amplitude 0 replaced by 1 | ✅ | ✅ | MATCH |  |
+| Issue #1407, 2D evaluator guards::A zero-radius circle involute does not abort | `OCCTGeom2dEvalCircleInvoluteD0` | radius 0 replaced by 1 | ✅ | ✅ | MATCH |  |
+| Issue #1407, 2D evaluator guards::A zero-growth Archimedean spiral does not abort | `OCCTGeom2dEvalArchimedeanSpiralD0` | growth rate 0 replaced by 1 | ✅ | ✅ | MATCH |  |
+| Curve2D.approxWithDetails surfaces MaxError (#1474)::approxWithDetails reports the true maxError for a starved (over-tolerance) fit | `OCCTGeomConvertApproxCurve2D` | MaxError discarded (reported as 0) | ✅ | ✅ | MATCH | `guard` + `Issue.record`; now `#require`, maxError pinned |
+| Curve2D.approxWithDetails surfaces MaxError (#1474)::approximated and approxWithDetails agree on a well-converged fit | `OCCTCurve2DApproximate` | plain entry point tolerance x 1e-4 | ✅ | ✅ | MATCH | `guard` + `Issue.record`; now `#require`, poles and degree pinned |
+| #1477: Geom2d_Curves.mm buffer-count and silent-drop fixes::returned count never exceeds a small buffer's capacity, and matches what was written | `OCCTGeom2dConvertApproxArcsSegments` | returns written - 1 | ✅ | ✅ | MATCH | fixture precondition now `#require`, full count pinned |
+| #1477: Geom2d_Curves.mm buffer-count and silent-drop fixes::join fails (returns nil) when a curve cannot attach, rather than silently dropping it | `OCCTCurve2DJoinToBSpline` | failed Add ignored | ✅ | ✅ | MATCH |  |
+| #1477: Geom2d_Curves.mm buffer-count and silent-drop fixes::join fails when curves are out of order and don't chain end-to-end | `OCCTCurve2DJoinToBSpline` | failed Add ignored | ✅ | ✅ | MATCH |  |
+| #1477: Geom2d_Curves.mm buffer-count and silent-drop fixes::join still succeeds for genuinely continuous curves | `OCCTCurve2DJoinToBSpline` | returns nullptr | ✅ | ✅ | MATCH | `!= nil`; now endpoints pinned |
+| Issue #1511 Finding 2: OCCTCurve2DCurveType OtherCurve fallback::a null OCCTCurve2DRef returns GeomAbs_OtherCurve (8), not GeomAbs_OffsetCurve (7) | `OCCTCurve2DCurveType` | null fallback back to 7 | ✅ | ✅ | MATCH |  |
+| Issue #1511 Finding 2: OCCTCurve2DCurveType OtherCurve fallback::an ordinary line's curve type is unaffected (Line = 0) | `OCCTCurve2DCurveType` | GetType result replaced by 1 | ✅ | ✅ | MATCH |  |
+### #1979 executed: `Issue1050BisectorDomainTests.swift`
+Probe: `Scripts/repro/766-geom2d-bisector-domain-nonfinite/`. Every row was run red with the injection applied and green after it was reverted.
+| Issue1050 bisector intersection domain::A meeting point past the old window is found | `OCCTBisectorInterPointPoint` | both IntRes2d_Domain upper bounds clamped to 100 (the pre-#1050 window) | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Issue1050 bisector intersection domain::A meeting point inside the old window is unchanged | `OCCTBisectorInterPointPoint` | A.y - 2 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Issue1050 bisector intersection domain::Parallel bisectors still report no intersection | `OCCTBisectorInterPointPoint` | returns 1 when nothing was found | ✅ | ✅ | MATCH |  |
+| Issue1050 bisector intersection domain::A crossing on the dead side of the half-line reports no intersection | `OCCTBisectorInterPointPoint` | returns 1 when nothing was found | ✅ | ✅ | MATCH |  |
+| Issue1050 bisector intersection domain::A meeting point past any input-derived bound is found | `OCCTBisectorInterPointPoint` | both IntRes2d_Domain upper bounds clamped to 100 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Issue1050 bisector intersection domain::The documented circumcentre example holds, and its three reorderings do not | `OCCTBisectorInterPointPoint` | A.y - 2 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Issue1050 bisector intersection domain::Coincident points return no intersection rather than crashing | `OCCTBisectorInterPointPoint` | catch returns 1 instead of 0 | ✅ | ✅ | MATCH |  |
+| Issue1050BisectorDomainTests.swift (free function)::Coincident bisectors report intersection segment endpoints | `OCCTBisectorInterPointPoint` | segment endpoints never collected | ✅ | ✅ | MATCH | `#expect(count == 2)` then `hits[0]`: a short result crashed the run; now `#require` |
+| Issue1085 bisector non-finite coordinates::NaN in first point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::NaN in second point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::NaN in third point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::NaN in fourth point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Positive infinity in first point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Positive infinity in second point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Positive infinity in third point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Positive infinity in fourth point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Negative infinity in first point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Negative infinity in second point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Negative infinity in third point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Negative infinity in fourth point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Large finite coordinates exceeding 1e150 return empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Coordinates near but below threshold still work | `OCCTBisectorInterPointPoint` | maxSafeMagnitude lowered to 1e148 | ✅ | ✅ | MATCH | asserted nothing (`_ = hits`) on a fixture whose C and D coincide in Double at 1e149; new fixture pinned to (0, 5) |
+### #1979 executed: `Issue1646EvaluatorContractTests.swift`
+Probe: `Scripts/repro/766-geom2d-evaluator-contract/`. Every row was run red with the injection applied and green after it was reverted.
+| Issue #1646, 2D evaluator contract::Every D0 evaluator refuses the argument its OCCT constructor rejects | `OCCTGeom2dEval*D0` | Swift wrapper ignores the bridge's bool (the pre-#1646 void contract) | ✅ | ✅ | MATCH |  |
+| Issue #1646, 2D evaluator contract::Every D1 evaluator refuses the argument its OCCT constructor rejects | `OCCTGeom2dEval*D1` | Swift wrapper ignores the bridge's bool | ✅ | ✅ | MATCH |  |
+| Issue #1646, 2D evaluator contract::The same evaluators answer the accepted argument beside each rejected one | `OCCTGeom2dEval*D0/D1` | D0 writer adds 1e-3 to x | ✅ | ✅ | MATCH | `isFinite` only; now all five pinned |
+| Issue #1646, 2D evaluator contract::A legitimate evaluation at the origin is a value, not a refusal | `OCCTGeom2dEvalSineWaveD0` | D0 writer refuses an exact (0, 0) | ✅ | ✅ | MATCH |  |
+| Issue #1646, 2D evaluator contract::A NaN argument is refused, not answered with a NaN point | `occtEval2dWriteD0/D1` | finite-output check skipped | ✅ | ✅ | MATCH |  |
+| Issue #1646, 2D evaluator contract::A NaN parameter is refused, and EvalD0 never raises on one | `occtEval2dWriteD0/D1` | finite-output check skipped | ✅ | ✅ | MATCH |  |
+| Issue #1646, 2D evaluator contract::A finite argument whose evaluation overflows is refused | `OCCTGeom2dEvalLogSpiralD0` | finite-output check skipped | ✅ | ✅ | MATCH | neighbour was `isFinite`; now pinned |
+| Issue #1646, 2D evaluator contract::The placement overloads refuse a bad radius, direction, or non-finite argument | `OCCTGeom2dEvalCircleInvoluteD0/D1WithPlacement` | Swift wrapper ignores the bridge's bool | ✅ | ✅ | MATCH |  |
+| Issue #1646, 2D evaluator contract::The placement overloads answer a well-formed call | `OCCTGeom2dEvalCircleInvoluteD0/D1WithPlacement` | D0 writer adds 1e-3 to x | ✅ | ✅ | MATCH | D1 row was `isFinite` on one component each; now both pinned |
+### #1979 executed: `Issue478Curve2DTransformParityTests.swift`
+Probe: `Scripts/repro/766-geom2d-transform-split-continuity/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D Transform Family Parity (#478)::translate vs translated(by:) | `OCCTCurve2DTransform vs OCCTCurve2DTranslate` | in-place dispatcher only: first transform parameter + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Family Parity (#478)::rotate vs rotated(around:angle:) | `OCCTCurve2DTransform vs OCCTCurve2DRotate` | in-place dispatcher only: first transform parameter + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Family Parity (#478)::scale vs scaled(from:factor:) about a non-origin centre | `OCCTCurve2DTransform vs OCCTCurve2DScale` | in-place dispatcher only: first transform parameter + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Family Parity (#478)::scale parity holds for a negative factor | `OCCTCurve2DTransform vs OCCTCurve2DScale` | in-place dispatcher only: first transform parameter + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Family Parity (#478)::mirrorPoint vs mirrored(acrossPoint:) | `OCCTCurve2DTransform vs OCCTCurve2DMirrorPoint` | in-place dispatcher only: first transform parameter + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Family Parity (#478)::mirrorAxis vs mirrored(acrossLine:direction:) | `OCCTCurve2DTransform vs OCCTCurve2DMirrorAxis` | in-place dispatcher only: first transform parameter + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Absolute Geometry (#478)::translation moves both endpoints by the delta | `buildTrsf2D (both families)` | shared builder: first transform parameter + 1e-3 (parity tests stay green) | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Absolute Geometry (#478)::rotation turns both endpoints about the centre | `buildTrsf2D (both families)` | shared builder: first transform parameter + 1e-3 (parity tests stay green) | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Absolute Geometry (#478)::scale moves both endpoints away from the centre, not the origin | `buildTrsf2D (both families)` | shared builder: first transform parameter + 1e-3 (parity tests stay green) | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Absolute Geometry (#478)::a negative scale factor reflects through the centre | `buildTrsf2D (both families)` | shared builder: first transform parameter + 1e-3 (parity tests stay green) | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Absolute Geometry (#478)::point mirror reflects both endpoints through the point | `buildTrsf2D (both families)` | shared builder: first transform parameter + 1e-3 (parity tests stay green) | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Absolute Geometry (#478)::axis mirror reflects both endpoints across the line | `buildTrsf2D (both families)` | shared builder: first transform parameter + 1e-3 (parity tests stay green) | ✅ | ✅ | MATCH |  |
+### #1979 executed: `Issue480Curve2DKnotSplitContinuityTests.swift`, `Issue485Curve2DContinuityTests.swift`, `Issue486Curve2DBatchTests.swift`
+| Curve2D knot-splitting continuity range (#480)::A cubic 2D BSpline with simple interior knots reports interior splits only at .c3 | `OCCTCurve2DSplitAtDiscontinuities` | requested continuity passed one lower | ✅ | ✅ | MATCH |  |
+| Curve2D knot-splitting continuity range (#480)::The .c1 default reports a real kink | `OCCTCurve2DSplitAtDiscontinuities` | requested continuity passed one lower | ✅ | ✅ | MATCH |  |
+| Curve2D measured continuity (#485)::Knot multiplicity drives the measured class, at GeomAbs_Shape's own ordinals | `OCCTCurve2DGetContinuity` | pre-#485 encoding (C2 = 2, G1 = -2, CN = 99) | ✅ | ✅ | MATCH | three `if let`s; now `#require` |
+| Curve2D measured continuity (#485)::Analytic 2D curves report CN as ordinal 6, not 99 | `OCCTCurve2DGetContinuity` | pre-#485 encoding | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Curve2D measured continuity (#485)::A G1-only 2D curve is reachable and reports ordinal 1 | `OCCTCurve2DGetContinuity` | pre-#485 encoding | ✅ | ✅ | MATCH | `guard` + `Issue.record`; now `#require` |
+| Curve2D measured continuity (#485)::continuity and continuityClass agree on the same curve, in every class | `OCCTCurve2DGetContinuity` | pre-#485 encoding | ✅ | ✅ | MATCH |  |
+| Issue 486: Curve2D batch-eval spellings agree::empty parameters give an empty result, not one padded with zeroes | `Curve2D.evaluateGrid (Swift)` | empty input returns one zero point | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+### #1979 executed: `Issue549Curve2DArcLengthRangeTests.swift`
+Probe: `Scripts/repro/766-geom2d-arclength-zero-radius/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D ranged arc-length contract after the #549 bridge removal::A reversed in-domain range measures the span, not the failure sentinel | `OCCTCurve2DGetLengthBetween` | u1 > u2 returns -1 | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::A reversed range on a single-span curve measures the span too | `OCCTCurve2DGetLengthBetween` | u1 > u2 returns -1 | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::Parameters past both ends clamp to the domain instead of extrapolating | `OCCTCurve2DGetLengthBetween` | pre-bounded adaptor over [u1, u2] (the pre-#549 extrapolation) | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::A range wholly outside the domain measures zero, not a fragment of the extrapolation | `OCCTCurve2DGetLengthBetween` | pre-bounded adaptor over [u1, u2] | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::Equal parameters are still a genuine zero, not the failure sentinel | `OCCTCurve2DGetLengthBetween` | u1 == u2 returns -1 | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::The -1.0 sentinel still reports a genuine failure | `OCCTCurve2DGetLengthBetween` | NaN bound measured as 0 | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::The two spellings are one computation, on the ranges that used to diverge | `Curve2D.arcLength (Swift)` | arcLength returns -1 on a reversed range while length(from:to:) measures it | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::2D and 3D answer the same on a reversed and an out-of-domain range | `OCCTCurve2DGetLengthBetween` | u1 > u2 returns -1 | ✅ | ✅ | MATCH |  |
+### #1979 executed: `Issue791ConvertCircleHelperTests.swift`, `Issue815Curve2DExtremaSelfIntersectTests.swift`, `Issue840ClassifyPoint2dToleranceTests.swift`, `Issue881PerpendicularBasisTests.swift`
+Probe: `Scripts/repro/766-geom2d-issue-regressions-b/`. Every row was run red with the injection applied and green after it was reverted.
+| Issue791 Circle 2D BSpline helper consolidation::fullCircleOriginMatchesPriorBaseline | `OCCTConvertCircleToBSpline2D` | radius + 1e-3 | ✅ | ✅ | MATCH |  |
+| Issue791 Circle 2D BSpline helper consolidation::offsetArcMatchesPriorBaseline | `OCCTConvertCircleToBSpline2D` | radius + 1e-3 | ✅ | ✅ | MATCH |  |
+| Issue791 Circle 2D BSpline helper consolidation::convertedCircleStaysOnTheAnalyticCircle | `OCCTConvertCircleToBSpline2D` | radius + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Extrema and Self-Intersection (#815)::allExtrema between two separated circles: exactly a nearest and a farthest point pair | `OCCTCurve2DAllExtrema` | each distance + 1e-3 | ✅ | ✅ | MATCH | min/max inside `if let`, 0.1 slack; now all four pinned |
+| Curve2D Extrema and Self-Intersection (#815)::Self-intersections of a looped cubic Bezier curve | `OCCTCurve2DSelfIntersect` | result count flipped (none found / phantom one) | ✅ | ✅ | MATCH | `if let`, 0.1 slack; now exact |
+| Curve2D Extrema and Self-Intersection (#815)::A circle (convex, simple) reports no self-intersections | `OCCTCurve2DSelfIntersect` | result count flipped (none found / phantom one) | ✅ | ✅ | MATCH | force-unwrapped fixture; now `#require` |
+| Issue #840: classifyPoint2d default tolerance alignment::classifyPoint2d agrees with Face.classify and classifyPoint2D on a borderline point | `OCCTIntToolsFClass2dPerform` | default tolerance back to 1e-7 (pre-#840) | ✅ | ✅ | MATCH |  |
+| Issue #840: classifyPoint2d default tolerance alignment::well-inside point is unaffected by the tolerance change | `OCCTIntToolsFClass2dPerform` | IN and OUT swapped in the state mapping | ✅ | ✅ | MATCH |  |
+| Issue #840: classifyPoint2d default tolerance alignment::well-outside point is unaffected by the tolerance change | `OCCTIntToolsFClass2dPerform` | IN and OUT swapped in the state mapping | ✅ | ✅ | MATCH |  |
+| perpendicularBasis unification: Section2D (#881)::sectionPlaneBasis's auto-derived (u, v) matches OCCT's gp_Ax2 canonical basis | `Shape.sectionPlaneBasis (Swift)` | u and v swapped | ✅ | ✅ | MATCH |  |
+| perpendicularBasis unification: Section2D (#881)::sectionPlaneBasis with an explicitU is unaffected by the unification | `Shape.sectionPlaneBasis (Swift)` | explicit u not orthogonalised against the normal | ✅ | ✅ | MATCH |  |
+### #1979 executed: `Issue965Curve2DPropertyLifetimeTests.swift`, `Issue999Curve2DParametersTests.swift`
+| Curve2D *Properties views keep their parent alive (#965)::every Curve2D *Properties accessor keeps its parent alive | `Curve2D.circleProperties (Swift)` | view built on a different owner, so the parent is released | ✅ | ✅ | MATCH |  |
+| Curve2D *Properties views keep their parent alive (#965)::a view outliving its parent still reads the right values | `Curve2D.circleProperties (Swift)` | view built on a different owner | ✅ | ✅ | MATCH |  |
+| Curve2D *Properties views keep their parent alive (#965)::a view outliving its parent survives 400 intervening allocations | `Curve2D.circleProperties (Swift)` | view built on a different owner | ✅ | ✅ | MATCH |  |
+| Curve2D *Properties views keep their parent alive (#965)::a setter called through a view is visible on the parent | `OCCTCurve2DCircleSetRadius` | setRadius reports success without setting | ✅ | ✅ | MATCH |  |
+| Curve2D conversion and bisector parameters are live (#999)::Each parameterisation gives a structurally different B-spline | `OCCTCurve2DToBSpline` | requested parameterisation ignored (always TgtThetaOver2) | ✅ | ✅ | MATCH |  |
+| Curve2D conversion and bisector parameters are live (#999)::Every parameterisation but polynomial reproduces the circle exactly | `OCCTCurve2DToBSpline` | requested parameterisation ignored | ✅ | ✅ | MATCH |  |
+| Curve2D conversion and bisector parameters are live (#999)::A parameterisation OCCT rejects for this arc returns nil rather than a wrong curve | `OCCTCurve2DToBSpline` | requested parameterisation ignored | ✅ | ✅ | MATCH |  |
+| Curve2D conversion and bisector parameters are live (#999)::The trimming distance bounds the bisector, and a longer one extends it | `OCCTCurve2DBisectorPC` | maxDistance ignored (always 500) | ✅ | ✅ | MATCH |  |
+### #1979 executed: `Point2DCreationTests.swift`, `Point2DDistanceTests.swift`, `Point2DTransformTests.swift`
+Probe: `Scripts/repro/766-geom2d-point-matrix-polygon/`. Every row was run red with the injection applied and green after it was reverted.
+| Point2D Creation::createPoint | `OCCTPoint2DCreate` | x + 1e-3 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Point2D Creation::createFromSIMD | `OCCTPoint2DCreate` | x + 1e-3 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Point2D Creation::setCoords | `OCCTPoint2DSetCoords` | SetCoord skipped | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Point2D Distance::distanceBetweenPoints | `OCCTPoint2DDistance` | distance + 1e-3 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Point2D Distance::squareDistance | `OCCTPoint2DSquareDistance` | square distance + 1e-3 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Point2D Distance::distanceToCurve | `OCCTPoint2DDistanceToCurve` | distance + 1e-3 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Point2D Transforms::translate | `OCCTPoint2DTranslated` | dx + 1e-3 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |
+| Point2D Transforms::rotate | `OCCTPoint2DRotated` | angle negated | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |
+| Point2D Transforms::scale | `OCCTPoint2DScaled` | factor + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |
+| Point2D Transforms::mirrorPoint | `OCCTPoint2DMirroredPoint` | mirror point x + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |
+| Point2D Transforms::mirrorAxis | `OCCTPoint2DMirroredAxis` | axis origin y + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |
+| Point2D Transforms::transformedByTransform2D | `OCCTPoint2DTransformed` | identity applied instead of the transform | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |
+### #1979 executed: `Polygon2DTests.swift`, `Matrix2DTests.swift`
+| Poly_Polygon2D::create and query | `OCCTPolyPolygon2DNode` | 0-based index passed through (off by one) | ✅ | ✅ | MATCH | two `if let`s; now `#require` |
+| Poly_Polygon2D::deflection | `OCCTPolyPolygon2DSetDeflection` | Deflection() setter skipped | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Poly_Polygon2D::all nodes | `OCCTPolyPolygon2DNode` | 0-based index passed through (off by one) | ✅ | ✅ | MATCH | `if let`, and `#expect(count)` before `nodes[2]` crashed the run; now `#require` |
+| Matrix2D::identity | `OCCTMat2dIdentity` | (1,2) + 1e-3 | ✅ | ✅ | MATCH | determinant only; now every entry |
+| Matrix2D::rotation | `OCCTMat2dRotation` | angle negated | ✅ | ✅ | MATCH | determinant only (1 for every rotation); now every entry |
+| Matrix2D::scale | `OCCTMat2dScale` | factor negated | ✅ | ✅ | MATCH | determinant only (9 for +-3); now every entry |
+| Matrix2D::multiplyAndInvert | `OCCTMat2dMultiply` | returns A instead of A*B | ✅ | ✅ | MATCH | one entry; now every entry |
+| Matrix2D::transpose | `OCCTMat2dTranspose` | returns the input | ✅ | ✅ | MATCH | one entry; now every entry |
+| Matrix2D::invert | `OCCTMat2dInvert` | returns the input | ✅ | ✅ | MATCH | `if let`, one entry of the product; now `#require`, the inverse and the product pinned |
+### #1979 executed: `MakeEdge2dTests.swift`, `MakeEdge2dExtensionsTests.swift`
+Probe: `Scripts/repro/766-geom2d-makeedge2d/`. Every row was run red with the injection applied and green after it was reverted.
+| BRepBuilderAPI MakeEdge2d::Edge 2D from points | `OCCTMakeEdge2dFromPoints` | end x + 1 | ✅ | ✅ | MATCH | `!= nil` and edge type; now vertices pinned |
+| BRepBuilderAPI MakeEdge2d::Edge 2D from circle arc | `OCCTMakeEdge2dFromCircle` | end parameter halved | ✅ | ✅ | MATCH | `!= nil` and edge type; now vertices pinned |
+| BRepBuilderAPI MakeEdge2d::Edge 2D from line | `OCCTMakeEdge2dFromLine` | end parameter + 1 | ✅ | ✅ | MATCH | `!= nil` and edge type; now vertices pinned |
+| BRepLib_MakeEdge2d Extensions Tests::edge2dFullCircle | `OCCTMakeEdge2dFullCircle` | radius + 1 | ✅ | ✅ | MATCH | `nbChildren >= 0` (cannot fail) in `if let` |
+| BRepLib_MakeEdge2d Extensions Tests::edge2dEllipse | `OCCTMakeEdge2dEllipse` | major radius + 1 | ✅ | ✅ | MATCH | `nbChildren >= 0` (cannot fail) in `if let` |
+| BRepLib_MakeEdge2d Extensions Tests::edge2dEllipseArc | `OCCTMakeEdge2dEllipseArc` | end parameter halved | ✅ | ✅ | MATCH | `nbChildren >= 0` (cannot fail) in `if let` |
+| BRepLib_MakeEdge2d Extensions Tests::edge2dFromCurve | `OCCTMakeEdge2dCurveRange` | end parameter + 1 | ✅ | ✅ | MATCH | `nbChildren >= 0` (cannot fail) in two `if let`s |
+| BRepLib_MakeEdge2d Extensions Tests::edge2dFromCurveFullRange | `OCCTMakeEdge2dCurve` | start parameter + 1 (no longer closed) | ✅ | ✅ | MATCH | `nbChildren >= 0` (cannot fail) in two `if let`s |
