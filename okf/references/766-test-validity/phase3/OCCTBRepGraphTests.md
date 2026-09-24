@@ -60,6 +60,18 @@
 | **v0.142 .containedIn now resolves** | faceInSolid | Contained-in recipe | child index + 1 |
 | **v0.142 .containedIn now resolves** | faceInSolidOOB | Contained-in recipe | occurrence clamped |
 | **v0.142 .containedIn now resolves** | ancestorMissing | Contained-in recipe | ancestor error remapped |
+| **Graph history absorb (#290)** | absorbWritesRecords | History absorb | record count reads 0 |
+| **Graph history absorb (#290)** | topFaceResolvesToTwoStrips | History absorb | long derivation list truncated |
+| **Graph history absorb (#290)** | splitOfResolvesOccurrences | History absorb | record count reads 0 |
+| **Graph history absorb (#290)** | createdByMatchesLabel | History absorb | record count reads 0 |
+| **Graph history absorb (#290)** | withoutAbsorbNothingResolves | History absorb | node reported as its own derivative |
+| **Graph history absorb (#290)** | untouchedNodeIsNotDeleted | History absorb | IsDeleted always true |
+| **Chained WithFullHistory absorb (#336)** | chainedCutsAbsorbAcrossTwoHops | Chained absorb | record count reads 0 |
+| **Chained WithFullHistory absorb (#336)** | nonIntersectingSecondCutAbsorbsNothing | Chained absorb | absorb writes a spurious record |
+| **BRepGraph history record operation name at any length (#1078)** | opNameLengthReported | Record name length | length query off by one |
+| **BRepGraph history record operation name at any length (#1078)** | nullBufferReportsTheLength | Record name length | length query off by one |
+| **BRepGraph history record operation name at any length (#1078)** | shortBufferReportsTheFullLength | Record name length | length query off by one |
+| **BRepGraph history record operation name at any length (#1078)** | malformedBufferArgumentsAreRefused | Record name length | negative max accepted |
 
 ---
 
@@ -117,6 +129,18 @@
 | faceInSolid | OCCTBRepGraphChildIndices | Contained-in recipe | NodeRef(kind:, index: $0 + 1) | ✅ | ✅ | Strengthened: kind alone passed a wrong index; now pins face 0 |
 | faceInSolidOOB | OCCTBRepGraphChildIndices | Contained-in recipe | element(at: min(occurrence, count - 1)) | ✅ | ✅ |  |
 | ancestorMissing | OCCTBRepGraphHistoryNbRecords | Contained-in recipe | resolveAncestor maps to .invalid | ✅ | ✅ |  |
+| absorbWritesRecords | OCCTBRepGraphHistoryNbRecords | History absorb | return 0 | ✅ | ✅ | `> 0` tightened to the kernel's 11 |
+| topFaceResolvesToTwoStrips | OCCTBRepGraphHistoryFindDerived | History absorb | total > 2 -> 1 | ✅ | ✅ |  |
+| splitOfResolvesOccurrences | OCCTBRepGraphHistoryNbRecords | History absorb | return 0 | ✅ | ✅ |  |
+| createdByMatchesLabel | OCCTBRepGraphHistoryGetRecordInfo | History absorb | NbRecords returns 0 | ✅ | ✅ |  |
+| withoutAbsorbNothingResolves | OCCTBRepGraphHistoryFindDerived | History absorb | empty FindDerived returns the node itself | ✅ | ✅ |  |
+| untouchedNodeIsNotDeleted | OCCTBRepGraphHistoryIsDeleted | History absorb | return true | ✅ | ✅ |  |
+| chainedCutsAbsorbAcrossTwoHops | OCCTBRepGraphAddWithHistory | Chained absorb | NbRecords returns 0 | ✅ | ✅ |  |
+| nonIntersectingSecondCutAbsorbsNothing | OCCTBRepGraphAddWithHistory | Chained absorb | extra Record() after every AddWithHistory | ✅ | ✅ |  |
+| opNameLengthReported | OCCTBRepGraphHistoryGetRecordInfo | Record name length | length-only query returns srcLen + 1 | ✅ | ✅ |  |
+| nullBufferReportsTheLength | OCCTBRepGraphHistoryGetRecordInfo | Record name length | length-only query returns srcLen + 1 | ✅ | ✅ | out-of-range -1 is bridge argument validation, no kernel counterpart |
+| shortBufferReportsTheFullLength | OCCTBRepGraphHistoryGetRecordInfo | Record name length | length-only query returns srcLen + 1 | ✅ | ✅ |  |
+| malformedBufferArgumentsAreRefused | OCCTBRepGraphHistoryGetRecordInfo | Record name length | early `outOpNameMax < 0` refusal removed; negative max treated as a length query | ✅ | ✅ |  |
 
 ---
 
