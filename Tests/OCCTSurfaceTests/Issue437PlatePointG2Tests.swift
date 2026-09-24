@@ -167,6 +167,9 @@ struct Issue437PlatePointG2Tests {
         let g0 = Shape.plateSurface(
             through: pentagon, orders: Array(repeating: .g0, count: pentagon.count))
         #expect(g0 != nil)
+        // #766: the kernel's area for this plate, the same fixture as
+        // AdvancedPlateSurfaceTests' G0 test (Scripts/repro/766-advanced-plate-surface/).
+        #expect(abs((g0?.surfaceArea ?? 0) - 272.86803196188612) < 1e-6)
     }
 
     // MARK: - Public contract: plateSurface(pointConstraints:curveConstraints:)
@@ -192,5 +195,7 @@ struct Issue437PlatePointG2Tests {
             curveConstraints: [(wire: try rectangleWire(), order: .g0)]
         )
         #expect(g0 != nil)
+        // #766: the kernel's area for this plate (Scripts/repro/766-issue398-403-437-480/).
+        #expect(abs((g0?.surfaceArea ?? 0) - 264.49343438299809) < 1e-6)
     }
 }
