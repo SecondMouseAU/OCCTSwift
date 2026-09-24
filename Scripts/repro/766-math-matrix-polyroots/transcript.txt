@@ -1,0 +1,7 @@
+createAndQuery: rows=3 cols=3
+setGetValue: (1,1)=5 (2,1)=0
+determinant: -2
+invert: -1.9999999999999998 1 1.4999999999999998 -0.49999999999999994
+quadratic: done=1 n=2 3 2
+linear: done=1 n=1 -2
+noRealRoots: done=1 n=0

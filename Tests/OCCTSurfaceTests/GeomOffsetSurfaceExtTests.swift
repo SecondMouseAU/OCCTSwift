@@ -29,6 +29,12 @@ struct GeomOffsetSurfaceExtTests {
         }
         guard let off = plane.offset(distance: 2.0) else { return }
         #expect(off.offsetBasis != nil)
+        // #766: `!= nil` passed the offset surface handed back as its own basis. The basis is
+        // the z = 0 plane: (1, 2) is (1, 2, 0) on it and (1, 2, 2) on the offset, see Scripts/repro/766-offset-plate-helix/.
+        if let basis = off.offsetBasis {
+            #expect(simd_length(basis.point(atU: 1, v: 2) - SIMD3(1, 2, 0)) < 1e-12)
+            #expect(simd_length(off.point(atU: 1, v: 2) - SIMD3(1, 2, 2)) < 1e-12)
+        }
     }
 
     @Test func nonOffsetSurfaceOffsetValueIsZero() {
