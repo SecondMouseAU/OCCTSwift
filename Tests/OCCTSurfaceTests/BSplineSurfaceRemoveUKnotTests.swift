@@ -14,12 +14,15 @@ struct BSplineSurfaceRemoveUKnotTests {
     }
 
     @Test func removeUKnot() {
-        if let s = makeBSplineSurface() {
+        let fixture = makeBSplineSurface()
+        #expect(fixture != nil)
+        if let s = fixture {
             // Attempt removal on the ORIGINAL boundary knot, exactly as the V test this mirrors
             // does: may legitimately fail (boundary knots carry full multiplicity), so this half
             // only proves the call doesn't crash, matching that precedent.
-            let _ = s.bsplineRemoveUKnot(index: 1, multiplicity: 0, tolerance: 1.0)
-            #expect(true)  // no crash
+            // #766: was `let _ = ...` then `#expect(true)`. Geom_BSplineSurface::RemoveUKnot
+            // throws "invalid Index" for a boundary knot; the bridge catches it and says false.
+            #expect(!s.bsplineRemoveUKnot(index: 1, multiplicity: 0, tolerance: 1.0))
 
             // A genuinely removable case, so the boolean itself is checked too, not just survival:
             // insert a fresh interior U knot at multiplicity 1, then remove it back out at a
