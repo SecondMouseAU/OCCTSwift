@@ -33,6 +33,7 @@ struct ConvertElementarySurfacesTests {
             u1: 0, u2: .pi, v1: 0, v2: 10)
         #expect(s != nil)
         if let s {
+            #expect(s.domain.uMax == .pi && s.domain.vMax == 10)
             #expect(simd_length(pointAt30x60(s) - SIMD3(4.6488686489193523, 6.5106082884085996, 5.196152422706632)) < 1e-12)
         }
     }
