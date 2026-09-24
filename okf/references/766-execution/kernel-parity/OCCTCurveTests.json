@@ -3530,5 +3530,324 @@
     "green": "passed",
     "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt",
     "note": "Rewritten: md >= 25"
+  },
+  {
+    "test_name": "Curve3D Conversion Tests::Circle to BSpline",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConversionTests.swift",
+    "bridge_function": "OCCTCurve3DToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "degree 2, 6 poles, periodic"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert::CurveToBSplineCurve: degree 2, 6 poles, rational, periodic"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "degree raised by one after conversion",
+    "red": "Curve3DConversionTests.swift:28 b.poleCount == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: poleCount > 0 and degree > 0"
+  },
+  {
+    "test_name": "Curve3D Conversion Tests::BSpline to Bezier segments",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConversionTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineToBeziers",
+    "bridge_output": {
+      "type": "value",
+      "data": "3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert_BSplineCurveToBezierCurve: NbArcs 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one arc fewer",
+    "red": "Curve3DConversionTests.swift:40 segs.count == 3",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: count >= 2"
+  },
+  {
+    "test_name": "Curve3D Conversion Tests::Join two segments into BSpline",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConversionTests.swift",
+    "bridge_function": "OCCTCurve3DJoinToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0) -> (10,5,0) over [0, 5 + sqrt 50]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Add=1, start (0,0,0), end (10,5,0), domain [0, 12.071067811865474]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "later curves not added",
+    "red": "Curve3DConversionTests.swift:56 simd_distance(j.endPoint, SIMD3(10, 5, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: end points to 0.1"
+  },
+  {
+    "test_name": "Curve3D Conversion Tests::Join returns nil rather than silently dropping a disconnected curve",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConversionTests.swift",
+    "bridge_function": "OCCTCurve3DJoinToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert_CompCurveToBSplineCurve::Add = 0 for the 4-unit gap"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Add() failure ignored",
+    "red": "Curve3DConversionTests.swift:71 Curve3D.join([seg1, seg2]) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Conversion Tests::Approximate curve",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConversionTests.swift",
+    "bridge_function": "OCCTCurve3DApproximate",
+    "bridge_output": {
+      "type": "value",
+      "data": "every sample within 0.01 of radius 5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: occtApproxCurve's result is checked against the arc it approximates"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "tolerance x 1000",
+    "red": "Curve3DConversionTests.swift:90 abs(simd_length(p) - 5) < 0.01",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Curve3D Draw Tests::Adaptive draw on circle produces points",
+    "test_file": "Tests/OCCTCurveTests/Curve3DDrawTests.swift",
+    "bridge_function": "OCCTCurve3DDrawAdaptive",
+    "bridge_output": {
+      "type": "value",
+      "data": "64 points on radius 5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_TangentialDeflection(0.1, 0.01): 64 points"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "deflections x 4 (and, separately, one point fewer)",
+    "red": "Curve3DDrawTests.swift:23 points.count == 64",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: count >= 10, radius to 0.1"
+  },
+  {
+    "test_name": "Curve3D Draw Tests::Uniform draw produces exact count",
+    "test_file": "Tests/OCCTCurveTests/Curve3DDrawTests.swift",
+    "bridge_function": "OCCTCurve3DDrawUniform",
+    "bridge_output": {
+      "type": "value",
+      "data": "32 points on radius 5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_UniformAbscissa(32): 32 points"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one point fewer",
+    "red": "Curve3DDrawTests.swift:33 points.count == 32",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Draw Tests::Deflection draw produces points",
+    "test_file": "Tests/OCCTCurveTests/Curve3DDrawTests.swift",
+    "bridge_function": "OCCTCurve3DDrawDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": "17"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_UniformDeflection(0.1): 17 points"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "deflection x 4",
+    "red": "Curve3DDrawTests.swift:44 points.count == 17",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: count >= 4"
+  },
+  {
+    "test_name": "Curve3D Draw Tests::Adaptive draw on segment produces at least 2 points",
+    "test_file": "Tests/OCCTCurveTests/Curve3DDrawTests.swift",
+    "bridge_function": "OCCTCurve3DDrawAdaptive",
+    "bridge_output": {
+      "type": "value",
+      "data": "2, (0,0,0) and (10,5,3)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_TangentialDeflection on the segment: 2 points"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one point fewer",
+    "red": "Curve3DDrawTests.swift:55 points.count == 2",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: count >= 2. The first rewrite compared the last point with == and failed green by 4e-16; it now uses a distance"
+  },
+  {
+    "test_name": "Curve3D Evaluation v0.110::evalD0BSpline",
+    "test_file": "Tests/OCCTCurveTests/Curve3DEvalTests.swift",
+    "bridge_function": "OCCTCurve3DEvalD0",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "EvalD0(first) = (0,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "x + 0.5",
+    "red": "Curve3DEvalTests.swift:30 simd_length(p) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: tolerance 1e-3 inside `if let`"
+  },
+  {
+    "test_name": "Curve3D Evaluation v0.110::evalD1BSpline",
+    "test_file": "Tests/OCCTCurveTests/Curve3DEvalTests.swift",
+    "bridge_function": "OCCTCurve3DEvalD1",
+    "bridge_output": {
+      "type": "value",
+      "data": "P (5,5,0), D1 (0.8782753106899468, 0, 0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "EvalD3(mid): P=(4.9999999999999991, 4.9999999999999991, 0) D1=(0.8782753106899468, -6.4e-17, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "D1.y + 0.5",
+    "red": "Curve3DEvalTests.swift:43 simd_distance(r.d1, Self.d1) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: |d1| > 0.1"
+  },
+  {
+    "test_name": "Curve3D Evaluation v0.110::evalD2BSpline",
+    "test_file": "Tests/OCCTCurveTests/Curve3DEvalTests.swift",
+    "bridge_function": "OCCTCurve3DEvalD2",
+    "bridge_output": {
+      "type": "value",
+      "data": "D2 (0, -0.44230769230769207, 0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "D2=(9.7e-16, -0.44230769230769207, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "D2.y + 0.5",
+    "red": "Curve3DEvalTests.swift:51 simd_distance(r.d2, Self.d2) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: ended in #expect(true)"
+  },
+  {
+    "test_name": "Curve3D Evaluation v0.110::evalD3BSpline",
+    "test_file": "Tests/OCCTCurveTests/Curve3DEvalTests.swift",
+    "bridge_function": "OCCTCurve3DEvalD3",
+    "bridge_output": {
+      "type": "value",
+      "data": "D3 (-0.0213346229317402, 0.11200677039163265, 0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "D3=(-0.0213346229317402, 0.11200677039163265, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "D3.y + 0.5",
+    "red": "Curve3DEvalTests.swift:59 simd_distance(r.d3, Self.d3) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: ended in #expect(true)"
+  },
+  {
+    "test_name": "Curve3D Evaluation v0.110::evalD0Circle",
+    "test_file": "Tests/OCCTCurveTests/Curve3DEvalTests.swift",
+    "bridge_function": "OCCTCurve3DEvalD0",
+    "bridge_output": {
+      "type": "value",
+      "data": "(5,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "circle EvalD0(0) = (5,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "x + 0.5",
+    "red": "Curve3DEvalTests.swift:68 curve.evalD0(at: 0) == SIMD3(5, 0, 0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt"
   }
 ]
