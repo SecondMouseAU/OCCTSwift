@@ -316,8 +316,8 @@ struct StressPostOperationStateTests {
         let r2 = box.subtracting(sphere)
         // Epic #766: both used to sit behind `if let`. The sphere of radius 5 is inscribed in the
         // 10-wide box, so the union is the box and the cut is 1000 - 4/3·π·125.
-        #expect(abs((v1 ?? 0) - 1000.0) < 1e-6)
-        #expect(abs((v2 ?? 0) - 523.5987756) < 1e-6)
+        #expect(abs(v1! - 1000.0) < 1e-6)
+        #expect(abs(v2! - 523.5987756) < 1e-6)
         #expect(abs((r1?.volume ?? 0) - 1000.0) < 1e-6)
         #expect(abs((r2?.volume ?? 0) - 476.4012244) < 1e-6)
         #expect(r1?.isValid == true)
@@ -608,11 +608,9 @@ struct StressEvalAndUpdateTolNullPCurveTests {
             tols.append(tol)
         }
         #expect(tols.count == 3)
-        if tols.count == 3 {
-            #expect(abs(tols[0] - 1e-7) < 1e-12)
-            #expect(abs(tols[1] - 15) < 1e-9)
-            #expect(abs(tols[2] - 15) < 1e-9)
-        }
+        #expect(abs(tols[0] - 1e-7) < 1e-12)
+        #expect(abs(tols[1] - 15) < 1e-9)
+        #expect(abs(tols[2] - 15) < 1e-9)
     }
 
     // The route OCCT 8.0.1 opened: #1402 made BRep_Tool::CurveOnPlane validate the edge range and
@@ -640,6 +638,10 @@ struct StressEvalAndUpdateTolNullPCurveTests {
         // above describes is not the one this input takes. BRepTools::EvalAndUpdateTol measures
         // 3.5 against the first face and 6.5 against the rest, and the stored tolerance only ever
         // rises (Scripts/repro/766-stress-null-invalid/transcript.txt).
-        #expect(tols == [3.5, 6.5, 6.5, 6.5, 6.5, 6.5])
+        let expected = [3.5, 6.5, 6.5, 6.5, 6.5, 6.5]
+        #expect(tols.count == expected.count)
+        for (got, want) in zip(tols, expected) {
+            #expect(abs(got - want) < 1e-9)
+        }
     }
 }
