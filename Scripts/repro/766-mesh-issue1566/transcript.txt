@@ -1,0 +1,3 @@
+merged box: nbNodes=24 nbTriangles=12 hasNormals=0
+vertexOverflowRefuses: nbNodes 24 > maxVertices 1 -> 1
+indexOverflowRefuses: nbTriangles*3 36 > maxIndices 1 -> 1
