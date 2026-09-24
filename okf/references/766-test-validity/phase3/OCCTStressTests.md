@@ -288,3 +288,30 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressConcurrencyTests (all six suites)
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-concurrency/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: Concurrent Read-Only Queries | `parallelVolumeQuery` | `OCCTShapeGetVolume` | OCCTShapeGetVolume reports Mass() × 1.5 | StressConcurrencyTests.swift:35 Expectation failed: abs(first - 1000.0) < 1e-9 | ✔ | MATCH | yes |
+| Stress: Concurrent Read-Only Queries | `parallelAreaQuery` | `OCCTShapeGetSurfaceArea` | OCCTShapeGetSurfaceArea × 1.5 | StressConcurrencyTests.swift:52 Expectation failed: abs(first - 100.0 * .pi) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Concurrent Read-Only Queries | `parallelBoundsQuery` | `OCCTShapeGetBounds` | OCCTShapeGetBounds max.x + 100 | StressConcurrencyTests.swift:69 Expectation failed: abs(m.x - 5) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Concurrent Read-Only Queries | `parallelFaceCountQuery` | `OCCTShapeGetSubShapeCount` | OCCTShapeGetSubShapeCount + 1 | StressConcurrencyTests.swift:85 Expectation failed: c == 6 | ✔ | MATCH | no |
+| Stress: Concurrent Read-Only Queries | `parallelIsValidQuery` | `OCCTShapeIsValid` | OCCTShapeIsValid always false | StressConcurrencyTests.swift:98 Expectation failed: r == true | ✔ | MATCH | no |
+| Stress: Concurrent Curve Evaluation | `parallelCurve3DEval` | `OCCTCurve3DGetPoint` | OCCTCurve3DGetPoint: x coordinate set to NaN | StressConcurrencyTests.swift:120 Expectation failed: p.x.isFinite | ✔ | MATCH | no |
+| Stress: Concurrent Curve Evaluation | `parallelCurve2DEval` | `OCCTCurve2DGetPoint` | OCCTCurve2DGetPoint x + 1 | StressConcurrencyTests.swift:137 Expectation failed: abs((p.x * p.x + p.y * p.y).squareRoot() - 5) < 1e-9 | ✔ | MATCH | yes |
+| Stress: Concurrent Curve Evaluation | `parallelSurfaceEval` | `OCCTSurfaceGetPoint` | OCCTSurfaceGetPoint: x coordinate set to NaN | StressConcurrencyTests.swift:155 Expectation failed: p.x.isFinite | ✔ | MATCH | no |
+| Stress: Concurrent Shape Creation | `parallelBoxCreation` | `OCCTShapeCreateBox` | OCCTShapeCreateBox returns nil | StressConcurrencyTests.swift:172 Expectation failed: shapes.count == 4 | ✔ | MATCH | no |
+| Stress: Concurrent Shape Creation | `parallelBooleanOps` | `OCCTShapeUnionEx, OCCTShapeSubtractEx, OCCTShapeIntersectEx` | runBooleanEx returns nil after a successful build | StressConcurrencyTests.swift:189 Expectation failed: volumes.count == 3 | ✔ | MATCH | yes |
+| Stress: Concurrent Document Creation (#344) | `parallelDocumentCreate` | `OCCTDocumentCreate` | OCCTDocumentCreate returns nil | StressConcurrencyTests.swift:217 Expectation failed: documents.count == 40 | ✔ | N/A | no |
+| Stress: Sequential Determinism | `booleanDeterministic` | `OCCTShapeSubtractEx` | runBooleanEx returns nil after a successful build | StressConcurrencyTests.swift:236 Expectation failed: volumes.count == 10 | ✔ | MATCH | no |
+| Stress: Sequential Determinism | `filletDeterministic` | `OCCTShapeFillet` | OCCTShapeFillet returns nil | StressConcurrencyTests.swift:252 Expectation failed: volumes.count == 10 | ✔ | MATCH | yes |
+| Stress: Sequential Determinism | `meshDeterministic` | `OCCTShapeCreateMesh` | OCCTShapeCreateMesh returns nil | StressConcurrencyTests.swift:268 Expectation failed: vertexCounts.count == 10 | ✔ | MATCH | yes |
+| Stress: Sequential Determinism | `volumeQueryDeterministic` | `OCCTShapeGetVolume` | OCCTShapeGetVolume reports Mass() × 1.5 | StressConcurrencyTests.swift:285 Expectation failed: abs(first - 2 * .pi * .pi * 10 * 9) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Sendable Boundary Crossing | `shapeAcrossTaskBoundary` | `OCCTShapeGetVolume` | OCCTShapeGetVolume reports Mass() × 1.5 | StressConcurrencyTests.swift:299 Expectation failed: abs(v - 1000.0) < 0.01 | ✔ | MATCH | no |
+| Stress: Sendable Boundary Crossing | `curveAcrossTaskBoundary` | `OCCTCurve3DGetPoint` | OCCTCurve3DGetPoint: x coordinate set to NaN | StressConcurrencyTests.swift:307 Expectation failed: pt.x.isFinite | ✔ | MATCH | no |
+| Stress: Sendable Boundary Crossing | `surfaceAcrossTaskBoundary` | `OCCTSurfaceGetPoint` | OCCTSurfaceGetPoint: x coordinate set to NaN | StressConcurrencyTests.swift:313 Expectation failed: pt.x.isFinite | ✔ | MATCH | no |
+| Stress: Sendable Boundary Crossing | `documentAcrossTaskBoundary` | `OCCTDocumentGetShapeCount` | OCCTDocumentGetShapeCount - 1 | StressConcurrencyTests.swift:320 Expectation failed: count == 1 | ✔ | N/A | yes |
+| Stress: Sendable Boundary Crossing | `wireAcrossTaskBoundary` | `OCCTWireGetLength` | OCCTWireGetLength × 1.5 | StressConcurrencyTests.swift:328 Expectation failed: abs(l - 40) < 1e-9 | ✔ | MATCH | yes |

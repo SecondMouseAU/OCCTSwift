@@ -46,5 +46,525 @@
     "kernel_result": {"status": "success", "result": "unified shape", "note": "Kernel patch 0013 guards null pcurves in ShapeUpgrade_UnifySameDomain::IntUnifyFaces"},
     "bridge_result": {"status": "success", "result": "unified shape", "note": "Bridge calls kernel which now handles null pcurves safely"},
     "comparison": {"equal": true, "differences": [], "note": "Kernel patch 0013 (upstream OCCT#1392) fixes the crash; bridge parity maintained"}
+  },
+  {
+    "test_name": "Stress: Concurrent Read-Only Queries::parallelVolumeQuery",
+    "bridge_function": "OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): box volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "box volume 1000",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetVolume reports Mass() × 1.5",
+      "env": "OCCT766=|VOLSCALE|",
+      "red": "StressConcurrencyTests.swift:35 Expectation failed: abs(first - 1000.0) < 1e-9",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Concurrent Read-Only Queries::parallelAreaQuery",
+    "bridge_function": "OCCTShapeGetSurfaceArea",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): sphere area 314.159265359 (4·π·25)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "sphere area 314.159265359 (4·π·25)",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetSurfaceArea × 1.5",
+      "env": "OCCT766=|AREASCALE|",
+      "red": "StressConcurrencyTests.swift:52 Expectation failed: abs(first - 100.0 * .pi) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Concurrent Read-Only Queries::parallelBoundsQuery",
+    "bridge_function": "OCCTShapeGetBounds",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): cylinder max (5.0000001, 5.0000001, 10.0000001)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "cylinder max (5.0000001, 5.0000001, 10.0000001)",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetBounds max.x + 100",
+      "env": "OCCT766=|BOUNDSHIFT|",
+      "red": "StressConcurrencyTests.swift:69 Expectation failed: abs(m.x - 5) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Concurrent Read-Only Queries::parallelFaceCountQuery",
+    "bridge_function": "OCCTShapeGetSubShapeCount",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): 6 faces"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "6 faces",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetSubShapeCount + 1",
+      "env": "OCCT766=|OFFBYONE:OCCTShapeGetSubShapeCount|",
+      "red": "StressConcurrencyTests.swift:85 Expectation failed: c == 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Concurrent Read-Only Queries::parallelIsValidQuery",
+    "bridge_function": "OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): torus valid"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "torus valid",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeIsValid always false",
+      "env": "OCCT766=|INVALID|",
+      "red": "StressConcurrencyTests.swift:98 Expectation failed: r == true",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Concurrent Curve Evaluation::parallelCurve3DEval",
+    "bridge_function": "OCCTCurve3DGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom_Circle samples finite, e.g. (5,0), (3.11745,3.90916)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom_Circle samples finite, e.g. (5,0), (3.11745,3.90916)",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCurve3DGetPoint: x coordinate set to NaN",
+      "env": "OCCT766=|NAN:OCCTCurve3DGetPoint|",
+      "red": "StressConcurrencyTests.swift:120 Expectation failed: p.x.isFinite",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Concurrent Curve Evaluation::parallelCurve2DEval",
+    "bridge_function": "OCCTCurve2DGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom2d_Circle samples all at |p| = 5"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom2d_Circle samples all at |p| = 5",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCurve2DGetPoint x + 1",
+      "env": "OCCT766=|OFFSET:OCCTCurve2DGetPoint|",
+      "red": "StressConcurrencyTests.swift:137 Expectation failed: abs((p.x * p.x + p.y * p.y).squareRoot() - 5) < 1e-9",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Concurrent Curve Evaluation::parallelSurfaceEval",
+    "bridge_function": "OCCTSurfaceGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom_BezierSurface samples finite, e.g. (0.5,0.5) -> (7.5, 7.5, 1.125)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom_BezierSurface samples finite, e.g. (0.5,0.5) -> (7.5, 7.5, 1.125)",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSurfaceGetPoint: x coordinate set to NaN",
+      "env": "OCCT766=|NAN:OCCTSurfaceGetPoint|",
+      "red": "StressConcurrencyTests.swift:155 Expectation failed: p.x.isFinite",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Concurrent Shape Creation::parallelBoxCreation",
+    "bridge_function": "OCCTShapeCreateBox",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeBox(10,10,10) volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeBox(10,10,10) volume 1000",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateBox returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeCreateBox|",
+      "red": "StressConcurrencyTests.swift:172 Expectation failed: shapes.count == 4",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Concurrent Shape Creation::parallelBooleanOps",
+    "bridge_function": "OCCTShapeUnionEx, OCCTShapeSubtractEx, OCCTShapeIntersectEx",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): fuse 1000, cut 476.4012244, common 523.5987756"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fuse 1000, cut 476.4012244, common 523.5987756",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "runBooleanEx returns nil after a successful build",
+      "env": "OCCT766=|BOOLNULL|",
+      "red": "StressConcurrencyTests.swift:189 Expectation failed: volumes.count == 3",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Concurrent Document Creation (#344)::parallelDocumentCreate",
+    "bridge_function": "OCCTDocumentCreate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: XCAFApp_Application::NewDocument, no geometric value",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "OCCTDocumentCreate returns nil",
+      "env": "OCCT766=|NULL:OCCTDocumentCreate|",
+      "red": "StressConcurrencyTests.swift:217 Expectation failed: documents.count == 40",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Sequential Determinism::booleanDeterministic",
+    "bridge_function": "OCCTShapeSubtractEx",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): cut volume 476.401224402"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "cut volume 476.401224402",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "runBooleanEx returns nil after a successful build",
+      "env": "OCCT766=|BOOLNULL|",
+      "red": "StressConcurrencyTests.swift:236 Expectation failed: volumes.count == 10",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Sequential Determinism::filletDeterministic",
+    "bridge_function": "OCCTShapeFillet",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): fillet(r=1) volume 975.587013891"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fillet(r=1) volume 975.587013891",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFillet returns nil",
+      "env": "OCCT766=|FILLETNULL|",
+      "red": "StressConcurrencyTests.swift:252 Expectation failed: volumes.count == 10",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Sequential Determinism::meshDeterministic",
+    "bridge_function": "OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepMesh(0.5): 24 nodes"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepMesh(0.5): 24 nodes",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateMesh returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeCreateMesh|",
+      "red": "StressConcurrencyTests.swift:268 Expectation failed: vertexCounts.count == 10",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Sequential Determinism::volumeQueryDeterministic",
+    "bridge_function": "OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): torus volume 1776.5287922 (2·π²·10·9)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "torus volume 1776.5287922 (2·π²·10·9)",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetVolume reports Mass() × 1.5",
+      "env": "OCCT766=|VOLSCALE|",
+      "red": "StressConcurrencyTests.swift:285 Expectation failed: abs(first - 2 * .pi * .pi * 10 * 9) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Sendable Boundary Crossing::shapeAcrossTaskBoundary",
+    "bridge_function": "OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): box volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "box volume 1000",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetVolume reports Mass() × 1.5",
+      "env": "OCCT766=|VOLSCALE|",
+      "red": "StressConcurrencyTests.swift:299 Expectation failed: abs(v - 1000.0) < 0.01",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Sendable Boundary Crossing::curveAcrossTaskBoundary",
+    "bridge_function": "OCCTCurve3DGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): point at π = (-5, 6.1e-16, 0)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "point at π = (-5, 6.1e-16, 0)",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCurve3DGetPoint: x coordinate set to NaN",
+      "env": "OCCT766=|NAN:OCCTCurve3DGetPoint|",
+      "red": "StressConcurrencyTests.swift:307 Expectation failed: pt.x.isFinite",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Sendable Boundary Crossing::surfaceAcrossTaskBoundary",
+    "bridge_function": "OCCTSurfaceGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): plane point(0,0) = (0,0,0)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "plane point(0,0) = (0,0,0)",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSurfaceGetPoint: x coordinate set to NaN",
+      "env": "OCCT766=|NAN:OCCTSurfaceGetPoint|",
+      "red": "StressConcurrencyTests.swift:313 Expectation failed: pt.x.isFinite",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Sendable Boundary Crossing::documentAcrossTaskBoundary",
+    "bridge_function": "OCCTDocumentGetShapeCount",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: XCAFDoc_ShapeTool label count, 1 by construction",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "OCCTDocumentGetShapeCount - 1",
+      "env": "OCCT766=|OFFBYONE:OCCTDocumentGetShapeCount|",
+      "red": "StressConcurrencyTests.swift:320 Expectation failed: count == 1",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Sendable Boundary Crossing::wireAcrossTaskBoundary",
+    "bridge_function": "OCCTWireGetLength",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): rectangle wire length 40"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "rectangle wire length 40",
+      "source": "Scripts/repro/766-stress-concurrency/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTWireGetLength × 1.5",
+      "env": "OCCT766=|LENSCALE|",
+      "red": "StressConcurrencyTests.swift:328 Expectation failed: abs(l - 40) < 1e-9",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]
