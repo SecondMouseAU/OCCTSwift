@@ -9,7 +9,7 @@ import simd
 @Suite("Curve3D Arc Length")
 struct Curve3DArcLengthTests {
     // Pinned to GCPnts_AbscissaPoint on the same curves
-    // (Scripts/repro/766-curve-arc-bezier-bspline/transcript.txt). The earlier versions used
+    // (Scripts/repro/766-curve-arc-length/transcript.txt). The earlier versions used
     // tolerances of 0.01 to 0.1 inside `if let`, loose enough to pass a length off by 0.1% (#766).
     private static func segment() -> Curve3D? {
         let c = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))

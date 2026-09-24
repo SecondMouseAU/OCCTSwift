@@ -8,7 +8,7 @@ import simd
 struct Curve3DArcLengthFailureParityTests {
     // Each test used to sit inside `if let line` (and two inside a further `if let expected`), so
     // a nil anywhere skipped every expectation (#766). Values are GCPnts_AbscissaPoint's on the
-    // same segment (Scripts/repro/766-curve-arc-bezier-bspline/transcript.txt).
+    // same segment (Scripts/repro/766-curve-arc-length/transcript.txt).
     private static func segment() -> Curve3D? {
         let c = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))
         if c == nil { Issue.record("segment not built") }

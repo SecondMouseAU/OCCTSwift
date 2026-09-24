@@ -27,7 +27,7 @@ struct Curve3DArcAliasParityTests {
             return
         }
         // GC_MakeArcOfCircle: the upper half of the r = 5 circle over [0, pi], start (5,0,0),
-        // midpoint (0,5,0), end (-5,0,0) (Scripts/repro/766-curve-arc-bezier-bspline/transcript.txt).
+        // midpoint (0,5,0), end (-5,0,0) (Scripts/repro/766-curve-arc-length/transcript.txt).
         // The earlier version checked only the start point to 0.01 inside `if let` (#766).
         #expect(!arc.isClosed)
         #expect(simd_distance(arc.startPoint, Self.start) < 1e-12)
