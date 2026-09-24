@@ -147,3 +147,12 @@
 | **CoordinateSystem3D** | mirrorPointWithDegenerateSourceFallsBackToUnmoved | `OCCTAx3MirrorPoint` | catch no longer writes the input point back (pre-#1443 empty catch) | red | green | PASS |
 | **CoordinateSystem3D** | rotateWithZeroAxisDirectionFallsBackToUnmoved | `OCCTAx3Rotate` | catch no longer writes the input point back (pre-#1443 empty catch) | red | green | PASS |
 | **CoordinateSystem3D** | translateWithDegenerateSourceFallsBackToUnmoved | `OCCTAx3Translate` | catch no longer writes the input point back (pre-#1443 empty catch) | red | green | PASS |
+### 766-math-curve-transform-cylinder (#1983, measured)
+| **Curve3D Transform** | Translate BSpline curve | `OCCTCurve3DTransform` | translation vector x and y swapped | red | green | PASS |
+| **Curve3D Transform** | Rotate curve | `OCCTCurve3DTransform` | rotation angle negated | red | green | PASS |
+| **Curve3D Transform** | Scale curve | `OCCTCurve3DTransform` | scale factor inverted | red | green | PASS |
+| **Curve3D Transform** | Mirror curve through point | `OCCTCurve3DTransform` | identity transform instead of the mirror | red | green | PASS |
+| **Curve3D Transform** | Mirror curve through axis | `OCCTCurve3DTransform` | point mirror through the axis origin instead of the axis mirror | red | green | PASS |
+| **Curve3D Transform** | Mirror curve through plane | `OCCTCurve3DTransform` | point mirror through the plane origin instead of the plane mirror | red | green | PASS |
+| **GC_MakeCylindricalSurface** | Cylindrical surface from axis and radius | `OCCTSurfaceCylindricalFromAxis` | radius doubled | red | green | PASS |
+| **GC_MakeCylindricalSurface** | Cylindrical surface from 3 points | `OCCTSurfaceCylindricalFromPoints` | point1 and point3 swapped | red | green | PASS |
