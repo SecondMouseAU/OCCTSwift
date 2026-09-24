@@ -1,0 +1,4 @@
+parallelPlanes: IsDone=1 IsParallel=1 SquareDistance(1)=49
+sphereDistance: IsDone=1 IsParallel=0 NbExt=2
+  [1] sqDist=25 dist=5 p1=(3, 2.114807373326764e-08, -5.007090133192611e-10) p2=(8, -6.2774636371135057e-09, -2.4052340361120819e-08)
+  [2] sqDist=225 dist=15 p1=(-3, 3.6739403974420594e-16, 0) p2=(12, -4.8985871965894128e-16, 8.2718061255302767e-25)
