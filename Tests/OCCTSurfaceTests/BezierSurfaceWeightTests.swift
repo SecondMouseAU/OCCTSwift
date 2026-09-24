@@ -15,11 +15,22 @@ struct BezierSurfaceWeightTests {
             [SIMD3(10, 0, 0), SIMD3(10, 5, 0), SIMD3(10, 10, 0)],
         ]
         let weights = [[1.0, 1.0, 1.0], [1.0, 2.0, 1.0], [1.0, 1.0, 1.0]]
-        if let surf = Surface.bezier(poles: poles, weights: weights) {
+        // #766: the `if let` let a nil surface pass, and `ok` alone passed an edit that dropped
+        // the weights or did nothing. Expected grids are Geom_BezierSurface's own, see
+        // Scripts/repro/766-bezier-surface-poles/.
+        let surf = Surface.bezier(poles: poles, weights: weights)
+        #expect(surf != nil)
+        if let surf {
             let newPoles = [SIMD3(0.0, 5.0, 2.0), SIMD3(5.0, 5.0, 3.0), SIMD3(10.0, 5.0, 2.0)]
             let newWeights = [3.0, 3.0, 3.0]
             let ok = surf.bezierSetPoleColWeights(vIndex: 2, poles: newPoles, weights: newWeights)
             #expect(ok)
+            let p = surf.bezierPoles
+            #expect(p.count == 9)
+            if p.count == 9 {
+                #expect(p[1] == SIMD3(0, 5, 2) && p[4] == SIMD3(5, 5, 3) && p[7] == SIMD3(10, 5, 2))
+            }
+            #expect(surf.bezierWeights == [1.0, 3.0, 1.0, 1.0, 3.0, 1.0, 1.0, 3.0, 1.0])
         }
     }
 
@@ -31,11 +42,19 @@ struct BezierSurfaceWeightTests {
             [SIMD3(10, 0, 0), SIMD3(10, 5, 0), SIMD3(10, 10, 0)],
         ]
         let weights = [[1.0, 1.0, 1.0], [1.0, 2.0, 1.0], [1.0, 1.0, 1.0]]
-        if let surf = Surface.bezier(poles: poles, weights: weights) {
+        let surf = Surface.bezier(poles: poles, weights: weights)
+        #expect(surf != nil)
+        if let surf {
             let newPoles = [SIMD3(5.0, 0.0, 2.0), SIMD3(5.0, 5.0, 3.0), SIMD3(5.0, 10.0, 2.0)]
             let newWeights = [4.0, 4.0, 4.0]
             let ok = surf.bezierSetPoleRowWeights(uIndex: 2, poles: newPoles, weights: newWeights)
             #expect(ok)
+            let p = surf.bezierPoles
+            #expect(p.count == 9)
+            if p.count == 9 {
+                #expect(Array(p[3...5]) == newPoles)
+            }
+            #expect(surf.bezierWeights == [1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 1.0, 1.0, 1.0])
         }
     }
 }

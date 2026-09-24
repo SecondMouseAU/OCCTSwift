@@ -228,61 +228,78 @@ Per `upstream-occt-patch-process.md`:
 
 Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
 
-### `LocOpeDPrismTests.swift` (3 tests)
+### `OffsetByJoinTests.swift` (4 tests)
 
-Probe: `Scripts/repro/766-modeling-locope-dprism/`.
+Probe: `Scripts/repro/766-modeling-offset-by-join/`.
 
 | Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
+| offsetArc | `OCCTShapeOffsetByJoin` offsets by -distance | `:15 Expectation failed: o.volume! > box.volume!` | pass | `OCCTShapeOffsetByJoin` | PASS |
+| offsetInward | `OCCTShapeOffsetByJoin` offsets by -distance | `:26 Expectation failed: o.volume! < box.volume!` | pass | `OCCTShapeOffsetByJoin` | PASS |
+| offsetIntersection | `OCCTShapeOffsetByJoin` returns nullptr | `:34 Expectation failed: offset != nil` | pass | `OCCTShapeOffsetByJoin` | PASS |
+| offsetCylinder | `OCCTShapeOffsetByJoin` returns nullptr | `:44 Expectation failed: offset != nil` | pass | `OCCTShapeOffsetByJoin` | PASS |
+
+### `OffsetWireFaceTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-offset-wire-face/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| offsetWire | `OCCTOffsetWireOnPlane` returns nullptr | `:14 Expectation failed: offset != nil` | pass | `OCCTOffsetWireOnPlane` | PASS |
+| offsetWireIntersection | `OCCTOffsetWireOnPlane` returns nullptr | `:23 Expectation failed: offset != nil` | pass | `OCCTOffsetWireOnPlane` | PASS |
+| offsetFace | `OCCTBRepOffsetOffsetFace` returns nullptr | `:32 Expectation failed: offset != nil` | pass | `OCCTBRepOffsetOffsetFace` | PASS |
+
+### `MultiEdgeBlendTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-multi-edge-blend/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| blendMultipleEdges | `OCCTShapeBlendEdges` returns nullptr | `:20 Expectation failed: blended != nil` | pass | `OCCTShapeBlendEdges` | PASS |
+| blendSingleEdge | `OCCTShapeBlendEdges` returns nullptr | `:32 Expectation failed: blended != nil` | pass | `OCCTShapeBlendEdges` | PASS |
+| blendEmptyArray | `Shape.blendedEdges` returns the input shape for an empty list instead of nil | `:44 Expectation failed: blended == nil` | pass | `OCCTShapeBlendEdges` | N/A: refused in Swift and in occtShapeFilletEdgeList before any kernel call |
+
+### `MultiFuseTests.swift` (4 tests)
+
+Probe: `Scripts/repro/766-modeling-multi-fuse/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| fuseThreeBoxes | `OCCTShapeFuseMulti` returns nullptr | `:14 Expectation failed: result != nil` | pass | `OCCTShapeFuseMulti` | PASS |
+| fuseFourSpheres | `OCCTShapeFuseMulti` returns nullptr | `:30 Expectation failed: result != nil` | pass | `OCCTShapeFuseMulti` | PASS |
+| fuseTooFew | `Shape.commonAll` / `Shape.fuseAll` return the lone operand for a one-element list instead of nil | `:40 Expectation failed: result == nil` | pass | `OCCTShapeFuseMulti` | N/A: the guard is in Swift (and again in the bridge) before any kernel call |
+| fuseNonOverlapping | `OCCTShapeFuseMulti` returns nullptr | `:48 Expectation failed: result != nil` | pass | `OCCTShapeFuseMulti` | PASS |
+
+### `MultiOffsetWireTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-multi-offset-wire/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| multipleInwardOffsets | `OCCTWireMultiOffset` returns 0 wires | `:15 Expectation failed: wires.count >= 3` | pass | `OCCTWireMultiOffset` | PASS |
+| outwardOffset | `OCCTWireMultiOffset` returns 0 wires | `:32 Expectation failed: wires.count >= 2` | pass | `OCCTWireMultiOffset` | PASS |
+| emptyOffsets | `Shape.multiOffsetWires` treats an empty offset list as a single 0 offset | `:39 Expectation failed: wires.isEmpty` | pass | `OCCTWireMultiOffset` | N/A: an empty list is refused in Swift and in the bridge before any kernel call |
+### `LocOpeDPrismTests.swift` (3 tests)
+Probe: `Scripts/repro/766-modeling-locope-dprism/`.
 | draftPrismTwoHeights | `OCCTLocOpeDPrism` returns nullptr | `:14 Expectation failed: result != nil` | pass | `OCCTLocOpeDPrism` | PASS |
 | draftPrismSingleHeight | `OCCTLocOpeDPrismSingleHeight` returns nullptr | `:22 Expectation failed: result != nil` | pass | `OCCTLocOpeDPrismSingleHeight` | PASS |
 | draftPrismHasFaces | `OCCTLocOpeDPrism` builds the single-height `LocOpe_DPrism(face, height1, angle)` instead of the two-height one | `:38 Expectation failed: result.faceCount == 10` | pass | `OCCTLocOpeDPrism` | PASS: rewritten: the old `if let` skipped its only assertion on nil and accepted any count |
-
 ### `LocOpeFindEdgesTests.swift` (1 tests)
-
 Probe: `Scripts/repro/766-modeling-locope-find-edges/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | findEdgesInFace | `OCCTLocOpeFindEdgesInFace` returns 0 (no edges found) | `:12 Expectation failed: edges.count == 4` | pass | `OCCTLocOpeFindEdgesInFace` | PASS |
-
 ### `LocOpeGluerTests.swift` (1 tests)
-
 Probe: `Scripts/repro/766-modeling-locope-gluer/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | glueByFace | `OCCTLocOpeGlue` returns nullptr | `:32 Issue recorded` | pass | `OCCTLocOpeGlue` | PASS: rewritten: the search helper kept the non-touching pair (0,0), whose glue is invalid, and returned silently on nil |
-
 ### `LocOpeLinearFormTests.swift` (1 tests)
-
 Probe: `Scripts/repro/766-modeling-locope-linear-form/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | linearForm | `OCCTLocOpeLinearForm` returns nullptr | `:16 Expectation failed: result != nil` | pass | `OCCTLocOpeLinearForm` | PASS |
-
 ### `LocOpeSplitShapeTests.swift` (1 tests)
-
 Probe: `Scripts/repro/766-modeling-locope-split-shape/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | splitEdge | `OCCTLocOpeSplitShapeByVertex` maps the normalized parameter at half its value | `:24 Expectation failed: vertices.contains { simd_distance($0, SIMD3(-5, -5, 0)) < 1e-9 }` | pass | `OCCTLocOpeSplitShapeByVertex` | PASS: rewritten: `!r.vertices().isEmpty || true` inside `if let` was a tautology |
-
 ### `LocOpeSpliterTests.swift` (1 tests)
-
 Probe: `Scripts/repro/766-modeling-locope-spliter/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | splitByWireOnFace | `OCCTLocOpeSplitByWireOnFace` resolves `faceIndex - 1` (the pre-#541 1-based off-by-one) | `:26 Expectation failed: top.faceCount == 7`, `:32 Expectation failed: box.splitByWireOnFace(wireShape, faceIndex: 6) == nil` | pass | `OCCTLocOpeSplitByWireOnFace` | PASS: rewritten: the loop stopped at the first non-nil result (face 1, unsplit) and accepted no result at all |
-
 ### `LocOpeSpliterV71Tests.swift` (2 tests)
-
 Probe: `Scripts/repro/766-modeling-locope-spliter-v71/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | splitByWireOnFace | `OCCTLocOpeSplitByWires` returns nullptr | `:30 Expectation failed: bestFaceCount > origFaceCount` | pass | `OCCTLocOpeSplitByWires` | PASS |
 | autoSplit | `OCCTLocOpeSplitByWiresAuto` returns nullptr | `:53 Issue recorded` | pass | `OCCTLocOpeSplitByWiresAuto` | PASS: rewritten: nested `if let` and `faces >= 6` passed on nil and on no split; its edge was off the centred box |
