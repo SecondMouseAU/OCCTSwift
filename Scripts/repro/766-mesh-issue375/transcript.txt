@@ -1,0 +1,5 @@
+mirroredSolidMeshesConsistentlyOutward:
+  box: triangles=12 reversedFaces=3 outwardFraction=1 (without the REVERSED swap: 0.5)
+  box mirrored through z=0: triangles=12 reversedFaces=3 outwardFraction=1 (without the REVERSED swap: 0.5)
+meshParametersOverloadMatchesOutwardBehavior:
+  box mirrored through x=0, MeshParameters.default: triangles=12 reversedFaces=3 outwardFraction=1 (without the REVERSED swap: 0.5)
