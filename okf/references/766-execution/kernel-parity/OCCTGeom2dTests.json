@@ -3495,5 +3495,320 @@
       "probe": "Scripts/repro/766-geom2d-bspline-knot-query/",
       "rewritten": "`cont >= 0`, nested in `if let c`"
     }
+  },
+  {
+    "test_name": "Curve2D circle factories agree (#411)::Both factories reject zero and negative radius",
+    "bridge_function": "OCCTGceMakeCirc2dFromCenterRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radius 0": null,
+        "radius -1": null,
+        "radius -5": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "gce_MakeCirc2d radius 0 IsDone": true,
+        "radius -1 IsDone": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip the radius precondition",
+      "red": "Curve2DCircleFactoryParityTests.swift:21:13: Expectation failed: Curve2D.circleFromCenterRadius(center: .zero, radius: radius) == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-factory-parity/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D circle factories agree (#411)::Both factories build the identical circle for a valid radius",
+    "bridge_function": "OCCTGceMakeCirc2dFromCenterRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          8,
+          -4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          8,
+          -4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "centre x + 1",
+      "red": "Curve2DCircleFactoryParityTests.swift:35:9: Expectation failed: simd_distance(b.point(at: 0), SIMD2(8, -4)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-factory-parity/",
+      "rewritten": "returned early when either factory gave nil and compared only with each other; now pins (8, -4)"
+    }
+  },
+  {
+    "test_name": "Curve2D conic factories agree (#487)::Ellipse: both families reject zero, negative and inverted radii",
+    "bridge_function": "OCCTGceMakeElips2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "all six inputs": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "all six inputs": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip the radius precondition",
+      "red": "Curve2DConicFactoryParityTests.swift:36:13: Expectation failed: Curve2D.ellipseFromCenterDir(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-factory-parity/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D conic factories agree (#487)::Hyperbola: both families reject a zero or negative radius",
+    "bridge_function": "OCCTGceMakeHypr2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "all five inputs": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "all five inputs": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip the radius precondition",
+      "red": "Curve2DConicFactoryParityTests.swift:51:13: Expectation failed: Curve2D.hyperbolaFromCenterDir(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-factory-parity/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D conic factories agree (#487)::Parabola: both families reject zero and negative focal length",
+    "bridge_function": "OCCTGceMakeParab2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "all three inputs": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "all three inputs": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip the focal precondition",
+      "red": "Curve2DConicFactoryParityTests.swift:65:13: Expectation failed: Curve2D.parabolaFromCenterDir(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-factory-parity/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D conic factories agree (#487)::Hyperbola: a minor radius larger than the major is accepted by both families",
+    "bridge_function": "OCCTGceMakeHypr2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "(3, 6)": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "(3, 6)": "non-nil"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "reject minor > major",
+      "red": "Curve2DConicFactoryParityTests.swift:77:9: Expectation failed: Curve2D.hyperbolaFromCenterDir(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-factory-parity/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D conic factories agree (#487)::Ellipse: equal radii are accepted by both families",
+    "bridge_function": "OCCTGceMakeElips2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "(5, 5)": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "(5, 5)": "non-nil"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "reject minor >= major",
+      "red": "Curve2DConicFactoryParityTests.swift:88:9: Expectation failed: Curve2D.ellipseFromCenterDir(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-factory-parity/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D conic factories agree (#487)::Valid ellipse radii still build the identical curve in both families",
+    "bridge_function": "OCCTGceMakeElips2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          11,
+          -4
+        ],
+        "point(pi/2)": [
+          3,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          11,
+          -4
+        ],
+        "point(pi/2)": [
+          3,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "centre x + 1",
+      "red": "Curve2DConicFactoryParityTests.swift:104:9: Expectation failed: simd_distance(b.point(at: 0), SIMD2(11, -4)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-factory-parity/",
+      "rewritten": "returned early on nil and compared only the two factories; now pins two points"
+    }
+  },
+  {
+    "test_name": "Curve2D conic factories agree (#487)::Valid hyperbola radii still build the identical curve in both families",
+    "bridge_function": "OCCTGceMakeHypr2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          9,
+          -4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          9,
+          -4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "centre x + 1",
+      "red": "Curve2DConicFactoryParityTests.swift:126:9: Expectation failed: simd_distance(b.point(at: 0), SIMD2(9, -4)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-factory-parity/",
+      "rewritten": "returned early on nil and compared only the two factories; now pins the vertex"
+    }
+  },
+  {
+    "test_name": "Curve2D conic factories agree (#487)::Valid focal length still builds the identical parabola in both families",
+    "bridge_function": "OCCTGceMakeParab2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(2)": [
+          3.33333333333,
+          -2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(2)": [
+          3.33333333333,
+          -2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "vertex x + 1",
+      "red": "Curve2DConicFactoryParityTests.swift:149:9: Expectation failed: simd_distance(b.point(at: 2), SIMD2(3 + 1.0 / 3.0, -2)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-factory-parity/",
+      "rewritten": "returned early on nil and compared only the two factories; now pins point(2)"
+    }
   }
 ]

@@ -236,3 +236,15 @@ Probe: `Scripts/repro/766-geom2d-bspline-knot-query/`. Every row was run red wit
 | Curve2D BSpline Knot Queries::GetPoles bulk | `OCCTCurve2DBSplineGetPoles` | shift each x by 1 | ✅ | ✅ | MATCH | compared the count with itself, nested in `if let c`; now pins the poles |
 | Curve2D BSpline Knot Queries::IsClosed and IsPeriodic | `OCCTCurve2DBSplineIsClosed / OCCTCurve2DBSplineIsPeriodic` | negate both | ✅ | ✅ | MATCH | nested in `if let c` |
 | Curve2D BSpline Knot Queries::Continuity and IsCN | `OCCTCurve2DBSplineContinuity / OCCTCurve2DBSplineIsCN` | report continuity 2 (C1) | ✅ | ✅ | MATCH | `cont >= 0`, nested in `if let c` |
+### #1979 executed: `Curve2DCircleFactoryParityTests.swift`, `Curve2DConicFactoryParityTests.swift`
+Probe: `Scripts/repro/766-geom2d-conic-factory-parity/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D circle factories agree (#411)::Both factories reject zero and negative radius | `OCCTGceMakeCirc2dFromCenterRadius` | skip the radius precondition | ✅ | ✅ | MATCH |  |
+| Curve2D circle factories agree (#411)::Both factories build the identical circle for a valid radius | `OCCTGceMakeCirc2dFromCenterRadius` | centre x + 1 | ✅ | ✅ | MATCH | returned early when either factory gave nil and compared only with each other; now pins (8, -4) |
+| Curve2D conic factories agree (#487)::Ellipse: both families reject zero, negative and inverted radii | `OCCTGceMakeElips2d` | skip the radius precondition | ✅ | ✅ | MATCH |  |
+| Curve2D conic factories agree (#487)::Hyperbola: both families reject a zero or negative radius | `OCCTGceMakeHypr2d` | skip the radius precondition | ✅ | ✅ | MATCH |  |
+| Curve2D conic factories agree (#487)::Parabola: both families reject zero and negative focal length | `OCCTGceMakeParab2d` | skip the focal precondition | ✅ | ✅ | MATCH |  |
+| Curve2D conic factories agree (#487)::Hyperbola: a minor radius larger than the major is accepted by both families | `OCCTGceMakeHypr2d` | reject minor > major | ✅ | ✅ | MATCH |  |
+| Curve2D conic factories agree (#487)::Ellipse: equal radii are accepted by both families | `OCCTGceMakeElips2d` | reject minor >= major | ✅ | ✅ | MATCH |  |
+| Curve2D conic factories agree (#487)::Valid ellipse radii still build the identical curve in both families | `OCCTGceMakeElips2d` | centre x + 1 | ✅ | ✅ | MATCH | returned early on nil and compared only the two factories; now pins two points |
+| Curve2D conic factories agree (#487)::Valid hyperbola radii still build the identical curve in both families | `OCCTGceMakeHypr2d` | centre x + 1 | ✅ | ✅ | MATCH | returned early on nil and compared only the two factories; now pins the vertex |
+| Curve2D conic factories agree (#487)::Valid focal length still builds the identical parabola in both families | `OCCTGceMakeParab2d` | vertex x + 1 | ✅ | ✅ | MATCH | returned early on nil and compared only the two factories; now pins point(2) |
