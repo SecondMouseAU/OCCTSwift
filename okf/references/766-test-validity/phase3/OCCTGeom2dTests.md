@@ -125,12 +125,23 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 
 **Total**: 545 tests
 
-### #1979 executed: `BatchCurve2DTests.swift`, `BisectorBisecAnaTests.swift`, `BisectorIntersectionTests.swift`
+### #1979 executed: `Curve2DInteriorTangentTests.swift`, `Curve2DInterpolatePeriodicParityTests.swift`
 
-Probe: `Scripts/repro/766-geom2d-batch-bisector/`. Every row was run red with the injection applied and green after it was reverted.
+Probe: `Scripts/repro/766-geom2d-interpolate-tangents-periodic/`. Every row was run red with the injection applied and green after it was reverted.
 
 | Test | Bridge function | Injection | Red | Green | Parity | Notes |
 |---|---|---|---|---|---|---|
+| Curve2D Interior Tangent Interpolation Tests::Interpolate with no tangent constraints matches basic interpolate | `OCCTCurve2DInterpolateWithInteriorTangents` | drop the last point | ✅ | ✅ | MATCH | start points to 0.01 inside `if let`; now the domain and mid point to 1e-9 |
+| Curve2D Interior Tangent Interpolation Tests::Tangent constraint at start and end | `OCCTCurve2DInterpolateWithInteriorTangents` | skip Load(tangents, flags) | ✅ | ✅ | MATCH | tangent `abs(y) < 0.1` inside two `if let`s; now exact and the pole count |
+| Curve2D Interior Tangent Interpolation Tests::Tangent constraint at interior point | `OCCTCurve2DInterpolateWithInteriorTangents` | skip Load(tangents, flags) | ✅ | ✅ | MATCH | `poleCount != nil`; now the horizontal tangent at the constrained point |
+| Curve2D Interior Tangent Interpolation Tests::Closed curve with interior tangent constraint | `OCCTCurve2DInterpolateWithInteriorTangents` | skip Load(tangents, flags) | ✅ | ✅ | MATCH | "may or may not succeed" inside `if let`; the kernel succeeds, now required |
+| Curve2D Interior Tangent Interpolation Tests::Minimum 2-point interpolation with tangent constraints | `OCCTCurve2DInterpolateWithInteriorTangents` | skip Load(tangents, flags) | ✅ | ✅ | MATCH | `!= nil`; now pins poles and a point |
+| Curve2D periodic interpolation delegates (#412)::Default tolerance: the two entry points produce the same curve | `OCCTCurve2DInterpolate` | ignore closed | ✅ | ✅ | MATCH | agreement only; now pins the domain and point(20) |
+| Curve2D periodic interpolation delegates (#412)::A non-default tolerance is now reachable through interpolatePeriodic | `OCCTCurve2DInterpolate` | pin the tolerance to 1e-6 | ✅ | ✅ | MATCH | tolerance-insensitive input; now adds a case the tolerance decides |
+| Curve2D periodic interpolation delegates (#412)::A 2-point periodic interpolation is accepted by both entry points | `OCCTCurve2DInterpolate` | ignore closed | ✅ | ✅ | MATCH | flags inside `if let`; now required, with the domain |
+| Curve2D periodic interpolation delegates (#412)::Both entry points reject a single point | `OCCTCurve2DInterpolate` | fabricate a second point for a one-point input | ✅ | ✅ | MATCH |  |
+### #1979 executed: `BatchCurve2DTests.swift`, `BisectorBisecAnaTests.swift`, `BisectorIntersectionTests.swift`
+Probe: `Scripts/repro/766-geom2d-batch-bisector/`. Every row was run red with the injection applied and green after it was reverted.
 | Batch Curve2D Evaluation::Evaluate grid on circle | `OCCTCurve2DEvaluateGrid` | swap x and y in each evaluated point | ✅ | ✅ | MATCH |  |
 | Batch Curve2D Evaluation::Evaluate grid D1 on circle | `OCCTCurve2DEvaluateGridD1` | swap the D1 components | ✅ | ✅ | MATCH |  |
 | Batch Curve2D Evaluation::Empty parameters returns empty | `OCCTCurve2DEvaluateGrid` | Swift wrapper returns one zero point for an empty parameter list instead of [] | ✅ | ✅ | MATCH |  |

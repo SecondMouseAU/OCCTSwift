@@ -6,31 +6,29 @@ import simd
 
 // MARK: - v0.43.0: Location Purge
 
+// #766: expected values are the kernel's own answers to the same calls, from
+// Scripts/repro/766-healing-locations-nurbs-sameparam/probe.mm (transcript.txt beside it).
+// Before #766 both tests asserted only inside `if let purged`, so a nil result passed.
 @Suite("Location Purge")
 struct LocationPurgeTests {
     @Test("Clean shape purges successfully")
-    func cleanShapePurge() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let purged = box.purgedLocations
-        // Clean shapes may return nil (nothing to purge) or the same shape
-        // Either outcome is valid
-        if let purged {
-            #expect(purged.subShapeCount(ofType: .face) == 6)
-        }
+    func cleanShapePurge() throws {
+        // Kernel: BRepTools_PurgeLocations is done on a clean box and keeps its 6 faces.
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let purged = try #require(box.purgedLocations)
+        #expect(purged.subShapeCount(ofType: .face) == 6)
+        #expect(abs((purged.volume ?? 0) - 1000) < 1e-9)
     }
 
     @Test("Mirrored shape purges locations")
-    func mirroredShapePurge() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let mirrored = box.mirrored(planeNormal: SIMD3(1, 0, 0))
-        #expect(mirrored != nil)
-        if let mirrored {
-            let purged = mirrored.purgedLocations
-            // Mirrored shape has a negative-scale location that should be purged
-            if let purged {
-                let faceCount = purged.subShapeCount(ofType: ShapeType.face)
-                #expect(faceCount == 6)
-            }
-        }
+    func mirroredShapePurge() throws {
+        // `mirrored(planeNormal:)` transforms with a copy, so its faces carry no location to
+        // purge (kernel: 0 located faces before and after); the purge must still succeed and
+        // keep the solid (6 faces, volume 1000).
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let mirrored = try #require(box.mirrored(planeNormal: SIMD3(1, 0, 0)))
+        let purged = try #require(mirrored.purgedLocations)
+        #expect(purged.subShapeCount(ofType: ShapeType.face) == 6)
+        #expect(abs((purged.volume ?? 0) - 1000) < 1e-9)
     }
 }

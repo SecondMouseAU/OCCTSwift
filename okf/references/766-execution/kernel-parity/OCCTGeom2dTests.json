@@ -2,98 +2,504 @@
   {
     "test_name": "mirrorAxisZeroDirection (2D)",
     "bridge_function": "OCCTMakeMirror2dAxis",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "geomDirection2dZeroVector",
     "bridge_function": "OCCTGeomDirection2dCreate",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Arc length stops being one quadrature per span (#603, 2D)",
     "bridge_function": "OCCTCurve2DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Curve2D extrema on parallel curves",
     "bridge_function": "OCCTCurve2DExtrema",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Curve2D arc-length accuracy on multi-span curves (#477)",
     "bridge_function": "OCCTCurve2DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BSpline Curve 2D Manipulation Tests",
     "bridge_function": "OCCTBSplineCurve2DManipulation",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Curve2D Primitive Tests",
     "bridge_function": "OCCTCurve2DPrimitive",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Curve2D Operations Tests",
     "bridge_function": "OCCTCurve2DOperations",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BSplineCurve 2D Completions v121",
     "bridge_function": "OCCTBSplineCurve2DCompletions",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Curve2D Conic Factory Families",
     "bridge_function": "OCCTCurve2DConicFactory",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Analytical conversion contract (#492)",
     "bridge_function": "OCCTAnalyticalConversion",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Bezier Curve Manipulation Tests",
     "bridge_function": "OCCTBezierCurve2DManipulation",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve2D Interior Tangent Interpolation Tests::Interpolate with no tangent constraints matches basic interpolate",
+    "bridge_function": "OCCTCurve2DInterpolateWithInteriorTangents",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "domain_upper": 11.6619037897,
+        "mid": [
+          5,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "domain_upper": 11.6619037897,
+        "mid": [
+          5,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "drop the last point",
+      "red": "Curve2DInteriorTangentTests.swift:25:9: Expectation failed: abs(w.domain.upperBound - b.domain.upperBound) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-interpolate-tangents-periodic/",
+      "rewritten": "start points to 0.01 inside `if let`; now the domain and mid point to 1e-9"
+    }
+  },
+  {
+    "test_name": "Curve2D Interior Tangent Interpolation Tests::Tangent constraint at start and end",
+    "bridge_function": "OCCTCurve2DInterpolateWithInteriorTangents",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "tangent(start).y": 0,
+        "poles": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tangent(start).y": 0,
+        "poles": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip Load(tangents, flags)",
+      "red": "Curve2DInteriorTangentTests.swift:49:9: Expectation failed: abs(tan.y) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-interpolate-tangents-periodic/",
+      "rewritten": "tangent `abs(y) < 0.1` inside two `if let`s; now exact and the pole count"
+    }
+  },
+  {
+    "test_name": "Curve2D Interior Tangent Interpolation Tests::Tangent constraint at interior point",
+    "bridge_function": "OCCTCurve2DInterpolateWithInteriorTangents",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(6.76782893563)": [
+          5,
+          2
+        ],
+        "tangent.y there": 0,
+        "poles": 8
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(6.76782893563)": [
+          5,
+          2
+        ],
+        "tangent.y there": 0,
+        "poles": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip Load(tangents, flags)",
+      "red": "Curve2DInteriorTangentTests.swift:66:9: Expectation failed: c.poleCount == 8",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-interpolate-tangents-periodic/",
+      "rewritten": "`poleCount != nil`; now the horizontal tangent at the constrained point"
+    }
+  },
+  {
+    "test_name": "Curve2D Interior Tangent Interpolation Tests::Closed curve with interior tangent constraint",
+    "bridge_function": "OCCTCurve2DInterpolateWithInteriorTangents",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "closed": true,
+        "periodic": true,
+        "poles": 6
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "closed": true,
+        "periodic": true,
+        "poles": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip Load(tangents, flags)",
+      "red": "Curve2DInteriorTangentTests.swift:79:9: Expectation failed: c.poleCount == 6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-interpolate-tangents-periodic/",
+      "rewritten": "\"may or may not succeed\" inside `if let`; the kernel succeeds, now required"
+    }
+  },
+  {
+    "test_name": "Curve2D Interior Tangent Interpolation Tests::Minimum 2-point interpolation with tangent constraints",
+    "bridge_function": "OCCTCurve2DInterpolateWithInteriorTangents",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poles": 4,
+        "point(5)": [
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poles": 4,
+        "point(5)": [
+          5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip Load(tangents, flags)",
+      "red": "Curve2DInteriorTangentTests.swift:88:9: Expectation failed: c.poleCount == 4",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-interpolate-tangents-periodic/",
+      "rewritten": "`!= nil`; now pins poles and a point"
+    }
+  },
+  {
+    "test_name": "Curve2D periodic interpolation delegates (#412)::Default tolerance: the two entry points produce the same curve",
+    "bridge_function": "OCCTCurve2DInterpolate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "domain_upper": 40,
+        "point(20)": [
+          10,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "domain_upper": 40,
+        "point(20)": [
+          10,
+          10
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "ignore closed",
+      "red": "Curve2DInterpolatePeriodicParityTests.swift:29:9: Expectation failed: abs(c.domain.upperBound - 40) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-interpolate-tangents-periodic/",
+      "rewritten": "agreement only; now pins the domain and point(20)"
+    }
+  },
+  {
+    "test_name": "Curve2D periodic interpolation delegates (#412)::A non-default tolerance is now reachable through interpolatePeriodic",
+    "bridge_function": "OCCTCurve2DInterpolate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "near-duplicate at 1e-4": null,
+        "near-duplicate at 1e-8": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "near-duplicate at 1e-4": null,
+        "near-duplicate at 1e-8": "non-nil"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pin the tolerance to 1e-6",
+      "red": "Curve2DInterpolatePeriodicParityTests.swift:50:9: Expectation failed: Curve2D.interpolatePeriodic(points: near, tolerance: 1e-4) == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-interpolate-tangents-periodic/",
+      "rewritten": "tolerance-insensitive input; now adds a case the tolerance decides"
+    }
+  },
+  {
+    "test_name": "Curve2D periodic interpolation delegates (#412)::A 2-point periodic interpolation is accepted by both entry points",
+    "bridge_function": "OCCTCurve2DInterpolate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "closed": true,
+        "periodic": true,
+        "domain_upper": 20
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "closed": true,
+        "periodic": true,
+        "domain_upper": 20
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "ignore closed",
+      "red": "Curve2DInterpolatePeriodicParityTests.swift:64:9: Expectation failed: c.isClosed",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-interpolate-tangents-periodic/",
+      "rewritten": "flags inside `if let`; now required, with the domain"
+    }
+  },
+  {
+    "test_name": "Curve2D periodic interpolation delegates (#412)::Both entry points reject a single point",
+    "bridge_function": "OCCTCurve2DInterpolate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "fabricate a second point for a one-point input",
+      "red": "Curve2DInterpolatePeriodicParityTests.swift:72:9: Expectation failed: Curve2D.interpolatePeriodic(points: one) == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-interpolate-tangents-periodic/",
+      "rewritten": ""
+    }
   },
   {
     "test_name": "Batch Curve2D Evaluation::Evaluate grid on circle",
