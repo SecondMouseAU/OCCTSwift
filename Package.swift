@@ -399,6 +399,31 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
             sources: ["src"],
             publicHeadersPath: "include",
             cxxSettings: [
+                // Compile the bridge as C++, not Objective-C++ (#2256). The 74 files in
+                // Sources/OCCTBridge/src carry a .mm extension and contain no Objective-C at all;
+                // measured across every one of them, zero @interface, @implementation,
+                // @autoreleasepool, @try, NSString, NSObject, NSArray and zero [[... alloc]. On this
+                // triple the extension is not merely inaccurate, it is fatal: the pinned clang
+                // CRASHES in WebAssembly instruction selection on a plain C++ try/catch in an
+                // Objective-C++ translation unit under -fwasm-exceptions, because clang gives such
+                // a unit the Objective-C++ personality function, the wasm EH lowering only handles
+                // the C++ one, and what survives to the selector cannot be selected. Building
+                // without the exception flags is not an alternative: that is exactly #2171's
+                // silent failure, where every outermost catch (...) stops firing with no
+                // diagnostic. Scripts/repro/2256 measures all of it, including the case where a
+                // real bridge file catches an OCCT raise on wasm with this setting and loses the
+                // catch without the flags.
+                //
+                // WHERE THIS MOVES. #2048 (PR #2206) takes .unsafeFlags out of the WASI path
+                // entirely, because SwiftPM refuses them for a dependency resolved by version. Its
+                // replacement is the consumer-side toolset that Scripts/make-wasi-toolset.py
+                // writes, and this setting belongs in that file's cxxCompiler.extraCLIOptions, not
+                // here. Measured equivalent, and measured BETTER: under the deprecated
+                // `--build-system native`, a cxxSettings -x c++ also reaches .c sources in the same
+                // target, while the toolset's does not. This target has no .c sources today, so
+                // nothing is broken by it standing here until #2206 lands. Do not resolve that
+                // merge by deleting this line alone.
+                .unsafeFlags(["-x", "c++"]),
                 // Use WASI-built OCCT headers
                 .headerSearchPath("../../Libraries/occt-headers-wasm"),
                 .define("OCCT_AVAILABLE", to: "1"),
