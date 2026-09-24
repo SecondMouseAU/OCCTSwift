@@ -1,0 +1,20 @@
+== Message_Messenger (OCCTMessengerCreate / PrinterCount / AddFilePrinter / Send / RemoveAllPrinters) ==
+new Message_Messenger: Printers().Size() = 1
+AddPrinter(file, Info) = 1, Size() = 2
+[32;1mTest from Swift[0m
+after RemovePrinters(Message_Printer): Size() = 0
+file printer received "Test from Swift": 1 (file 16 bytes)
+== Message_Report (OCCTReportCreate / Get/SetLimit / Clear / Dump) ==
+default Limit() = -1
+after SetLimit(100): Limit() = 100
+Dump() of an empty report: "" (0 bytes)
+Dump() after Clear() and Clear(Warning): 0 bytes, Limit() = 100
+Dump() after AddAlert(Info, Message_AlertExtended): 22 bytes
+== OSD_Timer (OCCTTimerStart / Stop / Reset / ElapsedTime / GetWallClockTime) ==
+ElapsedTime() over a 50 ms sleep = 0.0600 s
+after Reset(): ElapsedTime() = 0
+GetWallClockTime() - gettimeofday() = -1790177368.000000 s
+== OSD_MemInfo (OCCTMemInfoHeapUsage / HeapUsageMiB / PrintInfo) ==
+Value(MemHeapUsage) > 0: 1; ValuePreciseMiB * 2^20 / Value = 1.000000
+PrintInfo() contains "Heap memory": 1
+PrintInfo() first line: "  Working Set:        7 MiB"

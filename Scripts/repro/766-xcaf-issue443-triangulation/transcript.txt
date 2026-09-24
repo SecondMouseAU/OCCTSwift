@@ -1,0 +1,7 @@
+box 10x10x10 at 1.0: faces=6 nodes=24 triangles=12 worstDeflection=3.14018e-16 normals=false nodeX=[-5, 5]
+compound of two boxes at 1.0: faces=12 nodes=48 triangles=24 worstDeflection=3.14018e-16 normals=false nodeX=[-5, 35]
+sphere r10 at 2.0: faces=1 nodes=168 triangles=306 worstDeflection=0.62736 normals=false nodeX=[-9.84808, 9.92709]
+sphere r10 at 0.2: faces=1 nodes=273 triangles=516 worstDeflection=0.238182 normals=false nodeX=[-9.90686, 9.92709]
+box moved +100 in x (located): faces=6 nodes=24 triangles=12 worstDeflection=3.14018e-16 normals=false nodeX=[95, 105]
+box at x 10..20 mirrored in x: faces=6 nodes=24 triangles=12 worstDeflection=0 normals=false nodeX=[-20, -10]
+a lone edge (no face): faces=0 nodes=0 triangles=0 worstDeflection=0 normals=true nodeX=[0, 0]

@@ -22,6 +22,9 @@ struct SurfaceAxisAccessorsTests {
             #expect(abs(axis.origin.y - 2) < 1e-6)
             #expect(abs(axis.origin.z - 3) < 1e-6)
             #expect(abs(axis.direction.z - 1) < 1e-6)
+            // #766: the bridge's not-a-torus fallback is also direction (0, 0, 1), so the
+            // origin, (1, 2, 3) from Geom_ToroidalSurface::Axis(), is what tells them apart.
+            #expect(axis.direction == SIMD3(0, 0, 1))
         } else {
             Issue.record("torus surface has no axis")
         }

@@ -18,6 +18,7 @@ struct SurfaceSweptTests {
             let p = ext.point(atU: uMid, v: 2.5)
             #expect(abs(p.x - 5.0) < 1e-6)
             #expect(abs(p.z - 2.5) < 1e-6)
+            #expect(abs(p.y) < 1e-12)
         }
     }
 
@@ -37,6 +38,9 @@ struct SurfaceSweptTests {
             let p = rev.point(atU: 0, v: dom.vMin)
             let rDist = sqrt(p.x * p.x + p.y * p.y)
             #expect(abs(rDist - 5.0) < 1e-6)
+            // #766: radius alone passed a revolution about the wrong axis or angle.
+            #expect(simd_length(p - SIMD3(5, 0, 0)) < 1e-12)
+            #expect(simd_length(rev.point(atU: .pi / 2, v: dom.vMin + 4) - SIMD3(0, 5, 4)) < 1e-12)
         }
     }
 }
