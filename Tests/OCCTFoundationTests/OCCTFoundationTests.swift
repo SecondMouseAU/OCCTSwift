@@ -812,9 +812,11 @@ struct OSDEnvironmentTests {
         #expect(gone == nil)
     }
 
+    // #1987: `home != nil` passed any value; OSD_Environment("HOME").Value() is getenv("HOME").
     @Test func readHome() {
-        let home = Environment.get("HOME")
-        #expect(home != nil)
+        let expected = getenv("HOME").map { String(cString: $0) }
+        #expect(expected != nil)
+        #expect(Environment.get("HOME") == expected)
     }
 }
 
@@ -829,72 +831,100 @@ struct OSDEnvironmentTests {
 @Suite("OSD Chronometer Tests")
 struct OSDChronometerTests {
 
+    // #1987: `user >= 0` passed a bridge reporting zero. After burning some CPU the process user
+    // time must be positive and agree with getrusage(RUSAGE_SELF); OSD_Chronometer reports it in
+    // 1/100 s steps (0.060 against getrusage's 0.0611 in the probe), hence the 0.02 s slack.
     @Test func processCPU() {
+        var sum = 0.0
+        for i in 0..<1_000_000 { sum += Double(i) }
+        var before = rusage()
+        getrusage(RUSAGE_SELF, &before)
         let cpu = CPUTime.processCPU()
-        #expect(cpu.user >= 0)
+        var after = rusage()
+        getrusage(RUSAGE_SELF, &after)
+        let lo = Double(before.ru_utime.tv_sec) + Double(before.ru_utime.tv_usec) * 1e-6
+        let hi = Double(after.ru_utime.tv_sec) + Double(after.ru_utime.tv_usec) * 1e-6
+        #expect(cpu.user > 0)
+        #expect(cpu.user >= lo - 0.02)
+        #expect(cpu.user <= hi + 0.02)
+        #expect(sum > 0)
     }
 }
 
 @Suite("OSD Process Tests")
 struct OSDProcessTests {
 
+    // #1987: `> 0` and `!= nil` passed any pid and any name. OSD_Process reports getpid() and
+    // the passwd entry's name for getuid().
     @Test func processId() {
-        #expect(ProcessInfo.processId > 0)
+        #expect(ProcessInfo.processId == Int(getpid()))
     }
 
     @Test func userName() {
-        #expect(ProcessInfo.userName != nil)
+        let expected = getpwuid(getuid()).map { String(cString: $0.pointee.pw_name) }
+        #expect(expected != nil)
+        #expect(ProcessInfo.userName == expected)
     }
 }
 
 @Suite("OSD_File Tests")
 struct OSDFileTests {
 
+    // #1987: all three tests used to `return` silently when the file failed to open, and this
+    // one read its line only `if let`. OSD_File::ReadLine keeps the line's terminating newline.
     @Test func writeAndReadBack() {
         let tmpPath = "/tmp/occt_osdfile_test_\(Int.random(in: 0..<1_000_000)).txt"
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
         let file = OSDFile(path: tmpPath)
-        let opened = file.open()
-        guard opened else { return }
+        guard file.open() else {
+            Issue.record("open() failed")
+            return
+        }
         let content = "Hello, OSD_File!\nLine 2\n"
         let wrote = file.write(content)
         #expect(wrote)
         file.close()
 
         let reader = OSDFile(path: tmpPath)
-        guard reader.openReadOnly() else { return }
-        let line1 = reader.readLine()
-        if let line1 {
-            #expect(line1.hasPrefix("Hello"))
+        guard reader.openReadOnly() else {
+            Issue.record("openReadOnly() failed")
+            return
         }
+        #expect(reader.readLine() == "Hello, OSD_File!\n")
         reader.close()
-
-        try? FileManager.default.removeItem(atPath: tmpPath)
     }
 
     @Test func fileSize() {
         let tmpPath = "/tmp/occt_osdfile_size_\(Int.random(in: 0..<1_000_000)).txt"
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
         let file = OSDFile(path: tmpPath)
-        guard file.open() else { return }
+        guard file.open() else {
+            Issue.record("open() failed")
+            return
+        }
         _ = file.write("ABCDE")
         file.close()
 
         let reader = OSDFile(path: tmpPath)
-        guard reader.openReadOnly() else { return }
-        if let sz = reader.fileSize {
-            #expect(sz >= 5)
+        guard reader.openReadOnly() else {
+            Issue.record("openReadOnly() failed")
+            return
         }
+        #expect(reader.fileSize == 5)
         reader.close()
-        try? FileManager.default.removeItem(atPath: tmpPath)
     }
 
     @Test func isOpenFalseAfterClose() {
         let tmpPath = "/tmp/occt_osdfile_open_\(Int.random(in: 0..<1_000_000)).txt"
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
         let file = OSDFile(path: tmpPath)
-        guard file.open() else { return }
+        guard file.open() else {
+            Issue.record("open() failed")
+            return
+        }
         #expect(file.isOpen)
         file.close()
         #expect(!file.isOpen)
-        try? FileManager.default.removeItem(atPath: tmpPath)
     }
 }
 

@@ -366,6 +366,56 @@
 | **MathIntegRc4** | kronrodAdaptive | `OCCTMathIntegKronrodAdaptive` | upper bound * 0.99 (integral drops by about 4.9e-4) | red | green | PASS |
 | **MathIntegRc4** | tanhSinh | `OCCTMathIntegTanhSinh` | upper bound * 0.99 (integral drops by about 4.9e-4) | red | green | PASS |
 | **MathJacobi Tests** | eigenvalues | `OCCTMathJacobiEigenvalues` | math_Jacobi::Value(i) + 0.5 | red | green | PASS |
+### 766-math-shape-transforms (#1983, measured)
+| **GC_MakeMirror** | Mirror box about point | `OCCTShapeMirrorAboutPoint` | mirror centre replaced by the origin | red | green | PASS |
+| **GC_MakeMirror** | Mirror box about axis | `OCCTShapeMirrorAboutAxis` | axis direction components reversed, (dz, dy, dx): mirrors about X instead of Z | red | green | PASS |
+| **GC_MakeScale** | Scale box about origin | `OCCTShapeScaleAboutPoint` | factor inverted (1 / factor) | red | green | PASS |
+| **GC_MakeScale** | Scale with factor 0.5 | `OCCTShapeScaleAboutPoint` | factor inverted (1 / factor) | red | green | PASS |
+| **GC_MakeTranslation** | Translate box from point to point | `OCCTShapeTranslateByPoints` | from and to points swapped | red | green | PASS |
+### 766-math-surface-transform (#1983, measured)
+| **Surface Transform** | Translate surface | `OCCTSurfaceTransform` | translation dz dropped (dx, dy, 0) | red | green | PASS |
+| **Surface Transform** | Rotate surface | `OCCTSurfaceTransform` | rotation angle negated | red | green | PASS |
+| **Surface Transform** | Scale surface | `OCCTSurfaceTransform` | scale factor inverted (1 / factor) | red | green | PASS |
+| **Surface Transform** | Mirror surface through point | `OCCTSurfaceTransform` | point mirror built as a plane mirror (normal Z) through the point | red | green | PASS |
+| **Surface Transform** | Mirror surface through axis | `OCCTSurfaceTransform` | axis mirror built as a plane mirror (gp_Ax2 for gp_Ax1) | red | green | PASS |
+| **Surface Transform** | Mirror surface through plane | `OCCTSurfaceTransform` | plane mirror built as an axis mirror (gp_Ax1 for gp_Ax2) | red | green | PASS |
+| **Surface Transform** | Transform BezierSurface values | `OCCTSurfaceTransform (surface from OCCTSurfaceBezierFill2)` | translation dz dropped | red | green | PASS |
+| **TransformedCurve, Curve with Translation** | translateCircle | `OCCTGeomAdaptorTransformedCurveCreate` | tx and ty swapped | red | green | PASS |
+### 766-math-transform-factory-trig (#1983, measured)
+| **gce Transform Factory 3D Tests** | pointMirror | `OCCTMakeMirrorPoint` | point mirror built as an axis mirror (Z) through the point | red | green | PASS |
+| **gce Transform Factory 3D Tests** | planeMirror | `OCCTMakeMirrorPlane` | plane mirror built as an axis mirror about the normal | red | green | PASS |
+| **gce Transform Factory 3D Tests** | rotation90 | `OCCTMakeRotation` | angle negated | red | green | PASS |
+| **gce Transform Factory 3D Tests** | scaleBy2 | `OCCTMakeScaleTransform` | factor inverted | red | green | PASS |
+| **gce Transform Factory 3D Tests** | translationVector | `OCCTMakeTranslationVec` | vector x and y swapped | red | green | PASS |
+| **gce Transform Factory 3D Tests** | translationPoints | `OCCTMakeTranslationPoints` | from and to swapped | red | green | PASS |
+| **gce Transform Factory 3D Tests** | axisMirror | `OCCTMakeMirrorAxis` | axis mirror built as a plane mirror with the axis as normal | red | green | PASS |
+| **math_TrigonometricFunctionRoots** | sinZero | `OCCTTrigRoots` | last root dropped (NbSolutions() - 1) | red | green | PASS |
+| **math_TrigonometricFunctionRoots** | cosHalf | `OCCTTrigRoots` | last root dropped | red | green | PASS |
+| **math_TrigonometricFunctionRoots** | infiniteRoots | `OCCTTrigRootsInfinite` | InfiniteRoots() negated | red | green | PASS |
+### 766-math-trimmed-trsf-extras (#1983, measured)
+| **GC_MakeTrimmedCone** | Trimmed cone from endpoints and radii | `OCCTSurfaceTrimmedCone` | r1 and r2 swapped | red | green | PASS |
+| **GC_MakeTrimmedCylinder** | Trimmed cylinder from axis, radius, height | `OCCTSurfaceTrimmedCylinder` | radius and height swapped | red | green | PASS |
+| **gp_Trsf_Extras** | transformFromMatrix | `OCCTShapeTransformFromMatrix` | translation column (a14, a24, a34) dropped | red | green | PASS |
+| **gp_Trsf_Extras** | transformIsNegative | `OCCTShapeTransformIsNegative` | identity-location branch reports true | red | green | PASS |
+| **gp_Trsf_Extras** | mirrorTransformProducesResult | `OCCTShapeTransformFromMatrix` | a11 read from a22 (identity instead of the X mirror) | red | green | PASS |
+| **gp_Trsf_Extras** | displacement | `OCCTTrsfDisplacement` | from and to frames swapped | red | green | PASS |
+| **gp_Trsf_Extras** | transformation | `OCCTTrsfTransformation` | SetDisplacement used instead of SetTransformation | red | green | PASS |
+| **gp_Trsf_Extras** | invalidMatrixSize | `none (pure Swift: the deprecated transformed(byMatrix: [Double]) overload in Shape+Math.swift refuses before any bridge call)` | Swift injection: a short array padded with the identity instead of refused | red | green | N/A |
+| **gp_Trsf_Extras** | transformFromMatrixInterleavedLayoutTranslatesAsDocumented | `OCCTShapeTransformFromMatrix` | translation column dropped | red | green | PASS |
+### 766-math-trsfmod-uzawa-vector2d (#1983, measured)
+| **BRepTools_TrsfModification** | apply translation via modifier | `OCCTShapeTrsfModification` | translation column (a14, a24, a34) dropped | red | green | PASS |
+| **BRepTools_TrsfModification** | apply rotation via modifier | `OCCTShapeTrsfModification` | a12 and a21 swapped (rotation by -90 deg) | red | green | PASS |
+| **Uzawa** | constrainedOptimization | `OCCTMathUzawa` | constraint right-hand side negated | red | green | PASS |
+| **Vector2DMath** | modulus | `OCCTXYModulus` | SquareModulus() returned | red | green | PASS |
+| **Vector2DMath** | cross | `OCCTXYCrossed` | operands reversed | red | green | PASS |
+| **Vector2DMath** | dot | `OCCTXYDot` | y term dropped | red | green | PASS |
+| **Vector2DMath** | normalize | `OCCTXYNormalize` | normalized x and y swapped | red | green | PASS |
+### 766-math-vector3d (#1983, measured)
+| **Vector3DMath** | modulus | `OCCTXYZModulus` | SquareModulus() returned | red | green | PASS |
+| **Vector3DMath** | cross | `OCCTXYZCrossed` | operands reversed | red | green | PASS |
+| **Vector3DMath** | dot | `OCCTXYZDot` | z term dropped | red | green | PASS |
+| **Vector3DMath** | dotCross | `OCCTXYZDotCross` | b and c swapped in the triple product | red | green | PASS |
+| **Vector3DMath** | normalize | `OCCTXYZNormalize` | normalized x and y swapped | red | green | PASS |
 ### 766-math-geom-point-transformation (#1983, measured)
 | **GeomPoint3D Tests** | create and read coordinates | `OCCTGeomPoint3DY` | OCCTGeomPoint3DY returns X() | red | green | PASS |
 | **GeomPoint3D Tests** | create from SIMD3 | `OCCTGeomPoint3DCreate / OCCTGeomPoint3DY` | OCCTGeomPoint3DY returns X() | red | green | PASS |
