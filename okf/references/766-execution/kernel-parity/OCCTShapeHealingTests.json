@@ -1065,5 +1065,135 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::cylinderAnswersForItsOwnWire",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "tri_state",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "tri_state",
+      "data": {
+        "CheckOuterBound": false,
+        "TotCross2D": 125.7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::wireNotOnTheFaceIsRefused",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "tri_state",
+      "data": -1
+    },
+    "kernel_output": {
+      "type": "tri_state",
+      "data": {
+        "CheckOuterBound": false,
+        "TotCross2D": 0.0
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::wrongTypedShapeIsRefused",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "tri_state",
+      "data": -1
+    },
+    "kernel_output": {
+      "type": "tri_state",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::nullShapeIsRefused",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "tri_state",
+      "data": -1
+    },
+    "kernel_output": {
+      "type": "tri_state",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::edgelessWireIsRefused",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "tri_state",
+      "data": -1
+    },
+    "kernel_output": {
+      "type": "tri_state",
+      "data": {
+        "IsReady": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::disconnectedEdgeWireIsRefused",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "tri_state",
+      "data": -1
+    },
+    "kernel_output": {
+      "type": "tri_state",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::cylinderWireOnPlanarFaceIsRefused",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "tri_state",
+      "data": -1
+    },
+    "kernel_output": {
+      "type": "tri_state",
+      "data": {
+        "CheckOuterBound": true,
+        "TotCross2D": -1.78e-15
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
   }
 ]
