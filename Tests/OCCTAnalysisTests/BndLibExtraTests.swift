@@ -30,6 +30,11 @@ struct BndLibExtraTests {
         let b = BndLib.ellipse(
             center: .zero, normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0),
             majorRadius: 10, minorRadius: 5)
+        expectBounds(b, min: SIMD3(-10, -5, 0), max: SIMD3(10, 5, 0))
+    }
+        let b = BndLib.ellipse(
+            center: .zero, normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0),
+            majorRadius: 10, minorRadius: 5)
         #expect(abs(b.min.x + 10) < 0.1)
         #expect(abs(b.max.x - 10) < 0.1)
         #expect(abs(b.min.y + 5) < 0.1)
