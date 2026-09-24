@@ -12,5 +12,8 @@ struct SurfaceKnotSplittingTests {
         let result = bspline.knotSplitting(uContinuity: .c0, vContinuity: .c0)
         #expect(result.uSplitCount >= 1)
         #expect(result.vSplitCount >= 1)
+        // #766: `>= 1` passed any count; at C0 the kernel splits only at the two ends each way.
+        #expect(result.uSplitCount == 2)
+        #expect(result.vSplitCount == 2)
     }
 }

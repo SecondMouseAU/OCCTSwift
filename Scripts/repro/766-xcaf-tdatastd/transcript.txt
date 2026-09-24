@@ -1,0 +1,21 @@
+AsciiString: hello -> after second Set: world
+BooleanArray 1..5: 1 0 1 0 1; tag 301 has one before Set=false; tag 302 has one=false
+BooleanList: after two appends Extent=2 First=1 after Clear Extent=0
+ByteArray: 42 255 0 128
+Comment: my comment
+ExtStringArray: Length=3 [1]=Hello [2]=World
+ExtStringList: Extent=3 First=Alpha Last=Gamma after Clear Extent=0
+IntegerArray: bounds 1..5 values(1,3,5)=10 30 50; index 99 in range=false
+IntegerList: Extent=3 First=10 Last=30 after Clear Extent=0
+Integer: 42 -> 99; a fresh child label has one=false
+IntPackedMap: Contains(42)=true Contains(100)=true Extent after 3 adds=3 after Remove(42) Contains=false Extent=2 after Clear IsEmpty=true
+IntPackedMap ChangeMap(10..50): Extent=5 Contains(30)=true Contains(1)=false
+NamedData: count=42 HasInteger(other)=false pi=3.14159 partName=MyPart
+NoteBook: Find=true appended tags 1 2 3
+RealArray 0..2: 1.1 2.2 3.3
+RealList: Extent=3 First=1.5 Last=3.14 after Clear Extent=0
+Real: 3.14 -> 2.718
+ReferenceArray tags: 400 401 402
+ReferenceList: Extent=2 First=410 Last=411 after Clear Extent=0
+Relation: a = b; tag 391 has one before Set=false
+TreeNode fresh: HasFather=false Depth=0; after two Append: child1 HasFather=true Depth=1 root NbChildren=2 First is c1=true c1.Next is c2=true c2.Next null=true
