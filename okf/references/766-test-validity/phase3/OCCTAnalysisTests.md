@@ -268,6 +268,12 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **BndLib Extra Tests** | ellipseBounds | Analytic bounds, ellipse | fillBounds6 max + 1 on every axis |
+| **BndLib Extra Tests** | coneBounds | Analytic bounds, cone | fillBounds6 max + 1 on every axis |
+| **BndLib Extra Tests** | circleArcBounds | Analytic bounds, circle arc | fillBounds6 max + 1 on every axis |
+| **BndLib Extra Tests** | ellipseArcBounds | Analytic bounds, ellipse arc | fillBounds6 max + 1 on every axis |
+| **BndLib Extra Tests** | parabolaArcBounds | Analytic bounds, parabola arc | fillBounds6 max + 1 on every axis |
+| **BndLib Extra Tests** | hyperbolaArcBounds | Analytic bounds, hyperbola arc | fillBounds6 max + 1 on every axis |
 
 ---
 
@@ -475,6 +481,12 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| ellipseBounds | OCCTBndLibEllipse | Analytic bounds, ellipse | fillBounds6 max + 1 on every axis | ✅ | ✅ |  |
+| coneBounds | OCCTBndLibCone | Analytic bounds, cone | fillBounds6 max + 1 on every axis | ✅ | ✅ | Rewritten: asserted only max.z >= min.z |
+| circleArcBounds | OCCTBndLibCircleArc | Analytic bounds, circle arc | fillBounds6 max + 1 on every axis | ✅ | ✅ | Rewritten: asserted only max >= min on x and y |
+| ellipseArcBounds | OCCTBndLibEllipseArc | Analytic bounds, ellipse arc | fillBounds6 max + 1 on every axis | ✅ | ✅ | Rewritten: asserted only max.x >= min.x |
+| parabolaArcBounds | OCCTBndLibParabolaArc | Analytic bounds, parabola arc | fillBounds6 max + 1 on every axis | ✅ | ✅ | Rewritten: asserted only max.x >= min.x |
+| hyperbolaArcBounds | OCCTBndLibHyperbolaArc | Analytic bounds, hyperbola arc | fillBounds6 max + 1 on every axis | ✅ | ✅ | Rewritten: asserted only max.x >= min.x |
 
 ---
 

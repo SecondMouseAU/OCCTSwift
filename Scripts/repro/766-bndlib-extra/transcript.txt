@@ -1,0 +1,6 @@
+ellipseBounds: min=(-10, -5, 0) max=(10, 5, 0)
+coneBounds: min=(-10, -10, 0) max=(10, 10, 8.6602540378443873)
+circleArcBounds: min=(3.0616169978683831e-16, 0, 0) max=(5, 5, 0)
+ellipseArcBounds: min=(6.1232339957367663e-16, 0, 0) max=(10, 5, 0)
+parabolaArcBounds: min=(0, -1, 0) max=(0.125, 1, 0)
+hyperbolaArcBounds: min=(5, -3.5256035809314041, 0) max=(7.7154031740762186, 3.5256035809314041, 0)

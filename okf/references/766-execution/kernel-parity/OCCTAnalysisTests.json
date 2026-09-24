@@ -5835,5 +5835,239 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BndLib Extra Tests::ellipseBounds",
+    "bridge_function": "OCCTBndLibEllipse",
+    "bridge_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          -10,
+          -5,
+          0
+        ],
+        "max": [
+          10,
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          -10,
+          -5,
+          0
+        ],
+        "max": [
+          10,
+          5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BndLib Extra Tests::coneBounds",
+    "bridge_function": "OCCTBndLibCone",
+    "bridge_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          -10,
+          -10,
+          0
+        ],
+        "max": [
+          10,
+          10,
+          8.660254037844387
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          -10,
+          -10,
+          0
+        ],
+        "max": [
+          10,
+          10,
+          8.660254037844387
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BndLib Extra Tests::circleArcBounds",
+    "bridge_function": "OCCTBndLibCircleArc",
+    "bridge_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          3.061616997868383e-16,
+          0,
+          0
+        ],
+        "max": [
+          5,
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          3.061616997868383e-16,
+          0,
+          0
+        ],
+        "max": [
+          5,
+          5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BndLib Extra Tests::ellipseArcBounds",
+    "bridge_function": "OCCTBndLibEllipseArc",
+    "bridge_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          6.123233995736766e-16,
+          0,
+          0
+        ],
+        "max": [
+          10,
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          6.123233995736766e-16,
+          0,
+          0
+        ],
+        "max": [
+          10,
+          5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BndLib Extra Tests::parabolaArcBounds",
+    "bridge_function": "OCCTBndLibParabolaArc",
+    "bridge_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          0,
+          -1,
+          0
+        ],
+        "max": [
+          0.125,
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          0,
+          -1,
+          0
+        ],
+        "max": [
+          0.125,
+          1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BndLib Extra Tests::hyperbolaArcBounds",
+    "bridge_function": "OCCTBndLibHyperbolaArc",
+    "bridge_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          5,
+          -3.525603580931404,
+          0
+        ],
+        "max": [
+          7.715403174076219,
+          3.525603580931404,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          5,
+          -3.525603580931404,
+          0
+        ],
+        "max": [
+          7.715403174076219,
+          3.525603580931404,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
