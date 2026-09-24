@@ -6,14 +6,17 @@ import simd
 
 // MARK: - Durable Identity (UID / RefUID / ItemUID), OCCT 8.0.0p1
 
+// Every `guard ... else { return }` / `if let` around a UID lookup is now a `#require`: with
+// the UID mint failing (OCCTBRepGraphNodeUID returning false), eight of these tests returned
+// early and passed, including every "does not cross" test, which then asserted nothing (#1986).
 @Suite("BRepGraph Durable UID")
 struct BRepGraphDurableUIDTests {
     // Face kind ordinal in BRepGraph_NodeId::Kind is 2.
     private let faceKind = 2
 
-    @Test func nodeUIDRoundTrip() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        guard let graph = BRepGraph(shape: box) else { return }
+    @Test func nodeUIDRoundTrip() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
         #expect(graph.faceCount == 6)
 
         // Every face should yield a valid UID that round-trips back to the same node.
@@ -36,17 +39,13 @@ struct BRepGraphDurableUIDTests {
     /// A UID minted by a *different* graph must not resolve, the case that matters, and the one
     /// that silently returned a wrong node before #295. Its counter is in range for the foreign
     /// graph (counters restart at 1 per graph), so nothing but provenance can reject it.
-    @Test func uidFromAnotherGraphDoesNotResolve() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let cyl = Shape.cylinder(radius: 3, height: 7),
-            let boxGraph = BRepGraph(shape: box),
-            let cylGraph = BRepGraph(shape: cyl)
-        else { return }
+    @Test func uidFromAnotherGraphDoesNotResolve() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let cyl = try #require(Shape.cylinder(radius: 3, height: 7))
+        let boxGraph = try #require(BRepGraph(shape: box))
+        let cylGraph = try #require(BRepGraph(shape: cyl))
 
-        guard let boxFaceUID = boxGraph.uid(ofNodeKind: faceKind, index: 2) else {
-            Issue.record("box face 2 had no UID")
-            return
-        }
+        let boxFaceUID = try #require(boxGraph.uid(ofNodeKind: faceKind, index: 2))
         // Precondition for the test to be meaningful: the counter is one the cylinder graph
         // would consider perfectly valid, and did resolve to a cylinder face before the fix.
         #expect(boxFaceUID.counter <= UInt32(cylGraph.faceCount))
@@ -59,13 +58,13 @@ struct BRepGraphDurableUIDTests {
 
     /// Two graphs over the *same* shape are still two graphs: identity is the instance, not the
     /// geometry. This is the case a consumer is most likely to assume works.
-    @Test func uidDoesNotCrossIdenticallyBuiltGraphs() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let a = BRepGraph(shape: box),
-            let b = BRepGraph(shape: box)
-        else { return }
+    @Test func uidDoesNotCrossIdenticallyBuiltGraphs() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let a = try #require(BRepGraph(shape: box))
+        let b = try #require(BRepGraph(shape: box))
         #expect(a.instanceID != b.instanceID)
-        guard let uid = a.uid(ofNodeKind: faceKind, index: 1) else { return }
+        let uid = try #require(a.uid(ofNodeKind: faceKind, index: 1))
+        #expect(a.node(forUID: uid) != nil)
         #expect(b.node(forUID: uid) == nil)
         #expect(!b.contains(uid: uid))
     }
@@ -92,11 +91,10 @@ struct BRepGraphDurableUIDTests {
     /// resolves to the geometrically same face. This is the kernel's own contract, not an
     /// accident: `BRepGraph_Copy::Perform` transplants the UID counter space, the Generation and
     /// the GraphGUID into the target. Guards the #295 provenance check against over-rejecting.
-    @Test func uidSurvivesAFullCopyAndNamesTheSameFace() {
-        guard let box = Shape.box(width: 10, height: 20, depth: 30),
-            let graph = BRepGraph(shape: box),
-            let copy = graph.copy()
-        else { return }
+    @Test func uidSurvivesAFullCopyAndNamesTheSameFace() throws {
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let graph = try #require(BRepGraph(shape: box))
+        let copy = try #require(graph.copy())
         #expect(copy.instanceID == graph.instanceID)  // a copy is the same identity
         #expect(copy.faceCount == graph.faceCount)
 
@@ -105,7 +103,7 @@ struct BRepGraphDurableUIDTests {
         #expect(Set(sigs).count == graph.faceCount)
 
         for i in 0..<graph.faceCount {
-            guard let uid = graph.uid(ofNodeKind: faceKind, index: i) else { continue }
+            let uid = try #require(graph.uid(ofNodeKind: faceKind, index: i))
             guard let r = copy.node(forUID: uid) else {
                 Issue.record("face \(i)'s UID stopped resolving through copy()")
                 continue
@@ -116,15 +114,15 @@ struct BRepGraphDurableUIDTests {
 
     /// `translated()` copies the graph wholesale too, so identity and UID correspondence carry
     /// across exactly as with `copy()`, the faces are merely moved.
-    @Test func uidSurvivesATranslationAndNamesTheSameFace() {
+    @Test func uidSurvivesATranslationAndNamesTheSameFace() throws {
         let d = SIMD3<Double>(100, 200, 300)
-        guard let box = Shape.box(width: 10, height: 20, depth: 30),
-            let graph = BRepGraph(shape: box),
-            let moved = graph.translated(dx: d.x, dy: d.y, dz: d.z)
-        else { return }
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let graph = try #require(BRepGraph(shape: box))
+        let moved = try #require(graph.translated(dx: d.x, dy: d.y, dz: d.z))
         #expect(moved.instanceID == graph.instanceID)
+        #expect(graph.faceCount == 6)
         for i in 0..<graph.faceCount {
-            guard let uid = graph.uid(ofNodeKind: faceKind, index: i) else { continue }
+            let uid = try #require(graph.uid(ofNodeKind: faceKind, index: i))
             guard let r = moved.node(forUID: uid) else {
                 Issue.record("face \(i)'s UID stopped resolving through translated()")
                 continue
@@ -137,18 +135,17 @@ struct BRepGraphDurableUIDTests {
     /// transplanting the counter space, so the extracted face restarts at counter 1, the
     /// source's face-0 counter. Before #295 a source UID resolved here and returned the wrong
     /// face. The extracted graph gets a fresh identity, so it now returns nil.
-    @Test func uidDoesNotCrossACopiedOutFace() {
-        guard let box = Shape.box(width: 10, height: 20, depth: 30),
-            let graph = BRepGraph(shape: box),
-            let lifted = graph.copyFace(3)
-        else { return }
+    @Test func uidDoesNotCrossACopiedOutFace() throws {
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let graph = try #require(BRepGraph(shape: box))
+        let lifted = try #require(graph.copyFace(3))
         #expect(lifted.instanceID != graph.instanceID)
         #expect(lifted.faceCount == 1)
         // The lifted face IS source face 3, sitting at index 0.
         #expect(faceSignature(lifted, 0) == faceSignature(graph, 3))
 
         // Source face 0's counter (1) is in range here and used to return face 3.
-        guard let uidFace0 = graph.uid(ofNodeKind: faceKind, index: 0) else { return }
+        let uidFace0 = try #require(graph.uid(ofNodeKind: faceKind, index: 0))
         #expect(uidFace0.counter == 1)
         #expect(lifted.node(forUID: uidFace0) == nil)
         #expect(!lifted.contains(uid: uidFace0))
@@ -156,9 +153,9 @@ struct BRepGraphDurableUIDTests {
 
     /// An out-of-range counter must not resolve either. Stamped with this graph's own id, so it
     /// tests the counter path rather than being rejected on provenance first.
-    @Test func outOfRangeCounterDoesNotResolve() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        guard let graph = BRepGraph(shape: box) else { return }
+    @Test func outOfRangeCounterDoesNotResolve() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
 
         let bogus = BRepGraph.GraphUID(kind: faceKind, counter: 999_999, graphID: graph.instanceID)
         #expect(!graph.contains(uid: bogus))
@@ -172,10 +169,11 @@ struct BRepGraphDurableUIDTests {
 
     /// A UID with no provenance, hand-built, or decoded from a pre-#295 payload, resolves nowhere,
     /// even when its counter names a real node in the graph asked.
-    @Test func unstampedUIDResolvesNowhere() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        guard let graph = BRepGraph(shape: box) else { return }
-        guard let real = graph.uid(ofNodeKind: faceKind, index: 0) else { return }
+    @Test func unstampedUIDResolvesNowhere() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        let real = try #require(graph.uid(ofNodeKind: faceKind, index: 0))
+        #expect(graph.node(forUID: real) != nil)
 
         let unstamped = BRepGraph.GraphUID(kind: real.kind, counter: real.counter, graphID: 0)
         #expect(unstamped.isValid)  // the counter is a real one...
@@ -185,25 +183,23 @@ struct BRepGraphDurableUIDTests {
 
     /// The property the UID exists for: it survives a mutation that renumbers indices, within the
     /// graph that minted it. Guards against the #295 provenance check over-rejecting.
-    @Test func uidSurvivesCompactionOfItsOwnGraph() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box),
-            let uid = graph.uid(ofNodeKind: faceKind, index: 3)
-        else { return }
+    @Test func uidSurvivesCompactionOfItsOwnGraph() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        let uid = try #require(graph.uid(ofNodeKind: faceKind, index: 3))
         let idBefore = graph.instanceID
         graph.compact()
         #expect(graph.instanceID == idBefore)  // compaction mutates in place; same instance
         #expect(graph.contains(uid: uid))
-        #expect(graph.node(forUID: uid) != nil)
+        #expect(graph.node(forUID: uid)?.index == 3)
     }
 
     /// Provenance travels through `Codable`; a pre-#295 payload (no `graphID`) still decodes,
     /// as an unstamped UID rather than a decode failure.
     @Test func uidCodableCarriesProvenance() throws {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box),
-            let uid = graph.uid(ofNodeKind: faceKind, index: 0)
-        else { return }
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        let uid = try #require(graph.uid(ofNodeKind: faceKind, index: 0))
 
         let round = try JSONDecoder().decode(
             BRepGraph.GraphUID.self,
@@ -220,43 +216,37 @@ struct BRepGraphDurableUIDTests {
 
     /// RefUIDs and ItemUIDs restart their counters per graph exactly as node UIDs do, and carry
     /// the same provenance.
-    @Test func refAndItemUIDsDoNotCrossGraphs() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let cyl = Shape.cylinder(radius: 3, height: 7),
-            let boxGraph = BRepGraph(shape: box),
-            let cylGraph = BRepGraph(shape: cyl)
-        else { return }
+    @Test func refAndItemUIDsDoNotCrossGraphs() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let cyl = try #require(Shape.cylinder(radius: 3, height: 7))
+        let boxGraph = try #require(BRepGraph(shape: box))
+        let cylGraph = try #require(BRepGraph(shape: cyl))
 
         // Ref kind 1 == Face reference entry.
-        if let refUID = boxGraph.uid(ofRefKind: 1, index: 0) {
-            #expect(boxGraph.ref(forUID: refUID) != nil)
-            #expect(cylGraph.ref(forUID: refUID) == nil)
-            #expect(!cylGraph.contains(uid: refUID))
-        }
+        let refUID = try #require(boxGraph.uid(ofRefKind: 1, index: 0))
+        #expect(boxGraph.ref(forUID: refUID) != nil)
+        #expect(boxGraph.contains(uid: refUID))
+        #expect(cylGraph.ref(forUID: refUID) == nil)
+        #expect(!cylGraph.contains(uid: refUID))
 
-        if let itemUID = boxGraph.itemUID(ofNodeKind: faceKind, index: 2) {
-            #expect(boxGraph.item(forUID: itemUID) != nil)
-            #expect(cylGraph.item(forUID: itemUID) == nil)
-            #expect(boxGraph.contains(uid: itemUID))
-            #expect(!cylGraph.contains(uid: itemUID))
-        }
+        let itemUID = try #require(boxGraph.itemUID(ofNodeKind: faceKind, index: 2))
+        #expect(boxGraph.item(forUID: itemUID) != nil)
+        #expect(cylGraph.item(forUID: itemUID) == nil)
+        #expect(boxGraph.contains(uid: itemUID))
+        #expect(!cylGraph.contains(uid: itemUID))
     }
 
-    @Test func itemUIDOfNode() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        guard let graph = BRepGraph(shape: box) else { return }
-        guard graph.faceCount > 0 else { return }
+    @Test func itemUIDOfNode() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        #expect(graph.faceCount == 6)
 
-        if let item = graph.itemUID(ofNodeKind: faceKind, index: 0) {
-            #expect(item.isValid)
-            #expect(item.domain == 1)  // 1 == Node domain
-            if let resolved = graph.item(forUID: item) {
-                #expect(resolved.domain == 1)
-                #expect(resolved.kind == faceKind)
-                #expect(resolved.index == 0)
-            } else {
-                Issue.record("item UID did not resolve")
-            }
-        }
+        let item = try #require(graph.itemUID(ofNodeKind: faceKind, index: 0))
+        #expect(item.isValid)
+        #expect(item.domain == 1)  // 1 == Node domain
+        let resolved = try #require(graph.item(forUID: item))
+        #expect(resolved.domain == 1)
+        #expect(resolved.kind == faceKind)
+        #expect(resolved.index == 0)
     }
 }
