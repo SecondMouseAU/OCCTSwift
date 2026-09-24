@@ -1,0 +1,6 @@
+coincidentPoints: point (5, 5, 5)
+collinearPoints: linear origin=(5, 0, 0) dir=(1, 0, 0)
+coplanarPoints: planar origin=(5, 5, 0) normal=(0, 0, 1)
+spacePoints: space
+emptyReturnsNil (unguarded kernel path): space
+singlePoint: point (3, 4, 5)
