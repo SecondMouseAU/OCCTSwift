@@ -9677,5 +9677,311 @@
       "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
       "rewritten": ""
     }
+  },
+  {
+    "test_name": "Issue1050 bisector intersection domain::A meeting point past the old window is found",
+    "bridge_function": "OCCTBisectorInterPointPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          -150,
+          5
+        ],
+        "u1": 150,
+        "u2": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          -150,
+          5
+        ],
+        "u1": 150,
+        "u2": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "both IntRes2d_Domain upper bounds clamped to 100 (the pre-#1050 window)",
+      "red": "Issue1050BisectorDomainTests.swift:43:9: Expectation failed: !hits.isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Issue1050 bisector intersection domain::A meeting point inside the old window is unchanged",
+    "bridge_function": "OCCTBisectorInterPointPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          -50,
+          5
+        ],
+        "u1": 50,
+        "u2": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          -50,
+          5
+        ],
+        "u1": 50,
+        "u2": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "A.y - 2",
+      "red": "Issue1050BisectorDomainTests.swift:61:9: Expectation failed: abs(h.y - 5) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Issue1050 bisector intersection domain::Parallel bisectors still report no intersection",
+    "bridge_function": "OCCTBisectorInterPointPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "points": 0,
+        "segments": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "points": 0,
+        "segments": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "returns 1 when nothing was found",
+      "red": "Issue1050BisectorDomainTests.swift:80:9: Expectation failed: hits.isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1050 bisector intersection domain::A crossing on the dead side of the half-line reports no intersection",
+    "bridge_function": "OCCTBisectorInterPointPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "points": 0,
+        "segments": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "points": 0,
+        "segments": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "returns 1 when nothing was found",
+      "red": "Issue1050BisectorDomainTests.swift:98:9: Expectation failed: hits.isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1050 bisector intersection domain::A meeting point past any input-derived bound is found",
+    "bridge_function": "OCCTBisectorInterPointPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          -150.004236390595,
+          5
+        ],
+        "u1": 150.004236391
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          -150.004236390595,
+          5
+        ],
+        "u1": 150.004236391
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "both IntRes2d_Domain upper bounds clamped to 100",
+      "red": "Issue1050BisectorDomainTests.swift:113:9: Expectation failed: !hits.isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Issue1050 bisector intersection domain::The documented circumcentre example holds, and its three reorderings do not",
+    "bridge_function": "OCCTBisectorInterPointPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ABCD": [
+          2,
+          0.833333333333333
+        ],
+        "BACD": 0,
+        "ABDC": 0,
+        "BADC": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "ABCD": [
+          2,
+          0.833333333333333
+        ],
+        "BACD": 0,
+        "ABDC": 0,
+        "BADC": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "A.y - 2",
+      "red": "Issue1050BisectorDomainTests.swift:132:9: Expectation failed: hits.count == 1",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Issue1050 bisector intersection domain::Coincident points return no intersection rather than crashing",
+    "bridge_function": "OCCTBisectorInterPointPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "Bisector_Bisec": "gp_Vec2d::Normalize() throws: vector has zero norm"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "catch returns 1 instead of 0",
+      "red": "Issue1050BisectorDomainTests.swift:154:9: Expectation failed: bisectorIntersections(a: (5, 5), b: (5, 5), c: (-55, 0), d: (-45, 0)).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1050BisectorDomainTests.swift (free function)::Coincident bisectors report intersection segment endpoints",
+    "bridge_function": "OCCTBisectorInterPointPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "case1": [
+          [
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            "u1 2e+100",
+            "u2 2e+100"
+          ]
+        ],
+        "case2": [
+          2,
+          0
+        ],
+        "case3": [
+          0,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "case1": [
+          [
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            "u1 2e+100",
+            "u2 2e+100"
+          ]
+        ],
+        "case2": [
+          2,
+          0
+        ],
+        "case3": [
+          0,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "segment endpoints never collected",
+      "red": "Issue1050BisectorDomainTests.swift:291:9: Expectation failed: hits.count == 2",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": "`#expect(count == 2)` then `hits[0]`: a short result crashed the run; now `#require`"
+    }
   }
 ]
