@@ -302,5 +302,143 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Adaptor3d IsoCurve::U-iso points on cylinder face",
+    "test_file": "Tests/OCCTCurveTests/Adaptor3dIsoCurveTests.swift",
+    "bridge_function": "OCCTAdaptor3dIsoCurveEval",
+    "bridge_output": {
+      "type": "points",
+      "data": "(10, 0, z), z = -1e6, -5e5, 0, 5e5, 1e6 (within 1e-6)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "(10, 0, z), z = -1e6, -5e5, 0, 5e5, 1e6; raw iso range [-2e100, 2e100] clamped to 1e6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "U and V iso type swapped",
+    "red": "Adaptor3dIsoCurveTests.swift:35 abs(p.z - zk) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: picked any face, checked only the count"
+  },
+  {
+    "test_name": "Adaptor3d IsoCurve::V-iso points on cylinder face",
+    "test_file": "Tests/OCCTCurveTests/Adaptor3dIsoCurveTests.swift",
+    "bridge_function": "OCCTAdaptor3dIsoCurveEval",
+    "bridge_output": {
+      "type": "points",
+      "data": "(10cos u, 10sin u, 10), u = 2 pi i / 9, i = 0..9 (within 1e-9)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "(10cos u, 10sin u, 10), u = 2 pi i / 9; e.g. pt[1] = (7.6604444311897799, 6.4278760968653925, 10)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "U and V iso type swapped",
+    "red": "Adaptor3dIsoCurveTests.swift:50 abs(p.x - 10 * cos(u)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: picked any face, checked only the count"
+  },
+  {
+    "test_name": "Adaptor3d IsoCurve::U-iso curve edge from face",
+    "test_file": "Tests/OCCTCurveTests/Adaptor3dIsoCurveTests.swift",
+    "bridge_function": "OCCTAdaptor3dIsoCurveEdge",
+    "bridge_output": {
+      "type": "edge",
+      "data": "line, length 10, (10,0,0) -> (10,0,10)"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": "type 0 (line), range [0, 10], length 10, (10,0,0) -> (10,0,10)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "U and V iso type swapped",
+    "red": "Adaptor3dIsoCurveTests.swift:65 edge.edgeAdaptorCurveType == 0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: checked only shapeType == .edge"
+  },
+  {
+    "test_name": "Adaptor3d IsoCurve::V-iso curve edge from face",
+    "test_file": "Tests/OCCTCurveTests/Adaptor3dIsoCurveTests.swift",
+    "bridge_function": "OCCTAdaptor3dIsoCurveEdge",
+    "bridge_output": {
+      "type": "edge",
+      "data": "circle arc, length 10 pi, (10,0,10) -> (-10,0,10)"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": "type 1 (circle), range [0, pi], length 31.415926535897931, (10,0,10) -> (-10,1.2e-15,10)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "U and V iso type swapped",
+    "red": "Adaptor3dIsoCurveTests.swift:84 edge.edgeAdaptorCurveType == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: checked only shapeType == .edge"
+  },
+  {
+    "test_name": "Approx CurvilinearParameter::Arc-length reparameterize circle edge",
+    "test_file": "Tests/OCCTCurveTests/ApproxCurvilinearParameterTests.swift",
+    "bridge_function": "OCCTApproxCurvilinearParameter",
+    "bridge_output": {
+      "type": "edge",
+      "data": "BSpline, range [0, 1], length 20 pi within 1e-3, half-parameter length = half length within 1e-6"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": "BSpline degree 7, 14 poles, range [0, 1], length 62.831818308373776, length to u=0.5 31.415909154186899, MaxError3d 1.886e-4"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input edge instead of Approx_CurvilinearParameter's curve",
+    "red": "ApproxCurvilinearParameterTests.swift:27 result.edgeAdaptorCurveType == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: checked only isValid"
+  },
+  {
+    "test_name": "Approx SameParameter Tests::same parameter on line/plane",
+    "test_file": "Tests/OCCTCurveTests/ApproxSameParameterTests.swift",
+    "bridge_function": "OCCTApproxSameParameter",
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": "IsDone 1, IsSameParameter 1 (TolReached 1.48e50 on these unbounded lines, not asserted)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsSameParameter() negated",
+    "red": "ApproxSameParameterTests.swift:25 r.isSameParameter",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: `if let` let a nil result pass unchecked"
   }
 ]

@@ -1,0 +1,8 @@
+bowtie as bare wire: valid=1 selfIntersectingFlag=0
+bowtie as planar face: valid=0 selfIntersectingFlag=1
+clean square as bare wire: valid=1 selfIntersectingFlag=0
+clean square as planar face: valid=1 selfIntersectingFlag=0
+Sewing(box faces): NbFreeEdges=0 NbContigousEdges=0 NbMultipleEdges=0 NbDegeneratedShapes=0 sewedType=3 sewedFaces=6
+cylinder: revolutionFaces=0 volume=785.398163397
+ConvertToRevolution: revolutionFaces=1 volume=785.398163397 valid=1
+SweptToElementary(converted): revolutionFaces=0 volume=785.398163397
