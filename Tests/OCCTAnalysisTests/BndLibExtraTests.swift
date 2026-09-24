@@ -32,14 +32,6 @@ struct BndLibExtraTests {
             majorRadius: 10, minorRadius: 5)
         expectBounds(b, min: SIMD3(-10, -5, 0), max: SIMD3(10, 5, 0))
     }
-        let b = BndLib.ellipse(
-            center: .zero, normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0),
-            majorRadius: 10, minorRadius: 5)
-        #expect(abs(b.min.x + 10) < 0.1)
-        #expect(abs(b.max.x - 10) < 0.1)
-        #expect(abs(b.min.y + 5) < 0.1)
-        #expect(abs(b.max.y - 5) < 0.1)
-    }
 
     /// Reference radius 5 at v = 0, half-angle 30 degrees, v along the generatrix to 10: the top
     /// circle has radius 5 + 10 sin 30 = 10 at height 10 cos 30.
