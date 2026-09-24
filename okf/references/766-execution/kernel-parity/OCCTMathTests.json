@@ -5669,5 +5669,221 @@
       "failing_expectation": ":70 `abs(norm - 1.0) < 1e-10`"
     },
     "green": true
+  },
+  {
+    "test_name": "MathGauss Tests::solve2x2",
+    "bridge_function": "OCCTMathGaussSolve",
+    "bridge_output": {
+      "type": "observed",
+      "data": "x = 1.6000000000000001 1.8",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "x = 1.6000000000000001 1.8",
+      "source": "Scripts/repro/766-math-gauss-householder-integ-jacobi/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "swap X(1) and X(n) after math_Gauss::Solve",
+      "failing_expectation": ":15 `abs(solution[0] - 1.6) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathGauss Tests::determinant",
+    "bridge_function": "OCCTMathGaussDeterminant",
+    "bridge_output": {
+      "type": "observed",
+      "data": "5",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "5",
+      "source": "Scripts/repro/766-math-gauss-householder-integ-jacobi/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "negate math_Gauss::Determinant",
+      "failing_expectation": ":22 `abs(det - 5.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathHouseholder Tests::overdetermindedSolve",
+    "bridge_function": "OCCTMathHouseholderSolve",
+    "bridge_output": {
+      "type": "observed",
+      "data": "x = 1.3333333333333328 2.3333333333333339",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "x = 1.3333333333333328 2.3333333333333339",
+      "source": "Scripts/repro/766-math-gauss-householder-integ-jacobi/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "swap sol(1) and sol(cols) after math_Householder::Value",
+      "failing_expectation": "original: **green**; rewritten: :20 `abs(x[0] - 4.0 / 3.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathIntegRc4::gauss",
+    "bridge_function": "OCCTMathIntegGauss",
+    "bridge_output": {
+      "type": "observed",
+      "data": "2",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "2",
+      "source": "Scripts/repro/766-math-gauss-householder-integ-jacobi/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "upper bound * 0.99 (integral drops by about 4.9e-4)",
+      "failing_expectation": ":12 `abs(r.value - 2.0) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathIntegRc4::gaussAdaptive",
+    "bridge_function": "OCCTMathIntegGaussAdaptive",
+    "bridge_output": {
+      "type": "observed",
+      "data": "1.9999999999999998",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1.9999999999999998",
+      "source": "Scripts/repro/766-math-gauss-householder-integ-jacobi/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "upper bound * 0.99 (integral drops by about 4.9e-4)",
+      "failing_expectation": ":20 `abs(r.value - 2.0) < 1e-8`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathIntegRc4::kronrod",
+    "bridge_function": "OCCTMathIntegKronrod",
+    "bridge_output": {
+      "type": "observed",
+      "data": "1.9999999999999962",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1.9999999999999962",
+      "source": "Scripts/repro/766-math-gauss-householder-integ-jacobi/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "upper bound * 0.99 (integral drops by about 4.9e-4)",
+      "failing_expectation": ":26 `abs(r.value - 2.0) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathIntegRc4::kronrodAdaptive",
+    "bridge_function": "OCCTMathIntegKronrodAdaptive",
+    "bridge_output": {
+      "type": "observed",
+      "data": "1.9999999999999962",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1.9999999999999962",
+      "source": "Scripts/repro/766-math-gauss-householder-integ-jacobi/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "upper bound * 0.99 (integral drops by about 4.9e-4)",
+      "failing_expectation": ":34 `abs(r.value - 2.0) < 1e-8`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathIntegRc4::tanhSinh",
+    "bridge_function": "OCCTMathIntegTanhSinh",
+    "bridge_output": {
+      "type": "observed",
+      "data": "2",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "2",
+      "source": "Scripts/repro/766-math-gauss-householder-integ-jacobi/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "upper bound * 0.99 (integral drops by about 4.9e-4)",
+      "failing_expectation": ":40 `abs(r.value - 2.0) < 1e-4`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathJacobi Tests::eigenvalues",
+    "bridge_function": "OCCTMathJacobiEigenvalues",
+    "bridge_output": {
+      "type": "observed",
+      "data": "3 1 (unsorted, Value(1), Value(2))",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "3 1 (unsorted, Value(1), Value(2))",
+      "source": "Scripts/repro/766-math-gauss-householder-integ-jacobi/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "math_Jacobi::Value(i) + 0.5",
+      "failing_expectation": ":17 `abs(sorted[0] - 1.0) < 1e-10`"
+    },
+    "green": true
   }
 ]
