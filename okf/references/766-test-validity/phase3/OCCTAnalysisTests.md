@@ -264,6 +264,8 @@
 | **Hatch Builder Tests** | addYLines | Hatch Y lines | OCCTHatcherAddYLine drops AddYLine |
 | **Hatch Builder Tests** | trimAndIntervals | Hatch trimming (rewritten: could not fail) | OCCTHatcherTrim drops Trim |
 | **IntAna PlaneSphere Tests** | planeSphereIntersection | Plane-sphere circle | OCCTIntAnaPlaneSphere doubles the circle radius (values pinned, #766) |
+| **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistance | Parallel-axis crash guard | OCCTExtremaElCSLinCylinder parallel guard removed: SIGSEGV (rewritten, #766) |
+| **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 
 ---
 

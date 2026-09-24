@@ -5569,5 +5569,108 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtElCS Line-Cylinder::lineCylinderDistance",
+    "bridge_function": "OCCTExtremaElCSLinCylinder",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 0,
+        "note": "parallel-axis guard returns 0 before the kernel is called"
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "is_done": true,
+        "is_parallel": true,
+        "NbExt": "SIGSEGV (signal 11) in a child process"
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "intended: the bridge refuses the parallel case because Extrema_ExtElCS::NbExt() still crashes on it on the pinned kernel; the test asserts the refusal"
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtElCS Line-Cylinder::lineCylinderDistancePerpendicular",
+    "bridge_function": "OCCTExtremaElCSLinCylinder",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "extrema": [
+          {
+            "square_distance": 225.0,
+            "on_line": [
+              20.0,
+              0.0,
+              0.0
+            ],
+            "on_cylinder": [
+              5.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "square_distance": 625.0,
+            "on_line": [
+              20.0,
+              0.0,
+              0.0
+            ],
+            "on_cylinder": [
+              -5.0,
+              6.123233995736766e-16,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "extrema": [
+          {
+            "square_distance": 225.0,
+            "on_line": [
+              20.0,
+              0.0,
+              0.0
+            ],
+            "on_cylinder": [
+              5.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "square_distance": 625.0,
+            "on_line": [
+              20.0,
+              0.0,
+              0.0
+            ],
+            "on_cylinder": [
+              -5.0,
+              6.123233995736766e-16,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
