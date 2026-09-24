@@ -6,17 +6,28 @@ import simd
 
 @Suite("IntTools_EdgeFace Tests")
 struct IntToolsEdgeFaceTests {
+    /// An edge that crosses a face produces one vertex common part, at the crossing (#766).
+    ///
+    /// This used to assert only `parts != nil`, which #1631's empty search window satisfied, and
+    /// its fixture did not cross the face it tested: `Shape.box` is centred on the origin, so the
+    /// edge from (5, 5, -1) to (5, 5, 11) runs along the box's x = 5, y = 5 corner line and never
+    /// touches `faces.first`, the x = -5 face. The kernel returns no common part for that pair
+    /// (Scripts/repro/766-inttoolsedgeface), so the old test could not tell a working intersector
+    /// from one that finds nothing.
+    ///
+    /// This edge runs along +X at y = 1, z = 2 and crosses the x = -5 face once, 5 units along
+    /// its length.
     @Test("Edge crossing face produces intersection")
-    func edgeFaceIntersection() {
-        // Use a box face and an edge going through it
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        let edge = Shape.edgeFromPoints(SIMD3(5, 5, -1), SIMD3(5, 5, 11))
-        if let b = box, let e = edge {
-            let faces = b.subShapes(ofType: .face)
-            if let face = faces.first {
-                let parts = e.edgeFaceIntersection(with: face)
-                #expect(parts != nil)
-            }
+    func edgeFaceIntersection() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let edge = try #require(Shape.edgeFromPoints(SIMD3(-10, 1, 2), SIMD3(0, 1, 2)))
+        let face = try #require(box.subShapes(ofType: .face).first)
+        let parts = try #require(edge.edgeFaceIntersection(with: face))
+        #expect(parts.count == 1)
+        if let part = parts.first {
+            #expect(part.type == .vertex)
+            #expect(simd_distance(part.point, SIMD3(-5, 1, 2)) < 1e-9)
+            #expect(abs(part.param1Range.first - 5) < 1e-6)
         }
     }
 
