@@ -91,20 +91,23 @@ struct OCCTSignalHandlingTests {
     /// the BRepFill_CompatibleWires polar-iterator guard carried in Scripts/patches/ (issue #176).
     /// If that patch is dropped from the xcframework, this test crashes the runner.
     @Test("Degenerate loft returns nil, does not crash")
-    func degenerateLoftIsCaught() {
-        // A valid square, a wildly different many-gon, and a near-degenerate (collinear) wire,
-        // the kind of mismatched profile set that ThruSections can crash on.
-        let square = Wire.polygon3D(
-            [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true)
-        let collinear = Wire.polygon3D(
-            [SIMD3(0, 0, 5), SIMD3(1, 0, 5), SIMD3(2, 0, 5)], closed: true)
-        if let square, let collinear {
-            // Whatever the outcome, the call must return (nil or a shape) without aborting.
-            _ = Shape.loft(profiles: [square, collinear], solid: true)
-        }
-        // Tessellating a possibly-invalid solid must also not crash.
-        if let s = Shape.box(width: 1, height: 1, depth: 1) { _ = s.mesh(linearDeflection: 0.01) }
-        #expect(Bool(true))  // reaching here means no crash
+    func degenerateLoftIsCaught() throws {
+        // A valid square and a near-degenerate (collinear) wire, the kind of mismatched profile
+        // set that ThruSections can crash on.
+        // #766: this used to end in `#expect(Bool(true))` with every call inside `if let`, so it
+        // passed whatever the loft returned. Pinned to the kernel instead
+        // (Scripts/repro/766-foundation-color-material/): both polygons build, and
+        // BRepOffsetAPI_ThruSections reports IsDone() == false for this pair, so the loft is nil.
+        let square = try #require(
+            Wire.polygon3D(
+                [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true))
+        let collinear = try #require(
+            Wire.polygon3D([SIMD3(0, 0, 5), SIMD3(1, 0, 5), SIMD3(2, 0, 5)], closed: true))
+        #expect(Shape.loft(profiles: [square, collinear], solid: true) == nil)
+        // Tessellating a solid after the failed loft must also work: a unit box is 12 triangles.
+        let box = try #require(Shape.box(width: 1, height: 1, depth: 1))
+        let mesh = try #require(box.mesh(linearDeflection: 0.01))
+        #expect(mesh.triangleCount == 12)
     }
 }
 
@@ -112,18 +115,21 @@ struct OCCTSignalHandlingTests {
 
 @Suite("Color OCCT Operations Tests")
 struct ColorOCCTTests {
-    @Test func fromName() {
-        if let c = Color.fromName("RED") {
-            #expect(c.red > 0.9)
-            #expect(c.green < 0.1)
-            #expect(c.blue < 0.1)
-        }
+    // #766: fromName, fromNameBlue, fromHex, fromHexRGBA, toHexRGBA and namedColorName nested
+    // every assertion in `if let`, so a bridge that returned nil passed them. They now require the
+    // value and pin what Quantity_Color reports (Scripts/repro/766-foundation-color-material/).
+    @Test func fromName() throws {
+        let c = try #require(Color.fromName("RED"))
+        #expect(c.red == 1)
+        #expect(c.green == 0)
+        #expect(c.blue == 0)
     }
 
-    @Test func fromNameBlue() {
-        if let c = Color.fromName("BLUE") {
-            #expect(c.blue > 0.9)
-        }
+    @Test func fromNameBlue() throws {
+        let c = try #require(Color.fromName("BLUE"))
+        #expect(c.red == 0)
+        #expect(c.green == 0)
+        #expect(c.blue == 1)
     }
 
     @Test func fromNameInvalid() {
@@ -131,11 +137,11 @@ struct ColorOCCTTests {
         #expect(c == nil)
     }
 
-    @Test func fromHex() {
-        if let c = Color.fromHex("#FF0000") {
-            #expect(c.red > 0.9)
-            #expect(c.green < 0.1)
-        }
+    @Test func fromHex() throws {
+        let c = try #require(Color.fromHex("#FF0000"))
+        #expect(c.red == 1)
+        #expect(c.green == 0)
+        #expect(c.blue == 0)
     }
 
     @Test func fromHexInvalid() {
@@ -164,18 +170,18 @@ struct ColorOCCTTests {
         #expect(c.toHex(includeHashPrefix: false) == "FF0000")
     }
 
-    @Test func fromHexRGBA() {
-        if let c = Color.fromHexRGBA("#FF000080") {
-            #expect(c.red > 0.5)
-            #expect(c.alpha < 1.0)
-        }
+    @Test func fromHexRGBA() throws {
+        let c = try #require(Color.fromHexRGBA("#FF000080"))
+        #expect(c.red == 1)
+        #expect(c.green == 0)
+        #expect(c.blue == 0)
+        #expect(abs(c.alpha - 128.0 / 255.0) < 1e-6)  // 0x80 = 128/255, stored as Float
     }
 
     @Test func toHexRGBA() {
+        // Linear 0.5 gamma-encodes to sRGB 0xBC; alpha passes through unconverted as 0x80.
         let c = Color(red: 0.5, green: 0.5, blue: 0.5, alpha: 0.5)
-        if let hex = c.toHexRGBA() {
-            #expect(!hex.isEmpty)
-        }
+        #expect(c.toHexRGBA() == "#BCBCBC80")
     }
 
     // Regression for #1571: same shape as `toHex`, for the RGBA overload. Alpha is passed through
@@ -192,25 +198,28 @@ struct ColorOCCTTests {
         #expect(c.toHexRGBA(includeHashPrefix: false) == "FF0000FF")
     }
 
+    // #766: distance and squareDistance asserted only `> 1.0`, which each other's value (sqrt 2
+    // and 2) also satisfies, so a bridge calling the wrong one passed; deltaE2000 asserted `> 0`.
+    // Pinned to Quantity_Color's values.
     @Test func distance() {
         let red = Color(red: 1, green: 0, blue: 0)
         let blue = Color(red: 0, green: 0, blue: 1)
         let d = red.distance(to: blue)
-        #expect(d > 1.0)
+        #expect(abs(d - 2.0.squareRoot()) < 1e-12)
     }
 
     @Test func squareDistance() {
         let red = Color(red: 1, green: 0, blue: 0)
         let green = Color(red: 0, green: 1, blue: 0)
         let sd = red.squareDistance(to: green)
-        #expect(sd > 1.0)
+        #expect(abs(sd - 2.0) < 1e-12)
     }
 
     @Test func deltaE2000() {
         let c1 = Color(red: 0.5, green: 0, blue: 0)
         let c2 = Color(red: 0.6, green: 0, blue: 0)
         let de = c1.deltaE2000(to: c2)
-        #expect(de > 0)
+        #expect(abs(de - 3.2403708811651222) < 1e-9)
     }
 
     @Test func deltaE2000SameColor() {
@@ -242,10 +251,14 @@ struct ColorOCCTTests {
     }
 
     @Test func changeContrast() {
-        let c = Color(red: 0.5, green: 0.5, blue: 0.5)
+        // #766: this used mid-gray, which has zero saturation, so ChangeContrast leaves it at 0.5
+        // and a bridge that skipped the call passed `modified.red >= 0`. A saturated input moves:
+        // Quantity_Color::ChangeContrast(10) takes (0.8, 0.3, 0.2) to (0.8, 0.264928, 0.164506).
+        let c = Color(red: 0.8, green: 0.3, blue: 0.2)
         let modified = c.withContrastChanged(by: 10.0)
-        // Should not crash
-        #expect(modified.red >= 0)
+        #expect(abs(modified.red - 0.80000001192092896) < 1e-6)
+        #expect(abs(modified.green - 0.26492810249328613) < 1e-6)
+        #expect(abs(modified.blue - 0.16450574994087219) < 1e-6)
     }
 
     @Test func linearToSRGB() {
@@ -274,9 +287,7 @@ struct ColorOCCTTests {
     }
 
     @Test func namedColorName() {
-        if let name = Color.namedColorName(at: 0) {
-            #expect(!name.isEmpty)
-        }
+        #expect(Color.namedColorName(at: 0) == "BLACK")  // Quantity_NOC_BLACK is ordinal 0
     }
 
     @Test func epsilon() {
