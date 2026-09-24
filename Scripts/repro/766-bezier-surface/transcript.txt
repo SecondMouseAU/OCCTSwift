@@ -1,0 +1,10 @@
+nbPoles: NbUPoles=3 NbVPoles=3
+degree: UDegree=2 VDegree=2
+rationalFlags: IsURational=0 IsVRational=0
+getPoleAndSet before Pole(1,1)=(0, 0, 0)
+getPoleAndSet after SetPole(1,1,(1,2,3)) Pole(1,1)=(1, 2, 3)
+exchangeUV before Pole(1,2)=(0, 5, 1)
+exchangeUV before Pole(2,1)=(5, 0, 1)
+exchangeUV after: UDegree=2 VDegree=2
+exchangeUV after Pole(1,2)=(5, 0, 1)
+exchangeUV after Pole(2,1)=(0, 5, 1)
