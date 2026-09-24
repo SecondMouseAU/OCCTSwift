@@ -246,7 +246,7 @@ struct IntegrationZLevelSlicingTests {
         #expect(midWires.count == 4)
 
         // Step 5: the lengths are the circumferences, 2 pi 25 once and 2 pi 3 three times
-        let lengths = midWires.map { $0.length ?? -1 }.sorted()
+        let lengths = midWires.compactMap { $0.length }.sorted()
         if lengths.count == 4 {
             for k in 0..<3 { #expect(near(lengths[k], 2 * Double.pi * 3, 1e-9)) }
             #expect(near(lengths[3], 2 * Double.pi * 25, 1e-9))
@@ -426,7 +426,7 @@ struct IntegrationPocketClearingTests {
         // Section at Z=0 (mid-pocket depth): the outer square (400) and the pocket wall (240)
         let wires = pocket.sectionWiresAtZ(0.0)
         #expect(wires.count == 2)
-        let lengths = wires.map { $0.length ?? -1 }.sorted()
+        let lengths = wires.compactMap { $0.length }.sorted()
         if lengths.count == 2 {
             #expect(near(lengths[0], 240))
             #expect(near(lengths[1], 400))
@@ -434,7 +434,7 @@ struct IntegrationPocketClearingTests {
 
         // Offset the outer boundary 5 inward for a toolpath: a 90 x 90 square, 360 long. The
         // arc join only rounds convex corners going outward, so inward the corners stay sharp.
-        guard let outer = wires.first(where: { near($0.length ?? -1, 400) }) else {
+        guard let outer = wires.first(where: { $0.length.map { near($0, 400) } ?? false }) else {
             Issue.record("No 400-long outer wire in the section")
             return
         }
@@ -442,7 +442,7 @@ struct IntegrationPocketClearingTests {
             Issue.record("Inward offset of the outer wire returned nil")
             return
         }
-        #expect(near(offsetWire.length ?? -1, 360))
+        #expect(offsetWire.length.map { near($0, 360) } ?? false)
     }
 }
 
