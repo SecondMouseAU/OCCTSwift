@@ -6225,5 +6225,321 @@
       "probe": "Scripts/repro/766-geom2d-extrema-fillet2d/",
       "rewritten": ""
     }
+  },
+  {
+    "test_name": "GccAna Circ2d3Tan Tests::threePoints",
+    "bridge_function": "OCCTGccAnaCirc2d3TanPoints",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "centre": [
+          5,
+          0
+        ],
+        "radius": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "centre": [
+          5,
+          0
+        ],
+        "radius": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "third point y + 1",
+      "red": "GccAnaCirc2d3TanTests.swift:22:9: Expectation failed: abs(solutions[0].centerY) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`radius > 0`; now centre and radius"
+    }
+  },
+  {
+    "test_name": "GccAna Circ2d3Tan Tests::threeLines",
+    "bridge_function": "OCCTGccAnaCirc2d3TanLines",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "centres": [
+          [
+            5,
+            5
+          ],
+          [
+            5,
+            -5
+          ]
+        ],
+        "radius": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "centres": [
+          [
+            5,
+            5
+          ],
+          [
+            5,
+            -5
+          ]
+        ],
+        "radius": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "third line x + 2",
+      "red": "GccAnaCirc2d3TanTests.swift:32:9: Expectation failed: close(radii(solutions), [5, 5])",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`count >= 1`; now pins the solution set"
+    }
+  },
+  {
+    "test_name": "GccAna Circ2d3Tan Tests::threeCircles",
+    "bridge_function": "OCCTGccAnaCirc2d3TanCircles",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radii": [
+          2.5625,
+          4.89285714286,
+          5.04622471437,
+          5.04622471437,
+          8.5625,
+          8.70705074691,
+          8.70705074691,
+          10.25
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radii": [
+          2.5625,
+          4.89285714286,
+          5.04622471437,
+          5.04622471437,
+          8.5625,
+          8.70705074691,
+          8.70705074691,
+          10.25
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "third radius + 1",
+      "red": "GccAnaCirc2d3TanTests.swift:42:9: Expectation failed: close(radii(solutions), [2.5625, 4.89285714286, 5.04622471437, 5.04622471437, 8.5625, 8.70705074691,",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`count >= 1`; now pins the solution set"
+    }
+  },
+  {
+    "test_name": "GccAna Circ2d3Tan Tests::twoCirclesPoint",
+    "bridge_function": "OCCTGccAnaCirc2d2CirclesPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radii": [
+          6.69444444444,
+          10.0416666667,
+          10.0416666667,
+          10.0416666667
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radii": [
+          6.69444444444,
+          10.0416666667,
+          10.0416666667,
+          10.0416666667
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "point y + 1",
+      "red": "GccAnaCirc2d3TanTests.swift:54:9: Expectation failed: close(radii(solutions), [6.69444444444, 10.0416666667, 10.0416666667, 10.0416666667])",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`count >= 1`; now pins the solution set"
+    }
+  },
+  {
+    "test_name": "GccAna Circ2d3Tan Tests::circleAndTwoPoints",
+    "bridge_function": "OCCTGccAnaCirc2dCircle2Points",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radii": [
+          15.1666666667,
+          15.1666666667
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radii": [
+          15.1666666667,
+          15.1666666667
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second point x + 1",
+      "red": "GccAnaCirc2d3TanTests.swift:61:9: Expectation failed: close(radii(solutions), [15.1666666667, 15.1666666667])",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`count >= 1`; now pins the solution set"
+    }
+  },
+  {
+    "test_name": "GccAna Circ2d3Tan Tests::twoLinesPoint",
+    "bridge_function": "OCCTGccAnaCirc2d2LinesPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radii": [
+          2.92893218813,
+          17.0710678119
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radii": [
+          2.92893218813,
+          17.0710678119
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "point x + 1",
+      "red": "GccAnaCirc2d3TanTests.swift:70:9: Expectation failed: close(radii(solutions), [2.92893218813, 17.0710678119])",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`count >= 1`; now pins the solution set"
+    }
+  },
+  {
+    "test_name": "GccAna Lin2d2Tan Tests::line through two points",
+    "bridge_function": "OCCTGccAnaLin2d2TanPntPnt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "direction": [
+          0.707106781187,
+          0.707106781187
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "direction": [
+          0.707106781187,
+          0.707106781187
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second point y + 1",
+      "red": "GccAnaLin2d2TanTests.swift:15:9: Expectation failed: simd_distance(r.direction, SIMD2(s, s)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`|dx| == |dy|` inside `if let`; now the signed direction"
+    }
+  },
+  {
+    "test_name": "GccAna Lin2d2Tan Tests::lines tangent to circle through point",
+    "bridge_function": "OCCTGccAnaLin2d2TanCircPnt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "tangency": [
+          [
+            0.333333333333,
+            -0.942809041582
+          ],
+          [
+            0.333333333333,
+            0.942809041582
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tangency": [
+          [
+            0.333333333333,
+            -0.942809041582
+          ],
+          [
+            0.333333333333,
+            0.942809041582
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "point x + 1",
+      "red": "GccAnaLin2d2TanTests.swift:28:9: Expectation failed: results.allSatisfy { abs($0.origin.x - 1.0 / 3.0) < 1e-9 }",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
+      "rewritten": "`count >= 1`; now pins the solution set"
+    }
   }
 ]
