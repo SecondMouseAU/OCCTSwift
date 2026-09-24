@@ -268,6 +268,9 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **Hatch Patterns** | Generate horizontal hatches in rectangle | Hatch_Hatcher fill | return 0 segments after the input guards |
+| **Hatch Patterns** | Diagonal hatches | Hatch_Hatcher fill | return 0 segments after the input guards |
+| **Hatch Patterns** | Empty boundary returns nothing | Degenerate boundary rejection | drop the boundary.count >= 3 guard in HatchPattern.generate AND the boundaryCount < 3 guard in OCCTHatchLines |
 
 ---
 
@@ -475,6 +478,9 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Generate horizontal hatches in rectangle | OCCTHatchLines | Hatch_Hatcher fill | return 0 segments after the input guards | ✅ | ✅ | Red: HatchTests.swift:19 `segments.count > 0`. Parity MATCH, `Scripts/repro/766-hatch-redo/`. |
+| Diagonal hatches | OCCTHatchLines | Hatch_Hatcher fill | return 0 segments after the input guards | ✅ | ✅ | Red: HatchTests.swift:32 `segments.count > 0`. Parity MATCH, `Scripts/repro/766-hatch-redo/`. |
+| Empty boundary returns nothing | OCCTHatchLines | Degenerate boundary rejection | drop the boundary.count >= 3 guard in HatchPattern.generate AND the boundaryCount < 3 guard in OCCTHatchLines | ✅ | ✅ | Red: HatchTests.swift:58 `islandOnly.isEmpty` (the original assertion at :50 stays green under the same injection). Parity EXPECTED_DIVERGENCE, `Scripts/repro/766-hatch-redo/`: the bridge guard returns 0 for the island-only case where the unguarded kernel path returns 3. Rewritten: could not fail. The kernel itself returns nothing for an empty boundary, so the original assertion passed with every guard removed. Island case added. |
 
 ---
 
@@ -631,5 +637,8 @@ For each test, run ground-truth C++ comparison:
 | Measurement Tests: Get all vertices | ✅ | ✅ | ✅ |
 | Measurement Tests: Get vertex at index | ✅ | ✅ | ✅ |
 | Measurement Tests: Vertex out of bounds | ✅ | ✅ | ✅ |
+| Generate horizontal hatches in rectangle | ✅ | ✅ | ✅ |
+| Diagonal hatches | ✅ | ✅ | ✅ |
+| Empty boundary returns nothing | ✅ | ✅ | ✅ |
 
 **Total**: 589 tests
