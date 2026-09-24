@@ -1,0 +1,23 @@
+beyond old window: done=1 points=1 segments=0 [(-150, 5) u1=150 u2=5]
+inside old window: done=1 points=1 segments=0 [(-50, 5) u1=50 u2=5]
+parallel: done=1 points=0 segments=0
+dead side: done=1 points=0 segments=0
+dead side, A and B swapped: done=1 points=0 segments=0
+beyond input extent: done=1 points=1 segments=0 [(-150.004236390595, 5) u1=150.004236391 u2=132.386183114]
+circumcentre ABCD: done=1 points=1 segments=0 [(2, 0.833333333333333) u1=0.833333333333 u2=1.20185042515]
+circumcentre BACD: done=1 points=0 segments=0
+circumcentre ABDC: done=1 points=0 segments=0
+circumcentre BADC: done=1 points=0 segments=0
+coincident A=B: throws gp_Vec2d::Normalize() - vector has zero norm
+coincident A=B, C=D: throws gp_Vec2d::Normalize() - vector has zero norm
+coincident bisectors 1: done=1 points=0 segments=1 seg-first[(2, 0) u1=0 u2=0] seg-last[u1=2e+100 u2=2e+100]
+coincident bisectors 2: done=1 points=0 segments=1 seg-first[(2, 0) u1=0 u2=0] seg-last[u1=2e+100 u2=2e+100]
+coincident bisectors 3: done=1 points=0 segments=1 seg-first[(0, 2) u1=0 u2=0] seg-last[u1=2e+100 u2=2e+100]
+NaN a.x: throws 
+NaN d.y: throws 
++inf a.x: child killed by signal 14 (hang, 20 s alarm)
+-inf d.y: child killed by signal 14 (hang, 20 s alarm)
+1e200 a.x: child killed by signal 14 (hang, 20 s alarm)
+1e149 old fixture (c, d = -1e149, -1e149 + 10): throws gp_Vec2d::Normalize() - vector has zero norm
+1e149 c.x, d.x = +1e149, meeting at (0, 5): done=1 points=1 segments=0 [(0, 5) u1=-0 u2=-0]
+1e149 a.x: done=1 points=0 segments=0

@@ -4,6 +4,20 @@ import simd
 
 @testable import OCCTSwift
 
+// #766 finding: `Selector.pick` returns no hits at all on the pinned kernel, for every scene in
+// this file, including a 10-unit box under the centre pixel. A C++ probe that copies the bridge's
+// headless selector (Scripts/repro/766-drawing-selector-tolerance/probe.mm) gets NbPicked() == 0 too,
+// with and without zero-to-one depth, so this is how the bridge drives SelectMgr, not a Swift
+// wrapper slip. Root cause not established; a likely candidate is that the V3d-free
+// `OCCTHeadlessSelector` never populates the Z-layer order map `SelectMgr_ViewerSelector::Pick`
+// fills from a view before traversing.
+//
+// Consequences for these tests, which used to hide it: the two hit tests guarded their only
+// assertion with `if !results.isEmpty`, so they passed on no hits; the three emptiness tests
+// could not fail, since the pick is always empty. The hit expectations now sit in
+// `withKnownIssue`, so the suite stays green today and turns red the day picking starts to work
+// (the known issue then stops recurring). The emptiness tests are unchanged; they were proven
+// against an injected pick that does return hits (see the PR).
 @Suite("Selector Tests")
 struct SelectorTests {
 
@@ -30,8 +44,9 @@ struct SelectorTests {
         )
 
         // The box should be hit
-        if !results.isEmpty {
-            #expect(results[0].shapeId == 42)
+        withKnownIssue("Selector.pick returns no hits on the pinned kernel (#766 finding, see the note above the suite)") {
+            #expect(results.count >= 1)
+            #expect(results.first?.shapeId == 42)
         }
     }
 
@@ -80,6 +95,13 @@ struct SelectorTests {
 
         #expect(added1, "First shape should be added")
         #expect(added2, "Second shape should be added")
+        // The camera shows the boxes' centres at pixels (384, 300) and (416, 300).
+        let left = selector.pick(at: SIMD2(384, 300), camera: cam, viewSize: SIMD2(800, 600))
+        let right = selector.pick(at: SIMD2(416, 300), camera: cam, viewSize: SIMD2(800, 600))
+        withKnownIssue("Selector.pick returns no hits on the pinned kernel (#766 finding, see the note above the suite)") {
+            #expect(left.first?.shapeId == 1)
+            #expect(right.first?.shapeId == 2)
+        }
     }
 
     @Test("Remove shape then pick returns miss")
@@ -128,8 +150,9 @@ struct SelectorTests {
             viewSize: SIMD2(800, 600)
         )
 
-        if !results.isEmpty {
-            #expect(results[0].shapeId == 7)
+        withKnownIssue("Selector.pick returns no hits on the pinned kernel (#766 finding, see the note above the suite)") {
+            #expect(results.count >= 1)
+            #expect(results.first?.shapeId == 7)
         }
     }
 
