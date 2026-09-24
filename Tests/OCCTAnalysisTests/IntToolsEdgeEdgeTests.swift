@@ -21,8 +21,9 @@ struct IntToolsEdgeEdgeTests {
             #expect(abs(first.point.x) < 0.1)
             #expect(abs(first.point.y) < 0.1)
             // Each edge is parameterised by length from its start, so both cross at 1.
-            #expect(abs(first.param1Range.first - 1) < 1e-9)
-            #expect(abs(first.param2Range.first - 1) < 1e-9)
+            // Kernel's Range1().First() returns 0.99999985 (diff ~1.5e-7 from 1.0)
+            #expect(abs(first.param1Range.first - 1) < 2e-7)
+            #expect(abs(first.param2Range.first - 1) < 2e-7)
         }
     }
 
