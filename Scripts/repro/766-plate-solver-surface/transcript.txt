@@ -1,0 +1,14 @@
+planeConstraint (plane z = 1): IsDone=1  F(0.5,0.5)=(0.16666669131190437, 0.16666669131190437, 1)
+lineConstraint (line z = 1 along X): IsDone=1  F(0.5,0.5)=(0.16666667370814198, 0, 1)
+loadGlobalTranslation (+ pin (0,0) -> (0,0,1)): IsDone=1  F(1,0)=(0, 0, 0.99999999999999989)  F(0,1)=(0, 0, 1)
+solveWithGlobalTranslation: IsDone=1  F(0.5,0.5)=(0, 0, 1.0000002402910662)
+loadLinearXYZ (+ pin (0,0) -> (0,0,3)): IsDone=1  F(0,0)=(0, 0, 3)  F(1,0)=(0, 0, 2.9999999999999996)
+basicSolve: IsDone=1  F(0.5,0.5)=(0.49999999999999994, 0.5, 1)  F(0,0)=(-1.6022825690144272e-15, 1.1793822589168453e-15, -9.5974137467744408e-16)
+uvBoxAndContinuity: IsDone=1 UVBox=[0, 1]x[0, 1] Continuity=5
+derivativeConstraint: IsDone=1  D10(0.5,0.5)=(2.2204460492503131e-16, 0, 2.0000000000000004)
+evaluateDerivative: IsDone=1  D10(0.5,0.5)=(1.4761904524850298, 0.66666673383464681, 2.0000000928637642)
+gtoCConstraint: IsDone=1  D10(0.5,0.5)=(0, 1.1102230246251565e-16, 0.10000000000000003)  D01(0.5,0.5)=(5.5511151231257827e-17, -1.6653345369377348e-16, 0.10000000000000001)
+plateThroughGridPoints: face valid=1 area=122.93065426620325 dist((5,5,1))=2.22e-16 max corner dist=5.08e-16
+plateWithCornerPoints: face valid=1 area=121 dist((5,5,1))=1 max corner dist=4.44e-16
+plateFromCurvesAPI: face valid=1 area=120.99999999999996 dist((5,5,1))=1 max corner dist=7.79e-16
+plateTooFewPoints (unrefused, 2 points): threw Geom_RectangularTrimmedSurface::V1==V2
