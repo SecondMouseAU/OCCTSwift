@@ -260,6 +260,109 @@ census_all_toolkits() {
     return 0
 }
 
+# --------------------
+# Install, combine, copy headers (#2174, written in #2266)
+# --------------------
+# Run from the build directory. This is the ONLY copy of the three packaging steps: the full build
+# and --package-only both call it, and two copies of a packaging step are two packaging steps that
+# can disagree.
+#
+# It was called from both of those places and DEFINED NOWHERE until #2266. Nothing caught that,
+# because the census gates it and the census had never passed: every full build up to and including
+# #2174's was one source file short, so `package_build: command not found` was unreachable. The
+# first complete build is what ran it.
+package_build() {
+    local ar="$SWIFT_TOOLCHAIN_BIN/llvm-ar"
+    local nm="$SWIFT_TOOLCHAIN_BIN/llvm-nm"
+
+    echo ""
+    echo ">>> Installing to $LIBRARIES_DIR/occt-install-wasm ..."
+    cmake --install . >/dev/null
+
+    local static_libs=()
+    while IFS= read -r -d '' lib; do
+        static_libs+=("$lib")
+    done < <(find "$LIBRARIES_DIR/occt-install-wasm" -name '*.a' -print0 2>/dev/null)
+    if [ ${#static_libs[@]} -eq 0 ]; then
+        echo "ERROR: no static libraries under $LIBRARIES_DIR/occt-install-wasm after cmake --install." >&2
+        return 1
+    fi
+
+    echo ">>> Combining ${#static_libs[@]} toolkit archives into libOCCT-wasm.a ..."
+    # An MRI script, NOT `llvm-ar rcs` in a loop. `r` inserts each OPERAND as a member, so given
+    # per-toolkit .a files it produces an archive whose MEMBERS ARE ARCHIVES: zero defined symbols,
+    # and a size within 400 bytes of the correct one, which is how `[ -f ] && [ -s ]` accepted it
+    # (#2174). `addlib` adds the members OF an archive. The script arrives on stdin, so it has no
+    # ARG_MAX ceiling either, which is what the incremental loop was for.
+    # Scripts/repro/2174/run.sh combine reproduces both, side by side.
+    local combined="$LIBRARIES_DIR/libOCCT-wasm.a"
+    rm -f "$combined"
+    {
+        printf 'create %s\n' "$combined"
+        printf 'addlib %s\n' "${static_libs[@]}"
+        printf 'save\nend\n'
+    } | "$ar" -M
+
+    # Three checks, because the one this replaces passed on an archive defining nothing.
+    local members archive_members symbols
+    members=$("$ar" t "$combined" 2>/dev/null | wc -l | tr -d ' ')
+    archive_members=$("$ar" t "$combined" 2>/dev/null | grep -c '\.a$' || true)
+    symbols=$("$nm" --defined-only "$combined" 2>/dev/null | grep -cE '^[0-9a-f]+ [A-Za-z] ' || true)
+    printf '    %s: %s members, %s of them archives, %s defined symbols\n' \
+        "$(basename "$combined")" "$members" "$archive_members" "$symbols"
+    if [ ! -s "$combined" ] || [ "$members" -eq 0 ]; then
+        echo "ERROR: $combined was not written, or holds no members." >&2
+        return 1
+    fi
+    if [ "$archive_members" -ne 0 ]; then
+        echo "ERROR: $archive_members member(s) of $combined are themselves archives, so this is the" >&2
+        echo "       archive-of-archives that llvm-ar r produces, and wasm-ld will not read it." >&2
+        return 1
+    fi
+    if [ "$symbols" -eq 0 ]; then
+        echo "ERROR: $combined defines no symbols. A file of the right size that defines nothing is" >&2
+        echo "       exactly what the combine defect produced (#2174)." >&2
+        return 1
+    fi
+
+    # Headers: FLAT, and with no extension filter, which is what Scripts/build-occt.sh has always
+    # done for macOS and iOS. The version this replaces filtered on .h/.hxx/.inl, dropping all 382
+    # .lxx files OCCT installs (each one #included by the .hxx of the same name), and rebuilt the
+    # install tree's structure, leaving the headers one directory below the
+    # .headerSearchPath("occt-headers-wasm") that Package.swift reads. Both passed a "did any
+    # header land" check with thousands landing (#2174).
+    echo ">>> Copying headers to $LIBRARIES_DIR/occt-headers-wasm ..."
+    local src="$LIBRARIES_DIR/occt-install-wasm/include/opencascade"
+    local dst="$LIBRARIES_DIR/occt-headers-wasm"
+    if [ ! -d "$src" ]; then
+        echo "ERROR: no installed header tree at $src." >&2
+        return 1
+    fi
+    rm -rf "$dst"
+    mkdir -p "$dst"
+    # `$src/.` rather than `$src/*`: the same copy, without handing 7,000-odd paths to the shell.
+    cp -R "$src"/. "$dst"/
+    local n_src n_dst
+    n_src=$(find "$src" -type f | wc -l | tr -d ' ')
+    n_dst=$(find "$dst" -type f | wc -l | tr -d ' ')
+    printf '    headers: %s installed, %s copied\n' "$n_src" "$n_dst"
+    # Counted on both sides, rather than asked whether any arrived: a filter that drops a whole
+    # extension leaves thousands behind and still answers yes.
+    if [ "$n_dst" -ne "$n_src" ] || [ "$n_dst" -eq 0 ]; then
+        echo "ERROR: the header copy is not a copy: $n_src installed, $n_dst landed." >&2
+        return 1
+    fi
+
+    echo ""
+    echo "========================================"
+    echo "WASI build complete"
+    echo "========================================"
+    echo "  $combined"
+    echo "  $dst/"
+    echo ""
+    return 0
+}
+
 # --census-only: the census over the tree that is already there, with no download, no patching, no
 # configure and no compile. It is how the census is re-derived after the fact, and how it is proved
 # (hide one object, watch the count drop and the file be named) without a three-hour rebuild.

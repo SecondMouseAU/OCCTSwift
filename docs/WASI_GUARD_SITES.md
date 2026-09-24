@@ -129,9 +129,10 @@ That is a requirement on the **consumer's** build, which for this repo means `Pa
 
 ## What is patched today
 
-Ten patches, one per file, all under `src/FoundationClasses/TKernel/`. The last column is what the
-WASI branch does; each patch's own header says why that is safe for every in-tree caller, names
-them, and says whether it extended a condition that was already there or had to add one.
+Eleven patches, one per file: ten under `src/FoundationClasses/TKernel/` and one under
+`src/DataExchange/TKDESTEP/`. The last column is what the WASI branch does; each patch's own header
+says why that is safe for every in-tree caller, names them, and says whether it extended a condition
+that was already there or had to add one.
 
 | File | Gap in wasi-libc | What the WASI branch does | Patch |
 |---|---|---|---|
@@ -145,6 +146,7 @@ them, and says whether it extended a condition that was already there or had to 
 | `OSD/OSD_signal.cxx` | `<signal.h>`, `sigaction`, `sigemptyset`, `sigaddset`, `sigprocmask` | a third top-level arm installs no handler; `SetSignal()` leaves `OSD::SignalMode()` at `OSD_SignalMode_AsIs` and `ControlBreak()` never raises | `wasi-osd-signal.patch` |
 | `Standard/Standard_MMgrOpt.cxx` | `<sys/mman.h>`, `mmap()`, `munmap()` | `Initialize()` leaves `myMMap` at 0, so `AllocMemory()`/`FreeMemory()` take the malloc/free path the class already implements | `wasi-standard-mmgropt.patch` |
 | `Standard/Standard_StackTrace.cxx` | `<execinfo.h>`, `backtrace()` | joins the arm `OCCT_UWP` and iOS already take: a `Message_Trace` and `false` | `wasi-standard-stacktrace.patch` |
+| `STEPConstruct/STEPConstruct_AP203Context.cxx` | `<pwd.h>`, `getpwnam()`, and `timezone` | the AP203 person is built from an empty `OSD_Process::UserName()` with no gecos lookup, as on Emscripten, so the record carries an empty name; the UTC offset is exactly zero, matching the `localtime()` that supplies the timestamp beside it | `wasi-stepconstruct-ap203context.patch` |
 
 **`TKernel` builds 127 of 127 with these applied**, which is the whole of the toolkit and not a
 sample; `Scripts/build-occt-wasm.sh --toolkit TKernel --require-complete` is the command that says
@@ -280,30 +282,51 @@ from #2173 onwards a regression would otherwise hand a reader the same status a 
 does. `Scripts/repro/2173/run.sh negative` proves the flag by hiding one patch and rebuilding:
 126 of 127 and exit 1.
 
-**The rest of the module set is measured, and the list is one file long.**
+**The rest of the module set is closed too, and it took one more file.**
 [#2174](https://github.com/SecondMouseAU/OCCTSwift/issues/2174) compiled all 49 toolkits in one
-`-k` pass, 5,487 of 5,488 source files, and the census that decides it runs on every build rather
-than on a flag:
+`-k` pass and got 5,487 of 5,488 source files, with one gap, in `TKDESTEP`:
 
-| Toolkit | File | Gap |
-|---|---|---|
-| `TKDESTEP` | `STEPConstruct/STEPConstruct_AP203Context.cxx` | `<pwd.h>` at `:64`, then `getpwnam()` at `:181` |
+| Toolkit | File | Gap | Closed by |
+|---|---|---|---|
+| `TKDESTEP` | `STEPConstruct/STEPConstruct_AP203Context.cxx` | `<pwd.h>` at `:64`, `getpwnam()` at `:181`, `timezone` at `:125` | `wasi-stepconstruct-ap203context.patch` ([#2266](https://github.com/SecondMouseAU/OCCTSwift/issues/2266)) |
 
-Its include sits behind `#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__)`,
-which is a guard upstream already widens for the other wasm platform it supports, and the only use
-is turning a user name into a gecos full name for an AP203 person record; the `else` arm two lines
-below already answers "no user name" with `"Unknown"`. So it has the shape every patch in the table
-above has, and the rule this page gives for writing one applies unchanged: widen the condition that
-is already there.
+**With it the 49-toolkit build is 5,488 of 5,488, 0 missing, 0 unruled**, and
+`Scripts/build-occt-wasm.sh` goes on to install, combine and copy headers, which its census had
+been gating.
 
-**It is not an incidental file.** `STEPConstruct_ContextTool` references it unconditionally and the
-STEP writer pulls that, so a module that writes STEP does not link: 20 undefined symbols, measured
-in [`Scripts/repro/2174/README.md`](../Scripts/repro/2174/README.md). #1689's client scope is STEP
-export and import, so this one file is between the build and everything the port is for. Closing it
-is also what lets `Scripts/build-occt-wasm.sh` produce `libOCCT-wasm.a` at all, since its census
-gates install and combine.
+The file repeated #2173's shape exactly: a missing header is a fatal diagnostic, so one error was
+one include and not one site. Closing `<pwd.h>` uncovered `getpwnam()` in
+`DefaultPersonAndOrganization()`, and closing that uncovered `timezone` in `DefaultDateAndTime()`,
+which wasi-libc keeps inside `__wasilibc_unmodified_upstream` under the comment "WASI has no
+timezone tables". Three sites in one file, found one error at a time, which is why the gap list
+#2174 produced was complete for the file it named and not for the sites inside it.
 
-The other 48 toolkits, 5,487 files, need nothing. That includes the 682 files of
+Two of the three extended the condition that was already there, the shared
+`#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__)` that upstream spells at
+the include and at the only use. The third joined `DefaultDateAndTime()`'s existing
+`#if`/`#elif`/`#else` chain as a new `#elif defined(__wasi__)` arm, inside that one structure: no
+arm in the chain fits WASI, since `_MSC_VER` is Windows, the `__FreeBSD__` arm is gated on a version
+macro upstream will retire, and the `#else` reads the `timezone` that is not there.
+
+**What a STEP file written from wasm carries**, which is the part worth deciding rather than
+inheriting. The person record is built from `OSD_Process::UserName()` with no gecos lookup, exactly
+as on Windows, Android and Emscripten, and on WASI that name is empty
+(`wasi-osd-process.patch`), as is `OSD_Host::InternetAddress()` (`wasi-osd-host.patch`). So the file
+carries ORGANIZATION `IP`/`Unspecified` and a PERSON with id `IP,` and an empty name. The `"Unknown"`
+in the `else` arm two lines below was considered and not taken: it is inside the block WASI now
+skips, so keeping it would mean nesting a second condition in a block WASI does not enter, and it
+would diverge from Emscripten, where an empty user name already yields an empty name. The UTC offset
+is exactly zero, which is not a fallback either: `OSD_Process::SystemDate()` supplies the timestamp
+beside it from `localtime()`, which wasi-libc resolves to UTC for the same reason, so the two agree.
+
+**It was not an incidental file.** `STEPConstruct_ContextTool` references it unconditionally and the
+STEP writer pulls that, so before this patch a module that writes STEP did not link: 20 undefined
+symbols, measured in [`Scripts/repro/2174/README.md`](../Scripts/repro/2174/README.md).
+`Scripts/repro/2174/run.sh link` now links `probe-step.wasm`, runs it under `wasmkit` and requires
+an AP203 file carrying a PERSON, an ORGANIZATION and a COORDINATED_UNIVERSAL_TIME_OFFSET, and
+`run.sh step-negative` is the negative case for that assertion.
+
+The other 48 toolkits, 5,487 files, needed nothing. That includes the 682 files of
 `ApplicationFramework` and `Visualization` that OCCT's CMake pulls in behind `DataExchange`, which
 had the most platform surface on paper and needed no guard in practice.
 

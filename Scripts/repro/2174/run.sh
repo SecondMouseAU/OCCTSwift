@@ -23,7 +23,15 @@
 #                       for while platform gaps are open. Point the link cases at it with
 #                       OCCT_WASM_ARCHIVE=<path>.
 #   ./run.sh archive    libOCCT-wasm.a: size, members, defined symbols, wasm32 proof
-#   ./run.sh link       build probe.wasm and probe-alloc.wasm, run both under wasmkit
+#   ./run.sh link       build probe.wasm, probe-alloc.wasm and probe-step.wasm, run all three
+#                       under wasmkit. probe-step is an ASSERTION as of #2266: it must link, run
+#                       and write an AP203 STEP file, where until then it was expected to fail.
+#   ./run.sh step-negative  the negative case for that assertion: the same link against a copy of
+#                       the archive with STEPConstruct_AP203Context's object deleted, which must
+#                       fail, and must be classified as failing for that reason and not merely as
+#                       failing. Also runs the classifier against a link with no archive at all,
+#                       which it must reject; that case used to print "0 undefined-symbol line(s)"
+#                       and read as the expected failure.
 #   ./run.sh libs       the link-only questions: -lsetjmp, -lwasi-emulated-getpid, the eh runtime,
 #                       and which libc++ definition of std::__throw_out_of_range won
 #   ./run.sh imports    the linked module's wasi_snapshot_preview1 imports, which is what #2052 needs
@@ -441,31 +449,160 @@ do_link() {
     fi
 
     echo ""
-    echo "  linking probe-step.wasm, which is expected to FAIL while the TKDESTEP gap is open..."
+    echo "  linking probe-step.wasm, which #2266 turned from an expected failure into an assertion..."
+    if ! step_probe_link_and_run; then
+        return 1
+    fi
+}
+
+# ---------------------------------------------------------------------------------------------
+# probe-step: link it, run it, and require both. Returns 0 only if a STEP file was written.
+step_probe_link_and_run() {
     mkdir -p "$OUT_DIR/stepout"
     # Removed before the run, not after: the check below passes on a file of non-zero length, and a
     # file left by an earlier run is exactly the shape of a case that measures nothing.
-    rm -f "$OUT_DIR/stepout/probe-box.step"
+    rm -f "$OUT_DIR/stepout/probe-box.step" "$OUT_DIR/probe-step.wasm"
     link_probe "$SCRIPT_DIR/probe-step.cxx" "$OUT_DIR/probe-step.wasm" >"$OUT_DIR/step-link.txt" 2>&1
-    if [ -f "$OUT_DIR/probe-step.wasm" ]; then
-        printf '  probe-step.wasm: %s bytes\n' "$(wc -c < "$OUT_DIR/probe-step.wasm" | tr -d ' ')"
-        "$WASMKIT" run --dir "$OUT_DIR/stepout" "$OUT_DIR/probe-step.wasm" "$OUT_DIR/stepout" 2>&1 \
-            | sed 's/^/    /'
-        echo "  exit status: ${PIPESTATUS[0]}"
-        if [ -f "$OUT_DIR/stepout/probe-box.step" ]; then
-            echo "  the STEP file it wrote, first 4 lines:"
-            head -4 "$OUT_DIR/stepout/probe-box.step" | sed 's/^/    /'
-        fi
-    else
-        printf '  did not link: %s undefined-symbol line(s), every one of them a member of\n' \
-            "$(grep -c 'undefined symbol' "$OUT_DIR/step-link.txt" || true)"
-        echo "  STEPConstruct_AP203Context, the single file this build does not compile:"
-        grep -oE 'undefined symbol: [^ ]+' "$OUT_DIR/step-link.txt" | sort -u | head -5 \
-            | sed 's/^/    /'
-        printf '    all %s of them referenced from: %s\n' \
-            "$(grep -c 'undefined symbol' "$OUT_DIR/step-link.txt" || true)" \
-            "$(sed -n 's/.*\.a(\([^)]*\)).*/\1/p' "$OUT_DIR/step-link.txt" | sort -u | tr '\n' ' ')"
+    if [ ! -f "$OUT_DIR/probe-step.wasm" ]; then
+        echo "  FAIL: probe-step.wasm did not link. Before #2266 that was this case's EXPECTED" >&2
+        echo "  result; it is now the finding. What the link said:" >&2
+        classify_step_link_failure "$OUT_DIR/step-link.txt" >&2 || true
+        return 1
     fi
+    printf '  probe-step.wasm: %s bytes\n' "$(wc -c < "$OUT_DIR/probe-step.wasm" | tr -d ' ')"
+    "$WASMKIT" run --dir "$OUT_DIR/stepout" "$OUT_DIR/probe-step.wasm" "$OUT_DIR/stepout" 2>&1 \
+        | sed 's/^/    /'
+    local status=${PIPESTATUS[0]}
+    echo "  exit status: $status  (0 wrote an AP203 file carrying a PERSON, an ORGANIZATION and a UTC offset)"
+    if [ ! -f "$OUT_DIR/stepout/probe-box.step" ]; then
+        echo "  FAIL: it linked and ran and wrote no STEP file." >&2
+        return 1
+    fi
+    echo "  the STEP file it wrote, first 4 lines:"
+    head -4 "$OUT_DIR/stepout/probe-box.step" | sed 's/^/    /'
+    if [ "$status" -ne 0 ]; then
+        echo "  FAIL: probe-step reported $status." >&2
+        return 1
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------
+# What a probe-step link failure is allowed to BE, asserted rather than printed.
+#
+# Until #2266 this was the expected result and the code that reported it counted its own evidence
+# without ever checking the count. Given no archive at all it printed
+#
+#   did not link: 0 undefined-symbol line(s), every one of them a member of
+#   STEPConstruct_AP203Context, ...
+#     all 0 of them referenced from:
+#
+# which reads exactly like the expected failure and measures nothing. A check that cannot
+# distinguish "failed for the right reason" from "failed because there was nothing to look at" is
+# the shape --require-tree exists to remove elsewhere in this repo (#2098), so this one asserts a
+# NON-ZERO count, that every undefined symbol names STEPConstruct_AP203Context, and that the
+# reference comes from STEPConstruct_ContextTool.
+classify_step_link_failure() { # <link-log>; 0 iff it failed for the AP203Context reason
+    local log="$1" total named referrers verdict=0
+    if [ ! -f "$log" ]; then
+        echo "    no link log at $log: nothing was even attempted."
+        return 1
+    fi
+    total=$(grep -c 'undefined symbol' "$log" || true)
+    named=$(grep -c 'undefined symbol.*STEPConstruct_AP203Context' "$log" || true)
+    referrers="$(sed -n 's/.*\.a(\([^)]*\)).*/\1/p' "$log" | sort -u | tr '\n' ' ')"
+    printf '    undefined-symbol lines:                     %s\n' "$total"
+    printf '    of those naming STEPConstruct_AP203Context: %s\n' "$named"
+    printf '    referenced from:                            %s\n' \
+        "${referrers:-(no archive member named, which is itself the finding)}"
+    grep -oE 'undefined symbol: [^ ]+' "$log" | sort -u | head -5 | sed 's/^/      /'
+    if [ "$total" -eq 0 ]; then
+        echo "    VERDICT: the log names NO undefined symbol, so this is not the AP203Context"
+        echo "             failure at all. The usual cause is an archive that is absent or empty:"
+        printf '             archive = %s (%s)\n' "$COMBINED" \
+            "$([ -f "$COMBINED" ] && echo "$(wc -c < "$COMBINED" | tr -d ' ') bytes" || echo 'DOES NOT EXIST')"
+        verdict=1
+    elif [ "$named" -ne "$total" ]; then
+        printf '    VERDICT: %s of %s undefined symbols are NOT members of STEPConstruct_AP203Context,\n' \
+            "$((total - named))" "$total"
+        echo "             so this is a different link failure wearing the same shape."
+        verdict=1
+    elif [ "$referrers" != "STEPConstruct_ContextTool.cxx.obj " ]; then
+        printf '    VERDICT: expected STEPConstruct_ContextTool.cxx.obj as the only referrer, got: %s\n' \
+            "$referrers"
+        verdict=1
+    else
+        printf '    VERDICT: %s undefined symbols, all members of STEPConstruct_AP203Context, all\n' "$total"
+        echo "             referenced from STEPConstruct_ContextTool.cxx.obj. This is #2174's failure."
+    fi
+    return $verdict
+}
+
+# ---------------------------------------------------------------------------------------------
+# STEP, NEGATIVE: prove the assertion above can fail, per okf/policies/prove-the-test-fails.md.
+#
+# The patch cannot be un-applied without a rebuild, so this reproduces the state a missing patch
+# leaves BEHIND: the combined archive with STEPConstruct_AP203Context's object deleted from a copy
+# of it, which is exactly what #2174 measured when the file did not compile. The link must then
+# fail, and classify_step_link_failure must say so for the right reason.
+do_step_negative() {
+    echo ""
+    echo "===================================================================="
+    echo "STEP, NEGATIVE: delete the AP203Context object and watch the link fail"
+    echo "===================================================================="
+    if [ ! -f "$COMBINED" ]; then
+        echo "  no archive at $COMBINED to copy; run Scripts/build-occt-wasm.sh first" >&2
+        return 1
+    fi
+    local member without saved_combined rc
+    member="$("$AR" t "$COMBINED" | grep -x 'STEPConstruct_AP203Context.cxx.obj' | head -1)"
+    if [ -z "$member" ]; then
+        echo "  ERROR: $COMBINED has no STEPConstruct_AP203Context.cxx.obj member, so the patch it" >&2
+        echo "  is meant to prove is not in this archive and there is nothing to remove." >&2
+        return 1
+    fi
+    without="$OUT_DIR/libOCCT-wasm-no-ap203.a"
+    rm -f "$without"
+    cp "$COMBINED" "$without"
+    "$AR" d "$without" "$member"
+    printf '  copied the archive and deleted %s: %s members -> %s\n' "$member" \
+        "$("$AR" t "$COMBINED" | wc -l | tr -d ' ')" "$("$AR" t "$without" | wc -l | tr -d ' ')"
+
+    saved_combined="$COMBINED"
+    COMBINED="$without"
+    echo "  linking probe-step.wasm against it, which must NOT link:"
+    rm -f "$OUT_DIR/probe-step.wasm"
+    link_probe "$SCRIPT_DIR/probe-step.cxx" "$OUT_DIR/probe-step.wasm" \
+        >"$OUT_DIR/step-link-negative.txt" 2>&1 || true
+    if [ -f "$OUT_DIR/probe-step.wasm" ]; then
+        echo "  FAIL: it linked without STEPConstruct_AP203Context, so the assertion in ./run.sh" >&2
+        echo "  link is blind and would pass with the patch reverted." >&2
+        COMBINED="$saved_combined"
+        return 1
+    fi
+    classify_step_link_failure "$OUT_DIR/step-link-negative.txt"
+    rc=$?
+    COMBINED="$saved_combined"
+    rm -f "$without" "$OUT_DIR/probe-step.wasm"
+    if [ "$rc" -ne 0 ]; then
+        echo "  FAIL: it did not link, and not for the reason this case is about." >&2
+        return 1
+    fi
+    echo "  and the blind case: the same classifier against an archive that does not exist,"
+    echo "  which is what printed '0 undefined-symbol line(s)' and read as a pass before #2266:"
+    saved_combined="$COMBINED"
+    COMBINED="$OUT_DIR/no-such-archive.a"
+    rm -f "$COMBINED" "$OUT_DIR/probe-step.wasm"
+    link_probe "$SCRIPT_DIR/probe-step.cxx" "$OUT_DIR/probe-step.wasm" \
+        >"$OUT_DIR/step-link-absent.txt" 2>&1 || true
+    if classify_step_link_failure "$OUT_DIR/step-link-absent.txt"; then
+        echo "  FAIL: the classifier accepted a link with no archive at all." >&2
+        COMBINED="$saved_combined"
+        return 1
+    fi
+    COMBINED="$saved_combined"
+    echo "  rejected, which is the behaviour #2266 added."
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -647,11 +784,12 @@ case "${1:-all}" in
     census-negative) do_census_negative ;;
     archive) do_archive ;;
     link)    do_link ;;
+    step-negative) do_step_negative ;;
     libs)    do_libs ;;
     imports) do_imports ;;
     size)    do_size ;;
-    all)     do_combine; do_census; do_census_negative; do_archive; do_link; do_libs
-             do_imports; do_size ;;
-    *) echo "usage: $0 [combine|census|census-negative|partial|archive|link|libs|imports|size|all]" >&2
+    all)     do_combine; do_census; do_census_negative; do_archive; do_link; do_step_negative
+             do_libs; do_imports; do_size ;;
+    *) echo "usage: $0 [combine|census|census-negative|partial|archive|link|step-negative|libs|imports|size|all]" >&2
        exit 1 ;;
 esac

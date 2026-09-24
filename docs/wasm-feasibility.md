@@ -9,12 +9,13 @@ This doc captures the analysis of building OCCTSwift for WebAssembly so that the
 **OCCTSwift Swift API can be reused inside a SwiftWasm app** (e.g. a browser app
 driven by JavaScriptKit, or a server-side wasm runtime). Written June 2026 as a
 forward plan. The toolchain is now pinned and has been run end to end, see
-[Pinned toolchain](#pinned-toolchain). As of #2174, **5,487 of the 5,488 source
-files in the configured module set compile for `wasm32-unknown-wasip1`, and a C++
-module linked against them runs**: it builds a solid, measures it, meshes it, and
-catches a `Standard_Failure` OCCT raised from inside its own compiled code. No
-Swift is in that module yet, which is #2175's, and one source file does not
-compile, which blocks STEP.
+[Pinned toolchain](#pinned-toolchain). As of #2266, **all 5,488 source files in the
+configured module set compile for `wasm32-unknown-wasip1`, and a C++ module linked
+against them runs**: it builds a solid, measures it, meshes it, catches a
+`Standard_Failure` OCCT raised from inside its own compiled code, and writes an
+AP203 STEP file. #2174 got 5,487 of those and left one, `TKDESTEP`'s
+`STEPConstruct_AP203Context.cxx`, which blocked STEP and with it the packaging step;
+#2266 closed it. No Swift is in that module yet, which is #2175's.
 
 The goal is fixed. The *path* to reach it is deliberately left open, see
 [Three paths](#three-paths-to-one-wasm-module). The path choice is the **output of
@@ -72,8 +73,8 @@ Two structural facts make this more tractable than the `platform-expansion.md`
    `TKService` and `TKV3d`. `TKV3d` alone is 203 source files. So the
    platform-gap surface, and the code the module size pays for, include 682 files
    from two modules the flags say are off. **Measured by #2174: those 682 need no
-   platform guard at all.** The one file the whole set does not compile is in
-   `TKDESTEP`, which is a module the flags do switch on.
+   platform guard at all.** The one file the whole set did not compile was in
+   `TKDESTEP`, which is a module the flags do switch on, and #2266 closed it.
 
 3. **Threading is a non-issue for us.** The bridge serialises all OCCT access
    through one `std::recursive_mutex`; single-threaded wasm satisfies that

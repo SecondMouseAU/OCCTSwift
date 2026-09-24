@@ -44,6 +44,13 @@ all.
 is on the STEP writer's own path, so a STEP module does not link and the real `libOCCT-wasm.a`
 cannot be written yet. That gap is recorded here and handed on, not patched here.
 
+> **Closed by [#2266](https://github.com/SecondMouseAU/OCCTSwift/issues/2266), 2026-09-24.**
+> `wasi-stepconstruct-ap203context.patch` compiles that file, the 49-toolkit build is 5,488 of
+> 5,488, `Libraries/libOCCT-wasm.a` and `Libraries/occt-headers-wasm/` exist, and `probe-step.wasm`
+> links, runs and writes an AP203 STEP file. See [Closed by #2266](#closed-by-2266) below. Every
+> number above this line is #2174's and is left as it was measured; the numbers that moved are
+> restated there rather than edited in place.
+
 Six defects turned up on the way, five of them in merged code and each invisible to every check
 that existed. The sixth is in this issue's own new code and the build caught it within the hour.
 
@@ -324,7 +331,8 @@ other case with it.
 
 ### `probe-step.wasm`, which does not link
 
-Covered above: it is the measurement of what the one uncompiled file costs.
+Covered above: it is the measurement of what the one uncompiled file costs. #2266 closed the gap
+and turned this case into an assertion; see [Closed by #2266](#closed-by-2266).
 
 ## The three risks #2171 left open
 
@@ -471,6 +479,9 @@ any arrived.
 
 ## What this does not establish
 
+**The first two items are #2174's and #2266 closed both**; they are left here because the
+measurements above were taken under them.
+
 - **`libOCCT-wasm.a` itself does not exist yet**, and neither does `occt-headers-wasm/`. The
   packaging step is gated on the census and the census is one file short. Everything above is
   measured on `libOCCT-wasm-partial.a`, which holds every object the build produced, and on the
@@ -481,6 +492,157 @@ any arrived.
   #2175's, and #2048 has at least one more gap than it knew about: the threading shim is a consumer
   requirement, and its `.headerSearchPath` does not point at the headers.
 - **One configure, one host.** macOS 27.0 arm64, 10 cores, 69 minutes.
+
+## Closed by #2266
+
+Measurements 2026-09-24, same host and same pinned toolchain as everything above. The command is
+the same one: `Scripts/build-occt-wasm.sh`, then `Scripts/repro/2174/run.sh` with no
+`OCCT_WASM_ARCHIVE`, because there is now a real archive for it to default to.
+
+`Scripts/patches-wasi/wasi-stepconstruct-ap203context.patch` is the change.
+[`docs/WASI_GUARD_SITES.md`](../../../docs/WASI_GUARD_SITES.md) carries what it does and why; this
+section carries the numbers that moved.
+
+### The build
+
+    TOTAL             5488 of 5488  across 49 toolkits, 0 missing, 0 unruled
+    >>> COMPLETE: every toolkit built every source file it has a rule for.
+
+`TKDESTEP` is 1,735 of 1,735, which
+`Scripts/build-occt-wasm.sh --toolkit TKDESTEP --require-complete` asserts on its own. That flag was
+watched to fail, the way `Scripts/repro/2173/run.sh negative` proves it: with the patch moved out of
+`Scripts/patches-wasi/` and the object deleted, the same command is
+
+    /.../STEPConstruct_AP203Context.cxx:64:12: fatal error: 'pwd.h' file not found
+    >>> TKDESTEP: 1734 of 1735 source files compiled.
+    ERROR: --require-complete was given and TKDESTEP is INCOMPLETE:
+           1734 of 1735 source files compiled, 1 short.
+
+and exit 1. **One error, and that is the point**: it is the include, and closing it is what reveals
+the other two.
+
+The one file needed three guards, not one, and they were found one error at a time exactly as
+#2173 predicted here: `<pwd.h>` is fatal, so closing it uncovered `getpwnam()` in
+`DefaultPersonAndOrganization()`, and closing that uncovered `timezone` in `DefaultDateAndTime()`,
+which wasi-libc keeps behind `__wasilibc_unmodified_upstream` under "WASI has no timezone tables".
+
+### A seventh defect, and it is this README's own
+
+The census passing for the first time ran the packaging step for the first time, and it did not
+exist:
+
+    Scripts/build-occt-wasm.sh: line 856: package_build: command not found
+
+`package_build` was called from two places, the full build and `--package-only`, and **defined
+nowhere**. #2174 removed the inline install, combine and header-copy block and replaced it with
+calls to a function nobody wrote. Nothing could have caught it: the census gates those calls, the
+census had never passed, and both call sites were therefore unreachable on every build ever run.
+The same shape as the six above, one layer further out: the first consumer of a step is what finds
+out whether the step is there.
+
+It is written in #2266, to the behaviour this README already specified for it: `cmake --install`,
+an `llvm-ar` MRI script rather than `rcs` in a loop, the three archive checks, and a flat header
+copy with no extension filter that counts the files on both sides.
+
+### The artefacts, which did not exist until now
+
+| Property | `libOCCT-wasm.a` |
+|---|---|
+| path | `Libraries/libOCCT-wasm.a`, not `-partial` |
+| members | **5,488** objects |
+| members that are archives | **0** |
+| defined symbols, `llvm-nm --defined-only` | **291,277** |
+| per-toolkit archives installed | 49 of 49 |
+| size | 163,356,516 bytes |
+| size, `gzip -9` | 36,001,559 |
+| size, `brotli -q 11` | 20,452,292 |
+
+`Libraries/occt-headers-wasm/` is **7,160 files, 42,708,992 bytes**, flat, and the packaging step
+counts 7,160 installed against 7,160 copied rather than asking whether any arrived. That is the
+tree `Package.swift`'s `.headerSearchPath("occt-headers-wasm")` names, and `run.sh` compiles
+against it rather than against the build tree's forwarding stubs: its `>>> headers:` line says
+which, and it now says the real one.
+
+### `probe-step.wasm`, which links, runs and writes STEP
+
+    probe-step.wasm: 20015084 bytes
+     Step File Name : .../probe-box.step(380 ents)  Write  Done
+      #354 = PERSON_AND_ORGANIZATION(#355,#356);
+      #355 = PERSON('IP,','','',$,$,$);
+      #356 = ORGANIZATION('IP','Unspecified','');
+      #371 = COORDINATED_UNIVERSAL_TIME_OFFSET(0,$,.EXACT.);
+    Transfer=1 Write=1 bytes=16895 PERSON=1 ORGANIZATION=3 UTC_OFFSET=1
+    exit status: 0
+
+`probe-step.cxx` sets `write.step.schema` to AP203 before constructing the writer. That is the
+only schema under which `STEPConstruct_ContextTool` reaches `theAP203` at all (`mySchema == 3`), so
+writing the AP214IS default would link the patched object and execute none of it.
+
+Those four lines are the patch's documented WASI branch, read back out of the file it wrote rather
+than asserted from the code: an empty `OSD_Process::UserName()` and an empty
+`OSD_Host::InternetAddress()` give ORGANIZATION `IP`/`Unspecified` and PERSON id `IP,` with an
+empty first and last name, and the offset is `0 .EXACT.`.
+
+**The header timestamp is the independent check on that offset.** The file says
+`FILE_NAME(...,'2026-09-23T15:03:05',...)` and it was written at 01:03 on 2026-09-24 AEST, which is
+UTC+10. So `OSD_Process::SystemDate()`'s `localtime()` did resolve to UTC on this runtime, and a
+declared offset of zero is what agrees with the timestamp beside it rather than a value chosen for
+convenience.
+
+| | Uncompressed | `gzip -9` | `brotli -q 11` |
+|---|---|---|---|
+| `probe-step.wasm` | 20,015,084 | 4,645,295 | **3,271,481** |
+| `probe.wasm`, for comparison | 8,699,698 | 2,435,128 | 1,887,056 |
+
+**3.27 MB brotli is the first size for a module that does the thing #1689 asks for**, and it is
+under `occt-wasm`'s ~4.5 MB brotli, which is the only published figure this can be read against. It
+still carries no Swift runtime, no Foundation and no bridge; #2175's module is the comparable
+measurement.
+
+Its host imports stay inside `wasi_snapshot_preview1`: **16** of them, 0 from any other module,
+against `probe.wasm`'s 10 and a hello-world C program's 5. The six STEP adds over `probe.wasm` are
+`args_get`, `args_sizes_get`, `clock_time_get`, `fd_fdstat_set_flags`, `path_filestat_get` and
+`path_open`, which is argv, the clock the timestamp above came from, and opening a file for
+writing. Nothing needs a host function outside wasip1, which is what #2052 was asking.
+
+### The negative case
+
+`run.sh link` asserting a link is worth nothing unless it can fail, and the patch cannot be
+un-applied without a rebuild. `run.sh step-negative` reproduces what a missing patch leaves behind
+instead, by deleting one member from a copy of the archive:
+
+    copied the archive and deleted STEPConstruct_AP203Context.cxx.obj: 5488 members -> 5487
+    linking probe-step.wasm against it, which must NOT link:
+      undefined-symbol lines:                     20
+      of those naming STEPConstruct_AP203Context: 20
+      referenced from:                            STEPConstruct_ContextTool.cxx.obj
+      VERDICT: 20 undefined symbols, all members of STEPConstruct_AP203Context, all
+               referenced from STEPConstruct_ContextTool.cxx.obj. This is #2174's failure.
+
+which is #2174's 20 symbols exactly, from the same one object.
+
+**And the defect in the case that used to report them.** Until #2266 the probe-step failure was the
+expected result, and the code that reported it counted its own evidence and never checked the
+count. Given no archive at all it printed
+
+    did not link: 0 undefined-symbol line(s), every one of them a member of
+    STEPConstruct_AP203Context, ...
+      all 0 of them referenced from:
+
+which reads exactly like the expected failure and measures nothing: it could not tell "failed for
+the right reason" from "failed because there was nothing to look at". The classifier now requires a
+non-zero count, requires every undefined symbol to name `STEPConstruct_AP203Context`, and requires
+`STEPConstruct_ContextTool.cxx.obj` to be the only referrer, which is the rule `--require-tree`
+carries elsewhere in this repo (#2098). `step-negative` runs that blind case too, against an
+archive that does not exist, and requires the classifier to reject it.
+
+### What is unchanged
+
+`probe.wasm` still reports 0 failures over all five cases, against the real archive rather than the
+partial one, and `run.sh libs` still finds every piece of the link line load-bearing: `-lsetjmp`,
+the wasi-sdk `eh` runtime, the compiler-rt builtins and the threading shim each break the link or
+the compile when removed, and `-lwasi-emulated-getpid` is still needed only by a probe that reaches
+one of the two `getpid()` sites.
 
 ## Related
 
