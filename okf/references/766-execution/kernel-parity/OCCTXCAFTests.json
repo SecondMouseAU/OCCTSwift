@@ -2,129 +2,273 @@
   {
     "test_name": "XCAF Color Tests",
     "bridge_function": "OCCTXCAFColor",
-    "bridge_output": {"type": "color", "data": {}},
-    "kernel_output": {"type": "color", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "color",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "color",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Layer Tests",
     "bridge_function": "OCCTXCAFLayer",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Assembly Tests",
     "bridge_function": "OCCTXCAFAssembly",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Document Save",
     "bridge_function": "OCCTDocumentSaveOCAF",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Document Load",
     "bridge_function": "OCCTDocumentLoadOCAF",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Material Tests",
     "bridge_function": "OCCTXCAFMaterial",
-    "bridge_output": {"type": "color", "data": {}},
-    "kernel_output": {"type": "color", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "color",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "color",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Shape Addition/Removal",
     "bridge_function": "OCCTXCAFShapeAddRemove",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF GDT Tests",
     "bridge_function": "OCCTXCAFGDT",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Validation Tests",
     "bridge_function": "OCCTXCAFValidation",
-    "bridge_output": {"type": "bool", "data": true},
-    "kernel_output": {"type": "bool", "data": true},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Style Tests",
     "bridge_function": "OCCTXCAFStyle",
-    "bridge_output": {"type": "color", "data": {}},
-    "kernel_output": {"type": "color", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "color",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "color",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Area/Volume Tests",
     "bridge_function": "OCCTXCAFAreaVolume",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Location/Transformation",
     "bridge_function": "OCCTXCAFLocationTransform",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Bounding Box Tests",
     "bridge_function": "OCCTXCAFBoundingBox",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Document Creation",
     "bridge_function": "OCCTXCAFDocumentCreation",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Mesh Tests",
     "bridge_function": "OCCTXCAFMesh",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Note/Annotation Tests",
     "bridge_function": "OCCTXCAFNoteAnnotation",
-    "bridge_output": {"type": "string", "data": ""},
-    "kernel_output": {"type": "string", "data": ""},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "string",
+      "data": ""
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": ""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
@@ -341,5 +485,220 @@
     },
     "status": "PASS",
     "probe": "Scripts/repro/766-xcaf-color-tool-completions/"
+  },
+  {
+    "test_name": "Document Color/Material Setter Tests::Set and get label color",
+    "bridge_function": "OCCTDocumentSetLabelColor",
+    "bridge_output": {
+      "type": "color",
+      "data": {
+        "rgb": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "tolerance": 0.01
+      }
+    },
+    "kernel_output": {
+      "type": "color",
+      "data": {
+        "rgb": [
+          1.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-color-material/"
+  },
+  {
+    "test_name": "Document Color/Material Setter Tests::Color attribute (XCAFDoc_Color) round-trips a non-trivial RGB triple (#1508)",
+    "bridge_function": "OCCTDocumentGetColorAttr",
+    "bridge_output": {
+      "type": "color",
+      "data": {
+        "rgb": [
+          0.5,
+          0.25,
+          0.75
+        ],
+        "tolerance": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "color",
+      "data": {
+        "rgb": [
+          0.5,
+          0.25,
+          0.75
+        ],
+        "srgb_defect_readback": [
+          0.214041,
+          0.050876,
+          0.522522
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-color-material/"
+  },
+  {
+    "test_name": "Document Color/Material Setter Tests::RGBA color attribute (XCAFDoc_Color) round-trips a non-trivial RGBA quadruple (#1508)",
+    "bridge_function": "OCCTDocumentGetColorRGBAAttr",
+    "bridge_output": {
+      "type": "color",
+      "data": {
+        "rgba": [
+          0.5,
+          0.25,
+          0.75,
+          0.4
+        ],
+        "tolerance": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "color",
+      "data": {
+        "rgba": [
+          0.5,
+          0.25,
+          0.75,
+          0.4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-color-material/"
+  },
+  {
+    "test_name": "Document Color/Material Setter Tests::Set and get label material",
+    "bridge_function": "OCCTDocumentGetLabelMaterial",
+    "bridge_output": {
+      "type": "material",
+      "data": {
+        "metallic": 0.9,
+        "roughness": 0.3,
+        "tolerance": 0.01
+      }
+    },
+    "kernel_output": {
+      "type": "material",
+      "data": {
+        "metallic": 0.9,
+        "roughness": 0.3,
+        "has_pbr": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-color-material/"
+  },
+  {
+    "test_name": "XCAFPrs_DocumentExplorer Tests::exploreDocumentWithShape",
+    "bridge_function": "OCCTDocumentExplorerCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "leaf_nodes": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-explorer/"
+  },
+  {
+    "test_name": "XCAFPrs_DocumentExplorer Tests::explorerShapeAtIndex",
+    "bridge_function": "OCCTDocumentExplorerShape",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "non_null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-explorer/"
+  },
+  {
+    "test_name": "XCAFPrs_DocumentExplorer Tests::explorerPathId",
+    "bridge_function": "OCCTDocumentExplorerPathId",
+    "bridge_output": {
+      "type": "string",
+      "data": {
+        "non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": {
+        "path_id": "0:1:1:1."
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-explorer/"
+  },
+  {
+    "test_name": "XCAFPrs_DocumentExplorer Tests::findShapeFromPathId",
+    "bridge_function": "OCCTDocumentExplorerFindShape",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "non_null": true,
+        "shape_type": "TopAbs_SOLID (2)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-explorer/"
   }
 ]
