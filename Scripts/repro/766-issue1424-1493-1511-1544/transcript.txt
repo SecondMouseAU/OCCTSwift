@@ -1,0 +1,22 @@
+#1424 BndLib_AddSurface sphere r5 face: min=(-5, -5, -5) max=(5, 5, 5)
+#1424 null face: IsVoid=1
+#1424 null face: Get threw Bnd_Box is void (the bridge catch writes 0s)
+#1493 L-shape medial axis: IsDone=1 arcs=11 nodes=12 boundaryCurves=6
+  arc 1: node 11 -> 12, d(t=0)=0 d(t=1)=2.3431457505076194 d(t=0.5, real curve)=1.1715728752538097 linear=1.1715728752538097 deviation=0
+  arc 2: node 10 -> 8, d(t=0)=0 d(t=1)=2 d(t=0.5, real curve)=1 linear=1 deviation=0
+  arc 3: node 9 -> 8, d(t=0)=0 d(t=1)=2 d(t=0.5, real curve)=1 linear=1 deviation=0
+  arc 4: node 8 -> 6, d(t=0)=2 d(t=1)=2 d(t=0.5, real curve)=2 linear=2 deviation=0
+  arc 5: node 7 -> 6, d(t=0)=0 d(t=1)=2 d(t=0.5, real curve)=1 linear=1 deviation=0
+  arc 6: node 6 -> 12, d(t=0)=2 d(t=1)=2.3431457505076194 d(t=0.5, real curve)=2.0857864376269051 linear=2.1715728752538097 deviation=0.085786437626904632
+  arc 7: node 5 -> 1, d(t=0)=0 d(t=1)=2 d(t=0.5, real curve)=1 linear=1 deviation=0
+  arc 8: node 4 -> 2, d(t=0)=0 d(t=1)=2 d(t=0.5, real curve)=1 linear=1 deviation=0
+  arc 9: node 3 -> 2, d(t=0)=0 d(t=1)=2 d(t=0.5, real curve)=1 linear=1 deviation=0
+  arc 10: node 2 -> 1, d(t=0)=2 d(t=1)=2 d(t=0.5, real curve)=2 linear=2 deviation=0
+  arc 11: node 1 -> 12, d(t=0)=2 d(t=1)=2.3431457505076194 d(t=0.5, real curve)=2.0857864376269051 linear=2.1715728752538097 deviation=0.085786437626904632
+#1511 GeomLProp_CurAndInf2d::PerformCurExt ellipse(10,5): IsDone=1 NbPoints=4
+  0 LProp_MinCur
+  1.5707963267948966 LProp_MaxCur
+  3.1415926535897931 LProp_MinCur
+  4.7123889803846897 LProp_MaxCur
+#1544 DistanceSS deflection=1e-07: IsDone=1 DistValue=10 solutions=1 first pair distance=10
+#1544 DistanceSS deflection=100: IsDone=1 DistValue=10 solutions=3 first pair distance=30
