@@ -1,0 +1,8 @@
+circle r10 Geom2dConvert_ApproxCurve tol=0.001 cont=4: done=1 result=1 maxError=0.000676 degree=7 poles=13
+circle r10 Geom2dConvert_ApproxCurve tol=1e-06 cont=4: done=1 result=1 maxError=9.78e-08 degree=8 poles=27
+circle r10 Geom2dConvert_ApproxCurve tol=0.001 cont=0: done=1 result=1 maxError=0.000108 degree=7 poles=15
+circle r10 Approx_Curve2d tol=1e-6: done=1 degree=8 poles=27
+zigzag Geom2dConvert_ApproxCurve tol=0.001 cont=4: done=1 result=1 maxError=0.000889 degree=7 poles=268
+bezier length(0.2, 0.8)=6.34269563057 length(0.3, 0.3)=0
+arc of hyperbola closed=0 start=(5.63812982603, -1.56328591648) end=(5.63812982603, 1.56328591648)
+arc of parabola focus=(0, 0) closed=0 start=(1.125, -5) end=(1.125, 5)
