@@ -3916,5 +3916,569 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::alongEdge",
+    "bridge_function": "OCCTEdgeGetPointAtParam",
+    "bridge_output": {
+      "type": "axis",
+      "data": {
+        "origin": [
+          -5,
+          -5,
+          -5
+        ],
+        "direction": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "axis",
+      "data": {
+        "origin": [
+          -5,
+          -5,
+          -5
+        ],
+        "direction": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::alongEdgeCylindricalRimUsesRevolutionAxis",
+    "bridge_function": "OCCTFaceGetPrimaryAxis",
+    "bridge_output": {
+      "type": "axis",
+      "data": {
+        "direction": [
+          0,
+          0,
+          1
+        ],
+        "origin_xy": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "axis",
+      "data": {
+        "reason": "Swift resolver output; kernel counterpart is the wall's Geom_CylindricalSurface axis, probed as (0,0,1) through the origin"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::alongEdgePartialCylinderUsesAxisNotChord",
+    "bridge_function": "OCCTFaceGetPrimaryAxis",
+    "bridge_output": {
+      "type": "axis",
+      "data": {
+        "direction_abs_z": 1,
+        "origin_xy": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "axis",
+      "data": {
+        "reason": "Swift resolver output; kernel counterpart is the wall's Geom_CylindricalSurface axis, probed as (0,0,1) through the origin on the full cylinder built the same way"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::alongEdgeStandaloneCircleNoAdjacentFaceDegenerate",
+    "bridge_function": "OCCTBRepGraphEdgeFaceIndices",
+    "bridge_output": {
+      "type": "result",
+      "data": "degenerate"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift decision (zero-length chord of a closed circle); no kernel call returns it"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::alongEdgeBranchWithDisagreeingAxesFallsBackToChord",
+    "bridge_function": "OCCTFaceGetPrimaryAxis",
+    "bridge_output": {
+      "type": "result",
+      "data": "chord fallback"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift decision over two face axes; no kernel counterpart"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::alongEdgeCylindricalRimOriginStaysNearRimNotSurfaceBase",
+    "bridge_function": "OCCTFaceGetPrimaryAxis",
+    "bridge_output": {
+      "type": "axis",
+      "data": {
+        "origin": [
+          0,
+          0,
+          500
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "axis",
+      "data": {
+        "reason": "Swift projection of the rim onto the wall axis; the axis itself is the Geom_CylindricalSurface frame (0,0,1) through the origin"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::alongEdgeStraightSeamReparameterizedAsBSplineKeepsChord",
+    "bridge_function": "OCCTEdgeGetPointAtParam",
+    "bridge_output": {
+      "type": "result",
+      "data": "chord kept"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift decision (coaxialCrossSection); no kernel counterpart"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::alongEdgeEllipticalRimDoesNotSilentlyReturnCenterline",
+    "bridge_function": "OCCTEdgeGetPointAtParam",
+    "bridge_output": {
+      "type": "result",
+      "data": "not the centerline"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift decision; kernel inputs probed: closed ellipse, length 33.059867768, wall axis (0,0,1) through origin"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::alongEdgeGenuinelyDegenerateEdgeNextToCleanCylinderStillDegenerate",
+    "bridge_function": "OCCTEdgeGetPointAtParam",
+    "bridge_output": {
+      "type": "result",
+      "data": "degenerate"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift degeneracy threshold; no kernel counterpart"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::alongEdgeConeStraightSeamReparameterizedAsBSplineKeepsChord",
+    "bridge_function": "OCCTEdgeGetPointAtParam",
+    "bridge_output": {
+      "type": "result",
+      "data": "chord kept"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift decision; no kernel counterpart"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::alongEdgeSignTracksEdgeTopologyNotSurfaceConvention",
+    "bridge_function": "OCCTEdgeGetTangent3D",
+    "bridge_output": {
+      "type": "result",
+      "data": "opposite signs"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift sign rule over the edge tangent; no kernel counterpart"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::alongEdgeHelicalEdgeDoesNotSilentlyReturnCenterline",
+    "bridge_function": "OCCTEdgeGetPointAtParam",
+    "bridge_output": {
+      "type": "result",
+      "data": "origin on the wall"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift decision; no kernel counterpart"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::coincidentPointsDegenerate",
+    "bridge_function": "OCCTShapeVertexPoint",
+    "bridge_output": {
+      "type": "result",
+      "data": "degenerate"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift degeneracy check on two equal points"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::parallelIntersectionDegenerate",
+    "bridge_function": "none (pure Swift: ConstructionAxis.intersectionOfPlanes)",
+    "bridge_output": {
+      "type": "result",
+      "data": "degenerate"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "pure Swift vector arithmetic on absolute planes"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::normalToFaceCylinderPrimaryAxis",
+    "bridge_function": "OCCTFaceGetPrimaryAxis",
+    "bridge_output": {
+      "type": "direction",
+      "data": [
+        0,
+        0,
+        1
+      ]
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": [
+        0,
+        0,
+        1
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::normalToFaceCylinderOriginOnAxis",
+    "bridge_function": "OCCTFaceGetPrimaryAxis",
+    "bridge_output": {
+      "type": "axis",
+      "data": {
+        "origin": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "axis",
+      "data": {
+        "origin": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::normalToFaceTorusOriginOnAxis",
+    "bridge_function": "OCCTFaceGetPrimaryAxis",
+    "bridge_output": {
+      "type": "axis",
+      "data": {
+        "origin": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "axis",
+      "data": {
+        "origin": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::normalToFacePlaneFallback",
+    "bridge_function": "OCCTFaceGetNormalAtUV",
+    "bridge_output": {
+      "type": "axis",
+      "data": {
+        "origin": [
+          -5,
+          -5,
+          -5
+        ],
+        "direction": [
+          -1,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "axis",
+      "data": {
+        "origin": [
+          -5,
+          -5,
+          -5
+        ],
+        "direction": [
+          -1,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::normalToFaceExtrusionFallsBackToNormal",
+    "bridge_function": "OCCTFaceGetPrimaryAxis",
+    "bridge_output": {
+      "type": "result",
+      "data": "surface normal, z < 0.01"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift choice between primaryAxis and normal; no kernel counterpart"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::normalToFaceSphereFallsBackToNormal",
+    "bridge_function": "OCCTFaceGetPrimaryAxis",
+    "bridge_output": {
+      "type": "result",
+      "data": "UV-midpoint normal"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift choice between primaryAxis and normal; no kernel counterpart"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::normalToFaceFreeFormVariesWithPoint",
+    "bridge_function": "OCCTFaceProjectPoint",
+    "bridge_output": {
+      "type": "result",
+      "data": "normals vary"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift use of the projected point; no single kernel value"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::normalToFaceOriginIsOnFaceNotRawPoint",
+    "bridge_function": "OCCTFaceProjectPoint",
+    "bridge_output": {
+      "type": "result",
+      "data": "origin = projection"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "compared inside the test against Face.project (OCCTFaceProjectPoint) itself"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::alongEdgeUndefinedStartTangentFailsLoudNotSilent",
+    "bridge_function": "OCCTEdgeGetTangent3D",
+    "bridge_output": {
+      "type": "result",
+      "data": "degenerate"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift decision on a nil tangent"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionAxis resolution::coaxialCrossSectionAcceptsMeasuredEdgeToleranceNoise",
+    "bridge_function": "OCCTEdgeGetPointAtParam",
+    "bridge_output": {
+      "type": "result",
+      "data": "accepted at 1e-4"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift tolerance rule; no kernel counterpart"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
   }
 ]
