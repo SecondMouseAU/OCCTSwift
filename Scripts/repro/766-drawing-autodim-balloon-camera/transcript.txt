@@ -1,0 +1,12 @@
+boxLinearExtents: projected width=3.0000001999999997 height=10.000000199999999
+cylinderTopViewHasDiameters: projected width=10.000000200000001 height=10.000000200000001
+cylinderTopViewHasDiameters: circles faced=2 edgeOn=0 belowMinRadius=0
+cylinderSideViewEdgeOn: circles faced=0 edgeOn=2 belowMinRadius=0
+minRadiusFilters: circles faced=0 edgeOn=0 belowMinRadius=2
+defaultState: eye=(0, 0, -1500) center=(0, 0, 0) up=(0, 1, 0)
+projectionMatrixNonIdentity (row-major): 0.00133333332 0 0 -0 0 0.00200000009 0 -0 0 0 -0.000333333446 -3.33333446e-07 0 0 0 1
+viewMatrixChanges: m00 1 -> 0, m22 1 -> 0
+projectUnprojectRoundtrip: screen=(0.01, 0.0060000000000000001, 0.099099099099099086) world=(5, 3, 0)
+orthographicVsPerspective: m00 2.41421342 vs 0.00200000009, m32 -1 vs 0
+fitBoundingBox box=(-5..5): mid before=(0, 0) after=(0, 0) center=(0, 0, 0) max|corner ndc|=1
+fitBoundingBox box=(20..30): mid before=(0.050000000000000003, 0.050000000000000003) after=(0, 0) center=(25, 25, 0) max|corner ndc|=1
