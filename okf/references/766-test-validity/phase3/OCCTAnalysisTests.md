@@ -268,6 +268,14 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **v0.113.0 - IntCS Results** | lineSphereIntersection | Curve-surface intersection points | OCCTIntCSPoint |
+| **IntCurvesFace ShapeIntersector** | Ray intersects box | Ray-shape intersection | OCCTIntCurvesFaceShapeIntersect |
+| **IntCurvesFace ShapeIntersector** | Ray nearest intersection with sphere | Ray-shape nearest hit | OCCTIntCurvesFaceShapeIntersectNearest |
+| **IntCurvesFace ShapeIntersector** | Ray misses shape | Ray-shape intersection | OCCTIntCurvesFaceShapeIntersect |
+| **IntTools_BeanFaceIntersector Tests** | edge crossing face | Edge-face coincident ranges | OCCTIntToolsBeanFaceIntersect |
+| **IntTools_BeanFaceIntersector Tests** | edge lying on face - coincident ranges | Edge-face coincident ranges | OCCTIntToolsBeanFaceIntersect |
+| **IntTools_FaceFace Tests** | Perpendicular box faces produce intersection line | Face-face intersection | OCCTIntToolsFaceFace |
+| **IntTools_FaceFace Tests** | Coincident planes are tangent | Face-face intersection | OCCTIntToolsFaceFace |
 
 ---
 
@@ -475,6 +483,14 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| lineSphereIntersection | OCCTIntCSPoint | Curve-surface intersection points | x + 1 on every point | ✅ | ✅ |  |
+| Ray intersects box | OCCTIntCurvesFaceShapeIntersect | Ray-shape intersection | NbPnt forced to 0 | ✅ | ✅ |  |
+| Ray nearest intersection with sphere | OCCTIntCurvesFaceShapeIntersectNearest | Ray-shape nearest hit | hit z + 1 | ✅ | ✅ |  |
+| Ray misses shape | OCCTIntCurvesFaceShapeIntersect | Ray-shape intersection | report the ray origin as a hit when NbPnt is 0 | ✅ | ✅ |  |
+| edge crossing face | OCCTIntToolsBeanFaceIntersect | Edge-face coincident ranges | refuse after IsDone() | ✅ | ✅ | Rewritten: minSquareDistance >= 0 inside if-lets passed on a refused call |
+| edge lying on face - coincident ranges | OCCTIntToolsBeanFaceIntersect | Edge-face coincident ranges | drop every range | ✅ | ✅ | Kernel reports a zero-length range [0, 0] for a 6-long edge lying in the face |
+| Perpendicular box faces produce intersection line | OCCTIntToolsFaceFace | Face-face intersection | report 0 curves | ✅ | ✅ |  |
+| Coincident planes are tangent | OCCTIntToolsFaceFace | Face-face intersection | tangent forced false | ✅ | ✅ |  |
 
 ---
 

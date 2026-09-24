@@ -1,0 +1,19 @@
+IntCS lineSphere: IsDone=1 NbPoints=2 NbSegments=0
+  point 1: (5, 0, 0) w=25 u=0 v=0
+  point 2: (-5, 0, 0) w=15 u=3.1415926535897931 v=0
+ShapeIntersector box, ray (5,5,-20)+Z: NbPnt=2
+  hit 1: (5, 5, -5) w=15
+  hit 2: (5, 5, 5) w=25
+ShapeIntersector box, ray (100,100,-20)+Z: NbPnt=0
+ShapeIntersector sphere r5, nearest from (0,0,-20)+Z: NbPnt=2
+  nearest: (0, 0, -5) w=15
+BeanFace crossing (0,0,-5)-(0,0,5): IsDone=1
+  MinimalSquareDistance=1.7976931348623157e+308 NbRanges=0
+BeanFace on face (-3,0,0)-(3,0,0): IsDone=1
+  MinimalSquareDistance=1.7976931348623157e+308 NbRanges=1
+  range 1: [0, 0]
+FaceFace perpendicular Z/Y planes: IsDone=1
+  TangentFaces=0 NbLines=1 NbPoints=0
+  line 1: (5, 0, 0) -> (-5, 0, 0)
+FaceFace coincident Z planes: IsDone=1
+  TangentFaces=1 NbLines=0 NbPoints=0
