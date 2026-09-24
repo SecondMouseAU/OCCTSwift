@@ -10,7 +10,13 @@ struct QuaternionInterpolationTests {
         let q1 = SIMD4<Double>(0, 0, 0, 1)  // identity
         let q2 = SIMD4<Double>(0, 0, sin(.pi / 4), cos(.pi / 4))  // 90 deg about Z
         let mid = MathSolver.quaternionSlerp(from: q1, to: q2, t: 0.5)
-        #expect(abs(mid.w) > 0.9)  // close to 45 deg
+        // 45 deg about Z: (0, 0, sin(pi/8), cos(pi/8)). Probed (Scripts/repro/766-math-quaternion):
+        // (0, 0, 0.38268343236508978, 0.92387953251128696). The old check, |w| > 0.9, also
+        // passed for the unmoved identity (w = 1).
+        #expect(abs(mid.x) < 1e-12)
+        #expect(abs(mid.y) < 1e-12)
+        #expect(abs(mid.z - sin(.pi / 8)) < 1e-12)
+        #expect(abs(mid.w - cos(.pi / 8)) < 1e-12)
     }
 
     @Test func nlerpEndpoints() {
