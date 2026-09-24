@@ -1,0 +1,18 @@
+addOpsSafe: edgeInternalVertex uid=1 faceVertex uid=2
+addOpsSafe: compoundAppend valid=0 compSolidAppend valid=0
+removeOpsSafe: edgeRemoveVertex=0 edgeReplaceVertex valid=0 wireRemoveCoEdge=0 removeAttachment=0 faceRemoveWire=0 shellRemoveFace=0
+vertexFieldSetters: point=(1.5, 2.5, 3.5) tolerance=0.0001
+edgeFieldSetters: tolerance=0.001 range=(0.25, 7.5)
+faceFieldSetters: tolerance=0.0050000000000000001
+closure: edge0=0 wire0=1 shell0=1
+refSetters: coedge0 before edge=0 face=0
+refSetters: coedge0 after SetChildEdgeId(5)/SetFaceId(3) edge=5 face=3
+cachedMesh fresh: face=0 edge=0 coedge=0
+cachedMesh after SetCachedTriangulation: face=1
+products: parent=0 child=1 occurrence=1 occurrenceRef=1
+occurrenceRef after link: translation=(5, 6, 7)
+occurrenceRef after set: translation=(11, 12, 13)
+productRemoveOccurrence(99999, 99999)=0
+childRef: compound=0 childRef=1
+childRef first: translation=(1, 2, 3)
+childRef second: translation=(-4, -5, -6)
