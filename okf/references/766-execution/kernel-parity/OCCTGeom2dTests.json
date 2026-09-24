@@ -2687,5 +2687,507 @@
       "probe": "Scripts/repro/766-geom2d-approx-arclength-arctypes/",
       "rewritten": "non-nil, open and two samples; now pins both end points"
     }
+  },
+  {
+    "test_name": "v0.126.0 — Curve2D Bezier completions::InsertPoleAfter increases pole count",
+    "bridge_function": "OCCTCurve2DBezierInsertPoleAfter",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            0.5,
+            0.5
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            0.5,
+            0.5
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "insert (x, y + 1)",
+      "red": "Curve2DBezierCompletionsTests.swift:24:9: Expectation failed: close(c.bezierPoles, [SIMD2(0, 0), SIMD2(0.5, 0.5), SIMD2(1, 1)])",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bezier/",
+      "rewritten": "nested in `if let c`, so a nil curve passed; now pins the poles"
+    }
+  },
+  {
+    "test_name": "v0.126.0 — Curve2D Bezier completions::RemovePole decreases pole count",
+    "bridge_function": "OCCTCurve2DBezierRemovePole",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "remove index - 1",
+      "red": "Curve2DBezierCompletionsTests.swift:34:9: Expectation failed: close(c.bezierPoles, [SIMD2(0, 0), SIMD2(1, 1)])",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bezier/",
+      "rewritten": "nested in `if let c`, so a nil curve passed; now pins the poles"
+    }
+  },
+  {
+    "test_name": "v0.126.0 — Curve2D Bezier completions::Segment restricts domain",
+    "bridge_function": "OCCTCurve2DBezierSegment",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poles": [
+          [
+            0.2,
+            0.32
+          ],
+          [
+            0.5,
+            0.68
+          ],
+          [
+            0.8,
+            0.32
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poles": [
+          [
+            0.2,
+            0.32
+          ],
+          [
+            0.5,
+            0.68
+          ],
+          [
+            0.8,
+            0.32
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "segment to u2 + 0.1",
+      "red": "Curve2DBezierCompletionsTests.swift:43:9: Expectation failed: close(c.bezierPoles, [SIMD2(0.2, 0.32), SIMD2(0.5, 0.68), SIMD2(0.8, 0.32)])",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bezier/",
+      "rewritten": "only the returned Bool; now pins the segmented poles"
+    }
+  },
+  {
+    "test_name": "v0.126.0 — Curve2D Bezier completions::IncreaseDegree succeeds",
+    "bridge_function": "OCCTCurve2DBezierIncreaseDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "degree": 2,
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            0.5,
+            0.5
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "degree": 2,
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            0.5,
+            0.5
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return true without raising the degree",
+      "red": "Curve2DBezierCompletionsTests.swift:52:9: Expectation failed: c.degree == origDeg + 1",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bezier/",
+      "rewritten": "nested in `if let c`, so a nil curve passed; now also pins the poles"
+    }
+  },
+  {
+    "test_name": "v0.126.0 — Curve2D Bezier completions::StartPoint and EndPoint",
+    "bridge_function": "OCCTCurve2DBezierStartPoint / OCCTCurve2DBezierEndPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          5,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          5,
+          10
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "swap StartPoint and EndPoint",
+      "red": "Curve2DBezierCompletionsTests.swift:61:9: Expectation failed: abs(sp.x) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bezier/",
+      "rewritten": "nested in `if let c`, so a nil curve passed"
+    }
+  },
+  {
+    "test_name": "v0.126.0 — Curve2D Bezier completions::GetPoles returns correct poles",
+    "bridge_function": "OCCTCurve2DBezierGetPoles",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            6,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            6,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "shift each x by 1",
+      "red": "Curve2DBezierCompletionsTests.swift:71:9: Expectation failed: close(c.bezierPoles, poles)",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bezier/",
+      "rewritten": "nested in `if let c`, so a nil curve passed; now checks y as well as x"
+    }
+  },
+  {
+    "test_name": "v0.126.0 — Curve2D Bezier completions::Reverse swaps start and end",
+    "bridge_function": "OCCTCurve2DBezierReverse",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          10,
+          20
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          10,
+          20
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return true without reversing",
+      "red": "Curve2DBezierCompletionsTests.swift:80:9: Expectation failed: abs(sp.x - 10) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bezier/",
+      "rewritten": "nested in `if let c`, so a nil curve passed"
+    }
+  },
+  {
+    "test_name": "Curve2D_Bezier_Properties::degreeAndPoleCount",
+    "bridge_function": "OCCTCurve2DBezierDegree / OCCTCurve2DBezierPoleCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "degree": 2,
+        "poleCount": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "degree": 2,
+        "poleCount": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "degree + 1 and pole count + 1",
+      "red": "Curve2DBezierTests.swift:18:9: Expectation failed: bp.degree == 2",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bezier/",
+      "rewritten": "nested in `if let c`, so a nil curve passed"
+    }
+  },
+  {
+    "test_name": "Curve2D_Bezier_Properties::getPole",
+    "bridge_function": "OCCTCurve2DBezierGetPole",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "pole(1)": [
+          0,
+          0
+        ],
+        "pole(2)": [
+          5,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "pole(1)": [
+          0,
+          0
+        ],
+        "pole(2)": [
+          5,
+          10
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "read pole index + 1",
+      "red": "Curve2DBezierTests.swift:25:9: Expectation failed: abs(p.x) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bezier/",
+      "rewritten": "nested in `if let c`, so a nil curve passed; now also pins pole 2"
+    }
+  },
+  {
+    "test_name": "Curve2D_Bezier_Properties::setPole",
+    "bridge_function": "OCCTCurve2DBezierSetPole",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "pole(2)": [
+          3,
+          7
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "pole(2)": [
+          3,
+          7
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "store y + 1",
+      "red": "Curve2DBezierTests.swift:38:9: Expectation failed: abs(p.y - 7.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bezier/",
+      "rewritten": "nested in `if let c`, so a nil curve passed"
+    }
+  },
+  {
+    "test_name": "Curve2D_Bezier_Properties::isRational",
+    "bridge_function": "OCCTCurve2DBezierIsRational",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isRational": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "isRational": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "negate IsRational()",
+      "red": "Curve2DBezierTests.swift:43:9: Expectation failed: !bp.isRational",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bezier/",
+      "rewritten": "nested in `if let c`, so a nil curve passed"
+    }
+  },
+  {
+    "test_name": "Curve2D_Bezier_Properties::resolution",
+    "bridge_function": "OCCTCurve2DBezierResolution",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "resolution(0.1)": 0.00333333333333
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "resolution(0.1)": 0.00333333333333
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "double the resolution",
+      "red": "Curve2DBezierTests.swift:50:9: Expectation failed: abs(r - 0.00333333333333) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bezier/",
+      "rewritten": "`r > 0`, nested in `if let c`, so a nil curve passed"
+    }
   }
 ]
