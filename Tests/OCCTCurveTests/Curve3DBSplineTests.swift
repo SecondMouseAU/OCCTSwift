@@ -5,7 +5,7 @@ import simd
 @testable import OCCTSwift
 
 // Pinned to Geom_BezierCurve, GeomAPI_Interpolate and GeomAPI_PointsToBSpline on the same inputs
-// (Scripts/repro/766-curve-arc-bezier-bspline/transcript.txt). The earlier versions checked
+// (Scripts/repro/766-curve-bezier-bspline/transcript.txt). The earlier versions checked
 // `!= nil`, or end points to 0.01 or 0.5, so an interpolant that missed its interior points, or
 // ignored its tangents, passed (#766). polesRoundtrip also force-unwrapped its fixtures.
 @Suite("Curve3D BSpline Tests")

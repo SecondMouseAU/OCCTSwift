@@ -5,7 +5,7 @@ import simd
 @testable import OCCTSwift
 
 // Pinned to Geom_BezierCurve after the same edit
-// (Scripts/repro/766-curve-arc-bezier-bspline/transcript.txt). The earlier versions nested their
+// (Scripts/repro/766-curve-bezier-bspline/transcript.txt). The earlier versions nested their
 // checks in `if let`, and setPoleWithWeight checked only the Bool the bridge returns, which is
 // `true` whether or not the edit happened (#766).
 @Suite("v0.126.0, Curve3D Bezier completions")
