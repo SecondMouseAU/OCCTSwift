@@ -268,6 +268,18 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **KD-Tree Spatial Queries** | Build KD-tree | KD-tree build | OCCTKDTreeBuild |
+| **KD-Tree Spatial Queries** | Empty points returns nil | KD-tree build | OCCTKDTreeBuild |
+| **KD-Tree Spatial Queries** | Nearest point - exact match | KD-tree nearest | OCCTKDTreeNearestPoint |
+| **KD-Tree Spatial Queries** | Nearest point - closest to query | KD-tree nearest | OCCTKDTreeNearestPoint |
+| **KD-Tree Spatial Queries** | K-nearest returns correct count | KD-tree k-nearest | OCCTKDTreeKNearest |
+| **KD-Tree Spatial Queries** | K-nearest includes self when exact | KD-tree k-nearest | OCCTKDTreeKNearest |
+| **KD-Tree Spatial Queries** | K larger than point count returns all | KD-tree k-nearest | OCCTKDTreeKNearest |
+| **KD-Tree Spatial Queries** | Range search - finds nearby points | KD-tree range search | OCCTKDTreeRangeSearch |
+| **KD-Tree Spatial Queries** | Range search - small radius finds only nearest | KD-tree range search | OCCTKDTreeRangeSearch |
+| **KD-Tree Spatial Queries** | Box search - finds points in AABB | KD-tree box search | OCCTKDTreeBoxSearch |
+| **KD-Tree Spatial Queries** | Box search - entire space | KD-tree box search | OCCTKDTreeBoxSearch |
+| **KD-Tree Spatial Queries** | Large point set performance | KD-tree nearest | OCCTKDTreeNearestPoint |
 
 ---
 
@@ -475,6 +487,18 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Build KD-tree | OCCTKDTreeBuild | KD-tree build | refuse to build | ✅ | ✅ |  |
+| Empty points returns nil | OCCTKDTreeBuild | KD-tree build | remove both empty guards (Swift and bridge) | ✅ | ✅ |  |
+| Nearest point - exact match | OCCTKDTreeNearestPoint | KD-tree nearest | skip the 1-based to 0-based conversion | ✅ | ✅ |  |
+| Nearest point - closest to query | OCCTKDTreeNearestPoint | KD-tree nearest | skip the 1-based to 0-based conversion | ✅ | ✅ |  |
+| K-nearest returns correct count | OCCTKDTreeKNearest | KD-tree k-nearest | drop the last result | ✅ | ✅ |  |
+| K-nearest includes self when exact | OCCTKDTreeKNearest | KD-tree k-nearest | drop the last result | ✅ | ✅ |  |
+| K larger than point count returns all | OCCTKDTreeKNearest | KD-tree k-nearest | drop the last result | ✅ | ✅ |  |
+| Range search - finds nearby points | OCCTKDTreeRangeSearch | KD-tree range search | drop the last result | ✅ | ✅ |  |
+| Range search - small radius finds only nearest | OCCTKDTreeRangeSearch | KD-tree range search | drop the last result | ✅ | ✅ |  |
+| Box search - finds points in AABB | OCCTKDTreeBoxSearch | KD-tree box search | drop the last result | ✅ | ✅ |  |
+| Box search - entire space | OCCTKDTreeBoxSearch | KD-tree box search | drop the last result | ✅ | ✅ |  |
+| Large point set performance | OCCTKDTreeNearestPoint | KD-tree nearest | skip the 1-based to 0-based conversion | ✅ | ✅ | Rewritten: only asserted a non-nil answer; now pins the unique nearest grid point |
 
 ---
 
