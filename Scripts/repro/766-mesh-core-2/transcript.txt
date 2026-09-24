@@ -1,0 +1,39 @@
+Presentation Mesh Tests:
+  box 10 at 0.1: shaded vertexCount=24 triangleCount=12
+  cylinder r5 h10 at 0.1: shaded vertexCount=106 triangleCount=100
+  box 10 at 0.1: distinct edges=12 segmentCount=12 vertexCount=24 (onTriangulation=12 polygon3D=0 discretised=0)
+  sphere r5 at 0.1: distinct edges=3 segmentCount=3 vertexCount=18 (onTriangulation=3 polygon3D=0 discretised=0)
+Drawer Mesh Extraction:
+  default drawer: type=0 (RELATIVE=0) coefficient=0.001 maxChordial=0.0001 angle=0.3490658503988659
+  box 10, default drawer: effective deflection=0.040000000800000005 angle=0.3490658503988659
+  box 10, default drawer: shaded vertexCount=24 triangleCount=12
+  box 10, default drawer: distinct edges=12 segmentCount=12 vertexCount=24 (onTriangulation=12 polygon3D=0 discretised=0)
+  sphere r10, coefficient 0.1: effective deflection=8.0000000799999995 angle=0.3490658503988659
+  sphere r10, coefficient 0.1: shaded vertexCount=344 triangleCount=648
+  same sphere, then coefficient 0.001: effective deflection=0.080000000799999998 angle=0.3490658503988659
+  same sphere, then coefficient 0.001: shaded vertexCount=642 triangleCount=1244
+  box 10, absolute 0.5: effective deflection=0.5 angle=0.3490658503988659
+  box 10, absolute 0.5: shaded vertexCount=24 triangleCount=12
+  sphere r10, absolute 0.5: effective deflection=0.5 angle=0.3490658503988659
+  sphere r10, absolute 0.5: shaded vertexCount=344 triangleCount=648
+  sphere r1, default drawer: effective deflection=0.0080000008000000004 angle=0.3490658503988659
+  sphere r1, default drawer: shaded vertexCount=642 triangleCount=1244
+  sphere r50, default drawer: effective deflection=0.40000000080000003 angle=0.3490658503988659
+  sphere r50, default drawer: shaded vertexCount=642 triangleCount=1244
+Issue1224 overload parity (absolute 0.1 drawer vs deflection 0.1):
+  box 10, deflection 0.1: shaded vertexCount=24 triangleCount=12
+  box 10, drawer: effective deflection=0.10000000000000001 angle=0.3490658503988659
+  box 10, drawer: shaded vertexCount=24 triangleCount=12
+  box 10, deflection 0.1: distinct edges=12 segmentCount=12 vertexCount=24 (onTriangulation=12 polygon3D=0 discretised=0)
+MeshCoordinateSystem: RWMesh_CoordinateSystem_Undefined=-1 Zup=0 Yup=1 Blender=0 glTF=1
+BRepMesh Deflection:
+  ComputeAbsoluteDeflection(box 10x20x30, 0.01, 30) = 0.15000000099999999
+  IsConsistent(current=0.1, required=0.2, allowDecrease=false, ratio=0.1) = 1
+  IsConsistent(current=0.2, required=0.2, allowDecrease=false, ratio=0.1) = 1
+  IsConsistent(current=0.21, required=0.2, allowDecrease=false, ratio=0.1) = 1
+  IsConsistent(current=0.3, required=0.2, allowDecrease=false, ratio=0.1) = 0
+  IsConsistent(current=0.05, required=0.2, allowDecrease=false, ratio=0.1) = 1
+  IsConsistent(current=0.01, required=0.2, allowDecrease=false, ratio=0.1) = 1
+BRepBuilderAPI_MakeShapeOnMesh:
+  tetrahedron: done=1 type=0 faces=4 edges=6 valid=1
+  single triangle: done=1 null=0 faces=1
