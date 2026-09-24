@@ -418,3 +418,17 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `unitString` | `OCCTDocumentVariableGetUnit` returns null | :39 Expectation failed: unit == "m/s" | passed | `OCCTDocumentVariableGetUnit` | PASS: m/s |
 | `constantFlag` | `OCCTDocumentVariableIsConstant` returns true | :49 Expectation failed: !doc.variableIsConstant(at: 1) | passed | `OCCTDocumentVariableIsConstant` | PASS: true, false |
 | `assignAndDesassignExpression` | `OCCTDocumentVariableIsAssigned` returns false | :58 Expectation failed: doc.variableIsAssigned(at: 1) | passed | `OCCTDocumentVariableIsAssigned` | PASS: true, false |
+### `TNamingBasicTests.swift`
+| `createLabel` | `OCCTDocumentCreateLabel` returns -1 | force-unwrap crash on the nil label (`createLabel()!`) | passed | `OCCTDocumentCreateLabel` | PASS: a new child of Main |
+| `createChildLabel` | `OCCTDocumentCreateLabel` returns -1 | force-unwrap crash on the nil parent label | passed | `OCCTDocumentCreateLabel` | PASS: a child label |
+| `recordPrimitive` | `OCCTDocumentNamingRecord` returns false | :32 Expectation failed: ok | passed | `OCCTDocumentNamingRecord` | PASS: recorded as PRIMITIVE (0) |
+| `currentShapeAfterPrimitive` | `OCCTDocumentNamingGetCurrentShape` returns null | :43 Expectation failed: current != nil | passed | `OCCTDocumentNamingGetCurrentShape` | PASS: current shape is the box |
+| `storedShape` | `OCCTDocumentNamingGetShape` returns null | :54 Expectation failed: stored != nil | passed | `OCCTDocumentNamingGetShape` | PASS: stored shape is the box |
+| `evolutionType` | `OCCTDocumentNamingGetEvolution` answers 99 | :64 Expectation failed: doc.namingEvolution(on: label) == .primitive | passed | `OCCTDocumentNamingGetEvolution` | PASS: PRIMITIVE (0) |
+| `noEvolutionOnEmptyLabel` | `OCCTDocumentNamingGetEvolution` answers 0 (primitive) where there is none | :71 Expectation failed: doc.namingEvolution(on: label) == nil | passed | `OCCTDocumentNamingGetEvolution` | PASS: no named shape |
+| `historyAfterPrimitive` | `OCCTDocumentNamingHistoryCount` answers 0 | :82 `history.count == 1`, then an index-out-of-range crash on `history[0]` | passed | `OCCTDocumentNamingHistoryCount` | PASS: 1 entry, new only |
+| `newShapeFromHistory` | `OCCTDocumentNamingGetNewShape` returns null | :96 Expectation failed: newShape != nil | passed | `OCCTDocumentNamingGetNewShape` | PASS: new present, old absent |
+| `modifyEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :111 Expectation failed: doc.namingEvolution(on: label) == .modify | passed | `OCCTDocumentNamingGetEvolution` | PASS: MODIFY (2) |
+| `deleteEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :124 Expectation failed: doc.namingEvolution(on: label) == .delete | passed | `OCCTDocumentNamingGetEvolution` | PASS: DELETE (3) |
+| `generatedEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :135 Expectation failed: doc.namingEvolution(on: label) == .generated | passed | `OCCTDocumentNamingGetEvolution` | PASS: GENERATED (1), old and new |
+| `multipleHistoryEntries` | `OCCTDocumentNamingHistoryCount` answers 0 | :153 Expectation failed: history.count >= 1 | passed | `OCCTDocumentNamingHistoryCount` | PASS: at least 1 |
