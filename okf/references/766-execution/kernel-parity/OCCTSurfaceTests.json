@@ -10103,5 +10103,541 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "ProjectCurveOnSurface Tests::project line onto plane",
+    "bridge_function": "OCCTProjectCurveOnSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "value(0)": [
+          1,
+          2
+        ],
+        "value(10)": [
+          11,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "value(0)": [
+          1,
+          2
+        ],
+        "value(10)": [
+          11,
+          2
+        ]
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt projectLineOnPlane (the 2D line comes back untrimmed, +-2e100)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.113.0 - ProjectionOnSurface::multiResultProjection",
+    "bridge_function": "OCCTProjOnSurfPoint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "count": 2,
+        "near": [
+          5,
+          0,
+          0
+        ],
+        "uv": [
+          0,
+          0
+        ],
+        "distances": [
+          5,
+          15
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "count": 2,
+        "near": [
+          5,
+          0,
+          0
+        ],
+        "uv": [
+          0,
+          0
+        ],
+        "distances": [
+          5,
+          15
+        ]
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt multiResultProjection"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_RectangularTrimmedSurface Tests::trimPlane",
+    "bridge_function": "OCCTSurfaceCreateRectangularTrimmed",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          -5,
+          5,
+          -3,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          -5,
+          5,
+          -3,
+          3
+        ]
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt trimPlane"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_RectangularTrimmedSurface Tests::trimInU",
+    "bridge_function": "OCCTSurfaceCreateTrimmedInU",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          -2,
+          2,
+          "-2e100",
+          "2e100"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          -2,
+          2,
+          "-2e100",
+          "2e100"
+        ]
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt trimInU"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_RectangularTrimmedSurface Tests::trimInV",
+    "bridge_function": "OCCTSurfaceCreateTrimmedInV",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          "-2e100",
+          "2e100",
+          -3,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          "-2e100",
+          "2e100",
+          -3,
+          3
+        ]
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt trimInV"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Revolution Feature::Revolved boss on box",
+    "bridge_function": "OCCTShapeRevolFeature",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 8392699.081698727
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 8392699.081698727
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt revolvedBoss (top-face profile); the original input returned the box unchanged, volume 8e6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Revolution Feature::Revolved feature thru all (360)",
+    "bridge_function": "OCCTShapeRevolFeatureThruAll",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 8882194.478400942
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 8882194.478400942
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt revolvedThruAll (top-face profile)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Revolution Form Feature::Add revolution form to shape",
+    "bridge_function": "OCCTShapeAddRevolutionForm",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt addRevolutionForm: BRepLib_FindSurface found=0 on a single segment"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Revolution from Curve::Revolve segment into cylinder",
+    "bridge_function": "OCCTShapeCreateRevolutionFromCurve",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 785.3981633974482
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 785.3981633974482
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt revolveSegment"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Revolution from Curve::Revolve circle into torus-like shape",
+    "bridge_function": "OCCTShapeCreateRevolutionFromCurve",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": null,
+        "area": 1184.3525281307232
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": -1776.5287921960844,
+        "area": 1184.3525281307232
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt revolveCircle"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Revolution from Curve::Partial revolution",
+    "bridge_function": "OCCTShapeCreateRevolutionFromCurve",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 196.34954084936206
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 196.34954084936206
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt partialRevolution"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.127.0, Section with Plane/Surface::Section shape with plane produces edges",
+    "bridge_function": "OCCTShapeSectionWithPlane",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "edges": 4
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "edges": 4
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt sectionWithPlane z = 5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.127.0, Section with Plane/Surface::Section shape with cylindrical surface",
+    "bridge_function": "OCCTShapeSectionWithSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "edges": 4
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "edges": 4
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt sectionWithSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Shape.revolutionAxes::Cylinder yields exactly one axis",
+    "bridge_function": "OCCTShapeRevolutionAxes",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "axis": "loc (0,0,0) dir (0,0,1)"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "axis": "loc (0,0,0) dir (0,0,1)"
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt cylinderOneAxis"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Shape.revolutionAxes::Box yields no revolution axes",
+    "bridge_function": "OCCTShapeRevolutionAxes",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "axes": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "axes": 0
+      },
+      "source": "a box has only planar faces (BRepAdaptor_Surface type Plane)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Shape.revolutionAxes::Torus yields one deduplicated axis",
+    "bridge_function": "OCCTShapeRevolutionAxes",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "axes": 1,
+        "kind": "torus"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "axes": 1,
+        "kind": "torus"
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt torus (one toroidal face)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Shape.revolutionAxes::Coaxial cylinder + torus collapse to one axis",
+    "bridge_function": "OCCTShapeRevolutionAxes",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "axes": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "axes": 1
+      },
+      "source": "bridge-side dedup of coaxial axes, no single kernel call"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.137 Shape.revolutionAxes::Cylinder's revolution axis reports a real, non-nil extent matching its height",
+    "bridge_function": "OCCTShapeRevolutionAxes",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "extent span": 20
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "extent span": 20
+      },
+      "source": "extent measured by the bridge from the face bounding box"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.137 Shape.revolutionAxes::More than 256 distinct revolution axes: reported count never exceeds the buffer capacity",
+    "bridge_function": "OCCTShapeRevolutionAxes",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "axes": 256
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "axes": 256
+      },
+      "source": "N/A: a buffer-capacity contract, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Shell from Surface::Shell from cylinder surface",
+    "bridge_function": "OCCTShapeMakeShell",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 314.1592653589793
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 314.1592653589793
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt shellFromCylinder"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shell from Surface::Shell from plane surface",
+    "bridge_function": "OCCTShapeMakeShell",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 99.99999999999999
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 99.99999999999999
+      },
+      "source": "Scripts/repro/766-projection-trim-revolution-section/transcript.txt shellFromPlane"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
