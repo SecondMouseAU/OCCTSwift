@@ -403,3 +403,18 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `deleteFunction` | `OCCTDocumentDeleteFunction` returns false | :26 Expectation failed: deleted | passed | `OCCTDocumentDeleteFunction` | N/A: TFunction_IFunction::DeleteFunction; not probed in this pass, so no kernel value is claimed |
 | `functionExecStatus` | `OCCTDocumentFunctionSetExecStatus` returns true without setting | :41 Expectation failed: status == .succeeded | passed | `OCCTDocumentFunctionSetExecStatus` | N/A: status round-trip; not probed in this pass, so no kernel value is claimed |
 | `noFunction` | `OCCTDocumentFunctionGetExecStatus` answers 0 | :50 Expectation failed: status == nil | passed | `OCCTDocumentFunctionGetExecStatus` | N/A: no function on a fresh label; not probed in this pass, so no kernel value is claimed |
+### `TObjApplicationTests.swift`
+| `getInstance` | `OCCTTObjApplicationGetInstance` returns null | :10 Expectation failed: app != nil | passed | `OCCTTObjApplicationGetInstance` | PASS: non-null |
+| `verboseFlag` | `OCCTTObjApplicationIsVerbose` returns false | :21 Expectation failed: app.isVerbose | passed | `OCCTTObjApplicationIsVerbose` | PASS: true, false |
+| `createDocument` | `OCCTTObjApplicationCreateDocument` returns null | :32 Expectation failed: doc != nil | passed | `OCCTTObjApplicationCreateDocument` | PASS: created |
+### `UAttributeTests.swift`
+| `setAndHas` | `OCCTUAttributeHas` returns false | :13 Expectation failed: doc.hasUAttribute(tag: 300, guid: guid) | passed | `OCCTUAttributeHas` | PASS: true |
+| `differentGUID` | `OCCTUAttributeHas` returns true | :22 Expectation failed: !doc.hasUAttribute(tag: 301, guid: guid2) | passed | `OCCTUAttributeHas` | PASS: g1 yes, g2 no |
+| `getID` | `OCCTUAttributeGetID` returns null | :30 Expectation failed: retrieved != nil | passed | `OCCTUAttributeGetID` | N/A: the GUID string is the one passed in; not probed in this pass, so no kernel value is claimed |
+### `VariableTests.swift`
+| `setVariable` | `OCCTDocumentVariableSet` returns false | :11 Expectation failed: ok | passed | `OCCTDocumentVariableSet` | PASS: set |
+| `setAndGetName` | `OCCTDocumentVariableGetName` returns null | :20 Expectation failed: name == "velocity" | passed | `OCCTDocumentVariableGetName` | PASS: velocity |
+| `setAndGetValue` | `OCCTDocumentVariableGetValue` answers 0 | :30 Expectation failed: abs(val - 42.5) < 1e-10 | passed | `OCCTDocumentVariableGetValue` | PASS: 42.5 |
+| `unitString` | `OCCTDocumentVariableGetUnit` returns null | :39 Expectation failed: unit == "m/s" | passed | `OCCTDocumentVariableGetUnit` | PASS: m/s |
+| `constantFlag` | `OCCTDocumentVariableIsConstant` returns true | :49 Expectation failed: !doc.variableIsConstant(at: 1) | passed | `OCCTDocumentVariableIsConstant` | PASS: true, false |
+| `assignAndDesassignExpression` | `OCCTDocumentVariableIsAssigned` returns false | :58 Expectation failed: doc.variableIsAssigned(at: 1) | passed | `OCCTDocumentVariableIsAssigned` | PASS: true, false |
