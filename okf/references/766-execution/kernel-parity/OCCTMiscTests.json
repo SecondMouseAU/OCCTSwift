@@ -37,16 +37,19 @@
       "type": "diagnostic_record",
       "data": {
         "result": null,
+        "count": 1,
         "kind": "occtFailure",
         "exceptionType": "Standard_ConstructionError",
-        "function": "OCCTShapeHistoryFromRotate"
+        "messageContains": "zero norm",
+        "function": "OCCTShapeHistoryFromRotate",
+        "stackTraceEmpty": true
       }
     },
     "kernel_output": {
       "type": "caught_exception",
       "data": {
         "exceptionType": "Standard_ConstructionError",
-        "message": "gp_Dir() - input vector has zero norm (gp_Ax1(origin, gp_Dir(0,0,0)))"
+        "message": "gp_Dir() - input vector has zero norm"
       }
     },
     "comparison": {
