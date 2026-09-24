@@ -1,0 +1,6 @@
+3D segment: whole 10 | (f, nan) nan | (nan, l) nan | (nan, nan) nan | (f, +inf) inf | (-inf, l) inf
+3D circle: whole 31.4159265 | (f, nan) nan | (nan, l) nan | (nan, nan) nan | (f, +inf) inf | (-inf, l) inf
+3D multi-span NbIntervals(CN) 4
+3D multi-span: whole 528.749723 | (f, nan) 0 | (nan, l) 528.75 | (nan, nan) 528.75 | (f, +inf) 528.75 | (-inf, l) 528.75
+2D multi-span: whole 457.259668 | (f, nan) 0 | (nan, l) 457.26 | (nan, nan) 457.26 | (f, +inf) 457.26 | (-inf, l) 457.26
+straight edge: whole 10 | (f, nan) nan | (nan, l) nan | (nan, nan) nan | (f, +inf) inf | (-inf, l) inf
