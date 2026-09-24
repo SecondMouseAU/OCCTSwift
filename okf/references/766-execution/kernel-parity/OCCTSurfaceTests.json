@@ -1615,5 +1615,366 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate resolution order is bounded and load-bearing (#1017)::An order outside 2...9 is refused rather than silently ignored",
+    "bridge_function": "OCCTSurfaceNLPlateG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "orders 0,1,10,12,100,-1": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "orders 0,1,10,12,100,-1": "nil"
+      },
+      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt: Solve2 at orders 0,1,10,12,100,-1 reports IsDone=1 with Evaluate(0,0)=(0,0,0), the undeformed plane; the refusal is the bridge guard"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate resolution order is bounded and load-bearing (#1017)::Every order the kernel accepts still builds and deforms",
+    "bridge_function": "OCCTSurfaceNLPlateG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "orders 2..9": "deformed, max|z| > 1"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "orders 2..9": "deformed, max|z| > 1"
+      },
+      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt: Evaluate(0,0) z = 5.875 (order 2) and 5.0 (orders 3-9)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate resolution order is bounded and load-bearing (#1017)::Two accepted orders produce different surfaces",
+    "bridge_function": "OCCTSurfaceNLPlateG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "lowZ(order 2)": 5.875,
+        "highZ(order 8)": -16.9348871193
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "refit lowZ(order 2)": 5.87499997964,
+        "refit highZ(order 8)": -16.9348871193,
+        "Evaluate z(order 8)": 4.99999979268
+      },
+      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt \"1017 refit\" lines"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate resolution order is bounded and load-bearing (#1017)::The default order moves the surface off the input plane",
+    "bridge_function": "OCCTSurfaceNLPlateG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "order 4 Evaluate(0,0).z": 4.99999993531
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "order 4 Evaluate(0,0).z": 4.99999993531
+      },
+      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate keeps the input surface's position and parametrisation (#1049, #1046)::The fixture plane is parametrised as (100 + u, v, 0)",
+    "bridge_function": "OCCTSurfacePlaneFromPointNormal",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          100,
+          0,
+          0
+        ],
+        "S(3,4)": [
+          103,
+          4,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          100,
+          0,
+          0
+        ],
+        "S(3,4)": [
+          103,
+          4,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt 1049 fixture"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate keeps the input surface's position and parametrisation (#1049, #1046)::An identity constraint returns the input surface, G0",
+    "bridge_function": "OCCTSurfaceNLPlateG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "deviation_lt": 1e-09
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "deviation_lt": 1e-09
+      },
+      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt 1049 identity G0: Evaluate(10,10)=(110,10,0), the base point itself"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate keeps the input surface's position and parametrisation (#1049, #1046)::An identity constraint returns the input surface, G1",
+    "bridge_function": "OCCTSurfaceNLPlateG1",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "deviation_lt": 1e-09
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "deviation_lt": 1e-09
+      },
+      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt 1049 identity G0: Evaluate(10,10)=(110,10,0), the base point itself"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate keeps the input surface's position and parametrisation (#1049, #1046)::An identity constraint returns the input surface, G2",
+    "bridge_function": "OCCTSurfaceNLPlateG2",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "deviation_lt": 1e-09
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "deviation_lt": 1e-09
+      },
+      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt 1049 identity G0: Evaluate(10,10)=(110,10,0), the base point itself"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate keeps the input surface's position and parametrisation (#1049, #1046)::An identity constraint returns the input surface, G3",
+    "bridge_function": "OCCTSurfaceNLPlateG3",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "deviation_lt": 1e-09
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "deviation_lt": 1e-09
+      },
+      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt 1049 identity G0: Evaluate(10,10)=(110,10,0), the base point itself"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate keeps the input surface's position and parametrisation (#1049, #1046)::An identity constraint returns the input surface, incremental",
+    "bridge_function": "OCCTSurfaceNLPlateIncrementalG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "deviation_lt": 1e-09
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "deviation_lt": 1e-09
+      },
+      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt 1049 identity G0: Evaluate(10,10)=(110,10,0), the base point itself"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate keeps the input surface's position and parametrisation (#1049, #1046)::A pure-Z constraint moves z and leaves x and y alone",
+    "bridge_function": "OCCTSurfaceNLPlateG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "Evaluate(10,-10)": [
+          110,
+          -10,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "Evaluate(10,-10)": [
+          110,
+          -10,
+          5
+        ]
+      },
+      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt 1049 pure-Z"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate keeps the input surface's position and parametrisation (#1049, #1046)::The constrained point is where the caller asked for it",
+    "bridge_function": "OCCTSurfaceNLPlateG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          100,
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          100,
+          0,
+          5
+        ]
+      },
+      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt 1049 pure-Z at the constraint: Evaluate(0,0)=(100,0,5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate keeps the input surface's position and parametrisation (#1049, #1046)::The output carries the working domain, not [0, 1]",
+    "bridge_function": "OCCTSurfaceNLPlateG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "domain": [
+          -10,
+          10,
+          -10,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "domain": [
+          -10,
+          10,
+          -10,
+          10
+        ]
+      },
+      "source": "the working domain is the bridge's own construction (constraint span padded by 10); no kernel counterpart beyond Bounds() of the unbounded plane"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate keeps the input surface's position and parametrisation (#1049, #1046)::A bounded direction keeps the input surface's own range",
+    "bridge_function": "OCCTSurfaceNLPlateG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "u range": [
+          0,
+          6.283185307179586
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "u range": [
+          0,
+          6.283185307179586
+        ]
+      },
+      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt 1049 cylinder bounds: u=[0, 2pi]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
