@@ -1,0 +1,17 @@
+raycast box: NbPnt = 2
+extrema skew segments: NbExtrema = 1
+segment x plane z=0: NbPoints = 1
+segment as BSpline: NbKnots = 2 (one C0-free piece)
+2D segment as BSpline: NbKnots = 2
+plane z=0 x plane y=0: NbLines = 1
+project (5,5,0) on segment: NbPoints = 1
+project (1,1,5) on plane: NbPoints = 1
+box to sphere: IsDone = 1, Value = 0, NbSolution = 3
+box self-intersection: overlap entries = 0
+kd kNearest(k=3): 3
+kd RangeSearch(r=10): 3
+kd BoxSearch(+-9): 3
+ConvertUnicodeToFormat("hello") ok = 1, out = "hello"
+OSD_FileIterator: 7 files, OSD_DirectoryIterator: 2 directories
+GeomLib_LogSample(1, 100, 16): NbPoints = 16, first = 1, last = 100
+GeomLib_LogSample(1, 100, 1): NbPoints = 1

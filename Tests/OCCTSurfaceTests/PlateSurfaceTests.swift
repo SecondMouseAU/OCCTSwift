@@ -6,6 +6,12 @@ import simd
 @Suite("Plate Surface Tests")
 struct PlateSurfaceTests {
 
+    // #766: three of these asserted `isValid` only inside `if let surface`, so a nil surface
+    // passed. The kernel builds all three; each now requires the face and pins its area from the
+    // same GeomPlate_BuildPlateSurface -> GeomPlate_MakeApprox -> MakeFace chain, see
+    // Scripts/repro/766-plate-solver-surface/. (The corner-points and two-curve faces come out
+    // 11 x 11, area 121, over the 10 x 10 input: the approximation's own extent.)
+
     @Test("Plate surface through grid of points")
     func plateThroughGridPoints() {
         // Create a grid of points for plate surface
@@ -24,10 +30,14 @@ struct PlateSurfaceTests {
         ]
 
         let surface = Shape.plateSurface(through: points, tolerance: 1.0)
-
-        // GeomPlate algorithms are complex - test API works
+        #expect(surface != nil)
         if let surface = surface {
             #expect(surface.isValid)
+            #expect(abs((surface.surfaceArea ?? 0) - 122.93065426620325) < 1e-6)
+            // It passes through the raised centre point.
+            if let v = Shape.vertex(at: SIMD3(5, 5, 1)) {
+                #expect((surface.minDistance(to: v) ?? 1) < 1e-6)
+            }
         }
     }
 
@@ -42,10 +52,16 @@ struct PlateSurfaceTests {
         ]
 
         let surface = Shape.plateSurface(through: points, tolerance: 1.0)
-
-        // Test API interface
+        #expect(surface != nil)
         if let surface = surface {
             #expect(surface.isValid)
+            #expect(abs((surface.surfaceArea ?? 0) - 121) < 1e-6)
+            // It passes through all four corners (the kernel's worst distance is 4.4e-16).
+            for c in points {
+                if let v = Shape.vertex(at: c) {
+                    #expect((surface.minDistance(to: v) ?? 1) < 1e-6)
+                }
+            }
         }
     }
 
@@ -78,9 +94,10 @@ struct PlateSurfaceTests {
             tolerance: 1.0
         )
 
-        // Just verify we don't crash and API returns expected type
+        #expect(surface != nil)
         if let surface = surface {
             #expect(surface.isValid)
+            #expect(abs((surface.surfaceArea ?? 0) - 121) < 1e-6)
         }
     }
 }

@@ -35,6 +35,9 @@ struct ConstructionAxisTests {
         switch graph.resolve(ConstructionAxis.alongEdge(edge)) {
         case .success(let ax):
             #expect(abs(simd_length(ax.direction) - 1.0) < 1e-6)
+            // Kernel: edge 0 runs (-5,-5,-5) to (-5,-5,5).
+            #expect(simd_distance(ax.origin, SIMD3(-5, -5, -5)) < 1e-9)
+            #expect(simd_distance(ax.direction, SIMD3(0, 0, 1)) < 1e-9)
         case .failure: Issue.record("alongEdge failed")
         }
     }
@@ -886,6 +889,10 @@ struct ConstructionAxisTests {
         switch graph.resolve(ConstructionAxis.normalToFace(face: faceRef, at: vertexRef)) {
         case .success(let ax):
             #expect(abs(simd_length(ax.direction) - 1.0) < 1e-6)
+            // Kernel: vertex 0 (-5,-5,-5) lies on face 0, the x = -5 wall, whose outward
+            // normal there is (-1, 0, 0). Unit length alone passed a reversed normal.
+            #expect(simd_distance(ax.direction, SIMD3(-1, 0, 0)) < 1e-9)
+            #expect(simd_distance(ax.origin, SIMD3(-5, -5, -5)) < 1e-9)
         case .failure: Issue.record("normalToFace failed")
         }
     }
