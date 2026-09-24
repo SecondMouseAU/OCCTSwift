@@ -1,0 +1,4 @@
+lineCylinderDistance parallel line (20,0,0)+t(0,0,1): IsDone=1 IsParallel=1  child terminated by signal 11
+lineCylinderDistance perpendicular line (20,0,0)+t(0,1,0): IsDone=1 IsParallel=0 NbExt=2
+  ext 1: SquareDistance=225 onLine=(20, 0, 0) onCyl=(5, 0, 0)
+  ext 2: SquareDistance=625 onLine=(20, 0, 0) onCyl=(-5, 6.1232339957367663e-16, 0)
