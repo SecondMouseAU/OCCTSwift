@@ -1,0 +1,37 @@
+== FilletBuilder (BRepFilletAPI_MakeFillet)
+buildEmpty: Build threw There are no suitable edges for chamfer or fillet
+normalCycle: IsDone=1 volume=997.8539816 contours=1 HasResult=0
+doubleBuild: second Build IsDone=1 volume=1000
+invalidInput: IsDone=0
+queryContourDetails: IsDone=1 contours=2 [r=1 len=10 const=1] [r=2 len=10 const=1]
+== ChamferBuilder (BRepFilletAPI_MakeChamfer)
+buildEmpty: Build threw There are no suitable edges for chamfer or fillet
+normalCycleSymmetric: IsDone=1 volume=995 contours=1
+doubleBuild: second Build IsDone=1 volume=1000
+invalidInput: IsDone=0
+queryContourDetails: contours=1 symmetric=1 distAngle=0 twoDists=0
+== PipeShellBuilder (BRepOffsetAPI_MakePipeShell, Frenet)
+buildEmpty: Build threw PipeShell
+normalCycle: IsDone=1 faces=1 area=789.5683521 valid=1
+simulateBeforeBuild: sections=5
+== SewingBuilder (BRepBuilderAPI_Sewing)
+normalCycle: type=3 valid=1 volume=1000
+twoShapes: faces=12 valid=1
+extendedQueries: NbDeletedFaces=0
+== WireBuilder (BRepBuilderAPI_MakeWire)
+normalCycle: first 4 explored edges IsDone=1 edges=4
+addWireShape: IsDone=1 edges=4
+== UnifySameDomain
+normalCycle: fused faces=12 -> unified faces=12 volume=2000
+buildWithoutModification / withTolerances: faces=6 volume=1000
+== ThruSections
+normalCycle: IsDone=1 volume=513.1268001 (frustum pi*10/3*(25+15+9)=513.1268001)
+doubleBuild: second IsDone=1 volume=513.1268001
+== CellsBuilder (BOPAlgo_CellsBuilder)
+normalCycle: solids=2 volume=8000 valid=1
+removeAll: faces=0
+== SectionBuilder (BRepAlgoAPI_Section)
+normalCycleTwoShapes / initThenSetShapes / doubleBuild: IsDone=1 edges=0 vertices=6
+sectionWithPlane: IsDone=1 edges=4
+== ShapeFixer (ShapeFix_Shape)
+normalCycle / fixAlreadyGoodShape: Perform=0 volume=1000 valid=1
