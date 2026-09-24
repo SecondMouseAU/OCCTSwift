@@ -1,0 +1,15 @@
+slerpMidpoint: (x, y, z, w) = (0, 0, 0.38268343236508978, 0.92387953251128696)
+nlerpEndpoints t=0: (x, y, z, w) = (0, 0, 0, 1)
+transformInterpolate: translation (5, 0, 0)
+transformInterpolate rotation: (x, y, z, w) = (0, 0, 0, 1)
+identity (default): (x, y, z, w) = (0, 0, 0, 1)
+identity Quaternion() = (0, 0, 0, 1): (x, y, z, w) = (0, 0, 0, 1)
+fromAxisAngle rotate (1,0,0): (1.9967346175427393e-16, 1, 0)
+fromVectors rotate (1,0,0): (-2.2371143170757388e-17, 1, 0)
+eulerAngles: order 8 (gp_Intrinsic_XYZ=8) alpha=0.78539816339744839 beta=0 gamma=0
+matrix: [ 2.2204460492503131e-16 -1 0 1 2.2204460492503131e-16 0 0 0 1 ]
+multiply rotate (1,0,0): (-1.7938038903913487e-16, 1, 0)
+axisAngle: axis (0, 0, 1) angle 0.52359877559829882 (pi/6 = 0.52359877559829882)
+rotationAngle: 1.0471975511965976 (pi/3 = 1.0471975511965976)
+normalize: (x, y, z, w) = (0.18257418583505536, 0.36514837167011072, 0.54772255750516607, 0.73029674334022143)
+normalize: norm 0.99999999999999989
