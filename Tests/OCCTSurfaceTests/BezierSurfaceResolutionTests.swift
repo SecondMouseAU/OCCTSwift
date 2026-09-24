@@ -10,6 +10,7 @@ struct BezierSurfaceResolutionTests {
         // Use a simple box face, it's a plane, not a Bezier. Let's use Surface.bezier if available.
         // Actually, let's just test with what we have, if not Bezier it returns 0.
         let md = Surface.bezierMaxDegree
-        #expect(md >= 25)
+        // #766: Geom_BezierSurface::MaxDegree() is 25; `>= 25` passed any larger value too.
+        #expect(md == 25)
     }
 }
