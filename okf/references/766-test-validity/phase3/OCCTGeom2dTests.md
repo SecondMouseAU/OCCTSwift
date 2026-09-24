@@ -593,3 +593,13 @@ Probe: `Scripts/repro/766-geom2d-param-at-length-point2d/`. Every row was run re
 | Geom2d_Circle Properties::circle2DEccentricity | `OCCTCurve2DCircleEccentricity` | eccentricity + 0.1 | ✅ | ✅ | MATCH | nested in `if let c` |
 | Geom2d_Circle Properties::circle2DCenter | `OCCTCurve2DCircleCenter` | centre x + 1 | ✅ | ✅ | MATCH | nested in `if let c` |
 | Geom2d_Circle Properties::circle2DXAxis | `OCCTCurve2DCircleXAxis` | swap the direction components | ✅ | ✅ | MATCH | nested in `if let c`; checked only the direction x, now position too |
+### #1979 executed: `Curve2DGccTests.swift`, `Curve2DHatchingTests.swift`
+Probe: `Scripts/repro/766-geom2d-gcc-hatching/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D Gcc Tests::Circle through three points | `OCCTGccCircle2d3Pt` | centre x + 1 | ✅ | ✅ | MATCH | `radius > 0`; now pins centre and radius |
+| Curve2D Gcc Tests::Circles through two points with radius | `OCCTGccCircle2d2PtRad` | centre y x 0.5 | ✅ | ✅ | MATCH | radius only; now pins both centres |
+| Curve2D Gcc Tests::Circle tangent to curve with center | `OCCTGccCircle2dTanCen` | radius + 0.5 | ✅ | ✅ | MATCH | `count >= 1` inside `if let first`; now one solution, radius to 1e-9 |
+| Curve2D Gcc Tests::Lines tangent to circle through point | `OCCTGccLine2dTanPt` | drop the qualifier (unqualified) | ✅ | ✅ | MATCH | `count >= 1`; now pins the single outside tangent |
+| Curve2D Gcc Tests::Circles tangent to curve and point with radius | `OCCTGccCircle2dTanPtRad` | point x + 1 | ✅ | ✅ | MATCH | `count >= 1`; now pins both centres |
+| Curve2D Hatching Tests::Hatch a rectangular boundary | `OCCTCurve2DHatch` | spacing x 1.25 | ✅ | ✅ | MATCH | `count >= 1`; now pins the four interior lines |
+| Curve2D Hatching Tests::Hatch output is not silently truncated at half the buffer's real capacity (#1420) | `OCCTCurve2DHatch` | spacing x 1.25 | ✅ | ✅ | MATCH | strengthened: the (2048, 4096] bounds are kept and the exact kernel count 2999 is pinned |
+| Curve2D Hatching Tests::Hatch result is independent of boundary winding direction (#1496) | `OCCTCurve2DHatch` | always add boundary elements FORWARD (the #1496 defect) | ✅ | ✅ | MATCH | not rewritten: it already compares the clockwise hatch with the counter-clockwise one |
