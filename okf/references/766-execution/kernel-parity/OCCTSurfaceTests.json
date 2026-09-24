@@ -1,22 +1,5 @@
 [
   {
-    "test_name": "Surface domain kernel parity",
-    "bridge_function": "OCCTSurfacePlaceholder",
-    "bridge_output": {
-      "type": "object",
-      "data": {}
-    },
-    "kernel_output": {
-      "type": "object",
-      "data": {}
-    },
-    "comparison": {
-      "equal": null,
-      "differences": []
-    },
-    "status": "PENDING"
-  },
-  {
     "test_name": "Advanced Plate Surface Tests::Plate surface with G0 constraint orders",
     "bridge_function": "OCCTShapePlatePointsAdvanced",
     "bridge_output": {
@@ -15031,6 +15014,318 @@
       "type": "measurement",
       "data": {},
       "source": "Scripts/repro/766-issue491-522-572/transcript.txt lines 2 and 3: '491 sphere r=10 tol 1e-9 C2: IsDone=0 HasResult=1 MaxError=3.11e-09' and '491 torus 20/5 tol 1e-9 C2: IsDone=0 HasResult=1 MaxError=0.000395'"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_Profiler::add curves and perform",
+    "bridge_function": "OCCTGeomFillProfilerNbPoles",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": 14,
+        "nbPoles": 15,
+        "nbKnots": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": 14,
+        "nbPoles": 15,
+        "nbKnots": 2
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt profiler circles r5 z0 + r3 z10"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_Profiler::null-handle guard does not block a valid curve (#710 regression)",
+    "bridge_function": "OCCTGeomFillProfilerAddCurve",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": 14,
+        "nbPoles": 15
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": 14,
+        "nbPoles": 15
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt profiler circles r5 z0 + r3 z10"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_Profiler::extract poles",
+    "bridge_function": "OCCTGeomFillProfilerPoles",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "poles(1)[0]": [
+          5,
+          0,
+          0
+        ],
+        "poles(1)[1]": [
+          5,
+          2.24399475257,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "poles(1)[0]": [
+          5,
+          0,
+          0
+        ],
+        "poles(1)[1]": [
+          5,
+          2.24399475257,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt profiler Poles(1)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_Profiler::knots and multiplicities",
+    "bridge_function": "OCCTGeomFillProfilerKnotsAndMults",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "knots": [
+          0,
+          6.28318530718
+        ],
+        "mults": [
+          15,
+          15
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "knots": [
+          0,
+          6.28318530718
+        ],
+        "mults": [
+          15,
+          15
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt profiler circles r5 z0 + r4 z5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_SectionPlacement::place section on path",
+    "bridge_function": "OCCTGeomFillSectionPlacement",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "distance": 2,
+        "angle": 1.57079632679
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "distance": 2,
+        "angle": 1.57079632679
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt sectionPlacement"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_SectionPlacement::query placement parameters",
+    "bridge_function": "OCCTGeomFillSectionPlacement",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "parameterOnPath": 0,
+        "parameterOnSection": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "parameterOnPath": 0,
+        "parameterOnSection": 0
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt sectionPlacement"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_SectionPlacement::null-handle guard does not block a valid section (#710 regression)",
+    "bridge_function": "OCCTGeomFillSectionPlacement",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "isDone": true,
+        "distance": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "isDone": true,
+        "distance": 2
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt sectionPlacement"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_Stretch::stretch fill from 4 boundary point arrays",
+    "bridge_function": "OCCTGeomFillStretch",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "nbU": 3,
+        "nbV": 3,
+        "poles[1]": [
+          0,
+          5,
+          2
+        ],
+        "poles[4]": [
+          7.5,
+          7.5,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "nbU": 3,
+        "nbV": 3,
+        "poles[1]": [
+          0,
+          5,
+          2
+        ],
+        "poles[4]": [
+          7.5,
+          7.5,
+          3
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt stretchFill"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_Stretch::isRational for linear stretch",
+    "bridge_function": "OCCTGeomFillStretch",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "isRational": false
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "isRational": false
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt isRational"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill Sweep::Sweep circle along line",
+    "bridge_function": "OCCTGeomFillSweep",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "faceArea": 376.991118431,
+        "errorOnSurface": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "faceArea": 376.991118431,
+        "errorOnSurface": 0
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt sweepCircleAlongLine"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill Sweep::Rejects a sweep that misses its own tolerance instead of reporting it as done (#597)",
+    "bridge_function": "OCCTGeomFillSweep",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null,
+        "kernel errorOnSurface": 13.0281
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null,
+        "kernel errorOnSurface": 13.0281
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt sweepRejectsOutOfToleranceFit: IsDone=1 ErrorOnSurface=13.0281"
     },
     "comparison": {
       "equal": true,
