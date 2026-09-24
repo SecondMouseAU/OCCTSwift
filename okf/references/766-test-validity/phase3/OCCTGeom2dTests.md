@@ -262,3 +262,15 @@ Probe: `Scripts/repro/766-geom2d-circle-involute/`. Every row was run red with t
 | Curve2D — Circle Involute::createCircleInvoluteRejectsNearZeroLengthDirection | `OCCTGeom2dEvalCircleInvoluteCurveCreate` | Swift guard skipped, near-zero direction replaced by (1, 0) | ✅ | ✅ | MATCH |  |
 | Curve2D — Circle Involute::circleInvoluteD0WithPlacementRejectsZeroLengthDirection | `OCCTGeom2dEvalCircleInvoluteD0WithPlacement` | Swift guard skipped, zero direction replaced by (1, 0) | ✅ | ✅ | MATCH |  |
 | Curve2D — Circle Involute::circleInvoluteD1WithPlacementRejectsZeroLengthDirection | `OCCTGeom2dEvalCircleInvoluteD1WithPlacement` | Swift guard skipped, zero direction replaced by (1, 0) | ✅ | ✅ | MATCH |  |
+### #1979 executed: `Curve2DContinuityQueriesTests.swift`, `Curve2DContinuityTests.swift`, `Curve2DConvertExtrasTests.swift`
+Probe: `Scripts/repro/766-geom2d-continuity-convert/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D Continuity Queries v0.120.0::segmentContinuityClass | `OCCTCurve2DGetContinuity` | report 3 (C1) | ✅ | ✅ | MATCH | nested in `if let c` |
+| Curve2D Continuity Queries v0.120.0::isCN | `OCCTCurve2DIsCN` | negate IsCN() | ✅ | ✅ | MATCH | nested in `if let c` |
+| Curve2D Continuity Queries v0.120.0::reversedParameter | `OCCTCurve2DReversedParameter` | return u unchanged | ✅ | ✅ | MATCH | `rp.isFinite`; now pins -0.2 and -0.5 |
+| Curve2D Continuity Queries v0.120.0::bezierMaxDegree | `OCCTCurve2DBezierMaxDegree` | MaxDegree() - 1 | ✅ | ✅ | MATCH | `md >= 25`; now `== 25` |
+| Curve2D Continuity Queries v0.120.0::bsplineMaxDegree | `OCCTCurve2DBSplineMaxDegree` | MaxDegree() - 1 | ✅ | ✅ | MATCH | `md >= 25`; now `== 25` |
+| Curve2D Continuity Tests::line2DContinuity | `OCCTCurve2DGetContinuity` | report 3 (C1) | ✅ | ✅ | MATCH | `c >= 0`; now `== 6` (GeomAbs_CN) |
+| Curve2D Continuity Tests::bspline2DContinuity | `OCCTCurve2DGetContinuity` | report 3 (C1) | ✅ | ✅ | MATCH | `c >= 0`; now `== 4` (GeomAbs_C2) |
+| Curve2D Convert Extras Tests::Approximate circle as BSpline | `OCCTCurve2DApproximate` | tolerance x 10 | ✅ | ✅ | MATCH | `degree != nil`; now pins degree 7 and 13 poles |
+| Curve2D Convert Extras Tests::Split BSpline at discontinuities | `OCCTCurve2DSplitAtDiscontinuities` | split at continuity 3 whatever is asked | ✅ | ✅ | MATCH | `indices != nil`; now pins both split lists |
+| Curve2D Convert Extras Tests::Convert to arcs and segments | `OCCTCurve2DToArcsAndSegments` | drop the last curve | ✅ | ✅ | MATCH | `count >= 1`; now `== 2` |
