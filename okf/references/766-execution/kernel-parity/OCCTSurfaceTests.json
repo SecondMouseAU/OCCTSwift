@@ -2786,5 +2786,349 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface_Extras::resolution",
+    "bridge_function": "OCCTSurfaceBSplineResolution",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "u": 7.049445157140893e-05,
+        "v": 6.312909076351805e-05
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "u": 7.049445157140893e-05,
+        "v": 6.312909076351805e-05
+      },
+      "source": "Scripts/repro/766-bspline-extras-fill-iso/transcript.txt resolution"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface_Extras::getWeight",
+    "bridge_function": "OCCTSurfaceBSplineGetWeight",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "weight(1,1)": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "weight(1,1)": 1
+      },
+      "source": "Scripts/repro/766-bspline-extras-fill-iso/transcript.txt getWeight"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface_Extras::setUPeriodic",
+    "bridge_function": "OCCTSurfaceBSplineSetUPeriodic",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "returns": true,
+        "isUPeriodic": false,
+        "S(0.3,0.6)": [
+          2.4704944722029167,
+          5.466051783371696,
+          0.4728327067804845
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "returns": true,
+        "isUPeriodic": false,
+        "S(0.3,0.6)": [
+          2.4704944722029167,
+          5.466051783371696,
+          0.4728327067804845
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-extras-fill-iso/transcript.txt setU/VPeriodic(false)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface_Extras::setVPeriodic",
+    "bridge_function": "OCCTSurfaceBSplineSetVPeriodic",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "returns": true,
+        "isVPeriodic": false
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "returns": true,
+        "isVPeriodic": false
+      },
+      "source": "Scripts/repro/766-bspline-extras-fill-iso/transcript.txt setU/VPeriodic(false)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Fill::Fill from 2 boundary curves",
+    "bridge_function": "OCCTSurfaceFillBSpline2Curves",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "uMax": 10.770329614269007,
+        "S(mid,0)": [
+          5,
+          0,
+          2
+        ],
+        "S(mid,1)": [
+          5,
+          10,
+          2
+        ],
+        "S(0.3uMax,0.6)": [
+          3,
+          6,
+          1.68
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "uMax": 10.770329614269007,
+        "S(mid,0)": [
+          5,
+          0,
+          2
+        ],
+        "S(mid,1)": [
+          5,
+          10,
+          2
+        ],
+        "S(0.3uMax,0.6)": [
+          3,
+          6,
+          1.68
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-extras-fill-iso/transcript.txt twoCurveFill stretch"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Fill::Fill from 4 boundary curves (Coons)",
+    "bridge_function": "OCCTSurfaceFillBSpline4Curves",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,0)": [
+          5,
+          0,
+          1
+        ],
+        "S(0.5,1)": [
+          5,
+          10,
+          1
+        ],
+        "S(0.3,0.6)": [
+          2.955365888476319,
+          6.02550520658496,
+          1.7863972231546879
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,0)": [
+          5,
+          0,
+          1
+        ],
+        "S(0.5,1)": [
+          5,
+          10,
+          1
+        ],
+        "S(0.3,0.6)": [
+          2.955365888476319,
+          6.02550520658496,
+          1.7863972231546879
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-extras-fill-iso/transcript.txt fourCurveCoonsFill coons (Coons and stretch identical here); c4 := c1 terminated the probe by SIGSEGV"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Fill::Stretch fill style",
+    "bridge_function": "OCCTSurfaceFillBSpline2Curves",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(mid,0)": [
+          5,
+          0,
+          3
+        ],
+        "S(0.3uMax,0.6)": [
+          3,
+          6,
+          2.52
+        ],
+        "curved": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(mid,0)": [
+          5,
+          0,
+          3
+        ],
+        "S(0.3uMax,0.6)": [
+          3,
+          6,
+          2.52
+        ],
+        "curved": null
+      },
+      "source": "Scripts/repro/766-bspline-extras-fill-iso/transcript.txt stretchFill stretch; twoCurveFill curved threw \"Courbes non jointives\""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Iso Curves::UIso returns curve",
+    "bridge_function": "OCCTSurfaceBSplineUIso",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "UIso(pi)(0.3)": [
+          -4.799472078992827,
+          0,
+          1.401808746929577
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "UIso(pi)(0.3)": [
+          -4.799472078992827,
+          0,
+          1.401808746929577
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-extras-fill-iso/transcript.txt uIso"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Iso Curves::VIso returns curve",
+    "bridge_function": "OCCTSurfaceBSplineVIso",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "VIso(0)(1.0)": [
+          2.721815953559154,
+          4.194248194247792,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "VIso(0)(1.0)": [
+          2.721815953559154,
+          4.194248194247792,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-extras-fill-iso/transcript.txt vIso"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface KnotSplitting Tests::knotSplitsU",
+    "bridge_function": "OCCTSurfaceKnotSplitting",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "C0": [
+          2,
+          2
+        ],
+        "C1": [
+          4,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "C0": [
+          2,
+          2
+        ],
+        "C1": [
+          4,
+          3
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-extras-fill-iso/transcript.txt knotSplitsU"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
