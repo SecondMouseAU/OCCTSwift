@@ -1,0 +1,24 @@
+circle r5 u=0 curvature=0.2 tangent=(-0, 1) normal=(-1, -0) centre=(0, 0)
+circle r5 centre (3,4) u=0 curvature=0.2 tangent=(-0, 1) normal=(-1, -0) centre=(3, 4)
+segment (0,0)-(10,0) u=0.5 curvature=0 tangent=(1, 0)
+S-curve inflections done=1 points=1
+  u=10.3042200457 type=Inflection
+ellipse 10x5 curvature extrema done=1 points=4
+  u=0 type=MinCur
+  u=1.57079632679 type=MaxCur
+  u=3.14159265359 type=MinCur
+  u=4.71238898038 type=MaxCur
+ellipse 10x5 all special points done=1 points=4
+  u=0 type=MinCur
+  u=1.57079632679 type=MaxCur
+  u=3.14159265359 type=MinCur
+  u=4.71238898038 type=MaxCur
+trim circle [0, pi/2] start=(5, 0) end=(3.06161699787e-16, 5)
+offset segment by 2 start=(0, -2) end=(10, -2)
+reversed (0,0)-(10,5) start=(10, 5) end=(0, 0)
+translated by (5,5) start=(5, 5) end=(15, 5)
+(1,0)-(2,0) rotated pi/2 start=(6.12323399574e-17, 1) end=(1.22464679915e-16, 2)
+(1,0)-(3,0) scaled 2 start=(2, 0) end=(6, 0)
+(0,1)-(10,1) mirrored in x-axis start=(0, -1) end=(10, -1)
+(1,1)-(2,1) mirrored in origin start=(-1, -1) end=(-2, -1)
+circle r5 length=31.4159265359 segment (0,0)-(3,4) length=5

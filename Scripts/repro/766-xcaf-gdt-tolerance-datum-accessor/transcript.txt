@@ -1,0 +1,14 @@
+tolerance fresh: typeOfValue=0 material=0 zone=0 zoneValue=0 maxValue=0 modifiers=0
+tolerance written: typeOfValue=1 material=1 zone=1 zoneValue=15 maxValue=0.25 value=0.1 type=10
+tolerance zeroed: zone=1 zoneValue=0 maxValue=0 (bridge reports > 0 only)
+flatness 0.01: type=7 value=0.01
+tolerance modifiers read back: 3 15 13
+datum fresh: position=0 modifiers=0 isTarget=false
+datum position 2 -> 2; 0 -> 0
+datum modifiers: 2 3; withValue=3 value=12.5
+datum withValue cleared=0
+target type 2: number=4 hasParams=true length=30 width=18 (bridge: length unless Point, width only Rectangle)
+target type 1: number=4 hasParams=true length=30 width=18 (bridge: length unless Point, width only Rectangle)
+target type 0: number=4 hasParams=true length=30 width=18 (bridge: length unless Point, width only Rectangle)
+gp_Dir(0,0,0) throws (gp_Dir() - input vector has zero norm), so a degenerate placement axis is refused
+fresh document datum labels=0

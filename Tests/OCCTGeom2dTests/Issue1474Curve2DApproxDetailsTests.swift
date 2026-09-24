@@ -34,11 +34,8 @@ struct Issue1474Curve2DApproxDetailsTests {
     /// radius-10 circle, which measures `maxError` around 5.1 there): a single cubic segment
     /// cannot represent a full circle to anywhere near 1e-9, in 2D or 3D.
     @Test("approxWithDetails reports the true maxError for a starved (over-tolerance) fit")
-    func approxWithDetailsSurfacesOverToleranceFit() {
-        guard let circle = Curve2D.circle(center: .zero, radius: 10) else {
-            Issue.record("circle fixture failed")
-            return
-        }
+    func approxWithDetailsSurfacesOverToleranceFit() throws {
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 10))
         let tolerance = 1e-9
 
         // Unchanged behavior (#1474 does not touch this entry point's gate, matching #491's
@@ -58,6 +55,9 @@ struct Issue1474Curve2DApproxDetailsTests {
         // 5.108..., matching the analogous Curve3D case's ~5.1 almost exactly. Assert it is at
         // least three orders of magnitude off, which a genuinely-converged fit never would be.
         #expect(details.maxError > tolerance * 1000)
+        // #1979: pinned to Geom2dConvert_ApproxCurve's own MaxError on the same input
+        // (Scripts/repro/766-geom2d-issue-regressions-a/).
+        #expect(abs(details.maxError - 5.10851410302) < 1e-6)
 
         // Both entry points ran through the same shared implementation and must agree on the
         // fitted geometry, not just on "succeeded or not".
@@ -73,21 +73,17 @@ struct Issue1474Curve2DApproxDetailsTests {
     /// #1474 puts one shared `occtApproxCurve2D` helper behind both rather than two independent
     /// `Geom2dConvert_ApproxCurve` runs that could drift.
     @Test("approximated and approxWithDetails agree on a well-converged fit")
-    func approximatedAndDetailsAgreeOnGoodFit() {
-        guard let circle = Curve2D.circle(center: .zero, radius: 5) else {
-            Issue.record("circle fixture failed")
-            return
-        }
-        let plain = circle.approximated(tolerance: 1e-3, continuity: 2)
+    func approximatedAndDetailsAgreeOnGoodFit() throws {
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 5))
+        let plain = try #require(circle.approximated(tolerance: 1e-3, continuity: 2))
         let details = circle.approxWithDetails(tolerance: 1e-3, continuity: 2)
-
-        guard let plain, let detailsCurve = details.curve else {
-            Issue.record("expected both entry points to succeed on the shared defaults")
-            return
-        }
+        let detailsCurve = try #require(details.curve)
         #expect(details.hasResult)
         #expect(details.maxError <= 1e-3)
         #expect(plain.poleCount == detailsCurve.poleCount)
         #expect(plain.degree == detailsCurve.degree)
+        // #1979: pinned to the kernel's fit on the same input: 13 poles, degree 7.
+        #expect(detailsCurve.poleCount == 13)
+        #expect(detailsCurve.degree == 7)
     }
 }
