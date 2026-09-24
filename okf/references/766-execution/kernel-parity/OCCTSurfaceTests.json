@@ -14455,5 +14455,369 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Trim sphere surface",
+    "bridge_function": "OCCTSurfaceTrim",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          0,
+          3.141592653589793,
+          -1.5707963267948966,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          0,
+          3.141592653589793,
+          -1.5707963267948966,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt trimSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Offset surface",
+    "bridge_function": "OCCTSurfaceOffset",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          7,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          7,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt offsetSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Translate surface",
+    "bridge_function": "OCCTSurfaceTranslate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          15,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          15,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt translateSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Scale surface",
+    "bridge_function": "OCCTSurfaceScale",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          10,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt scaleSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Mirror surface across XY plane",
+    "bridge_function": "OCCTSurfaceMirrorPlane",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          2,
+          0,
+          -5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          2,
+          0,
+          -5
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt mirrorSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Rotate surface around an axis",
+    "bridge_function": "OCCTSurfaceRotate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3,0.2)": [
+          -1.4481473881275762,
+          14.681466817920995,
+          5.993346653975306
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3,0.2)": [
+          -1.4481473881275762,
+          14.681466817920995,
+          5.993346653975306
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt rotateSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Mirror surface across a point",
+    "bridge_function": "OCCTSurfaceMirrorPoint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.4,0.1)": [
+          0.16708094898402104,
+          3.225054254734457,
+          0.8003331667063437
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.4,0.1)": [
+          0.16708094898402104,
+          3.225054254734457,
+          0.8003331667063437
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt mirrorPointSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Mirror surface across an axis",
+    "bridge_function": "OCCTSurfaceMirrorAxis",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(pi/4,pi/6)": [
+          -6.224744871391589,
+          -1.224744871391589,
+          0.9999999999999999
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(pi/4,pi/6)": [
+          -6.224744871391589,
+          -1.224744871391589,
+          0.9999999999999999
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt mirrorAxisSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Pipe::Pipe with circular cross-section",
+    "bridge_function": "OCCTSurfaceCreatePipe",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          0,
+          6.283185307179586,
+          0,
+          10
+        ],
+        "S(0.3*2pi,6)": [
+          -1.9021130325903073,
+          -0.6180339887498945,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          0,
+          6.283185307179586,
+          0,
+          10
+        ],
+        "S(0.3*2pi,6)": [
+          -1.9021130325903073,
+          -0.6180339887498945,
+          6
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt pipeCircular"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Pipe::Pipe with section curve",
+    "bridge_function": "OCCTSurfaceCreatePipeWithSection",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3*2pi,6)": [
+          -0.927050983124842,
+          2.853169548885461,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3*2pi,6)": [
+          -0.927050983124842,
+          2.853169548885461,
+          6
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt pipeWithSection"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.123.0, Surface queries::Cylinder U period",
+    "bridge_function": "OCCTSurfaceGetUPeriod",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "UPeriod": 6.283185307179586
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "UPeriod": 6.283185307179586
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt cylinderUPeriod"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.123.0, Surface queries::Plane has no period",
+    "bridge_function": "OCCTSurfaceGetVPeriod",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "periodic": [
+          false,
+          false
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "periodic": [
+          false,
+          false
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt planePeriod"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
