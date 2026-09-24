@@ -2176,5 +2176,395 @@
       "strengthened": true
     },
     "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Near-Degenerate Geometry::veryThinBox",
+    "bridge_function": "OCCTShapeCreateBox, OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): valid, volume 10"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "valid, volume 10",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetVolume reports Mass() × 1.5",
+      "env": "OCCT766=|VOLSCALE|",
+      "red": "StressBoundaryConditionTests.swift:352 Expectation failed: near(thin.volume, 10)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Near-Degenerate Geometry::verySmallFillet",
+    "bridge_function": "OCCTShapeFillet",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): valid, 26 faces, volume 999.999999997"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "valid, 26 faces, volume 999.999999997",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFillet returns nil",
+      "env": "OCCT766=|FILLETNULL|",
+      "red": "StressBoundaryConditionTests.swift:357 Expectation failed: box.filleted(radius: 1e-5)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Near-Degenerate Geometry::verySmallChamfer",
+    "bridge_function": "OCCTShapeChamfer",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): valid, 26 faces, volume 999.999999994"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "valid, 26 faces, volume 999.999999994",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeChamfer returns nil",
+      "env": "OCCT766=|CHAMFERNULL|",
+      "red": "StressBoundaryConditionTests.swift:365 Expectation failed: box.chamfered(distance: 1e-5)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Near-Degenerate Geometry::nearlyTouchingBoxes",
+    "bridge_function": "OCCTShapeUnionEx",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): valid, volume 2000, 12 faces"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "valid, volume 2000, 12 faces",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "runBooleanEx returns its first argument unchanged (a no-op boolean)",
+      "env": "OCCT766=|BOOLPASS|",
+      "red": "StressBoundaryConditionTests.swift:378 Expectation failed: abs((r.volume ?? 0) - 2000) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Near-Degenerate Geometry::nearlyCoincidentSubtract",
+    "bridge_function": "OCCTShapeSubtractEx",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): valid, volume 875.00000075, 9 faces"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "valid, volume 875.00000075, 9 faces",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "runBooleanEx returns its first argument unchanged (a no-op boolean)",
+      "env": "OCCT766=|BOOLPASS|",
+      "red": "StressBoundaryConditionTests.swift:390 Expectation failed: abs((r.volume ?? 0) - 875.00000075) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Near-Degenerate Geometry::veryThinShell",
+    "bridge_function": "OCCTShapeShell",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeThickSolidBySimple(-0.001) IsDone=0 -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeThickSolidBySimple(-0.001) IsDone=0 -> nil",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeShell returns the input unchanged when not done or on a throw",
+      "env": "OCCT766=|SHELLPASS|",
+      "red": "StressBoundaryConditionTests.swift:397 Expectation failed: box.shelled(thickness: -0.001) == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Near-Degenerate Geometry::verySmallDrill",
+    "bridge_function": "OCCTShapeDrillHole",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): valid, 7 faces, volume 999.999999997"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "valid, 7 faces, volume 999.999999997",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeSubtract returns its first argument unchanged",
+      "env": "OCCT766=|CUTPASS|",
+      "red": "StressBoundaryConditionTests.swift:406 Expectation failed: r.subShapeCount(ofType: .face) == 7",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve and Surface Boundaries::curveEvalAtDomainBounds",
+    "bridge_function": "OCCTCurve3DGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): start (5, 0), end (5, -1.2e-15)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "start (5, 0), end (5, -1.2e-15)",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCurve3DGetPoint: x coordinate set to NaN",
+      "env": "OCCT766=|NAN:OCCTCurve3DGetPoint|",
+      "red": "StressBoundaryConditionTests.swift:421 Expectation failed: p1.x.isFinite",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve and Surface Boundaries::curveEvalSlightlyOutside",
+    "bridge_function": "OCCTCurve3DGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): p1 (4.9999975000002088, -0.004999999166666708), p2 (4.9999975000002088, 0.0049999991666671529)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "p1 (4.9999975000002088, -0.004999999166666708), p2 (4.9999975000002088, 0.0049999991666671529)",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCurve3DGetPoint clamps u into [First, Last]",
+      "env": "OCCT766=|CLAMP:OCCTCurve3DGetPoint|",
+      "red": "StressBoundaryConditionTests.swift:432 Expectation failed: abs(p1.x - 4.9999975000002088) < 1e-12",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve and Surface Boundaries::surfaceEvalAtDomainCorners",
+    "bridge_function": "OCCTSurfaceGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): corners finite: (0,0,0), (15,15,0)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "corners finite: (0,0,0), (15,15,0)",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSurfaceGetPoint: x coordinate set to NaN",
+      "env": "OCCT766=|NAN:OCCTSurfaceGetPoint|",
+      "red": "StressBoundaryConditionTests.swift:445 Expectation failed: p1.x.isFinite",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve and Surface Boundaries::curve2DEvalAtDomainBounds",
+    "bridge_function": "OCCTCurve2DGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): start (5, 0), end (5, -1.2e-15)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "start (5, 0), end (5, -1.2e-15)",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCurve2DGetPoint: x coordinate set to NaN",
+      "env": "OCCT766=|NAN:OCCTCurve2DGetPoint|",
+      "red": "StressBoundaryConditionTests.swift:456 Expectation failed: p1.x.isFinite",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve and Surface Boundaries::bezierSurfaceEvalGrid",
+    "bridge_function": "OCCTSurfaceGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): every grid point finite"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "every grid point finite",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSurfaceGetPoint: x coordinate set to NaN",
+      "env": "OCCT766=|NAN:OCCTSurfaceGetPoint|",
+      "red": "StressBoundaryConditionTests.swift:469 Expectation failed: pt.x.isFinite",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve and Surface Boundaries::curveCurvatureAtBounds",
+    "bridge_function": "OCCTCurve3DGetCurvature",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): GeomLProp_CLProps: k(first) 0.0674635578751, k(last) 0.0185120076021"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "GeomLProp_CLProps: k(first) 0.0674635578751, k(last) 0.0185120076021",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCurve3DGetCurvature × 1.5",
+      "env": "OCCT766=|SCALE:OCCTCurve3DGetCurvature|",
+      "red": "StressBoundaryConditionTests.swift:483 Expectation failed: abs((k1 ?? 0) - 0.0674635578751) < 1e-9",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve and Surface Boundaries::surfaceCurvatureAtBounds",
+    "bridge_function": "OCCTSurfaceGetGaussianCurvature, OCCTSurfaceGetMeanCurvature",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): GeomLProp_SLProps: K(0,0) = -0.0064, H(1,1) = 0"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "GeomLProp_SLProps: K(0,0) = -0.0064, H(1,1) = 0",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSurfaceGetGaussianCurvature + 0.01",
+      "env": "OCCT766=|OFFSET:OCCTSurfaceGetGaussianCurvature|",
+      "red": "StressBoundaryConditionTests.swift:495 Expectation failed: abs((g ?? 0) - -0.0064) < 1e-9",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve and Surface Boundaries::periodicCurveAtPeriodBoundary",
+    "bridge_function": "OCCTCurve3DGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): |start - end| = 1.22e-15"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "|start - end| = 1.22e-15",
+      "source": "Scripts/repro/766-stress-boundary/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCurve3DGetPoint: x coordinate set to NaN",
+      "env": "OCCT766=|NAN:OCCTCurve3DGetPoint|",
+      "red": "StressBoundaryConditionTests.swift:508 Expectation failed: dist < 0.01",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]
