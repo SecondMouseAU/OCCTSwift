@@ -1354,5 +1354,206 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher::append single annotation",
+    "bridge_function": "Drawing.append(_: DrawingAnnotation)",
+    "bridge_output": {
+      "annotations": 1
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the drawing's annotation and dimension stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher::append factory output installs every annotation case",
+    "bridge_function": "Drawing.append(contentsOf: [DrawingAnnotation])",
+    "bridge_output": {
+      "annotations": "anns.count"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the drawing's annotation and dimension stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher::append GD&T feature control frame output",
+    "bridge_function": "Drawing.append(contentsOf: [DrawingAnnotation])",
+    "bridge_output": {
+      "annotations": "anns.count"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the drawing's annotation and dimension stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher::append pre-built hatch survives round-trip (no consumer switch)",
+    "bridge_function": "Drawing.append(_: DrawingAnnotation)",
+    "bridge_output": {
+      "first": "hatch"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the drawing's annotation and dimension stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher::append pre-built cutting-plane line survives round-trip",
+    "bridge_function": "Drawing.append(_: DrawingAnnotation)",
+    "bridge_output": {
+      "first": "cuttingPlaneLine"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the drawing's annotation and dimension stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher::append a pre-built dimension",
+    "bridge_function": "Drawing.append(_: DrawingDimension)",
+    "bridge_output": {
+      "dimensions": 1
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the drawing's annotation and dimension stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher::append dimensions batch",
+    "bridge_function": "Drawing.append(contentsOf: [DrawingDimension])",
+    "bridge_output": {
+      "dimensions": 3
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the drawing's annotation and dimension stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.137 Drawing auto-centrelines (#64 ↔ #65)::Cylinder top view produces no centreline (axis collapses to point)",
+    "bridge_function": "OCCTShapeRevolutionAxes",
+    "bridge_output": {
+      "axes": [
+        {
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "added": 0,
+      "skipped": 1
+    },
+    "kernel_output": {
+      "cylinderAxis": {
+        "origin": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          0,
+          0,
+          1
+        ]
+      },
+      "projectedDown+Z": [
+        0,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Drawing auto-centrelines (#64 ↔ #65)::Cylinder side view draws one centreline along axis",
+    "bridge_function": "OCCTShapeRevolutionAxes",
+    "bridge_output": {
+      "added": 1,
+      "from": [
+        -55.0,
+        0.0
+      ],
+      "to": [
+        55.0,
+        0.0
+      ]
+    },
+    "kernel_output": {
+      "projectedDown+Y": [
+        1,
+        0
+      ],
+      "gp_Ax2X": [
+        0,
+        0,
+        1
+      ],
+      "clippedWithOvershoot": [
+        [
+          -55,
+          0
+        ],
+        [
+          55,
+          0
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Drawing auto-centrelines (#64 ↔ #65)::Box produces no centrelines (no revolution axes)",
+    "bridge_function": "OCCTShapeRevolutionAxes",
+    "bridge_output": {
+      "axes": 0,
+      "added": 0,
+      "skipped": 0
+    },
+    "kernel_output": {
+      "revolutionFaces": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
