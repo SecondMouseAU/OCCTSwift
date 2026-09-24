@@ -17,7 +17,7 @@ struct BSplineMutationsTests {
             return
         }
         // GeomAPI_PointsToBSpline gives one cubic span here: knots 0 and 1, multiplicity 4 each
-        // (Scripts/repro/766-curve-bspline-manip/transcript.txt). `count > 0` passed a short
+        // (Scripts/repro/766-curve-bspline-misc/transcript.txt). `count > 0` passed a short
         // sequence (#766).
         #expect(curve.bsplineKnotSequence() == [0, 0, 0, 0, 1, 1, 1, 1])
         let weights = curve.bsplineWeights()

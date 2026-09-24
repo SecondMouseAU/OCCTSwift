@@ -7,7 +7,7 @@ import simd
 // MARK: - v0.40.0: BSpline Knot Splitting
 
 // Pinned to GeomConvert_BSplineCurveKnotSplitting on the same curve
-// (Scripts/repro/766-curve-bspline-manip/transcript.txt). The earlier curveBreaks accepted any
+// (Scripts/repro/766-curve-bspline-misc/transcript.txt). The earlier curveBreaks accepted any
 // count >= 2 inside nested `if let`s, so splitting at a stricter continuity (every interior knot)
 // passed (#766).
 @Suite("BSpline Knot Splitting")

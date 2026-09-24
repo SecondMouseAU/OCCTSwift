@@ -5,7 +5,7 @@ import simd
 @testable import OCCTSwift
 
 // Pinned to Geom_BSplineCurve on the same interpolated curves
-// (Scripts/repro/766-curve-bspline-manip/transcript.txt). The earlier versions wrapped every body
+// (Scripts/repro/766-curve-bspline-misc/transcript.txt). The earlier versions wrapped every body
 // in `if let`, so a nil curve or a nil normalization passed with nothing checked, and the periodic
 // test accepted any value inside the domain (#766).
 @Suite("v0.127.0, BSpline Curve Completions")
