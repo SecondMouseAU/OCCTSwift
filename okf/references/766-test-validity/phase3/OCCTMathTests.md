@@ -192,3 +192,16 @@
 | **gce_MakeParab Tests** | parabolaFromCenterNormal | `OCCTGceMakeParab` | focal doubled | red | green | PASS |
 | **gce_MakePln Tests** | planeFromEquation | `OCCTGceMakePlnFromEquation` | d negated | red | green | PASS |
 | **gce_MakePln Tests** | planeFrom3Points | `OCCTSurfacePlaneFromPoints` | p2 and p3 swapped | red | green | PASS |
+### 766-math-gc-circle-cone-cylinder (#1983, measured)
+| **GC_MakeCircle Tests** | circleFromAxisAndRadius | `OCCTGCMakeCircle` | radius doubled | red | green | PASS |
+| **GC_MakeCircle Tests** | circleFrom3Points | `OCCTGCMakeCircle3Points` | p2 built as (x, z, y): a circle in the XZ plane | red | green | PASS |
+| **GC_MakeCircle Tests** | circleCenterNormal | `OCCTGCMakeCircleCenterNormal` | centre z dropped | red | green | PASS |
+| **GC_MakeCircle Tests** | circleParallel | `OCCTGCMakeCircleParallel` | distance negated | red | green | PASS |
+| **GC_MakeConicalSurface Tests** | conicalFromAxisAngleRadius | `OCCTGCMakeConicalSurface` | semi-angle doubled | red | green | PASS |
+| **GC_MakeConicalSurface Tests** | conicalFrom2PtsRadii | `OCCTGCMakeConicalSurface2Pts` | r1 and r2 swapped | red | green | PASS |
+| **GC_MakeConicalSurface Tests** | conicalFrom4Pts | `OCCTGCMakeConicalSurface4Pts` | p3 and p4 swapped | red | green | PASS |
+| **GC_MakeCylindricalSurface Tests** | cylindricalFromAxisRadius | `OCCTGCMakeCylindricalSurface` | radius doubled | red | green | PASS |
+| **GC_MakeCylindricalSurface Tests** | cylindricalFrom3Pts | `OCCTGCMakeCylindricalSurface3Pts` | p1 and p3 swapped | red | green | PASS |
+| **GC_MakeCylindricalSurface Tests** | cylindricalFromCircle | `OCCTGCMakeCylindricalSurfaceFromCircle` | circle radius doubled | red | green | PASS |
+| **GC_MakeCylindricalSurface Tests** | cylindricalParallel | `OCCTGCMakeCylindricalSurfaceParallel` | distance negated | red | green | PASS |
+| **GC_MakeCylindricalSurface Tests** | cylindricalFromAxis | `OCCTGCMakeCylindricalSurfaceAxis` | radius doubled | red | green | PASS |

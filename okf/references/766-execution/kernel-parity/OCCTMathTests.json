@@ -2117,5 +2117,293 @@
       "failing_expectation": "original: **green**; rewritten: :27 `abs(k.c - 1) < 1e-12`"
     },
     "green": true
+  },
+  {
+    "test_name": "GC_MakeCircle Tests::circleFromAxisAndRadius",
+    "bridge_function": "OCCTGCMakeCircle",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(0) (5, 0, 0), P(pi/2) (0, 5, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(0) (5, 0, 0), P(pi/2) (0, 5, 0)",
+      "source": "Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "radius doubled",
+      "failing_expectation": "original: **green**; rewritten: :19 `simd_length(c.point(at: 0) - SIMD3(5, 0, 0)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeCircle Tests::circleFrom3Points",
+    "bridge_function": "OCCTGCMakeCircle3Points",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(0) (1, 0, 0), P(pi/2) (0, 1, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(0) (1, 0, 0), P(pi/2) (0, 1, 0)",
+      "source": "Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "p2 built as (x, z, y): a circle in the XZ plane",
+      "failing_expectation": "original: **green**; rewritten: :32 `simd_length(c.point(at: .pi / 2) - SIMD3(0, 1, 0)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeCircle Tests::circleCenterNormal",
+    "bridge_function": "OCCTGCMakeCircleCenterNormal",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(0) (11, 2, 3), P(pi/2) (1, 12, 3)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(0) (11, 2, 3), P(pi/2) (1, 12, 3)",
+      "source": "Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "centre z dropped",
+      "failing_expectation": "original: **green**; rewritten: :44 `simd_length(c.point(at: 0) - SIMD3(11, 2, 3)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeCircle Tests::circleParallel",
+    "bridge_function": "OCCTGCMakeCircleParallel",
+    "bridge_output": {
+      "type": "observed",
+      "data": "radius 8: P(0) (8, 0, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "radius 8: P(0) (8, 0, 0)",
+      "source": "Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "distance negated",
+      "failing_expectation": "original: **green**; rewritten: :58 `simd_length(c.point(at: 0) - SIMD3(8, 0, 0)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeConicalSurface Tests::conicalFromAxisAngleRadius",
+    "bridge_function": "OCCTGCMakeConicalSurface",
+    "bridge_output": {
+      "type": "observed",
+      "data": "semiAngle pi/6, S(0,1) (5.5, 0, 0.866025403784)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "semiAngle pi/6, S(0,1) (5.5, 0, 0.866025403784)",
+      "source": "Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "semi-angle doubled",
+      "failing_expectation": "original: **green**; rewritten: :21 `abs(s.coneProperties.semiAngle - .pi / 6) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeConicalSurface Tests::conicalFrom2PtsRadii",
+    "bridge_function": "OCCTGCMakeConicalSurface2Pts",
+    "bridge_output": {
+      "type": "observed",
+      "data": "semiAngle -0.291456794477867, refRadius 5",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "semiAngle -0.291456794477867, refRadius 5",
+      "source": "Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "r1 and r2 swapped",
+      "failing_expectation": "original: **green**; rewritten: :30 `abs(s.coneProperties.semiAngle - -0.291456794477867) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeConicalSurface Tests::conicalFrom4Pts",
+    "bridge_function": "OCCTGCMakeConicalSurface4Pts",
+    "bridge_output": {
+      "type": "observed",
+      "data": "original points: not done (gce status 7); valid points: semiAngle -0.291456794477867, refRadius 5",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "original points: not done (gce status 7); valid points: semiAngle -0.291456794477867, refRadius 5",
+      "source": "Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "p3 and p4 swapped",
+      "failing_expectation": "original: **green**; rewritten: :47 `abs(s.coneProperties.semiAngle - -0.291456794477867) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeCylindricalSurface Tests::cylindricalFromAxisRadius",
+    "bridge_function": "OCCTGCMakeCylindricalSurface",
+    "bridge_output": {
+      "type": "observed",
+      "data": "radius 5, S(pi/2,3) (0, 5, 3)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "radius 5, S(pi/2,3) (0, 5, 3)",
+      "source": "Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "radius doubled",
+      "failing_expectation": "original: **green**; rewritten: :16 `abs(s.cylinderProperties.radius - 5) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeCylindricalSurface Tests::cylindricalFrom3Pts",
+    "bridge_function": "OCCTGCMakeCylindricalSurface3Pts",
+    "bridge_output": {
+      "type": "observed",
+      "data": "radius 7.07106781187, axis (-0.7071, 0.7071, 0), S(0,0) (0, -5, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "radius 7.07106781187, axis (-0.7071, 0.7071, 0), S(0,0) (0, -5, 0)",
+      "source": "Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "p1 and p3 swapped",
+      "failing_expectation": "original: **green**; rewritten: :27 `simd_length(s.cylinderProperties.axis.direction - SIMD3(-r, r, 0)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeCylindricalSurface Tests::cylindricalFromCircle",
+    "bridge_function": "OCCTGCMakeCylindricalSurfaceFromCircle",
+    "bridge_output": {
+      "type": "observed",
+      "data": "radius 5, S(pi/2,3) (0, 5, 3)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "radius 5, S(pi/2,3) (0, 5, 3)",
+      "source": "Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "circle radius doubled",
+      "failing_expectation": "original: **green**; rewritten: :36 `abs(s.cylinderProperties.radius - 5) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeCylindricalSurface Tests::cylindricalParallel",
+    "bridge_function": "OCCTGCMakeCylindricalSurfaceParallel",
+    "bridge_output": {
+      "type": "observed",
+      "data": "radius 3, S(0,0) (3, 0, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "radius 3, S(0,0) (3, 0, 0)",
+      "source": "Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "distance negated",
+      "failing_expectation": "original: **green**; rewritten: :47 `abs(s.cylinderProperties.radius - 3) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeCylindricalSurface Tests::cylindricalFromAxis",
+    "bridge_function": "OCCTGCMakeCylindricalSurfaceAxis",
+    "bridge_output": {
+      "type": "observed",
+      "data": "radius 5, S(pi/2,3) (0, 5, 3)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "radius 5, S(pi/2,3) (0, 5, 3)",
+      "source": "Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "radius doubled",
+      "failing_expectation": "original: **green**; rewritten: :56 `abs(s.cylinderProperties.radius - 5) < 1e-12`"
+    },
+    "green": true
   }
 ]
