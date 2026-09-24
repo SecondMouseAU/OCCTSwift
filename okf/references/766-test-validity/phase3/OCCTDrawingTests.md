@@ -85,3 +85,22 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 194 tests
+
+---
+
+## Measured records (#766 execution, #1984)
+
+Rows below were run: the injection turned the test red at the line named, the test was green with Sources/ restored, and parity is against the probe transcript under `Scripts/repro/766-drawing-*/`.
+
+| Suite | Test | Bridge / Swift subject | Injection | Red (failing line) | Green | Parity |
+|-------|------|------------------------|-----------|--------------------|-------|--------|
+| Angle Dimension | Right angle from three points | `OCCTDimensionCreateAngleFromPoints` | `OCCTDimensionGetValue`: `GetValue() + 0.1` | `:18` `abs(dim.degrees - 90.0) < 1e-4` | ✔ | PASS |
+| Angle Dimension | 60-degree angle | `OCCTDimensionCreateAngleFromPoints` | `OCCTDimensionGetValue`: `GetValue() + 0.1` | `:30` `abs(dim.degrees - 60.0) < 0.1` | ✔ | PASS |
+| Angle Dimension | 180-degree angle (straight line) | `OCCTDimensionCreateAngleFromPoints` | `OCCTDimensionGetValue`: `GetValue() + 0.1` | `:42` `abs(dim.degrees - 180.0) < 0.1` | ✔ | PASS |
+| Angle Dimension | Angle geometry has center point | `OCCTDimensionGetGeometry` | `OCCTDimensionGetGeometry` angle case: `centerPoint[0] = cp.X() + 1` | `:55` `abs(g.centerPoint.x) < 1e-6 && ...` | ✔ | PASS |
+| Angle Dimension | Angle between perpendicular faces is 90 degrees | `OCCTDimensionCreateAngleFromFaces` | value + 0.1 (red at old `:73`); ctor `return nullptr` was GREEN under the old `if let`, rewritten to `guard` | rewritten: `:74` `Issue.record` (nil), value + 0.1 at `:80` | ✔ | PASS |
+| emitAngular sweep matches Angular.value for reflex ray pairs (#1169) | Rays 200 degrees apart draw the 160-degree (non-reflex) arc, matching Angular.value | `emitAngular (Swift, DrawingDispatch.swift)` | `emitAngular`: reflex branch `sweep > .pi` to `sweep > 99` | `:33` `abs(sweepDeg - 160.0) < 1e-6` | ✔ | N/A (pure Swift: DXFWriter arc emission, no OCCT call) |
+| #914 review, third pass: auto-centermark position matches the drawing's own projected frame | centermark for an off-axis cylinder matches the projected circle's own bounding-box center | `OCCTDrawingCreate` | `perpendicularBasis`: `return (up, right)` | `:68` `simd_length(mark.centre - projectedCentre) < 1e-6` (both marks) | ✔ | PASS |
+| v0.147 Drawing.addAutoCentermarks | Cylinder top view produces one centermark | `OCCTDrawingCreate` | `testCircleVisibility`: `dotAxis < 0.1` to `> 0.1` | `:22` `result.added.count == 2` | ✔ | PASS |
+| v0.147 Drawing.addAutoCentermarks | Cylinder side view skips edge-on circles | `OCCTDrawingCreate` | `testCircleVisibility`: `dotAxis < 0.1` to `> 0.1` | `:35` `result.added.isEmpty`, `:36` skipped (now pinned `== 2`) | ✔ | PASS |
+| v0.147 Drawing.addAutoCentermarks | minRadius filters small holes | `OCCTDrawingCreate` | `testCircleVisibility`: `radius >= minRadius` to `>= 0` | `:50` `result.added.isEmpty` | ✔ | PASS |
