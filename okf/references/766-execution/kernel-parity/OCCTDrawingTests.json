@@ -222,5 +222,191 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Angle Dimension::Right angle from three points",
+    "bridge_function": "OCCTDimensionCreateAngleFromPoints",
+    "bridge_output": {
+      "degrees": 90.0
+    },
+    "kernel_output": {
+      "degrees": 90.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Angle Dimension::60-degree angle",
+    "bridge_function": "OCCTDimensionCreateAngleFromPoints",
+    "bridge_output": {
+      "degrees": 59.99999999999999
+    },
+    "kernel_output": {
+      "degrees": 59.99999999999999
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Angle Dimension::180-degree angle (straight line)",
+    "bridge_function": "OCCTDimensionCreateAngleFromPoints",
+    "bridge_output": {
+      "degrees": 180.0
+    },
+    "kernel_output": {
+      "degrees": 180.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Angle Dimension::Angle geometry has center point",
+    "bridge_function": "OCCTDimensionGetGeometry",
+    "bridge_output": {
+      "centerPoint": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "kernel_output": {
+      "centerPoint": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Angle Dimension::Angle between perpendicular faces is 90 degrees",
+    "bridge_function": "OCCTDimensionCreateAngleFromFaces",
+    "bridge_output": {
+      "degrees": 90.0
+    },
+    "kernel_output": {
+      "degrees": 90.0,
+      "isValid": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "emitAngular sweep matches Angular.value for reflex ray pairs (#1169)::Rays 200 degrees apart draw the 160-degree (non-reflex) arc, matching Angular.value",
+    "bridge_function": "emitAngular (Swift, DrawingDispatch.swift)",
+    "bridge_output": {
+      "sweepDeg": 160.0
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: DXFWriter arc emission, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#914 review, third pass: auto-centermark position matches the drawing's own projected frame::centermark for an off-axis cylinder matches the projected circle's own bounding-box center",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "visibleBBoxCentre": [
+        5.0,
+        -10.0
+      ],
+      "marks": [
+        [
+          5.0,
+          -10.0
+        ],
+        [
+          5.0,
+          -10.0
+        ]
+      ]
+    },
+    "kernel_output": {
+      "visibleBBoxCentre": [
+        5.0,
+        -10.0
+      ],
+      "gp_Ax2Projected": [
+        [
+          5.0,
+          -10.0
+        ],
+        [
+          5.0,
+          -10.0
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.147 Drawing.addAutoCentermarks::Cylinder top view produces one centermark",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "added": 2,
+      "skipped": 0
+    },
+    "kernel_output": {
+      "circularEdgesFacingView": 2
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.147 Drawing.addAutoCentermarks::Cylinder side view skips edge-on circles",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "added": 0,
+      "skipped": 2
+    },
+    "kernel_output": {
+      "circularEdgesEdgeOn": 2
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.147 Drawing.addAutoCentermarks::minRadius filters small holes",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "added": 0
+    },
+    "kernel_output": {
+      "circlesBelowMinRadius": 2
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

@@ -499,6 +499,5033 @@
     "status": "PASS"
   },
   {
+    "test_name": "Measurement Tests::Volume of box",
+    "bridge_function": "OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "volume",
+      "data": {
+        "volume": 1000.0
+      }
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "volume": 1000.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Volume of cylinder",
+    "bridge_function": "OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "volume",
+      "data": {
+        "volume": 785.398163397448
+      }
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "volume": 785.398163397448
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Volume of sphere",
+    "bridge_function": "OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "volume",
+      "data": {
+        "volume": 523.598775598299
+      }
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "volume": 523.598775598299
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Surface area of box",
+    "bridge_function": "OCCTShapeGetSurfaceArea",
+    "bridge_output": {
+      "type": "area",
+      "data": {
+        "area": 600.0
+      }
+    },
+    "kernel_output": {
+      "type": "area",
+      "data": {
+        "area": 600.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Surface area of sphere",
+    "bridge_function": "OCCTShapeGetSurfaceArea",
+    "bridge_output": {
+      "type": "area",
+      "data": {
+        "area": 314.159265358979
+      }
+    },
+    "kernel_output": {
+      "type": "area",
+      "data": {
+        "area": 314.159265358979
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Center of mass of box at origin",
+    "bridge_function": "OCCTShapeGetCenterOfMass",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Center of mass of translated box",
+    "bridge_function": "OCCTShapeGetCenterOfMass",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": 100.0,
+        "y": 200.0,
+        "z": 300.0
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": 100.0,
+        "y": 200.0,
+        "z": 300.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Full shape properties",
+    "bridge_function": "OCCTShapeGetProperties",
+    "bridge_output": {
+      "type": "properties",
+      "data": {
+        "volume": 1000.0,
+        "surface_area": 600.0,
+        "mass": 2500.0,
+        "center": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "properties",
+      "data": {
+        "volume": 1000.0,
+        "surface_area": 600.0,
+        "mass": 2500.0,
+        "center": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Distance between separated boxes",
+    "bridge_function": "OCCTShapeDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 10.0
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 10.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Distance between touching boxes",
+    "bridge_function": "OCCTShapeDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Min distance convenience method",
+    "bridge_function": "OCCTShapeDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 7.0
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 7.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Intersects - overlapping shapes",
+    "bridge_function": "OCCTShapeIntersects",
+    "bridge_output": {
+      "type": "intersects",
+      "data": {
+        "distance": 0.0,
+        "intersects": true
+      }
+    },
+    "kernel_output": {
+      "type": "intersects",
+      "data": {
+        "distance": 0.0,
+        "intersects": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Intersects - separated shapes",
+    "bridge_function": "OCCTShapeIntersects",
+    "bridge_output": {
+      "type": "intersects",
+      "data": {
+        "distance": 42.0,
+        "intersects": false
+      }
+    },
+    "kernel_output": {
+      "type": "intersects",
+      "data": {
+        "distance": 42.0,
+        "intersects": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Intersects - touching shapes",
+    "bridge_function": "OCCTShapeIntersects",
+    "bridge_output": {
+      "type": "intersects",
+      "data": {
+        "distance": 1.74e-10,
+        "intersects": true
+      }
+    },
+    "kernel_output": {
+      "type": "intersects",
+      "data": {
+        "distance": 1.74e-10,
+        "intersects": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Vertex count of box",
+    "bridge_function": "OCCTShapeGetVertexCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count": 8
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "count": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Get all vertices",
+    "bridge_function": "OCCTShapeGetVertices",
+    "bridge_output": {
+      "type": "vertices",
+      "data": {
+        "count": 8,
+        "all_corners_of_pm5_cube": true
+      }
+    },
+    "kernel_output": {
+      "type": "vertices",
+      "data": {
+        "count": 8,
+        "all_corners_of_pm5_cube": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Get vertex at index",
+    "bridge_function": "OCCTShapeGetVertexAt",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": -5.0,
+        "y": -5.0,
+        "z": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": -5.0,
+        "y": -5.0,
+        "z": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Measurement Tests::Vertex out of bounds",
+    "bridge_function": "OCCTShapeGetVertexAt",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "index": 100,
+        "extent": 8,
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "index": 100,
+        "extent": 8,
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Edge Curve Properties Tests::Parameter bounds of line edge",
+    "bridge_function": "OCCTEdgeGetParameterBounds",
+    "bridge_output": {
+      "type": "parameter_bounds",
+      "data": {
+        "first": 0.0,
+        "last": 10.0
+      }
+    },
+    "kernel_output": {
+      "type": "parameter_bounds",
+      "data": {
+        "first": 0.0,
+        "last": 10.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Edge Curve Properties Tests::Curvature of circle edge is 1/r",
+    "bridge_function": "OCCTEdgeGetCurvature3D",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "curvature": 0.2
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "curvature": 0.2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Edge Curve Properties Tests::Curvature of line edge is zero",
+    "bridge_function": "OCCTEdgeGetCurvature3D",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "curvature": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "curvature": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Edge Curve Properties Tests::Tangent direction of straight edge",
+    "bridge_function": "OCCTEdgeGetTangent3D",
+    "bridge_output": {
+      "type": "direction",
+      "data": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 1.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Edge Curve Properties Tests::Normal of circle edge points toward center",
+    "bridge_function": "OCCTEdgeGetNormal3D",
+    "bridge_output": {
+      "type": "direction",
+      "data": {
+        "x": 1.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": {
+        "x": 1.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Edge Curve Properties Tests::Center of curvature of circle matches circle center",
+    "bridge_function": "OCCTEdgeGetCenterOfCurvature3D",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 10.0
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 10.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Edge Curve Properties Tests::Torsion of planar curve is zero",
+    "bridge_function": "OCCTEdgeGetTorsion",
+    "bridge_output": {
+      "type": "torsion",
+      "data": {
+        "torsion": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "torsion",
+      "data": {
+        "torsion": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Edge Curve Properties Tests::Curve type detection",
+    "bridge_function": "OCCTEdgeGetCurveType",
+    "bridge_output": {
+      "type": "curve_type",
+      "data": {
+        "box_edge0": "line",
+        "cylinder_has_circle": true
+      }
+    },
+    "kernel_output": {
+      "type": "curve_type",
+      "data": {
+        "box_edge0": "line",
+        "cylinder_has_circle": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Edge Curve Properties Tests::Point at parameter matches expected location",
+    "bridge_function": "OCCTEdgeGetPointAtParam",
+    "bridge_output": {
+      "type": "endpoints",
+      "data": {
+        "start": [
+          -5.0,
+          -5.0,
+          -5.0
+        ],
+        "end": [
+          -5.0,
+          -5.0,
+          5.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "endpoints",
+      "data": {
+        "start": [
+          -5.0,
+          -5.0,
+          -5.0
+        ],
+        "end": [
+          -5.0,
+          -5.0,
+          5.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape distance to Wire/Edge/Face::Shape distance to Wire",
+    "bridge_function": "OCCTShapeDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 14.0,
+        "p1": [
+          5.0,
+          0.0,
+          0.0
+        ],
+        "p2": [
+          19.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 14.0,
+        "p1": [
+          5.0,
+          0.0,
+          0.0
+        ],
+        "p2": [
+          19.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape distance to Wire/Edge/Face::Shape intersects Wire",
+    "bridge_function": "OCCTShapeIntersects",
+    "bridge_output": {
+      "type": "intersects",
+      "data": {
+        "far_circle": {
+          "distance": 14.0,
+          "intersects": false
+        },
+        "inside_circle": {
+          "distance": 0.0,
+          "intersects": true
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "intersects",
+      "data": {
+        "far_circle": {
+          "distance": 14.0,
+          "intersects": false
+        },
+        "inside_circle": {
+          "distance": 0.0,
+          "intersects": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape distance to Wire/Edge/Face::Shape distance to Edge",
+    "bridge_function": "OCCTShapeDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 0.0,
+        "p1": [
+          -5.0,
+          -5.0,
+          5.0
+        ],
+        "p2": [
+          -5.0,
+          -5.0,
+          5.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 0.0,
+        "p1": [
+          -5.0,
+          -5.0,
+          5.0
+        ],
+        "p2": [
+          -5.0,
+          -5.0,
+          5.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape distance to Wire/Edge/Face::Shape distance to Face",
+    "bridge_function": "OCCTShapeDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 0.0,
+        "p2": [
+          -2.5,
+          -2.5,
+          2.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 0.0,
+        "p2": [
+          -2.5,
+          -2.5,
+          2.5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtCS Tests::curveSurfaceParallel",
+    "bridge_function": "OCCTExtremaExtCS",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "isDone": true,
+        "isParallel": true,
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "isDone": true,
+        "isParallel": true,
+        "count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtCS Tests::curveSurfaceDistance",
+    "bridge_function": "OCCTExtremaExtCSPoint",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "near": {
+          "squareDistance": 25.0,
+          "p1": [
+            10.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            5.0,
+            0.0,
+            0.0
+          ]
+        },
+        "far": {
+          "squareDistance": 225.0,
+          "p2": [
+            -5.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "near": {
+          "squareDistance": 25.0,
+          "p1": [
+            10.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            5.0,
+            0.0,
+            0.0
+          ]
+        },
+        "far": {
+          "squareDistance": 225.0,
+          "p2": [
+            -5.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Plane Properties::planeCoefficients",
+    "bridge_function": "OCCTSurfacePlaneCoefficients",
+    "bridge_output": {
+      "type": "coefficients",
+      "data": {
+        "a": 0.0,
+        "b": 0.0,
+        "c": 1.0,
+        "d": -2.0
+      }
+    },
+    "kernel_output": {
+      "type": "coefficients",
+      "data": {
+        "a": 0.0,
+        "b": 0.0,
+        "c": 1.0,
+        "d": -2.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Plane Properties::planeUIso",
+    "bridge_function": "OCCTSurfacePlaneUIso",
+    "bridge_output": {
+      "type": "iso_line",
+      "data": {
+        "point_at_0": [
+          3.0,
+          0.0,
+          2.0
+        ],
+        "point_at_1": [
+          3.0,
+          1.0,
+          2.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "iso_line",
+      "data": {
+        "point_at_0": [
+          3.0,
+          0.0,
+          2.0
+        ],
+        "point_at_1": [
+          3.0,
+          1.0,
+          2.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Plane Properties::planeVIso",
+    "bridge_function": "OCCTSurfacePlaneVIso",
+    "bridge_output": {
+      "type": "iso_line",
+      "data": {
+        "point_at_0": [
+          0.0,
+          3.0,
+          2.0
+        ],
+        "point_at_1": [
+          1.0,
+          3.0,
+          2.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "iso_line",
+      "data": {
+        "point_at_0": [
+          0.0,
+          3.0,
+          2.0
+        ],
+        "point_at_1": [
+          1.0,
+          3.0,
+          2.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Plane Properties::planePln",
+    "bridge_function": "OCCTSurfacePlanePln",
+    "bridge_output": {
+      "type": "plane",
+      "data": {
+        "origin": [
+          0.0,
+          0.0,
+          2.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "plane",
+      "data": {
+        "origin": [
+          0.0,
+          0.0,
+          2.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "CanonicalRecognition Detailed Tests::recognizePlane",
+    "bridge_function": "OCCTShapeRecognizeCanonicalSurface",
+    "bridge_output": {
+      "type": "canonical_surface",
+      "data": {
+        "type": "plane",
+        "origin": [
+          -5.0,
+          -5.0,
+          -5.0
+        ],
+        "direction": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "gap": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "canonical_surface",
+      "data": {
+        "type": "plane",
+        "origin": [
+          -5.0,
+          -5.0,
+          -5.0
+        ],
+        "direction": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "gap": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "CanonicalRecognition Detailed Tests::recognizeCylinder",
+    "bridge_function": "OCCTShapeRecognizeCanonicalSurface",
+    "bridge_output": {
+      "type": "canonical_surface",
+      "data": {
+        "type": "cylinder",
+        "radius": 5.0,
+        "direction": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "gap": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "canonical_surface",
+      "data": {
+        "type": "cylinder",
+        "radius": 5.0,
+        "direction": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "gap": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "CanonicalRecognition Detailed Tests::recognizeSphere",
+    "bridge_function": "OCCTShapeRecognizeCanonicalSurface",
+    "bridge_output": {
+      "type": "canonical_surface",
+      "data": {
+        "type": "sphere",
+        "radius": 5.0,
+        "centre": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "gap": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "canonical_surface",
+      "data": {
+        "type": "sphere",
+        "radius": 5.0,
+        "centre": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "gap": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "CanonicalRecognition Detailed Tests::recognizeEdgeLine",
+    "bridge_function": "OCCTShapeRecognizeCanonicalCurve",
+    "bridge_output": {
+      "type": "canonical_curve",
+      "data": {
+        "edges": 12,
+        "recognised_as_line": 12
+      }
+    },
+    "kernel_output": {
+      "type": "canonical_curve",
+      "data": {
+        "edges": 12,
+        "recognised_as_line": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::UV bounds of box face",
+    "bridge_function": "OCCTFaceGetUVBounds",
+    "bridge_output": {
+      "type": "uv_bounds",
+      "data": {
+        "uMin": 0.0,
+        "uMax": 10.0,
+        "vMin": -10.0,
+        "vMax": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "uv_bounds",
+      "data": {
+        "uMin": 0.0,
+        "uMax": 10.0,
+        "vMin": -10.0,
+        "vMax": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Evaluate point on box face at UV center",
+    "bridge_function": "OCCTFaceEvaluateAtUV",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": -5.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": -5.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Normal at UV on box face is axis-aligned",
+    "bridge_function": "OCCTFaceGetNormalAtUV",
+    "bridge_output": {
+      "type": "normal",
+      "data": {
+        "x": -1.0,
+        "y": 0.0,
+        "z": 0.0,
+        "face_orientation": "REVERSED"
+      }
+    },
+    "kernel_output": {
+      "type": "normal",
+      "data": {
+        "x": -1.0,
+        "y": 0.0,
+        "z": 0.0,
+        "face_orientation": "REVERSED"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Gaussian curvature of plane face is zero",
+    "bridge_function": "OCCTFaceGetGaussianCurvature",
+    "bridge_output": {
+      "type": "gaussian_curvature",
+      "data": {
+        "value": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "gaussian_curvature",
+      "data": {
+        "value": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Gaussian curvature of sphere is 1/r²",
+    "bridge_function": "OCCTFaceGetGaussianCurvature",
+    "bridge_output": {
+      "type": "gaussian_curvature",
+      "data": {
+        "value": 0.04
+      }
+    },
+    "kernel_output": {
+      "type": "gaussian_curvature",
+      "data": {
+        "value": 0.04000000000000001,
+        "note": "read after IsCurvatureDefined(), as the bridge does; a first GaussianCurvature() on a fresh GeomLProp_SLProps returns 0 in the pinned kernel (transcript line staleFirstRead)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Mean curvature of sphere is 1/r",
+    "bridge_function": "OCCTFaceGetMeanCurvature",
+    "bridge_output": {
+      "type": "mean_curvature",
+      "data": {
+        "value": -0.2
+      }
+    },
+    "kernel_output": {
+      "type": "mean_curvature",
+      "data": {
+        "value": -0.2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Principal curvatures of cylinder",
+    "bridge_function": "OCCTFaceGetPrincipalCurvatures",
+    "bridge_output": {
+      "type": "principal_curvatures",
+      "data": {
+        "kMin": -0.2,
+        "kMax": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "principal_curvatures",
+      "data": {
+        "kMin": -0.2,
+        "kMax": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Surface type detection",
+    "bridge_function": "OCCTFaceGetSurfaceType",
+    "bridge_output": {
+      "type": "surface_types",
+      "data": {
+        "box": [
+          "plane",
+          "plane",
+          "plane",
+          "plane",
+          "plane",
+          "plane"
+        ],
+        "cylinder": [
+          "cylinder",
+          "plane",
+          "plane"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "surface_types",
+      "data": {
+        "box": [
+          "plane",
+          "plane",
+          "plane",
+          "plane",
+          "plane",
+          "plane"
+        ],
+        "cylinder": [
+          "cylinder",
+          "plane",
+          "plane"
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face Surface Properties Tests::Face area of box face",
+    "bridge_function": "OCCTFaceGetArea",
+    "bridge_output": {
+      "type": "face_areas",
+      "data": {
+        "areas": [
+          600.0,
+          600.0,
+          300.0,
+          300.0,
+          200.0,
+          200.0
+        ],
+        "total": 2200.0
+      }
+    },
+    "kernel_output": {
+      "type": "face_areas",
+      "data": {
+        "areas": [
+          599.9999999999999,
+          599.9999999999999,
+          299.99999999999994,
+          299.99999999999994,
+          200.0,
+          200.0
+        ],
+        "total": 2200.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Face v0.111::faceValue",
+    "bridge_function": "OCCTFaceLPropValue",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": 3.8507557646703496,
+        "y": 2.1036774620197414,
+        "z": 2.397127693021015
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": 3.8507557646703496,
+        "y": 2.1036774620197414,
+        "z": 2.397127693021015
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Face v0.111::faceNormal",
+    "bridge_function": "OCCTFaceLPropNormal",
+    "bridge_output": {
+      "type": "direction",
+      "data": {
+        "x": 0.7701511529340699,
+        "y": 0.42073549240394825,
+        "z": 0.479425538604203
+      }
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": {
+        "x": 0.7701511529340699,
+        "y": 0.42073549240394825,
+        "z": 0.479425538604203
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Face v0.111::faceCurvature",
+    "bridge_function": "OCCTFaceLPropMaxCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "max": -0.19999999999999998,
+        "min": -0.2
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "max": -0.19999999999999998,
+        "min": -0.2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Face v0.111::faceMeanAndGaussianCurvature",
+    "bridge_function": "OCCTFaceLPropMeanCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "mean": -0.19999999999999998,
+        "gaussian": 0.039999999999999994
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "mean": -0.19999999999999998,
+        "gaussian": 0.039999999999999994
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Face v0.111::faceIsUmbilic",
+    "bridge_function": "OCCTFaceLPropIsUmbilic",
+    "bridge_output": {
+      "type": "umbilic",
+      "data": {
+        "curvature_defined": true,
+        "is_umbilic": false
+      }
+    },
+    "kernel_output": {
+      "type": "umbilic",
+      "data": {
+        "curvature_defined": true,
+        "is_umbilic": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Face v0.111::faceTangentU",
+    "bridge_function": "OCCTFaceLPropTangentU",
+    "bridge_output": {
+      "type": "direction",
+      "data": {
+        "x": -0.479425538604203,
+        "y": 0.8775825618903728,
+        "z": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": {
+        "x": -0.479425538604203,
+        "y": 0.8775825618903728,
+        "z": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Integration: Assembly Interference::shaftHousingClearanceAndInterference",
+    "bridge_function": "OCCTShapeDistance",
+    "bridge_output": {
+      "type": "assembly",
+      "data": {
+        "hollow_volume": 7790.99270127,
+        "clearance": 0.05,
+        "interference_volume": 6283.18530718
+      }
+    },
+    "kernel_output": {
+      "type": "assembly",
+      "data": {
+        "hollow_volume": 7790.99270127,
+        "clearance": 0.05,
+        "interference_volume": 6283.18530718
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Hyperbola Properties::hyperbolaRadii",
+    "bridge_function": "OCCTCurve3DHyperbolaMajorRadius",
+    "bridge_output": {
+      "type": "radii",
+      "data": {
+        "major": 5,
+        "minor": 3
+      }
+    },
+    "kernel_output": {
+      "type": "radii",
+      "data": {
+        "major": 5,
+        "minor": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Hyperbola Properties::hyperbolaSetRadii",
+    "bridge_function": "OCCTCurve3DHyperbolaSetMinorRadius",
+    "bridge_output": {
+      "type": "radii_after_set",
+      "data": {
+        "major": 8,
+        "minor": 4
+      }
+    },
+    "kernel_output": {
+      "type": "radii_after_set",
+      "data": {
+        "major": 8,
+        "minor": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Hyperbola Properties::hyperbolaEccentricity",
+    "bridge_function": "OCCTCurve3DHyperbolaEccentricity",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "eccentricity": 1.1661903789690602
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "eccentricity": 1.1661903789690602
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Hyperbola Properties::hyperbolaFocal",
+    "bridge_function": "OCCTCurve3DHyperbolaFocal",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "focal": 11.661903789690601
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "focal": 11.661903789690601
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Hyperbola Properties::hyperbolaFocus1",
+    "bridge_function": "OCCTCurve3DHyperbolaFocus1",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "focus1": [
+          5.830951894845301,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "focus1": [
+          5.830951894845301,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Hyperbola Properties::hyperbolaAsymptote1",
+    "bridge_function": "OCCTCurve3DHyperbolaAsymptote1",
+    "bridge_output": {
+      "type": "axis",
+      "data": {
+        "location": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          0.8574929257125443,
+          0.5144957554275266,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "axis",
+      "data": {
+        "location": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          0.8574929257125443,
+          0.5144957554275266,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Mass Properties::linearProperties",
+    "bridge_function": "OCCTShapeLinearProperties",
+    "bridge_output": {
+      "type": "linear_properties",
+      "data": {
+        "length": 40.0,
+        "centre": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "linear_properties",
+      "data": {
+        "length": 40.0,
+        "centre": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Mass Properties::momentOfInertia",
+    "bridge_function": "OCCTShapeMomentOfInertia",
+    "bridge_output": {
+      "type": "inertia_tensor",
+      "data": {
+        "ixx": 16666.666666666668,
+        "iyy": 16666.666666666664,
+        "izz": 16666.66666666667,
+        "off_diagonal_max": 7.77e-15
+      }
+    },
+    "kernel_output": {
+      "type": "inertia_tensor",
+      "data": {
+        "ixx": 16666.6666667,
+        "iyy": 16666.6666667,
+        "izz": 16666.6666667,
+        "off_diagonal_max": 7.77e-15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [
+        "kernel values printed to 12 significant digits; agree to that precision"
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Mass Properties::principalAxes",
+    "bridge_function": "OCCTShapePrincipalAxes",
+    "bridge_output": {
+      "type": "principal_axes",
+      "data": {
+        "fixture": "box 10x20x30",
+        "axis1": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "axis2": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "axis3": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "principal_axes",
+      "data": {
+        "fixture": "box 10x20x30",
+        "axis1": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "axis2": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "axis3": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Mass Properties::radiusOfGyration",
+    "bridge_function": "OCCTShapeRadiusOfGyration",
+    "bridge_output": {
+      "type": "radius_of_gyration",
+      "data": {
+        "radius": 4.082482904638631
+      }
+    },
+    "kernel_output": {
+      "type": "radius_of_gyration",
+      "data": {
+        "radius": 4.08248290464
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [
+        "kernel value printed to 12 significant digits; agree to that precision"
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtElCS Line-Sphere::lineSphereDistance",
+    "bridge_function": "OCCTExtremaElCSLinSphere",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "near": {
+          "squareDistance": 225.0,
+          "p1": [
+            0.0,
+            0.0,
+            20.0
+          ],
+          "p2": [
+            0.0,
+            0.0,
+            5.0
+          ]
+        },
+        "far": {
+          "squareDistance": 625.0,
+          "p1": [
+            0.0,
+            0.0,
+            20.0
+          ],
+          "p2": [
+            0.0,
+            0.0,
+            -5.0
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "near": {
+          "squareDistance": 225.0,
+          "p1": [
+            0.0,
+            0.0,
+            20.0
+          ],
+          "p2": [
+            0.0,
+            0.0,
+            5.0
+          ]
+        },
+        "far": {
+          "squareDistance": 625.0,
+          "p1": [
+            0.0,
+            0.0,
+            20.0
+          ],
+          "p2": [
+            0.0,
+            0.0,
+            -5.0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema extras v0.112::locateOnCurve",
+    "bridge_function": "OCCTExtremaLocateOnCurve",
+    "bridge_output": {
+      "type": "curve_projection",
+      "data": {
+        "parameter": 0.0,
+        "distance": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "curve_projection",
+      "data": {
+        "parameter": 0.0,
+        "distance": 1.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema extras v0.112::projectPointOnCurve",
+    "bridge_function": "OCCTExtremaPointCurve",
+    "bridge_output": {
+      "type": "curve_projection",
+      "data": {
+        "count": 1,
+        "parameter": 5.0,
+        "distance": 3.0
+      }
+    },
+    "kernel_output": {
+      "type": "curve_projection",
+      "data": {
+        "count": 1,
+        "parameter": 5.0,
+        "distance": 3.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema extras v0.112::locateOnSurface",
+    "bridge_function": "OCCTExtremaLocateOnSurface",
+    "bridge_output": {
+      "type": "surface_projection",
+      "data": {
+        "u": 5.0,
+        "v": 3.0,
+        "distance": 10.0
+      }
+    },
+    "kernel_output": {
+      "type": "surface_projection",
+      "data": {
+        "u": 5.0,
+        "v": 3.0,
+        "distance": 10.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema extras v0.112::projectPointOnSurface",
+    "bridge_function": "OCCTExtremaPointSurface",
+    "bridge_output": {
+      "type": "surface_projection",
+      "data": {
+        "count": 2,
+        "first": {
+          "u": 0.0,
+          "v": 0.0,
+          "distance": 5.0
+        },
+        "second": {
+          "u": 3.141592653589793,
+          "v": 0.0,
+          "distance": 15.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "surface_projection",
+      "data": {
+        "count": 2,
+        "first": {
+          "u": 0.0,
+          "v": 0.0,
+          "distance": 5.0
+        },
+        "second": {
+          "u": 3.141592653589793,
+          "v": 0.0,
+          "distance": 15.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_Poly::Polyhedral distance between two shapes",
+    "bridge_function": "OCCTShapePolyhedralDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "distance": 10.123940560713,
+        "p1": [
+          4.963544370490271,
+          0.0,
+          0.6026834012766069
+        ],
+        "p2": [
+          15.046570269818346,
+          0.6808332454812377,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "distance": 10.123940560713,
+        "p1": [
+          4.963544370490271,
+          0.0,
+          0.6026834012766069
+        ],
+        "p2": [
+          15.046570269818346,
+          0.6808332454812377,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_Poly::Polyhedral distance needs a mesh",
+    "bridge_function": "OCCTShapePolyhedralDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "ok": false,
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "ok": false,
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "IntAna ConeSphere Tests::coneSphereIntersection",
+    "bridge_function": "OCCTIntAnaConeSphere",
+    "bridge_output": {
+      "type": "curve_count",
+      "data": {
+        "on_axis_r3": 0,
+        "off_axis_r2": 2
+      }
+    },
+    "kernel_output": {
+      "type": "curve_count",
+      "data": {
+        "on_axis_r3": 0,
+        "off_axis_r2": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "IntAna ConeSphere Tests::coneSphereSamplePoints",
+    "bridge_function": "OCCTIntAnaConeSpherePoints",
+    "bridge_output": {
+      "type": "samples",
+      "data": {
+        "count": 10,
+        "first": [
+          3.5450277563209704,
+          -1.5597365825401104,
+          3.8729833462074166
+        ],
+        "last": [
+          3.5450277563209704,
+          1.5597365825401086,
+          3.8729833462074166
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "samples",
+      "data": {
+        "count": 10,
+        "first": [
+          3.545027756,
+          -1.559736583,
+          3.872983346
+        ],
+        "last": [
+          3.545027756,
+          1.559736583,
+          3.872983346
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [
+        "kernel printed to 9 decimals; agree to that precision"
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plane Detection::Planar wire finds plane",
+    "bridge_function": "OCCTShapeFindPlane",
+    "bridge_output": {
+      "type": "plane",
+      "data": {
+        "found": true,
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "origin": [
+          -5.0,
+          -5.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "plane",
+      "data": {
+        "found": true,
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "origin": [
+          -5.0,
+          -5.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plane Detection::Non-planar 3D wire returns nil",
+    "bridge_function": "OCCTShapeFindPlane",
+    "bridge_output": {
+      "type": "plane",
+      "data": {
+        "found": false
+      }
+    },
+    "kernel_output": {
+      "type": "plane",
+      "data": {
+        "found": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plane Detection::Face shape is planar",
+    "bridge_function": "OCCTShapeFindPlane",
+    "bridge_output": {
+      "type": "plane",
+      "data": {
+        "found": true,
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "origin": [
+          -5.0,
+          -5.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "plane",
+      "data": {
+        "found": true,
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "origin": [
+          -5.0,
+          -5.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GProp Torus Tests::torusSurfaceArea",
+    "bridge_function": "OCCTGPropTorusSurface",
+    "bridge_output": {
+      "type": "area",
+      "data": {
+        "area": 1184.352528130723
+      }
+    },
+    "kernel_output": {
+      "type": "area",
+      "data": {
+        "area": 1184.352528130723
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GProp Torus Tests::torusVolume",
+    "bridge_function": "OCCTGPropTorusVolume",
+    "bridge_output": {
+      "type": "volume",
+      "data": {
+        "volume": 1776.5287921960844
+      }
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "volume": 1776.528792196084
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [
+        "kernel printed to 12 decimals; agree to that precision"
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "IntAna LineSphere Tests::lineThroughSphere",
+    "bridge_function": "OCCTIntAnaLineSphere",
+    "bridge_output": {
+      "type": "intersection_points",
+      "data": {
+        "count": 2,
+        "points": [
+          [
+            5.0,
+            0.0,
+            0.0
+          ],
+          [
+            -5.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "params": [
+          15.0,
+          5.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "intersection_points",
+      "data": {
+        "count": 2,
+        "points": [
+          [
+            5.0,
+            0.0,
+            0.0
+          ],
+          [
+            -5.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "params": [
+          15.0,
+          5.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "IntAna LineSphere Tests::lineMissesSphere",
+    "bridge_function": "OCCTIntAnaLineSphere",
+    "bridge_output": {
+      "type": "intersection_points",
+      "data": {
+        "count": 0,
+        "is_parallel": false
+      }
+    },
+    "kernel_output": {
+      "type": "intersection_points",
+      "data": {
+        "count": 0,
+        "is_parallel": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtSS Tests::parallelPlanes",
+    "bridge_function": "OCCTExtremaExtSS",
+    "bridge_output": {
+      "type": "surface_extrema",
+      "data": {
+        "is_done": true,
+        "is_parallel": true,
+        "square_distance": 49.0
+      }
+    },
+    "kernel_output": {
+      "type": "surface_extrema",
+      "data": {
+        "is_done": true,
+        "is_parallel": true,
+        "square_distance": 49.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtSS Tests::sphereDistance",
+    "bridge_function": "OCCTExtremaExtSSPoint",
+    "bridge_output": {
+      "type": "surface_extrema",
+      "data": {
+        "is_done": true,
+        "is_parallel": false,
+        "count": 2,
+        "distances": [
+          5.0,
+          15.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "surface_extrema",
+      "data": {
+        "is_done": true,
+        "is_parallel": false,
+        "count": 2,
+        "distances": [
+          5.0,
+          15.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Canonical Recognition::Canonical recognition callable on box",
+    "bridge_function": "OCCTShapeRecognizeCanonical",
+    "bridge_output": {
+      "type": "canonical_form",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "canonical_form",
+      "data": {
+        "result": null,
+        "IsPlane": false,
+        "IsCylinder": false,
+        "IsCone": false,
+        "IsSphere": false,
+        "IsLine": false,
+        "IsCircle": false,
+        "IsEllipse": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Canonical Recognition::Canonical recognition callable on cylinder",
+    "bridge_function": "OCCTShapeRecognizeCanonical",
+    "bridge_output": {
+      "type": "canonical_form",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "canonical_form",
+      "data": {
+        "result": null,
+        "IsPlane": false,
+        "IsCylinder": false,
+        "IsCone": false,
+        "IsSphere": false,
+        "IsLine": false,
+        "IsCircle": false,
+        "IsEllipse": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd OBB Tests::createAndQuery",
+    "bridge_function": "OCCTOBBGetHalfSizes",
+    "bridge_output": {
+      "type": "bnd_obb",
+      "data": {
+        "is_void": false,
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "half_sizes": [
+          5.0,
+          3.0,
+          2.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_obb",
+      "data": {
+        "is_void": false,
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "half_sizes": [
+          5.0,
+          3.0,
+          2.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd OBB Tests::pointInOut",
+    "bridge_function": "OCCTOBBIsOutPoint",
+    "bridge_output": {
+      "type": "is_out",
+      "data": {
+        "(1,1,1)": false,
+        "(10,10,10)": true
+      }
+    },
+    "kernel_output": {
+      "type": "is_out",
+      "data": {
+        "(1,1,1)": false,
+        "(10,10,10)": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd OBB Tests::obbOverlap",
+    "bridge_function": "OCCTOBBIsOutOBB",
+    "bridge_output": {
+      "type": "is_out",
+      "data": {
+        "partner_at_x4": false,
+        "partner_at_x20": true
+      }
+    },
+    "kernel_output": {
+      "type": "is_out",
+      "data": {
+        "partner_at_x4": false,
+        "partner_at_x20": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd OBB Tests::fromShape",
+    "bridge_function": "OCCTOBBCreateFromShape",
+    "bridge_output": {
+      "type": "bnd_obb",
+      "data": {
+        "is_void": false,
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "half_sizes": [
+          5.0000001,
+          5.0000001,
+          5.0000001
+        ],
+        "square_extent": 300.00001200000014
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_obb",
+      "data": {
+        "is_void": false,
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "half_sizes": [
+          5.0000001,
+          5.0000001,
+          5.0000001
+        ],
+        "square_extent": 300.00001200000014
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd OBB Tests::enlarge",
+    "bridge_function": "OCCTOBBEnlarge",
+    "bridge_output": {
+      "type": "bnd_obb",
+      "data": {
+        "half_sizes": [
+          3.0,
+          3.0,
+          3.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_obb",
+      "data": {
+        "half_sizes": [
+          3.0,
+          3.0,
+          3.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_ExtCF Tests::Edge to sphere face distance",
+    "bridge_function": "OCCTBRepExtremaExtCF",
+    "bridge_output": {
+      "type": "edge_face_extrema",
+      "data": {
+        "edges": 12,
+        "far_edges": 8,
+        "far_distance": 7.012492197250393,
+        "far_nb_ext": 2,
+        "crossing_edges": 4,
+        "crossing_distance": 0.0,
+        "crossing_nb_ext": 4
+      }
+    },
+    "kernel_output": {
+      "type": "edge_face_extrema",
+      "data": {
+        "edges": 12,
+        "far_edges": 8,
+        "far_distance": 7.012492197250393,
+        "far_nb_ext": 2,
+        "crossing_edges": 4,
+        "crossing_distance": 0.0,
+        "crossing_nb_ext": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_ExtCF Tests::Box edge to box face",
+    "bridge_function": "OCCTBRepExtremaExtCF",
+    "bridge_output": {
+      "type": "edge_face_extrema",
+      "data": {
+        "edge": 1,
+        "face": 2,
+        "nb_ext": 1,
+        "distance": 15.811388300841896,
+        "point_on_edge": [
+          -5.0,
+          0.0,
+          5.0
+        ],
+        "point_on_face": [
+          0.0,
+          0.0,
+          20.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "edge_face_extrema",
+      "data": {
+        "edge": 1,
+        "face": 2,
+        "nb_ext": 1,
+        "distance": 15.811388300841896,
+        "point_on_edge": [
+          -5.0,
+          0.0,
+          5.0
+        ],
+        "point_on_face": [
+          0.0,
+          0.0,
+          20.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Curvature getters report definedness (#595)::A straight curve reports 0; a curve with no tangent reports nothing",
+    "bridge_function": "OCCTCurve3DGetCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "line_at_3": 0.0,
+        "dead_bezier_at_0.5": null,
+        "circle_r4_at_1": 0.25
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "line_at_3": 0.0,
+        "dead_bezier_at_0.5": null,
+        "circle_r4_at_1": 0.25
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LProp3dCurve::tangentOfCircle",
+    "bridge_function": "OCCTCurve3DLocalTangent",
+    "bridge_output": {
+      "type": "direction",
+      "data": {
+        "is_defined": true,
+        "value": [
+          -0.0,
+          1.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": {
+        "is_defined": true,
+        "value": [
+          -0.0,
+          1.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LProp3dCurve::normalOfCircle",
+    "bridge_function": "OCCTCurve3DLocalNormal",
+    "bridge_output": {
+      "type": "direction",
+      "data": {
+        "is_defined": true,
+        "value": [
+          -1.0,
+          -0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": {
+        "is_defined": true,
+        "value": [
+          -1.0,
+          -0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LProp3dCurve::centreOfCurvature",
+    "bridge_function": "OCCTCurve3DLocalCentreOfCurvature",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "is_defined": true,
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "is_defined": true,
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_LocateExtCC Tests::localExtremum",
+    "bridge_function": "OCCTExtremaLocateExtCC",
+    "bridge_output": {
+      "type": "local_extremum_cc",
+      "data": {
+        "isDone": true,
+        "squareDistance": 34.0,
+        "p1": {
+          "x": 5.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "param1": 0.0,
+        "p2": {
+          "x": 10.0,
+          "y": 0.0,
+          "z": 3.0
+        },
+        "param2": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "local_extremum_cc",
+      "data": {
+        "isDone": true,
+        "squareDistance": 34.0,
+        "p1": {
+          "x": 5.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "param1": 0.0,
+        "p2": {
+          "x": 10.0,
+          "y": 0.0,
+          "z": 3.0
+        },
+        "param2": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue943 bounds: void versus zero-size::voidShapeHasNoBoundsSizeOrCenter",
+    "bridge_function": "OCCTShapeGetBounds",
+    "bridge_output": {
+      "type": "void",
+      "data": {
+        "bounds": null,
+        "size": null,
+        "center": null,
+        "boundingBox": null,
+        "boundingBoxOptimal": null
+      }
+    },
+    "kernel_output": {
+      "type": "void",
+      "data": {
+        "BRepBndLib_Add_IsVoid": true,
+        "BRepBndLib_AddOptimal_IsVoid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue943 bounds: void versus zero-size::pointVertexAtOriginReportsAMeasuredBox",
+    "bridge_function": "OCCTShapeBoundingBox",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "bounds_near_zero": true,
+        "boundingBox_equals_bounds": true,
+        "boundingBoxOptimal": {
+          "min": [
+            0,
+            0,
+            0
+          ],
+          "max": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "Add": {
+          "min": [
+            -1e-07,
+            -1e-07,
+            -1e-07
+          ],
+          "max": [
+            1e-07,
+            1e-07,
+            1e-07
+          ]
+        },
+        "AddOptimal": {
+          "min": [
+            0,
+            0,
+            0
+          ],
+          "max": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue943 bounds: void versus zero-size::zeroLengthEdgeAtOriginReportsAMeasuredBox",
+    "bridge_function": "OCCTEdgeGetBounds",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "degenerate_edge_at_origin_found": true,
+        "bounds_near_zero": true
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "sphere_edge_2_degenerated": true,
+        "min": [
+          -1.0000000030824117e-07,
+          -1.0000000030789441e-07,
+          -1.0000000000207949e-07
+        ],
+        "max": [
+          1.0000000030824117e-07,
+          1.0000000030789441e-07,
+          1.0000000000207949e-07
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue943 bounds: void versus zero-size::faceBoundsAreMeasuredAndAAGKeepsEveryFace",
+    "bridge_function": "OCCTFaceGetBoundsExact",
+    "bridge_output": {
+      "type": "face_bounds",
+      "data": {
+        "faces": 6,
+        "all_bounds_present": true,
+        "all_exactBounds_present": true,
+        "aag_nodes": 6
+      }
+    },
+    "kernel_output": {
+      "type": "face_bounds",
+      "data": {
+        "unique_faces": 6,
+        "face_occurrences": 6,
+        "all_non_void_with_and_without_triangulation": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Sinert Tests::face surface inertia",
+    "bridge_function": "OCCTBRepGPropSinert",
+    "bridge_output": {
+      "type": "surface_inertia",
+      "data": {
+        "mass": 100.0,
+        "centre_of_mass": [
+          -5.0,
+          2.7755575615628914e-17,
+          2.7755575615628914e-17
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "surface_inertia",
+      "data": {
+        "mass": 100.0,
+        "centre_of_mass": [
+          -5.0,
+          2.7755575615628914e-17,
+          2.7755575615628914e-17
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Sinert Tests::adaptive surface inertia on sphere",
+    "bridge_function": "OCCTBRepGPropSinertAdaptive",
+    "bridge_output": {
+      "type": "surface_inertia",
+      "data": {
+        "mass": 0.0,
+        "epsilon": 0.0,
+        "centre_of_mass": null
+      }
+    },
+    "kernel_output": {
+      "type": "surface_inertia",
+      "data": {
+        "mass": 0.0,
+        "epsilon": 0.0,
+        "centre_of_mass": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "with_face_domain_mass": 1256.637061435917,
+        "expected_4_pi_r2": 1256.6370614359173
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [
+        "bridge matches BRepGProp_Sinert::Perform(face, eps) exactly, and both are wrong: that overload integrates over an empty BRepGProp_Domain. #2204."
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd Range Tests::createAndQuery",
+    "bridge_function": "OCCTRangeGetBounds",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "first": 1.0,
+        "last": 5.0,
+        "is_void": false,
+        "delta": 4.0
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "first": 1.0,
+        "last": 5.0,
+        "is_void": false,
+        "delta": 4.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd Range Tests::contains",
+    "bridge_function": "OCCTRangeContains",
+    "bridge_output": {
+      "type": "contains",
+      "data": {
+        "contains_3": true,
+        "contains_6": false
+      }
+    },
+    "kernel_output": {
+      "type": "contains",
+      "data": {
+        "contains_3": true,
+        "contains_6": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd Range Tests::addValue",
+    "bridge_function": "OCCTRangeAddValue",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "first": 2.0,
+        "last": 6.0
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "first": 2.0,
+        "last": 6.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd Range Tests::common",
+    "bridge_function": "OCCTRangeCommon",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "first": 3.0,
+        "last": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "first": 3.0,
+        "last": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd Range Tests::trimFromTo",
+    "bridge_function": "OCCTRangeTrimFrom",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "first": 3.0,
+        "last": 7.0
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "first": 3.0,
+        "last": 7.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd Range Tests::voidRange",
+    "bridge_function": "OCCTRangeCreateVoid",
+    "bridge_output": {
+      "type": "void",
+      "data": {
+        "is_void": true,
+        "get_bounds": false
+      }
+    },
+    "kernel_output": {
+      "type": "void",
+      "data": {
+        "is_void": true,
+        "get_bounds": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GProp Weighted Tests::weightedCentroid",
+    "bridge_function": "OCCTGPropPointSetWeightedCentroid",
+    "bridge_output": {
+      "type": "mass_centroid",
+      "data": {
+        "mass": 4,
+        "centroid": [
+          7.5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "mass_centroid",
+      "data": {
+        "mass": 4,
+        "centroid": [
+          7.5,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GProp Weighted Tests::barycentre",
+    "bridge_function": "OCCTGPropBarycentre",
+    "bridge_output": {
+      "type": "centroid",
+      "data": {
+        "centroid": [
+          3.3333333333333335,
+          3.3333333333333335,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "centroid",
+      "data": {
+        "mass": 3,
+        "centroid": [
+          3.3333333333333335,
+          3.3333333333333335,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtElSS Plane-Plane::parallelPlanesReportTheSquareDistance",
+    "bridge_function": "OCCTExtremaElSSPlanePlane",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "isParallel": true,
+        "squareDistance": 100,
+        "viaExtPElS": {
+          "count": 1,
+          "squareDistance": 100
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "isParallel": true,
+        "squareDistance": 100,
+        "viaExtPElS": {
+          "count": 1,
+          "squareDistance": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtElSS Plane-Plane::crossingPlanesReportNoDistance",
+    "bridge_function": "OCCTExtremaElSSPlanePlane",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "isParallel": false,
+        "squareDistance": null
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "isParallel": false,
+        "nbExt": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck Analyzer Tests::Box passes analyzer validation",
+    "bridge_function": "OCCTBRepCheckAnalyzerIsValid",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck Analyzer Tests::Sphere passes analyzer validation",
+    "bridge_function": "OCCTBRepCheckAnalyzerIsValid",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck Analyzer Tests::Cylinder passes analyzer validation",
+    "bridge_function": "OCCTBRepCheckAnalyzerIsValid",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck Analyzer Tests::Analyzer without geometry checks",
+    "bridge_function": "OCCTBRepCheckAnalyzerIsValid",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "is_valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "IntTools_EdgeFace Tests::Edge crossing face produces intersection",
+    "bridge_function": "OCCTIntToolsEdgeFace",
+    "bridge_output": {
+      "type": "common_parts",
+      "data": {
+        "count": 1,
+        "parts": [
+          {
+            "type": "vertex",
+            "param1": 5.0,
+            "point": [
+              -5.0,
+              1.0,
+              2.0
+            ]
+          }
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "common_parts",
+      "data": {
+        "count": 1,
+        "parts": [
+          {
+            "type": "vertex",
+            "range1": [
+              4.99999985,
+              5.00000015
+            ],
+            "point": [
+              -5.0,
+              1.0,
+              2.0
+            ]
+          }
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtPElC Point-Circle::pointToCircle",
+    "bridge_function": "OCCTExtremaExtPElCCirc",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "near": {
+          "square_distance": 25.0,
+          "point": [
+            5.0,
+            0.0,
+            0.0
+          ]
+        },
+        "far": {
+          "square_distance": 225.0,
+          "point": [
+            -5.0,
+            6.123233995736766e-16,
+            0.0
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "near": {
+          "square_distance": 25.0,
+          "point": [
+            5.0,
+            0.0,
+            0.0
+          ]
+        },
+        "far": {
+          "square_distance": 225.0,
+          "point": [
+            -5.0,
+            6.123233995736766e-16,
+            0.0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Domain Tests::faceEdgeCount",
+    "bridge_function": "OCCTShapeFaceDomainEdgeCount",
+    "bridge_output": {
+      "type": "edge_count",
+      "data": {
+        "count": 4
+      }
+    },
+    "kernel_output": {
+      "type": "edge_count",
+      "data": {
+        "count": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "IntAna LineTorus Tests::lineThroughTorus",
+    "bridge_function": "OCCTIntAnaLineTorus",
+    "bridge_output": {
+      "type": "intersection_points",
+      "data": {
+        "count": 4,
+        "points_sorted_by_x": [
+          [
+            -25,
+            0,
+            0
+          ],
+          [
+            -15,
+            0,
+            0
+          ],
+          [
+            15,
+            0,
+            0
+          ],
+          [
+            25,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "intersection_points",
+      "data": {
+        "count": 4,
+        "points": [
+          [
+            -25,
+            0,
+            0
+          ],
+          [
+            -15,
+            0,
+            0
+          ],
+          [
+            25,
+            0,
+            0
+          ],
+          [
+            15,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd_Sphere Tests::createAndQuery",
+    "bridge_function": "OCCTBndSphereCreate",
+    "bridge_output": {
+      "type": "sphere",
+      "data": {
+        "radius": 5.0,
+        "center": {
+          "x": 1.0,
+          "y": 2.0,
+          "z": 3.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "sphere",
+      "data": {
+        "radius": 5.0,
+        "center": {
+          "x": 1.0,
+          "y": 2.0,
+          "z": 3.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd_Sphere Tests::distanceToPoint",
+    "bridge_function": "OCCTBndSphereDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "to_10_0_0": 10.0,
+        "to_0_3_4": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "to_10_0_0": 10.0,
+        "to_0_3_4": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd_Sphere Tests::isOutsidePoint",
+    "bridge_function": "OCCTBndSphereIsOut",
+    "bridge_output": {
+      "type": "is_out_point",
+      "data": {
+        "p_100_0_0": true,
+        "p_6_0_0": true,
+        "p_1_0_0": false,
+        "p_0_0_0": false
+      }
+    },
+    "kernel_output": {
+      "type": "is_out_point",
+      "data": {
+        "p_100_0_0": true,
+        "p_6_0_0": true,
+        "p_1_0_0": false,
+        "p_0_0_0": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd_Sphere Tests::isOutsideSphere",
+    "bridge_function": "OCCTBndSphereIsOutSphere",
+    "bridge_output": {
+      "type": "is_out_sphere",
+      "data": {
+        "far": true,
+        "overlapping": false
+      }
+    },
+    "kernel_output": {
+      "type": "is_out_sphere",
+      "data": {
+        "far": true,
+        "overlapping": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd_Sphere Tests::addMerge",
+    "bridge_function": "OCCTBndSphereAdd",
+    "bridge_output": {
+      "type": "merged_sphere",
+      "data": {
+        "radius": 10.0,
+        "center": {
+          "x": 5.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "merged_sphere",
+      "data": {
+        "radius": 10.0,
+        "center": {
+          "x": 5.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema ExtFF Tests::Face-face distance between separated boxes",
+    "bridge_function": "OCCTBRepExtremaExtFF",
+    "bridge_output": {
+      "type": "face_face_extrema",
+      "data": {
+        "pair": [
+          1,
+          0
+        ],
+        "distance": 7.5,
+        "solutionCount": 1,
+        "pointOnFace1": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "pointOnFace2": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "face1UV": [
+          0.0,
+          0.0
+        ],
+        "face2UV": [
+          0.0,
+          0.0
+        ],
+        "far_pair_0_0_distance": 12.5,
+        "perpendicular_pair_0_2": null
+      }
+    },
+    "kernel_output": {
+      "type": "face_face_extrema",
+      "data": {
+        "pair": [
+          1,
+          0
+        ],
+        "distance": 7.5,
+        "nbExt": 1,
+        "isParallel": true,
+        "pointOnFace1": "none: ParameterOnFace1(1) throws Standard_OutOfRange",
+        "pointOnFace2": "none",
+        "far_pair_0_0_distance": 12.5,
+        "perpendicular_pair_0_2_nbExt": 0
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "witness points and UV: the kernel has none for parallel faces (ParameterOnFace1 throws); the bridge catches the throw after writing distance/solutionCount and returns (0,0,0)/(0,0) as if measured. Filed as #2249. distance, solutionCount, the far pair and the perpendicular pair all MATCH."
+      ]
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "BRepExtrema ExtCC Tests::Edge-edge distance between box edges",
+    "bridge_function": "OCCTBRepExtremaExtCC",
+    "bridge_output": {
+      "type": "extremum",
+      "data": {
+        "pair_0_0": "IsParallel, solutionCount 0 (nil)",
+        "pair_1_0": {
+          "solution_count": 1,
+          "distance": 25.0,
+          "point_on_e1": [
+            -5.0,
+            0.0,
+            5.0
+          ],
+          "point_on_e2": [
+            20.0,
+            0.0,
+            5.0
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "extremum",
+      "data": {
+        "pair_0_0": "IsParallel, solutionCount 0 (nil)",
+        "pair_1_0": {
+          "solution_count": 1,
+          "distance": 25.0,
+          "point_on_e1": [
+            -5.0,
+            0.0,
+            5.0
+          ],
+          "point_on_e2": [
+            20.0,
+            0.0,
+            5.0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema ExtCC Tests::Edge-edge distance between standalone edge shapes",
+    "bridge_function": "OCCTBRepExtremaExtCCEdges",
+    "bridge_output": {
+      "type": "extremum",
+      "data": {
+        "solution_count": 1,
+        "distance": 25.0,
+        "point_on_e1": [
+          -5.0,
+          0.0,
+          5.0
+        ],
+        "point_on_e2": [
+          20.0,
+          0.0,
+          5.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "extremum",
+      "data": {
+        "solution_count": 1,
+        "distance": 25.0,
+        "point_on_e1": [
+          -5.0,
+          0.0,
+          5.0
+        ],
+        "point_on_e2": [
+          20.0,
+          0.0,
+          5.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtPS Tests::pointSurfaceDistance",
+    "bridge_function": "OCCTExtremaExtPS",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "is_done": true,
+        "nb_ext": 2,
+        "square_distances": [
+          25.0,
+          225.0
+        ],
+        "min_distance": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "is_done": true,
+        "nb_ext": 2,
+        "square_distances": [
+          25.0,
+          225.0
+        ],
+        "min_distance": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtPS Tests::pointOnSurfaceParams",
+    "bridge_function": "OCCTExtremaExtPSPoint",
+    "bridge_output": {
+      "type": "extremum_1",
+      "data": {
+        "square_distance": 25.0,
+        "point": [
+          3.061616997868383e-16,
+          0.0,
+          5.0
+        ],
+        "u": 0.0,
+        "v": 1.5707963267948966
+      }
+    },
+    "kernel_output": {
+      "type": "extremum_1",
+      "data": {
+        "square_distance": 25.0,
+        "point": [
+          3.061616997868383e-16,
+          0.0,
+          5.0
+        ],
+        "u": 0.0,
+        "v": 1.5707963267948966
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Self-Intersection Tests::Box has no self-intersection",
+    "bridge_function": "OCCTShapeSelfIntersection",
+    "bridge_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "kernel_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Self-Intersection Tests::Sphere has no self-intersection",
+    "bridge_function": "OCCTShapeSelfIntersection",
+    "bridge_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "kernel_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Self-Intersection Tests::Cylinder has no self-intersection",
+    "bridge_function": "OCCTShapeSelfIntersection",
+    "bridge_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "kernel_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Self-Intersection Tests::Custom tolerance and mesh deflection",
+    "bridge_function": "OCCTShapeSelfIntersection",
+    "bridge_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "kernel_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Self-Intersection Tests::Overlapping boxes in one compound report their overlaps",
+    "bridge_function": "OCCTShapeSelfIntersection",
+    "bridge_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 6
+      }
+    },
+    "kernel_output": {
+      "type": "overlap_count",
+      "data": {
+        "isDone": true,
+        "overlapCount": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtPElS Point-Cone::pointToCone",
+    "bridge_function": "OCCTExtremaExtPElSCone",
+    "bridge_output": {
+      "type": "point_surface_extrema",
+      "data": {
+        "count": 2,
+        "extrema": [
+          {
+            "squareDistance": 112.50000000000001,
+            "point2": {
+              "x": 12.5,
+              "y": 0.0,
+              "z": 7.500000000000001
+            }
+          },
+          {
+            "squareDistance": 312.50000000000006,
+            "point2": {
+              "x": 7.4999999999999964,
+              "y": -9.184850993605144e-16,
+              "z": -12.499999999999998
+            }
+          }
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point_surface_extrema",
+      "data": {
+        "count": 2,
+        "extrema": [
+          {
+            "squareDistance": 112.50000000000001,
+            "point2": {
+              "x": 12.5,
+              "y": 0.0,
+              "z": 7.500000000000001
+            }
+          },
+          {
+            "squareDistance": 312.50000000000006,
+            "point2": {
+              "x": 7.4999999999999964,
+              "y": -9.184850993605144e-16,
+              "z": -12.499999999999998
+            }
+          }
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_CylindricalSurface Properties::cylinderRadius",
+    "bridge_function": "OCCTSurfaceCylinderRadius",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "radius": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "radius": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_CylindricalSurface Properties::cylinderSetRadius",
+    "bridge_function": "OCCTSurfaceCylinderSetRadius",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "radius_after_set": 10.0
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "radius_after_set": 10.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_CylindricalSurface Properties::cylinderAxis",
+    "bridge_function": "OCCTSurfaceCylinderAxis",
+    "bridge_output": {
+      "type": "axis",
+      "data": {
+        "position": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "direction": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "axis",
+      "data": {
+        "position": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "direction": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_CylindricalSurface Properties::cylinderUIso",
+    "bridge_function": "OCCTSurfaceCylinderUIso",
+    "bridge_output": {
+      "type": "iso_line",
+      "data": {
+        "uiso_0": {
+          "type": "Geom_Line",
+          "value_0": [
+            5.0,
+            0.0,
+            0.0
+          ],
+          "value_3": [
+            5.0,
+            0.0,
+            3.0
+          ]
+        },
+        "uiso_pi_2": {
+          "type": "Geom_Line",
+          "value_3": [
+            3.061616997868383e-16,
+            5.0,
+            3.0
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "iso_line",
+      "data": {
+        "uiso_0": {
+          "type": "Geom_Line",
+          "value_0": [
+            5.0,
+            0.0,
+            0.0
+          ],
+          "value_3": [
+            5.0,
+            0.0,
+            3.0
+          ]
+        },
+        "uiso_pi_2": {
+          "type": "Geom_Line",
+          "value_3": [
+            3.061616997868383e-16,
+            5.0,
+            3.0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Make Volume::Make volume from faces",
+    "bridge_function": "OCCTShapeMakeVolume",
+    "bridge_output": {
+      "type": "volume_result",
+      "data": {
+        "solids": 1,
+        "volume": 1000
+      }
+    },
+    "kernel_output": {
+      "type": "volume_result",
+      "data": {
+        "hasErrors": false,
+        "solids": 1,
+        "volume": 999.9999999999998
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Make Volume::Two coincident faces enclose no volume",
+    "bridge_function": "OCCTShapeMakeVolume",
+    "bridge_output": {
+      "type": "volume_result",
+      "data": {
+        "nil": false,
+        "solids": 0
+      }
+    },
+    "kernel_output": {
+      "type": "volume_result",
+      "data": {
+        "hasErrors": false,
+        "shapeType": "TopAbs_COMPOUND",
+        "solids": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema ExtPF Tests::Point-face distance",
+    "bridge_function": "OCCTBRepExtremaExtPF",
+    "bridge_output": {
+      "type": "per_face_extrema",
+      "data": {
+        "faces_answering": 2,
+        "solution_count_each": 1,
+        "nearest": {
+          "distance": 10,
+          "point": [
+            5,
+            5,
+            5
+          ]
+        },
+        "farthest": {
+          "distance": 20,
+          "point": [
+            5,
+            5,
+            -5
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "per_face_extrema",
+      "data": {
+        "nb_ext_by_face": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1
+        ],
+        "face_4": {
+          "distance": 20,
+          "point": [
+            5,
+            5,
+            -5
+          ],
+          "uv": [
+            10,
+            10
+          ]
+        },
+        "face_5": {
+          "distance": 10,
+          "point": [
+            5,
+            5,
+            5
+          ],
+          "uv": [
+            10,
+            10
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Patterns::Triangle boundary",
+    "bridge_function": "OCCTHatchLines",
+    "bridge_output": {
+      "type": "segments",
+      "data": {
+        "count": 9,
+        "y": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "x_from": "y/2",
+        "x_to": "10 - y/2"
+      }
+    },
+    "kernel_output": {
+      "type": "segments",
+      "data": {
+        "count": 9,
+        "y": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "x_from": "y/2",
+        "x_to": "10 - y/2"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Patterns::An island polygon cuts a hole in the hatch fill",
+    "bridge_function": "OCCTHatchLines",
+    "bridge_output": {
+      "type": "segments",
+      "data": {
+        "count": 13,
+        "y10_spans": [
+          [
+            0.0,
+            7.0
+          ],
+          [
+            13.0,
+            20.0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "segments",
+      "data": {
+        "count": 13,
+        "y10_spans": [
+          [
+            0.0,
+            7.0
+          ],
+          [
+            13.0,
+            20.0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_SelfIntersection Pair Tests::noSelfIntersectionOnBox",
+    "bridge_function": "OCCTShapeSelfIntersectionPairs",
+    "bridge_output": {
+      "type": "pairs",
+      "data": {
+        "box": [],
+        "overlapping_compound_nonempty": true
+      }
+    },
+    "kernel_output": {
+      "type": "pairs",
+      "data": {
+        "box": [],
+        "overlapping_compound_nonempty": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_SelfIntersection Pair Tests::selfIntersectionReturnsArray",
+    "bridge_function": "OCCTShapeSelfIntersectionPairs",
+    "bridge_output": {
+      "type": "pairs",
+      "data": {
+        "sphere": [],
+        "overlapping_compound": [
+          [
+            1,
+            8
+          ],
+          [
+            1,
+            10
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            3,
+            10
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            8
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "pairs",
+      "data": {
+        "sphere": [],
+        "overlapping_compound": [
+          [
+            1,
+            8
+          ],
+          [
+            1,
+            10
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            3,
+            10
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            8
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Extrema Tests::Sphere surfaces distance",
+    "bridge_function": "OCCTSurfaceExtrema",
+    "bridge_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 12.000000001961356,
+        "p1": {
+          "x": 2.9999999999068514,
+          "y": -2.3353891282520862e-05,
+          "z": -3.6726259132488495e-06
+        },
+        "p2": {
+          "x": 15.000000001171706,
+          "y": 0.00010113057010444278,
+          "z": -3.8596245878837996e-05
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 12.000000001961356,
+        "p1": {
+          "x": 2.9999999999068514,
+          "y": -2.3353891282520862e-05,
+          "z": -3.6726259132488495e-06
+        },
+        "p2": {
+          "x": 15.000000001171706,
+          "y": 0.00010113057010444278,
+          "z": -3.8596245878837996e-05
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Extrema Tests::Extrema returns nearest points and UV",
+    "bridge_function": "OCCTSurfaceExtrema",
+    "bridge_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 20.000000002303583,
+        "p1": {
+          "x": 3.999999999899847,
+          "y": -2.15998579181621e-05,
+          "z": -1.8294040907514106e-05
+        },
+        "p2": {
+          "x": 24.000000001610637,
+          "y": 0.0001282943928125367,
+          "z": -5.3555754393281796e-05
+        },
+        "uv1": [
+          6.283179907215106,
+          -4.57351022689447e-06
+        ],
+        "uv2": [
+          3.1415712711909887,
+          -8.92595906566549e-06
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 20.000000002303583,
+        "p1": {
+          "x": 3.999999999899847,
+          "y": -2.15998579181621e-05,
+          "z": -1.8294040907514106e-05
+        },
+        "p2": {
+          "x": 24.000000001610637,
+          "y": 0.0001282943928125367,
+          "z": -5.3555754393281796e-05
+        },
+        "uv1": [
+          6.283179907215106,
+          -4.57351022689447e-06
+        ],
+        "uv2": [
+          3.1415712711909887,
+          -8.92595906566549e-06
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Extrema Tests::Cylinder and sphere distance",
+    "bridge_function": "OCCTSurfaceExtrema",
+    "bridge_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 12.0,
+        "p1": {
+          "x": 5.0,
+          "y": 4.596695327168491e-08,
+          "z": 1.8503663659890507e-09
+        },
+        "p2": {
+          "x": 17.0,
+          "y": 2.076669806219026e-08,
+          "z": 1.3759166247828372e-08
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 12.0,
+        "p1": {
+          "x": 5.0,
+          "y": 4.596695327168491e-08,
+          "z": 1.8503663659890507e-09
+        },
+        "p2": {
+          "x": 17.0,
+          "y": 2.076669806219026e-08,
+          "z": 1.3759166247828372e-08
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Face Tests::Natural bounds of box face",
+    "bridge_function": "OCCTFaceGetNaturalBounds",
+    "bridge_output": {
+      "type": "uv_bounds",
+      "data": {
+        "u": [
+          0.0,
+          30.0
+        ],
+        "v": [
+          -20.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "uv_bounds",
+      "data": {
+        "u": [
+          0.0,
+          30.0
+        ],
+        "v": [
+          -20.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-brepgprop-face/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Face Tests::Evaluate GProp normal on box face",
+    "bridge_function": "OCCTFaceEvaluateNormalAtUV",
+    "bridge_output": {
+      "type": "gprop_normal",
+      "data": {
+        "point": [
+          -5.0,
+          0.0,
+          0.0
+        ],
+        "normal": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "magnitude": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "gprop_normal",
+      "data": {
+        "point": [
+          -5.0,
+          0.0,
+          0.0
+        ],
+        "normal": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "magnitude": 1.0
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-brepgprop-face/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Face Tests::Evaluate GProp normal on cylinder face",
+    "bridge_function": "OCCTFaceEvaluateNormalAtUV",
+    "bridge_output": {
+      "type": "gprop_normal_magnitudes",
+      "data": {
+        "lateral": 5.0,
+        "top_cap": 1.0,
+        "bottom_cap": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "gprop_normal_magnitudes",
+      "data": {
+        "lateral": 5.0,
+        "top_cap": 1.0,
+        "bottom_cap": 1.0
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-brepgprop-face/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Face Tests::GProp normal magnitude is area element",
+    "bridge_function": "OCCTFaceEvaluateNormalAtUV",
+    "bridge_output": {
+      "type": "gprop_normal_magnitudes",
+      "data": {
+        "at_min_corner": 1.0,
+        "at_max_corner": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "gprop_normal_magnitudes",
+      "data": {
+        "at_min_corner": 1.0,
+        "at_max_corner": 1.0
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-brepgprop-face/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtPElS Point-Plane::pointToPlane",
+    "bridge_function": "OCCTExtremaExtPElSPlane",
+    "bridge_output": {
+      "type": "point_surface_extrema",
+      "data": {
+        "count": 1,
+        "square_distance": 100.0,
+        "point2": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point_surface_extrema",
+      "data": {
+        "count": 1,
+        "square_distance": 100.0,
+        "point2": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Builder Tests::createHatcher",
+    "bridge_function": "OCCTHatcherCreate",
+    "bridge_output": {
+      "type": "handle",
+      "data": {
+        "non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "handle",
+      "data": {
+        "constructed": true,
+        "tolerance": 1e-06
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Builder Tests::addLinesAndCount",
+    "bridge_function": "OCCTHatcherAddXLine",
+    "bridge_output": {
+      "type": "line_count",
+      "data": {
+        "nb_lines": 3
+      }
+    },
+    "kernel_output": {
+      "type": "line_count",
+      "data": {
+        "nb_lines": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Builder Tests::addYLines",
+    "bridge_function": "OCCTHatcherAddYLine",
+    "bridge_output": {
+      "type": "line_count",
+      "data": {
+        "nb_lines": 2
+      }
+    },
+    "kernel_output": {
+      "type": "line_count",
+      "data": {
+        "nb_lines": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Builder Tests::trimAndIntervals",
+    "bridge_function": "OCCTHatcherNbIntervals",
+    "bridge_output": {
+      "type": "interval_counts",
+      "data": {
+        "untrimmed": [
+          0,
+          0,
+          0
+        ],
+        "closed_square": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "interval_counts",
+      "data": {
+        "untrimmed": [
+          0,
+          0,
+          0
+        ],
+        "closed_square": [
+          1,
+          1,
+          1
+        ],
+        "single_diagonal_segment": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
     "test_name": "IntAna PlaneSphere Tests::planeSphereIntersection",
     "bridge_function": "OCCTIntAnaPlaneSphere",
     "bridge_output": {
