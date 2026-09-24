@@ -134,29 +134,57 @@ struct MeshFromArraysTests {
 @Suite("Mesh Tests")
 struct MeshTests {
 
-    @Test("Mesh from shape")
-    func meshFromShape() {
-        let box = Shape.box(width: 10, height: 5, depth: 3)!
-        let mesh = box.mesh(linearDeflection: 0.1)!
-
-        // With stubs, mesh will be empty
-        // With real OCCT, will have vertices and triangles
-        _ = mesh.vertexCount
-        _ = mesh.triangleCount
+    /// Volume enclosed by a closed, outward-wound triangle mesh (divergence theorem).
+    static func enclosedVolume(_ mesh: Mesh) -> Double {
+        let v = mesh.vertices
+        let idx = mesh.indices
+        var volume = 0.0
+        var i = 0
+        while i + 2 < idx.count {
+            let a = SIMD3<Double>(v[Int(idx[i])])
+            let b = SIMD3<Double>(v[Int(idx[i + 1])])
+            let c = SIMD3<Double>(v[Int(idx[i + 2])])
+            volume += simd_dot(a, simd_cross(b, c)) / 6
+            i += 3
+        }
+        return volume
     }
 
+    // This read vertexCount and triangleCount and asserted nothing, so it passed against an
+    // empty mesh. A box meshes as two triangles per face on four nodes per face
+    // (Scripts/repro/766-mesh-core-1/transcript.txt), and encloses its own volume.
+    @Test("Mesh from shape")
+    func meshFromShape() throws {
+        let box = try #require(Shape.box(width: 10, height: 5, depth: 3))
+        let mesh = try #require(box.mesh(linearDeflection: 0.1))
+        #expect(mesh.vertexCount == 24)
+        #expect(mesh.triangleCount == 12)
+        #expect(abs(Self.enclosedVolume(mesh) - 150) < 1e-3)
+    }
+
+    // The two length checks this held are true by construction (`vertices` and `normals` are
+    // both sized from `vertexCount`, `indices` from `triangleCount`), so they passed whatever the
+    // arrays contained. Now the contents: every index addresses a vertex, and every vertex lies
+    // on the sphere to within the 0.5 deflection. Counts are BRepMesh's for the same input
+    // (Scripts/repro/766-mesh-core-1/transcript.txt).
     @Test("Mesh data access")
-    func meshDataAccess() {
-        let sphere = Shape.sphere(radius: 5)!
-        let mesh = sphere.mesh(linearDeflection: 0.5)!
+    func meshDataAccess() throws {
+        let sphere = try #require(Shape.sphere(radius: 5))
+        let mesh = try #require(sphere.mesh(linearDeflection: 0.5))
 
         let vertices = mesh.vertices
         let normals = mesh.normals
         let indices = mesh.indices
 
-        // Lengths should be consistent
-        #expect(vertices.count == normals.count)
-        #expect(indices.count == mesh.triangleCount * 3)
+        #expect(vertices.count == 168)
+        #expect(normals.count == vertices.count)
+        #expect(indices.count == 306 * 3)
+        #expect(indices.allSatisfy { Int($0) < vertices.count })
+        let offSphere = vertices.filter {
+            let r = Double(simd_length($0))
+            return r > 5 + 1e-4 || r < 5 - 0.5
+        }
+        #expect(offSphere.isEmpty, "\(offSphere.count) vertices off the r = 5 sphere")
     }
 
     @Test("Enhanced mesh parameters")
@@ -257,6 +285,11 @@ struct MeshTests {
         #expect(unionMesh != nil)
         if let union = unionMesh {
             #expect(union.triangleCount > 0)
+            // The union of two unit-overlapping 10-boxes encloses 1500. The mesh boolean
+            // operates on sewn shells, not solids, and encloses 2000 (#2301).
+            withKnownIssue("#2301: mesh booleans operate on sewn shells, not solids") {
+                #expect(abs(Self.enclosedVolume(union) - 1500) < 1)
+            }
         }
     }
 
@@ -270,6 +303,12 @@ struct MeshTests {
 
         let diffMesh = boxMesh.subtracting(cylMesh, deflection: 0.5)
         #expect(diffMesh != nil)
+        if let diff = diffMesh {
+            // BRepAlgoAPI_Cut on the solids leaves 858.63; the mesh boolean removes nothing (#2301).
+            withKnownIssue("#2301: mesh booleans operate on sewn shells, not solids") {
+                #expect(abs(Self.enclosedVolume(diff) - 858.63) < 5)
+            }
+        }
     }
 
     @Test("Mesh boolean intersection")
@@ -282,6 +321,14 @@ struct MeshTests {
 
         let intersectMesh = boxMesh.intersection(with: sphereMesh, deflection: 0.5)
         #expect(intersectMesh != nil)
+        if let common = intersectMesh {
+            // BRepAlgoAPI_Common on the solids encloses 959.23; the mesh boolean returns an empty
+            // mesh, which `!= nil` accepts (#2301).
+            withKnownIssue("#2301: mesh booleans operate on sewn shells, not solids") {
+                #expect(common.triangleCount > 0)
+                #expect(abs(Self.enclosedVolume(common) - 959.23) < 5)
+            }
+        }
     }
 }
 
