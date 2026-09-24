@@ -7341,5 +7341,463 @@
       "probe": "Scripts/repro/766-geom2d-gce-geom2dapi/",
       "rewritten": "`!= nil` only"
     }
+  },
+  {
+    "test_name": "GC_Make*2d Conic Tests::circle2dCenterRadius",
+    "bridge_function": "OCCTCurve2DMakeCircleCenterRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radius": 5,
+        "centre": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radius": 5,
+        "centre": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1",
+      "red": "GCMake2dConicTests.swift:22:21: Expectation failed: abs(c.circleProperties.radius - radius) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gcmake2d-conic/",
+      "rewritten": "`!= nil` and `isClosed` only"
+    }
+  },
+  {
+    "test_name": "GC_Make*2d Conic Tests::circle2d3Points",
+    "bridge_function": "OCCTCurve2DMakeCircle3Points",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radius": 1,
+        "centre": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radius": 1,
+        "centre": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second point y + 1",
+      "red": "GCMake2dConicTests.swift:27:21: Expectation failed: abs(c.circleProperties.radius - radius) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gcmake2d-conic/",
+      "rewritten": "`!= nil` and `isClosed` only"
+    }
+  },
+  {
+    "test_name": "GC_Make*2d Conic Tests::circle2dCenterPoint",
+    "bridge_function": "OCCTCurve2DMakeCircleCenterPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radius": 3,
+        "centre": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radius": 3,
+        "centre": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "point x + 1",
+      "red": "GCMake2dConicTests.swift:32:21: Expectation failed: abs(c.circleProperties.radius - radius) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gcmake2d-conic/",
+      "rewritten": "`!= nil` and `isClosed` only"
+    }
+  },
+  {
+    "test_name": "GC_Make*2d Conic Tests::circle2dAxis",
+    "bridge_function": "OCCTCurve2DMakeCircleAxis",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radius": 5,
+        "centre": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radius": 5,
+        "centre": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1",
+      "red": "GCMake2dConicTests.swift:37:21: Expectation failed: abs(c.circleProperties.radius - radius) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gcmake2d-conic/",
+      "rewritten": "`!= nil` and `isClosed` only"
+    }
+  },
+  {
+    "test_name": "GC_Make*2d Conic Tests::circle2dParallel",
+    "bridge_function": "OCCTCurve2DMakeCircleParallel",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radius": 7,
+        "centre": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radius": 7,
+        "centre": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "negate the distance",
+      "red": "GCMake2dConicTests.swift:47:9: Expectation failed: abs(c.circleProperties.radius - 7) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gcmake2d-conic/",
+      "rewritten": "nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "GC_Make*2d Conic Tests::circle2dParallelInward",
+    "bridge_function": "OCCTCurve2DMakeCircleParallel",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radius": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radius": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "negate the distance",
+      "red": "GCMake2dConicTests.swift:58:9: Expectation failed: abs(c.circleProperties.radius - 3) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gcmake2d-conic/",
+      "rewritten": "nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "GC_Make*2d Conic Tests::ellipse2dFromAxis",
+    "bridge_function": "OCCTCurve2DMakeEllipse",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "major": 10,
+        "minor": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "major": 10,
+        "minor": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "minor radius - 1",
+      "red": "GCMake2dConicTests.swift:68:9: Expectation failed: abs(e.ellipseProperties.minorRadius - 5) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gcmake2d-conic/",
+      "rewritten": "`!= nil` and `isClosed` only"
+    }
+  },
+  {
+    "test_name": "GC_Make*2d Conic Tests::ellipse2dFrom3Points",
+    "bridge_function": "OCCTCurve2DMakeEllipse3Points",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "major": 10,
+        "minor": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "major": 10,
+        "minor": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second point y + 1",
+      "red": "GCMake2dConicTests.swift:77:9: Expectation failed: abs(e.ellipseProperties.minorRadius - 5) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gcmake2d-conic/",
+      "rewritten": "nested in `if let e`"
+    }
+  },
+  {
+    "test_name": "GC_Make*2d Conic Tests::ellipse2dFromAx22d",
+    "bridge_function": "OCCTCurve2DMakeEllipseAxis22d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(pi/2)": [
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(pi/2)": [
+          0,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "reverse the y direction",
+      "red": "GCMake2dConicTests.swift:87:9: Expectation failed: simd_distance(e.point(at: .pi / 2), SIMD2(0, 5)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gcmake2d-conic/",
+      "rewritten": "`!= nil` and `isClosed` only"
+    }
+  },
+  {
+    "test_name": "GC_Make*2d Conic Tests::hyperbola2dFromAxis",
+    "bridge_function": "OCCTCurve2DMakeHyperbola",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "major": 10,
+        "minor": 5,
+        "point(0)": [
+          10,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "major": 10,
+        "minor": 5,
+        "point(0)": [
+          10,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "major radius + 1",
+      "red": "GCMake2dConicTests.swift:95:9: Expectation failed: abs(h.hyperbolaProperties.majorRadius - 10) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gcmake2d-conic/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "GC_Make*2d Conic Tests::hyperbola2dFrom3Points",
+    "bridge_function": "OCCTCurve2DMakeHyperbola3Points",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "major": 10,
+        "minor": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "major": 10,
+        "minor": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second point y + 1",
+      "red": "GCMake2dConicTests.swift:105:9: Expectation failed: abs(h.hyperbolaProperties.minorRadius - 5) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gcmake2d-conic/",
+      "rewritten": "nested in `if let h`"
+    }
+  },
+  {
+    "test_name": "GC_Make*2d Conic Tests::parabola2dFromAxis",
+    "bridge_function": "OCCTCurve2DMakeParabola",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "focal": 5,
+        "focus": [
+          5,
+          0
+        ],
+        "point(2)": [
+          0.2,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "focal": 5,
+        "focus": [
+          5,
+          0
+        ],
+        "point(2)": [
+          0.2,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "focal + 1",
+      "red": "GCMake2dConicTests.swift:111:9: Expectation failed: abs(p.parabolaProperties.focal - 5) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gcmake2d-conic/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "GC_Make*2d Conic Tests::parabola2dFromDirectrixFocus",
+    "bridge_function": "OCCTCurve2DMakeParabolaDirectrixFocus",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "focal": 2.5,
+        "vertex": [
+          2.5,
+          0
+        ],
+        "point(2)": [
+          2.9,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "focal": 2.5,
+        "vertex": [
+          2.5,
+          0
+        ],
+        "point(2)": [
+          2.9,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "focus x + 1",
+      "red": "GCMake2dConicTests.swift:122:9: Expectation failed: abs(p.parabolaProperties.focal - 2.5) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gcmake2d-conic/",
+      "rewritten": "`!= nil` only"
+    }
   }
 ]

@@ -366,3 +366,18 @@ Probe: `Scripts/repro/766-geom2d-gce-geom2dapi/`. Every row was run red with the
 | Geom2dAPI Interpolate Tests::basicInterpolation | `OCCTCurve2DInterpolate2D` | drop the last point | ✅ | ✅ | MATCH | `!= nil` only |
 | Geom2dAPI Interpolate Tests::periodicInterpolation | `OCCTCurve2DInterpolate2D` | ignore periodic | ✅ | ✅ | MATCH | `!= nil` only |
 | Geom2dAPI PointsToBSpline Tests::basicApproximation | `OCCTCurve2DApproximate2D` | last point y + 1 | ✅ | ✅ | MATCH | `!= nil` only |
+### #1979 executed: `GCMake2dConicTests.swift`
+Probe: `Scripts/repro/766-geom2d-gcmake2d-conic/`. Every row was run red with the injection applied and green after it was reverted.
+| GC_Make*2d Conic Tests::circle2dCenterRadius | `OCCTCurve2DMakeCircleCenterRadius` | radius + 1 | ✅ | ✅ | MATCH | `!= nil` and `isClosed` only |
+| GC_Make*2d Conic Tests::circle2d3Points | `OCCTCurve2DMakeCircle3Points` | second point y + 1 | ✅ | ✅ | MATCH | `!= nil` and `isClosed` only |
+| GC_Make*2d Conic Tests::circle2dCenterPoint | `OCCTCurve2DMakeCircleCenterPoint` | point x + 1 | ✅ | ✅ | MATCH | `!= nil` and `isClosed` only |
+| GC_Make*2d Conic Tests::circle2dAxis | `OCCTCurve2DMakeCircleAxis` | radius + 1 | ✅ | ✅ | MATCH | `!= nil` and `isClosed` only |
+| GC_Make*2d Conic Tests::circle2dParallel | `OCCTCurve2DMakeCircleParallel` | negate the distance | ✅ | ✅ | MATCH | nested in `if let c` |
+| GC_Make*2d Conic Tests::circle2dParallelInward | `OCCTCurve2DMakeCircleParallel` | negate the distance | ✅ | ✅ | MATCH | nested in `if let c` |
+| GC_Make*2d Conic Tests::ellipse2dFromAxis | `OCCTCurve2DMakeEllipse` | minor radius - 1 | ✅ | ✅ | MATCH | `!= nil` and `isClosed` only |
+| GC_Make*2d Conic Tests::ellipse2dFrom3Points | `OCCTCurve2DMakeEllipse3Points` | second point y + 1 | ✅ | ✅ | MATCH | nested in `if let e` |
+| GC_Make*2d Conic Tests::ellipse2dFromAx22d | `OCCTCurve2DMakeEllipseAxis22d` | reverse the y direction | ✅ | ✅ | MATCH | `!= nil` and `isClosed` only |
+| GC_Make*2d Conic Tests::hyperbola2dFromAxis | `OCCTCurve2DMakeHyperbola` | major radius + 1 | ✅ | ✅ | MATCH | `!= nil` only |
+| GC_Make*2d Conic Tests::hyperbola2dFrom3Points | `OCCTCurve2DMakeHyperbola3Points` | second point y + 1 | ✅ | ✅ | MATCH | nested in `if let h` |
+| GC_Make*2d Conic Tests::parabola2dFromAxis | `OCCTCurve2DMakeParabola` | focal + 1 | ✅ | ✅ | MATCH | `!= nil` only |
+| GC_Make*2d Conic Tests::parabola2dFromDirectrixFocus | `OCCTCurve2DMakeParabolaDirectrixFocus` | focus x + 1 | ✅ | ✅ | MATCH | `!= nil` only |
