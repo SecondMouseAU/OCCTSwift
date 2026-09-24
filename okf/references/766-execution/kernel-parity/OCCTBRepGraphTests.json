@@ -794,5 +794,271 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Compact::compactBox",
+    "bridge_function": "OCCTBRepGraphCompact",
+    "bridge_output": {
+      "type": "compact",
+      "data": {
+        "clean": {
+          "removed": [
+            0,
+            0,
+            0
+          ],
+          "nodesAfter": 58
+        },
+        "afterVertexRemoval": {
+          "removedVertices": 1,
+          "nodesAfter": 57
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "compact",
+      "data": {
+        "clean": {
+          "removed": [
+            0,
+            0,
+            0
+          ],
+          "nodesAfter": 58
+        },
+        "afterVertexRemoval": {
+          "removedVertices": 1,
+          "nodesAfter": 57
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Compound Queries::compoundQueriesOnCompound",
+    "bridge_function": "OCCTBRepGraphCompoundChildCount",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "compounds": 1,
+        "solids": 2,
+        "children": 2,
+        "parents": 0
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "compounds": 1,
+        "solids": 2,
+        "children": 2,
+        "parents": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph CompSolid Count::compSolidCount",
+    "bridge_function": "OCCTBRepGraphNbCompSolids",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "before": 0,
+        "afterAdd": 1
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "before": 0,
+        "afterAdd": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Copy::deepCopy",
+    "bridge_function": "OCCTBRepGraphCopy",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "surfaces": 6
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "surfaces": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Copy::lightCopy",
+    "bridge_function": "OCCTBRepGraphCopy",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Copy::copyFace",
+    "bridge_function": "OCCTBRepGraphCopyFace",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faces": 1,
+        "wires": 1,
+        "edges": 4,
+        "vertices": 4
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faces": 1,
+        "wires": 1,
+        "edges": 4,
+        "vertices": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Counts::activeCounts",
+    "bridge_function": "OCCTBRepGraphNbActiveFaces",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Counts::geometryCounts",
+    "bridge_function": "OCCTBRepGraphNbCurves2D",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "surfaces": 6,
+        "curves3d": 12,
+        "curves2d": 24
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "surfaces": 6,
+        "curves3d": 12,
+        "curves2d": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Counts::coedgeCounts",
+    "bridge_function": "OCCTBRepGraphNbCoEdges",
+    "bridge_output": {
+      "type": "int",
+      "data": 24
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 24
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Deduplicate::deduplicateBox",
+    "bridge_function": "OCCTBRepGraphDeduplicate",
+    "bridge_output": {
+      "type": "dedup",
+      "data": {
+        "canonicalSurfaces": 6,
+        "canonicalCurves": 12,
+        "surfaceRewrites": 0,
+        "curveRewrites": 0
+      }
+    },
+    "kernel_output": {
+      "type": "dedup",
+      "data": {
+        "canonicalSurfaces": 6,
+        "canonicalCurves": 12,
+        "surfaceRewrites": 0,
+        "curveRewrites": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
