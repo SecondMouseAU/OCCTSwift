@@ -2,97 +2,205 @@
   {
     "test_name": "OSD Environment Tests",
     "bridge_function": "OCCTOSDEnvironment",
-    "bridge_output": {"type": "string", "data": ""},
-    "kernel_output": {"type": "string", "data": ""},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "string",
+      "data": ""
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": ""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "OSD_Directory Tests",
     "bridge_function": "OCCTOSDDirectory",
-    "bridge_output": {"type": "string", "data": ""},
-    "kernel_output": {"type": "string", "data": ""},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "string",
+      "data": ""
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": ""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "OSD Chronometer Tests",
     "bridge_function": "OCCTOSDChronometer",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "UnitsConversion",
     "bridge_function": "OCCTUnitsConversion",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "ExtStringArray Tests",
     "bridge_function": "OCCTExtStringArray",
-    "bridge_output": {"type": "string", "data": ""},
-    "kernel_output": {"type": "string", "data": ""},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "string",
+      "data": ""
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": ""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "FontManager Tests",
     "bridge_function": "OCCTFontManager",
-    "bridge_output": {"type": "string", "data": ""},
-    "kernel_output": {"type": "string", "data": ""},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "string",
+      "data": ""
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": ""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Color OCCT Operations Tests",
     "bridge_function": "OCCTColorOperations",
-    "bridge_output": {"type": "color", "data": {}},
-    "kernel_output": {"type": "color", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "color",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "color",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Thread Safety: OCCTSerial",
     "bridge_function": "OCCTSerialLock",
-    "bridge_output": {"type": "bool", "data": true},
-    "kernel_output": {"type": "bool", "data": true},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "v0.150 BillOfMaterials",
     "bridge_function": "OCCTBillOfMaterials",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "OSD_DirectoryIterator Tests",
     "bridge_function": "OCCTOSDDirectoryIterator",
-    "bridge_output": {"type": "string", "data": ""},
-    "kernel_output": {"type": "string", "data": ""},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "string",
+      "data": ""
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": ""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "OSD_FileIterator Tests",
     "bridge_function": "OCCTOSDFileIterator",
-    "bridge_output": {"type": "string", "data": ""},
-    "kernel_output": {"type": "string", "data": ""},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "string",
+      "data": ""
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": ""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Serialized concurrent access",
     "bridge_function": "OCCTSerializedConcurrentAccess",
-    "bridge_output": {"type": "bool", "data": true},
-    "kernel_output": {"type": "bool", "data": true},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
@@ -213,6 +321,138 @@
       "data": {
         "convertedLength": 5000,
         "copied": "maxSize - 1 = 9 bytes"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::diskSizeMatchesStatvfsInKB",
+    "bridge_function": "OCCTDiskSize",
+    "bridge_output": {
+      "type": "kilobytes",
+      "data": {
+        "equals": "statvfs f_blocks * (f_frsize/512) / 2 exactly"
+      }
+    },
+    "kernel_output": {
+      "type": "kilobytes",
+      "data": {
+        "OSD_Disk(\"/\").DiskSize()/2": 971350180,
+        "statvfs totalKB": 971350180
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::diskFreeMatchesStatvfsInKB",
+    "bridge_function": "OCCTDiskFree",
+    "bridge_output": {
+      "type": "kilobytes",
+      "data": {
+        "within": "10% of statvfs f_bavail KB"
+      }
+    },
+    "kernel_output": {
+      "type": "kilobytes",
+      "data": {
+        "OSD_Disk(\"/\").DiskFree()/2": 116267292,
+        "statvfs freeKB": 116267292
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::twoByteRangeCodeUnitIsUTF8Encoded",
+    "bridge_function": "OCCTUnicodeConvertToUnicode",
+    "bridge_output": {
+      "type": "code_units",
+      "data": [
+        "U+0041",
+        "U+00E9",
+        "U+0042"
+      ]
+    },
+    "kernel_output": {
+      "type": "code_units",
+      "data": [
+        "U+0041",
+        "U+00E9",
+        "U+0042"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::threeByteRangeCodeUnitIsUTF8Encoded",
+    "bridge_function": "OCCTUnicodeConvertToUnicode",
+    "bridge_output": {
+      "type": "code_units",
+      "data": [
+        "U+3042"
+      ]
+    },
+    "kernel_output": {
+      "type": "code_units",
+      "data": [
+        "U+3042"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::diskIsValidAcceptsRealPath",
+    "bridge_function": "OCCTDiskIsValid",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "/": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "OSD_Disk(\"/\").Failed()": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::diskIsValidRejectsNonexistentPath",
+    "bridge_function": "OCCTDiskIsValid",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "nonexistent": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "OSD_Disk(nonexistent).Failed()": true
       }
     },
     "comparison": {
