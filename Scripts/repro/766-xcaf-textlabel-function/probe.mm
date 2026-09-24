@@ -1,19 +1,25 @@
 // Kernel-parity probe for #766 (OCCTXCAFTests). Calls the OCCT API the bridge calls, with the
 // test's inputs, and prints what the kernel returns. Build line: CLAUDE.md "Compile a Ground
 // Truth C++ Test", headers/lib from the pinned OCCT.xcframework.
-#include <BRepPrimAPI_MakeBox.hxx>
 #include <TDocStd_Application.hxx>
 #include <TDocStd_Document.hxx>
 #include <TDF_Label.hxx>
-#include <TDF_LabelSequence.hxx>
-#include <TDF_Tool.hxx>
 #include <TCollection_AsciiString.hxx>
-#include <TCollection_ExtendedString.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
-#include <XCAFDoc_ShapeTool.hxx>
-#include <XCAFDoc_ColorTool.hxx>
-#include <XCAFDoc_VisMaterialTool.hxx>
-#include <TopoDS_Shape.hxx>
+#include <Bnd_Box.hxx>
+#include <gp_Pnt.hxx>
+#include <TFunction_DriverTable.hxx>
+#include <TFunction_Function.hxx>
+#include <TFunction_GraphNode.hxx>
+#include <TFunction_Logbook.hxx>
+#include <TFunction_Scope.hxx>
+#include <TDataStd_Tick.hxx>
+#include <TDataStd_UAttribute.hxx>
+#include <TDataStd_Variable.hxx>
+#include <TObj_Application.hxx>
+#include <Prs3d_TextAspect.hxx>
+#include <Graphic3d_ArrayOfPoints.hxx>
+#include <Standard_GUID.hxx>
 #include <cstdio>
 
 // OCCTDocument(): a private TDocStd_Application (#371), NewDocument("MDTV-XCAF"), then the three
@@ -35,30 +41,10 @@ static TDF_Label tagLabel(const Handle(TDocStd_Document)& d, int tag)
   return tag == 0 ? d->Main() : d->Main().FindChild(tag, Standard_True);
 }
 
-// OCCTShapeCreateBox: centred on the origin.
-static TopoDS_Shape centredBox(double w, double h, double dp)
-{
-  return BRepPrimAPI_MakeBox(gp_Pnt(-w / 2, -h / 2, -dp / 2), w, h, dp).Shape();
-}
-
 static const char* tf(bool b) { return b ? "true" : "false"; }
 
-#include <TFunction_DriverTable.hxx>
-#include <TFunction_Function.hxx>
-#include <TFunction_GraphNode.hxx>
-#include <TFunction_IFunction.hxx>
-#include <TFunction_Logbook.hxx>
-#include <TFunction_Scope.hxx>
-#include <TDataStd_Tick.hxx>
-#include <TDataStd_UAttribute.hxx>
-#include <TDataStd_Variable.hxx>
-#include <TObj_Application.hxx>
-#include <Prs3d_TextAspect.hxx>
-#include <Graphic3d_ArrayOfPoints.hxx>
-#include <Standard_GUID.hxx>
-
-// TextLabelAndPointCloudTests, TFunction* tests, TickTests, TObjApplicationTests, UAttributeTests,
-// VariableTests: the OCCT objects the bridge builds and reads.
+// One probe for three PRs that share this directory: TextLabelAndPointCloudTests (TextLabel + PointCloud),
+// the TFunction* tests, and TickTests, TObjApplicationTests, UAttributeTests and VariableTests.
 int main()
 {
   Handle(Prs3d_TextAspect) ta = new Prs3d_TextAspect();
