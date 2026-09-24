@@ -1,0 +1,10 @@
+thread0 HasMsg after Init = 1, thread1 HasMsg after Init = 0
+thread0 HasMsg after Init = 1, thread1 HasMsg after Init = 0
+thread0 HasMsg after Init = 1, thread1 HasMsg after Init = 0
+thread0 HasMsg after Init = 1, thread1 HasMsg after Init = 0
+thread0 HasMsg after Init = 1, thread1 HasMsg after Init = 0
+thread0 HasMsg after Init = 1, thread1 HasMsg after Init = 0
+thread0 HasMsg after Init = 1, thread1 HasMsg after Init = 0
+thread0 HasMsg after Init = 1, thread1 HasMsg after Init = 0
+thread0 HasMsg after Init = 1, thread1 HasMsg after Init = 0
+thread0 HasMsg after Init = 1, thread1 HasMsg after Init = 0
