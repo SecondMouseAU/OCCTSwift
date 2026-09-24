@@ -6,6 +6,7 @@
 #include <gp_Ax1.hxx>
 #include <gp_Trsf.hxx>
 #include <cstdio>
+#include <numbers>
 
 int main()
 {
@@ -56,7 +57,7 @@ int main()
   }
   {
     Handle(Geom_Transformation) t = new Geom_Transformation();
-    t->SetRotation(gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), M_PI / 2);
+    t->SetRotation(gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), std::numbers::pi / 2);
     double x = 1, y = 0, z = 0;
     t->Transforms(x, y, z);
     printf("rotation: (1,0,0) -> (%.10g, %.10g, %.10g)\n", x, y, z);
