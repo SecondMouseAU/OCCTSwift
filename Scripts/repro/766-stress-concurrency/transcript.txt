@@ -1,0 +1,20 @@
+parallelVolumeQuery: box volume=1000
+parallelAreaQuery: sphere area=314.159265359 (4*pi*25=314.159265359)
+parallelBoundsQuery: cylinder max=(5.0000001, 5.0000001, 10.0000001)
+parallelFaceCountQuery: faces=6
+parallelIsValidQuery: torus valid=1
+parallelCurve3DEval: domain=[0, 6.28318530718] (5,0) (3.11745,3.90916) (-1.1126,4.87464) (-4.50484,2.16942) (-4.50484,-2.16942) (-1.1126,-4.87464) (3.11745,-3.90916) (5,-1.22465e-15)
+curveAcrossTaskBoundary: point at pi=(-5, 6.12323399574e-16, 0)
+parallelCurve2DEval: |p| at 8 samples: 5 5 5 5 5 5 5 5
+parallelSurfaceEval: bezier point(0.5,0.5)=(7.5, 7.5, 1.125)
+parallelBoxCreation: MakeBox(10,10,10) volume=1000
+parallelBooleanOps: fuse=1000 cut=476.4012244 common=523.5987756
+parallelDocumentCreate: no kernel geometry (XCAFApp_Application::NewDocument); N/A
+booleanDeterministic: cut volume=476.401224402
+filletDeterministic: IsDone=1 volume=975.587013891
+meshDeterministic: nodes=24
+volumeQueryDeterministic: torus volume=1776.5287922 (2*pi^2*R*r^2=1776.5287922)
+shapeAcrossTaskBoundary: box volume=1000
+surfaceAcrossTaskBoundary: plane point(0,0)=(0, 0, 0)
+documentAcrossTaskBoundary: one shape added; XCAFDoc_ShapeTool::GetShapes length 1 expected
+wireAcrossTaskBoundary: rectangle wire length=40
