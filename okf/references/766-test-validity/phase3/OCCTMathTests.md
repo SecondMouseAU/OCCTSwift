@@ -156,3 +156,13 @@
 | **Curve3D Transform** | Mirror curve through plane | `OCCTCurve3DTransform` | point mirror through the plane origin instead of the plane mirror | red | green | PASS |
 | **GC_MakeCylindricalSurface** | Cylindrical surface from axis and radius | `OCCTSurfaceCylindricalFromAxis` | radius doubled | red | green | PASS |
 | **GC_MakeCylindricalSurface** | Cylindrical surface from 3 points | `OCCTSurfaceCylindricalFromPoints` | point1 and point3 swapped | red | green | PASS |
+### 766-math-drawing-eigen-solvers (#1983, measured)
+| **v0.144 Drawing transform + bounds** | Drawing.bounds returns finite box for a projected box | `OCCTDrawingCreate (bounds() is Swift over its edge polylines)` | Swift: bounds reads (y, x) instead of (x, y) | red | green | PASS |
+| **v0.144 Drawing transform + bounds** | transformed(translate:scale:) returns non-nil wrapper | `N/A (pure Swift: Drawing.transformed stores translate/scale)` | Swift: transformed() drops the scale | red | green | N/A |
+| **v0.144 Drawing transform + bounds** | DXFWriter.collectFromDrawing accepts TransformedDrawing | `OCCTDrawingCreate (DXF writer is Swift)` | Swift: collectFromDrawing(TransformedDrawing) drops the translation | red | green | PASS |
+| **EigenValues** | tridiagonal | `OCCTMathEigenValues` | off-diagonals placed in slots 1..n-1 (the pre-#1643 convention) | red | green | PASS |
+| **EigenValues** | withVectors | `OCCTMathEigenValuesAndVectors` | off-diagonals placed in slots 1..n-1 (the pre-#1643 convention) | red | green | PASS |
+| **GC_MakeEllipse, 3 Points** | Create ellipse through three points | `OCCTCurve3DMakeEllipseThreePoints` | S2 built as (x, z, y) | red | green | PASS |
+| **FRPR Minimizer** | minimizeQuadratic | `OCCTMathFRPR` | returns the start point instead of Location() | red | green | PASS |
+| **FunctionAllRoots** | sinRoots | `OCCTMathFunctionRoots` | every root + 0.05 (despite the suite name, `findAllRoots(in:)` resolves to the overload that calls OCCTMathFunctionRoots; injections in OCCTMathFunctionAllRoots left it green) | red | green | PASS |
+| **GaussLeastSquare** | overdetermined | `OCCTMathGaussLeastSquare` | matrix read column-major | red | green | PASS |

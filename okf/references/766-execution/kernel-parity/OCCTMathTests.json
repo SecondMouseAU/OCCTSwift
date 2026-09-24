@@ -1325,5 +1325,221 @@
       "failing_expectation": "original: **green**; rewritten: :26 `abs(surf.cylinderProperties.radius - 5) < 1e-9`"
     },
     "green": true
+  },
+  {
+    "test_name": "v0.144 Drawing transform + bounds::Drawing.bounds returns finite box for a projected box",
+    "bridge_function": "OCCTDrawingCreate (bounds() is Swift over its edge polylines)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "HLR front view of the centred 100x50x25 box: x [-12.5, 12.5], y [-50, 50]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "HLR front view of the centred 100x50x25 box: x [-12.5, 12.5], y [-50, 50]",
+      "source": "Scripts/repro/766-math-drawing-eigen-solvers/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Swift: bounds reads (y, x) instead of (x, y)",
+      "failing_expectation": "original: **green**; rewritten: :28 `abs(b.min.x + 12.5) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "v0.144 Drawing transform + bounds::transformed(translate:scale:) returns non-nil wrapper",
+    "bridge_function": "N/A (pure Swift: Drawing.transformed stores translate/scale)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: N/A: pure Swift, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "Swift: transformed() drops the scale",
+      "failing_expectation": ":37 `transformed.scale == 0.5`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "v0.144 Drawing transform + bounds::DXFWriter.collectFromDrawing accepts TransformedDrawing",
+    "bridge_function": "OCCTDrawingCreate (DXF writer is Swift)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "HLR top view of the centred 10 mm cube: [-5, 5]; after scale 2, +100: [90, 110]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "HLR top view of the centred 10 mm cube: [-5, 5]; after scale 2, +100: [90, 110]",
+      "source": "Scripts/repro/766-math-drawing-eigen-solvers/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Swift: collectFromDrawing(TransformedDrawing) drops the translation",
+      "failing_expectation": "original: **green**; rewritten: :80 `abs(lo - 90) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "EigenValues::tridiagonal",
+    "bridge_function": "OCCTMathEigenValues",
+    "bridge_output": {
+      "type": "observed",
+      "data": "0.585786437626905, 2, 3.41421356237309 (pre-#1643 convention: 1, 3, 2)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "0.585786437626905, 2, 3.41421356237309 (pre-#1643 convention: 1, 3, 2)",
+      "source": "Scripts/repro/766-math-drawing-eigen-solvers/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "off-diagonals placed in slots 1..n-1 (the pre-#1643 convention)",
+      "failing_expectation": ":22 `abs(got - want) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "EigenValues::withVectors",
+    "bridge_function": "OCCTMathEigenValuesAndVectors",
+    "bridge_output": {
+      "type": "observed",
+      "data": "0.585786437626905, 2, 3.41421356237309",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "0.585786437626905, 2, 3.41421356237309",
+      "source": "Scripts/repro/766-math-drawing-eigen-solvers/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "off-diagonals placed in slots 1..n-1 (the pre-#1643 convention)",
+      "failing_expectation": ":38 `abs(got - want) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeEllipse, 3 Points::Create ellipse through three points",
+    "bridge_function": "OCCTCurve3DMakeEllipseThreePoints",
+    "bridge_output": {
+      "type": "observed",
+      "data": "major 10, minor 5, P(0) (10, 0, 0), P(pi/2) (0, 5, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "major 10, minor 5, P(0) (10, 0, 0), P(pi/2) (0, 5, 0)",
+      "source": "Scripts/repro/766-math-drawing-eigen-solvers/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "S2 built as (x, z, y)",
+      "failing_expectation": "original: **green**; rewritten: :25 `simd_length(c.point(at: .pi / 2) - SIMD3(0, 5, 0)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "FRPR Minimizer::minimizeQuadratic",
+    "bridge_function": "OCCTMathFRPR",
+    "bridge_output": {
+      "type": "observed",
+      "data": "location (1, 2), minimum 0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "location (1, 2), minimum 0",
+      "source": "Scripts/repro/766-math-drawing-eigen-solvers/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "returns the start point instead of Location()",
+      "failing_expectation": ":17 `abs(r.location[0] - 1.0) < 0.01`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "FunctionAllRoots::sinRoots",
+    "bridge_function": "OCCTMathFunctionRoots",
+    "bridge_output": {
+      "type": "observed",
+      "data": "3 roots: 3.14159265359, 6.28318530718, 9.42477796077",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "3 roots: 3.14159265359, 6.28318530718, 9.42477796077",
+      "source": "Scripts/repro/766-math-drawing-eigen-solvers/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "every root + 0.05 (despite the suite name, `findAllRoots(in:)` resolves to the overload that calls OCCTMathFunctionRoots; injections in OCCTMathFunctionAllRoots left it green)",
+      "failing_expectation": ":19 `abs(got - want) < 1e-8`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GaussLeastSquare::overdetermined",
+    "bridge_function": "OCCTMathGaussLeastSquare",
+    "bridge_output": {
+      "type": "observed",
+      "data": "x (1, 2)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "x (1, 2)",
+      "source": "Scripts/repro/766-math-drawing-eigen-solvers/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "matrix read column-major",
+      "failing_expectation": "original: **green**; rewritten: :20 `abs(x[0] - 1) < 1e-12`"
+    },
+    "green": true
   }
 ]
