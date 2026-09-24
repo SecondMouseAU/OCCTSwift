@@ -288,31 +288,6 @@
     "status": "PASS"
   },
   {
-    "test_name": "Shape Measurements::cylinderTopBottomCentroidsAreOnAxis",
-    "bridge_function": "OCCTBRepGPropSinert",
-    "bridge_output": {
-      "type": "cap_centroids",
-      "data": {
-        "cap_count": 2,
-        "max_abs_x": 0.0,
-        "max_abs_y": 0.0
-      }
-    },
-    "kernel_output": {
-      "type": "cap_centroids",
-      "data": {
-        "cap_count": 2,
-        "max_abs_x": 0.0,
-        "max_abs_y": 0.0
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
     "test_name": "IntCurvesFace Intersection::Line-face intersection",
     "bridge_function": "OCCTLocOpeCSIntersectLine",
     "bridge_output": {
@@ -5830,6 +5805,275 @@
         "BRepExtrema_ExtPC_NbExt": 1
       }
     },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeMeasurements::cylinderTopBottomCentroidsAreOnAxis",
+    "bridge_function": "OCCTBRepGPropSinert",
+    "bridge_output": {
+      "type": "cap_centroids",
+      "data": {
+        "cap_count": 2,
+        "centroids": [
+          [
+            5.551115123125783e-17,
+            5.551115123125783e-17,
+            10.0
+          ],
+          [
+            5.551115123125783e-17,
+            5.551115123125783e-17,
+            0.0
+          ]
+        ],
+        "sinert_mass": [
+          100.0,
+          100.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "cap_centroids",
+      "data": {
+        "cap_count": 2,
+        "centroids": [
+          [
+            5.551115123125783e-17,
+            5.551115123125783e-17,
+            10.0
+          ],
+          [
+            5.551115123125783e-17,
+            5.551115123125783e-17,
+            0.0
+          ]
+        ],
+        "sinert_mass": [
+          100.0,
+          100.0
+        ],
+        "reference_only_domain_bounded_sinert_mass": [
+          78.53981633974483,
+          78.53981633974483
+        ]
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-shape-measurements/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Compared keys: cap_count, centroids, sinert_mass. The bridge (OCCTBRepGPropSinert) calls BRepGProp_Sinert::Perform(BRepGProp_Face), which integrates the untrimmed surface patch, so it reports mass 100 for a disc cap of area 78.54; the bridge never returns 78.54. reference_only_domain_bounded_sinert_mass is the kernel's Perform(face, BRepGProp_Domain(face)) overload from transcript.txt, kept as a labelled reference for the overload the bridge does not call and deliberately absent from bridge_output."
+  },
+  {
+    "test_name": "ShapeMeasurements::boxFaceAreasMatchExpectedTotals",
+    "bridge_function": "OCCTFaceGetArea",
+    "bridge_output": {
+      "type": "face_areas",
+      "data": {
+        "areas": [
+          15.0,
+          15.0,
+          10.0,
+          10.0,
+          5.999999999999998,
+          5.999999999999998
+        ],
+        "total": 62.0
+      }
+    },
+    "kernel_output": {
+      "type": "face_areas",
+      "data": {
+        "areas": [
+          15.0,
+          15.0,
+          10.0,
+          10.0,
+          5.999999999999998,
+          5.999999999999998
+        ],
+        "total": 62.0
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-shape-measurements/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeMeasurements::boxEdgeLengthsMatchExpectedTotals",
+    "bridge_function": "OCCTEdgeGetLength",
+    "bridge_output": {
+      "type": "edge_lengths",
+      "data": {
+        "count": 12,
+        "total": 40.0
+      }
+    },
+    "kernel_output": {
+      "type": "edge_lengths",
+      "data": {
+        "count": 12,
+        "total": 40.0
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-shape-measurements/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeMeasurements::cylinderTotalsAreFinite",
+    "bridge_function": "OCCTFaceGetArea + OCCTEdgeGetLength",
+    "bridge_output": {
+      "type": "cylinder_totals",
+      "data": {
+        "face_count": 3,
+        "total_face_area": 471.23889803846885,
+        "total_edge_length": 72.83185307179586
+      }
+    },
+    "kernel_output": {
+      "type": "cylinder_totals",
+      "data": {
+        "face_count": 3,
+        "total_face_area": 471.23889803846885,
+        "total_edge_length": 72.83185307179586
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-shape-measurements/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeMeasurements::boxFaceCentroidsLieInsideFaceBounds",
+    "bridge_function": "OCCTBRepGPropSinert",
+    "bridge_output": {
+      "type": "face_centroids",
+      "data": {
+        "centroids": [
+          [
+            -1,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            -1.5,
+            0
+          ],
+          [
+            0,
+            1.5,
+            0
+          ],
+          [
+            0,
+            0,
+            -2.5
+          ],
+          [
+            0,
+            0,
+            2.5
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "face_centroids",
+      "data": {
+        "centroids": [
+          [
+            -1,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            -1.5,
+            0
+          ],
+          [
+            0,
+            1.5,
+            0
+          ],
+          [
+            0,
+            0,
+            -2.5
+          ],
+          [
+            0,
+            0,
+            2.5
+          ]
+        ]
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-shape-measurements/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeMeasurements::boxFacePerimetersMatchExpectedTotals",
+    "bridge_function": "OCCTWireGetLength",
+    "bridge_output": {
+      "type": "face_perimeters",
+      "data": {
+        "perimeters": [
+          16.0,
+          16.0,
+          14.0,
+          14.0,
+          10.0,
+          10.0
+        ],
+        "total": 80.0
+      }
+    },
+    "kernel_output": {
+      "type": "face_perimeters",
+      "data": {
+        "perimeters": [
+          16.0,
+          16.0,
+          14.0,
+          14.0,
+          10.0,
+          10.0
+        ],
+        "total": 80.0
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-shape-measurements/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []

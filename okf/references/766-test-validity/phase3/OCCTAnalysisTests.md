@@ -52,12 +52,12 @@
 | **Shape Fixing Tests** | Shape Fixing Tests | Shape fixing | Remove shape fixing |
 | **Self-Intersecting Profile Crash Guard (#263)** | Self-Intersecting Profile Crash Guard (#263) | Self-intersection | Remove self-intersection guard |
 | **Extrema Tests** | Point on circle distance | Extrema point-on-circle | Remove point-on-circle |
-| **Shape Measurements** | Box face areas | Shape measurements box faces | Remove box face areas |
-| **Shape Measurements** | Box edge lengths | Shape measurements box edges | Remove box edge lengths |
-| **Shape Measurements** | Box face perimeters | Shape measurements box faces | Remove box face perimeters |
-| **Shape Measurements** | Cylinder totals are finite | Shape measurements cylinder | Remove cylinder totals |
-| **Shape Measurements** | Box face centroids | Shape measurements box faces | Remove box face centroids |
-| **Shape Measurements** | Cylinder top/bottom centroids | Shape measurements cylinder | Remove cylinder centroids |
+| **ShapeMeasurements** | boxFaceAreasMatchExpectedTotals | Face area (BRepGProp::SurfaceProperties) | return Mass() * 2 from OCCTFaceGetArea |
+| **ShapeMeasurements** | boxEdgeLengthsMatchExpectedTotals | Edge length (BRepGProp::LinearProperties) | return Mass() * 2 from OCCTEdgeGetLength |
+| **ShapeMeasurements** | cylinderTotalsAreFinite | Face area and edge length | OCCTFaceGetArea returns -1 (red at :49); separately, OCCTEdgeGetLength returns 0 (red at :51) |
+| **ShapeMeasurements** | boxFaceCentroidsLieInsideFaceBounds | Face centroid (BRepGProp_Sinert) | centerX = cm.X() + 1.0 |
+| **ShapeMeasurements** | boxFacePerimetersMatchExpectedTotals | Outer wire length | return 2 * arc length from OCCTWireGetLength |
+| **ShapeMeasurements** | cylinderTopBottomCentroidsAreOnAxis | Face centroid (BRepGProp_Sinert) | centerX = cm.X() + 1.0 |
 | **Sewing_Extras** | Sewing_Extras | Sewing extras | Remove sewing extras |
 | **#837: fixed() mode-flag wiring** | #837: fixed() mode-flag wiring | Mode flags | Remove mode flags |
 | **ShapeUpgrade_SplitSurface** | ShapeUpgrade_SplitSurface | Surface splitting | Remove surface split |
@@ -332,12 +332,12 @@
 | Shape Fixing Tests | OCCTShapeFixing | Shape fixing | Remove shape fixing | ✅ | ✅ |  |
 | Self-Intersecting Profile Crash Guard (#263) | OCCTSelfIntersectingProfileGuard | Self-intersection | Remove SEGV guard | ✅ | ✅ |  |
 | Extrema: pointOnCircle | OCCTExtremaPointOnCircle | Extrema point-on-circle | Remove point-on-circle | ✅ | ✅ |  |
-| Shape Measurements: boxFaceAreas | OCCTShapeMeasurementsBoxFaceAreas | Shape measurements box faces | Remove box face areas | ✅ | ✅ |  |
-| Shape Measurements: boxEdgeLengths | OCCTShapeMeasurementsBoxEdgeLengths | Shape measurements box edges | Remove box edge lengths | ✅ | ✅ |  |
-| Shape Measurements: boxFacePerimeters | OCCTShapeMeasurementsBoxFacePerimeters | Shape measurements box faces | Remove box face perimeters | ✅ | ✅ |  |
-| Shape Measurements: cylinderTotalsAreFinite | OCCTShapeMeasurementsCylinderTotalsAreFinite | Shape measurements cylinder | Remove cylinder totals | ✅ | ✅ |  |
-| Shape Measurements: boxFaceCentroids | OCCTShapeMeasurementsBoxFaceCentroids | Shape measurements box faces | Remove box face centroids | ✅ | ✅ |  |
-| Shape Measurements: cylinderTopBottomCentroidsAreOnAxis | OCCTBRepGPropSinert | Shape measurements cylinder caps | Remove surface centroid | ✅ | ✅ |  |
+| boxFaceAreasMatchExpectedTotals | OCCTFaceGetArea | Face area (BRepGProp::SurfaceProperties) | return Mass() * 2 from OCCTFaceGetArea | ✅ | ✅ | Red: ShapeMeasurementsTests.swift:18 `abs(m.totalFaceArea - 62.0) < 1e-6`. Parity MATCH, `Scripts/repro/766-shape-measurements/`. |
+| boxEdgeLengthsMatchExpectedTotals | OCCTEdgeGetLength | Edge length (BRepGProp::LinearProperties) | return Mass() * 2 from OCCTEdgeGetLength | ✅ | ✅ | Red: ShapeMeasurementsTests.swift:37 `abs(m.totalEdgeLength - 40.0) < 1e-6`. Parity MATCH, `Scripts/repro/766-shape-measurements/`. |
+| cylinderTotalsAreFinite | OCCTFaceGetArea + OCCTEdgeGetLength | Face area and edge length | OCCTFaceGetArea returns -1 (red at :49); separately, OCCTEdgeGetLength returns 0 (red at :51) | ✅ | ✅ | Red: ShapeMeasurementsTests.swift:49 `m.totalFaceArea > 0`; ShapeMeasurementsTests.swift:51 `m.totalEdgeLength > 0`. Parity MATCH, `Scripts/repro/766-shape-measurements/`. |
+| boxFaceCentroidsLieInsideFaceBounds | OCCTBRepGPropSinert | Face centroid (BRepGProp_Sinert) | centerX = cm.X() + 1.0 | ✅ | ✅ | Red: ShapeMeasurementsTests.swift:71 `c.x >= b.min.x - 1e-6 && c.x <= b.max.x + 1e-6`. Parity MATCH, `Scripts/repro/766-shape-measurements/`. Components below 1e-16 shown as 0. |
+| boxFacePerimetersMatchExpectedTotals | OCCTWireGetLength | Outer wire length | return 2 * arc length from OCCTWireGetLength | ✅ | ✅ | Red: ShapeMeasurementsTests.swift:92 `abs(m.totalFacePerimeter - 80.0) < 1e-6`. Parity MATCH, `Scripts/repro/766-shape-measurements/`. |
+| cylinderTopBottomCentroidsAreOnAxis | OCCTBRepGPropSinert | Face centroid (BRepGProp_Sinert) | centerX = cm.X() + 1.0 | ✅ | ✅ | Red: ShapeMeasurementsTests.swift:118 `abs(c.x) < 1e-6`. Parity MATCH, `Scripts/repro/766-shape-measurements/`. Bridge matches the kernel call it makes, but that call ignores the face's trim: Sinert mass is 100 (the 10x10 parameter square) for a disc of area 78.54. The centroid is right here only by symmetry. |
 | Sewing_Extras | OCCTSewingExtras | Sewing extras | Remove sewing extras | ✅ | ✅ |  |
 | #837 fixed() mode-flag wiring | OCCTShapeFixDetailed | Mode flags | Remove FixFree*Mode | ✅ | ✅ |  |
 | ShapeUpgrade_SplitSurface | OCCTShapeUpgradeSplitSurface | Surface splitting | Remove surface split | ✅ | ✅ |  |
@@ -534,12 +534,12 @@ For each test, run ground-truth C++ comparison:
 | Shape Fixing Tests | ✅ | ✅ | ✅ |
 | Self-Intersecting Profile Crash Guard (#263) | ✅ | ✅ | ✅ |
 | Extrema: pointOnCircle | ✅ | ✅ | ✅ |
-| Shape Measurements: boxFaceAreas | ✅ | ✅ | ✅ |
-| Shape Measurements: boxEdgeLengths | ✅ | ✅ | ✅ |
-| Shape Measurements: boxFacePerimeters | ✅ | ✅ | ✅ |
-| Shape Measurements: cylinderTotalsAreFinite | ✅ | ✅ | ✅ |
-| Shape Measurements: boxFaceCentroids | ✅ | ✅ | ✅ |
-| Shape Measurements: cylinderTopBottomCentroidsAreOnAxis | ✅ | ✅ | ✅ |
+| boxFaceAreasMatchExpectedTotals | ✅ | ✅ | ✅ |
+| boxEdgeLengthsMatchExpectedTotals | ✅ | ✅ | ✅ |
+| cylinderTotalsAreFinite | ✅ | ✅ | ✅ |
+| boxFaceCentroidsLieInsideFaceBounds | ✅ | ✅ | ✅ |
+| boxFacePerimetersMatchExpectedTotals | ✅ | ✅ | ✅ |
+| cylinderTopBottomCentroidsAreOnAxis | ✅ | ✅ | ✅ |
 | Sewing_Extras | ✅ | ✅ | ✅ |
 | #837 fixed() mode-flag wiring | ✅ | ✅ | ✅ |
 | ShapeUpgrade_SplitSurface | ✅ | ✅ | ✅ |
