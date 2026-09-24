@@ -260,15 +260,17 @@ For each test, run ground-truth C++ comparison:
 | alongEdge T-branch | ✅ | ✅ | ✅ |
 | v0.142 ConstructionAxis | ✅ | ✅ | ✅ |
 | deferredModeToggle | ✅ | ✅ | ✅ |
-| packSIMD3 exactMapping | ✅ | ✅ | ✅ |
-| packSIMD3 emptyInputIsEmpty | ✅ | ✅ | ✅ |
-| packSIMD3 floatScalarBuffer | ✅ | ✅ | ✅ |
-| packSIMD3 roundTripsThroughUnpack | ✅ | ✅ | ✅ |
-| unpackSIMD3 exactMapping | ✅ | ✅ | ✅ |
-| unpackSIMD3 zeroCountIsEmpty | ✅ | ✅ | ✅ |
-| unpackSIMD3 stopsAtActualCountNotBufferLength | ✅ | ✅ | ✅ |
-| unpackSIMD3 floatScalarBuffer | ✅ | ✅ | ✅ |
-| unpackSIMD3 unsafeBufferPointerBuffer | ✅ | ✅ | ✅ |
+| packSIMD3 exactMapping | ✅ | N/A | ✅ |
+| packSIMD3 emptyInputIsEmpty | ✅ | N/A | ✅ |
+| packSIMD3 floatScalarBuffer | ✅ | N/A | ✅ |
+| packSIMD3 roundTripsThroughUnpack | ✅ | N/A | ✅ |
+| unpackSIMD3 exactMapping | ✅ | N/A | ✅ |
+| unpackSIMD3 zeroCountIsEmpty | ✅ | N/A | ✅ |
+| unpackSIMD3 stopsAtActualCountNotBufferLength | ✅ | N/A | ✅ |
+| unpackSIMD3 floatScalarBuffer | ✅ | N/A | ✅ |
+| unpackSIMD3 unsafeBufferPointerBuffer | ✅ | N/A | ✅ |
+
+**Total**: 27 tests
 
 ---
 
@@ -450,4 +452,3 @@ green once it was reverted. Probes and transcripts are under `Scripts/repro/766-
 | refOrientation | OCCTBRepGraphRefOrientation | Ref orientation | always FORWARD | ✅ orientation list | ✅ | Rewritten: `0...3` accepted any orientation |
 | hasRoots | OCCTBRepGraphRootNodes | Root nodes | root count + 1 | ✅ `roots.count == 1` | ✅ | Rewritten: `count > 0` passed a duplicate root |
 | boxNoSameDomain | OCCTBRepGraphFaceSameDomainIndices | Same-domain derivation | never same-domain | ✅ `fg.sameDomainFaces(of: 1) == [5]` | ✅ | Rewritten: a box alone passes an always-empty answer; fused coplanar boxes added. Kernel side is the probe re-deriving the bridge rule from Tool::Face::Surface |
-**Total**: 27 tests
