@@ -106,7 +106,11 @@ int main()
     printf("supplement: remove1=%d after=%d\n", r1 ? 1 : 0, faceDirectCount(sg, 0));
     bool r2 = sg.Editor().Supplement().RemoveAttachment(uid);
     printf("supplement: remove2=%d\n", r2 ? 1 : 0);
-    uint64_t euid = sg.Editor().Supplement().AttachToEdge(
+    // edgeInternalVertexAttach attaches on a FRESH graph, so the uid it sees is that graph's
+    // first attachment. Reusing sg here gave the second one (2), which the test never sees.
+    BRepGraph eg;
+    build(eg, box(10, 10, 10));
+    uint64_t euid = eg.Editor().Supplement().AttachToEdge(
       BRepGraph_EdgeId(0), v, BRepGraph_LayerTopoSupplement::AttachmentKind::EdgeInternalVertex);
     printf("supplement: edge uid=%llu\n", (unsigned long long)euid);
     for (int i = 0; i < (int)sg.Topo().Faces().Nb(); ++i)

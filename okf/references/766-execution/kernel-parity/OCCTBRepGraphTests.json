@@ -223,21 +223,23 @@
     "bridge_output": {
       "type": "uid",
       "data": {
-        "attached": true
+        "attached": true,
+        "uid": 1
       }
     },
     "kernel_output": {
       "type": "uid",
       "data": {
         "attached": true,
-        "uid": 2
+        "uid": 1
       }
     },
-"comparison": {
+    "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "note": "Both sides attach one edge-internal vertex to edge 0 of a fresh box graph, so uid is that graph's first attachment (1). The Swift test asserts uid != nil and uid >= 0; the uid value was read through graph.edgeAddInternalVertex(0, vertexIndex: 0) with a temporary print. An earlier record had kernel uid 2 because the probe reused a graph that already held one face attachment."
   },
   {
     "test_name": "BRepGraph Supplement Vertices::boxFacesNotNaturalRestriction",
@@ -323,7 +325,12 @@
       "data": {
         "faces": 6,
         "edges": 12,
-        "vertices": 8
+        "vertices": 8,
+        "v0_after_translate_dx10": [
+          -5,
+          -5,
+          -5
+        ]
       }
     },
     "kernel_output": {
@@ -340,10 +347,11 @@
       }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "MISMATCH"
+    "status": "PASS",
+    "note": "The Swift test asserts only the three counts. The v0 value was read through graph.translated(dx: 10, dy: 0, dz: 0, copyGeometry: false).vertexPoint(0) with a temporary print: (-5, -5, -5), unmoved, identical to the kernel (BRepGraph_Transform with the Share policy leaves vertex 0 where it was; see the PR body observation 1). Parity is a MATCH; the unmoved vertex is deliberately not pinned by the test."
   },
   {
     "test_name": "BRepGraph Validate::boxIsValid",
@@ -352,7 +360,8 @@
       "type": "validate",
       "data": {
         "isValid": true,
-        "errors": 0
+        "errors": 0,
+        "warnings": 0
       }
     },
     "kernel_output": {
@@ -364,10 +373,11 @@
       }
     },
     "comparison": {
-      "equal": false,
-      "differences": ["kernel_output includes warnings field that bridge_output omits"]
+      "equal": true,
+      "differences": []
     },
-    "status": "MISMATCH"
+    "status": "PASS",
+    "note": "The Swift test asserts isValid and errorCount == 0. warnings: 0 was read from graph.validate().warningCount with a temporary print, and matches the kernel's BRepGraph_Validate::Perform warning count."
   },
   {
     "test_name": "BRepGraph Vertex Geometry::vertexPoint",

@@ -3,7 +3,7 @@ supplement: faceDirect(0) before=0
 supplement: face uid=1 after add=1
 supplement: remove1=1 after=0
 supplement: remove2=0
-supplement: edge uid=2
+supplement: edge uid=1
 naturalRestriction(0)=0 nbWires=1
 naturalRestriction(1)=0 nbWires=1
 naturalRestriction(2)=0 nbWires=1
