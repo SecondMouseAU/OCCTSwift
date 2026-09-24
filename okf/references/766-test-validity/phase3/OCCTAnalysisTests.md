@@ -268,6 +268,12 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **LProp3dSurface** | sphereCurvatures | Surface local curvatures | OCCTSurfaceLocalCurvatures |
+| **LProp3dSurface** | cylinderCurvatures | Surface local curvatures | OCCTSurfaceLocalCurvatures |
+| **LProp3dSurface** | curvatureDirections | Surface curvature directions | OCCTSurfaceLocalCurvatureDirections |
+| **LProp AnalyticCurInf** | ellipseHasExtrema | Analytic curvature extrema | OCCTLPropAnalyticCurInf |
+| **LProp AnalyticCurInf** | lineHasNoSpecialPoints | Analytic curvature extrema | OCCTLPropAnalyticCurInf |
+| **LProp AnalyticCurInf** | circleHasNoSpecialPoints | Analytic curvature extrema | OCCTLPropAnalyticCurInf |
 
 ---
 
@@ -475,6 +481,12 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| sphereCurvatures | OCCTSurfaceLocalCurvatures | Surface local curvatures | gaussian + 0.5; mean negated (original: green, it compared abs(mean)) | ✅ | ✅ | Rewritten: abs(mean) passed a sign-flipped mean; now pins all four signed values |
+| cylinderCurvatures | OCCTSurfaceLocalCurvatures | Surface local curvatures | gaussian + 0.5; mean negated; max/min swapped (original: green, it checked only the Gaussian) | ✅ | ✅ | Rewritten: only the Gaussian was checked, so swapped principal curvatures passed |
+| curvatureDirections | OCCTSurfaceLocalCurvatureDirections | Surface curvature directions | swap max/min directions (original: green, it checked only != nil) | ✅ | ✅ | Rewritten: != nil passed swapped directions |
+| ellipseHasExtrema | OCCTLPropAnalyticCurInf | Analytic curvature extrema | MinCur/MaxCur classification swapped (original: green, it checked count >= 2) | ✅ | ✅ | Rewritten: count >= 2 passed swapped types. Kernel side is GeomLProp_CurAndInf2d, since 8.0.1 ships no LProp_AnalyticCurInf |
+| lineHasNoSpecialPoints | OCCTLPropAnalyticCurInf | Analytic curvature extrema | ellipse extrema reported for every curve type | ✅ | ✅ |  |
+| circleHasNoSpecialPoints | OCCTLPropAnalyticCurInf | Analytic curvature extrema | ellipse extrema reported for every curve type | ✅ | ✅ |  |
 
 ---
 
