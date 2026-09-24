@@ -434,3 +434,16 @@ Probe: `Scripts/repro/766-geom2d-conic-props-sine-lprop/`. Every row was run red
 | Geom2d_Parabola Properties::parabola2DFocus | `OCCTCurve2DParabolaFocus` | focus x + 1 | ✅ | ✅ | MATCH | asserted nothing (`let _ = f`); now (0, 0) |
 | Geom2d_Parabola Properties::parabola2DEccentricity | `OCCTCurve2DParabolaEccentricity` | eccentricity + 0.1 | ✅ | ✅ | MATCH | `if let`; now `#require` |
 | Geom2d_Parabola Properties::parabola2DParameter | `OCCTCurve2DParabolaParameter` | parameter + 1 | ✅ | ✅ | MATCH | `p > 0` inside `if let`; now 6 |
+### #1979 executed: `Issue1407EvaluatorGuardTests.swift`, `Issue1474Curve2DApproxDetailsTests.swift`, `Issue1477Geom2dCurvesTests.swift`, `Issue1511Curve2DCurveTypeOtherCurveFallbackTests.swift`
+Probe: `Scripts/repro/766-geom2d-issue-regressions-a/`. Every row was run red with the injection applied and green after it was reverted.
+| Issue #1407, 2D evaluator guards::A zero-amplitude sine wave does not abort | `OCCTGeom2dEvalSineWaveD0` | amplitude 0 replaced by 1 | ✅ | ✅ | MATCH |  |
+| Issue #1407, 2D evaluator guards::A zero-radius circle involute does not abort | `OCCTGeom2dEvalCircleInvoluteD0` | radius 0 replaced by 1 | ✅ | ✅ | MATCH |  |
+| Issue #1407, 2D evaluator guards::A zero-growth Archimedean spiral does not abort | `OCCTGeom2dEvalArchimedeanSpiralD0` | growth rate 0 replaced by 1 | ✅ | ✅ | MATCH |  |
+| Curve2D.approxWithDetails surfaces MaxError (#1474)::approxWithDetails reports the true maxError for a starved (over-tolerance) fit | `OCCTGeomConvertApproxCurve2D` | MaxError discarded (reported as 0) | ✅ | ✅ | MATCH | `guard` + `Issue.record`; now `#require`, maxError pinned |
+| Curve2D.approxWithDetails surfaces MaxError (#1474)::approximated and approxWithDetails agree on a well-converged fit | `OCCTCurve2DApproximate` | plain entry point tolerance x 1e-4 | ✅ | ✅ | MATCH | `guard` + `Issue.record`; now `#require`, poles and degree pinned |
+| #1477: Geom2d_Curves.mm buffer-count and silent-drop fixes::returned count never exceeds a small buffer's capacity, and matches what was written | `OCCTGeom2dConvertApproxArcsSegments` | returns written - 1 | ✅ | ✅ | MATCH | fixture precondition now `#require`, full count pinned |
+| #1477: Geom2d_Curves.mm buffer-count and silent-drop fixes::join fails (returns nil) when a curve cannot attach, rather than silently dropping it | `OCCTCurve2DJoinToBSpline` | failed Add ignored | ✅ | ✅ | MATCH |  |
+| #1477: Geom2d_Curves.mm buffer-count and silent-drop fixes::join fails when curves are out of order and don't chain end-to-end | `OCCTCurve2DJoinToBSpline` | failed Add ignored | ✅ | ✅ | MATCH |  |
+| #1477: Geom2d_Curves.mm buffer-count and silent-drop fixes::join still succeeds for genuinely continuous curves | `OCCTCurve2DJoinToBSpline` | returns nullptr | ✅ | ✅ | MATCH | `!= nil`; now endpoints pinned |
+| Issue #1511 Finding 2: OCCTCurve2DCurveType OtherCurve fallback::a null OCCTCurve2DRef returns GeomAbs_OtherCurve (8), not GeomAbs_OffsetCurve (7) | `OCCTCurve2DCurveType` | null fallback back to 7 | ✅ | ✅ | MATCH |  |
+| Issue #1511 Finding 2: OCCTCurve2DCurveType OtherCurve fallback::an ordinary line's curve type is unaffected (Line = 0) | `OCCTCurve2DCurveType` | GetType result replaced by 1 | ✅ | ✅ | MATCH |  |
