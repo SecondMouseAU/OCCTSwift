@@ -23,7 +23,7 @@
         "torus 1e-9": "surface, IsDone false",
         "sphere 1e-9": "surface, IsDone false"
       },
-      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 491 lines"
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt lines 2 and 3: '491 sphere r=10 tol 1e-9 C2: IsDone=0 HasResult=1 MaxError=3.11e-09' and '491 torus 20/5 tol 1e-9 C2: IsDone=0 HasResult=1 MaxError=0.000395'"
     },
     "comparison": {
       "equal": true,
@@ -63,7 +63,7 @@
           ]
         }
       },
-      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 491 sphere"
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt line 1: '491 sphere r=10 tol 1e-3 C2: IsDone=1 HasResult=1 MaxError=0.000206 degree=(8,8) poles=(15,9)'"
     },
     "comparison": {
       "equal": true,
@@ -91,7 +91,7 @@
           9
         ]
       },
-      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 491 sphere r=10 tol 1e-3 C2"
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt line 1: '491 sphere r=10 tol 1e-3 C2: IsDone=1 HasResult=1 MaxError=0.000206 degree=(8,8) poles=(15,9)'"
     },
     "comparison": {
       "equal": true,
@@ -113,7 +113,7 @@
       "data": {
         "sphere 1e-3 MaxError": 0.000206
       },
-      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 491"
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt line 1: '491 sphere r=10 tol 1e-3 C2: IsDone=1 HasResult=1 MaxError=0.000206 degree=(8,8) poles=(15,9)'"
     },
     "comparison": {
       "equal": true,
@@ -139,7 +139,7 @@
         "HasResult": true,
         "MaxError": 0.000395
       },
-      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 491 torus 20/5 tol 1e-9"
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt line 3: '491 torus 20/5 tol 1e-9 C2: IsDone=0 HasResult=1 MaxError=0.000395'"
     },
     "comparison": {
       "equal": true,
@@ -199,7 +199,7 @@
           ]
         }
       },
-      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 491 cone"
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt lines 4 and 5: '491 cone maxDegree 4 maxSegments 20: IsDone=1 HasResult=1 MaxError=4.42e-05 degree=(5,5) poles=(27,6)' and '491 cone maxDegree 20 maxSegments 4: IsDone=1 HasResult=1 MaxError=0.000114 degree=(11,5) poles=(12,6)'"
     },
     "comparison": {
       "equal": true,
@@ -217,7 +217,7 @@
     "kernel_output": {
       "type": "measurement",
       "data": {},
-      "source": "Scripts/repro/766-issue491-522-572/transcript.txt 491: IsDone=0 HasResult=1 for sphere and torus at 1e-9"
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt lines 2 and 3: '491 sphere r=10 tol 1e-9 C2: IsDone=0 HasResult=1 MaxError=3.11e-09' and '491 torus 20/5 tol 1e-9 C2: IsDone=0 HasResult=1 MaxError=0.000395'"
     },
     "comparison": {
       "equal": true,
