@@ -381,3 +381,14 @@ Probe: `Scripts/repro/766-geom2d-gcmake2d-conic/`. Every row was run red with th
 | GC_Make*2d Conic Tests::hyperbola2dFrom3Points | `OCCTCurve2DMakeHyperbola3Points` | second point y + 1 | ✅ | ✅ | MATCH | nested in `if let h` |
 | GC_Make*2d Conic Tests::parabola2dFromAxis | `OCCTCurve2DMakeParabola` | focal + 1 | ✅ | ✅ | MATCH | `!= nil` only |
 | GC_Make*2d Conic Tests::parabola2dFromDirectrixFocus | `OCCTCurve2DMakeParabolaDirectrixFocus` | focus x + 1 | ✅ | ✅ | MATCH | `!= nil` only |
+### #1979 executed: `Geom2dEllipseTests.swift`, `Geom2dEvalArchimedeanSpiralTests.swift`
+Probe: `Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/`. Every row was run red with the injection applied and green after it was reverted.
+| Geom2d_Ellipse Properties::ellipse2DRadii | `OCCTCurve2DEllipseMajorRadius / OCCTCurve2DEllipseMinorRadius` | major radius + 1 | ✅ | ✅ | MATCH | nested in `if let e` |
+| Geom2d_Ellipse Properties::ellipse2DSetRadii | `OCCTCurve2DEllipseSetMajorRadius` | skip SetMajorRadius() | ✅ | ✅ | MATCH | nested in `if let e` |
+| Geom2d_Ellipse Properties::ellipse2DEccentricity | `OCCTCurve2DEllipseEccentricity` | eccentricity + 0.01 | ✅ | ✅ | MATCH | `> 0`, nested in `if let e` |
+| Geom2d_Ellipse Properties::ellipse2DFocal | `OCCTCurve2DEllipseFocal` | focal + 0.01 | ✅ | ✅ | MATCH | `> 0`, nested in `if let e` |
+| Geom2d_Ellipse Properties::ellipse2DFocus1 | `OCCTCurve2DEllipseFocus1` | negate x (report focus 2) | ✅ | ✅ | MATCH | `let _ = f`, no assertion |
+| Geom2dEval — Archimedean Spiral::spiralD0AtZero | `OCCTGeom2dEvalArchimedeanSpiralD0` | initial radius + 1 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — Archimedean Spiral::spiralD0AtTwoPi | `OCCTGeom2dEvalArchimedeanSpiralD0` | initial radius + 1 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — Archimedean Spiral::spiralD1 | `OCCTGeom2dEvalArchimedeanSpiralD1` | growth rate + 1 | ✅ | ✅ | MATCH | `speed > 0`; now D1 = (b, a) |
+| Geom2dEval — Archimedean Spiral::spiralWithInitialRadius | `OCCTGeom2dEvalArchimedeanSpiralD0` | initial radius + 1 | ✅ | ✅ | MATCH |  |
