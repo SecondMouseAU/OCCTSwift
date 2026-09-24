@@ -27,7 +27,9 @@ struct DistAngleChamferTests {
                 (edgeIndex: 0, faceIndex: 0, distance: 1.0, angleDegrees: angleDegrees)
             ])
         else {
-            Issue.record("a 1-unit chamfer at \(angleDegrees) degrees on a 10-unit box succeeds")
+        let r = try #require(box.chamferedDistAngle([
+            (edgeIndex: 0, faceIndex: 0, distance: 1.0, angleDegrees: angleDegrees)
+        ]))
             return
         }
         #expect(r.isValid)
