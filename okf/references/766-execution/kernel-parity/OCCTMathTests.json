@@ -6437,5 +6437,221 @@
       "failing_expectation": ":24 `inf`"
     },
     "green": true
+  },
+  {
+    "test_name": "GC_MakeTrimmedCone::Trimmed cone from endpoints and radii",
+    "bridge_function": "OCCTSurfaceTrimmedCone",
+    "bridge_output": {
+      "type": "observed",
+      "data": "domain u [0, 2pi] v [0, 10.440306508910549]; P(0, vMin) (5, 0, 0), P(0, vMax) (2, 0, 10)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "domain u [0, 2pi] v [0, 10.440306508910549]; P(0, vMin) (5, 0, 0), P(0, vMax) (2, 0, 10)",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "r1 and r2 swapped",
+      "failing_expectation": "original: **green**; rewritten: :23 `simd_distance(surf.point(atU: 0, v: d.vMin), SIMD3<Double>(5, 0, 0)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeTrimmedCylinder::Trimmed cylinder from axis, radius, height",
+    "bridge_function": "OCCTSurfaceTrimmedCylinder",
+    "bridge_output": {
+      "type": "observed",
+      "data": "domain u [0, 2pi] v [0, 8]; P(0,0) (4, 0, 0), P(0,8) (4, 0, 8)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "domain u [0, 2pi] v [0, 8]; P(0,0) (4, 0, 0), P(0,8) (4, 0, 8)",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "radius and height swapped",
+      "failing_expectation": "original: **green**; rewritten: :19 `abs(d.vMax - 8) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Trsf_Extras::transformFromMatrix",
+    "bridge_function": "OCCTShapeTransformFromMatrix",
+    "bridge_output": {
+      "type": "observed",
+      "data": "min (4.4999999, 9.4999999, 14.4999999), max (5.5000001, 10.5000001, 15.5000001)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min (4.4999999, 9.4999999, 14.4999999), max (5.5000001, 10.5000001, 15.5000001)",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "translation column (a14, a24, a34) dropped",
+      "failing_expectation": ":25 `bb.min.x > 4.0`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Trsf_Extras::transformIsNegative",
+    "bridge_function": "OCCTShapeTransformIsNegative",
+    "bridge_output": {
+      "type": "observed",
+      "data": "location identity = 1, IsNegative reported 0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "location identity = 1, IsNegative reported 0",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "identity-location branch reports true",
+      "failing_expectation": ":37 `b.isTransformNegative == false`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Trsf_Extras::mirrorTransformProducesResult",
+    "bridge_function": "OCCTShapeTransformFromMatrix",
+    "bridge_output": {
+      "type": "observed",
+      "data": "min (-15.0000001, -1e-7, -1e-7), max (-4.9999999, 10.0000001, 10.0000001)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min (-15.0000001, -1e-7, -1e-7), max (-4.9999999, 10.0000001, 10.0000001)",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "a11 read from a22 (identity instead of the X mirror)",
+      "failing_expectation": ":58 `bb.max.x < -4.0`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Trsf_Extras::displacement",
+    "bridge_function": "OCCTTrsfDisplacement",
+    "bridge_output": {
+      "type": "observed",
+      "data": "[1 0 0 10, 0 1 0 0, 0 0 1 0]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "[1 0 0 10, 0 1 0 0, 0 0 1 0]",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "from and to frames swapped",
+      "failing_expectation": ":70 `abs(m.values[3] - 10.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Trsf_Extras::transformation",
+    "bridge_function": "OCCTTrsfTransformation",
+    "bridge_output": {
+      "type": "observed",
+      "data": "[1 0 0 -5, 0 1 0 -5, 0 0 1 -5]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "[1 0 0 -5, 0 1 0 -5, 0 0 1 -5]",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "SetDisplacement used instead of SetTransformation",
+      "failing_expectation": "original: **green**; rewritten: :82 `zip(m.values, want).allSatisfy { abs($0 - $1) < 1e-12 }`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Trsf_Extras::invalidMatrixSize",
+    "bridge_function": "none (pure Swift: the deprecated transformed(byMatrix: [Double]) overload in Shape+Math.swift refuses before any bridge call)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: N/A: element-count validation happens in Swift; no kernel call is made"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "Swift injection: a short array padded with the identity instead of refused",
+      "failing_expectation": ":89 `result == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Trsf_Extras::transformFromMatrixInterleavedLayoutTranslatesAsDocumented",
+    "bridge_function": "OCCTShapeTransformFromMatrix",
+    "bridge_output": {
+      "type": "observed",
+      "data": "min (4.9999999, 9.9999999, 14.9999999), max (15.0000001, 20.0000001, 25.0000001)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min (4.9999999, 9.9999999, 14.9999999), max (15.0000001, 20.0000001, 25.0000001)",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "translation column dropped",
+      "failing_expectation": ":110 `abs(bb.min.x - 5.0) < 1e-6`"
+    },
+    "green": true
   }
 ]
