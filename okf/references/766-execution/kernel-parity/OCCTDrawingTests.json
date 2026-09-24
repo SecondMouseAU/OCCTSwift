@@ -2655,5 +2655,262 @@
       "reason": "pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call"
     },
     "status": "N/A"
+  },
+  {
+    "test_name": "Point Projection Tests::Project point onto box face",
+    "bridge_function": "OCCTFaceProjectPoint",
+    "bridge_output": {
+      "point": [
+        0,
+        0,
+        5
+      ],
+      "distance": 10
+    },
+    "kernel_output": {
+      "nearest": [
+        0,
+        0,
+        5
+      ],
+      "distance": 10
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Point Projection Tests::Project point onto sphere face with UV",
+    "bridge_function": "OCCTFaceProjectPoint",
+    "bridge_output": {
+      "point": [
+        5,
+        0,
+        0
+      ],
+      "distance": 5
+    },
+    "kernel_output": {
+      "nearest": [
+        5,
+        0,
+        0
+      ],
+      "distance": 5
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Point Projection Tests::All projections returns results",
+    "bridge_function": "OCCTFaceProjectPointAll",
+    "bridge_output": {
+      "count": 1,
+      "distance": 10
+    },
+    "kernel_output": {
+      "nbPoints": 1,
+      "distance": 10
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Point Projection Tests::Project point onto straight edge",
+    "bridge_function": "OCCTEdgeProjectPoint",
+    "bridge_output": {
+      "distance": 1.4142135623730951
+    },
+    "kernel_output": {
+      "distance": 1.4142135623730951
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Point Projection Tests::Project point onto circular edge",
+    "bridge_function": "OCCTEdgeProjectPoint",
+    "bridge_output": {
+      "distance": 3
+    },
+    "kernel_output": {
+      "distance": 3
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Polygon-Based HLR::Fast top view of box produces edges",
+    "bridge_function": "OCCTDrawingCreatePoly",
+    "bridge_output": {
+      "visible": 4,
+      "extent": [
+        [
+          -5.0000001,
+          -5.0000001
+        ],
+        [
+          5.0000001,
+          5.0000001
+        ]
+      ]
+    },
+    "kernel_output": {
+      "visible": 4,
+      "extent": [
+        [
+          -5.0000001,
+          -5.0000001
+        ],
+        [
+          5.0000001,
+          5.0000001
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Polygon-Based HLR::Fast isometric view of box",
+    "bridge_function": "OCCTDrawingCreatePoly",
+    "bridge_output": {
+      "visible": 9,
+      "hidden": 3,
+      "extent": [
+        [
+          -8.838834864831846,
+          -9.185586635436922
+        ],
+        [
+          8.838834864831846,
+          9.185586635436922
+        ]
+      ]
+    },
+    "kernel_output": {
+      "visible": 9,
+      "hidden": 3,
+      "extent": [
+        [
+          -8.83883486,
+          -9.18558664
+        ],
+        [
+          8.83883486,
+          9.18558664
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Polygon-Based HLR::Fast projection of cylinder",
+    "bridge_function": "OCCTDrawingCreatePoly",
+    "bridge_output": {
+      "visible": 76,
+      "outline": 4,
+      "extent": [
+        [
+          -1e-07,
+          -5.000000099706646
+        ],
+        [
+          10.0000001,
+          5.000000099706646
+        ]
+      ]
+    },
+    "kernel_output": {
+      "visible": 76,
+      "outline": 4,
+      "extent": [
+        [
+          -1e-07,
+          -5.0000001
+        ],
+        [
+          10.0000001,
+          5.0000001
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Polygon-Based HLR::Fast projection has hidden edges",
+    "bridge_function": "OCCTDrawingCreatePoly",
+    "bridge_output": {
+      "visible": 10,
+      "hidden": 14
+    },
+    "kernel_output": {
+      "visible": 10,
+      "hidden": 14
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Polygon-Based HLR::Fast vs exact projection both succeed",
+    "bridge_function": "OCCTDrawingCreatePoly",
+    "bridge_output": {
+      "exactVisible": 1,
+      "fastVisible": 197
+    },
+    "kernel_output": {
+      "exactVisible": 1,
+      "fastVisible": 197
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Polygon-Based HLR::Custom deflection affects result",
+    "bridge_function": "OCCTDrawingCreatePoly",
+    "bridge_output": {
+      "coarseVisible": 35,
+      "fineVisible": 631
+    },
+    "kernel_output": {
+      "coarseVisible": 35,
+      "fineVisible": 631
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
