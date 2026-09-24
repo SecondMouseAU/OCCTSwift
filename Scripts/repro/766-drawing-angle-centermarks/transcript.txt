@@ -1,0 +1,10 @@
+rightAngle/angleGeometry: degrees=90 valid=1 center=(0, 0, 0)
+sixtyDegreeAngle: degrees=59.999999999999993
+straightAngle: degrees=180 valid=1
+perpendicularFaces: degrees=90 valid=1
+frameAgreement: visible bbox centre=(5, -10)
+frameAgreement: gp_Ax2 frame projects circle centre (0,10,5) to (5, -10)
+frameAgreement: gp_Ax2 frame projects circle centre (10,10,5) to (5, -10)
+cylinderTopViewMark: circles faced=2 edgeOn=0 belowMinRadius=0
+cylinderSideViewSkipped: circles faced=0 edgeOn=2 belowMinRadius=0
+minRadiusFilter: circles faced=0 edgeOn=0 belowMinRadius=2

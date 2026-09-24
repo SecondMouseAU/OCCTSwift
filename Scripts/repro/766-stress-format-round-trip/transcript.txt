@@ -1,0 +1,127 @@
+== originals
+box: volume=1000 area=600 faces=6 edges=12 valid=1 size=(10, 10, 10)
+cylinder: volume=785.3981634 area=471.238898 faces=3 edges=3 valid=1 size=(10, 10, 10)
+sphere: volume=523.5987756 area=314.1592654 faces=1 edges=3 valid=1 size=(10, 10, 10)
+cone: volume=408.407045 area=320.7005186 faces=3 edges=3 valid=1 size=(10, 10, 10)
+torus: volume=1776.528792 area=1184.352528 faces=1 edges=2 valid=1 size=(28.1422, 28.1422, 6)
+filletedBox: volume=975.5870139 area=547.362818 faces=26 edges=56 valid=1 size=(10, 10, 10)
+drilledPlate: volume=12358.62833 area=6037.699112 faces=7 edges=15 valid=1 size=(50, 50, 5)
+compound: volume=1392.699082 area=757.0796327 faces=11 edges=26 valid=1 size=(10, 10, 15)
+== STEP (AP214, as-is)
+*******************************************************************
+******        Statistics on Transfer (Write)                 ******
+*******************************************************************
+******        Transfer Mode = 0  I.E.  As Is       ******
+******        Transferring Shape, ShapeType = 2                      ******
+** WorkSession : Sending all data
+ Step File Name : /tmp/occt766_fmt_probe_box.step(350 ents)  Write  Done
+box: valid=1 volume=1000 area=600 faces=6 edges=12
+*******************************************************************
+******        Statistics on Transfer (Write)                 ******
+*******************************************************************
+******        Transfer Mode = 0  I.E.  As Is       ******
+******        Transferring Shape, ShapeType = 2                      ******
+** WorkSession : Sending all data
+ Step File Name : /tmp/occt766_fmt_probe_cylinder.step(118 ents)  Write  Done
+cylinder: valid=1 volume=785.3981634 area=471.238898 faces=3 edges=3
+*******************************************************************
+******        Statistics on Transfer (Write)                 ******
+*******************************************************************
+******        Transfer Mode = 0  I.E.  As Is       ******
+******        Transferring Shape, ShapeType = 2                      ******
+** WorkSession : Sending all data
+ Step File Name : /tmp/occt766_fmt_probe_sphere.step(32 ents)  Write  Done
+sphere: valid=1 volume=523.5987756 area=314.1592654 faces=1 edges=3
+*******************************************************************
+******        Statistics on Transfer (Write)                 ******
+*******************************************************************
+******        Transfer Mode = 0  I.E.  As Is       ******
+******        Transferring Shape, ShapeType = 2                      ******
+** WorkSession : Sending all data
+ Step File Name : /tmp/occt766_fmt_probe_cone.step(118 ents)  Write  Done
+cone: valid=1 volume=408.407045 area=320.7005186 faces=3 edges=3
+*******************************************************************
+******        Statistics on Transfer (Write)                 ******
+*******************************************************************
+******        Transfer Mode = 0  I.E.  As Is       ******
+******        Transferring Shape, ShapeType = 2                      ******
+** WorkSession : Sending all data
+ Step File Name : /tmp/occt766_fmt_probe_torus.step(78 ents)  Write  Done
+torus: valid=1 volume=1776.528792 area=1184.352528 faces=1 edges=2
+*******************************************************************
+******        Statistics on Transfer (Write)                 ******
+*******************************************************************
+******        Transfer Mode = 0  I.E.  As Is       ******
+******        Transferring Shape, ShapeType = 0                      ******
+** WorkSession : Sending all data
+ Step File Name : /tmp/occt766_fmt_probe_filletedBox.step(1326 ents)  Write  Done
+filletedBox: valid=1 volume=975.5870139 area=547.362818 faces=26 edges=56
+*******************************************************************
+******        Statistics on Transfer (Write)                 ******
+*******************************************************************
+******        Transfer Mode = 0  I.E.  As Is       ******
+******        Transferring Shape, ShapeType = 0                      ******
+** WorkSession : Sending all data
+ Step File Name : /tmp/occt766_fmt_probe_drilledPlate.step(442 ents)  Write  Done
+drilledPlate: valid=1 volume=12358.62833 area=6037.699112 faces=7 edges=15
+*******************************************************************
+******        Statistics on Transfer (Write)                 ******
+*******************************************************************
+******        Transfer Mode = 0  I.E.  As Is       ******
+******        Transferring Shape, ShapeType = 0                      ******
+** WorkSession : Sending all data
+ Step File Name : /tmp/occt766_fmt_probe_compound.step(625 ents)  Write  Done
+compound: valid=1 volume=1392.699082 area=757.0796327 faces=11 edges=22
+== BREP file
+box: valid=1 volume=1000 faces=6 edges=12
+cylinder: valid=1 volume=785.3981634 faces=3 edges=3
+sphere: valid=1 volume=523.5987756 faces=1 edges=3
+cone: valid=1 volume=408.407045 faces=3 edges=3
+torus: valid=1 volume=1776.528792 faces=1 edges=2
+filletedBox: valid=1 volume=975.5870139 faces=26 edges=56
+drilledPlate: valid=1 volume=12358.62833 faces=7 edges=15
+compound: valid=1 volume=1392.699082 faces=11 edges=26
+== BREP string
+box: string length=2569 valid=1 volume=1000 faces=6
+cylinder: string length=1087 valid=1 volume=785.3981634 faces=3
+sphere: string length=891 valid=1 volume=523.5987756 faces=1
+cone: string length=1228 valid=1 volume=408.407045 faces=3
+torus: string length=783 valid=1 volume=1776.528792 faces=1
+filletedBox: string length=15957 valid=1 volume=975.5870139 faces=26
+drilledPlate: string length=3517 valid=1 volume=12358.62833 faces=7
+compound: string length=5689 valid=1 volume=1392.699082 faces=11
+== STL (BRepMesh 0.1, binary)
+box: faces=12 valid=1 size=(10, 10, 10) original size.x=10
+cylinder: faces=100 valid=1 size=(10, 9.92709, 10) original size.x=10.0729
+sphere: faces=514 valid=1 size=(9.91697, 9.97669, 10) original size.x=10.1552
+cone: faces=196 valid=1 size=(10, 9.92709, 10) original size.x=10.2088
+torus: faces=1864 valid=1 size=(26, 26, 5.95625) original size.x=26.2693
+filletedBox: faces=620 valid=1 size=(10, 10, 10) original size.x=10.0427
+== OBJ (RWObj_CafWriter / RWObj_CafReader)
+Mesh /tmp/occt766_fmt_probe_box.obj
+[24 nodes] [12 2d elements]
+[read in 0.0001 s]
+box: null=0 faces=1 triangles=12 size=(10, 10, 10)
+Mesh /tmp/occt766_fmt_probe_cylinder.obj
+[106 nodes] [100 2d elements]
+[read in 0.00015 s]
+cylinder: null=0 faces=1 triangles=100 size=(10, 9.92709, 10)
+Mesh /tmp/occt766_fmt_probe_sphere.obj
+[273 nodes] [516 2d elements]
+[read in 0.000395 s]
+sphere: null=0 faces=1 triangles=516 size=(9.91697, 9.97669, 10)
+Mesh /tmp/occt766_fmt_probe_filletedBox.obj
+[536 nodes] [628 2d elements]
+[read in 0.000627 s]
+filletedBox: null=0 faces=1 triangles=628 size=(10, 10, 10)
+== IGES (IGESControl_Writer default / IGESControl_Reader::OneShape)
+Total number of loaded entities 49.
+box: faces=6 solids=0 sewn volume=1000
+Total number of loaded entities 27.
+cylinder: faces=3 solids=0 sewn volume=nil/0
+Total number of loaded entities 14.
+sphere: faces=1 solids=0 sewn volume=nil/0
+Total number of loaded entities 28.
+cone: faces=3 solids=0 sewn volume=nil/0
+Total number of loaded entities 19.
+torus: faces=1 solids=0 sewn volume=nil/0

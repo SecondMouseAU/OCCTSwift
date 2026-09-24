@@ -26,6 +26,9 @@ struct StressBooleanChainTests {
         }
         #expect(shape.isValid)
         if let vol = shape.volume { #expect(vol < origVol) }
+        // Epic #766: "smaller than before" held for any single successful cut. The kernel's
+        // volume after all fifty is 995373.8819 (Scripts/repro/766-stress-chain-depth/).
+        #expect(abs((shape.volume ?? 0) - 995373.8819) < 1e-3)
     }
 
     @Test func hundredSubtractions() {
@@ -45,6 +48,8 @@ struct StressBooleanChainTests {
             if (i + 1) % 25 == 0 { #expect(shape.isValid) }
         }
         if let vol = shape.volume { #expect(vol < origVol) }
+        // Epic #766: pinned to the kernel's volume after all hundred cuts.
+        #expect(abs((shape.volume ?? 0) - 7996665.368) < 1e-2)
     }
 
     @Test func fiftyUnions() {
@@ -59,6 +64,9 @@ struct StressBooleanChainTests {
         }
         #expect(shape.isValid)
         if let vol = shape.volume { #expect(vol > 0) }
+        // Epic #766: "positive" held for the starting box alone, so fifty failed unions passed.
+        // The kernel's fused volume is 6359.375.
+        #expect(abs((shape.volume ?? 0) - 6359.375) < 1e-6)
     }
 
     @Test func fiftyIntersections() {
@@ -73,6 +81,8 @@ struct StressBooleanChainTests {
             }
         }
         #expect(shape.isValid)
+        // Epic #766: the last common is with the 75.5-wide box, so the result is that box.
+        #expect(abs((shape.volume ?? 0) - 75.5 * 75.5 * 75.5) < 1e-4)
     }
 
     @Test func mixedBooleans() {
@@ -88,6 +98,11 @@ struct StressBooleanChainTests {
             }
         }
         #expect(shape.isValid)
+        // Epic #766: validity alone passed for thirty no-op booleans. In the kernel the chain
+        // ends empty: a later common with a small box that no longer overlaps what is left leaves
+        // nothing, and an empty result has no volume (reported as nil, not 0).
+        #expect(shape.volume == nil)
+        #expect(shape.subShapeCount(ofType: .face) == 0)
     }
 }
 
@@ -119,19 +134,29 @@ struct StressFeatureChainTests {
         if let s = shape.shelled(thickness: -1.0) { shape = s }
         // Shell may fail on complex geometry, that's OK
         #expect(shape.isValid)
+        // Epic #766: four validity checks passed for a chain where every step failed. In the
+        // kernel the fillet, all four drills and the chamfer succeed and the shell does not, so
+        // the final volume is the chamfered one ({K}).
+        #expect(abs((shape.volume ?? 0) - 30905.43876) < 1e-3)
     }
 
     @Test func tenSuccessiveFillets() {
         guard var shape = Shape.box(width: 100, height: 100, depth: 100) else { return }
+        var succeeded = 0
         for i in 0..<10 {
             let radius = 0.5 + Double(i) * 0.1
             if let f = shape.filleted(radius: radius) {
                 shape = f
                 #expect(shape.isValid)
+                succeeded += 1
             } else {
                 break  // Fillet failed, expected for complex shapes
             }
         }
+        // Epic #766: a first fillet that failed broke out before any expectation ran. In the
+        // kernel the first fillet (r = 0.5) succeeds and the second, on the filleted box, does not.
+        #expect(succeeded == 1)
+        #expect(abs((shape.volume ?? 0) - 999935.7869) < 1e-3)
     }
 
     @Test func tenDrillsGrid() {
@@ -149,6 +174,8 @@ struct StressFeatureChainTests {
         }
         #expect(shape.isValid)
         if let vol = shape.volume { #expect(vol > 0) }
+        // Epic #766: ten through-holes of radius 2 in a 10-thick plate: 1e5 - 10·π·4·10.
+        #expect(abs((shape.volume ?? 0) - (1e5 - 400 * .pi)) < 1e-3)
     }
 
     @Test func deepFeatureChain() {
@@ -170,6 +197,9 @@ struct StressFeatureChainTests {
         }
         #expect(stepCount > 0)
         #expect(shape.isValid)
+        // Epic #766: in the kernel all twenty steps succeed.
+        #expect(stepCount == 20)
+        #expect(abs((shape.volume ?? 0) - 74045.18424) < 1e-3)
     }
 }
 
@@ -189,9 +219,12 @@ struct StressTransformChainTests {
         // Should be offset by ~1.0 in X
         let b = shape.bounds!
         #expect(b.max.x > 0.5)
+        // Epic #766: 1000 × 0.001 moves the box 1 along X, from [-5, 5] to [-4, 6].
+        #expect(abs(b.max.x - 6) < 1e-6)
+        #expect(abs(b.min.x - -4) < 1e-6)
     }
 
-    @Test func thousandRotations() {
+    @Test func thousandRotations() throws {
         var shape = standardBox()
         let angleStep = (2.0 * .pi) / 1000.0
         for _ in 0..<1000 {
@@ -202,6 +235,11 @@ struct StressTransformChainTests {
         #expect(shape.isValid)
         // After full rotation, should be back near original
         if let vol = shape.volume { #expect(abs(vol - 1000.0) < 1.0) }
+        // Epic #766: the volume is the same at every angle, so it could not see a wrong one. The
+        // bounds can: after a full turn the box is axis-aligned again, max corner (5, 5, 5).
+        let b = try #require(shape.bounds)
+        #expect(abs(b.max.x - 5) < 1e-6)
+        #expect(abs(b.max.y - 5) < 1e-6)
     }
 
     @Test func hundredScales() {
@@ -228,6 +266,9 @@ struct StressTransformChainTests {
             }
         }
         #expect(shape.isValid)
+        // Epic #766: 33 scalings by 1.001 (rotation and translation keep the volume), so
+        // 1000 · 1.001^99 = 1104.01168603.
+        #expect(abs((shape.volume ?? 0) - 1104.01168603) < 1e-6)
     }
 }
 
@@ -244,21 +285,23 @@ struct StressWireConstructionTests {
         for i in 0..<min(100, edges.count * 10) {
             builder.addEdge(edges[i % edges.count])
         }
-        _ = builder.wire
-        _ = builder.isDone
+        // Epic #766: both were discarded. BRepBuilderAPI_MakeWire ends done, with each of the 12
+        // edges in the wire once however often it was added.
+        #expect(builder.isDone)
+        #expect(builder.wire?.subShapeCount(ofType: .edge) == 12)
     }
 
-    @Test func largePolygonWire() {
+    @Test func largePolygonWire() throws {
         // 100-sided polygon
         var points: [SIMD3<Double>] = []
         for i in 0..<100 {
             let angle = Double(i) * 2.0 * .pi / 100.0
             points.append(SIMD3(10.0 * cos(angle), 10.0 * sin(angle), 0))
         }
-        let wire = Wire.polygon3D(points, closed: true)
-        if let w = wire {
-            if let len = w.length { #expect(len > 0) }
-        }
+        // Epic #766: a nil wire or length used to pass. The perimeter of the regular 100-gon of
+        // radius 10 is 200·10·sin(π/100).
+        let w = try #require(Wire.polygon3D(points, closed: true))
+        #expect(abs((w.length ?? 0) - 2000 * sin(.pi / 100)) < 1e-9)
     }
 
     @Test func manyPointInterpolation() {
@@ -286,18 +329,20 @@ struct StressWireConstructionTests {
 @Suite("Stress: Document Assembly Chains")
 struct StressDocumentAssemblyTests {
 
-    @Test func hundredShapesInDocument() {
-        guard let doc = Document.create() else { return }
+    // Epic #766: `guard let doc = Document.create() else { return }` passed when creation
+    // failed, in all three tests. They now require the document.
+    @Test func hundredShapesInDocument() throws {
+        let doc = try #require(Document.create())
         for i in 0..<100 {
             if let box = Shape.box(width: Double(i + 1), height: 10, depth: 10) {
                 doc.addShape(box)
             }
         }
-        #expect(doc.shapeCount >= 100)
+        #expect(doc.shapeCount == 100)
     }
 
-    @Test func deepAssemblyTree() {
-        guard let doc = Document.create() else { return }
+    @Test func deepAssemblyTree() throws {
+        let doc = try #require(Document.create())
         // Build 5-level deep assembly
         var lastLabel = doc.addShape(standardBox())
         for _ in 0..<5 {
@@ -306,16 +351,18 @@ struct StressDocumentAssemblyTests {
             _ = childLabel
             _ = lastLabel
         }
-        #expect(doc.shapeCount >= 5)
+        // Epic #766: the box plus five children, six free shapes (">= 5" passed with one missing).
+        #expect(doc.shapeCount == 6)
     }
 
-    @Test func manyColorAssignments() {
-        guard let doc = Document.create() else { return }
+    @Test func manyColorAssignments() throws {
+        let doc = try #require(Document.create())
         for i in 0..<50 {
             let r = Double(i) / 50.0
             _ = doc.colorToolAddColor(r: r, g: 0.5, b: 1.0 - r)
         }
-        #expect(doc.colorToolColorCount >= 50)
+        // Epic #766: fifty distinct colours, fifty entries.
+        #expect(doc.colorToolColorCount == 50)
     }
 }
 
