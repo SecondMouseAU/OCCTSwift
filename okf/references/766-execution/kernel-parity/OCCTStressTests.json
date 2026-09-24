@@ -7246,5 +7246,291 @@
       "strengthened": false
     },
     "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: CellsBuilder Lifecycle::normalCycle",
+    "bridge_function": "OCCTCellsBuilderAddAllToResult, OCCTCellsBuilderGetResult",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BOPAlgo_CellsBuilder: 2 solids, volume 8000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BOPAlgo_CellsBuilder: 2 solids, volume 8000",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTCellsBuilderGetResult",
+      "env": "OCCT766=|EARLY:OCCTCellsBuilderGetResult|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:769 Expectation failed: builder.result()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: CellsBuilder Lifecycle::emptyInput",
+    "bridge_function": "OCCTCellsBuilderCreate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): no arguments: HasErrors -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "no arguments: HasErrors -> nil",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCellsBuilderCreate: empty-input and HasErrors guards removed",
+      "env": "OCCT766=|SKIP:OCCTCellsBuilderCreate|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:779 Expectation failed: builder == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: CellsBuilder Lifecycle::removeAll",
+    "bridge_function": "OCCTCellsBuilderRemoveAllFromResult, OCCTCellsBuilderGetResult",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): all removed: 0 faces"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "all removed: 0 faces",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTCellsBuilderRemoveAllFromResult",
+      "env": "OCCT766=|EARLY:OCCTCellsBuilderRemoveAllFromResult|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:790 Expectation failed: result.subShapeCount(ofType: .face) == 0",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: CellsBuilder Lifecycle::destroyWithoutResult",
+    "bridge_function": "OCCTCellsBuilderRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: deallocation without result(); the old guard returned before any builder existed (single-argument CellsBuilder is nil)",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTCellsBuilderRelease",
+      "env": "OCCT766=|CRASH:OCCTCellsBuilderRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SectionBuilder Lifecycle::buildEmpty",
+    "bridge_function": "OCCTSectionBuilderBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): no arguments: IsDone=0 -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "no arguments: IsDone=0 -> nil",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSectionBuilderBuild returns an empty shape when not done",
+      "env": "OCCT766=|FAKE:OCCTSectionBuilderBuild|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:813 Expectation failed: builder.build() == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SectionBuilder Lifecycle::normalCycleTwoShapes",
+    "bridge_function": "OCCTSectionBuilderCreateFromShapes, OCCTSectionBuilderBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): box/sphere: 0 edges, 6 vertices"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "box/sphere: 0 edges, 6 vertices",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSectionBuilderBuild returns nil",
+      "env": "OCCT766=|NULL:OCCTSectionBuilderBuild|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:821 Expectation failed: builder.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SectionBuilder Lifecycle::initThenSetShapes",
+    "bridge_function": "OCCTSectionBuilderInit1Shape, OCCTSectionBuilderInit2Shape, OCCTSectionBuilderBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): box/sphere: 6 vertices"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "box/sphere: 6 vertices",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTSectionBuilderInit2Shape",
+      "env": "OCCT766=|EARLY:OCCTSectionBuilderInit2Shape|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:830 Expectation failed: builder.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SectionBuilder Lifecycle::sectionWithPlane",
+    "bridge_function": "OCCTSectionBuilderInit2Plane, OCCTSectionBuilderBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): z=0 plane: 4 edges"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "z=0 plane: 4 edges",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTSectionBuilderInit2Plane",
+      "env": "OCCT766=|EARLY:OCCTSectionBuilderInit2Plane|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:840 Expectation failed: builder.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SectionBuilder Lifecycle::destroyWithoutBuild",
+    "bridge_function": "OCCTSectionBuilderRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: deallocation without a prior call; no kernel value, the test exists to catch a crash in Release",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTSectionBuilderRelease",
+      "env": "OCCT766=|CRASH:OCCTSectionBuilderRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SectionBuilder Lifecycle::doubleBuild",
+    "bridge_function": "OCCTSectionBuilderBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): both builds done, 6 vertices"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "both builds done, 6 vertices",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSectionBuilderBuild returns nil",
+      "env": "OCCT766=|NULL:OCCTSectionBuilderBuild|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:860 Expectation failed: r1 != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SectionBuilder Lifecycle::ancestorFaceNilAfterReinitWithoutRebuild",
+    "bridge_function": "OCCTSectionBuilderBuild, OCCTSectionBuilderAncestorFaceOn1",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): overlapping boxes: section done with ancestor-resolving edges"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "overlapping boxes: section done with ancestor-resolving edges",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSectionBuilderBuild returns nil",
+      "env": "OCCT766=|NULL:OCCTSectionBuilderBuild|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:892 Expectation failed: builder.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]

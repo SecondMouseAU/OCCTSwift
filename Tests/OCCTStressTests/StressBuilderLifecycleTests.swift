@@ -804,34 +804,42 @@ struct StressThruSectionsBuilderLifecycleTests {
 @Suite("Stress: CellsBuilder Lifecycle")
 struct StressCellsBuilderLifecycleTests {
 
-    @Test func normalCycle() {
+    @Test func normalCycle() throws {
         let box = Shape.box(width: 20, height: 20, depth: 20)!
         let sphere = Shape.sphere(radius: 10)!
-        guard let builder = CellsBuilder(shapes: [box, sphere]) else { return }
+        let builder = try #require(CellsBuilder(shapes: [box, sphere]))
         builder.addAllToResult()
-        if let result = builder.result() {
-            #expect(result.isValid)
-        }
+        let result = try #require(builder.result())
+        #expect(result.isValid)
+        // The inscribed sphere splits the 20-cube into two cells that fill it.
+        #expect(result.solidCount == 2)
+        #expect(abs((result.volume ?? 0) - 8000) < 1e-6)
     }
 
     @Test func emptyInput() {
         // Empty array, should return nil or handle gracefully
         let builder = CellsBuilder(shapes: [])
-        _ = builder
+        #expect(builder == nil)
     }
 
-    @Test func removeAll() {
+    // Everything taken back out leaves an empty result, not nil.
+    @Test func removeAll() throws {
         let box = standardBox()
         let sphere = standardSphere()
-        guard let builder = CellsBuilder(shapes: [box, sphere]) else { return }
+        let builder = try #require(CellsBuilder(shapes: [box, sphere]))
         builder.addAllToResult()
         builder.removeAllFromResult()
-        _ = builder.result()
+        let result = try #require(builder.result())
+        #expect(result.subShapeCount(ofType: .face) == 0)
     }
 
-    @Test func destroyWithoutResult() {
+    // Epic #766: with the box alone CellsBuilder(shapes:) is nil (BOPAlgo_CellsBuilder reports
+    // errors for a single argument), so the `guard ... else { return }` returned before any builder
+    // existed and nothing was ever released: the test could not fail. It now builds from two
+    // shapes and requires the builder, so the release it is about actually happens.
+    @Test func destroyWithoutResult() throws {
         let box = standardBox()
-        guard let builder = CellsBuilder(shapes: [box]) else { return }
+        let builder = try #require(CellsBuilder(shapes: [box, standardSphere()]))
         builder.addAllToResult()
         // Don't call result()
     }
@@ -842,36 +850,39 @@ struct StressCellsBuilderLifecycleTests {
 @Suite("Stress: SectionBuilder Lifecycle")
 struct StressSectionBuilderLifecycleTests {
 
-    @Test func buildEmpty() {
-        guard let builder = SectionBuilder() else { return }
-        _ = builder.build()
+    @Test func buildEmpty() throws {
+        let builder = try #require(SectionBuilder())
+        // No arguments: not done, nil (read into `_` before).
+        #expect(builder.build() == nil)
     }
 
-    @Test func normalCycleTwoShapes() {
+    // The inscribed sphere touches the box at six points: six vertices, no edge.
+    @Test func normalCycleTwoShapes() throws {
         let box = standardBox()
         let sphere = standardSphere()
-        guard let builder = SectionBuilder(shape1: box, shape2: sphere) else { return }
-        if let result = builder.build() {
-            #expect(result.isValid)
-        }
+        let builder = try #require(SectionBuilder(shape1: box, shape2: sphere))
+        let result = try #require(builder.build())
+        #expect(result.isValid)
+        #expect(result.subShapeCount(ofType: .vertex) == 6)
     }
 
-    @Test func initThenSetShapes() {
-        guard let builder = SectionBuilder() else { return }
+    @Test func initThenSetShapes() throws {
+        let builder = try #require(SectionBuilder())
         builder.init1(shape: standardBox())
         builder.init2(shape: standardSphere())
-        if let result = builder.build() {
-            #expect(result.isValid)
-        }
+        let result = try #require(builder.build())
+        #expect(result.isValid)
+        #expect(result.subShapeCount(ofType: .vertex) == 6)
     }
 
-    @Test func sectionWithPlane() {
-        guard let builder = SectionBuilder() else { return }
+    // The z = 0 plane cuts the box in a 10 × 10 square: four edges.
+    @Test func sectionWithPlane() throws {
+        let builder = try #require(SectionBuilder())
         builder.init1(shape: standardBox())
         builder.init2(plane: 0, 0, 1, 0)  // XY plane at Z=0
-        if let result = builder.build() {
-            #expect(result.isValid)
-        }
+        let result = try #require(builder.build())
+        #expect(result.isValid)
+        #expect(result.subShapeCount(ofType: .edge) == 4)
     }
 
     @Test func destroyWithoutBuild() {
@@ -889,6 +900,8 @@ struct StressSectionBuilderLifecycleTests {
         let r2 = builder.build()
         if let r1 { #expect(r1.isValid) }
         if let r2 { #expect(r2.isValid) }
+        #expect(r1 != nil)
+        #expect(r2?.subShapeCount(ofType: .vertex) == 6)
     }
 
     // #916: OCCTSectionBuilder's `built` flag (gating ancestorFaceOn1/2) is only ever set true on a
