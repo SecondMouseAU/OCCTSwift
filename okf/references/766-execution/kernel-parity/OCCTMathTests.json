@@ -228,7 +228,7 @@
     "bridge_function": "none reached for the rejected cases (MathSVD.solve guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":152 `MathSVD.solve(matrix: [], rows: 0, cols: -1, rhs: []) == nil`"},
     "green": true
@@ -238,7 +238,7 @@
     "bridge_function": "none reached (MathJacobi.eigenvalues guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":165 `MathJacobi.eigenvalues(matrix: [1.0], n: -1) == nil`"},
     "green": true
@@ -248,7 +248,7 @@
     "bridge_function": "none reached (MathHouseholder.solve guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":175 `MathHouseholder.solve(matrix: [], rows: 0, cols: -1, rhs: []) == nil`"},
     "green": true
@@ -258,7 +258,7 @@
     "bridge_function": "none reached (MathSolver.solveSystem guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":186 `MathSolver.solveSystem(`"},
     "green": true
@@ -268,7 +268,7 @@
     "bridge_function": "OCCTMathFunctionSetRoot / Newton callbacks (Swift closure-length checks)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":218 `MathSolver.solveSystem(`"},
     "green": true
@@ -278,7 +278,7 @@
     "bridge_function": "none reached (MathSolver.minimize guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":242 `MathSolver.minimize(variables: -1, startPoint: [], function: { _ in (0, []) }) == nil`"},
     "green": true
@@ -288,7 +288,7 @@
     "bridge_function": "Swift callback length checks before OCCTMathBFGS / Newton / FRPR",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":265 `MathSolver.minimize(`"},
     "green": true
@@ -298,7 +298,7 @@
     "bridge_function": "none reached (guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":294 `MathSolver.minimizePowell(variables: -1, startPoint: [], function: { _ in 0 }) == nil`"},
     "green": true
@@ -308,7 +308,7 @@
     "bridge_function": "none reached (guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":303 `MathSolver.particleSwarm(`"},
     "green": true
@@ -318,7 +318,7 @@
     "bridge_function": "none reached (guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":315 `MathSolver.globalMinimize(variables: -1, lower: [], upper: [], function: { _ in 0 }) == nil`"},
     "green": true
@@ -328,7 +328,7 @@
     "bridge_function": "none reached (guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":327 `MathSolver.solveSystemNewton(`"},
     "green": true
@@ -338,7 +338,7 @@
     "bridge_function": "none reached (guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":341 `MathSolver.minimizeNewton(`"},
     "green": true
@@ -348,7 +348,7 @@
     "bridge_function": "none reached (guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":355 `MathSolver.leastSquares(matrix: [], rows: 0, cols: -1, rhs: []) == nil`"},
     "green": true
@@ -358,7 +358,7 @@
     "bridge_function": "none reached (guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":372 `MathSolver.uzawa(`"},
     "green": true
@@ -368,7 +368,7 @@
     "bridge_function": "none reached (MathDimension.tridiagonal guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":404 `MathSolver.eigenvalues(diagonal: longDiagonal, offDiagonal: [1.0]) == nil`"},
     "green": true
@@ -378,7 +378,7 @@
     "bridge_function": "none reached (guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":417 `MathSolver.gaussMultipleIntegration(`"},
     "green": true
@@ -388,7 +388,7 @@
     "bridge_function": "none reached (lower.count == 1 guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":458 `MathSolver.gaussSetIntegration(`"},
     "green": true
@@ -398,7 +398,7 @@
     "bridge_function": "Swift callback length check before OCCTMathGaussSetIntegration",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":483 `MathSolver.gaussSetIntegration(`"},
     "green": true
@@ -408,7 +408,7 @@
     "bridge_function": "none reached (Sampling.requested guard)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":494 `MathSolver.findAllRoots(in: 0...10, samples: pastInt32) { x in (x - 5, 1) }.count == 0`"},
     "green": true
@@ -418,7 +418,7 @@
     "bridge_function": "OCCTMathFunctionAllRoots (reached only via the Swift path)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)", "failing_expectation": ":533 `calls1 > 0`"},
     "green": true
@@ -428,7 +428,7 @@
     "bridge_function": "none (pure Swift MathDimension.valid)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: pure Swift validator"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "MathDimension.valid drops its n > 0 check", "failing_expectation": ":568 `!MathDimension.valid(0, matches: 0)`"},
     "green": true
@@ -438,7 +438,7 @@
     "bridge_function": "none (pure Swift MathDimension.consistent)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: pure Swift validator"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "MathDimension.consistent always true", "failing_expectation": ":576 `!MathDimension.consistent(0, matches: 1)`"},
     "green": true
@@ -448,7 +448,7 @@
     "bridge_function": "none (pure Swift MathDimension.validSquare)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: pure Swift validator"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "MathDimension.validSquare drops its n > 0 check", "failing_expectation": ":585 `!MathDimension.validSquare(0, count: 0)`"},
     "green": true
@@ -458,7 +458,7 @@
     "bridge_function": "none (pure Swift MathDimension.validRectangle)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: pure Swift validator"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "MathDimension.validRectangle drops its positivity check", "failing_expectation": ":594 `!MathDimension.validRectangle(rows: 0, cols: -1, count: 0)`"},
     "green": true
