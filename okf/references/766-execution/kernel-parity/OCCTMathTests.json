@@ -210,7 +210,9 @@
     "kernel_output": {"type": "probe", "data": "IsPlanar=1", "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS",
-    "red": {"injection": "negate GeomLib_IsPlanarSurface::IsPlanar()", "failing_expectation": ":12 `plane.isPlanar()`"},
+    "red": {"injection": "negate GeomLib_IsPlanarSurface::IsPlanar()", "failing_expectation": ":16 `plane.isPlanar()`"},
+    "red_nil_return": {"injection": "OCCTGeomLibIsPlanarSurface returns false, and separately OCCTSurfacePlaneFromPointNormal returns nullptr (Surface.plane is nil)", "failing_expectation": ":16 `plane.isPlanar()`; :15 `try #require(Surface.plane(...))`"},
+    "original_if_let_form": "red under the false return (Bool result), green under the nil Surface.plane (setup nested in if let)",
     "green": true
   },
   {
@@ -220,7 +222,9 @@
     "kernel_output": {"type": "probe", "data": "origin=(1,2,3) normal=(0,0,1) x=(1,0,0)", "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS",
-    "red": {"injection": "negate the Z of Plan().Location()", "failing_expectation": ":21 `abs(r.origin.z - 3.0) < 1e-6`"},
+    "red": {"injection": "negate the Z of Plan().Location(); also origin X + 1, normal negated, X direction negated", "failing_expectation": ":23 `simd_length(result.origin - SIMD3(1, 2, 3)) < 1e-9` (origin Z and origin X); :24 `simd_length(result.normal - SIMD3(0, 0, 1)) < 1e-9`; :25 `simd_length(result.xDirection - SIMD3(1, 0, 0)) < 1e-9`"},
+    "red_nil_return": {"injection": "OCCTGeomLibPlanarSurfacePlane returns false, and separately Surface.plane is nil", "failing_expectation": ":22 `try #require(plane.planarPlane())`; :21 `try #require(Surface.plane(...))`"},
+    "original_if_let_form": "green under both nil injections (result and setup nested in if let); normal was only bounded by abs(z) > 0.99, so a negated normal also passed",
     "green": true
   },
   {
@@ -230,7 +234,9 @@
     "kernel_output": {"type": "probe", "data": "IsPlanar=0", "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS",
-    "red": {"injection": "negate IsPlanar()", "failing_expectation": ":30 `!cyl.isPlanar()`"},
+    "red": {"injection": "negate IsPlanar(); also IsPlanar() always true", "failing_expectation": ":32 `!cyl.isPlanar()`"},
+    "red_nil_return": {"injection": "OCCTSurfaceCreateCylinder returns nullptr (Surface.cylinder is nil); IsPlanar() has a Bool result, and false is the correct value for a cylinder, so its only wrong-value injection is the one above", "failing_expectation": ":30 `try #require(Surface.cylinder(...))`"},
+    "original_if_let_form": "green under the nil Surface.cylinder (setup nested in if let)",
     "green": true
   },
   {
@@ -240,7 +246,9 @@
     "kernel_output": {"type": "probe", "data": "ok=1 param=5", "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS",
-    "red": {"injection": "reported parameter + 1.0", "failing_expectation": ":15 `abs(p - 5.0) < 1e-6`"},
+    "red": {"injection": "reported parameter + 1.0", "failing_expectation": ":19 `abs(param - 5.0) < 1e-9`"},
+    "red_nil_return": {"injection": "OCCTGeomLibToolParameter3D returns false, and separately OCCTCurve3DCreateLine returns nullptr", "failing_expectation": ":18 `try #require(line.parameterOf(...))`; :17 `try #require(Curve3D.line(...))`"},
+    "original_if_let_form": "green under both nil injections (result and setup nested in if let)",
     "green": true
   },
   {
@@ -250,7 +258,9 @@
     "kernel_output": {"type": "probe", "data": "ok=1 u=3 v=4", "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS",
-    "red": {"injection": "swap u and v", "failing_expectation": ":24 `abs(uv.u - 3.0) < 1e-6`"},
+    "red": {"injection": "swap u and v", "failing_expectation": ":26 `abs(uv.u - 3.0) < 1e-9` and :27 `abs(uv.v - 4.0) < 1e-9`"},
+    "red_nil_return": {"injection": "OCCTGeomLibToolParametersSurface returns false, and separately Surface.plane is nil", "failing_expectation": ":25 `try #require(plane.parametersOf(...))`; :24 `try #require(Surface.plane(...))`"},
+    "original_if_let_form": "green under both nil injections (result and setup nested in if let)",
     "green": true
   },
   {
@@ -260,7 +270,9 @@
     "kernel_output": {"type": "probe", "data": "ok=1 param=7", "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS",
-    "red": {"injection": "reported parameter + 1.0", "failing_expectation": ":34 `abs(p - 7.0) < 1e-6`"},
+    "red": {"injection": "reported parameter + 1.0", "failing_expectation": ":34 `abs(param - 7.0) < 1e-9`"},
+    "red_nil_return": {"injection": "OCCTGeomLibToolParameter2D returns false, and separately OCCTCurve2DCreateLine returns nullptr", "failing_expectation": ":33 `try #require(line.parameterOf(...))`; :32 `try #require(Curve2D.line(...))`"},
+    "original_if_let_form": "green under both nil injections (result and setup nested in if let)",
     "green": true
   }
 ]
