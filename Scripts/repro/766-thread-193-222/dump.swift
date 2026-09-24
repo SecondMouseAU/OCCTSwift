@@ -8,8 +8,9 @@ import simd
 // target: copy it into Tests/OCCTThreadTests/ and run `swift test --filter ZZ766DumpC` to
 // reproduce. It prints the values the tests observe (the BRIDGE rows of transcript.txt) and
 // writes each shape to BREP (no triangles, written before any measurement) for probe.mm.
-// dumpDir is the session scratch directory it was run from; point it anywhere writable.
-private let dumpDir = FileManager.default.temporaryDirectory.appendingPathComponent("OCCTSwift_766_Thread_C_breps").path
+// dumpDir is a directory under the system temporary directory; point it anywhere writable. It
+// must end in "/": every call site builds a path as dumpDir + name.
+private let dumpDir = FileManager.default.temporaryDirectory.appendingPathComponent("OCCTSwift_766_Thread_C_breps").path + "/"
 
 private func out(_ s: String) { print("DUMP " + s) }
 
