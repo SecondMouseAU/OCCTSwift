@@ -1,0 +1,6 @@
+lateral area=628.318530718 (2 pi r h = 628.318530718)
+cylinder's own wire on its lateral face: IsReady=1 CheckOuterBound=0 TotCross2D=1.257e+02
+panel wire on cylinder lateral face: IsReady=1 CheckOuterBound=0 TotCross2D=0.000e+00
+cylinder wire on planar panel: IsReady=1 CheckOuterBound=1 TotCross2D=-1.780e-15
+edgeless wire on panel: IsReady=0 (kernel cannot run the check)
+panel's own outer wire on panel (control): IsReady=1 CheckOuterBound=0 TotCross2D=1.000e+02
