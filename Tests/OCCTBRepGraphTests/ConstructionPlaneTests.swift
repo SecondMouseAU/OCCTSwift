@@ -53,10 +53,12 @@ struct ConstructionPlaneTests {
         let plane = ConstructionPlane.offsetFromFace(face: faceRef, distance: 5.0)
         switch graph.resolve(plane) {
         case .success(let p):
-            // The face normal is unit length; offset 5.0 along it produces a
-            // plane whose origin is 5.0 away (in the plane normal direction) from
-            // the face centroid.
-            #expect(simd_length(p.zAxis) > 0.99 && simd_length(p.zAxis) < 1.01)
+            // Face 0 is the x = -5 wall. Kernel (Scripts/repro/766-brepgraph-construction): its
+            // UV-midpoint sample is (-5, 0, 0) with outward normal (-1, 0, 0), so the offset
+            // plane sits at (-10, 0, 0). A unit-length check alone passed a plane that was never
+            // offset at all.
+            #expect(simd_distance(p.origin, SIMD3(-10, 0, 0)) < 1e-9)
+            #expect(simd_distance(p.zAxis, SIMD3(-1, 0, 0)) < 1e-9)
         case .failure(let e): Issue.record("failed: \(e)")
         }
     }
@@ -75,7 +77,10 @@ struct ConstructionPlaneTests {
         let plane = ConstructionPlane.byThreePoints(v0, v1, v2)
         switch graph.resolve(plane) {
         case .success(let p):
-            #expect(simd_length(p.zAxis) > 0.99)
+            // Kernel: vertices 0, 1, 2 are (-5,-5,-5), (-5,-5,5), (-5,5,-5); (v1 - v0) x (v2 - v0)
+            // is (-100, 0, 0), so the plane is x = -5 with normal (-1, 0, 0) through vertex 0.
+            #expect(simd_distance(p.origin, SIMD3(-5, -5, -5)) < 1e-9)
+            #expect(simd_distance(p.zAxis, SIMD3(-1, 0, 0)) < 1e-9)
         case .failure: Issue.record("byThreePoints failed")
         }
     }
@@ -109,8 +114,10 @@ struct ConstructionPlaneTests {
         let plane = ConstructionPlane.normalToEdge(edge: edgeRef, t: 0.5)
         switch graph.resolve(plane) {
         case .success(let p):
-            // The plane normal is the edge tangent, so non-zero unit vector.
-            #expect(simd_length(p.zAxis) > 0.99 && simd_length(p.zAxis) < 1.01)
+            // Kernel: edge 0 runs (-5,-5,-5) to (-5,-5,5); at t = 0.5 the point is (-5,-5,0) and
+            // the tangent (0, 0, 1). Unit length alone passed a reversed tangent.
+            #expect(simd_distance(p.origin, SIMD3(-5, -5, 0)) < 1e-9)
+            #expect(simd_distance(p.zAxis, SIMD3(0, 0, 1)) < 1e-9)
         case .failure(let e): Issue.record("failed: \(e)")
         }
     }
