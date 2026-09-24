@@ -17,6 +17,351 @@
     "status": "PENDING"
   },
   {
+    "test_name": "ShapeCustom_BSplineRestriction Advanced::restrictBox",
+    "bridge_function": "OCCTShapeBSplineRestrictionAdvanced",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "size": [
+          10,
+          20,
+          30
+        ],
+        "volume": 6000.0,
+        "faces": {
+          "plane": 6
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "size": [
+          10,
+          20,
+          30
+        ],
+        "volume": 6000.0,
+        "faces": {
+          "plane": 6
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom_ConvertToBSpline Advanced::convertCylinder",
+    "bridge_function": "OCCTShapeConvertToBSplineAdvanced",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 2,
+          "cylinder": 1
+        },
+        "volume": 15707.963267949
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 2,
+          "cylinder": 1
+        },
+        "volume": 15707.963267949
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom_Curve ConvertToPeriodic::convertToPeriodic",
+    "bridge_function": "OCCTCurve3DConvertToPeriodic",
+    "bridge_output": {
+      "type": "curve",
+      "data": {
+        "isPeriodic": true,
+        "type": "BSpline",
+        "last": 56.568542495,
+        "start": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": {
+        "isPeriodic": true,
+        "type": "Geom_BSplineCurve",
+        "last": 56.568542495,
+        "start": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Curve Project Tests::projectOntoLine",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "projection",
+      "data": {
+        "distance": 3.0,
+        "parameter": 5.0,
+        "point": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "projection",
+      "data": {
+        "distance": 3.0,
+        "parameter": 5.0,
+        "point": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Curve Project Tests::projectOntoCircle",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "projection",
+      "data": {
+        "distance": 5.0,
+        "parameter": 0.0,
+        "point": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "projection",
+      "data": {
+        "distance": 5.0,
+        "parameter": 0.0,
+        "point": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Curve GetSamplePoints Tests::sampleCircle",
+    "bridge_function": "OCCTCurve3DGetSamplePoints3D",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "count": 360,
+        "first": [
+          5,
+          0,
+          0
+        ],
+        "last": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "count": 360,
+        "first": [
+          5,
+          0,
+          0
+        ],
+        "last": [
+          5,
+          0,
+          0
+        ],
+        "maxRadiusDev": 8.882e-16
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Curve GetSamplePoints Tests::sampleLine",
+    "bridge_function": "OCCTCurve3DGetSamplePoints3D",
+    "bridge_output": {
+      "type": "points",
+      "data": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0
+        ]
+      ]
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade_SplitCurve3d::splitCurve",
+    "bridge_function": "OCCTCurve3DSplitAt",
+    "bridge_output": {
+      "type": "split",
+      "data": {
+        "mid": 10.635412986,
+        "first": [
+          0,
+          10.635412986
+        ],
+        "second": [
+          10.635412986,
+          21.270825972
+        ],
+        "joint": [
+          6.176464924,
+          3.684166024,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "split",
+      "data": {
+        "mid": 10.635412986,
+        "first": [
+          0,
+          10.635412986
+        ],
+        "second": [
+          10.635412986,
+          21.270825972
+        ],
+        "joint": [
+          6.176464924,
+          3.684166024,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Curve ValidateRange Tests::validateInBounds",
+    "bridge_function": "OCCTCurve3DValidateRange",
+    "bridge_output": {
+      "type": "range",
+      "data": {
+        "first": 2.0,
+        "last": 8.0,
+        "wasAdjusted": true
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "first": 2.0,
+        "last": 8.0,
+        "returned": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Curve ValidateRange Tests::validateOutOfBounds",
+    "bridge_function": "OCCTCurve3DValidateRange",
+    "bridge_output": {
+      "type": "range",
+      "data": {
+        "first": 0.0,
+        "last": 10.0,
+        "wasAdjusted": true
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "first": 0.0,
+        "last": 10.0,
+        "returned": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
     "test_name": "Divide by Number::divideBox",
     "bridge_function": "OCCTShapeDivideByNumber",
     "bridge_output": {
