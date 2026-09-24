@@ -65,16 +65,15 @@ struct ExtremaPCTests {
         }
     }
 
-    @Test func pointToHelix() {
-        guard let helix = Curve3D.circularHelix(radius: 5.0, pitch: 10.0) else { return }
-        // Point at center of helix, all points on helix are equidistant at radius 5
-        // (in the XY plane). This is an infinite solutions case but the API may
-        // return some extrema or handle it gracefully.
+    /// The query point is the origin, on the helix axis at the height of its start: the nearest
+    /// point is the start, (5, 0, 0), at exactly the radius. `ExtremaPC_Curve` reports that one
+    /// extremum (`Scripts/repro/766-extremapc/`). The old `if let d { d >= 4.9 }` passed a nil
+    /// and any distance above 4.9.
+    @Test func pointToHelix() throws {
+        let helix = try #require(Curve3D.circularHelix(radius: 5.0, pitch: 10.0))
         let d = helix.minimumDistance(from: SIMD3(0, 0, 0))
-        // Minimum distance should be at least close to the radius
-        if let d = d {
-            #expect(d >= 4.9)
-        }
+        #expect(d != nil)
+        if let d { #expect(abs(d - 5.0) < 1e-9) }
     }
 }
 
