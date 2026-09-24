@@ -54,6 +54,9 @@ struct ElCLibTests {
     @Test func inPeriod() {
         let u = ElCLib.inPeriod(u: 7.0, uFirst: 0.0, uLast: 2 * .pi)
         #expect(u >= 0.0 && u < 2 * .pi)
+        // Any value in the period passed, including uFirst itself. Pin the reduction:
+        // 7 - 2 pi (kernel value from Scripts/repro/766-math-elclib-elslib/transcript.txt).
+        #expect(abs(u - (7.0 - 2 * .pi)) < 1e-12)
     }
 }
 
