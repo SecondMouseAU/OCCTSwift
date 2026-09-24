@@ -2059,5 +2059,247 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "HLR ReflectLines Tests::reflect lines on sphere",
+    "bridge_function": "OCCTHLRReflectLines",
+    "bridge_output": {
+      "edges": 1,
+      "bbox": [
+        [
+          -10.0000001,
+          -10.0000001,
+          -1e-07
+        ],
+        [
+          10.0000001,
+          10.0000001,
+          1e-07
+        ]
+      ]
+    },
+    "kernel_output": {
+      "edges": 1,
+      "bbox": [
+        [
+          -10.0000001,
+          -10.0000001,
+          -1e-07
+        ],
+        [
+          10.0000001,
+          10.0000001,
+          1e-07
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "HLR ReflectLines Tests::reflect lines filtered by edge type",
+    "bridge_function": "OCCTHLRReflectLinesFiltered",
+    "bridge_output": {
+      "edges": 1,
+      "bbox": [
+        [
+          -10.0000001,
+          -10.0000001,
+          -1e-07
+        ],
+        [
+          10.0000001,
+          10.0000001,
+          1e-07
+        ]
+      ]
+    },
+    "kernel_output": {
+      "edges": 1,
+      "bbox": [
+        [
+          -10.0000001,
+          -10.0000001,
+          -1e-07
+        ],
+        [
+          10.0000001,
+          10.0000001,
+          1e-07
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Perspective eye anchor and the regime beyond it (#1036)::A shape wholly beyond the eye is refused, not drawn mirrored",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "drawing": null
+    },
+    "kernel_output": {
+      "reach": 1010,
+      "focus": 50,
+      "guard": "refuse"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Perspective eye anchor and the regime beyond it (#1036)::An eye plane cutting the shape is refused, not drawn half mirrored",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "drawing": null
+    },
+    "kernel_output": {
+      "reach": 10.0000001,
+      "focus": 5.5,
+      "guard": "refuse"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Perspective eye anchor and the regime beyond it (#1036)::An eye exactly on a face is refused rather than divided by zero",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "drawing": null
+    },
+    "kernel_output": {
+      "reach": 10.0000001,
+      "focus": 10,
+      "guard": "refuse"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Perspective eye anchor and the regime beyond it (#1036)::The eye is anchored at the world origin, so the scale follows the shape's position",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "near": [
+        -6.2500001,
+        6.2500001
+      ],
+      "far": [
+        -131.25000010000008,
+        131.25000010000008
+      ]
+    },
+    "kernel_output": {
+      "near": [
+        -6.2500001,
+        6.2500001
+      ],
+      "far": [
+        -131.2500001,
+        131.2500001
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Perspective eye anchor and the regime beyond it (#1036)::A shape behind the picture plane still projects, shrunken and the right way round",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "x": [
+        0.9433961264150944,
+        1.4285715285714287
+      ]
+    },
+    "kernel_output": {
+      "x": [
+        0.943396126415,
+        1.42857152857
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Perspective eye anchor and the regime beyond it (#1036)::A focal distance just clear of the shape is accepted, however extreme the scale",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "x": [
+        19.9999999,
+        30030.00000010102
+      ]
+    },
+    "kernel_output": {
+      "x": [
+        19.9999999,
+        30030.0000001
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawing.ProjectionType is Hashable (#1059)::A ProjectionType keys a dictionary",
+    "bridge_function": "Drawing.ProjectionType (Swift)",
+    "bridge_output": {
+      "hashable": true
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the enum's Hashable/Equatable conformance, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Drawing.ProjectionType is Hashable (#1059)::A set collapses equal cases and keeps distinct ones",
+    "bridge_function": "Drawing.ProjectionType (Swift)",
+    "bridge_output": {
+      "hashable": true
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the enum's Hashable/Equatable conformance, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Drawing.ProjectionType is Hashable (#1059)::Equal values hash equal, which Hashable requires and Equatable alone cannot give",
+    "bridge_function": "Drawing.ProjectionType (Swift)",
+    "bridge_output": {
+      "hashable": true
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the enum's Hashable/Equatable conformance, no OCCT call"
+    },
+    "status": "N/A"
   }
 ]
