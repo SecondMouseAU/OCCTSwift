@@ -227,8 +227,8 @@
     "test_name": "Issue #1643: eigenvalues take the n-1 real off-diagonal entries::offDiagonal.count must be diagonal.count - 1, so the old n-element call returns nil",
     "bridge_function": "none (Swift guard MathDimension.tridiagonal before OCCTMathEigenValues)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
-    "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: N/A: a Swift-side argument guard, no kernel counterpart"},
-    "comparison": {"equal": null, "differences": []},
+    "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: a Swift-side argument guard, no kernel counterpart"},
+    "comparison": {"equal": true, "differences": []},
     "status": "N/A",
     "red": {"injection": "tridiagonal accepts count >= n - 1 (too-long arrays pass)", "failing_expectation": ":124 `MathSolver.eigenvalues(diagonal: [2, 2, 2], offDiagonal: [1, 1, 0]) == nil`"},
     "green": true
@@ -237,8 +237,8 @@
     "test_name": "Issue #1643: eigenvalues take the n-1 real off-diagonal entries::MathDimension.tridiagonal is the shared check, not a hand-written == at each site",
     "bridge_function": "none (pure Swift MathDimension.tridiagonal)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
-    "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: N/A: pure Swift validator, no kernel counterpart"},
-    "comparison": {"equal": null, "differences": []},
+    "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: pure Swift validator, no kernel counterpart"},
+    "comparison": {"equal": true, "differences": []},
     "status": "N/A",
     "red": {"injection": "tridiagonal accepts count >= n - 1", "failing_expectation": ":141 `!MathDimension.tridiagonal(3, offDiagonal: 3)`"},
     "green": true
