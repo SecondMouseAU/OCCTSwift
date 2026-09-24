@@ -274,3 +274,13 @@ Probe: `Scripts/repro/766-geom2d-continuity-convert/`. Every row was run red wit
 | Curve2D Convert Extras Tests::Approximate circle as BSpline | `OCCTCurve2DApproximate` | tolerance x 10 | ✅ | ✅ | MATCH | `degree != nil`; now pins degree 7 and 13 poles |
 | Curve2D Convert Extras Tests::Split BSpline at discontinuities | `OCCTCurve2DSplitAtDiscontinuities` | split at continuity 3 whatever is asked | ✅ | ✅ | MATCH | `indices != nil`; now pins both split lists |
 | Curve2D Convert Extras Tests::Convert to arcs and segments | `OCCTCurve2DToArcsAndSegments` | drop the last curve | ✅ | ✅ | MATCH | `count >= 1`; now `== 2` |
+### #1979 executed: `Curve2DInterpolateTangentsParityTests.swift`, `Curve2DIsLinearTests.swift`, `Curve2DLineTests.swift`
+Probe: `Scripts/repro/766-geom2d-tangents-islinear-line/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D tangent interpolation entry points agree (#410)::Default tolerance: the two entry points produce the same curve | `OCCTCurve2DInterpolateWithTangents` | swap the start and end tangents | ✅ | ✅ | MATCH | agreement only; now pins the pole count and a point |
+| Curve2D tangent interpolation entry points agree (#410)::A non-default tolerance is now reachable through interpolate(points:...) | `OCCTCurve2DInterpolateWithTangents` | pin the tolerance to 1e-6 | ✅ | ✅ | MATCH | tolerance-insensitive input; now adds a case the tolerance decides |
+| Curve2D tangent interpolation entry points agree (#410)::Both entry points reject a single point | `OCCTCurve2DInterpolateWithTangents` | fabricate a second point for a one-point input | ✅ | ✅ | MATCH |  |
+| Curve2D IsLinear Tests::Linear BSpline is detected as linear | `OCCTCurve2DIsLinear` | negate the verdict | ✅ | ✅ | MATCH | two nested `if let`s; now required, with the deviation |
+| Curve2D IsLinear Tests::Non-linear curve is detected as non-linear | `OCCTCurve2DIsLinear` | negate the verdict | ✅ | ✅ | MATCH | two nested `if let`s; now required |
+| Curve2D IsLinear Tests::Non-BSpline curve returns nil, not a false result | `OCCTCurve2DIsLinear` | report (false, 0) for a non-BSpline (the #1542 defect) | ✅ | ✅ | MATCH |  |
+| GC_MakeLine2d::Create 2D line through two points | `OCCTCurve2DMakeLineThroughPoints` | swap the two points | ✅ | ✅ | MATCH | `!= nil`; now pins the line |
+| GC_MakeLine2d::Create 2D line parallel to direction at distance | `OCCTCurve2DMakeLineParallel` | negate the distance | ✅ | ✅ | MATCH | `!= nil`; now pins the offset side |
