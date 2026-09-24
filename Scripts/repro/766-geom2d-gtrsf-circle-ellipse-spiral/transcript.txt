@@ -1,0 +1,14 @@
+affinity x-axis ratio 2: mat=[1, -0, -0, 2] t=(0, 0)
+affinity x 2 multiplied by x 0.5: mat=[1, 0, 0, 1] t=(0, 0)
+affinity x 2 inverted: mat=[1, 0, 0, 0.5] t=(-0, -0)
+affinity x 2 on (1,1) -> (1, 2)
+circle r5 @(3,4): radius=5 ecc=0 centre=(3, 4) xaxis dir=(1, 0)
+  SetRadius(8): radius=8
+ellipse 10x5: a=10 b=5 ecc=0.866025403784 focal=17.3205080757 focus1=(8.66025403784, 0) focus2=(-8.66025403784, 0)
+  SetMajorRadius(20), SetMinorRadius(8): a=20 b=8
+archimedean a=0 b=1 u=0: P=(0, 0) D1=(1, 0)
+archimedean a=0 b=1 u=6.28318530718: P=(6.28318530718, -1.53893655498e-15) D1=(1, 6.28318530718)
+archimedean a=1 b=0.5 u=0: P=(1, 0) D1=(0.5, 1)
+archimedean a=1 b=0.5 u=6.28318530718: P=(4.14159265359, -1.01439763732e-15) D1=(0.5, 4.14159265359)
+archimedean a=2 b=1 u=0: P=(2, 0) D1=(1, 2)
+archimedean a=2 b=1 u=6.28318530718: P=(8.28318530718, -2.02879527464e-15) D1=(1, 8.28318530718)

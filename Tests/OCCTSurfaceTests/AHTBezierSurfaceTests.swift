@@ -21,5 +21,11 @@ struct AHTBezierSurfaceTests {
             alphaU: 1.0, alphaV: 1.0,
             betaU: 1.0, betaV: 1.0)
         #expect(surf != nil)
+        // #766: pinned to GeomEval_AHTBezierSurface::D0 at (0.3, 0.7) on the same row-major
+        // poles, see Scripts/repro/766-aht-bezier/. `surf != nil` passed a transposed pole grid.
+        if let s = surf {
+            let expected = SIMD3(31.415697292121592, 29.74530741910133, -0.039437938300482867)
+            #expect(simd_length(s.point(atU: 0.3, v: 0.7) - expected) < 1e-9)
+        }
     }
 }
