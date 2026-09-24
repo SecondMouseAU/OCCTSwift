@@ -1,0 +1,17 @@
+absorb: records before=0
+absorb: without absorb, FindDerived(top).Size()=0 IsDeleted(top)=0
+absorb: ok=1 records after=11
+absorb: derived face 7 area=40.000000
+absorb: derived face 11 area=40.000000
+absorb: FindDerived(top) size=4 faces=2
+absorb: IsDeleted(bottom)=0
+absorb: records labelled channel-cut=11
+336 chained: after hop1 records=14
+336 chained: volumes 5999.000 -> 5991.000, hop2 records 14 -> 28
+336 non-intersecting: volumes 5973.000 -> 5973.000, hop2 records 1 -> 1, FindDerived(root1).Size()=0
+1078: records=2 len[0]=300 len[1]=6
+topologyref forward walk: FindDerived(face 10) size=1 first=(2,11)
+topologyref splitOf: FindDerived(edge 3) size=2
+  [0] = (4,30)
+  [1] = (4,31)
+topologyref: records=3
