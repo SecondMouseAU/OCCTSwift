@@ -19,7 +19,7 @@ struct ExtremaElCLinCircTests {
         #expect(results.count == 4)
         let squares = results.map(\.squareDistance).sorted()
         #expect(squares.count == 4)
-        for (got, want) in zip(squares, [100.0, 100, 125, 125]) {
+        for (got, want) in zip(squares, [100.0, 100.0, 125.0, 125.0]) {
             #expect(abs(got - want) < 1e-9)
         }
         // Each result pairs a line point with the circle point directly beneath it.
@@ -49,6 +49,7 @@ struct ExtremaElCLinCircTests {
         #expect(simd_distance(nearest.point1, SIMD3(10, 0, 0)) < 1e-9)
         #expect(simd_distance(nearest.point2, SIMD3(5, 0, 0)) < 1e-9)
         #expect(abs(farthest.squareDistance - 225) < 1e-9)
+        #expect(simd_distance(farthest.point1, SIMD3(10, 0, 0)) < 1e-9)
         #expect(simd_distance(farthest.point2, SIMD3(-5, 0, 0)) < 1e-9)
     }
 
