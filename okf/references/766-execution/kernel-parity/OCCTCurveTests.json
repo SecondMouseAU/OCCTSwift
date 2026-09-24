@@ -2460,5 +2460,347 @@
     "red": "BSplineApproxInterpContractTests.swift:208 abs(solver.maxError - 5.3473650477313526e-07) < 1e-12",
     "green": "passed",
     "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::knotCount",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineKnotCount",
+    "bridge_output": {
+      "type": "value",
+      "data": "5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "NbKnots 5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "NbKnots() + 1",
+    "red": "BSplineCurve3DManipulationTests.swift:38 bsp.bspline.knotCount == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: knotCount > 0"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::poleCount",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplinePoleCount",
+    "bridge_output": {
+      "type": "value",
+      "data": "7"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "NbPoles 7"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "NbPoles() + 1",
+    "red": "BSplineCurve3DManipulationTests.swift:43 bsp.bspline.poleCount == 7",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: poleCount >= 5"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::degree",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": "3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Degree 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Degree() + 1",
+    "red": "BSplineCurve3DManipulationTests.swift:48 bsp.bspline.degree == 3",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: degree >= 1"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::isRational",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineIsRational",
+    "bridge_output": {
+      "type": "value",
+      "data": "false"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "IsRational 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsRational() negated",
+    "red": "BSplineCurve3DManipulationTests.swift:54 !bsp.bspline.isRational",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: asserted nothing"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::knotsArray",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineGetKnots",
+    "bridge_output": {
+      "type": "value",
+      "data": "[0, 3.6055512754639891, 7.2111025509279782, 10.816653826391967, 14.422205101855956]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "[0, 3.6055512754639891, 7.2111025509279782, 10.816653826391967, 14.422205101855956]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "knots doubled",
+    "red": "BSplineCurve3DManipulationTests.swift:59 Self.near(bsp.bspline.knots, Self.knots)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: count > 0 and last > first"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::multiplicities",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineGetMults",
+    "bridge_output": {
+      "type": "value",
+      "data": "[4,1,1,1,4]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "mults 4 1 1 1 4"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "multiplicities + 1",
+    "red": "BSplineCurve3DManipulationTests.swift:64 bsp.bspline.multiplicities == [4, 1, 1, 1, 4]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: count > 0 and first > 0"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::getPole",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineGetPole",
+    "bridge_output": {
+      "type": "value",
+      "data": "poles 1, 2, 7"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "(0,0,0) (0.38888888888888895, 0.83333333333333337, 0) ... (10,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "index + 1 read",
+    "red": "BSplineCurve3DManipulationTests.swift:69 Self.near(bsp.bspline.pole(at: 1), SIMD3(0, 0, 0))",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: |x| < 1.0 on pole 1"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::setPole",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineSetPole",
+    "bridge_output": {
+      "type": "value",
+      "data": "(5,7,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Pole(3) = (5, 7, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "SetPole skipped",
+    "red": "BSplineCurve3DManipulationTests.swift:78 Self.near(bsp.bspline.pole(at: 3), SIMD3(5, 7, 0))",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::getAndSetWeight",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineGetWeight",
+    "bridge_output": {
+      "type": "value",
+      "data": "1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Weight(1) = 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Weight() + 0.5",
+    "red": "BSplineCurve3DManipulationTests.swift:83 bsp.bspline.weight(at: 1) == 1.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::insertKnot",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineInsertKnot",
+    "bridge_output": {
+      "type": "value",
+      "data": "5 knots, mults [4,1,2,1,4], 8 poles"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "InsertKnot(mid): nbKnots 5, mults 4 1 2 1 4, nbPoles 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "InsertKnot skipped",
+    "red": "BSplineCurve3DManipulationTests.swift:93 bsp.bspline.multiplicities == [4, 1, 2, 1, 4]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: knotCount >= before passed a skipped insert"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::segment",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineSegment",
+    "bridge_output": {
+      "type": "value",
+      "data": "domain [3.6055512754639891, 10.816653826391967], 5 poles, (2,3,0) -> (8,3,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "same"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Segment skipped",
+    "red": "BSplineCurve3DManipulationTests.swift:103 abs(bsp.domain.lowerBound - 3.6055512754639891) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::increaseDegree",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineIncreaseDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": "degree 4, 11 poles, mults [5,2,2,2,5]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "same"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IncreaseDegree skipped",
+    "red": "BSplineCurve3DManipulationTests.swift:114 bsp.bspline.degree == 4",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::resolution",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineResolution",
+    "bridge_output": {
+      "type": "value",
+      "data": "0.00059678090076645284"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Resolution(0.001) = 0.00059678090076645284"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "resolution doubled",
+    "red": "BSplineCurve3DManipulationTests.swift:122 abs(res - 0.00059678090076645284) < 1e-15",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: res > 0"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::setPeriodic",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineSetPeriodic",
+    "bridge_output": {
+      "type": "value",
+      "data": "not periodic, 7 poles, knots unchanged"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "SetNotPeriodic: periodic 0, 7 poles"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "periodic flag inverted",
+    "red": "BSplineCurve3DManipulationTests.swift:129 !bsp.isPeriodic",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::removeKnot",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineRemoveKnot",
+    "bridge_output": {
+      "type": "value",
+      "data": "true, 4 knots, mults [4,2,1,4], 7 poles"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "RemoveKnot(2, 0, 1.0) = 1, nbKnots 4, mults 4 2 1 4, nbPoles 7"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "report success without removing",
+    "red": "BSplineCurve3DManipulationTests.swift:141 bsp.bspline.knotCount == 4",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: asserted nothing"
   }
 ]
