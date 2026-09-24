@@ -1,0 +1,12 @@
+guideTrihedronAC SetCurve=1
+guideTrihedronAC D0(5): ok=1 T=(1, 0, 0) N=(0, 1, 0) B=(0, 0, 1)
+guideTrihedronPlan SetCurve=1
+guideTrihedronPlan D0(5): ok=1 T=(1, 0, 0) N=(0, 1, 0) B=(0, 0, 1)
+locationDraft Direction=(0, 0, 1)
+locationDraft angle pi/12 D0(5): ok=1 M=[0, 0, -1, -0.965925826289, -0.258819045103, -0, -0.258819045103, 0.965925826289, 0] V=(5, 0, 0)
+locationDraft angle pi/6 D0(5): ok=1 M=[0, 0, -1, -0.866025403784, -0.5, -0, -0.5, 0.866025403784, 0] V=(5, 0, 0)
+locationDraft pi/6 then SetAngle(pi/4), SetCurve, D0(5): ok=1 M=[0, 0, -1, -0.707106781187, -0.707106781187, -0, -0.707106781187, 0.707106781187, 0] V=(5, 0, 0)
+setAngle: pi/6, SetCurve, SetAngle(pi/4), D0(5) (the Swift test's order): ok=1 M=[0, 0, -1, -0.707106781187, -0.707106781187, -0, -0.707106781187, 0.707106781187, 0] V=(5, 0, 0)
+locationDraft pi/6, SetAngle(pi/4) before SetCurve, D0(5): ok=1 M=[0, 0, -1, -0.707106781187, -0.707106781187, -0, -0.707106781187, 0.707106781187, 0] V=(5, 0, 0)
+surfaceFromCircleSections: bounds=[0, 1]x[0, 1] S(u1, vmid)=(4, -6.31294863482e-16, 3) S(u1, v2)=(3, -4.73471147612e-16, 6)
+sectionInfo: nbPoles=6 nbKnots=2 degree=6

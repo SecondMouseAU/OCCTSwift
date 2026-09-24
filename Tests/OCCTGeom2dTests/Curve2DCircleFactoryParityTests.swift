@@ -23,13 +23,16 @@ struct Curve2DCircleFactoryParityTests {
     }
 
     @Test("Both factories build the identical circle for a valid radius")
-    func validRadiusProducesMatchingGeometry() {
+    func validRadiusProducesMatchingGeometry() throws {
         let center = SIMD2<Double>(3, -4)
         let direct = Curve2D.circle(center: center, radius: 5)
         let gce = Curve2D.circleFromCenterRadius(center: center, radius: 5)
-        #expect(direct != nil)
-        #expect(gce != nil)
-        guard let a = direct, let b = gce else { return }
+        let a = try #require(direct)
+        let b = try #require(gce)
+        // #1979: agreement alone passed two factories wrong the same way. Both start at (8, -4),
+        // as gce_MakeCirc2d and Geom2d_Circle give (Scripts/repro/766-geom2d-conic-factory-parity/).
+        #expect(simd_distance(a.point(at: 0), SIMD2(8, -4)) < 1e-9)
+        #expect(simd_distance(b.point(at: 0), SIMD2(8, -4)) < 1e-9)
 
         #expect(a.isClosed == b.isClosed)
         #expect(a.isPeriodic == b.isPeriodic)
