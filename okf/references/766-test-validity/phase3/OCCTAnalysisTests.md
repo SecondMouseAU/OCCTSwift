@@ -268,6 +268,12 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **Geom_Parabola Properties** | parabolaFocal | Geom_Parabola | Focal() |
+| **Geom_Parabola Properties** | parabolaSetFocal | Geom_Parabola setter | SetFocal() |
+| **Geom_Parabola Properties** | parabolaFocus | Geom_Parabola | Focus() |
+| **Geom_Parabola Properties** | parabolaEccentricity | Geom_Parabola | Eccentricity() |
+| **Geom_Parabola Properties** | parabolaParameter | Geom_Parabola | Parameter() |
+| **Geom_Parabola Properties** | parabolaDirectrix | Geom_Parabola | Directrix() |
 
 ---
 
@@ -475,6 +481,12 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| parabolaFocal | OCCTCurve3DParabolaFocal | Geom_Parabola | Focal() + 1 | ✅ | ✅ | Fixture now #require'd |
+| parabolaSetFocal | OCCTCurve3DParabolaSetFocal | Geom_Parabola setter | skip SetFocal | ✅ | ✅ | Fixture now #require'd |
+| parabolaFocus | OCCTCurve3DParabolaFocus | Geom_Parabola | focus x + 1 | ✅ | ✅ | Fixture now #require'd |
+| parabolaEccentricity | OCCTCurve3DParabolaEccentricity | Geom_Parabola | Eccentricity() + 1 | ✅ | ✅ | Fixture now #require'd |
+| parabolaParameter | OCCTCurve3DParabolaParameter | Geom_Parabola | Parameter() + 1 | ✅ | ✅ | Fixture now #require'd |
+| parabolaDirectrix | OCCTCurve3DParabolaDirectrix | Geom_Parabola | position x + 1 | ✅ | ✅ | Fixture now #require'd |
 
 ---
 
