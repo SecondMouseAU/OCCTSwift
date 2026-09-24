@@ -570,3 +570,14 @@ Probe: `Scripts/repro/766-geom2d-makeedge2d/`. Every row was run red with the in
 | BRepLib_MakeEdge2d Extensions Tests::edge2dEllipseArc | `OCCTMakeEdge2dEllipseArc` | end parameter halved | ✅ | ✅ | MATCH | `nbChildren >= 0` (cannot fail) in `if let` |
 | BRepLib_MakeEdge2d Extensions Tests::edge2dFromCurve | `OCCTMakeEdge2dCurveRange` | end parameter + 1 | ✅ | ✅ | MATCH | `nbChildren >= 0` (cannot fail) in two `if let`s |
 | BRepLib_MakeEdge2d Extensions Tests::edge2dFromCurveFullRange | `OCCTMakeEdge2dCurve` | start parameter + 1 (no longer closed) | ✅ | ✅ | MATCH | `nbChildren >= 0` (cannot fail) in two `if let`s |
+### #1979 executed: `Curve2DParameterAtLengthTests.swift`, `Curve2DPoint2DIntegrationTests.swift`
+Probe: `Scripts/repro/766-geom2d-param-at-length-point2d/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D parameterAtLength Tests::Parameter at full arc length of a circle arc | `OCCTCurve2DParameterAtLength` | parameter + 0.5 | ✅ | ✅ | MATCH | nested `if let`s and 0.01/0.05 tolerances; now required, to 1e-9 |
+| Curve2D parameterAtLength Tests::Parameter at zero length returns start parameter | `OCCTCurve2DParameterAtLength` | parameter + 0.5 | ✅ | ✅ | MATCH | nested in `if let` |
+| Curve2D parameterAtLength Tests::Parameter at full length of a segment | `OCCTCurve2DParameterAtLength` | parameter + 0.5 | ✅ | ✅ | MATCH | nested in `if let`, 0.01 tolerance |
+| Curve2D parameterAtLength Tests::Parameter at length from non-start parameter | `OCCTCurve2DParameterAtLength` | parameter + 0.5 | ✅ | ✅ | MATCH | nested in `if let`, 0.1 tolerance |
+| Curve2D parameterAtLength Tests::parameterAtLength returns nil on failure | `OCCTCurve2DParameterAtLength` | parameter + 0.5 | ✅ | ✅ | MATCH | `_ = result`, no assertion |
+| Curve2D parameterAtLength Tests::Trim curve to exact arc length using parameterAtLength | `OCCTCurve2DParameterAtLength` | parameter + 0.5 | ✅ | ✅ | MATCH | three nested `if let`s, 0.01 tolerance |
+| Curve2D Point2D Integration::pointAtParameter | `OCCTCurve2DPointAt` | evaluate at t + 1 | ✅ | ✅ | MATCH | `guard ... else { return }` and `if let` |
+| Curve2D Point2D Integration::segmentFromPoints | `OCCTCurve2DSegmentFromPoints` | half-length segment | ✅ | ✅ | MATCH | `guard ... else { return }`; now checks both samples fully |
+| Curve2D Point2D Integration::projectPoint | `OCCTCurve2DProjectPoint2D` | distance + 1 | ✅ | ✅ | MATCH | `guard ... else { return }` and `if let` |
