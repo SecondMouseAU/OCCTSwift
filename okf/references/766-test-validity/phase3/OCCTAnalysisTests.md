@@ -268,6 +268,15 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **IntAna LinePlane Tests** | linePlaneIntersection | IntAna_IntConicQuad | Point() |
+| **IntAna LinePlane Tests** | parallelLineAndPlane | IntAna_IntConicQuad | IsParallel()/IsInQuadric() |
+| **IntAna LinePlane Tests** | embeddedLineLiesInPlane | IntAna_IntConicQuad | IsInQuadric() |
+| **IntAna PlanePlane Tests** | planePlaneIntersection | IntAna_QuadQuadGeo | NbSolutions() |
+| **IntAna PlanePlane Tests** | planePlaneLine | IntAna_QuadQuadGeo | Line() |
+| **IntAna_IntQuadQuad Tests** | cylinderSphereIntersection | IntAna_IntQuadQuad | NbCurve() |
+| **IntAna_IntQuadQuad Tests** | cylinderSphereNotIdentical | IntAna_IntQuadQuad | IdenticalElements() |
+| **IntAna ThreePlanes Tests** | threePlanesAtOrigin | IntAna_Int3Pln | Value() |
+| **IntAna ThreePlanes Tests** | offsetPlanes | IntAna_Int3Pln | Value() |
 
 ---
 
@@ -475,6 +484,15 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| linePlaneIntersection | OCCTIntAnaLineQuad | IntAna_IntConicQuad | point z + 1 | ✅ | ✅ |  |
+| parallelLineAndPlane | OCCTIntAnaLineQuad | IntAna_IntConicQuad | isParallel forced false | ✅ | ✅ |  |
+| embeddedLineLiesInPlane | OCCTIntAnaLineQuad | IntAna_IntConicQuad | isParallel forced false; isInQuadric forced false | ✅ | ✅ |  |
+| planePlaneIntersection | OCCTIntAnaPlanePlane | IntAna_QuadQuadGeo | solution count 0 | ✅ | ✅ |  |
+| planePlaneLine | OCCTIntAnaPlanePlane | IntAna_QuadQuadGeo | solution count 0; line dx/dy swapped | ✅ | ✅ | Rewritten: skipped every check with no line, then checked only unit length |
+| cylinderSphereIntersection | OCCTIntAnaCylinderSphere | IntAna_IntQuadQuad | NbCurve() + 1 | ✅ | ✅ |  |
+| cylinderSphereNotIdentical | OCCTIntAnaCylinderSphereIdentical | IntAna_IntQuadQuad | drop the IdenticalElements() term | ✅ | ✅ |  |
+| threePlanesAtOrigin | OCCTIntAna3Planes | IntAna_Int3Pln | x + 1 | ✅ | ✅ |  |
+| offsetPlanes | OCCTIntAna3Planes | IntAna_Int3Pln | x + 1 | ✅ | ✅ |  |
 
 ---
 
