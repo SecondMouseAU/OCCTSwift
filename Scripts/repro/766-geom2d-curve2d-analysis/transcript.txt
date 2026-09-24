@@ -1,0 +1,15 @@
+Intersect segment(-10,0)-(10,0) x circle r5: n=2
+  (-5, 6.12323399574e-16) u1=5 u2=3.14159265359
+  (5, -1.22464679915e-15) u1=15 u2=6.28318530718
+Intersect parallel segments: n=0 segments=0
+Project (5,3) on segment: n=1 nearest=(5, 0) dist=3
+Project (10,0) on circle r5: n=2 nearest=(5, 0) dist=5
+MinDistance circle r5 to segment x=10: n=2 dist=5 p1=(5, 0) p2=(10, 0)
+Circle r5 to BSpline (TgtThetaOver2): degree=2 poles=6 knots=4 rational=1
+  to Beziers: arcs=3
+Join (0,0)-(5,5)-(10,0): domain=[0, 14.1421356237] start=(0, 0) end=(10, 2.58474609444e-16) mid=(5, 5) poles=3
+All projections of (0,0) on ellipse 10x5: n=4
+  (10, 0) u=0 dist=10
+  (-10, 6.12323399574e-16) u=3.14159265359 dist=10
+  (6.12323399574e-16, 5) u=1.57079632679 dist=5
+  (-1.83697019872e-15, -5) u=4.71238898038 dist=5

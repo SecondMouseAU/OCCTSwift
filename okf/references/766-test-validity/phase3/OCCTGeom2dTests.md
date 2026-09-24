@@ -649,3 +649,14 @@ Probe: `Scripts/repro/766-geom2d-gccana-bisector-circ/`. Every row was run red w
 | Curve2D measured continuity encoding after the retirement (#619)::An analytic 2D curve reports CN as ordinal 6, the old encoding's 99 is unreachable | `OCCTCurve2DGetContinuity` | pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99) | ✅ | ✅ | MATCH |  |
 | Curve2D measured continuity encoding after the retirement (#619)::A C1 pcurve reports C1 as ordinal 2, not 1 | `OCCTCurve2DGetContinuity` | pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99) | ✅ | ✅ | MATCH |  |
 | Curve2D measured continuity encoding after the retirement (#619)::A raw threshold of 2 now admits a merely-C1 pcurve; satisfies(.c2) still refuses it | `OCCTCurve2DGetContinuity` | pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99) | ✅ | ✅ | MATCH |  |
+### #1979 executed: `Curve2DAnalysisTests.swift`
+Probe: `Scripts/repro/766-geom2d-curve2d-analysis/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D Analysis Tests::Line-circle intersection finds 2 points | `OCCTCurve2DIntersect` | scale the reported x by 1.1 | ✅ | ✅ | MATCH | count only; now pins both points |
+| Curve2D Analysis Tests::Non-intersecting curves return empty | `OCCTCurve2DIntersect` | intersect with tolerance 10 instead of the caller's 1e-6 | ✅ | ✅ | MATCH |  |
+| Curve2D Analysis Tests::Project point onto segment | `OCCTCurve2DProjectPoint` | shift the projected x by 1 | ✅ | ✅ | MATCH |  |
+| Curve2D Analysis Tests::Project point onto circle | `OCCTCurve2DProjectPoint` | shift the projected x by 1 | ✅ | ✅ | MATCH |  |
+| Curve2D Analysis Tests::Min distance between circle and point-like segment | `OCCTCurve2DMinDistance` | add 0.3 to the distance (inside the old 0.5 tolerance) | ✅ | ✅ | MATCH | tolerance 0.5 passed a distance off by 0.3; now 1e-9 |
+| Curve2D Analysis Tests::Convert circle to BSpline | `OCCTCurve2DToBSpline` | use Convert_QuasiAngular whatever parameterisation is asked | ✅ | ✅ | MATCH | `poleCount != nil` and `degree != nil`; now pins degree 2 with 6 poles |
+| Curve2D Analysis Tests::Split BSpline to Beziers | `OCCTCurve2DBSplineToBeziers` | drop the last arc | ✅ | ✅ | MATCH | `count >= 2` passed with an arc dropped; now `== 3` |
+| Curve2D Analysis Tests::Join segments into BSpline | `OCCTCurve2DJoinToBSpline` | skip the last curve | ✅ | ✅ | MATCH | strengthened: also pins the (5, 5) corner at the middle of the range |
+| Curve2D Analysis Tests::All projections of point onto ellipse | `OCCTCurve2DProjectPointAll` | report at most one projection | ✅ | ✅ | MATCH | `count >= 1` passed with three of four projections dropped; now pins all four distances |

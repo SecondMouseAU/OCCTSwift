@@ -15872,5 +15872,341 @@
       "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
       "rewritten": ""
     }
+  },
+  {
+    "test_name": "Curve2D Analysis Tests::Line-circle intersection finds 2 points",
+    "bridge_function": "OCCTCurve2DIntersect",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "points": [
+          [
+            -5,
+            0
+          ],
+          [
+            5,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "points": [
+          [
+            -5,
+            0
+          ],
+          [
+            5,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "scale the reported x by 1.1",
+      "red": "Curve2DAnalysisTests.swift:19:9: Expectation failed: abs(xs[0] + 5) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-analysis/",
+      "rewritten": "count only; now pins both points"
+    }
+  },
+  {
+    "test_name": "Curve2D Analysis Tests::Non-intersecting curves return empty",
+    "bridge_function": "OCCTCurve2DIntersect",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "intersect with tolerance 10 instead of the caller's 1e-6",
+      "red": "Curve2DAnalysisTests.swift:29:9: Expectation failed: ints.isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-analysis/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Analysis Tests::Project point onto segment",
+    "bridge_function": "OCCTCurve2DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          5,
+          0
+        ],
+        "distance": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          5,
+          0
+        ],
+        "distance": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "shift the projected x by 1",
+      "red": "Curve2DAnalysisTests.swift:38:13: Expectation failed: abs(proj.point.x - 5) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-analysis/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Analysis Tests::Project point onto circle",
+    "bridge_function": "OCCTCurve2DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          5,
+          0
+        ],
+        "distance": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          5,
+          0
+        ],
+        "distance": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "shift the projected x by 1",
+      "red": "Curve2DAnalysisTests.swift:50:13: Expectation failed: abs(proj.point.x - 5) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-analysis/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Analysis Tests::Min distance between circle and point-like segment",
+    "bridge_function": "OCCTCurve2DMinDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distance": 5,
+        "p1": [
+          5,
+          0
+        ],
+        "p2": [
+          10,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "distance": 5,
+        "p1": [
+          5,
+          0
+        ],
+        "p2": [
+          10,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "add 0.3 to the distance (inside the old 0.5 tolerance)",
+      "red": "Curve2DAnalysisTests.swift:62:9: Expectation failed: abs(result.distance - 5) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-analysis/",
+      "rewritten": "tolerance 0.5 passed a distance off by 0.3; now 1e-9"
+    }
+  },
+  {
+    "test_name": "Curve2D Analysis Tests::Convert circle to BSpline",
+    "bridge_function": "OCCTCurve2DToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "degree": 2,
+        "poles": 6
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "degree": 2,
+        "poles": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "use Convert_QuasiAngular whatever parameterisation is asked",
+      "red": "Curve2DAnalysisTests.swift:72:9: Expectation failed: bsp.degree == 2",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-analysis/",
+      "rewritten": "`poleCount != nil` and `degree != nil`; now pins degree 2 with 6 poles"
+    }
+  },
+  {
+    "test_name": "Curve2D Analysis Tests::Split BSpline to Beziers",
+    "bridge_function": "OCCTCurve2DBSplineToBeziers",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "arcs": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "arcs": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "drop the last arc",
+      "red": "Curve2DAnalysisTests.swift:82:9: Expectation failed: beziers.count == 3",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-analysis/",
+      "rewritten": "`count >= 2` passed with an arc dropped; now `== 3`"
+    }
+  },
+  {
+    "test_name": "Curve2D Analysis Tests::Join segments into BSpline",
+    "bridge_function": "OCCTCurve2DJoinToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0
+        ],
+        "mid": [
+          5,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0
+        ],
+        "mid": [
+          5,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip the last curve",
+      "red": "Curve2DAnalysisTests.swift:95:13: Expectation failed: abs(end.x - 10) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-analysis/",
+      "rewritten": "strengthened: also pins the (5, 5) corner at the middle of the range"
+    }
+  },
+  {
+    "test_name": "Curve2D Analysis Tests::All projections of point onto ellipse",
+    "bridge_function": "OCCTCurve2DProjectPointAll",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distances": [
+          5,
+          5,
+          10,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "distances": [
+          5,
+          5,
+          10,
+          10
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "report at most one projection",
+      "red": "Curve2DAnalysisTests.swift:111:13: Expectation failed: distances.count == 4",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-analysis/",
+      "rewritten": "`count >= 1` passed with three of four projections dropped; now pins all four distances"
+    }
   }
 ]
