@@ -35,6 +35,12 @@ struct DrawingAutoCentrelinesTests {
         #expect(drawing.annotations.count == 1)
         if case .centreline(let line)? = result.added.first {
             #expect(line.style == .chain)
+            // #766: count and style alone passed with the axis projected into the wrong frame.
+            // Down +Y, gp_Ax2's XDirection is +Z, so the cylinder's Z axis runs along the view's
+            // x axis at y = 0, clipped to the +/-50 bounds plus the default 5 overshoot
+            // (Scripts/repro/766-drawing-append-centrelines/transcript.txt).
+            #expect(simd_length(line.from - SIMD2(-55, 0)) < 1e-9, "from \(line.from)")
+            #expect(simd_length(line.to - SIMD2(55, 0)) < 1e-9, "to \(line.to)")
         } else {
             Issue.record("expected centreline")
         }
