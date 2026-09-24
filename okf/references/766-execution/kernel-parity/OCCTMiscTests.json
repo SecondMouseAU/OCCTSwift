@@ -1,74 +1,2361 @@
 [
   {
-    "test_name": "Issue 622: result buffer capacities clamp rather than trap",
-    "bridge_function": "OCCTShapeProject",
-    "bridge_output": {"type": "int", "data": 5},
-    "kernel_output": {"type": "int", "data": 5},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "One GROUPED 12-double reader, shared by all three call sites (#1009)::Shape.transformed(matrix:) moves the shape by the GROUPED translation",
+    "test_file": "Tests/OCCTMiscTests/Issue1009Matrix12GroupedTests.swift",
+    "bridge_function": "OCCTShapeTransformed",
+    "bridge_output": {
+      "type": "bbox_shift",
+      "data": {
+        "min": [
+          5,
+          6,
+          7
+        ],
+        "max": [
+          5,
+          6,
+          7
+        ],
+        "tolerance": 1e-09
+      }
+    },
+    "kernel_output": {
+      "type": "bbox",
+      "data": {
+        "before": {
+          "min": [
+            -5.0000001,
+            -5.0000001,
+            -5.0000001
+          ],
+          "max": [
+            5.0000001,
+            5.0000001,
+            5.0000001
+          ]
+        },
+        "after": {
+          "min": [
+            -1e-07,
+            0.9999999,
+            1.9999999
+          ],
+          "max": [
+            10.0000001,
+            11.0000001,
+            12.0000001
+          ]
+        },
+        "shift": [
+          5,
+          6,
+          7
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: Shape.allDistanceSolutions clamps maxSolutions",
+    "test_name": "One GROUPED 12-double reader, shared by all three call sites (#1009)::A GROUPED matrix agrees with the same transform written INTERLEAVED",
+    "test_file": "Tests/OCCTMiscTests/Issue1009Matrix12GroupedTests.swift",
+    "bridge_function": "OCCTShapeTransformed / OCCTShapeTransformFromMatrix",
+    "bridge_output": {
+      "type": "bbox_agreement",
+      "data": {
+        "groupedEqualsInterleaved": true,
+        "tolerance": 1e-09,
+        "minXMovedOffPureTranslation": true
+      }
+    },
+    "kernel_output": {
+      "type": "bbox",
+      "data": {
+        "grouped": {
+          "min": [
+            -1.83012711892,
+            -0.830127118922,
+            1.9999999
+          ],
+          "max": [
+            11.8301271189,
+            12.8301271189,
+            12.0000001
+          ]
+        },
+        "interleaved": {
+          "min": [
+            -1.83012711892,
+            -0.830127118922,
+            1.9999999
+          ],
+          "max": [
+            11.8301271189,
+            12.8301271189,
+            12.0000001
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "One GROUPED 12-double reader, shared by all three call sites (#1009)::Curve3D.parametricTransformation reads the rotation from the GROUPED slots",
+    "test_file": "Tests/OCCTMiscTests/Issue1009Matrix12GroupedTests.swift",
+    "bridge_function": "OCCTCurve3DParametricTransformation",
+    "bridge_output": {
+      "type": "scalars",
+      "data": {
+        "scale2": 2,
+        "translate567": 1,
+        "wireShift": [
+          5,
+          6,
+          7
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "scalars",
+      "data": {
+        "scale2": 2,
+        "translate567": 1,
+        "wireShift": [
+          5,
+          6,
+          7
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "One GROUPED 12-double reader, shared by all three call sites (#1009)::Document.addComponent(matrix:) places the component at the GROUPED translation",
+    "test_file": "Tests/OCCTMiscTests/Issue1009Matrix12GroupedTests.swift",
+    "bridge_function": "OCCTDocumentAddComponentMatrix",
+    "bridge_output": {
+      "type": "bbox_shift",
+      "data": {
+        "min": [
+          5,
+          6,
+          7
+        ],
+        "tolerance": 1e-09
+      }
+    },
+    "kernel_output": {
+      "type": "bbox",
+      "data": {
+        "note": "TopoDS_Shape::Moved(TopLoc_Location(grouped translate567)), the placement an XCAF component carries",
+        "after": {
+          "min": [
+            -1e-07,
+            0.9999999,
+            1.9999999
+          ],
+          "max": [
+            10.0000001,
+            11.0000001,
+            12.0000001
+          ]
+        },
+        "shift": [
+          5,
+          6,
+          7
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "One GROUPED 12-double reader, shared by all three call sites (#1009)::Document.addComponent(matrix:) accepts a reflection and actually reflects",
+    "test_file": "Tests/OCCTMiscTests/Issue1009Matrix12GroupedTests.swift",
+    "bridge_function": "OCCTDocumentAddComponentMatrix",
+    "bridge_output": {
+      "type": "bbox_x",
+      "data": {
+        "componentId>=0": true,
+        "minX": -11,
+        "maxX": -1,
+        "tolerance": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "bbox",
+      "data": {
+        "SetValues_accepted": true,
+        "IsNegative": true,
+        "ScaleFactor": -1,
+        "after": {
+          "min": [
+            -11.0000001,
+            -1e-07,
+            -1e-07
+          ],
+          "max": [
+            -0.9999999,
+            10.0000001,
+            10.0000001
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue972 2D-to-3D lifting::lift maps a 2D point through the placement's own basis",
+    "test_file": "Tests/OCCTMiscTests/Issue972LiftingTests.swift",
+    "bridge_function": "Placement.lift (Swift)",
+    "bridge_output": {
+      "type": "point",
+      "data": [
+        5,
+        7,
+        3
+      ]
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "via": "gp_Ax3((1,2,3), Z, X) -> world, (4,5,0)",
+        "value": [
+          5,
+          7,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue972 2D-to-3D lifting::lift respects a rotated basis",
+    "test_file": "Tests/OCCTMiscTests/Issue972LiftingTests.swift",
+    "bridge_function": "Placement.lift (Swift)",
+    "bridge_output": {
+      "type": "point",
+      "data": [
+        0.7071067811865476,
+        0.7071067811865476,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "via": "gp_Ax3(origin, Z, (s2,s2,0)) -> world, (1,0,0)",
+        "value": [
+          0.7071067811865476,
+          0.7071067811865476,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue972 2D-to-3D lifting::Flange.normal and Flange.placement.zAxis agree for a non-unit normal",
+    "test_file": "Tests/OCCTMiscTests/Issue972LiftingTests.swift",
+    "bridge_function": "SheetMetal.Flange.init (Swift)",
+    "bridge_output": {
+      "type": "vector",
+      "data": {
+        "normal": [
+          0,
+          0,
+          1
+        ],
+        "placementZ": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "vector",
+      "data": {
+        "gp_Dir(0,0,7)": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Shape.raycast clamps maxHits instead of allocating ~880 GB and trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTShapeRaycast",
+    "bridge_output": {
+      "type": "count",
+      "data": 2
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "value": 2,
+        "via": "IntCurvesFace_ShapeIntersector::NbPnt, ray (0,0,20) -Z through the centred box"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Curve3D extrema/intersection/split capacities clamp rather than trap",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTCurve3DExtrema / OCCTCurve3DIntersectSurface / OCCTCurve3DSplitAtContinuity",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "extrema": 1,
+        "intersections": 1,
+        "splitAtContinuity": 1
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "GeomAPI_ExtremaCurveCurve.NbExtrema": 1,
+        "GeomAPI_IntCS.NbPoints": 1,
+        "BSpline NbKnots (one piece)": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Curve2D.splitAtContinuity clamps maxSegments rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTCurve2DSplitAtContinuity",
+    "bridge_output": {
+      "type": "count",
+      "data": 1
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "Geom2d BSpline NbKnots (one piece)": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Surface.intersections clamps maxCurves rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTSurfaceIntersect",
+    "bridge_output": {
+      "type": "count",
+      "data": 1
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "value": 1,
+        "via": "GeomAPI_IntSS::NbLines, planes z=0 and y=0"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::point projection capacities clamp rather than trap",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTExtremaPointCurve / OCCTExtremaPointSurface",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "curve": 1,
+        "surface": 1
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "GeomAPI_ProjectPointOnCurve.NbPoints": 1,
+        "GeomAPI_ProjectPointOnSurf.NbPoints": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Shape.allDistanceSolutions clamps maxSolutions rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
     "bridge_function": "OCCTShapeAllDistanceSolutions",
-    "bridge_output": {"type": "int", "data": 10},
-    "kernel_output": {"type": "int", "data": 10},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "count",
+      "data": 3
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "value": 3,
+        "via": "BRepExtrema_DistShapeShape::NbSolution, box and inscribed sphere, distance 0"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: Shape.selfIntersectionPairs clamps maxPairs",
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Shape.selfIntersectionPairs clamps maxPairs rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
     "bridge_function": "OCCTShapeSelfIntersectionPairs",
-    "bridge_output": {"type": "int", "data": 3},
-    "kernel_output": {"type": "int", "data": 3},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "count",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "value": 0,
+        "via": "BRepExtrema_SelfIntersection overlap entries on the box"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: KDTree search capacities clamp rather than trap",
-    "bridge_function": "OCCTKDTreeSearch",
-    "bridge_output": {"type": "int", "data": 100},
-    "kernel_output": {"type": "int", "data": 100},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::KDTree search capacities clamp rather than trap",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTKDTreeKNearest / OCCTKDTreeRangeSearch / OCCTKDTreeBoxSearch",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "kNearest": 3,
+        "range": 3,
+        "box": 3
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "NCollection_KDTree.KNearestPoints": 3,
+        "RangeSearch": 3,
+        "BoxSearch": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: Selector.pick overloads clamp maxResults",
-    "bridge_function": "OCCTSelectorPick",
-    "bridge_output": {"type": "int", "data": 20},
-    "kernel_output": {"type": "int", "data": 20},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::all three Selector.pick overloads clamp maxResults rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTSelectorPick / OCCTSelectorPickRect / OCCTSelectorPickPoly",
+    "bridge_output": {
+      "type": "count",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "headless selector with a default Camera resolves no hit; the test asserts only that an absurd capacity returns, and a hit count is not what it compares"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::HatchPattern.generate clamps maxSegments rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTHatchLines",
+    "bridge_output": {
+      "type": "count",
+      "data": 10
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "OCCTHatchLines wraps Hatch_Hatcher in bridge-side line generation and clipping; no single kernel call returns the segment count"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::UnicodeUtils.convertFromUnicode clamps its output buffer rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTUnicodeConvertFromUnicode",
+    "bridge_output": {
+      "type": "string",
+      "data": "hello"
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": {
+        "Resource_Unicode::ConvertUnicodeToFormat": "hello",
+        "ok": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: HatchPattern.generate clamps maxSegments",
-    "bridge_function": "OCCTHatchPatternGenerate",
-    "bridge_output": {"type": "int", "data": 50},
-    "kernel_output": {"type": "int", "data": 50},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::directory and file listing clamp maxCount rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTFileList / OCCTDirectoryList",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "files": 7
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "OSD_FileIterator": 7,
+        "OSD_DirectoryIterator": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [
+        "Directories are compared only against the same call's own baseline in the test; the kernel iterator reports 2 entries in a directory holding only files, which reads as '.' and '..'."
+      ]
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: UnicodeUtils.convertFromUnicode clamps buffer",
-    "bridge_function": "OCCTUnicodeConvert",
-    "bridge_output": {"type": "string", "data": "test"},
-    "kernel_output": {"type": "string", "data": "test"},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "Issue 622: directory and file listing clamp maxCount",
-    "bridge_function": "OCCTDirectoryListing",
-    "bridge_output": {"type": "int", "data": 1000},
-    "kernel_output": {"type": "int", "data": 1000},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "Issue 622: LogSample.sample fills its buffer exactly",
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::LogSample.sample fills its buffer exactly, so its count is a request, not a capacity",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
     "bridge_function": "OCCTLogSample",
-    "bridge_output": {"type": "int", "data": 1000},
-    "kernel_output": {"type": "int", "data": 1000},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "samples",
+      "data": {
+        "count": 16,
+        "first": 1.0,
+        "last": 100.0
+      }
+    },
+    "kernel_output": {
+      "type": "samples",
+      "data": {
+        "GeomLib_LogSample.NbPoints": 16,
+        "first": 1,
+        "last": 100
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.115.0 - Interpolation Expansion 3D::interpolateWithEndpointTangents()",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "OCCTCurve3DInterpolateWithTangents",
+    "bridge_output": {
+      "type": "curve",
+      "data": {
+        "start": [
+          0,
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0,
+          0
+        ],
+        "unitStartTangent": [
+          0.7071067811865476,
+          0.7071067811865476,
+          0
+        ],
+        "unitEndTangent": [
+          0.7071067811865476,
+          -0.7071067811865476,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": {
+        "GeomAPI_Interpolate+Load": {
+          "start": [
+            0,
+            0,
+            0
+          ],
+          "end": [
+            10,
+            0,
+            0
+          ],
+          "unitStartTangent": [
+            0.707106781187,
+            0.707106781187,
+            0
+          ],
+          "unitEndTangent": [
+            0.707106781187,
+            -0.707106781187,
+            0
+          ]
+        },
+        "without Load": {
+          "unitStartTangent": [
+            0.4472135955,
+            0.894427191,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.115.0 - Interpolation Expansion 3D::interpolateWithAllTangents()",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "OCCTInterpolateWithAllTangents",
+    "bridge_output": {
+      "type": "curve",
+      "data": {
+        "unitStartTangent": [
+          0.7071067811865476,
+          0.7071067811865476,
+          0
+        ],
+        "unitEndTangent": [
+          0.7071067811865476,
+          -0.7071067811865476,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": {
+        "unitStartTangent": [
+          0.707106781187,
+          0.707106781187,
+          0
+        ],
+        "unitEndTangent": [
+          0.707106781187,
+          -0.707106781187,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.115.0 - Interpolation Expansion 3D::interpolateWithParameters()",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "OCCTInterpolateWithParameters",
+    "bridge_output": {
+      "type": "curve",
+      "data": {
+        "domain": [
+          0,
+          1
+        ],
+        "pointAt0.5": [
+          5,
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": {
+        "domain": [
+          0,
+          1
+        ],
+        "pointAt0.5": [
+          5,
+          5,
+          0
+        ],
+        "without parameters: domain": [
+          0,
+          14.1421356237
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.115.0 - Interpolation Expansion 3D::interpolatePeriodic()",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "OCCTCurve3DInterpolate",
+    "bridge_output": {
+      "type": "curve",
+      "data": {
+        "isPeriodic": true,
+        "isClosed": true,
+        "domainLength": 40,
+        "start": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": {
+        "IsPeriodic": true,
+        "IsClosed": true,
+        "domain": [
+          0,
+          40
+        ],
+        "start": [
+          0,
+          -1.1e-16,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionContext::Add and retrieve entities by ID",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionContext::Resolve entities against a graph",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionContext::allBroken detects unregistered references",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionContext::Remove an entity",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionContext::Remove an axis and a point",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionContext::removeAll clears every entity kind",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionContext::Resolve axis and point entities against a graph",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionContext::allBroken detects unregistered axis and point references",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionContext::Document exposes a lazy construction context",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "PR #898 review: ConstructionContext cross-store atomicity::count() never observes a torn cross-store snapshot during removeAll()",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext.count (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "torn observations: 0"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "PR #898 review: ConstructionContext cross-store atomicity::removeAll() stays all-or-nothing under concurrent add()",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext.removeAll (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "torn observations: 0"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "PR #898 review: ConstructionContext cross-store atomicity::removeAll() stays all-or-nothing under concurrent single remove()",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext.removeAll (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "torn observations: 0"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "PR #898 review: ConstructionContext cross-store atomicity::removeAll() immediately followed by count() is empty with no concurrent add()",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext.removeAll (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "PR #898 review: ConstructionContext cross-store atomicity::allBroken(in:) never observes a torn cross-store snapshot during removeAll()",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext.allBroken (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "torn observations: 0"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "PR #898 review: ConstructionContext cross-store atomicity::materialize(in:graph:) never observes a torn cross-store snapshot during removeAll()",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext.materialize (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "torn observations: 0"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#914 review, second round: Document.constructionContext lazy-init race::every concurrent first access to a fresh document's constructionContext returns the same instance",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Document.constructionContext (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "one instance per document"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 Sketch buildProfile::Profile excludes construction elements",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Sketch.buildProfile -> Wire.polygon3D (OCCTWireCreatePolygon3D), OCCTWireGetLength",
+    "bridge_output": {
+      "type": "length",
+      "data": 40
+    },
+    "kernel_output": {
+      "type": "length",
+      "data": {
+        "closed 10x10 polygon": 40,
+        "with the diagonal": 54.1421356237
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 Sketch buildProfile::buildProfile returns nil if no profile elements present",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Sketch.buildProfile (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": null
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 Sketch buildProfile::buildProfile returns nil when host plane is unresolvable",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Sketch.buildProfile (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": null
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.143 Angle helpers::Angle between two perpendicular edges ≈ π/2",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Edge.angle -> OCCTEdgeGetTangent3D",
+    "bridge_output": {
+      "type": "angle",
+      "data": 1.5707963267948966
+    },
+    "kernel_output": {
+      "type": "angle",
+      "data": {
+        "gp_Vec::Angle, TopExp edges 1 and 2": 1.57079632679
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.143 Angle helpers::Box face pairs parallel-or-perpendicular",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Face.angle -> OCCTFaceGetNormalAtUV",
+    "bridge_output": {
+      "type": "histogram",
+      "data": {
+        "pi/2": 12,
+        "pi": 3
+      }
+    },
+    "kernel_output": {
+      "type": "histogram",
+      "data": {
+        "pi/2": 12,
+        "pi": 3,
+        "0": 0,
+        "other": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.143 Angle helpers::unsignedAngle between parallel vectors == 0",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "unsignedAngle (Swift)",
+    "bridge_output": {
+      "type": "angle",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "angle",
+      "data": {
+        "gp_Vec(1,0,0).Angle(gp_Vec(2,0,0))": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.143 Angle helpers::unsignedAngle between antiparallel vectors == π",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "unsignedAngle (Swift)",
+    "bridge_output": {
+      "type": "angle",
+      "data": 3.141592653589793
+    },
+    "kernel_output": {
+      "type": "angle",
+      "data": {
+        "gp_Vec(1,0,0).Angle(gp_Vec(-1,0,0))": 3.141592653589793
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.143 Angle helpers::unsignedAngle returns nil for degenerate (near-zero-length) input (PR #897 review, finding 5)",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "unsignedAngle (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": null
+    },
+    "kernel_output": {
+      "type": "exception",
+      "data": {
+        "gp_Vec(0,0,0).Angle": "throws gp_VectorWithNullMagnitude"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.143 Angle helpers::ConstructionAxis angle between resolved axes",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionAxis.angle (Swift)",
+    "bridge_output": {
+      "type": "angle",
+      "data": 1.5707963267948966
+    },
+    "kernel_output": {
+      "type": "angle",
+      "data": {
+        "gp_Dir(1,0,0).Angle(gp_Dir(0,1,0))": 1.5707963267948966
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.143 Angle helpers::ConstructionPlane angle between normals",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionPlane.angle (Swift)",
+    "bridge_output": {
+      "type": "angle",
+      "data": 1.5707963267948966
+    },
+    "kernel_output": {
+      "type": "angle",
+      "data": {
+        "gp_Dir(0,0,1).Angle(gp_Dir(0,1,0))": 1.5707963267948966
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#888 Edge.parameterByLinearFraction(_:)::parameterByLinearFraction(_:) maps 0/0.5/1 to bounds.first/mid/last",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Edge.parameterByLinearFraction -> OCCTEdgeGetParameterBounds",
+    "bridge_output": {
+      "type": "range",
+      "data": {
+        "first": 0,
+        "last": 10
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "BRep_Tool::Range edge 1": [
+          0,
+          10
+        ],
+        "midpoint": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#888 Edge.parameterByLinearFraction(_:)::parameterByLinearFraction(_:) clamps out-of-range fractions to [0, 1]",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Edge.parameterByLinearFraction (Swift clamp)",
+    "bridge_output": {
+      "type": "range",
+      "data": {
+        "first": 0,
+        "last": 10
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "BRep_Tool::Range edge 1": [
+          0,
+          10
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#889 Face.uvMidpointSample()::uvMidpointSample matches point/normal at the manual UV midpoint",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Face.uvMidpointSample -> OCCTFaceEvaluateAtUV, OCCTFaceGetNormalAtUV",
+    "bridge_output": {
+      "type": "sample",
+      "data": {
+        "uv": [
+          5,
+          -5
+        ],
+        "point": [
+          -5,
+          0,
+          0
+        ],
+        "normal": [
+          -1,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "sample",
+      "data": {
+        "uv": [
+          5,
+          -5
+        ],
+        "point": [
+          -5,
+          0,
+          0
+        ],
+        "normal": [
+          -1,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#889 Face.uvMidpointSample()::isCoplanar: a face is coplanar with itself",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Face.isCoplanar (Swift)",
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "face to itself": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#889 Face.uvMidpointSample()::isCoplanar: parallel but offset faces are not coplanar",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Face.isCoplanar (Swift)",
+    "bridge_output": {
+      "type": "bool",
+      "data": false
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "opposite box faces separation": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#889 Face.uvMidpointSample()::revolutionProperties on a cone matches primaryAxis and has positive radius",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Face.revolutionProperties",
+    "bridge_output": {
+      "type": "radius",
+      "data": 2.4999999999999996
+    },
+    "kernel_output": {
+      "type": "radius",
+      "data": {
+        "at UV midpoint": 2.5,
+        "distance to axis origin": 5.59016994375
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#889 Face.uvMidpointSample()::revolutionProperties on a trimmed spherical cap reports the true constant radius, not an axis-relative radial component (PR #897 review, finding 1)",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Face.revolutionProperties",
+    "bridge_output": {
+      "type": "radius",
+      "data": 5.0
+    },
+    "kernel_output": {
+      "type": "radius",
+      "data": {
+        "distance to centre": 5,
+        "radial component (the old bug)": 0.849835714501
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.143 Multi-leaf createdBy::leafOccurrence picks among split descendants",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "BRepGraph.resolve (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.143 Multi-leaf createdBy::currentForms returns both leaves of a split",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "BRepGraph.currentForms (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.143 Multi-leaf createdBy::leafOccurrence: nil returns seed without forward-walk",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "BRepGraph.resolve (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.143 Multi-leaf createdBy::leafOccurrence out of range fails with occurrenceOutOfRange",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "BRepGraph.resolve (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.143 Construction layer persistence::addConstructionShape tags the shape with the CONSTRUCTION layer",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Document.addConstructionShape -> OCCTDocumentSetLayer",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "label is on the CONSTRUCTION layer"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "XCAF layer bookkeeping through the bridge; not re-probed"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.143 Construction layer persistence::Materialize all ConstructionContext entities as shapes on the CONSTRUCTION layer",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext.materialize",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "materialized": 3,
+        "failures": 0
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "composite Swift construction over several bridge calls"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.143 Construction layer persistence::materialize reports a resolve failure for each entity kind",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext.materializeOne (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "three resolve failures, one per kind"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.143 Construction layer persistence::materialize reports axisShapeFailed for a zero-length axis direction (#880)",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext.axisShape -> Wire.line",
+    "bridge_output": {
+      "type": "failure",
+      "data": "axisShapeFailed"
+    },
+    "kernel_output": {
+      "type": "is_done",
+      "data": {
+        "BRepBuilderAPI_MakeEdge between NaN points": true
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: the kernel builds an edge between NaN points (IsDone 1); Wire.line's own distance guard is what refuses it"
+      ]
+    },
+    "status": "EXPECTED_DIVERGENCE"
+  },
+  {
+    "test_name": "v0.143 Construction layer persistence::materialize reports planeShapeFailed when the plane's wire itself can't be built (#880)",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext.planeShape -> Wire.polygon3D",
+    "bridge_output": {
+      "type": "failure",
+      "data": "planeShapeFailed"
+    },
+    "kernel_output": {
+      "type": "is_done",
+      "data": {
+        "BRepBuilderAPI_MakePolygon of a 2e-9 square": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.143 Construction layer persistence::materialize reports planeShapeFailed, not non-finite geometry, for a zero-length normal (#880)",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext.planeShape -> Shape.face(from:)",
+    "bridge_output": {
+      "type": "failure",
+      "data": "planeShapeFailed"
+    },
+    "kernel_output": {
+      "type": "is_done",
+      "data": {
+        "MakePolygon on NaN vertices": true,
+        "MakeFace on that wire": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.143 Construction layer persistence::materializeOne reports an add failure instead of a bogus success (PR #898 review)",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext.materializeOne (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "planeAddFailed"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.143 Construction layer persistence::materializeOne still reports success for a non-negative label ID",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ConstructionContext.materializeOne (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "success, labelId 42"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.143 Construction layer persistence::A fresh Document never inherits a dead Document's construction context (#277)",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Document.releaseConstructionContext (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "every fresh context empty"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.145 ISO 5457 paper sizes::A0 landscape dimensions match ISO 5457",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "PaperSize / Sheet (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.145 ISO 5457 paper sizes::A4 portrait is 210 × 297",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "PaperSize / Sheet (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.145 ISO 5457 paper sizes::Each paper size has half the area of the next size up",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "PaperSize / Sheet (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.145 Sheet rendering::Sheet render emits border + inner frame polylines",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Sheet.render (Swift)",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "polylines": 3,
+        "lines": 8,
+        "texts": 12
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.145 Sheet rendering::Sheet innerFrame respects ISO 5457 margins",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "PaperSize / Sheet (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.145 Sheet rendering::Sheet innerFrame uses A4's distinct ISO 5457 margins, not A0-A3's",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "PaperSize / Sheet (Swift)",
+    "bridge_output": {
+      "type": "assertions",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.145 Sheet rendering::Projection symbol renders two circles for both conventions",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ProjectionSymbol.render (Swift)",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "circles": 2
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.145 Sheet rendering::TitleBlock fields are emitted as text",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Sheet.render (Swift)",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "texts": 14
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.145 Sheet rendering::Sheet render emits border + inner frame polylines onto a PDFWriter",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Sheet.render (Swift)",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "polylines": 3,
+        "lines": 8,
+        "texts": 12
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.145 Sheet rendering::Sheet render emits border + inner frame polylines onto an SVGWriter",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Sheet.render (Swift)",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "polylines": 3,
+        "lines": 8,
+        "texts": 12
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.145 Sheet rendering::Projection symbol renders two circles for both conventions onto a PDFWriter",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ProjectionSymbol.render (Swift)",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "circles": 2
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.145 Sheet rendering::Projection symbol renders two circles for both conventions onto an SVGWriter",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "ProjectionSymbol.render (Swift)",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "circles": 2
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.145 Sheet rendering::TitleBlock fields are emitted as text onto a PDFWriter",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Sheet.render (Swift)",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "texts": 14
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.145 Sheet rendering::TitleBlock fields are emitted as text onto an SVGWriter",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "Sheet.render (Swift)",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "texts": 14
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::L-bracket: two orthogonal flanges with one bend",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build",
+    "bridge_output": {
+      "type": "volume",
+      "data": 13315.796477516664
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::U-channel: three flanges, two bends",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build",
+    "bridge_output": {
+      "type": "volume",
+      "data": 2819.3141652942295
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::Flanges-only (no bends) still produces a fused solid",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build -> Shape.extrude, Shape.union",
+    "bridge_output": {
+      "type": "volume",
+      "data": 599.9999999999999
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "MakePrism x2 + BRepAlgoAPI_Fuse": 600
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::Single flange with no bends returns a plain extrusion",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build -> Shape.extrude",
+    "bridge_output": {
+      "type": "volume",
+      "data": 3750.0
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "MakePrism 50x25x3": 3750
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::Zero thickness is rejected",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build (Swift guard)",
+    "bridge_output": {
+      "type": "error",
+      "data": "invalidThickness"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::Empty flange list is rejected",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build (Swift guard)",
+    "bridge_output": {
+      "type": "error",
+      "data": "noFlanges"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::Duplicate flange id is rejected",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build (Swift guard)",
+    "bridge_output": {
+      "type": "error",
+      "data": "duplicateFlangeID(\"same\")"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::Bend referencing unknown flange id is rejected",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build (Swift guard)",
+    "bridge_output": {
+      "type": "error",
+      "data": "unknownFlangeID(\"ghost\")"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::Single-flange volume matches thickness × profile area",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build -> Shape.extrude",
+    "bridge_output": {
+      "type": "volume",
+      "data": "2000 (within 0.5, as asserted)"
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "MakePrism 40x20x2.5": 2000
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::Fused two-flange volume subtracts the overlap",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build -> Shape.extrude, Shape.union",
+    "bridge_output": {
+      "type": "volume",
+      "data": "13260 (within 1, as asserted)"
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "MakePrism x2 + BRepAlgoAPI_Fuse": 13260
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::Stepped seam (narrow upright over wider base) succeeds in v0.153",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build",
+    "bridge_output": {
+      "type": "volume",
+      "data": 8815.654315677795
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::L-bracket: 80×40 base, 20×30 centred mounting tab",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build",
+    "bridge_output": {
+      "type": "volume",
+      "data": 7580.685854250031
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::Z-bracket: full + stepped seams",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build",
+    "bridge_output": {
+      "type": "volume",
+      "data": 6219.3141848384885
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::U-channel with stepped narrower side flanges",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build",
+    "bridge_output": {
+      "type": "volume",
+      "data": 12857.94265223678
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.151 SheetMetal, flange + bend composition::Parallel flanges cannot form a bend",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.intersect (Swift guard)",
+    "bridge_output": {
+      "type": "error",
+      "data": "parallelFlangesHaveNoSeam"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "pure Swift; nothing in this test reaches OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #89: convex bends::Z-section with two opposite-direction 90° bends builds cleanly",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build",
+    "bridge_output": {
+      "type": "volume",
+      "data": 12671.999999999995
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #89: convex bends::Symmetric Z-section (top 30, web 20, bottom 30, R=3)",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build",
+    "bridge_output": {
+      "type": "volume",
+      "data": 7248.285413235574
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #89: convex bends::Offset L with very short web (5mm) and 90° opposite bends",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build",
+    "bridge_output": {
+      "type": "volume",
+      "data": 12577.466807156732
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #89: convex bends::Channel with flange, mixed concave + convex bends",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.build",
+    "bridge_output": {
+      "type": "volume",
+      "data": 10759.358422418583
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #89: convex bends::Explicit `.convex` matches auto-detected convex behaviour",
+    "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
+    "bridge_function": "SheetMetal.Builder.resolvedDirection (Swift)",
+    "bridge_output": {
+      "type": "volume_relation",
+      "data": "auto equals explicit convex within 1e-3 relative"
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
   }
 ]
