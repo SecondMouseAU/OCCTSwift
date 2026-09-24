@@ -1,0 +1,14 @@
+pointToPoint: value=10 valid=1 first=(0, 0, 0) second=(10, 0, 0)
+pointToPoint: after SetCustomValue(42) value=42
+diagonalDistance: value=5 valid=1 first=(0, 0, 0) second=(3, 4, 0)
+diagonalDistance: after SetCustomValue(42) value=42
+threeDDistance: value=5 valid=1 first=(1, 2, 3) second=(4, 6, 3)
+threeDDistance: after SetCustomValue(42) value=42
+geometryPoints: value=5 valid=1 first=(0, 0, 0) second=(5, 0, 0)
+geometryPoints: after SetCustomValue(42) value=42
+edgeLength: value=7 valid=1
+faceToFaceDistance: value=10 valid=1
+projectOnSphere: IsDone=1
+projectOnSphere: edges=2 bbox=(9.70142485, -2.4253564, -1.46871406e-07)..(10.0000001, 2.4253564, 1.46871406e-07)
+projectOutsideSphere: IsDone=1
+projectOutsideSphere: edges=2 bbox=(9.48683264, -3.162278, -3.40436912e-07)..(10.0000003, 3.162278, 3.40436912e-07)
