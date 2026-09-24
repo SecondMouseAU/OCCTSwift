@@ -133,7 +133,7 @@
       "data": {
         "result": null
       },
-      "source": "Scripts/repro/766-issue1669-geomeval3d/transcript.txt helix(5, 2) D0(NaN) = (nan, nan, nan)"
+      "source": "Scripts/repro/766-issue1669-geomeval3d/transcript.txt helix(5, 2) D0(NaN)=(nan, nan, nan) finite=0"
     },
     "comparison": {
       "equal": true,
@@ -155,7 +155,7 @@
       "data": {
         "result": null
       },
-      "source": "Scripts/repro/766-issue1669-geomeval3d/transcript.txt helix(inf, 2) D0(0) = (nan, nan, nan)"
+      "source": "Scripts/repro/766-issue1669-geomeval3d/transcript.txt helix(inf, 2) D0(0)=(nan, nan, nan) finite=0"
     },
     "comparison": {
       "equal": true,
@@ -177,7 +177,7 @@
       "data": {
         "result": null
       },
-      "source": "Scripts/repro/766-issue1669-geomeval3d/transcript.txt helix(NaN, 2) D0(0) = (nan, nan, nan)"
+      "source": "Scripts/repro/766-issue1669-geomeval3d/transcript.txt helix(NaN, 2) D0(0)=(nan, nan, nan) finite=0"
     },
     "comparison": {
       "equal": true,
