@@ -3821,5 +3821,245 @@
       "failing_expectation": "original: **green**; rewritten: :35 `roots != nil`"
     },
     "green": true
+  },
+  {
+    "test_name": "MathPolyRc4::linear",
+    "bridge_function": "OCCTMathPolyLinear",
+    "bridge_output": {
+      "type": "observed",
+      "data": "n=1 -2",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "n=1 -2",
+      "source": "Scripts/repro/766-math-polyrc4-bfgs-brent/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "constant coefficient passed to MathPoly::* off by +0.01 (small enough to keep the root count, so no index trap)",
+      "failing_expectation": ":17 `abs(r[0] - (-2.0)) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathPolyRc4::linearDegenerate",
+    "bridge_function": "OCCTMathPolyLinear",
+    "bridge_output": {
+      "type": "observed",
+      "data": "done=0 status=5 (InfiniteSolutions) n=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "done=0 status=5 (InfiniteSolutions) n=0",
+      "source": "Scripts/repro/766-math-polyrc4-bfgs-brent/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "drop the IsDone() check (InfiniteSolutions returns 0 roots as success)",
+      "failing_expectation": ":26 `roots == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathPolyRc4::quadratic",
+    "bridge_function": "OCCTMathPolyQuadratic",
+    "bridge_output": {
+      "type": "observed",
+      "data": "n=2 1.9999999999999991 3.0000000000000013",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "n=2 1.9999999999999991 3.0000000000000013",
+      "source": "Scripts/repro/766-math-polyrc4-bfgs-brent/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "constant coefficient passed to MathPoly::* off by +0.01 (small enough to keep the root count, so no index trap)",
+      "failing_expectation": ":35 `abs(r[0] - 2.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathPolyRc4::quadraticNoRealRoots",
+    "bridge_function": "OCCTMathPolyQuadratic",
+    "bridge_output": {
+      "type": "observed",
+      "data": "done=1 status=0 n=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "done=1 status=0 n=0",
+      "source": "Scripts/repro/766-math-polyrc4-bfgs-brent/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "report failure (-1) for every quadratic",
+      "failing_expectation": ":43 `roots != nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathPolyRc4::cubic",
+    "bridge_function": "OCCTMathPolyCubic",
+    "bridge_output": {
+      "type": "observed",
+      "data": "n=3 1 2 3",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "n=3 1 2 3",
+      "source": "Scripts/repro/766-math-polyrc4-bfgs-brent/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "constant coefficient passed to MathPoly::* off by +0.01 (small enough to keep the root count, so no index trap)",
+      "failing_expectation": ":55 `abs(r[0] - 1.0) < 1e-8`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathPolyRc4::quartic",
+    "bridge_function": "OCCTMathPolyQuartic",
+    "bridge_output": {
+      "type": "observed",
+      "data": "n=4 0.99999999999999978 2 3 4",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "n=4 0.99999999999999978 2 3 4",
+      "source": "Scripts/repro/766-math-polyrc4-bfgs-brent/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "constant coefficient passed to MathPoly::* off by +0.01 (small enough to keep the root count, so no index trap)",
+      "failing_expectation": ":67 `abs(r[0] - 1.0) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathSolver BFGS v0.110::minimizeQuadratic",
+    "bridge_function": "OCCTMathBFGS",
+    "bridge_output": {
+      "type": "observed",
+      "data": "x=3 4 min=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "x=3 4 min=0",
+      "source": "Scripts/repro/766-math-polyrc4-bfgs-brent/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "location + 0.05 in every coordinate",
+      "failing_expectation": ":20 `abs(result.point[0] - 3.0) < 1e-4`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathSolver BFGS v0.110::minimizeRosenbrock",
+    "bridge_function": "OCCTMathBFGS",
+    "bridge_output": {
+      "type": "observed",
+      "data": "x=1 1 min=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "x=1 1 min=0",
+      "source": "Scripts/repro/766-math-polyrc4-bfgs-brent/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "location + 0.05 in every coordinate",
+      "failing_expectation": "original: **green**; rewritten: :44 `abs(result.point[0] - 1.0) < 1e-4`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathSolver BrentMinimum v0.110::minimizeQuadratic",
+    "bridge_function": "OCCTMathBrentMinimum",
+    "bridge_output": {
+      "type": "observed",
+      "data": "location=-9.999999916733275e-09 minimum=-4",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "location=-9.999999916733275e-09 minimum=-4",
+      "source": "Scripts/repro/766-math-polyrc4-bfgs-brent/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Location() + 0.05",
+      "failing_expectation": "original: **green**; rewritten: :15 `abs(result.location) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "MathSolver BrentMinimum v0.110::minimizeSine",
+    "bridge_function": "OCCTMathBrentMinimum",
+    "bridge_output": {
+      "type": "observed",
+      "data": "location=4.7123889804110037 minimum=-1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "location=4.7123889804110037 minimum=-1",
+      "source": "Scripts/repro/766-math-polyrc4-bfgs-brent/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Location() + 0.05",
+      "failing_expectation": "original: **green**; rewritten: :27 `abs(result.location - 3 * Double.pi / 2) < 1e-6`"
+    },
+    "green": true
   }
 ]
