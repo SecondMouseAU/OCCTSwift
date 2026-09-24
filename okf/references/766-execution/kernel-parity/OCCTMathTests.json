@@ -247,7 +247,7 @@
     "test_name": "v0.115.0 - Transform Expansion::typedInitializersReturnNilRatherThanTrapOnWrongCount",
     "bridge_function": "none (pure Swift: validated12 in Sources/OCCTSwift/TransformFactory.swift)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
-    "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: N/A: pure-Swift element-count validation, no kernel counterpart"},
+    "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: pure-Swift element-count validation, no kernel counterpart"},
     "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "Swift injection: the count check in validated12 bypassed. RUN THIS TOKEN WITH A FILTER ON THIS ONE TEST ONLY: with it set, deprecatedArrayOverloadsStillWork hands a 3-element array to a bridge that reads 12", "failing_expectation": ":206 `Matrix12Grouped(elevenElements) == nil`"},

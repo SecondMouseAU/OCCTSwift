@@ -23,7 +23,7 @@ struct TransformExpansionTests {
                 // Probed (Scripts/repro/766-math-transform-expansion): the centred cube moves
                 // from -5..5 to 0..10 in x and stays at -5..5 in y and z, each face widened by
                 // the 1e-7 vertex tolerance.
-                let bounds = r.bounds
+                let bounds = r.boundingBox
                 #expect(bounds != nil)
                 if let bb = bounds {
                     #expect(abs(bb.min.x - 0.0) < 1e-6)
