@@ -2802,5 +2802,213 @@
     "green": "passed",
     "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
     "note": "Rewritten: asserted nothing"
+  },
+  {
+    "test_name": "v0.143 Circle property extraction::Cylindrical face exposes revolutionProperties with correct radius",
+    "test_file": "Tests/OCCTCurveTests/CirclePropertyTests.swift",
+    "bridge_function": "OCCTFaceGetPrimaryAxis (radius computed in Swift, Face.revolutionProperties)",
+    "bridge_output": {
+      "type": "value",
+      "data": "5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "cylinder face radius 5, axis (0,0,0) +Z"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: radius scaled by 1.01",
+    "red": "CirclePropertyTests.swift:19 abs(rp.radius - 5.0) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt"
+  },
+  {
+    "test_name": "v0.143 Circle property extraction::Circle through three points recovers correct centre and radius",
+    "test_file": "Tests/OCCTCurveTests/CirclePropertyTests.swift",
+    "bridge_function": "none: pure Swift circleThroughThreePoints",
+    "bridge_output": {
+      "type": "value",
+      "data": "centre (0,0,0), radius 1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gce_MakeCirc through the same points: centre (-7.9e-17, 1.0e-17, 0), radius 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: centre offset by (0.01, 0, 0)",
+    "red": "CirclePropertyTests.swift:36 abs(simd_length(circle.center - SIMD3<Double>(0, 0, 0))) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt",
+    "note": "Swift-side geometry; the kernel counterpart is gce_MakeCirc"
+  },
+  {
+    "test_name": "v0.143 Circle property extraction::Three collinear points → nil circle",
+    "test_file": "Tests/OCCTCurveTests/CirclePropertyTests.swift",
+    "bridge_function": "none: pure Swift circleThroughThreePoints",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gce_MakeCirc: not done, gce_ColinearPoints"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: collinearity guard skipped",
+    "red": "CirclePropertyTests.swift:45 circleThroughThreePoints(p1, p2, p3) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt",
+    "note": "Swift-side geometry; the kernel counterpart is gce_MakeCirc"
+  },
+  {
+    "test_name": "v0.143 Circle property extraction::Edge.circleProperties recovers a full-circle cap edge (#378)",
+    "test_file": "Tests/OCCTCurveTests/CirclePropertyTests.swift",
+    "bridge_function": "OCCTEdgeGetParameterBounds + OCCTEdgeGetPointAtParam (circle recovered in Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": "radius 3, full circle over [0, 2 pi]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "cap circles: radius 3, range [0, 6.2831853071795862]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: isFullCircle inverted (and, separately, centre offset)",
+    "red": "CirclePropertyTests.swift:63 Issue recorded (isFullCircle false for the full cap circle)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt"
+  },
+  {
+    "test_name": "Convert_CompBezierCurvesToBSplineCurve Tests::singleCubicSegment3D",
+    "test_file": "Tests/OCCTCurveTests/CompBezierToBSplineTests.swift",
+    "bridge_function": "OCCTConvertCompBezierToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "degree 3, the four input poles, knots [0,1], mults [4,4]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "degree 3, 4 poles (0,0,0) (1,2,0) (2,2,0) (3,0,0), knots 0 1, mults 4 4"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pole x + 1",
+    "red": "CompBezierToBSplineTests.swift:24 result.poles == seg",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt",
+    "note": "Strengthened: all poles, knots and multiplicities; the old last-pole check force-unwrapped inside #expect"
+  },
+  {
+    "test_name": "Convert_CompBezierCurvesToBSplineCurve Tests::twoCubicSegments3D",
+    "test_file": "Tests/OCCTCurveTests/CompBezierToBSplineTests.swift",
+    "bridge_function": "OCCTConvertCompBezierToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "6 poles, knots [0,0.5,1], mults [4,2,4]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "degree 3, 6 poles (0,0,0) (1,1,0) (2,1,0) (4,-1,0) (5,-1,0) (6,0,0), knots 0 0.5 1, mults 4 2 4"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pole x + 1",
+    "red": "CompBezierToBSplineTests.swift:44 result.poles == [...]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt",
+    "note": "Rewritten: poles.count >= 4 and knots.count >= 2 inside `if let`"
+  },
+  {
+    "test_name": "Convert_CompBezierCurvesToBSplineCurve Tests::emptySegmentsReturnsNil",
+    "test_file": "Tests/OCCTCurveTests/CompBezierToBSplineTests.swift",
+    "bridge_function": "none: Swift guard in CompBezierConverter.toBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected before the kernel is reached"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "No kernel counterpart: the Swift guard rejects the input"
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: empty input returns an empty result instead of nil",
+    "red": "CompBezierToBSplineTests.swift:55 result == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt",
+    "note": "No kernel counterpart: the Swift guard rejects the input"
+  },
+  {
+    "test_name": "Convert_CompBezierCurvesToBSplineCurve Tests::mismatchedSegmentSizesReturnsNil",
+    "test_file": "Tests/OCCTCurveTests/CompBezierToBSplineTests.swift",
+    "bridge_function": "none: Swift guard in CompBezierConverter.toBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected before the kernel is reached"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "No kernel counterpart: the Swift guard rejects the input"
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: segment-size check skipped",
+    "red": "CompBezierToBSplineTests.swift:62 result == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt",
+    "note": "No kernel counterpart: the Swift guard rejects the input"
+  },
+  {
+    "test_name": "Convert_CompBezierCurvesToBSplineCurve Tests::manySegmentsExceedingCapacityReturnsNil",
+    "test_file": "Tests/OCCTCurveTests/CompBezierToBSplineTests.swift",
+    "bridge_function": "OCCTConvertCompBezierToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "60 segments give 122 poles and 61 knots, over the bridge's 100/50 buffer"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "over-capacity result reported as success (empty)",
+    "red": "CompBezierToBSplineTests.swift:80 result == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt"
   }
 ]
