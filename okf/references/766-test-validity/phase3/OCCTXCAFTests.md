@@ -446,3 +446,13 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `namingValidUntil` | `OCCTNamingValidUntil` answers -1 | :81 Expectation failed: valid >= 0 | passed | `OCCTNamingValidUntil` | PASS: 1 |
 | `sameShapeCount` | `OCCTNamingSameShapeCount` answers 1 | :92 Expectation failed: count >= 2 | passed | `OCCTNamingSameShapeCount` | PASS: 3 labels hold the box |
 | `sameShapeLabels` | `OCCTNamingSameShapeLabels` answers 1 | :103 Expectation failed: labels.count >= 2 | passed | `OCCTNamingSameShapeLabels` | PASS: 3 |
+### `TNamingTracingTests.swift`
+| `traceForward` | `OCCTDocumentNamingTraceForward` answers 0 | :21 Expectation failed: forward.count >= 1 | passed | `OCCTDocumentNamingTraceForward` | PASS: 2 |
+| `traceBackward` | `OCCTDocumentNamingTraceBackward` answers 0 | :36 Expectation failed: backward.count >= 1 | passed | `OCCTDocumentNamingTraceBackward` | PASS: 1 |
+| `multipleGenerations` | `OCCTDocumentNamingTraceForward` answers 0 | :55 Expectation failed: forward.count >= 2 | passed | `OCCTDocumentNamingTraceForward` | PASS: 2 |
+| `emptyTraceForUnrelated` | `OCCTDocumentNamingTraceForward` answers the source shape | :67 Expectation failed: forward.isEmpty | passed | `OCCTDocumentNamingTraceForward` | PASS: not in the used-shape table, so 0 |
+| `traceModificationChain` | `OCCTDocumentNamingTraceForward` answers 0 | :81 Expectation failed: forward.count >= 1 | passed | `OCCTDocumentNamingTraceForward` | PASS: at least 1 |
+| `forwardTraceExcludesSource` | `OCCTDocumentNamingTraceForward` answers the source shape | :98 Expectation failed: !shape.isSame(as: box) | passed | `OCCTDocumentNamingTraceForward` | PASS: the source is not in its own forward trace |
+| `backwardTraceExcludesGenerated` | `OCCTDocumentNamingTraceBackward` answers the given shape | :116 Expectation failed: !shape.isSame(as: sphere) | passed | `OCCTDocumentNamingTraceBackward` | PASS: the shape is not in its own backward trace |
+### `TNamingTranslatorTests.swift`
+| `translatorCopy` | `OCCTShapeTranslatorCopy` returns null | :12 Expectation failed: Bool(false) | passed | `OCCTShapeTranslatorCopy` | PASS: copied, a distinct TShape |
