@@ -118,41 +118,55 @@ struct StressShapeBooleanTests {
 @Suite("Stress: Shape Features")
 struct StressShapeFeatureTests {
 
-    @Test func fillet() {
-        let r = standardBox().filleted(radius: 1.0)
-        if let r { #expect(r.isValid) }
+    @Test func fillet() throws {
+        let r = try #require(standardBox().filleted(radius: 1.0))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 975.5870139) < 1e-6)
     }
 
-    @Test func chamfer() {
-        let r = standardBox().chamfered(distance: 1.0)
-        if let r { #expect(r.isValid) }
+    @Test func chamfer() throws {
+        let r = try #require(standardBox().chamfered(distance: 1.0))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 945.3333333) < 1e-6)
     }
 
+    // MakeThickSolidBySimple is not done for this box (the old `if let` passed either way).
     @Test func shell() {
         let r = standardBox().shelled(thickness: -1.0)
-        if let r { #expect(r.isValid) }
+        #expect(r == nil)
     }
 
-    @Test func drill() {
-        let r = standardBox().drilled(
-            at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 2, depth: 0)
-        if let r { #expect(r.isValid) }
+    @Test func drill() throws {
+        let r = try #require(
+            standardBox().drilled(
+                at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 2, depth: 0))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - (1000 - 40 * .pi)) < 1e-6)
     }
 
-    @Test func offset() {
-        let r = standardBox().offset(by: 1.0)
-        if let r { #expect(r.isValid) }
+    // PerformBySimple offsets the faces without rounding the edges: a 12-wide box.
+    @Test func offset() throws {
+        let r = try #require(standardBox().offset(by: 1.0))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 1200) < 1e-6)
     }
 
-    @Test func linearPattern() {
-        let r = standardBox().linearPattern(direction: SIMD3(15, 0, 0), spacing: 15, count: 3)
-        if let r { #expect(r.isValid) }
+    // Three translated copies in one compound.
+    @Test func linearPattern() throws {
+        let r = try #require(
+            standardBox().linearPattern(direction: SIMD3(15, 0, 0), spacing: 15, count: 3))
+        #expect(r.isValid)
+        #expect(r.solidCount == 3)
+        #expect(abs((r.volume ?? 0) - 3000) < 1e-6)
     }
 
-    @Test func circularPattern() {
-        let r = standardBox().circularPattern(
-            axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 4)
-        if let r { #expect(r.isValid) }
+    // Four quarter-turn copies of a centred cube, each coincident with the original.
+    @Test func circularPattern() throws {
+        let r = try #require(
+            standardBox().circularPattern(axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 4))
+        #expect(r.isValid)
+        #expect(r.solidCount == 4)
+        #expect(abs((r.volume ?? 0) - 4000) < 1e-6)
     }
 
     @Test func sectionWires() {
@@ -161,6 +175,9 @@ struct StressShapeFeatureTests {
         for w in wires {
             if let len = w.length { #expect(len > 0) }
         }
+        // One closed 10 × 10 loop.
+        #expect(wires.count == 1)
+        #expect(abs((wires.first?.length ?? 0) - 40) < 1e-9)
     }
 }
 
@@ -169,24 +186,33 @@ struct StressShapeFeatureTests {
 @Suite("Stress: Shape Transforms")
 struct StressShapeTransformTests {
 
-    @Test func translate() {
-        let r = standardBox().translated(by: SIMD3(10, 20, 30))
-        if let r { #expect(r.isValid) }
+    @Test func translate() throws {
+        let r = try #require(standardBox().translated(by: SIMD3(10, 20, 30)))
+        #expect(r.isValid)
+        let b = try #require(r.bounds)
+        #expect(abs(b.min.x - 5) < 1e-6)
+        #expect(abs(b.min.y - 15) < 1e-6)
+        #expect(abs(b.min.z - 25) < 1e-6)
     }
 
-    @Test func rotate() {
-        let r = standardBox().rotated(axis: SIMD3(0, 0, 1), angle: .pi / 4)
-        if let r { #expect(r.isValid) }
+    @Test func rotate() throws {
+        let r = try #require(standardBox().rotated(axis: SIMD3(0, 0, 1), angle: .pi / 4))
+        #expect(r.isValid)
+        // A quarter-diagonal turn puts the corners at 5·√2 on each axis.
+        let b = try #require(r.bounds)
+        #expect(abs(b.max.x - 5 * 2.0.squareRoot()) < 1e-6)
     }
 
-    @Test func scale() {
-        let r = standardBox().scaled(by: 2.0)
-        if let r { #expect(r.isValid) }
+    @Test func scale() throws {
+        let r = try #require(standardBox().scaled(by: 2.0))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 8000) < 1e-6)
     }
 
-    @Test func mirror() {
-        let r = standardBox().mirrored(planeNormal: SIMD3(1, 0, 0))
-        if let r { #expect(r.isValid) }
+    @Test func mirror() throws {
+        let r = try #require(standardBox().mirrored(planeNormal: SIMD3(1, 0, 0)))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 1000) < 1e-6)
     }
 }
 
