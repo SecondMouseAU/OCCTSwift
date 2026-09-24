@@ -560,3 +560,13 @@ Probe: `Scripts/repro/766-geom2d-point-matrix-polygon/`. Every row was run red w
 | Matrix2D::multiplyAndInvert | `OCCTMat2dMultiply` | returns A instead of A*B | ✅ | ✅ | MATCH | one entry; now every entry |
 | Matrix2D::transpose | `OCCTMat2dTranspose` | returns the input | ✅ | ✅ | MATCH | one entry; now every entry |
 | Matrix2D::invert | `OCCTMat2dInvert` | returns the input | ✅ | ✅ | MATCH | `if let`, one entry of the product; now `#require`, the inverse and the product pinned |
+### #1979 executed: `MakeEdge2dTests.swift`, `MakeEdge2dExtensionsTests.swift`
+Probe: `Scripts/repro/766-geom2d-makeedge2d/`. Every row was run red with the injection applied and green after it was reverted.
+| BRepBuilderAPI MakeEdge2d::Edge 2D from points | `OCCTMakeEdge2dFromPoints` | end x + 1 | ✅ | ✅ | MATCH | `!= nil` and edge type; now vertices pinned |
+| BRepBuilderAPI MakeEdge2d::Edge 2D from circle arc | `OCCTMakeEdge2dFromCircle` | end parameter halved | ✅ | ✅ | MATCH | `!= nil` and edge type; now vertices pinned |
+| BRepBuilderAPI MakeEdge2d::Edge 2D from line | `OCCTMakeEdge2dFromLine` | end parameter + 1 | ✅ | ✅ | MATCH | `!= nil` and edge type; now vertices pinned |
+| BRepLib_MakeEdge2d Extensions Tests::edge2dFullCircle | `OCCTMakeEdge2dFullCircle` | radius + 1 | ✅ | ✅ | MATCH | `nbChildren >= 0` (cannot fail) in `if let` |
+| BRepLib_MakeEdge2d Extensions Tests::edge2dEllipse | `OCCTMakeEdge2dEllipse` | major radius + 1 | ✅ | ✅ | MATCH | `nbChildren >= 0` (cannot fail) in `if let` |
+| BRepLib_MakeEdge2d Extensions Tests::edge2dEllipseArc | `OCCTMakeEdge2dEllipseArc` | end parameter halved | ✅ | ✅ | MATCH | `nbChildren >= 0` (cannot fail) in `if let` |
+| BRepLib_MakeEdge2d Extensions Tests::edge2dFromCurve | `OCCTMakeEdge2dCurveRange` | end parameter + 1 | ✅ | ✅ | MATCH | `nbChildren >= 0` (cannot fail) in two `if let`s |
+| BRepLib_MakeEdge2d Extensions Tests::edge2dFromCurveFullRange | `OCCTMakeEdge2dCurve` | start parameter + 1 (no longer closed) | ✅ | ✅ | MATCH | `nbChildren >= 0` (cannot fail) in two `if let`s |
