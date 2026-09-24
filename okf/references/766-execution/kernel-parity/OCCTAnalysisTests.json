@@ -565,10 +565,10 @@
     },
     "kernel_probe": "Scripts/repro/766-hatch/probe.mm",
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": ["key names differ: bridge uses 'empty_boundary_segments' vs kernel 'empty_boundary_segments_unguarded'; 'empty_boundary_with_island_segments' vs 'empty_boundary_with_island_segments_unguarded'"]
     },
-    "status": "PASS"
+    "status": "MISMATCH"
   },
   {
     "test_name": "Hatch Patterns::Triangle boundary",
