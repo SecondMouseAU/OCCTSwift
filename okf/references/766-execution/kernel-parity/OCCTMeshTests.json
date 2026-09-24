@@ -1,342 +1,1172 @@
 [
   {
-    "test_name": "Deflection consistency check",
-    "bridge_function": "OCCTBRepMeshDeflection",
+    "test_name": "Issue #197, mesh deflection is a caller-tunable parameter::binary STL: finer deflection yields a larger file (more triangles)",
+    "bridge_function": "OCCTShapeWriteSTLBinary",
     "bridge_output": {
-      "type": "double",
-      "data": 0.0
+      "type": "measured",
+      "data": {
+        "coarse_1.0_bytes": 15384,
+        "fine_0.05_bytes": 100284
+      }
     },
     "kernel_output": {
-      "type": "double",
-      "data": 0.0
+      "type": "measured",
+      "data": {
+        "coarse_1.0_bytes": 15384,
+        "fine_0.05_bytes": 100284,
+        "coarse_triangles": 306,
+        "fine_triangles": 2004
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":42 `fineSize > coarseSize`",
+    "injection": "R1: pass 1.0 instead of the caller's deflection to OCCTExportSTLWithMode",
+    "probe": "Scripts/repro/766-mesh-issue197/"
   },
   {
-    "test_name": "BRepMesh Deflection",
-    "bridge_function": "OCCTBRepMeshDeflection",
+    "test_name": "Issue #197, mesh deflection is a caller-tunable parameter::default deflection (0.1) still writes a valid STL",
+    "bridge_function": "OCCTShapeWriteSTLBinary",
     "bridge_output": {
-      "type": "double",
-      "data": 0.0
+      "type": "measured",
+      "data": {
+        "default_bytes": 48884
+      }
     },
     "kernel_output": {
-      "type": "double",
-      "data": 0.0
+      "type": "measured",
+      "data": {
+        "default_0.1_bytes": 48884,
+        "triangles": 976
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":60 `size == 84 + 50 * 976`",
+    "injection": "R1: pass 1.0 instead of the caller's deflection to OCCTExportSTLWithMode",
+    "probe": "Scripts/repro/766-mesh-issue197/"
   },
   {
-    "test_name": "Poly_Polygon3D",
-    "bridge_function": "OCCTPolyPolygon3D",
+    "test_name": "Issue #197, mesh deflection is a caller-tunable parameter::coherent triangulation builds at the requested deflection",
+    "bridge_function": "OCCTCoherentTriangulationCreateFromMesh",
     "bridge_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "first_face_triangles_0.2": 516,
+        "first_face_triangles_0.1": 976
+      }
     },
     "kernel_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "first_face_triangles_0.2": 516,
+        "first_face_triangles_0.1": 976
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":73 `coarse.triangleCount == 516`",
+    "injection": "R1: BRepMesh_IncrementalMesh(shape, 0.1), ignoring deflection",
+    "probe": "Scripts/repro/766-mesh-issue197/"
   },
   {
-    "test_name": "Poly_MergeNodesTool",
-    "bridge_function": "OCCTPolyMergeNodesTool",
+    "test_name": "Issue #211, allowQualityDecrease mesh parameter::default is false",
+    "bridge_function": "none (MeshParameters.default, Swift); mirrors IMeshTools_Parameters",
     "bridge_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "allowQualityDecrease": false
+      }
     },
     "kernel_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "IMeshTools_Parameters().AllowQualityDecrease": false
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":12 `MeshParameters.default.allowQualityDecrease == false`",
+    "injection": "R1: MeshParameters.default.allowQualityDecrease = true (Mesh.swift)",
+    "probe": "Scripts/repro/766-mesh-issue211/"
   },
   {
-    "test_name": "Poly Copy & Mutators",
-    "bridge_function": "OCCTPolyCopyMutate",
+    "test_name": "Issue #211, allowQualityDecrease mesh parameter::meshing with the flag set produces a valid mesh",
+    "bridge_function": "OCCTShapeCreateMeshWithParams",
     "bridge_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "vertexCount": 273,
+        "triangleCount": 516
+      }
     },
     "kernel_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "vertexCount": 273,
+        "triangleCount": 516
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":25 `Bool(false)` (the guard's else branch)",
+    "injection": "R2: return nullptr when params.allowQualityDecrease is set",
+    "probe": "Scripts/repro/766-mesh-issue211/"
   },
   {
-    "test_name": "BRepMesh ShapeTool Tests",
-    "bridge_function": "OCCTBRepMeshShapeTool",
+    "test_name": "Issue #211, allowQualityDecrease mesh parameter::allows a coarser re-mesh to replace a finer one",
+    "bridge_function": "OCCTShapeCreateMeshWithParams",
     "bridge_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "fine": 976,
+        "coarse_with_flag": 306,
+        "coarse_without_flag": 976
+      }
     },
     "kernel_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "fine": 976,
+        "coarse_with_flag": 306,
+        "coarse_without_flag": 976
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":51 `coarseA.triangleCount == 306`",
+    "injection": "R1: meshParams.AllowQualityDecrease = Standard_False, dropping the flag",
+    "probe": "Scripts/repro/766-mesh-issue211/"
   },
   {
-    "test_name": "Mesh face indices",
-    "bridge_function": "OCCTMeshFaceIndex",
+    "test_name": "Issue #375, mesh() winding reflects true topological orientation, not a naive transform read::a mirrored valid solid still meshes 100% outward, matching the un-mirrored original",
+    "bridge_function": "OCCTShapeCreateMesh",
     "bridge_output": {
-      "type": "int",
-      "data": 0
+      "type": "measured",
+      "data": {
+        "box_outward_fraction": 1.0,
+        "mirrored_outward_fraction": 1.0,
+        "triangles": 12
+      }
     },
     "kernel_output": {
-      "type": "int",
-      "data": 0
+      "type": "measured",
+      "data": {
+        "box_outward_fraction": 1.0,
+        "mirrored_outward_fraction": 1.0,
+        "triangles": 12,
+        "reversed_faces": 3,
+        "fraction_without_swap": 0.5
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":55 `boxOutward == 1.0`, :58 `mirroredOutward == 1.0`",
+    "injection": "R1: REVERSED faces no longer swap n2/n3",
+    "probe": "Scripts/repro/766-mesh-issue375/"
   },
   {
-    "test_name": "Mesh boolean union",
-    "bridge_function": "OCCTMeshBooleanUnion",
+    "test_name": "Issue #375, mesh() winding reflects true topological orientation, not a naive transform read::mesh(parameters:) has the same outward-normalization behavior as the deflection overload",
+    "bridge_function": "OCCTShapeCreateMeshWithParams",
     "bridge_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "mirrored_outward_fraction": 1.0,
+        "triangles": 12
+      }
     },
     "kernel_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "mirrored_outward_fraction": 1.0,
+        "triangles": 12,
+        "fraction_without_swap": 0.5
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":73 `mirroredOutward == 1.0`",
+    "injection": "R1: REVERSED faces no longer swap n2/n3",
+    "probe": "Scripts/repro/766-mesh-issue375/"
   },
   {
-    "test_name": "Merged mesh nodes outward",
-    "bridge_function": "OCCTMeshMergedNodesOutward",
+    "test_name": "Issue #1440: Polygon3D.parameter(at:) null-Handle guard::a no-params polygon's parameter(at:) is safe, not a crash",
+    "bridge_function": "OCCTPolyPolygon3DParameter",
     "bridge_output": {
-      "type": "bool",
-      "data": true
+      "type": "measured",
+      "data": {
+        "hasParameters": false,
+        "parameters": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
     },
     "kernel_output": {
-      "type": "bool",
-      "data": true
+      "type": "measured",
+      "data": {
+        "HasParameters": false
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH on HasParameters; the 0 fallback is bridge behaviour (the kernel call it guards segfaults)"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": "process killed, signal 11 (SIGSEGV) inside the test",
+    "injection": "R3: HasParameters() guard removed",
+    "probe": "Scripts/repro/766-mesh-issue1440/"
   },
   {
-    "test_name": "Mesh parameterised entry",
-    "bridge_function": "OCCTMeshParameterisedEntry",
+    "test_name": "Issue #1440: Polygon3D.parameter(at:) null-Handle guard::a with-parameters polygon still returns its real stored values",
+    "bridge_function": "OCCTPolyPolygon3DParameter",
     "bridge_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "hasParameters": true,
+        "parameters": [
+          0.0,
+          0.5,
+          1.0
+        ]
+      }
     },
     "kernel_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "HasParameters": true,
+        "parameters": [
+          0.0,
+          0.5,
+          1.0
+        ]
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":54 `polygon.parameter(at: i) == expected` (i = 0 and i = 2)",
+    "injection": "R1: read Parameters()(NbNodes() - index), reversed order",
+    "probe": "Scripts/repro/766-mesh-issue1440/"
   },
   {
-    "test_name": "Mesh boolean subtraction",
-    "bridge_function": "OCCTMeshBooleanSubtraction",
+    "test_name": "Issue #1566: OCCTPolyMergeNodes refuses rather than mis-reports on buffer overflow::generous buffers: succeeds, reports the true counts, and every count matches the write",
+    "bridge_function": "OCCTPolyMergeNodes",
     "bridge_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "nVerts": 24,
+        "triCount": 12
+      }
     },
     "kernel_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "NbNodes": 24,
+        "NbTriangles": 12
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":61 `triCount > 0`",
+    "injection": "R2: *outTriangleCount never written",
+    "probe": "Scripts/repro/766-mesh-issue1566/"
   },
   {
-    "test_name": "Mesh boolean intersection",
-    "bridge_function": "OCCTMeshBooleanIntersection",
+    "test_name": "Issue #1566: OCCTPolyMergeNodes refuses rather than mis-reports on buffer overflow::vertex buffer too small: refuses (returns 0), does not touch outTriangleCount",
+    "bridge_function": "OCCTPolyMergeNodes",
     "bridge_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "nVerts": 0,
+        "triCount": -1
+      }
     },
     "kernel_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "NbNodes": 24
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH: kernel NbNodes 24 > maxVertices 1, so the refusal is the correct outcome; the refusal itself has no kernel counterpart"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": "process killed, signal 5, writing 24 nodes into a 1-node buffer",
+    "injection": "R1b: verticesOverflow = false (the #1566 refusal removed)",
+    "probe": "Scripts/repro/766-mesh-issue1566/"
   },
   {
-    "test_name": "Mesh face indices address faces()",
-    "bridge_function": "OCCTMeshFaceIndicesAddressFaces",
+    "test_name": "Issue #1566: OCCTPolyMergeNodes refuses rather than mis-reports on buffer overflow::index buffer too small: refuses (returns 0), does not touch outTriangleCount",
+    "bridge_function": "OCCTPolyMergeNodes",
     "bridge_output": {
-      "type": "bool",
-      "data": true
+      "type": "measured",
+      "data": {
+        "nVerts": 0,
+        "triCount": -1
+      }
     },
     "kernel_output": {
-      "type": "bool",
-      "data": true
+      "type": "measured",
+      "data": {
+        "NbTriangles": 12,
+        "indices_needed": 36
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH: kernel needs 36 indices > maxIndices 1, so the refusal is the correct outcome; the refusal itself has no kernel counterpart"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":123 `nVerts == 0`",
+    "injection": "R2: indicesOverflow = false (the #1566 refusal removed)",
+    "probe": "Scripts/repro/766-mesh-issue1566/"
   },
   {
-    "test_name": "Mesh Tests",
-    "bridge_function": "OCCTMeshTests",
+    "test_name": "Issue #1566: OCCTPolyMergeNodes refuses rather than mis-reports on buffer overflow::a null outIndices is not gated on maxIndices, even when maxIndices is 0",
+    "bridge_function": "OCCTPolyMergeNodes",
     "bridge_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "nVerts": 24,
+        "triCount": 12
+      }
     },
     "kernel_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "NbNodes": 24,
+        "NbTriangles": 12
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":146 `nVerts > 0`, :147 `triCount > 0`",
+    "injection": "R4: indicesOverflow no longer gated on outIndices being non-null",
+    "probe": "Scripts/repro/766-mesh-issue1566/"
   },
   {
-    "test_name": "Drawer Mesh Extraction",
-    "bridge_function": "OCCTDrawerMeshExtraction",
+    "test_name": "Issue #1566: OCCTPolyMergeNodes refuses rather than mis-reports on buffer overflow::mergedMeshNodes still succeeds normally for an ordinary box (non-regression)",
+    "bridge_function": "OCCTPolyMergeNodes",
     "bridge_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "vertexCount": 24,
+        "triangleCount": 12
+      }
     },
     "kernel_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "NbNodes": 24,
+        "NbTriangles": 12
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":157 `merged.triangleCount > 0`",
+    "injection": "R2: *outTriangleCount never written",
+    "probe": "Scripts/repro/766-mesh-issue1566/"
   },
   {
-    "test_name": "Finer deviation",
-    "bridge_function": "OCCTBRepMeshDeflection",
+    "test_name": "Mesh face indices address faces(), and winding survives a shared wall (#613)::the fixture really does share one face between two solids",
+    "bridge_function": "OCCTShapeGetFaceCount, OCCTShapeGetOrientedFaces",
     "bridge_output": {
-      "type": "double",
-      "data": 0.0
+      "type": "measured",
+      "data": {
+        "faceCount": 11,
+        "occurrences": 12,
+        "shared_faces": 1
+      }
     },
     "kernel_output": {
-      "type": "double",
-      "data": 0.0
+      "type": "measured",
+      "data": {
+        "distinct_faces": 11,
+        "occurrences": 12,
+        "shared_faces": 1,
+        "shared_index": 5
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":80 `compound.faceCount == 11`",
+    "injection": "R4: Shape.faceCount reads OCCTShapeGetFaceOccurrenceCount (the pre-#651 explorer count)",
+    "probe": "Scripts/repro/766-mesh-issue613/"
   },
   {
-    "test_name": "Mesh Tests outward",
-    "bridge_function": "OCCTMeshMergedNodesOutward",
+    "test_name": "Mesh face indices address faces(), and winding survives a shared wall (#613)::no triangle claims a face index faces() cannot address",
+    "bridge_function": "OCCTShapeCreateMesh",
     "bridge_output": {
-      "type": "bool",
-      "data": true
+      "type": "measured",
+      "data": {
+        "triangles": 24,
+        "faceIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ]
+      }
     },
     "kernel_output": {
-      "type": "bool",
-      "data": true
+      "type": "measured",
+      "data": {
+        "triangles": 24,
+        "faceIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ]
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":111 `compound.face(at: i) != nil`",
+    "injection": "R4: faceIndex stamped from an occurrence counter, not the map index",
+    "probe": "Scripts/repro/766-mesh-issue613/"
   },
   {
-    "test_name": "Mesh Tests union",
-    "bridge_function": "OCCTMeshBooleanUnion",
+    "test_name": "Mesh face indices address faces(), and winding survives a shared wall (#613)::a triangle's faceIndex names the face that triangle lies on",
+    "bridge_function": "OCCTShapeCreateMesh",
     "bridge_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "triangles": 24,
+        "faceIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ]
+      }
     },
     "kernel_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "triangles": 24,
+        "faceIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ]
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":135 `#require(compound.face(at:))`, :143 `abs(Self.dot(offset, normal)) < 1e-6`",
+    "injection": "R4: faceIndex stamped from an occurrence counter, not the map index",
+    "probe": "Scripts/repro/766-mesh-issue613/"
   },
   {
-    "test_name": "Mesh Tests subtraction",
-    "bridge_function": "OCCTMeshBooleanSubtraction",
+    "test_name": "Mesh face indices address faces(), and winding survives a shared wall (#613)::both sides of the shared wall are stamped with the one index that names it",
+    "bridge_function": "OCCTShapeCreateMesh",
     "bridge_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "wall_index": 5,
+        "plusX": 2,
+        "minusX": 2
+      }
     },
     "kernel_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "wall_index": 5,
+        "plusX": 2,
+        "minusX": 2
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":174 `wallIndices.count == 1`",
+    "injection": "R4: faceIndex stamped from an occurrence counter, not the map index",
+    "probe": "Scripts/repro/766-mesh-issue613/"
   },
   {
-    "test_name": "Mesh Tests intersection",
-    "bridge_function": "OCCTMeshBooleanIntersection",
+    "test_name": "Mesh face indices address faces(), and winding survives a shared wall (#613)::every mesh triangle is wound outward for the solid that owns it (control)",
+    "bridge_function": "OCCTShapeCreateMesh",
     "bridge_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "outward": 24,
+        "inward": 0
+      }
     },
     "kernel_output": {
-      "type": "shape",
-      "data": {}
+      "type": "measured",
+      "data": {
+        "outward": 24,
+        "inward": 0
+      }
     },
     "comparison": {
       "equal": true,
-      "differences": []
+      "differences": [],
+      "note": "MATCH"
     },
-    "status": "PASS"
+    "status": "PASS",
+    "red": ":223 `inward == 0`",
+    "injection": "R4: winding swapped for FORWARD faces instead of REVERSED (global inversion)",
+    "probe": "Scripts/repro/766-mesh-issue613/"
+  },
+  {
+    "test_name": "Mesh face indices address faces(), and winding survives a shared wall (#613)::a plain box still meshes entirely outward",
+    "bridge_function": "OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "outward": 12,
+        "inward": 0,
+        "faceIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "outward": 12,
+        "inward": 0,
+        "faceIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":250 `outward == 12`, :251 `inward == 0`",
+    "injection": "R4: winding swapped for FORWARD faces instead of REVERSED (global inversion)",
+    "probe": "Scripts/repro/766-mesh-issue613/"
+  },
+  {
+    "test_name": "Mesh face indices address faces(), and winding survives a shared wall (#613)::the parameterised mesh entry point holds the same index contract",
+    "bridge_function": "OCCTShapeCreateMeshWithParams",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 24,
+        "faceIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 24,
+        "faceIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "wall_index": 5,
+        "plusX": 2,
+        "minusX": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":267 `compound.face(at: i) != nil`, :286 `wallIndices.count == 1`",
+    "injection": "R4: faceIndex stamped from an occurrence counter, not the map index",
+    "probe": "Scripts/repro/766-mesh-issue613/"
+  },
+  {
+    "test_name": "Mesh face indices address faces(), and winding survives a shared wall (#613)::merged mesh nodes keep both sides of a shared wall, oppositely wound",
+    "bridge_function": "OCCTPolyMergeNodes",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 24,
+        "vertices": 40,
+        "plusX": 2,
+        "minusX": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "NbTriangles": 24,
+        "NbNodes": 40,
+        "plusX": 2,
+        "minusX": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":316 `minusX > 0`, :317 `plusX == minusX`",
+    "injection": "R4: reversed flag passed to AddTriangulation forced false",
+    "probe": "Scripts/repro/766-mesh-issue613/"
+  },
+  {
+    "test_name": "Mesh face indices address faces(), and winding survives a shared wall (#613)::merged mesh nodes on a plain box are entirely outward",
+    "bridge_function": "OCCTPolyMergeNodes",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 12,
+        "vertices": 24,
+        "outward": 12
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "NbTriangles": 12,
+        "NbNodes": 24,
+        "outward": 12,
+        "inward": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":341 `outward == 12`, :342 `inward == 0`",
+    "injection": "R4: reversed flag passed to AddTriangulation forced false",
+    "probe": "Scripts/repro/766-mesh-issue613/"
+  },
+  {
+    "test_name": "Mesh from raw arrays::Round-trip vertices and indices",
+    "bridge_function": "OCCTMeshCreateFromArrays",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "vertexCount": 4,
+        "triangleCount": 4
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: OCCTMeshCreateFromArrays copies and validates caller arrays and calls no OCCT API"
+    },
+    "status": "N/A",
+    "red": ":47 `idxs == Self.tetIndices`",
+    "injection": "C1: second and third index of every triangle swapped on the way in",
+    "probe": null
+  },
+  {
+    "test_name": "Mesh from raw arrays::Computed normals when none provided produce unit-length per-vertex normals",
+    "bridge_function": "OCCTMeshCreateFromArrays",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "normal_lengths": 1.0
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: OCCTMeshCreateFromArrays copies and validates caller arrays and calls no OCCT API"
+    },
+    "status": "N/A",
+    "red": ":72 `abs(len - 1.0) < 1e-5 || len < 1e-9` (all four vertices)",
+    "injection": "C1: accumulated vertex normals never renormalised",
+    "probe": null
+  },
+  {
+    "test_name": "Mesh from raw arrays::Provided normals are preserved verbatim",
+    "bridge_function": "OCCTMeshCreateFromArrays",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "normals": "as supplied"
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: OCCTMeshCreateFromArrays copies and validates caller arrays and calls no OCCT API"
+    },
+    "status": "N/A",
+    "red": ":97, :98, :99 (each vertex)",
+    "injection": "C1: supplied normals ignored",
+    "probe": null
+  },
+  {
+    "test_name": "Mesh from raw arrays::Empty inputs return nil",
+    "bridge_function": "OCCTMeshCreateFromArrays",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: OCCTMeshCreateFromArrays copies and validates caller arrays and calls no OCCT API"
+    },
+    "status": "N/A",
+    "red": ":105 `Mesh(vertices: [], indices: []) == nil`, :106, then process abort (signal 6) on :107's null vertex buffer",
+    "injection": "C1: validation removed from BOTH layers (Mesh.init guard and OCCTMeshCreateFromArrays); removing either layer alone leaves the other rejecting, by design",
+    "probe": null
+  },
+  {
+    "test_name": "Mesh from raw arrays::Index count not divisible by 3 returns nil",
+    "bridge_function": "OCCTMeshCreateFromArrays",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: OCCTMeshCreateFromArrays copies and validates caller arrays and calls no OCCT API"
+    },
+    "status": "N/A",
+    "red": ":112 `Mesh(vertices:indices: [0, 1]) == nil`, :113",
+    "injection": "C1: validation removed from BOTH layers (Mesh.init guard and OCCTMeshCreateFromArrays); removing either layer alone leaves the other rejecting, by design",
+    "probe": null
+  },
+  {
+    "test_name": "Mesh from raw arrays::Out-of-range index returns nil",
+    "bridge_function": "OCCTMeshCreateFromArrays",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: OCCTMeshCreateFromArrays copies and validates caller arrays and calls no OCCT API"
+    },
+    "status": "N/A",
+    "red": "process abort (signal 6) reading vertex 9 of 4",
+    "injection": "C1: validation removed from BOTH layers (Mesh.init guard and OCCTMeshCreateFromArrays); removing either layer alone leaves the other rejecting, by design",
+    "probe": null
+  },
+  {
+    "test_name": "Mesh from raw arrays::Mismatched normals length returns nil",
+    "bridge_function": "OCCTMeshCreateFromArrays",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: OCCTMeshCreateFromArrays copies and validates caller arrays and calls no OCCT API"
+    },
+    "status": "N/A",
+    "red": ":125 `Mesh(vertices:normals:indices:) == nil`",
+    "injection": "C1: Mesh.init's normals-length check removed (the bridge cannot check it: it takes no normals count)",
+    "probe": null
+  },
+  {
+    "test_name": "Mesh Tests::Mesh from shape",
+    "bridge_function": "OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "vertexCount": 24,
+        "triangleCount": 12,
+        "volume": 150.0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "vertexCount": 24,
+        "triangleCount": 12,
+        "volume": 150.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":160 `mesh.vertexCount == 24`, :161 `triangleCount == 12`, :162 volume",
+    "injection": "C2: the first face dropped from the extraction",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::Mesh data access",
+    "bridge_function": "OCCTMeshGetVertices, OCCTMeshGetNormals, OCCTMeshGetIndices",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "vertices": 168,
+        "indices": 918,
+        "normals": 168
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "vertexCount": 168,
+        "triangleCount": 306
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":187 `offSphere.isEmpty`",
+    "injection": "C3: OCCTMeshGetVertices copies the normals buffer",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::Enhanced mesh parameters",
+    "bridge_function": "OCCTShapeCreateMeshWithParams",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "vertexCount": 24,
+        "triangleCount": 12
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "vertexCount": 24,
+        "triangleCount": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":199 `mesh.vertexCount > 0`, :200",
+    "injection": "C2: the parameterised entry point returns an empty mesh",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::Triangles with face info",
+    "bridge_function": "OCCTMeshGetTrianglesWithFaces",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 12,
+        "faceIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 12,
+        "faceIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":217 `tri.faceIndex >= 0` (all 12)",
+    "injection": "C2: every faceIndex reported as -1",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::Mesh to shape conversion",
+    "bridge_function": "OCCTMeshToShapeWithTolerance",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "edges": 18
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "edges": 18,
+        "type": "TopAbs_SHELL"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":228 `shape != nil`",
+    "injection": "C3: the sewn shape dropped (return nullptr on success)",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::toShape weldTolerance: default parity, guards, and large-mesh welding",
+    "bridge_function": "OCCTMeshToShapeWithTolerance",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "gappy_edges_1e-6": 6,
+        "gappy_edges_2.0": 5
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "gappy_edges_1e-6": 6,
+        "gappy_edges_2.0": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":266 `weldedEdges < tightEdges`",
+    "injection": "C2: BRepBuilderAPI_Sewing built at 1e-6 whatever the caller asks",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::Mesh boolean union",
+    "bridge_function": "OCCTMeshUnion",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 72,
+        "volume": 2000.0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 72,
+        "volume": 2000.0,
+        "solid_boolean_volume": 1500.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH bridge vs kernel pipeline; both wrong against the solid Boolean (1500), filed as #2301, asserted under withKnownIssue"
+    },
+    "status": "PASS",
+    "red": ":285 `unionMesh != nil`",
+    "injection": "C2: occtMeshBoolean returns nullptr",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::Mesh boolean subtraction",
+    "bridge_function": "OCCTMeshSubtract",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 120,
+        "volume": 1000.0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 120,
+        "volume": 1000.0,
+        "solid_boolean_volume": 858.628331
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH bridge vs kernel pipeline; nothing is removed against the solid Boolean (858.63), filed as #2301, asserted under withKnownIssue"
+    },
+    "status": "PASS",
+    "red": ":305 `diffMesh != nil`",
+    "injection": "C2: occtMeshBoolean returns nullptr",
+    "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Mesh Tests::Mesh boolean intersection",
+    "bridge_function": "OCCTMeshIntersect",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 0,
+        "volume": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 0,
+        "volume": 0.0,
+        "solid_boolean_volume": 959.232938
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH bridge vs kernel pipeline; result is EMPTY against the solid Boolean (959.23), filed as #2301, asserted under withKnownIssue"
+    },
+    "status": "PASS",
+    "red": ":323 `intersectMesh != nil`",
+    "injection": "C2: occtMeshBoolean returns nullptr",
+    "probe": "Scripts/repro/766-mesh-core-1/"
   }
 ]

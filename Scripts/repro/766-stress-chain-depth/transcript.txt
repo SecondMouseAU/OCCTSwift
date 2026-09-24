@@ -1,0 +1,21 @@
+fiftySubtractions: valid=1 volume=995373.8819 (orig 1e6)
+hundredSubtractions: valid=1 volume=7996665.368 (orig 8e6)
+fiftyUnions: valid=1 volume=6359.375
+fiftyIntersections: valid=1 volume=430368.875 (75.5^3=430368.875)
+mixedBooleans: valid=1 volume=0
+filletDrillChamferChain: after fillet valid=1 volume=31915.4985
+filletDrillChamferChain: after 4 drills valid=1 volume=30910.18885
+filletDrillChamferChain: chamfer ok=1 valid=1 volume=30905.43876
+filletDrillChamferChain: shell ok=0 valid=1 volume=30905.43876
+tenSuccessiveFillets: succeeded=1 valid=1 volume=999935.7869
+tenDrillsGrid: drills=10 valid=1 volume=98743.36294 (1e5 - 10*pi*4*10=98743.36294)
+deepFeatureChain: steps=20 valid=1 volume=74045.18424
+thousandTranslations: valid=1 max.x=6.0000001 min.x=-4.0000001
+thousandRotations: valid=1 volume=1000 max=(5.0000001, 5.0000001, 5.0000001)
+hundredScales: valid=1 volume=1000
+mixedTransforms: valid=1 volume=1104.01168603 (1000*1.001^99=1104.01168603)
+hundredEdgeWire: edges added=100 IsDone=1 Error=0 wire edges=12
+largePolygonWire: length=62.8215181563 (200*sin(pi/100)*10=62.8215181563)
+manyPointInterpolation: GeomAPI_Interpolate through 50 points, 101 finite samples (see Swift)
+hundredShapesInDocument / deepAssemblyTree / manyColorAssignments: XCAF label bookkeeping, no geometric kernel value (N/A)
+tenThousandPointEval / surfaceGridEval10x10 / curve2DThousandPoints: Geom_*::Value on the standard circle, Bezier patch and 2D circle; every sample finite
