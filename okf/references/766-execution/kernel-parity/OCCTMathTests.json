@@ -6941,5 +6941,293 @@
       "failing_expectation": "original: **green**; rewritten: :35 `abs(n.x - 1.0 / 3.0) < 1e-12`"
     },
     "green": true
+  },
+  {
+    "test_name": "GC_MakeEllipse Tests::ellipseFromAxisAndRadii",
+    "bridge_function": "OCCTGCMakeEllipse",
+    "bridge_output": {
+      "type": "observed",
+      "data": "closed, P(0) (10, 0, 0), P(pi/2) (0, 5, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "closed, P(0) (10, 0, 0), P(pi/2) (0, 5, 0)",
+      "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "major and minor swapped: GC refuses, bridge returns nil",
+      "failing_expectation": ":11 `Curve3D.gcEllipse(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5)` (the `try #require`); the P(0) and P(pi/2) pins are red under separate injections that leave the ellipse non-nil, both radii = minor at :16 and both radii = major at :18, which the earlier `e != nil` version passed"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeEllipse Tests::ellipseFromFullAx2",
+    "bridge_function": "OCCTGCMakeEllipseFromElips",
+    "bridge_output": {
+      "type": "observed",
+      "data": "closed, P(0) (10, 0, 0), P(pi/2) (0, 5, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "closed, P(0) (10, 0, 0), P(pi/2) (0, 5, 0)",
+      "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "major and minor swapped: GC refuses, bridge returns nil",
+      "failing_expectation": ":22 `Curve3D.gcEllipse(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0), majorRadius: 10, minorRadius: 5)` (the `try #require`); the P(0) and P(pi/2) pins are red under separate injections that leave the ellipse non-nil, both radii = minor at :28, both radii = major at :30, x direction (0, 1, 0) at :28 and :30, which the earlier `e != nil` version passed"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeHyperbola Tests::hyperbolaFromAxisAndRadii",
+    "bridge_function": "OCCTGCMakeHyperbola",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(0) (10, 0, 0), P(1) (15.4308063482, 5.87600596822, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(0) (10, 0, 0), P(1) (15.4308063482, 5.87600596822, 0)",
+      "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "radii swapped",
+      "failing_expectation": "original: **green**; rewritten: :16 `simd_length(h.point(at: 0) - SIMD3(10, 0, 0)) < 1e-9`; :17 `simd_length(h.point(at: 1) - SIMD3(15.4308063482, 5.87600596822, 0)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeTrimmedCone Tests::trimmedCone2Pts",
+    "bridge_function": "OCCTGCMakeTrimmedCone2Pts",
+    "bridge_output": {
+      "type": "observed",
+      "data": "v [0, 10.4403065089], ends (5, 0, 0) and (2, 0, 10)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "v [0, 10.4403065089], ends (5, 0, 0) and (2, 0, 10)",
+      "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "r1 and r2 swapped",
+      "failing_expectation": "original: **green**; rewritten: :21 `simd_length(s.point(atU: d.uMin, v: d.vMin) - SIMD3(5, 0, 0)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeTrimmedCone Tests::trimmedCone4Pts",
+    "bridge_function": "OCCTGCMakeTrimmedCone4Pts",
+    "bridge_output": {
+      "type": "observed",
+      "data": "original points: not done (status 7); valid points: ends (5, 0, 0) and (2, 0, 10)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "original points: not done (status 7); valid points: ends (5, 0, 0) and (2, 0, 10)",
+      "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "p3 and p4 swapped",
+      "failing_expectation": "original: **green**; rewritten: :37 `simd_length(s.point(atU: d.uMin, v: d.vMin) - SIMD3(5, 0, 0)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeTrimmedCylinder Tests::trimmedCylinderCircle",
+    "bridge_function": "OCCTGCMakeTrimmedCylinderCircle",
+    "bridge_output": {
+      "type": "observed",
+      "data": "v [0, 10], ends (5, 0, 0) and (5, 0, 10)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "v [0, 10], ends (5, 0, 0) and (5, 0, 10)",
+      "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "height doubled",
+      "failing_expectation": "original: **green**; rewritten: :19 `abs(d.vMax - d.vMin - 10) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeTrimmedCylinder Tests::trimmedCylinderAxis",
+    "bridge_function": "OCCTGCMakeTrimmedCylinderAxis",
+    "bridge_output": {
+      "type": "observed",
+      "data": "v [0, 10], ends (5, 0, 0) and (5, 0, 10)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "v [0, 10], ends (5, 0, 0) and (5, 0, 10)",
+      "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "radius doubled",
+      "failing_expectation": "original: **green**; rewritten: :31 `simd_length(s.point(atU: d.uMin, v: d.vMin) - SIMD3(5, 0, 0)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeTrimmedCylinder Tests::trimmedCylinder3Pts",
+    "bridge_function": "OCCTGCMakeTrimmedCylinder3Pts",
+    "bridge_output": {
+      "type": "observed",
+      "data": "v [0, 10], ends (12.0710678119, 0, 0) and (12.0710678119, 0, 10)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "v [0, 10], ends (12.0710678119, 0, 0) and (12.0710678119, 0, 10)",
+      "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "p2 and p3 swapped",
+      "failing_expectation": "original: **green**; rewritten: :40 `abs(d.vMax - d.vMin - 10) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomDirection Tests::create unit direction",
+    "bridge_function": "OCCTGeomDirectionCoords",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(0, 0, 1)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(0, 0, 1)",
+      "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "x and z components swapped",
+      "failing_expectation": ":13 `abs(c.z - 1) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomDirection Tests::auto-normalizes",
+    "bridge_function": "OCCTGeomDirectionCoords",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(0.6, 0.8, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(0.6, 0.8, 0)",
+      "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "x and z components swapped",
+      "failing_expectation": "original: **green**; rewritten: :24 `abs(c.x - 0.6) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomDirection Tests::crossed product",
+    "bridge_function": "OCCTGeomDirectionCrossed",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(0, 0, 1)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(0, 0, 1)",
+      "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "operands swapped",
+      "failing_expectation": ":29 `abs(cross.coordinates.z - 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomDirection Tests::setCoordinates",
+    "bridge_function": "OCCTGeomDirectionSetCoord",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(0, 1, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(0, 1, 0)",
+      "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "SetCoord skipped",
+      "failing_expectation": ":37 `abs(d.coordinates.y - 1.0) < 1e-10`"
+    },
+    "green": true
   }
 ]
