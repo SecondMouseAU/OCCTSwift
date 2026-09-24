@@ -263,3 +263,11 @@
 | **GeomLib_LogSample Tests** | singleSample | `OCCTLogSample` | linear spacing a + (b - a) * i / n (gives 10 for n = 1) | red | green | PASS |
 | **MathCrout Tests** | symmetricSolve | `OCCTMathCroutSolve` | swap X(1) and X(n) after math_Crout::Solve | red | green | PASS |
 | **MathCrout Tests** | determinant | `OCCTMathCroutDeterminant` | negate math_Crout::Determinant | red | green | PASS |
+### 766-math-matrix-polyroots (#1983, measured)
+| **MathMatrix Tests** | createAndQuery | `OCCTMathMatrixRows` | RowNumber() + 1 | red | green | PASS |
+| **MathMatrix Tests** | setGetValue | `OCCTMathMatrixGetValue` | read row (row % RowNumber) + 1 (off-by-one row) | red | green | PASS |
+| **MathMatrix Tests** | determinant | `OCCTMathMatrixDeterminant` | negate math_Matrix::Determinant | red | green | PASS |
+| **MathMatrix Tests** | invert | `OCCTMathMatrixInvert` | skip math_Matrix::Invert, still return true | red | green | PASS |
+| **MathPolynomialRoots Tests** | quadratic | `OCCTMathPolynomialRoots` | math_DirectPolynomialRoots::Value(i) + 0.5 | red | green | PASS |
+| **MathPolynomialRoots Tests** | linear | `OCCTMathPolynomialRoots` | math_DirectPolynomialRoots::Value(i) + 0.5 | red | green | PASS |
+| **MathPolynomialRoots Tests** | noRealRoots | `OCCTMathPolynomialRoots` | take the IsDone-false path (return -1) for every polynomial | red | green | PASS |
