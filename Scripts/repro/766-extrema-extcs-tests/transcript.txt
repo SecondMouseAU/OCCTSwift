@@ -1,0 +1,4 @@
+curveSurfaceParallel: isDone=1 isParallel=1 squareDistance(1)=100.000000000000
+curveSurfaceDistance: isDone=1 isParallel=0 nbExt=2
+  [1] sqDist=25.000000000000 dist=5.000000000000 p1=(10, 0, 0) t=0 p2=(5, 0, 0) uv=(0, 0)
+  [2] sqDist=225.000000000000 dist=15.000000000000 p1=(10, 0, 0) t=0 p2=(-5, 6.123234e-16, 0) uv=(3.14159265, -0)
