@@ -208,6 +208,10 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **BRepGProp_VinertGK** | volume integration on box face | Volume integration, planar face | Mass() * 2 |
+| **BRepGProp_VinertGK** | error bounds | Volume integration error | negate GetErrorReached() |
+| **BRepGProp_VinertGK** | vinertGK reports a nonzero error on a curved face, consistent with the true deviation | Volume integration error, curved face | negate GetErrorReached() |
+| **BRepGProp_VinertGK** | vinertGK's errorReached grows, and stays finite, as mass is driven toward zero | Volume integration error near zero mass | negate GetErrorReached() |
 | **Hatch Patterns** | Triangle boundary | Hatch generation | Line spacing doubled / segment end written as its start |
 | **Hatch Patterns** | An island polygon cuts a hole in the hatch fill | Hatch island trimming | Island trim skipped / segment end written as its start |
 | **BRepExtrema ExtPF Tests** | Point-face distance | Point-face extrema (rewritten: could not fail) | OCCTBRepExtremaExtPF reports solutionCount 0; separately, the squared distance as the distance |
@@ -420,6 +424,10 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| volume integration on box face | OCCTBRepGPropVinertGK | Volume integration, planar face | Mass() * 2 | ✅ | ✅ | Rewritten: asserted #expect(Bool(true)) |
+| error bounds | OCCTBRepGPropVinertGK | Volume integration error | negate GetErrorReached() | ✅ | ✅ | if-let unwraps replaced by #require |
+| vinertGK reports a nonzero error on a curved face, consistent with the true deviation | OCCTBRepGPropVinertGK | Volume integration error, curved face | negate GetErrorReached() | ✅ | ✅ |  |
+| vinertGK's errorReached grows, and stays finite, as mass is driven toward zero | OCCTBRepGPropVinertGK | Volume integration error near zero mass | negate GetErrorReached() | ✅ | ✅ |  |
 | Triangle boundary | OCCTHatchLines | Hatch generation | Line spacing doubled / segment end written as its start | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: count > 0 passed under both injections; now pins 9 segments and their endpoints |
 | An island polygon cuts a hole in the hatch fill | OCCTHatchLines | Hatch island trimming | Island trim skipped / segment end written as its start | ✅ | ✅ | Could already fail on a skipped island trim; did not catch zero-length segments, now pins the y = 10 spans and the total |
 | Make volume from faces | OCCTShapeMakeVolume | Volume from faces | Return nullptr; return the first argument | ✅ | ✅ | Rewritten: discarded the result, no assertion |

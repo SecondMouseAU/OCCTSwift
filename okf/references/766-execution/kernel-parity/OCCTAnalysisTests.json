@@ -499,6 +499,32 @@
     "status": "PASS"
   },
   {
+    "test_name": "BRepGProp_VinertGK::volume integration on box face",
+    "bridge_function": "OCCTBRepGPropVinertGK",
+    "bridge_output": {
+      "type": "volume_integral",
+      "data": {
+        "mass": 166.66666666666663,
+        "errorReached": 4.547473508864642e-16,
+        "center": [
+          -3.75,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "volume_integral",
+      "data": {
+        "mass": 166.66666666666663,
+        "errorReached": 4.547473508864642e-16,
+        "center": [
+          -3.75,
+          0,
+          0
+        ]
+      }
+    },
     "test_name": "Measurement Tests::Volume of box",
     "bridge_function": "OCCTShapeGetVolume",
     "bridge_output": {
@@ -4865,6 +4891,20 @@
     "status": "PASS"
   },
   {
+    "test_name": "BRepGProp_VinertGK::error bounds",
+    "bridge_function": "OCCTBRepGPropVinertGK",
+    "bridge_output": {
+      "type": "volume_integral",
+      "data": {
+        "mass": 20.83333333333333,
+        "errorReached": 4.547473508864642e-16
+      }
+    },
+    "kernel_output": {
+      "type": "volume_integral",
+      "data": {
+        "mass": 20.83333333333333,
+        "errorReached": 4.547473508864642e-16
     "test_name": "BRepExtrema ExtPF Tests::Point-face distance",
     "bridge_function": "OCCTBRepExtremaExtPF",
     "bridge_output": {
@@ -4934,6 +4974,20 @@
     "status": "PASS"
   },
   {
+    "test_name": "BRepGProp_VinertGK::vinertGK reports a nonzero error on a curved face, consistent with the true deviation",
+    "bridge_function": "OCCTBRepGPropVinertGK",
+    "bridge_output": {
+      "type": "volume_integral",
+      "data": {
+        "mass": 4188.790219839933,
+        "errorReached": 0.0008086135038665399
+      }
+    },
+    "kernel_output": {
+      "type": "volume_integral",
+      "data": {
+        "mass": 4188.790219839933,
+        "errorReached": 0.0008086135038665399
     "test_name": "Hatch Patterns::Triangle boundary",
     "bridge_function": "OCCTHatchLines",
     "bridge_output": {
@@ -4981,6 +5035,26 @@
     "status": "PASS"
   },
   {
+    "test_name": "BRepGProp_VinertGK::vinertGK's errorReached grows, and stays finite, as mass is driven toward zero",
+    "bridge_function": "OCCTBRepGPropVinertGK",
+    "bridge_output": {
+      "type": "volume_integral",
+      "data": {
+        "farMass": 261.79938779914886,
+        "farError": 2.5693227506791556e-15,
+        "rootY": 7.85398163397448,
+        "nearMass": 5.835999059517825e-14,
+        "nearError": 4.2281776446698254e-06
+      }
+    },
+    "kernel_output": {
+      "type": "volume_integral",
+      "data": {
+        "farMass": 261.79938779914886,
+        "farError": 2.5693227506791556e-15,
+        "rootY": 7.85398163397448,
+        "nearMass": 5.835999059517825e-14,
+        "nearError": 4.2281776446698254e-06
     "test_name": "Hatch Patterns::An island polygon cuts a hole in the hatch fill",
     "bridge_function": "OCCTHatchLines",
     "bridge_output": {
