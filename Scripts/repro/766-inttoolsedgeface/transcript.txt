@@ -1,0 +1,16 @@
+edge (5,5,-1)-(5,5,11) [the test's original fixture] vs faces()[0]: IsDone=1 NbCommonParts=0
+edge (5,5,-1)-(5,5,11) [the test's original fixture] vs faces()[1]: IsDone=1 NbCommonParts=1
+  part 1: type=EDGE range1=(0, 12) midpoint=(5, 5, 5)
+edge (5,5,-1)-(5,5,11) [the test's original fixture] vs faces()[2]: IsDone=1 NbCommonParts=0
+edge (5,5,-1)-(5,5,11) [the test's original fixture] vs faces()[3]: IsDone=1 NbCommonParts=1
+  part 1: type=EDGE range1=(0, 12) midpoint=(5, 5, 5)
+edge (5,5,-1)-(5,5,11) [the test's original fixture] vs faces()[4]: IsDone=1 NbCommonParts=0
+edge (5,5,-1)-(5,5,11) [the test's original fixture] vs faces()[5]: IsDone=1 NbCommonParts=1
+  part 1: type=VERTEX range1=(5.99999985, 6.00000015) midpoint=(5, 5, 5)
+edge (-10,1,2)-(0,1,2) [the rewritten fixture] vs faces()[0]: IsDone=1 NbCommonParts=1
+  part 1: type=VERTEX range1=(4.99999985, 5.00000015) midpoint=(-5, 1, 2)
+edge (-10,1,2)-(0,1,2) [the rewritten fixture] vs faces()[1]: IsDone=1 NbCommonParts=0
+edge (-10,1,2)-(0,1,2) [the rewritten fixture] vs faces()[2]: IsDone=1 NbCommonParts=0
+edge (-10,1,2)-(0,1,2) [the rewritten fixture] vs faces()[3]: IsDone=1 NbCommonParts=0
+edge (-10,1,2)-(0,1,2) [the rewritten fixture] vs faces()[4]: IsDone=1 NbCommonParts=0
+edge (-10,1,2)-(0,1,2) [the rewritten fixture] vs faces()[5]: IsDone=1 NbCommonParts=0

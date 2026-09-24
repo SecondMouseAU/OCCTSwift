@@ -77,7 +77,6 @@ int main()
   Handle(TDocStd_Document)    d = newDoc(app);
 
   TDF_Label as = d->Main().NewChild();
-  TDataStd_AsciiString::Set(as, "hello");
   printf("AsciiString: %s", TDataStd_AsciiString::Set(as, "hello")->Get().ToCString());
   TDataStd_AsciiString::Set(as, "world");
   Handle(TDataStd_AsciiString) asA;
