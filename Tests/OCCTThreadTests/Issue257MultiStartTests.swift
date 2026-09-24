@@ -1,5 +1,6 @@
 import Testing
 import simd
+import Foundation
 
 @testable import OCCTSwift
 
@@ -132,8 +133,8 @@ struct Issue257MultiStartTests {
                 Issue.record("starts=\(n): no crest on one of the two half-planes")
                 continue
             }
-            let offset = (z90 - z0).truncatingRemainder(dividingBy: pitch)
-            let expected = (lead / 4).truncatingRemainder(dividingBy: pitch)
+            let offset = remainder(z90 - z0, pitch)
+            let expected = remainder(lead / 4, pitch)
             #expect(
                 abs(remainder(offset - expected, pitch)) < 0.1,
                 "starts=\(n): quarter-turn crest offset \(offset) mod pitch, expected lead/4 = \(expected)"
