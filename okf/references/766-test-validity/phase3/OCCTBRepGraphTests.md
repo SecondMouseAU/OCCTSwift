@@ -106,5 +106,14 @@ For each test, run ground-truth C++ comparison:
 | alongEdge T-branch | ✅ | ✅ | ✅ |
 | v0.142 ConstructionAxis | ✅ | ✅ | ✅ |
 | deferredModeToggle | ✅ | ✅ | ✅ |
+| packSIMD3 exactMapping | ✅ | ✅ | ✅ |
+| packSIMD3 emptyInputIsEmpty | ✅ | ✅ | ✅ |
+| packSIMD3 floatScalarBuffer | ✅ | ✅ | ✅ |
+| packSIMD3 roundTripsThroughUnpack | ✅ | ✅ | ✅ |
+| unpackSIMD3 exactMapping | ✅ | ✅ | ✅ |
+| unpackSIMD3 zeroCountIsEmpty | ✅ | ✅ | ✅ |
+| unpackSIMD3 stopsAtActualCountNotBufferLength | ✅ | ✅ | ✅ |
+| unpackSIMD3 floatScalarBuffer | ✅ | ✅ | ✅ |
+| unpackSIMD3 unsafeBufferPointerBuffer | ✅ | ✅ | ✅ |
 
-**Total**: 18 tests
+**Total**: 27 tests
