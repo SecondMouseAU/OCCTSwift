@@ -2371,6 +2371,225 @@
     "status": "PASS"
   },
   {
+    "test_name": "OSD Environment Tests::setGetRemove",
+    "bridge_function": "OCCTEnvironmentGet",
+    "bridge_output": {
+      "type": "string",
+      "data": {
+        "after_set": "hello",
+        "after_remove": null
+      }
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": {
+        "after_set": "hello",
+        "after_remove_length": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD Environment Tests::readHome",
+    "bridge_function": "OCCTEnvironmentGet",
+    "bridge_output": {
+      "type": "bool",
+      "data": "== getenv(HOME)"
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": "== getenv(HOME)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD Chronometer Tests::processCPU",
+    "bridge_function": "OCCTGetProcessCPU",
+    "bridge_output": {
+      "type": "seconds",
+      "data": "> 0, within 0.02 of getrusage"
+    },
+    "kernel_output": {
+      "type": "seconds",
+      "data": {
+        "GetProcessCPU": 0.06,
+        "getrusage": 0.061101
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD Process Tests::processId",
+    "bridge_function": "OCCTProcessId",
+    "bridge_output": {
+      "type": "bool",
+      "data": "== getpid()"
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": "== getpid()"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD Process Tests::userName",
+    "bridge_function": "OCCTProcessUserName",
+    "bridge_output": {
+      "type": "bool",
+      "data": "== pw_name"
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": "== pw_name"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_File Tests::writeAndReadBack",
+    "bridge_function": "OCCTFileReadLine",
+    "bridge_output": {
+      "type": "string",
+      "data": "Hello, OSD_File!\n"
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": "Hello, OSD_File!\n"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_File Tests::fileSize",
+    "bridge_function": "OCCTFileSize",
+    "bridge_output": {
+      "type": "int",
+      "data": 5
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 5
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_File Tests::isOpenFalseAfterClose",
+    "bridge_function": "OCCTFileIsOpen",
+    "bridge_output": {
+      "type": "bool",
+      "data": [
+        true,
+        false
+      ]
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": [
+        true,
+        false
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Resource_Manager Tests::setAndGetString",
+    "bridge_function": "OCCTResourceManagerGetString",
+    "bridge_output": {
+      "type": "string",
+      "data": "hello"
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": "hello"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Resource_Manager Tests::setAndGetInt",
+    "bridge_function": "OCCTResourceManagerGetInt",
+    "bridge_output": {
+      "type": "int",
+      "data": 42
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 42
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Resource_Manager Tests::setAndGetReal",
+    "bridge_function": "OCCTResourceManagerGetReal",
+    "bridge_output": {
+      "type": "double",
+      "data": 3.14
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 3.14
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Resource_Manager Tests::findNonExistent",
+    "bridge_function": "OCCTResourceManagerFind",
+    "bridge_output": {
+      "type": "bool",
+      "data": false
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
     "test_name": "OSD_Host Tests::hostName",
     "bridge_function": "OCCTHostName",
     "bridge_output": {

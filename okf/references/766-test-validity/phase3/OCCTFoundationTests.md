@@ -229,6 +229,18 @@ Probe: `Scripts/repro/766-foundation-font-pixmap-units/` (Font_FontMgr, Image_Al
 | UnitsAPI Tests | fromSI | `OCCTUnitsAnyFromSI` | calls AnyToSI | OCCTFoundationTests.swift:676 abs(result - 1000.0) < 1e-6 | passed (84/84 in the nine suites, after the revert) | MATCH |
 | UnitsAPI Tests | kgToG | `OCCTUnitsAnyToAny` | from and to units swapped | OCCTFoundationTests.swift:681 abs(result - 1000.0) < 1e-6 | passed (84/84 in the nine suites, after the revert) | MATCH |
 | UnitsAPI Tests | localSystem | `OCCTUnitsSetLocalSystem` | SetLocalSystem skipped (REWRITTEN: set only .si, the default, so a no-op setter passed) | OCCTFoundationTests.swift:688 Units.localSystem == .mdtv | passed (84/84 in the nine suites, after the revert) | MATCH |
+| OSD Environment Tests | setGetRemove | `OCCTEnvironmentGet` | Get appends "x" (B) | ✅ `:799` | ✅ | MATCH "hello", then empty after Remove |  |
+| OSD Environment Tests | readHome | `OCCTEnvironmentGet` | Get appends "x" (B) | ✅ `:809` (original: green) | ✅ | MATCH, == getenv(HOME) | Rewritten: `!= nil` |
+| OSD Chronometer Tests | processCPU | `OCCTGetProcessCPU` | user seconds forced to 0 (B) | ✅ `:837`, `:838` (original: green) | ✅ | MATCH within 0.02 s of getrusage (0.060 vs 0.0611; 1/100 s steps) | Rewritten: `user >= 0` |
+| OSD Process Tests | processId | `OCCTProcessId` | ProcessId() + 1 (B) | ✅ `:850` (original: green) | ✅ | MATCH, == getpid() | Rewritten: `> 0` |
+| OSD Process Tests | userName | `OCCTProcessUserName` | return "root" (B) | ✅ `:856` (original: green) | ✅ | MATCH, == getpwuid(getuid()).pw_name | Rewritten: `!= nil` |
+| OSD_File Tests | writeAndReadBack | `OCCTFileReadLine` | Open returns false (A); ReadLine drops the last char (B) | ✅ A `:870`, B `:883` (original: green under both) | ✅ | MATCH "Hello, OSD_File!\n" (ReadLine keeps the newline) | Rewritten: silent return on open failure, `if let` prefix check |
+| OSD_File Tests | fileSize | `OCCTFileSize` | Open returns false (A); Size + 1 (B) | ✅ A `:892`, B `:903` (original: green under both) | ✅ | MATCH 5 | Rewritten: silent return, `sz >= 5` |
+| OSD_File Tests | isOpenFalseAfterClose | `OCCTFileIsOpen` | Open returns false (A); IsOpen always true (B) | ✅ A `:912` (original: green), B `:917` | ✅ | MATCH, 1 then 0 | Rewritten: silent return on open failure |
+| Resource_Manager Tests | setAndGetString | `OCCTResourceManagerGetString` | SetString no-op (B) | ✅ `:928` | ✅ | MATCH "hello", Find 1 |  |
+| Resource_Manager Tests | setAndGetInt | `OCCTResourceManagerGetInt` | Integer() + 1 (B) | ✅ `:934` | ✅ | MATCH 42 |  |
+| Resource_Manager Tests | setAndGetReal | `OCCTResourceManagerGetReal` | Real() × 2 (B) | ✅ `:940` | ✅ | MATCH 3.14 |  |
+| Resource_Manager Tests | findNonExistent | `OCCTResourceManagerFind` | Find returns true (B) | ✅ `:945` | ✅ | MATCH false |  |
 | OSD_Host Tests | hostName | `OCCTHostName` | `"localhost"` (A) | ✅ `:940` (original: green) | ✅ | MATCH on the first DNS label (CI runner: `<host>.` vs `<host>.local`) | Rewritten; the first version failed CI comparing the whole string |
 | OSD_Host Tests | systemVersion | `OCCTSystemVersion` | return "Darwin" (A) | ✅ `:949` (original: green) | ✅ | MATCH, "Darwin 27.0.0" == uname sysname + release | Rewritten: `contains("Darwin")` |
 | OSD_Host Tests | internetAddress | `OCCTInternetAddress` | return nullptr (C) | ✅ `:958` (original: green) | ✅ | MATCH, parses as IPv4 | Rewritten: had no assertion at all |
