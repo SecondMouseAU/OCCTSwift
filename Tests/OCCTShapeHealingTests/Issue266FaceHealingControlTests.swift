@@ -30,11 +30,21 @@ struct Issue266FaceHealingControlTests {
         fixer.setMode(.addNaturalBound, .off)
         fixer.setMode(.orientation, .on)
         fixer.setMode(.intersectingWires, .auto)
-        fixer.perform()
-        // Result/face are retrievable and valid; a clean face needs no failure-level fix.
-        if let r = fixer.result { #expect(r.isValid) }
-        if let f = fixer.face { #expect(f.isValid) }
+        // #766: pinned to ShapeFix_Face on the same face with the same modes
+        // (Scripts/repro/766-healing-1638-266-318-438): Perform() reports nothing to do, status
+        // OK set, DONE and FAIL clear. Before #766 the result/face checks sat inside `if let`,
+        // and `!status(.fail)` was the only unconditional assertion.
+        #expect(fixer.perform() == false)
+        #expect(fixer.status(.ok))
+        #expect(!fixer.status(.done))
         #expect(!fixer.status(.fail))
+        guard let r = fixer.result, let f = fixer.face else {
+            Issue.record("FaceFixer returned no result or face")
+            return
+        }
+        #expect(r.isValid)
+        #expect(f.isValid)
+        #expect(abs((f.surfaceArea ?? 0) - 100) < 1e-9)
     }
 
     @Test("FaceFixer individual fix passes run without crashing")
@@ -43,11 +53,12 @@ struct Issue266FaceHealingControlTests {
             Issue.record("setup")
             return
         }
-        // These must execute and return a Bool (no crash) on a clean face.
-        _ = fixer.fixIntersectingWires()
-        _ = fixer.fixWiresTwoCoincEdges()
-        _ = fixer.fixLoopWire()
-        _ = fixer.fixPeriodicDegenerated()
+        // #766: these were `_ =`, discarding the answer. On a clean face the kernel reports
+        // that none of the four passes had anything to fix.
+        #expect(fixer.fixIntersectingWires() == false)
+        #expect(fixer.fixWiresTwoCoincEdges() == false)
+        #expect(fixer.fixLoopWire() == false)
+        #expect(fixer.fixPeriodicDegenerated() == false)
         #expect(fixer.face != nil)
     }
 
