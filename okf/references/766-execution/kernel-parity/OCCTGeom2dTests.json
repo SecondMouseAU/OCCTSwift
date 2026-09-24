@@ -5043,5 +5043,365 @@
       "probe": "Scripts/repro/766-geom2d-localprops-operations/",
       "rewritten": "`count >= 2`; now `== 4`"
     }
+  },
+  {
+    "test_name": "Curve2D Operations Tests::Trim circle to quarter arc",
+    "bridge_function": "OCCTCurve2DTrim",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          5,
+          0
+        ],
+        "end": [
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          5,
+          0
+        ],
+        "end": [
+          0,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "trim to half the upper bound",
+      "red": "Curve2DOperationsTests.swift:19:13: Expectation failed: abs(end.y - 5) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-localprops-operations/",
+      "rewritten": "nested in `if let arc`; now required"
+    }
+  },
+  {
+    "test_name": "Curve2D Operations Tests::Offset segment",
+    "bridge_function": "OCCTCurve2DOffset",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          -2
+        ],
+        "end": [
+          10,
+          -2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          -2
+        ],
+        "end": [
+          10,
+          -2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "negate the offset",
+      "red": "Curve2DOperationsTests.swift:30:9: Expectation failed: simd_distance(offset.startPoint, SIMD2(0, -2)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-localprops-operations/",
+      "rewritten": "`!= nil` only; now pins the offset segment"
+    }
+  },
+  {
+    "test_name": "Curve2D Operations Tests::Reverse segment swaps endpoints",
+    "bridge_function": "OCCTCurve2DReversed",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          10,
+          5
+        ],
+        "end": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          10,
+          5
+        ],
+        "end": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return a copy, not reversed",
+      "red": "Curve2DOperationsTests.swift:40:9: Expectation failed: abs(revStart.x - 10) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-localprops-operations/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Operations Tests::Translate segment",
+    "bridge_function": "OCCTCurve2DTranslate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          5,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          5,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "dx + 1",
+      "red": "Curve2DOperationsTests.swift:51:9: Expectation failed: abs(start.x - 5) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-localprops-operations/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Operations Tests::Rotate quarter turn",
+    "bridge_function": "OCCTCurve2DRotate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "half the angle",
+      "red": "Curve2DOperationsTests.swift:60:9: Expectation failed: abs(start.x - 0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-localprops-operations/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Operations Tests::Scale by 2x",
+    "bridge_function": "OCCTCurve2DScale",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          2,
+          0
+        ],
+        "end": [
+          6,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          2,
+          0
+        ],
+        "end": [
+          6,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "factor + 1",
+      "red": "Curve2DOperationsTests.swift:70:9: Expectation failed: abs(start.x - 2) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-localprops-operations/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Operations Tests::Mirror across X axis",
+    "bridge_function": "OCCTCurve2DMirrorAxis",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          -1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          -1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "swap the axis direction components",
+      "red": "Curve2DOperationsTests.swift:79:9: Expectation failed: abs(start.y - (-1)) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-localprops-operations/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Operations Tests::Mirror across point",
+    "bridge_function": "OCCTCurve2DMirrorPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          -1,
+          -1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          -1,
+          -1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "mirror point x + 1",
+      "red": "Curve2DOperationsTests.swift:87:9: Expectation failed: abs(start.x - (-1)) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-localprops-operations/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Operations Tests::Circle length approximately 2*pi*r",
+    "bridge_function": "OCCTCurve2DGetLength",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": 31.4159265359
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": 31.4159265359
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "length x 1.01",
+      "red": "Curve2DOperationsTests.swift:96:9: Expectation failed: abs(len - 2 * .pi * r) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-localprops-operations/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Operations Tests::Segment length approximately Euclidean distance",
+    "bridge_function": "OCCTCurve2DGetLength",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "length x 1.01",
+      "red": "Curve2DOperationsTests.swift:103:9: Expectation failed: abs(len - 5) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-localprops-operations/",
+      "rewritten": ""
+    }
   }
 ]
