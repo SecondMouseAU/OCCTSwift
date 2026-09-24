@@ -190,7 +190,7 @@
     "kernel_output": {"type": "probe", "data": "closed, P(0) (10, 0, 0), P(pi/2) (0, 5, 0)", "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS",
-    "red": {"injection": "major and minor swapped: GC refuses, bridge returns nil", "failing_expectation": ":14 `e != nil`"},
+    "red": {"injection": "major and minor swapped: GC refuses, bridge returns nil", "failing_expectation": ":11 `Curve3D.gcEllipse(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5)` (the `try #require`); the P(0) and P(pi/2) pins are red under separate injections that leave the ellipse non-nil, both radii = minor at :16 and both radii = major at :18, which the earlier `e != nil` version passed"},
     "green": true
   },
   {
@@ -200,7 +200,7 @@
     "kernel_output": {"type": "probe", "data": "closed, P(0) (10, 0, 0), P(pi/2) (0, 5, 0)", "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS",
-    "red": {"injection": "major and minor swapped: GC refuses, bridge returns nil", "failing_expectation": ":25 `e != nil`"},
+    "red": {"injection": "major and minor swapped: GC refuses, bridge returns nil", "failing_expectation": ":22 `Curve3D.gcEllipse(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0), majorRadius: 10, minorRadius: 5)` (the `try #require`); the P(0) and P(pi/2) pins are red under separate injections that leave the ellipse non-nil, both radii = minor at :28, both radii = major at :30, x direction (0, 1, 0) at :28 and :30, which the earlier `e != nil` version passed"},
     "green": true
   },
   {
@@ -210,7 +210,7 @@
     "kernel_output": {"type": "probe", "data": "P(0) (10, 0, 0), P(1) (15.4308063482, 5.87600596822, 0)", "source": "Scripts/repro/766-math-gc-ellipse-trimmed-direction/transcript.txt"},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS",
-    "red": {"injection": "radii swapped", "failing_expectation": "original: **green**; rewritten: :18 `simd_length(h.point(at: 0) - SIMD3(10, 0, 0)) < 1e-9`"},
+    "red": {"injection": "radii swapped", "failing_expectation": "original: **green**; rewritten: :16 `simd_length(h.point(at: 0) - SIMD3(10, 0, 0)) < 1e-9`; :17 `simd_length(h.point(at: 1) - SIMD3(15.4308063482, 5.87600596822, 0)) < 1e-9`"},
     "green": true
   },
   {
