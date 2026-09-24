@@ -2,9 +2,1401 @@
   {
     "test_name": "ShapeHealing domain kernel parity",
     "bridge_function": "OCCTShapeHealingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
+  },
+  {
+    "test_name": "ShapeCustom_BSplineRestriction Advanced::restrictBox",
+    "bridge_function": "OCCTShapeBSplineRestrictionAdvanced",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "size": [
+          10,
+          20,
+          30
+        ],
+        "volume": 6000.0,
+        "faces": {
+          "plane": 6
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "size": [
+          10,
+          20,
+          30
+        ],
+        "volume": 6000.0,
+        "faces": {
+          "plane": 6
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom_ConvertToBSpline Advanced::convertCylinder",
+    "bridge_function": "OCCTShapeConvertToBSplineAdvanced",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 2,
+          "cylinder": 1
+        },
+        "volume": 15707.963267949
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 2,
+          "cylinder": 1
+        },
+        "volume": 15707.963267949
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom_Curve ConvertToPeriodic::convertToPeriodic",
+    "bridge_function": "OCCTCurve3DConvertToPeriodic",
+    "bridge_output": {
+      "type": "curve",
+      "data": {
+        "isPeriodic": true,
+        "type": "BSpline",
+        "last": 56.568542495,
+        "start": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": {
+        "isPeriodic": true,
+        "type": "Geom_BSplineCurve",
+        "last": 56.568542495,
+        "start": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Curve Project Tests::projectOntoLine",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "projection",
+      "data": {
+        "distance": 3.0,
+        "parameter": 5.0,
+        "point": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "projection",
+      "data": {
+        "distance": 3.0,
+        "parameter": 5.0,
+        "point": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Curve Project Tests::projectOntoCircle",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "projection",
+      "data": {
+        "distance": 5.0,
+        "parameter": 0.0,
+        "point": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "projection",
+      "data": {
+        "distance": 5.0,
+        "parameter": 0.0,
+        "point": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Curve GetSamplePoints Tests::sampleCircle",
+    "bridge_function": "OCCTCurve3DGetSamplePoints3D",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "count": 360,
+        "first": [
+          5,
+          0,
+          0
+        ],
+        "last": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "count": 360,
+        "first": [
+          5,
+          0,
+          0
+        ],
+        "last": [
+          5,
+          0,
+          0
+        ],
+        "maxRadiusDev": 8.882e-16
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Curve GetSamplePoints Tests::sampleLine",
+    "bridge_function": "OCCTCurve3DGetSamplePoints3D",
+    "bridge_output": {
+      "type": "points",
+      "data": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0
+        ]
+      ]
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade_SplitCurve3d::splitCurve",
+    "bridge_function": "OCCTCurve3DSplitAt",
+    "bridge_output": {
+      "type": "split",
+      "data": {
+        "mid": 10.635412986,
+        "first": [
+          0,
+          10.635412986
+        ],
+        "second": [
+          10.635412986,
+          21.270825972
+        ],
+        "joint": [
+          6.176464924,
+          3.684166024,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "split",
+      "data": {
+        "mid": 10.635412986,
+        "first": [
+          0,
+          10.635412986
+        ],
+        "second": [
+          10.635412986,
+          21.270825972
+        ],
+        "joint": [
+          6.176464924,
+          3.684166024,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Curve ValidateRange Tests::validateInBounds",
+    "bridge_function": "OCCTCurve3DValidateRange",
+    "bridge_output": {
+      "type": "range",
+      "data": {
+        "first": 2.0,
+        "last": 8.0,
+        "wasAdjusted": true
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "first": 2.0,
+        "last": 8.0,
+        "returned": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Curve ValidateRange Tests::validateOutOfBounds",
+    "bridge_function": "OCCTCurve3DValidateRange",
+    "bridge_output": {
+      "type": "range",
+      "data": {
+        "first": 0.0,
+        "last": 10.0,
+        "wasAdjusted": true
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "first": 0.0,
+        "last": 10.0,
+        "returned": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Divide by Number::divideBox",
+    "bridge_function": "OCCTShapeDivideByNumber",
+    "bridge_output": {
+      "type": "face_count",
+      "data": 24
+    },
+    "kernel_output": {
+      "type": "face_count",
+      "data": 24
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Divide by Number::divideOnePart",
+    "bridge_function": "OCCTShapeDivideByNumber",
+    "bridge_output": {
+      "type": "object",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {
+        "Perform(1,1)": false,
+        "resultFaces": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Divide by Number::divideCylinder",
+    "bridge_function": "OCCTShapeDivideByNumber",
+    "bridge_output": {
+      "type": "face_count",
+      "data": 6
+    },
+    "kernel_output": {
+      "type": "face_count",
+      "data": 6
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Encode Regularity::encodeRegularityBox",
+    "bridge_function": "OCCTShapeEncodeRegularity",
+    "bridge_output": {
+      "type": "continuity_codes",
+      "data": {
+        "sharedEdges": 12,
+        "C0": 12,
+        "volume": 1000.0
+      }
+    },
+    "kernel_output": {
+      "type": "continuity_codes",
+      "data": {
+        "sharedEdges": 12,
+        "encoded": 12,
+        "C0": 12,
+        "volume": 1000.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Encode Regularity::encodeRegularityFilleted",
+    "bridge_function": "OCCTShapeEncodeRegularity",
+    "bridge_output": {
+      "type": "continuity_codes",
+      "data": {
+        "faces": 26,
+        "sharedEdges": 48,
+        "aboveC0": 48
+      }
+    },
+    "kernel_output": {
+      "type": "continuity_codes",
+      "data": {
+        "faces": 26,
+        "sharedEdges": 48,
+        "aboveC0_before": 48,
+        "aboveC0_after": 48
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Encode Regularity::fixtureStartsUnencoded",
+    "bridge_function": "OCCTMakeShell",
+    "bridge_output": {
+      "type": "continuity_codes",
+      "data": {
+        "encoded": 0
+      }
+    },
+    "kernel_output": {
+      "type": "continuity_codes",
+      "data": {
+        "sharedEdges": 1,
+        "encoded": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Encode Regularity::defaultToleranceMarksNearTangentEdgeRegular",
+    "bridge_function": "OCCTShapeEncodeRegularity",
+    "bridge_output": {
+      "type": "continuity_codes",
+      "data": {
+        "encoded": 1,
+        "aboveC0": 1
+      }
+    },
+    "kernel_output": {
+      "type": "continuity_codes",
+      "data": {
+        "encoded": 1,
+        "aboveC0": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Encode Regularity::oldBuggyDefaultStillDoesNotMarkRegular",
+    "bridge_function": "OCCTShapeEncodeRegularity",
+    "bridge_output": {
+      "type": "continuity_codes",
+      "data": {
+        "encoded": 1,
+        "C0": 1
+      }
+    },
+    "kernel_output": {
+      "type": "continuity_codes",
+      "data": {
+        "encoded": 1,
+        "C0": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Fast Sewing::fastSewValid",
+    "bridge_function": "OCCTShapeFastSewn",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 1,
+        "area": 1256.637061436
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 1,
+        "area": 1256.637061436,
+        "type": "compound"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Fast Sewing::fastSewTolerance",
+    "bridge_function": "OCCTShapeFastSewn",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 1,
+        "area": 1256.637061436
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 1,
+        "area": 1256.637061436
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Fast Sewing::fastSewBoxReturnsNil",
+    "bridge_function": "OCCTShapeFastSewn",
+    "bridge_output": {
+      "type": "object",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {
+        "Add": false,
+        "GetResultNull": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Free Boundary Analysis::closedSolidNoFreeBounds",
+    "bridge_function": "OCCTShapeFreeBounds",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "closedWires": 0,
+        "openWires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Free Boundary Analysis::compoundFacesHasFreeBounds",
+    "bridge_function": "OCCTShapeFreeBounds",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "closed": 1,
+        "open": 0,
+        "edges": 6
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "closedWires": 1,
+        "closedEdges": 6,
+        "openWires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Free Boundary Analysis::freeBoundsSphere",
+    "bridge_function": "OCCTShapeFreeBounds",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "closedWires": 0,
+        "openWires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Free Boundary Analysis::fixFreeBoundsCallable",
+    "bridge_function": "OCCTShapeFixFreeBounds",
+    "bridge_output": {
+      "type": "free_bounds_fix",
+      "data": {
+        "faces": 1,
+        "closed": 0,
+        "open": 0
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds_fix",
+      "data": {
+        "faces": 1,
+        "closedWires": 0,
+        "openWires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Free Boundary Analysis::issue310DisjointFacesFreeBounds",
+    "bridge_function": "OCCTShapeFreeBoundsClosedCount",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "closedCount": 2,
+        "closedWires": 2,
+        "openWires": 0
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "closedWires": 2,
+        "closedEdges": 8,
+        "openWires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom Geometry Conversion::cylinderToBSpline",
+    "bridge_function": "OCCTShapeCustomConvertToBSpline",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 2,
+          "cylinder": 1
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 2,
+          "cylinder": 1
+        },
+        "volume": 785.398163397
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom Geometry Conversion::toRevolution",
+    "bridge_function": "OCCTShapeCustomConvertToRevolution",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 2,
+          "revolution": 1
+        },
+        "volume": 785.398163397
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 2,
+          "revolution": 1
+        },
+        "volume": 785.398163397
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom Geometry Conversion::bsplinePreservesVolume",
+    "bridge_function": "OCCTShapeCustomConvertToBSpline",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "cylinder": 1,
+          "bspline": 2
+        },
+        "volume": 785.398163397
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "cylinder": 1,
+          "bspline": 2
+        },
+        "volume": 785.398163397
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis FreeBoundsProperties Tests::freeBoundsOnFaces",
+    "bridge_function": "OCCTFreeBoundsPropsCounts",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "total": 2,
+        "closed": 2,
+        "open": 0
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "total": 2,
+        "closed": 2,
+        "open": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis FreeBoundsProperties Tests::closedBoundInfo",
+    "bridge_function": "OCCTFreeBoundsPropsInfo",
+    "bridge_output": {
+      "type": "free_bound_info",
+      "data": {
+        "area": 100.0,
+        "perimeter": 40.0,
+        "notches": 0
+      }
+    },
+    "kernel_output": {
+      "type": "free_bound_info",
+      "data": {
+        "area": 100.0,
+        "perimeter": 40.0,
+        "ratio": 0.0,
+        "width": 0.0,
+        "notches": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis FreeBoundsProperties Tests::freeBoundWire",
+    "bridge_function": "OCCTFreeBoundsPropsWire",
+    "bridge_output": {
+      "type": "wire",
+      "data": {
+        "edges": 4,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "wire",
+      "data": {
+        "edges": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis FreeBoundsProperties Tests::freeBoundIndexOutOfRange",
+    "bridge_function": "OCCTFreeBoundsPropsInfo",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "closed": 2,
+        "index1": "present",
+        "index2": null,
+        "index7": null,
+        "index-1": null
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "closed": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis FreeBoundsProperties Tests::openFreeBoundsAbsent",
+    "bridge_function": "OCCTFreeBoundsPropsCounts",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "open": 0
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "open": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis FreeBoundsProperties Tests::loneFaceHasNoFreeBounds",
+    "bridge_function": "OCCTFreeBoundsPropsCreate",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "total": 0,
+        "closed": 0,
+        "open": 0
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "total": 0,
+        "closed": 0,
+        "open": 0,
+        "wrappedInCompound": {
+          "closed": 1
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis FreeBoundsProperties Tests::shapeAndPropertiesAgree",
+    "bridge_function": "OCCTFreeBoundsPropsInfo",
+    "bridge_output": {
+      "type": "free_bound_info",
+      "data": {
+        "closed": 2,
+        "equalFields": true
+      }
+    },
+    "kernel_output": {
+      "type": "free_bound_info",
+      "data": {
+        "closed": 2,
+        "area": 100.0,
+        "perimeter": 40.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_FreeBounds Simplified Tests::closedCountOnBox",
+    "bridge_function": "OCCTShapeFreeBoundsClosedCount",
+    "bridge_output": {
+      "type": "count",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_FreeBounds Simplified Tests::closedWiresOnBox",
+    "bridge_function": "OCCTShapeFreeBoundsClosed",
+    "bridge_output": {
+      "type": "compound",
+      "data": {
+        "null": false,
+        "wires": 0
+      }
+    },
+    "kernel_output": {
+      "type": "compound",
+      "data": {
+        "null": false,
+        "wires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_FreeBounds Simplified Tests::openWiresOnBox",
+    "bridge_function": "OCCTShapeFreeBoundsOpen",
+    "bridge_output": {
+      "type": "compound",
+      "data": {
+        "null": false,
+        "wires": 0
+      }
+    },
+    "kernel_output": {
+      "type": "compound",
+      "data": {
+        "null": false,
+        "wires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_FreeBounds Simplified Tests::freeBoundsOnOpenShell",
+    "bridge_function": "OCCTShapeFreeBoundsClosedCount",
+    "bridge_output": {
+      "type": "count",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "sewing": 0,
+        "nonSewing": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::cylinderAnswersForItsOwnWire",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "tri_state",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "tri_state",
+      "data": {
+        "CheckOuterBound": false,
+        "TotCross2D": 125.7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::wireNotOnTheFaceIsRefused",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "tri_state",
+      "data": -1
+    },
+    "kernel_output": {
+      "type": "tri_state",
+      "data": {
+        "CheckOuterBound": false,
+        "TotCross2D": 0.0
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::wrongTypedShapeIsRefused",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "tri_state",
+      "data": -1
+    },
+    "kernel_output": {
+      "type": "tri_state",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::nullShapeIsRefused",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "tri_state",
+      "data": -1
+    },
+    "kernel_output": {
+      "type": "tri_state",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::edgelessWireIsRefused",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "tri_state",
+      "data": -1
+    },
+    "kernel_output": {
+      "type": "tri_state",
+      "data": {
+        "IsReady": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::disconnectedEdgeWireIsRefused",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "tri_state",
+      "data": -1
+    },
+    "kernel_output": {
+      "type": "tri_state",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::cylinderWireOnPlanarFaceIsRefused",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "tri_state",
+      "data": -1
+    },
+    "kernel_output": {
+      "type": "tri_state",
+      "data": {
+        "CheckOuterBound": true,
+        "TotCross2D": -1.78e-15
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #1479: Healing_Fix.mm null guards::composeShellOnNullifiedShapeReturnsNil",
+    "bridge_function": "OCCTShapeFixComposeShell",
+    "bridge_output": {
+      "type": "object",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #1479: Healing_Fix.mm null guards::composeShellNullRawPointerReturnsNil",
+    "bridge_function": "OCCTShapeFixComposeShell",
+    "bridge_output": {
+      "type": "object",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #1479: Healing_Fix.mm null guards::composeShellOrdinaryFaceUnaffected",
+    "bridge_function": "OCCTShapeFixComposeShell",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 1,
+        "area": 100.0,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 1,
+        "area": 100.0,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1479: Healing_Fix.mm null guards::edgeConnectNullRawPointerReturnsNil",
+    "bridge_function": "OCCTShapeFixEdgeConnect",
+    "bridge_output": {
+      "type": "object",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #1479: Healing_Fix.mm null guards::edgeConnectOrdinaryShapeUnaffected",
+    "bridge_function": "OCCTShapeFixEdgeConnect",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 6,
+        "volume": 1000.0,
+        "valid": false
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 6,
+        "volume": 1000.0,
+        "valid": false,
+        "invalidWires": 3,
+        "invalidFaces": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1491: OCCTShapeDivideByNumber respects nbU/nbV::exactSplitCountUOnly",
+    "bridge_function": "OCCTShapeDivideByNumber",
+    "bridge_output": {
+      "type": "face_count",
+      "data": 5
+    },
+    "kernel_output": {
+      "type": "face_count",
+      "data": {
+        "withUVSplits": 5,
+        "withoutUVSplits": 44
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1491: OCCTShapeDivideByNumber respects nbU/nbV::exactSplitCountVOnly",
+    "bridge_function": "OCCTShapeDivideByNumber",
+    "bridge_output": {
+      "type": "face_count",
+      "data": 5
+    },
+    "kernel_output": {
+      "type": "face_count",
+      "data": {
+        "withUVSplits": 5,
+        "withoutUVSplits": 44
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1491: OCCTShapeDivideByNumber respects nbU/nbV::exactSplitCountAsymmetric",
+    "bridge_function": "OCCTShapeDivideByNumber",
+    "bridge_output": {
+      "type": "face_count",
+      "data": 6
+    },
+    "kernel_output": {
+      "type": "face_count",
+      "data": {
+        "withUVSplits": 6,
+        "withoutUVSplits": 48
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1491: fixSmallCurves/fixSmallBezierCurves removed, fixSmallEdges is the real replacement::smallEdgeIsActuallyMerged",
+    "bridge_function": "OCCTShapeFixSmallEdges",
+    "bridge_output": {
+      "type": "edge_count",
+      "data": 5
+    },
+    "kernel_output": {
+      "type": "edge_count",
+      "data": 5
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1491: fixSmallCurves/fixSmallBezierCurves removed, fixSmallEdges is the real replacement::largeEdgeIsUntouched",
+    "bridge_function": "OCCTShapeFixSmallEdges",
+    "bridge_output": {
+      "type": "edge_count",
+      "data": 6
+    },
+    "kernel_output": {
+      "type": "edge_count",
+      "data": 6
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
