@@ -2,265 +2,1328 @@
   {
     "test_name": "gce_MakeLin Tests",
     "bridge_function": "OCCTGceMakeLin",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Convert_CompPolynomialToPoles",
     "bridge_function": "OCCTConvertCompPolyToPoles",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "gce_MakeHypr Tests",
     "bridge_function": "OCCTGceMakeHypr",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "MathJacobi Tests",
     "bridge_function": "OCCTMathJacobi",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "MathSolver Powell v0.110",
     "bridge_function": "OCCTMathSolverPowell",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Vector2DMath",
     "bridge_function": "OCCTVector2DMath",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "gce_MakeCirc Tests",
     "bridge_function": "OCCTGceMakeCirc",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "LineGeometry_Operations",
     "bridge_function": "OCCTLineGeometryOperations",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "MathSolver FunctionRoot v0.110",
     "bridge_function": "OCCTMathSolverFunctionRoot",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BRepTools_TrsfModification",
     "bridge_function": "OCCTBRepToolsTrsfModification",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "MathSolver GaussIntegrate v0.111",
     "bridge_function": "OCCTMathSolverGaussIntegrate",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "GC_MakeTranslation",
     "bridge_function": "OCCTGCMakeTranslation",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "GC_MakeTrimmedCylinder Tests",
     "bridge_function": "OCCTGCMakeTrimmedCylinder",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "GC_MakePipe Tests",
     "bridge_function": "OCCTGCMakePipe",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Geom_BSplineCurve PeriodicNormalization (patch 0008)",
     "bridge_function": "OCCTGeomBSplineCurvePeriodicNormalization",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "StepData_StepWriter AddString (patch 0009)",
     "bridge_function": "OCCTStepDataStepWriterAddString",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "gp_Dir Zero Vector Crash (patch #345)",
     "bridge_function": "OCCTMakeMirrorAxis",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "AdvApp2Var_ApproxF2var U Jacobi-maxima (patch 0019)",
     "bridge_function": "OCCTAdvApp2VarApproxF2var",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "CPnts_AbscissaPoint Single Quadrature (patch 0021)",
     "bridge_function": "OCCTCPntsAbscissaPoint",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BRepExtrema_ExtCC Parallel Curves Guard",
     "bridge_function": "OCCTBRepExtremaExtCC",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Borrowed Handles Audit (patch #965)",
     "bridge_function": "OCCTMathPropertiesViews",
-    "bridge_output": {"type": "bool", "data": true},
-    "kernel_output": {"type": "bool", "data": true},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "OSD Chronometer Precision",
     "bridge_function": "OCCTOSDChronometer",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "UnitsConversion",
     "bridge_function": "OCCTUnitsConversion",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
+  },
+  {
+    "test_name": "GC_MakeArcOfHyperbola::Arc of hyperbola between parameters",
+    "bridge_function": "OCCTCurve3DArcOfHyperbola",
+    "bridge_output": {
+      "type": "observed",
+      "data": "start (7.71540317408, -3.52560358093, 0), end (7.71540317408, 3.52560358093, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "start (7.71540317408, -3.52560358093, 0), end (7.71540317408, 3.52560358093, 0)",
+      "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "major and minor radius swapped into gp_Hypr",
+      "failing_expectation": ":22 `abs(start.x - expectedX) < 0.1`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeArcOfParabola::Arc of parabola between parameters",
+    "bridge_function": "OCCTCurve3DArcOfParabola",
+    "bridge_output": {
+      "type": "observed",
+      "data": "point(0) (0, 0, 0), ends (1.125, -3, 0) and (1.125, 3, 0), domain [-3, 3]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "point(0) (0, 0, 0), ends (1.125, -3, 0) and (1.125, 3, 0), domain [-3, 3]",
+      "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "focal distance doubled (original test green; vertex offset +1 in x also turned the original red)",
+      "failing_expectation": "original: **green**; rewritten: :26 `simd_length(start - SIMD3(1.125, -3, 0)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Axis1Placement Tests::create and read",
+    "bridge_function": "OCCTAxis1PlacementLocation",
+    "bridge_output": {
+      "type": "observed",
+      "data": "location (1, 2, 3), direction (0, 0, 1)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "location (1, 2, 3), direction (0, 0, 1)",
+      "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "location x + 1",
+      "failing_expectation": ":12 `abs(ax.location.x - 1) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Axis1Placement Tests::reverse",
+    "bridge_function": "OCCTAxis1PlacementReverse",
+    "bridge_output": {
+      "type": "observed",
+      "data": "direction (0, 0, -1)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "direction (0, 0, -1)",
+      "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Reverse() skipped",
+      "failing_expectation": ":20 `abs(ax.direction.z + 1) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Axis1Placement Tests::reversed copy",
+    "bridge_function": "OCCTAxis1PlacementReversed",
+    "bridge_output": {
+      "type": "observed",
+      "data": "copy (0, -1, 0), original (0, 1, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "copy (0, -1, 0), original (0, 1, 0)",
+      "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "returns an unreversed copy",
+      "failing_expectation": ":27 `abs(rev.direction.y + 1) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Axis1Placement Tests::setDirection and setLocation",
+    "bridge_function": "OCCTAxis1PlacementSetDirection / OCCTAxis1PlacementSetLocation",
+    "bridge_output": {
+      "type": "observed",
+      "data": "direction (0, 1, 0), location (5, 5, 5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "direction (0, 1, 0), location (5, 5, 5)",
+      "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "SetDirection skipped; SetLocation skipped (each red on its own line)",
+      "failing_expectation": ":36 `abs(ax.direction.y - 1) < 1e-10`; :37 `abs(ax.location.x - 5) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Axis2Placement Tests::create and read directions",
+    "bridge_function": "OCCTAxis2PlacementYDirection",
+    "bridge_output": {
+      "type": "observed",
+      "data": "x (1, 0, 0), y (0, 1, 0), main (0, 0, 1)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "x (1, 0, 0), y (0, 1, 0), main (0, 0, 1)",
+      "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Y direction y negated",
+      "failing_expectation": ":14 `abs(ax.yDirection.y - 1) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Axis2Placement Tests::location",
+    "bridge_function": "OCCTAxis2PlacementLocation",
+    "bridge_output": {
+      "type": "observed",
+      "data": "location (5, 5, 5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "location (5, 5, 5)",
+      "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "location x + 1",
+      "failing_expectation": ":22 `abs(ax.location.x - 5) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Axis2Placement Tests::setDirection",
+    "bridge_function": "OCCTAxis2PlacementSetDirection",
+    "bridge_output": {
+      "type": "observed",
+      "data": "main direction (0, 1, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "main direction (0, 1, 0)",
+      "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "SetDirection skipped",
+      "failing_expectation": ":30 `abs(ax.mainDirection.y - 1) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Axis2Placement Tests::setXDirection",
+    "bridge_function": "OCCTAxis2PlacementSetXDirection",
+    "bridge_output": {
+      "type": "observed",
+      "data": "x direction (0, 1, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "x direction (0, 1, 0)",
+      "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "SetXDirection skipped",
+      "failing_expectation": ":38 `abs(ax.xDirection.y - 1) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "BracketedRoot::findRoot",
+    "bridge_function": "OCCTMathBracketedRoot",
+    "bridge_output": {
+      "type": "observed",
+      "data": "root 2.00000000005126 (9 iterations)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "root 2.00000000005126 (9 iterations)",
+      "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "returns bound1 instead of Root()",
+      "failing_expectation": ":14 `abs(r.root - 2.0) < 1e-8`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "BracketedRoot::findSinRoot",
+    "bridge_function": "OCCTMathBracketedRoot",
+    "bridge_output": {
+      "type": "observed",
+      "data": "root 3.14159265354861 (6 iterations)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "root 3.14159265354861 (6 iterations)",
+      "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "returns bound1 instead of Root()",
+      "failing_expectation": ":22 `abs(r.root - .pi) < 1e-8`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "BracketMinimum::bracketQuadratic",
+    "bridge_function": "OCCTMathBracketMinimum",
+    "bridge_output": {
+      "type": "observed",
+      "data": "a=-5 b=2 c=13.326238, fa=25 fb=4 fc=177.588619233",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "a=-5 b=2 c=13.326238, fa=25 fb=4 fc=177.588619233",
+      "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "fa and fb written to each other",
+      "failing_expectation": ":12 `r.fb <= r.fa && r.fb <= r.fc`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeConicalSurface::Conical surface from axis and angle",
+    "bridge_function": "OCCTSurfaceConicalFromAxis",
+    "bridge_output": {
+      "type": "observed",
+      "data": "S(0,0) (5, 0, 0), S(0,1) (5.5, 0, 0.866025403784), S(pi/2,2) (0, 6, 1.73205080757)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "S(0,0) (5, 0, 0), S(0,1) (5.5, 0, 0.866025403784), S(pi/2,2) (0, 6, 1.73205080757)",
+      "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "semi-angle doubled",
+      "failing_expectation": "original: **green**; rewritten: :16 `simd_length(surf.point(atU: 0, v: 1) - SIMD3(5.5, 0, 0.866025403784)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeConicalSurface::Conical surface from points and radii",
+    "bridge_function": "OCCTSurfaceConicalFromPointsRadii",
+    "bridge_output": {
+      "type": "observed",
+      "data": "S(0,0) (5, 0, 0), S(0,sqrt(109)) (2, 0, 10), semiAngle -0.291456794478",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "S(0,0) (5, 0, 0), S(0,sqrt(109)) (2, 0, 10), semiAngle -0.291456794478",
+      "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "r1 and r2 swapped",
+      "failing_expectation": "original: **green**; rewritten: :29 `simd_length(surf.point(atU: 0, v: 0) - SIMD3(5, 0, 0)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Coordinate System Tests::zUpDirection",
+    "bridge_function": "OCCTCoordSystemUpDirection",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(0, 0, 1)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(0, 0, 1)",
+      "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "XDirection() returned instead of Direction()",
+      "failing_expectation": ":11 `abs(up.z - 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Coordinate System Tests::yUpDirection",
+    "bridge_function": "OCCTCoordSystemUpDirection",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(0, 1, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(0, 1, 0)",
+      "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "XDirection() returned instead of Direction()",
+      "failing_expectation": ":16 `abs(up.y - 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Coordinate System Tests::convertWithScaling",
+    "bridge_function": "OCCTCoordSystemConvert",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1, 0, 0.5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1, 0, 0.5)",
+      "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "SetInputLengthUnit skipped",
+      "failing_expectation": ":24 `abs(result.x - 1.0) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Coordinate System Tests::convertZupToYup",
+    "bridge_function": "OCCTCoordSystemConvert",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1, 3, -2)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1, 3, -2)",
+      "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "SetOutputCoordinateSystem skipped",
+      "failing_expectation": ":35 `abs(result.y - 3.0) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::defaultXYZ",
+    "bridge_function": "OCCTAx3Create",
+    "bridge_output": {
+      "type": "observed",
+      "data": "direct 1, yDirection (0, 1, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "direct 1, yDirection (0, 1, 0)",
+      "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Y direction y negated",
+      "failing_expectation": ":13 `abs(cs.yDirection.y - 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::fromNormal",
+    "bridge_function": "OCCTAx3CreateFromNormal",
+    "bridge_output": {
+      "type": "observed",
+      "data": "direct 1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "direct 1",
+      "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "isDirect inverted",
+      "failing_expectation": ":18 `cs.isDirect`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::angle",
+    "bridge_function": "OCCTAx3Angle",
+    "bridge_output": {
+      "type": "observed",
+      "data": "1.5707963267949",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1.5707963267949",
+      "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "a1.Angle(a1) instead of a1.Angle(a2)",
+      "failing_expectation": ":24 `abs(cs1.angle(to: cs2) - .pi / 2) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::isCoplanar",
+    "bridge_function": "OCCTAx3IsCoplanar",
+    "bridge_output": {
+      "type": "observed",
+      "data": "1 (coplanar)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1 (coplanar)",
+      "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "second origin built as (x, z, y)",
+      "failing_expectation": ":30 `cs1.isCoplanar(with: cs2)`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::mirrorPoint",
+    "bridge_function": "OCCTAx3MirrorPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "origin (-1, 0, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "origin (-1, 0, 0)",
+      "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "origin x read from the unmirrored axis",
+      "failing_expectation": ":37 `abs(mirrored.origin.x + 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::rotate",
+    "bridge_function": "OCCTAx3Rotate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "origin (1.1e-16, 1, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "origin (1.1e-16, 1, 0)",
+      "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "angle negated",
+      "failing_expectation": ":45 `abs(rotated.origin.y - 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::translate",
+    "bridge_function": "OCCTAx3Translate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "origin (1, 2, 3)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "origin (1, 2, 3)",
+      "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "vector x and y swapped",
+      "failing_expectation": ":52 `abs(translated.origin.x - 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::createWithParallelDirectionAndXDirectionSignalsFailure",
+    "bridge_function": "OCCTAx3Create",
+    "bridge_output": {
+      "type": "observed",
+      "data": "gp_Ax3 throws Standard_ConstructionError; bridge fallback zeros",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "gp_Ax3 throws Standard_ConstructionError; bridge fallback zeros",
+      "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "catch falls back to a default (1,0,0)/(0,1,0) frame instead of zeros",
+      "failing_expectation": ":68 `cs.xDirection == .zero`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::createFromNormalWithZeroDirectionSignalsFailure",
+    "bridge_function": "OCCTAx3CreateFromNormal",
+    "bridge_output": {
+      "type": "observed",
+      "data": "gp_Dir(0,0,0) throws Standard_ConstructionError; bridge fallback zeros",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "gp_Dir(0,0,0) throws Standard_ConstructionError; bridge fallback zeros",
+      "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "catch falls back to a default (1,0,0)/(0,1,0) frame instead of zeros",
+      "failing_expectation": ":75 `cs.xDirection == .zero`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::mirrorPointWithDegenerateSourceFallsBackToUnmoved",
+    "bridge_function": "OCCTAx3MirrorPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "gp_Ax3 throws Standard_ConstructionError; bridge returns the input point",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "gp_Ax3 throws Standard_ConstructionError; bridge returns the input point",
+      "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "catch no longer writes the input point back (pre-#1443 empty catch)",
+      "failing_expectation": ":90 `mirrored.origin == SIMD3(5, 3, 2)`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::rotateWithZeroAxisDirectionFallsBackToUnmoved",
+    "bridge_function": "OCCTAx3Rotate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "gp_Dir(0,0,0) axis throws Standard_ConstructionError; bridge returns the input point",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "gp_Dir(0,0,0) axis throws Standard_ConstructionError; bridge returns the input point",
+      "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "catch no longer writes the input point back (pre-#1443 empty catch)",
+      "failing_expectation": ":98 `rotated.origin == SIMD3(5, 3, 2)`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::translateWithDegenerateSourceFallsBackToUnmoved",
+    "bridge_function": "OCCTAx3Translate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "gp_Ax3 throws Standard_ConstructionError; bridge returns the input point",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "gp_Ax3 throws Standard_ConstructionError; bridge returns the input point",
+      "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "catch no longer writes the input point back (pre-#1443 empty catch)",
+      "failing_expectation": ":106 `translated.origin == SIMD3(5, 3, 2)`"
+    },
+    "green": true
   },
   {
     "test_name": "Curve3D Transform::Translate BSpline curve",
     "bridge_function": "OCCTCurve3DTransform",
-    "bridge_output": {"type": "observed", "data": "P(0) (0,0,0) -> (10, 0, 0)", "source": "pinned by the assertions of the green test run"},
-    "kernel_output": {"type": "probe", "data": "P(0) (0,0,0) -> (10, 0, 0)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(0) (0,0,0) -> (10, 0, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(0) (0,0,0) -> (10, 0, 0)",
+      "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "red": {"injection": "translation vector x and y swapped", "failing_expectation": ":20 `abs(p1.x - p0.x - 10) < 0.001`"},
+    "red": {
+      "injection": "translation vector x and y swapped",
+      "failing_expectation": ":20 `abs(p1.x - p0.x - 10) < 0.001`"
+    },
     "green": true
   },
   {
     "test_name": "Curve3D Transform::Rotate curve",
     "bridge_function": "OCCTCurve3DTransform",
-    "bridge_output": {"type": "observed", "data": "P(0) (1.1e-16, 1, 0)", "source": "pinned by the assertions of the green test run"},
-    "kernel_output": {"type": "probe", "data": "P(0) (1.1e-16, 1, 0)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(0) (1.1e-16, 1, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(0) (1.1e-16, 1, 0)",
+      "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "red": {"injection": "rotation angle negated", "failing_expectation": ":38 `abs(p.y - 1) < 0.1`"},
+    "red": {
+      "injection": "rotation angle negated",
+      "failing_expectation": ":38 `abs(p.y - 1) < 0.1`"
+    },
     "green": true
   },
   {
     "test_name": "Curve3D Transform::Scale curve",
     "bridge_function": "OCCTCurve3DTransform",
-    "bridge_output": {"type": "observed", "data": "P(0) (2, 0, 0)", "source": "pinned by the assertions of the green test run"},
-    "kernel_output": {"type": "probe", "data": "P(0) (2, 0, 0)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(0) (2, 0, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(0) (2, 0, 0)",
+      "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "red": {"injection": "scale factor inverted", "failing_expectation": ":51 `abs(p.x - 2) < 0.1`"},
+    "red": {
+      "injection": "scale factor inverted",
+      "failing_expectation": ":51 `abs(p.x - 2) < 0.1`"
+    },
     "green": true
   },
   {
     "test_name": "Curve3D Transform::Mirror curve through point",
     "bridge_function": "OCCTCurve3DTransform",
-    "bridge_output": {"type": "observed", "data": "P(0) (-1, 0, 0)", "source": "pinned by the assertions of the green test run"},
-    "kernel_output": {"type": "probe", "data": "P(0) (-1, 0, 0)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(0) (-1, 0, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(0) (-1, 0, 0)",
+      "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "red": {"injection": "identity transform instead of the mirror", "failing_expectation": ":64 `abs(p.x + 1) < 0.1`"},
+    "red": {
+      "injection": "identity transform instead of the mirror",
+      "failing_expectation": ":64 `abs(p.x + 1) < 0.1`"
+    },
     "green": true
   },
   {
     "test_name": "Curve3D Transform::Mirror curve through axis",
     "bridge_function": "OCCTCurve3DTransform",
-    "bridge_output": {"type": "observed", "data": "P(0) (1, -1, 0)", "source": "pinned by the assertions of the green test run"},
-    "kernel_output": {"type": "probe", "data": "P(0) (1, -1, 0)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(0) (1, -1, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(0) (1, -1, 0)",
+      "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "red": {"injection": "point mirror through the axis origin instead of the axis mirror", "failing_expectation": "original: **green**; rewritten: :81 `abs(p.x - 1) < 1e-9`"},
+    "red": {
+      "injection": "point mirror through the axis origin instead of the axis mirror",
+      "failing_expectation": "original: **green**; rewritten: :81 `abs(p.x - 1) < 1e-9`"
+    },
     "green": true
   },
   {
     "test_name": "Curve3D Transform::Mirror curve through plane",
     "bridge_function": "OCCTCurve3DTransform",
-    "bridge_output": {"type": "observed", "data": "P(0) (1, 0, -5)", "source": "pinned by the assertions of the green test run"},
-    "kernel_output": {"type": "probe", "data": "P(0) (1, 0, -5)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(0) (1, 0, -5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(0) (1, 0, -5)",
+      "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "red": {"injection": "point mirror through the plane origin instead of the plane mirror", "failing_expectation": "original: **green**; rewritten: :99 `abs(p.x - 1) < 1e-9`"},
+    "red": {
+      "injection": "point mirror through the plane origin instead of the plane mirror",
+      "failing_expectation": "original: **green**; rewritten: :99 `abs(p.x - 1) < 1e-9`"
+    },
     "green": true
   },
   {
     "test_name": "GC_MakeCylindricalSurface::Cylindrical surface from axis and radius",
     "bridge_function": "OCCTSurfaceCylindricalFromAxis",
-    "bridge_output": {"type": "observed", "data": "S(0,0) (3, 0, 0), S(pi/2,4) (0, 3, 4)", "source": "pinned by the assertions of the green test run"},
-    "kernel_output": {"type": "probe", "data": "S(0,0) (3, 0, 0), S(pi/2,4) (0, 3, 4)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "observed",
+      "data": "S(0,0) (3, 0, 0), S(pi/2,4) (0, 3, 4)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "S(0,0) (3, 0, 0), S(pi/2,4) (0, 3, 4)",
+      "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "red": {"injection": "radius doubled", "failing_expectation": "original: **green**; rewritten: :14 `simd_length(surf.point(atU: 0, v: 0) - SIMD3(3, 0, 0)) < 1e-9`"},
+    "red": {
+      "injection": "radius doubled",
+      "failing_expectation": "original: **green**; rewritten: :14 `simd_length(surf.point(atU: 0, v: 0) - SIMD3(3, 0, 0)) < 1e-9`"
+    },
     "green": true
   },
   {
     "test_name": "GC_MakeCylindricalSurface::Cylindrical surface from 3 points",
     "bridge_function": "OCCTSurfaceCylindricalFromPoints",
-    "bridge_output": {"type": "observed", "data": "radius 5, axis (0, 0, 1), S(0,5) (5, 0, 5)", "source": "pinned by the assertions of the green test run"},
-    "kernel_output": {"type": "probe", "data": "radius 5, axis (0, 0, 1), S(0,5) (5, 0, 5)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "observed",
+      "data": "radius 5, axis (0, 0, 1), S(0,5) (5, 0, 5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "radius 5, axis (0, 0, 1), S(0,5) (5, 0, 5)",
+      "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS",
-    "red": {"injection": "point1 and point3 swapped", "failing_expectation": "original: **green**; rewritten: :26 `abs(surf.cylinderProperties.radius - 5) < 1e-9`"},
+    "red": {
+      "injection": "point1 and point3 swapped",
+      "failing_expectation": "original: **green**; rewritten: :26 `abs(surf.cylinderProperties.radius - 5) < 1e-9`"
+    },
     "green": true
   }
 ]
