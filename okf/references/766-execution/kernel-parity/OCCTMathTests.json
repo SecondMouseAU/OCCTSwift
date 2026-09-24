@@ -4493,5 +4493,245 @@
       "failing_expectation": "original: **green**; rewritten: :20 `abs(x[0] - 4.0 / 3.0) < 1e-10`"
     },
     "green": true
+  },
+  {
+    "test_name": "Period Tests::createFromComponents",
+    "bridge_function": "OCCTPeriodValues",
+    "bridge_output": {
+      "type": "observed",
+      "data": "days=1 hours=2 minutes=30 seconds=15",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "days=1 hours=2 minutes=30 seconds=15",
+      "source": "Scripts/repro/766-math-period/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "swap hours and minutes after Quantity_Period::Values",
+      "failing_expectation": ":15 `c.hours == 2`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Period Tests::createFromSeconds",
+    "bridge_function": "OCCTPeriodTotalSeconds",
+    "bridge_output": {
+      "type": "observed",
+      "data": "sec=3661 usec=500",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "sec=3661 usec=500",
+      "source": "Scripts/repro/766-math-period/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "swap seconds and microseconds out of Values(sec, usec)",
+      "failing_expectation": ":23 `p.totalSeconds == 3661`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Period Tests::addPeriods",
+    "bridge_function": "OCCTPeriodAdd",
+    "bridge_output": {
+      "type": "observed",
+      "data": "hours=1 minutes=30 (sec=5400)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "hours=1 minutes=30 (sec=5400)",
+      "source": "Scripts/repro/766-math-period/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "p1 - p2 instead of p1 + p2",
+      "failing_expectation": ":32 `c.hours == 1`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Period Tests::subtractPeriods",
+    "bridge_function": "OCCTPeriodSubtract",
+    "bridge_output": {
+      "type": "observed",
+      "data": "hours=1 minutes=30 (sec=5400)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "hours=1 minutes=30 (sec=5400)",
+      "source": "Scripts/repro/766-math-period/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "p1 + p2 instead of p1 - p2",
+      "failing_expectation": ":41 `c.hours == 1`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Period Tests::equality",
+    "bridge_function": "OCCTPeriodCompare",
+    "bridge_output": {
+      "type": "observed",
+      "data": "1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1",
+      "source": "Scripts/repro/766-math-period/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "never report equal",
+      "failing_expectation": ":50 `a == b`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Period Tests::comparison",
+    "bridge_function": "OCCTPeriodCompare",
+    "bridge_output": {
+      "type": "observed",
+      "data": "1h < 2h: 1, 2h > 1h: 1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1h < 2h: 1, 2h > 1h: 1",
+      "source": "Scripts/repro/766-math-period/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "invert the < branch",
+      "failing_expectation": ":56 `p1 < p2`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Period Tests::isValidComponents",
+    "bridge_function": "OCCTPeriodIsValid",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1, 2, 30): 1, (-1): 0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1, 2, 30): 1, (-1): 0",
+      "source": "Scripts/repro/766-math-period/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "negate Quantity_Period::IsValid",
+      "failing_expectation": ":62 `Period.isValid(days: 1, hours: 2, minutes: 30)`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Period Tests::isValidSeconds",
+    "bridge_function": "OCCTPeriodIsValidSeconds",
+    "bridge_output": {
+      "type": "observed",
+      "data": "100: 1, -1: 0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "100: 1, -1: 0",
+      "source": "Scripts/repro/766-math-period/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "negate Quantity_Period::IsValid(ss, mics)",
+      "failing_expectation": ":67 `Period.isValid(totalSeconds: 100)`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Period Tests::withMilliseconds",
+    "bridge_function": "OCCTPeriodValues",
+    "bridge_output": {
+      "type": "observed",
+      "data": "seconds=1 ms=500 us=250 (usec=500250)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "seconds=1 ms=500 us=250 (usec=500250)",
+      "source": "Scripts/repro/766-math-period/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "swap milliseconds and microseconds after Values",
+      "failing_expectation": ":75 `c.milliseconds == 500`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Period Tests::zeroPeriod",
+    "bridge_function": "OCCTPeriodCreateFromSeconds",
+    "bridge_output": {
+      "type": "observed",
+      "data": "IsValid(0, 0): 1; sec=0 usec=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "IsValid(0, 0): 1; sec=0 usec=0",
+      "source": "Scripts/repro/766-math-period/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "reject ss == 0 as invalid",
+      "failing_expectation": "original: **green**; rewritten: :84 `p != nil`"
+    },
+    "green": true
   }
 ]
