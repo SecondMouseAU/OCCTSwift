@@ -314,8 +314,14 @@ struct StressPostOperationStateTests {
         #expect(v1 != nil)
         #expect(v2 != nil)
         let r2 = box.subtracting(sphere)
-        if let r1 { #expect(r1.isValid) }
-        if let r2 { #expect(r2.isValid) }
+        // Epic #766: both used to sit behind `if let`. The sphere of radius 5 is inscribed in the
+        // 10-wide box, so the union is the box and the cut is 1000 - 4/3·π·125.
+        #expect(abs((v1 ?? 0) - 1000.0) < 1e-6)
+        #expect(abs((v2 ?? 0) - 523.5987756) < 1e-6)
+        #expect(abs((r1?.volume ?? 0) - 1000.0) < 1e-6)
+        #expect(abs((r2?.volume ?? 0) - 476.4012244) < 1e-6)
+        #expect(r1?.isValid == true)
+        #expect(r2?.isValid == true)
     }
 
     @Test func shapeQueriesAfterExport() throws {
@@ -349,16 +355,19 @@ struct StressPostOperationStateTests {
         let m1 = box.mesh(linearDeflection: 0.5)
         let m2 = box.mesh(linearDeflection: 0.1)
         let m3 = box.mesh(linearDeflection: 1.0)
-        #expect(m1 != nil)
-        #expect(m2 != nil)
-        #expect(m3 != nil)
+        // Epic #766: a planar box meshes to 2 triangles and 4 nodes per face at any deflection
+        // (BRepMesh_IncrementalMesh, Scripts/repro/766-stress-null-invalid/).
+        for m in [m1, m2, m3] {
+            #expect(m?.vertexCount == 24)
+            #expect(m?.triangleCount == 12)
+        }
     }
 
     @Test func volumeCalledManyTimes() {
         let box = standardBox()
         for _ in 0..<100 {
             let v = box.volume
-            #expect(v != nil)
+            #expect(abs((v ?? 0) - 1000.0) < 1e-9)
         }
     }
 }
@@ -368,87 +377,94 @@ struct StressPostOperationStateTests {
 @Suite("Stress: Unusual Input Combinations")
 struct StressUnusualInputTests {
 
-    @Test func booleanWireShapes() {
+    @Test func booleanWireShapes() throws {
         // Create wire shapes (not solids) and try boolean ops
         guard let w1 = Wire.rectangle(width: 10, height: 10),
             let w2 = Wire.rectangle(width: 5, height: 5),
             let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2)
         else { return }
-        let result = s1.union(s2)
-        // May fail for non-solid inputs, should not crash
-        if let r = result { _ = r.isValid }
+        // Epic #766: BRepAlgoAPI_Fuse on two nested rectangle wires is done: a valid result
+        // with the 4 + 4 edges.
+        let r = try #require(s1.union(s2))
+        #expect(r.isValid)
+        #expect(r.subShapeCount(ofType: .edge) == 8)
     }
 
     @Test func filletOnNonSolid() {
         guard let wire = Wire.rectangle(width: 10, height: 10),
             let shape = Shape.fromWire(wire)
         else { return }
-        let result = shape.filleted(radius: 1.0)
-        if let r = result { _ = r.isValid }
+        // Epic #766: BRepFilletAPI_MakeFillet on a wire throws "There are no suitable edges for
+        // chamfer or fillet"; the bridge's catch makes that nil.
+        #expect(shape.filleted(radius: 1.0) == nil)
     }
 
     @Test func volumeOnWireShape() {
         guard let wire = Wire.rectangle(width: 10, height: 10),
             let shape = Shape.fromWire(wire)
         else { return }
-        let vol = shape.volume
-        // Wire has no volume, should be nil or 0
-        if let v = vol { #expect(v <= 0.001) }
+        // Epic #766: a wire encloses nothing, and the zero integral is reported as nil, not as a
+        // measured 0.
+        #expect(shape.volume == nil)
     }
 
-    @Test func meshOnWireShape() {
+    @Test func meshOnWireShape() throws {
         guard let wire = Wire.rectangle(width: 10, height: 10),
             let shape = Shape.fromWire(wire)
         else { return }
-        let mesh = shape.mesh(linearDeflection: 0.5)
-        // Wire can't be meshed, should return nil
-        _ = mesh
+        // Epic #766: the old comment said nil, and the result was discarded. OCCTShapeCreateMesh
+        // meshes the faces it finds, and a wire has none, so the answer is an empty mesh.
+        let mesh = try #require(shape.mesh(linearDeflection: 0.5))
+        #expect(mesh.vertexCount == 0)
+        #expect(mesh.triangleCount == 0)
     }
 
-    @Test func sectionOfSameShape() {
+    @Test func sectionOfSameShape() throws {
         let box = standardBox()
-        guard let section = SectionBuilder(shape1: box, shape2: box) else { return }
-        let result = section.build()
-        // Section of shape with itself, edge case
-        if let r = result { _ = r.isValid }
+        let section = try #require(SectionBuilder(shape1: box, shape2: box))
+        // Epic #766: BRepAlgoAPI_Section of a box with itself is done and has no edges, since
+        // every face is coincident rather than crossing.
+        let r = try #require(section.build())
+        #expect(r.isValid)
+        #expect(r.subShapeCount(ofType: .edge) == 0)
     }
 
-    @Test func translateByZero() {
+    @Test func translateByZero() throws {
         let box = standardBox()
-        let result = box.translated(by: SIMD3(0, 0, 0))
-        if let r = result {
-            #expect(r.isValid)
-            if let vol = r.volume { #expect(abs(vol - 1000.0) < 0.01) }
-        }
+        let r = try #require(box.translated(by: SIMD3(0, 0, 0)))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)
     }
 
-    @Test func rotateByZero() {
+    @Test func rotateByZero() throws {
         let box = standardBox()
-        let result = box.rotated(axis: SIMD3(0, 0, 1), angle: 0)
-        if let r = result {
-            #expect(r.isValid)
-        }
+        let r = try #require(box.rotated(axis: SIMD3(0, 0, 1), angle: 0))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)
     }
 
-    @Test func scaleByOne() {
+    @Test func scaleByOne() throws {
         let box = standardBox()
-        let result = box.scaled(by: 1.0)
-        if let r = result {
-            #expect(r.isValid)
-            if let vol = r.volume { #expect(abs(vol - 1000.0) < 0.01) }
-        }
+        let r = try #require(box.scaled(by: 1.0))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)
     }
 
-    @Test func scaleByZero() {
+    // Epic #766: gp_Trsf::SetScale(0) does not throw in a release kernel, and
+    // BRepBuilderAPI_Transform collapses the box to a point: six faces, invalid, no volume.
+    @Test func scaleByZero() throws {
         let box = standardBox()
-        let result = box.scaled(by: 0.0)
-        if let r = result { _ = r.isValid }
+        let r = try #require(box.scaled(by: 0.0))
+        #expect(!r.isValid)
+        #expect(r.volume == nil)
     }
 
-    @Test func scaleByNegative() {
+    // A factor of -1 is a point reflection through the origin: a valid box of the same volume.
+    @Test func scaleByNegative() throws {
         let box = standardBox()
-        let result = box.scaled(by: -1.0)
-        if let r = result { _ = r.isValid }
+        let r = try #require(box.scaled(by: -1.0))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)
     }
 }
 
@@ -471,7 +487,11 @@ struct StressUnifySameDomainNullPCurveTests {
         let unifier = UnifySameDomainBuilder(shape: shape, unifyEdges: true, unifyFaces: true)
         unifier.setAngularTolerance(1.0 * .pi / 180)
         unifier.build()
-        _ = unifier.shape
+        // Epic #766: the result used to be discarded. ShapeUpgrade_UnifySameDomain with the same
+        // settings merges the fixture's 662 faces / 1072 edges into 228 / 627.
+        let unified = try #require(unifier.shape)
+        #expect(unified.subShapeCount(ofType: .face) == 228)
+        #expect(unified.subShapeCount(ofType: .edge) == 627)
     }
 }
 
@@ -574,13 +594,23 @@ struct StressEvalAndUpdateTolNullPCurveTests {
         let cylinderFaces = cylinder.subShapes(ofType: .face)
         try #require(!cylinderFaces.isEmpty)
 
+        // Epic #766: the lateral face (index 0) is the one with no pcurve, so it must answer the
+        // edge's own tolerance, 1e-7, and it is asked first, before a planar cap's evaluation
+        // raises that tolerance. The caps do project a pcurve, and BRepTools::EvalAndUpdateTol
+        // measures the edge 15 away from each (Scripts/repro/766-stress-null-invalid/).
+        var tols: [Double] = []
         for face in cylinderFaces {
             let tol = Shape.evalAndUpdateTolerance(edge: boxEdges[0], face: face)
             // The contract for "nothing to evaluate against this face" is the edge's own
             // tolerance, which is finite and non-negative, not a fabricated zero.
             #expect(tol.isFinite)
             #expect(tol >= 0)
+            tols.append(tol)
         }
+        try #require(tols.count == 3)
+        #expect(abs(tols[0] - 1e-7) < 1e-12)
+        #expect(abs(tols[1] - 15) < 1e-9)
+        #expect(abs(tols[2] - 15) < 1e-9)
     }
 
     // The route OCCT 8.0.1 opened: #1402 made BRep_Tool::CurveOnPlane validate the edge range and
@@ -596,10 +626,22 @@ struct StressEvalAndUpdateTolNullPCurveTests {
         try #require(!edges.isEmpty)
         try #require(!faces.isEmpty)
 
+        var tols: [Double] = []
         for face in faces {
             let tol = Shape.evalAndUpdateTolerance(edge: edges[0], face: face)
             #expect(tol.isFinite)
             #expect(tol >= 0)
+            tols.append(tol)
+        }
+        // Epic #766: in OCCT 8.0.1 as pinned, BRep_Tool::CurveOnSurface projects a pcurve for this
+        // edge on every face of the small box (none is null), so the null-pcurve route the comment
+        // above describes is not the one this input takes. BRepTools::EvalAndUpdateTol measures
+        // 3.5 against the first face and 6.5 against the rest, and the stored tolerance only ever
+        // rises (Scripts/repro/766-stress-null-invalid/transcript.txt).
+        let expected = [3.5, 6.5, 6.5, 6.5, 6.5, 6.5]
+        #expect(tols.count == expected.count)
+        for (got, want) in zip(tols, expected) {
+            #expect(abs(got - want) < 1e-9)
         }
     }
 }
