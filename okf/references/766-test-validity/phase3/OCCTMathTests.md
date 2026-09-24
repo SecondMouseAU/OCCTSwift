@@ -343,3 +343,16 @@
 | **Precision Tests** | ordering | `OCCTPrecisionIntersection` | Intersection() returns Approximation() | red | green | PASS |
 | **Precision Tests** | infinite | `OCCTPrecisionInfinite` | returns 1e10 instead of Infinite() | red | green | PASS |
 | **Precision Tests** | pConfusion | `OCCTPrecisionPConfusion` | returns Confusion() (drops the /100) | red | green | PASS |
+### 766-math-quaternion (#1983, measured)
+| **Quaternion Interpolation** | slerpMidpoint | `OCCTQuaternionSLerp` | returns the start quaternion, ignoring t | red | green | PASS |
+| **Quaternion Interpolation** | nlerpEndpoints | `OCCTQuaternionNLerp` | parameter reversed (1 - t), so t = 0 gives the end quaternion | red | green | PASS |
+| **Quaternion Interpolation** | transformInterpolate | `OCCTTrsfInterpolate` | end transform built with the start translation x (tx1 for tx2) | red | green | PASS |
+| **Quaternion Tests** | identity | `OCCTQuaternionCreate` | components passed in (w, x, y, z) order | red | green | PASS |
+| **Quaternion Tests** | fromAxisAngle | `OCCTQuaternionCreateFromAxisAngle` | angle halved | red | green | PASS |
+| **Quaternion Tests** | fromVectors | `OCCTQuaternionCreateFromVectors` | from and to swapped | red | green | PASS |
+| **Quaternion Tests** | eulerAngles | `OCCTQuaternionGetEulerAngles` | alpha and gamma outputs swapped | red | green | PASS |
+| **Quaternion Tests** | matrix | `OCCTQuaternionGetMatrix` | (1,2) and (2,1) entries swapped (transpose of the rotation part) | red | green | PASS |
+| **Quaternion Tests** | multiply | `OCCTQuaternionMultiply` | returns q1, dropping q2 | red | green | PASS |
+| **Quaternion Tests** | axisAngle | `OCCTQuaternionGetVectorAndAngle` | angle output halved | red | green | PASS |
+| **Quaternion Tests** | rotationAngle | `OCCTQuaternionGetRotationAngle` | angle halved | red | green | PASS |
+| **Quaternion Tests** | normalize | `OCCTQuaternionNormalize` | Normalize() skipped | red | green | PASS |
