@@ -545,3 +545,16 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `widthAndMode` | `OCCTDocumentPresentationGetWidth` answers 0 | :48 Expectation failed: abs(width - 2.0) < 1e-6 | passed | `OCCTDocumentPresentationGetWidth` | PASS: width 2.0 and mode 1 on both sides |
 | `displayState` | `OCCTDocumentPresentationIsDisplayed` returns false | :63 Expectation failed: doc.presentationIsDisplayed(labelId: node.labelId) | passed | `OCCTDocumentPresentationIsDisplayed` | PASS: true |
 | `unsetPresentation` | `OCCTDocumentUnsetPresentation` returns without unsetting | :74 Expectation failed: !doc.hasPresentation(labelId: node.labelId) | passed | `OCCTDocumentUnsetPresentation` | PASS: gone after Unset |
+### `TDFLabelPropertyTests.swift`
+| `labelTag` | `OCCTDocumentLabelTag` answers 99 | :17 Expectation failed: main.tag == 1 | passed | `OCCTDocumentLabelTag` | PASS: Main tag 1 |
+| `labelDepth` | `OCCTDocumentLabelDepth` answers 5 | :25 Expectation failed: main.depth == 1; :27 Expectation failed: child.depth == 2 | passed | `OCCTDocumentLabelDepth` | PASS: Main depth 1 and depth 2 for a child of Main, on both sides |
+| `labelIsNull` | `OCCTDocumentLabelIsNull` returns true for every id | :36 Expectation failed: !main.isNull | passed | `OCCTDocumentLabelIsNull` | PASS: Main is not null on both sides |
+| `labelIsRoot` | `OCCTDocumentLabelIsRoot` returns true | :44 Expectation failed: !main.isRoot | passed | `OCCTDocumentLabelIsRoot` | PASS: Main not root; Root() is |
+| `labelFather` | `OCCTDocumentLabelFather` answers -1 | :57 `child.father?.labelId == main.labelId` (rewritten; with `father` inside the `if let`, a missing father passed) | passed | `OCCTDocumentLabelFather` | PASS: a child's father is Main on both sides |
+| `labelRoot` | `OCCTDocumentLabelIsRoot` returns false | :65 Expectation failed: root.isRoot | passed | `OCCTDocumentLabelRoot` | PASS: the root of a label is the root label on both sides |
+| `labelAttributes` | `OCCTDocumentLabelHasAttribute` returns false | :78 Expectation failed: label.hasAttribute | passed | `OCCTDocumentLabelHasAttribute` | PASS: no attributes on a fresh label, at least 1 after a name is set, on both sides |
+| `labelChildren` | `OCCTDocumentLabelNbChildren` answers 0 | :92 Expectation failed: parent.childCount == 2 | passed | `OCCTDocumentLabelNbChildren` | PASS: 0, then 2 |
+| `labelFindChild` | `OCCTDocumentLabelFindChild` answers -1 | :103 Expectation failed: found != nil; :111 Expectation failed: created != nil | passed | `OCCTDocumentLabelFindChild` | PASS: existing child found, tag 999 absent then created, 2 children after, on both sides |
+| `labelForgetAllAttributes` | `OCCTDocumentLabelForgetAllAttributes` returns without forgetting | :124 Expectation failed: !label.hasAttribute | passed | `OCCTDocumentLabelForgetAllAttributes` | PASS: no attribute after |
+| `labelDescendants` | `OCCTDocumentGetDescendantLabels` answers 0 | :137 Expectation failed: direct.count == 2; :140 Expectation failed: all.count == 4 | passed | `OCCTDocumentGetDescendantLabels` | PASS: 2 and 4 |
+| `labelDescendantsBeyondBufferCap` | `OCCTDocumentGetDescendantLabels` answers 0 | :153 Expectation failed: direct.count == extraCount | passed | `OCCTDocumentGetDescendantLabels` | PASS: 1029 children created and 1029 reported on both sides (no 1024 cap) |
