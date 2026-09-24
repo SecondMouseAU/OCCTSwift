@@ -37,13 +37,13 @@ struct FastSewingTests {
     }
 
     @Test("Fast sew with custom tolerance")
-    func fastSewTolerance() {
-        let sphere = Shape.sphere(radius: 10)!
-        let sewn = sphere.fastSewn(tolerance: 0.01)
-        #expect(sewn != nil)
-        if let sewn {
-            #expect(sewn.faces().count == 1)
-        }
+    func fastSewTolerance() throws {
+        let sphere = try #require(Shape.sphere(radius: 10))
+        let sewn = try #require(sphere.fastSewn(tolerance: 0.01))
+        #expect(sewn.faces().count == 1)
+        // #766: kernel area at tol 0.01 is 1256.637061436 = 4 pi r^2
+        // (Scripts/repro/766-healing-divide-encode-fastsew/probe.mm).
+        #expect(abs((sewn.surfaceArea ?? 0) - 4.0 * Double.pi * 100) < 1e-6)
     }
 
     // Regression guard for #1475: `BRepBuilderAPI_FastSewing::Add()` declines a face whose
