@@ -410,3 +410,9 @@
 | **Vector2DMath** | cross | `OCCTXYCrossed` | operands reversed | red | green | PASS |
 | **Vector2DMath** | dot | `OCCTXYDot` | y term dropped | red | green | PASS |
 | **Vector2DMath** | normalize | `OCCTXYNormalize` | normalized x and y swapped | red | green | PASS |
+### 766-math-vector3d (#1983, measured)
+| **Vector3DMath** | modulus | `OCCTXYZModulus` | SquareModulus() returned | red | green | PASS |
+| **Vector3DMath** | cross | `OCCTXYZCrossed` | operands reversed | red | green | PASS |
+| **Vector3DMath** | dot | `OCCTXYZDot` | z term dropped | red | green | PASS |
+| **Vector3DMath** | dotCross | `OCCTXYZDotCross` | b and c swapped in the triple product | red | green | PASS |
+| **Vector3DMath** | normalize | `OCCTXYZNormalize` | normalized x and y swapped | red | green | PASS |
