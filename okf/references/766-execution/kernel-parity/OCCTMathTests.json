@@ -6941,5 +6941,125 @@
       "failing_expectation": "original: **green**; rewritten: :35 `abs(n.x - 1.0 / 3.0) < 1e-12`"
     },
     "green": true
+  },
+  {
+    "test_name": "math_NewtonMinimum Tests::minimizeQuadratic",
+    "bridge_function": "OCCTMathNewtonMinimum",
+    "bridge_output": {
+      "type": "observed",
+      "data": "x=3 4 min=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "x=3 4 min=0",
+      "source": "Scripts/repro/766-math-newton-nonuniformscale/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "location + 0.05 in every coordinate",
+      "failing_expectation": ":22 `abs(r.point[0] - 3.0) < 1e-4`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "math_NewtonMinimum Tests::minimizeRosenbrock",
+    "bridge_function": "OCCTMathNewtonMinimum",
+    "bridge_output": {
+      "type": "observed",
+      "data": "x=1 1 min=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "x=1 1 min=0",
+      "source": "Scripts/repro/766-math-newton-nonuniformscale/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "location + 0.05 in every coordinate",
+      "failing_expectation": "original: **green**; rewritten: :46 `abs(r.point[0] - 1.0) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "NewtonRoot::findRoot",
+    "bridge_function": "OCCTMathNewtonFunctionRoot",
+    "bridge_output": {
+      "type": "observed",
+      "data": "root=2",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "root=2",
+      "source": "Scripts/repro/766-math-newton-nonuniformscale/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Root() + 0.5",
+      "failing_expectation": ":14 `abs(r.root - 2.0) < 1e-8`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Non-Uniform Scale::Scale box non-uniformly",
+    "bridge_function": "OCCTShapeNonUniformScale",
+    "bridge_output": {
+      "type": "observed",
+      "data": "size (BRepBndLib::Add incl. gap) 20.0000004 10.0000004 5.0000004",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "size (BRepBndLib::Add incl. gap) 20.0000004 10.0000004 5.0000004",
+      "source": "Scripts/repro/766-math-newton-nonuniformscale/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "drop sz (scale z by 1)",
+      "failing_expectation": "original: red; rewritten: :21 `abs(size.z - 5) < 0.1`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Non-Uniform Scale::Non-uniform scale preserves volume ratio",
+    "bridge_function": "OCCTShapeNonUniformScale",
+    "bridge_output": {
+      "type": "observed",
+      "data": "volume 3000, ratio 3.0000000000000009",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume 3000, ratio 3.0000000000000009",
+      "source": "Scripts/repro/766-math-newton-nonuniformscale/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "drop sz (scale z by 1)",
+      "failing_expectation": ":31 `abs(scaledVol / origVol - 3.0) < 0.1`"
+    },
+    "green": true
   }
 ]
