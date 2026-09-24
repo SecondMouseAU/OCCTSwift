@@ -15,7 +15,7 @@ struct FreeBoundsTests {
     }
 
     @Test("Compound of adjacent faces has free boundaries")
-    func compoundFacesHasFreeBounds() {
+    func compoundFacesHasFreeBounds() throws {
         // ShapeAnalysis_FreeBounds finds boundaries between separate faces in a compound,
         // not edges of a single face. Use two adjacent faces sharing an edge.
         let face1 = Shape.face(from: Wire.rectangle(width: 10, height: 10)!)!
@@ -23,11 +23,12 @@ struct FreeBoundsTests {
         // Translate second face to be adjacent
         let moved = face2.translated(by: SIMD3(10, 0, 0))!
         let compound = Shape.compound([face1, moved])!
-        let result = compound.freeBounds()
-        #expect(result != nil)
-        if let result {
-            #expect(result.closedCount >= 1)
-        }
+        // #766: kernel (Scripts/repro/766-healing-freebounds-geomconv): one closed wire of six
+        // edges around the joined 20x10 outline, no open wires. Was `closedCount >= 1`.
+        let result = try #require(compound.freeBounds())
+        #expect(result.closedCount == 1)
+        #expect(result.openCount == 0)
+        #expect(result.wires.subShapes(ofType: .edge).count == 6)
     }
 
     @Test("Free bounds analysis callable on sphere")
