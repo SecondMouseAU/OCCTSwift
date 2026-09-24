@@ -11455,5 +11455,277 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Surface knot-splitting duplicates (#562)::Split indices resolve through the knot table to exactly the split parameters",
+    "bridge_function": "OCCTSurfaceKnotSplitting",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "C1 U": {
+          "1": 0,
+          "2": 2.0944,
+          "3": 4.18879,
+          "4": 6.28319
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "C1 U": {
+          "1": 0,
+          "2": 2.0944,
+          "3": 4.18879,
+          "4": 6.28319
+        }
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 562 C0..C3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface knot-splitting duplicates (#562)::Indices are 1-based and bracket the surface's own knot table",
+    "bridge_function": "OCCTSurfaceKnotSplitting",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "U indices": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "V indices": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "U indices": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "V indices": [
+          1,
+          2,
+          3
+        ]
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 562 C1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface knot-splitting duplicates (#562)::U and V answer their own continuity independently",
+    "bridge_function": "OCCTSurfaceKnotSplitting",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "C0 counts": [
+          2,
+          2
+        ],
+        "C3 counts": [
+          4,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "C0 counts": [
+          2,
+          2
+        ],
+        "C3 counts": [
+          4,
+          3
+        ]
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 562"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface knot-splitting duplicates (#562)::A non-BSpline surface reports no splits at all",
+    "bridge_function": "OCCTSurfaceKnotSplitting",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "counts": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "counts": [
+          0,
+          0
+        ]
+      },
+      "source": "the refusal is the bridge DownCast; no kernel call for a plane"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue 571, plate approximation honours its tolerance::A plate surface lands within the tolerance it was given",
+    "bridge_function": "OCCTSurfacePlateThrough",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "tol 0.01 worst deviation": 0.00321
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "tol 0.01 worst deviation": 0.00321
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 571 plate tol 0.01 Nbmax 20"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 571, plate approximation honours its tolerance::The approximation is allowed to use more than one Bezier patch",
+    "bridge_function": "OCCTSurfacePlateThrough",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "poles": [
+          16,
+          16
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "poles": [
+          16,
+          16
+        ]
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 571 plate tol 0.01 Nbmax 20: 16x16 (Nbmax 1: 9x9, one patch)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 571, plate approximation honours its tolerance::Asking for a tighter tolerance actually produces a tighter fit",
+    "bridge_function": "OCCTSurfacePlateThrough",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "tol 0.1": 0.0724,
+        "tol 0.0005": 0.000242
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "tol 0.1": 0.0724,
+        "tol 0.0005": 0.000242
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 571"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 571, plate approximation honours its tolerance::maxSegments below the algorithm's floor still honours the tolerance",
+    "bridge_function": "OCCTGeomPlateSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "Nbmax 1 unclamped": "9x9, deviation 0.0724",
+        "Nbmax 20": "16x16, deviation 0.00321"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "Nbmax 1 unclamped": "9x9, deviation 0.0724",
+        "Nbmax 20": "16x16, deviation 0.00321"
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 571 plate tol 0.01"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 571, plate approximation honours its tolerance::Both plate-through-points entry points agree on the same input",
+    "bridge_function": "OCCTShapePlatePoints",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 571"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 571, plate approximation honours its tolerance::Curve-constrained plates honour their tolerance too",
+    "bridge_function": "OCCTShapePlateCurves",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "same GeomPlate_MakeApprox arguments as Scripts/repro/766-issue562-571-619-623/transcript.txt 571; the curve constraints themselves are not in the probe"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
