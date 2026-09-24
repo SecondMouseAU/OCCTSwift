@@ -1398,5 +1398,237 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue 1505: bare-wire self-intersection guard::bareWireRefusesExtrusion",
+    "bridge_function": "OCCTShapeCreateExtrusionShape (guard occtHasSelfIntersectingWire)",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "refused": true
+      }
+    },
+    "kernel_output": {
+      "type": "self_intersection",
+      "data": {
+        "bareWireFlag": false,
+        "planarFaceFlag": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 1505: bare-wire self-intersection guard::bareWireRefusesHeal",
+    "bridge_function": "OCCTShapeHeal (guard occtHasSelfIntersectingWire)",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "refused": true
+      }
+    },
+    "kernel_output": {
+      "type": "self_intersection",
+      "data": {
+        "bareWireFlag": false,
+        "planarFaceFlag": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 1505: bare-wire self-intersection guard::bareWireRefusesHealWithHistory",
+    "bridge_function": "OCCTShapeHealWithHistory (guard occtHasSelfIntersectingWire)",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "refused": true
+      }
+    },
+    "kernel_output": {
+      "type": "self_intersection",
+      "data": {
+        "bareWireFlag": false,
+        "planarFaceFlag": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 1505: bare-wire self-intersection guard::cleanBareWireStillWorks",
+    "bridge_function": "occtHasSelfIntersectingWire",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "refused": false
+      }
+    },
+    "kernel_output": {
+      "type": "self_intersection",
+      "data": {
+        "bareWireFlag": false,
+        "planarFaceFlag": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 1505: bare-wire self-intersection guard::faceInputStillRefuses",
+    "bridge_function": "occtHasSelfIntersectingWire",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "refused": true
+      }
+    },
+    "kernel_output": {
+      "type": "self_intersection",
+      "data": {
+        "planarFaceFlag": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1507: OCCTSewing null guards::nbMultipleEdgesNullRawPointerReturnsZero",
+    "bridge_function": "OCCTSewingNbMultipleEdges",
+    "bridge_output": {
+      "type": "count",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #1507: OCCTSewing null guards::isMultipleEdgeNullRawPointerReturnsFalse",
+    "bridge_function": "OCCTSewingIsMultipleEdge",
+    "bridge_output": {
+      "type": "bool",
+      "data": false
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #1507: OCCTSewing null guards::ordinarySewingUnaffected",
+    "bridge_function": "OCCTSewingPerform / OCCTSewingResult / OCCTSewingNbFreeEdges",
+    "bridge_output": {
+      "type": "sewing",
+      "data": {
+        "freeEdges": 0,
+        "multipleEdges": 0,
+        "type": "shell",
+        "faces": 6
+      }
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "NbFreeEdges": 0,
+        "NbMultipleEdges": 0,
+        "NbContigousEdges": 0,
+        "type": "shell",
+        "faces": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1634: ConvertToRevolution runs elementary -> revolution::directionIsElementaryToRevolution",
+    "bridge_function": "OCCTShapeCustomConvertToRevolution",
+    "bridge_output": {
+      "type": "surface_kinds",
+      "data": {
+        "revolutionFaces": 1,
+        "faces": 3
+      }
+    },
+    "kernel_output": {
+      "type": "surface_kinds",
+      "data": {
+        "revolutionFaces": 1,
+        "faces": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1634: ConvertToRevolution runs elementary -> revolution::sweptToElementaryReversesIt",
+    "bridge_function": "OCCTShapeSweptToElementary",
+    "bridge_output": {
+      "type": "surface_kinds",
+      "data": {
+        "revolutionFacesBack": 0
+      }
+    },
+    "kernel_output": {
+      "type": "surface_kinds",
+      "data": {
+        "revolutionFacesBack": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1634: ConvertToRevolution runs elementary -> revolution::volumeIsPreserved",
+    "bridge_function": "OCCTShapeCustomConvertToRevolution",
+    "bridge_output": {
+      "type": "volume",
+      "data": 785.398163397
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": 785.398163397
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
