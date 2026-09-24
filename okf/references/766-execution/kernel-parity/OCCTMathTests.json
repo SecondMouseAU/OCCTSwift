@@ -4973,5 +4973,149 @@
       "failing_expectation": ":113 `Surface.planeFromPointNormal(point: origin, normal: tiny) == nil`"
     },
     "green": true
+  },
+  {
+    "test_name": "PlaneGeometry_Operations::distanceToPointOnPlane",
+    "bridge_function": "OCCTPlaneDistanceToPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "0",
+      "source": "Scripts/repro/766-math-plane-geometry/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "gp_Pln::Distance(point) + 0.5",
+      "failing_expectation": ":13 `abs(d) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "PlaneGeometry_Operations::distanceToPointAbovePlane",
+    "bridge_function": "OCCTPlaneDistanceToPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "7",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "7",
+      "source": "Scripts/repro/766-math-plane-geometry/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "gp_Pln::Distance(point) + 0.5",
+      "failing_expectation": ":20 `abs(d - 7.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "PlaneGeometry_Operations::distanceToParallelLine",
+    "bridge_function": "OCCTPlaneDistanceToLine",
+    "bridge_output": {
+      "type": "observed",
+      "data": "5",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "5",
+      "source": "Scripts/repro/766-math-plane-geometry/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "gp_Pln::Distance(line) + 0.5",
+      "failing_expectation": ":27 `abs(d - 5.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "PlaneGeometry_Operations::distanceToIntersectingLine",
+    "bridge_function": "OCCTPlaneDistanceToLine",
+    "bridge_output": {
+      "type": "observed",
+      "data": "0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "0",
+      "source": "Scripts/repro/766-math-plane-geometry/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "gp_Pln::Distance(line) + 0.5",
+      "failing_expectation": ":34 `abs(d) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "PlaneGeometry_Operations::containsPointTrue",
+    "bridge_function": "OCCTPlaneContainsPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "true",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "true",
+      "source": "Scripts/repro/766-math-plane-geometry/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "negate gp_Pln::Contains",
+      "failing_expectation": ":41 `r`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "PlaneGeometry_Operations::containsPointFalse",
+    "bridge_function": "OCCTPlaneContainsPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "false",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "false",
+      "source": "Scripts/repro/766-math-plane-geometry/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "negate gp_Pln::Contains",
+      "failing_expectation": ":48 `!r`"
+    },
+    "green": true
   }
 ]

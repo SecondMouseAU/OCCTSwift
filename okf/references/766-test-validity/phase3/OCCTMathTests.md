@@ -324,3 +324,10 @@
 | **Surface plane factory parity (#421)** | Valid normal: both entry points agree | `OCCTSurfacePlaneFromPointNormal` | negate the normal passed to GC_MakePlane | red | green | PASS |
 | **Surface plane factory parity (#421)** | Zero-length normal: both entry points return nil | `OCCTSurfacePlaneFromPointNormal` | substitute a default +Z plane for a zero-length normal instead of letting gp_Dir refuse it | red | green | PASS |
 | **Surface plane factory parity (#421)** | Near-zero-length normal: both entry points return nil | `OCCTSurfacePlaneFromPointNormal` | substitute a default +Z plane for a zero-length normal instead of letting gp_Dir refuse it | red | green | PASS |
+### 766-math-plane-geometry (#1983, measured)
+| **PlaneGeometry_Operations** | distanceToPointOnPlane | `OCCTPlaneDistanceToPoint` | gp_Pln::Distance(point) + 0.5 | red | green | PASS |
+| **PlaneGeometry_Operations** | distanceToPointAbovePlane | `OCCTPlaneDistanceToPoint` | gp_Pln::Distance(point) + 0.5 | red | green | PASS |
+| **PlaneGeometry_Operations** | distanceToParallelLine | `OCCTPlaneDistanceToLine` | gp_Pln::Distance(line) + 0.5 | red | green | PASS |
+| **PlaneGeometry_Operations** | distanceToIntersectingLine | `OCCTPlaneDistanceToLine` | gp_Pln::Distance(line) + 0.5 | red | green | PASS |
+| **PlaneGeometry_Operations** | containsPointTrue | `OCCTPlaneContainsPoint` | negate gp_Pln::Contains | red | green | PASS |
+| **PlaneGeometry_Operations** | containsPointFalse | `OCCTPlaneContainsPoint` | negate gp_Pln::Contains | red | green | PASS |
