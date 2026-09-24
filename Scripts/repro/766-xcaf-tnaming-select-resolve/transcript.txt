@@ -1,0 +1,3 @@
+insertNaming: Insert non-null=true, inserted attribute lives on 0:1:1:1 (the label passed in is 0:1:1); a FindAttribute on the label passed in finds it=false; namingIsDefined: IsDefined of the inserted attribute=false, and the bridge's lookup result (false when not found)=false
+selectSubShape: rectangle face non-null=true, Select(rectangle face, box)=true; selectedEvolution: NamedShape present=true evolution=SELECTED (kernel ordinal 5)
+resolveShape: Select(box face, box)=true; same selector Solve=true; NEW selector Solve=true NamedShape non-empty=true CurrentShape null=false type=0 faces=6

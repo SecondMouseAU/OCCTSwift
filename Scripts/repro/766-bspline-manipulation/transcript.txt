@@ -1,0 +1,18 @@
+untrimmed cylinder fixture: SurfaceToBSplineSurface threw GeomConvert::SurfaceToBSplineSurface() - infinite surface
+cylinder fixture: knots 4x2 poles 6x2 degree 2x1 rational 0/1 bounds [0, 6.2831853071795862]x[0, 10]
+getPole: Pole(1,1)=(5, 0, 0) Weight(1,1)=1
+setPole: Pole(1,1) after=(10, 10, 10)
+exchangeUV: knots 2x4 poles 2x6 degree 1x2 rational 1/0 bounds [0, 10]x[0, 6.2831853071795862]
+insertUKnot: u=3.1415926535897931 NbUKnots after=5 mults=2 2 1 2 2 
+insertVKnot: v=5 NbVKnots after=3 mults=2 1 2 
+segment: knots 4x2 poles 7x2 degree 2x1 rational 0/1 bounds [1.5707963267948966, 4.7123889803846897]x[2.5, 7.5]
+increaseDegree: knots 4x2 poles 9x3 degree 3x2 rational 0/1 bounds [0, 6.2831853071795862]x[0, 10]
+  S(1.0, 0.5) moved by 0
+setWeight: Weight(1,1) after=2 rational 1/1
+sincos fixture: knots 2x2 poles 4x4 degree 3x3 rational 0/0 bounds [0, 1]x[0, 1]
+removeUKnot: knots U=0(x4) 1(x4) 
+  RemoveUKnot(1, 0, 1.0) threw Geom_BSplineSurface::RemoveUKnot: invalid Index
+  after InsertUKnots(0.5): NbUKnots=3
+  RemoveUKnot(2, 0, 1.0)=1 NbUKnots=2 S(0.3,0.6) moved by 0
+removeVKnot: RemoveVKnot(1, 0, 1.0) threw Geom_BSplineSurface::RemoveVKnot: invalid Index
+  after InsertVKnots(0.5): RemoveVKnot(2, 0, 1.0)=1 NbVKnots=2
