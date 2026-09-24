@@ -6684,5 +6684,441 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Plate Constraint Extension Tests::planeConstraint",
+    "bridge_function": "OCCTPlateLoadPlaneConstraint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "F(0.5,0.5).z": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "F(0.5,0.5).z": 1
+      },
+      "source": "Scripts/repro/766-plate-solver-surface/transcript.txt planeConstraint"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate Constraint Extension Tests::lineConstraint",
+    "bridge_function": "OCCTPlateLoadLineConstraint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "F(0.5,0.5)": [
+          0.16666667370814198,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "F(0.5,0.5)": [
+          0.16666667370814198,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-plate-solver-surface/transcript.txt lineConstraint"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate GlobalTranslation Constraint::loadGlobalTranslation",
+    "bridge_function": "OCCTPlateLoadGlobalTranslation",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "F(1,0)": [
+          0,
+          0,
+          1
+        ],
+        "F(0,1)": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "F(1,0)": [
+          0,
+          0,
+          1
+        ],
+        "F(0,1)": [
+          0,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-plate-solver-surface/transcript.txt loadGlobalTranslation"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate GlobalTranslation Constraint::solveWithGlobalTranslation",
+    "bridge_function": "OCCTPlateSolve",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "solved": true,
+        "F(0.5,0.5).z": 1.0000002402910662
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "solved": true,
+        "F(0.5,0.5).z": 1.0000002402910662
+      },
+      "source": "Scripts/repro/766-plate-solver-surface/transcript.txt solveWithGlobalTranslation"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate LinearXYZ Constraint::loadLinearXYZ",
+    "bridge_function": "OCCTPlateLoadLinearXYZ",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "F(1,0)": [
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "F(1,0)": [
+          0,
+          0,
+          3
+        ]
+      },
+      "source": "Scripts/repro/766-plate-solver-surface/transcript.txt loadLinearXYZ"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate LinearXYZ Constraint::loadLinearXYZLengthMismatchIsRejected",
+    "bridge_function": "PlateSolver.loadLinearXYZ length guard (Swift, #1583)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": false
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": false
+      },
+      "source": "N/A: a wrapper precondition, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Plate_Plate Solver::basicSolve",
+    "bridge_function": "OCCTPlateEvaluate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "F(0.5,0.5)": [
+          0.5,
+          0.5,
+          1
+        ],
+        "F(0,0)": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "F(0.5,0.5)": [
+          0.5,
+          0.5,
+          1
+        ],
+        "F(0,0)": [
+          0,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-plate-solver-surface/transcript.txt basicSolve"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate_Plate Solver::uvBoxAndContinuity",
+    "bridge_function": "OCCTPlateUVBox",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "UVBox": [
+          0,
+          1,
+          0,
+          1
+        ],
+        "continuity": 5
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "UVBox": [
+          0,
+          1,
+          0,
+          1
+        ],
+        "continuity": 5
+      },
+      "source": "Scripts/repro/766-plate-solver-surface/transcript.txt uvBoxAndContinuity"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate_Plate Solver::derivativeConstraint",
+    "bridge_function": "OCCTPlateLoadPinpoint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D10(0.5,0.5)": [
+          0,
+          0,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D10(0.5,0.5)": [
+          0,
+          0,
+          2
+        ]
+      },
+      "source": "Scripts/repro/766-plate-solver-surface/transcript.txt derivativeConstraint"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate_Plate Solver::evaluateDerivative",
+    "bridge_function": "OCCTPlateEvaluateDerivative",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D10(0.5,0.5)": [
+          1.4761904524850298,
+          0.6666667338346468,
+          2.0000000928637642
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D10(0.5,0.5)": [
+          1.4761904524850298,
+          0.6666667338346468,
+          2.0000000928637642
+        ]
+      },
+      "source": "Scripts/repro/766-plate-solver-surface/transcript.txt evaluateDerivative"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate_Plate Solver::gtoCConstraint",
+    "bridge_function": "OCCTPlateLoadGtoC",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D10": [
+          0,
+          0,
+          0.1
+        ],
+        "D01": [
+          0,
+          0,
+          0.1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D10": [
+          0,
+          0,
+          0.1
+        ],
+        "D01": [
+          0,
+          0,
+          0.1
+        ]
+      },
+      "source": "Scripts/repro/766-plate-solver-surface/transcript.txt gtoCConstraint"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate Surface Tests::Plate surface through grid of points",
+    "bridge_function": "OCCTShapePlatePoints",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 122.93065426620325,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 122.93065426620325,
+        "valid": true
+      },
+      "source": "Scripts/repro/766-plate-solver-surface/transcript.txt plateThroughGridPoints"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate Surface Tests::Plate surface with corner points",
+    "bridge_function": "OCCTShapePlatePoints",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 121,
+        "max corner distance": 4.44e-16
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 121,
+        "max corner distance": 4.44e-16
+      },
+      "source": "Scripts/repro/766-plate-solver-surface/transcript.txt plateWithCornerPoints"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate Surface Tests::Plate surface too few points",
+    "bridge_function": "OCCTShapePlatePoints",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-plate-solver-surface/transcript.txt plateTooFewPoints: threw Geom_RectangularTrimmedSurface::V1==V2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate Surface Tests::Plate surface from curves - API test",
+    "bridge_function": "OCCTShapePlateCurves",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 120.99999999999996,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 120.99999999999996,
+        "valid": true
+      },
+      "source": "Scripts/repro/766-plate-solver-surface/transcript.txt plateFromCurvesAPI"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
