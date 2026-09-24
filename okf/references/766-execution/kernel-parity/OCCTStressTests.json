@@ -145,7 +145,7 @@
     "red_green": {
       "injection": "OCCTShapeDrillHole returns nil",
       "env": "OCCT766=|DRILLNULL|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:120 Expectation failed: standardBox().drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 2, depth: 0)",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:119 Expectation failed: standardBox().drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 2, depth: 0)",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -171,7 +171,7 @@
     "red_green": {
       "injection": "EARLY:OCCTShapeOffset",
       "env": "OCCT766=|EARLY:OCCTShapeOffset|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:129 Expectation failed: standardBox().offset(by: 1.0)",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:128 Expectation failed: standardBox().offset(by: 1.0)",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -197,7 +197,7 @@
     "red_green": {
       "injection": "EARLY:OCCTShapeLinearPattern",
       "env": "OCCT766=|EARLY:OCCTShapeLinearPattern|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:136 Expectation failed: standardBox().linearPattern(direction: SIMD3(15, 0, 0), spacing: 15, count: 3)",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:135 Expectation failed: standardBox().linearPattern(direction: SIMD3(15, 0, 0), spacing: 15, count: 3)",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -223,7 +223,7 @@
     "red_green": {
       "injection": "EARLY:OCCTShapeCircularPattern",
       "env": "OCCT766=|EARLY:OCCTShapeCircularPattern|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:145 Expectation failed: standardBox().circularPattern(axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 4)",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:144 Expectation failed: standardBox().circularPattern(axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 4)",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -249,7 +249,7 @@
     "red_green": {
       "injection": "EARLY:OCCTShapeSectionWiresAtZ",
       "env": "OCCT766=|EARLY:OCCTShapeSectionWiresAtZ|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:154 Expectation failed: !wires.isEmpty",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:153 Expectation failed: !wires.isEmpty",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -275,7 +275,7 @@
     "red_green": {
       "injection": "OCCTShapeTranslate moves by dx + 1",
       "env": "OCCT766=|WRONG:OCCTShapeTranslate|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:173 Expectation failed: abs(b.min.x - 5) < 1e-6",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:172 Expectation failed: abs(b.min.x - 5) < 1e-6",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -301,7 +301,7 @@
     "red_green": {
       "injection": "OCCTShapeRotate turns by angle + 0.1",
       "env": "OCCT766=|WRONG:OCCTShapeRotate|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:183 Expectation failed: abs(b.max.x - 5 * 2.0.squareRoot()) < 1e-6",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:182 Expectation failed: abs(b.max.x - 5 * 2.0.squareRoot()) < 1e-6",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -327,7 +327,7 @@
     "red_green": {
       "injection": "OCCTShapeScale scales by factor × 1.1",
       "env": "OCCT766=|WRONG:OCCTShapeScale|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:189 Expectation failed: abs((r.volume ?? 0) - 8000) < 1e-6",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:188 Expectation failed: abs((r.volume ?? 0) - 8000) < 1e-6",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -353,7 +353,7 @@
     "red_green": {
       "injection": "EARLY:OCCTShapeMirror",
       "env": "OCCT766=|EARLY:OCCTShapeMirror|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:193 Expectation failed: standardBox().mirrored(planeNormal: SIMD3(1, 0, 0))",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:192 Expectation failed: standardBox().mirrored(planeNormal: SIMD3(1, 0, 0))",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },

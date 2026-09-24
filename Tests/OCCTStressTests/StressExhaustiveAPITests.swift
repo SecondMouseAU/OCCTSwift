@@ -113,7 +113,6 @@ struct StressShapeFeatureTests {
     @Test func shell() {
         let r = standardBox().shelled(thickness: -1.0)
         #expect(r == nil)
-        if let r { #expect(r.isValid) }
     }
 
     @Test func drill() throws {
