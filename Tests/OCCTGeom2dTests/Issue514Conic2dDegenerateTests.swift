@@ -209,7 +209,11 @@ struct Issue514Conic2dDegenerateTests {
         // #1979: asserted only that some coefficient was non-zero. IntAna2d_Conic of the x-axis
         // is 2E·y = 0 with E = -1 and every other coefficient 0.
         let l = try #require(Conic2D.line(point: SIMD2(0, 0), direction: SIMD2(1, 0)))
-        #expect(abs(l.a) + abs(l.b) + abs(l.c) + abs(l.d) + abs(l.f) < 1e-12)
+        // A five-term `abs(...) + ...` inside `#expect` exceeds the type-checker's time budget on the
+        // CI toolchain (Xcode 26.3), though newer compilers accept it, so sum over an array instead.
+        let otherCoefficients: [Double] = [l.a, l.b, l.c, l.d, l.f]
+        let coefficientSum: Double = otherCoefficients.reduce(0) { $0 + abs($1) }
+        #expect(coefficientSum < 1e-12)
         #expect(abs(l.e + 1) < 1e-12)
     }
 
