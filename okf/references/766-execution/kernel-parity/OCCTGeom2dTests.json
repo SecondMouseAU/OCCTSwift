@@ -2349,5 +2349,343 @@
       "probe": "Scripts/repro/766-geom2d-chfi2d-compbezier/",
       "rewritten": ""
     }
+  },
+  {
+    "test_name": "Curve2D Approximated Overload Parity Tests::Both overloads succeed on the same curve using only their own implicit defaults",
+    "bridge_function": "OCCTCurve2DApproximate / OCCTApproxCurve2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "whole_default": {
+          "degree": 7,
+          "poles": 13
+        },
+        "ranged_default": {
+          "degree": 8,
+          "poles": 27
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "whole_default": {
+          "degree": 7,
+          "poles": 13
+        },
+        "ranged_default": {
+          "degree": 8,
+          "poles": 27
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "OCCTApproxCurve2d approximates only half the range",
+      "red": "Curve2DApproximatedOverloadParityTests.swift:29:9: Expectation failed: ranged.poleCount == 27",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-approx-arclength-arctypes/",
+      "rewritten": "two `!= nil` checks; now pins both fits"
+    }
+  },
+  {
+    "test_name": "Curve2D Approximated Overload Parity Tests::Whole-domain overload's implicit default tolerance produces a real, non-trivial fit error",
+    "bridge_function": "OCCTCurve2DApproximate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "max_sampled_deviation_range": "(1e-5, 5e-3)"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "maxError": 0.000889
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "tolerance x 10",
+      "red": "Curve2DApproximatedOverloadParityTests.swift:82:9: Expectation failed: dev < 5e-3",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-approx-arclength-arctypes/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Approximated Overload Parity Tests::Ranged overload's implicit default tolerance produces a near-exact fit",
+    "bridge_function": "OCCTApproxCurve2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "max_sampled_deviation": "< 1e-9"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "max_sampled_deviation": "< 1e-9"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "approximate only half the range",
+      "red": "Curve2DApproximatedOverloadParityTests.swift:97:9: Expectation failed: dev < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-approx-arclength-arctypes/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Approximated Overload Parity Tests::Both overloads independently succeed on the same curve; neither promises to structurally match the other",
+    "bridge_function": "OCCTCurve2DApproximate / OCCTApproxCurve2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "whole_1e-6": {
+          "degree": 8,
+          "poles": 27
+        },
+        "ranged_1e-6": {
+          "degree": 8,
+          "poles": 27
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "whole_1e-6": {
+          "degree": 8,
+          "poles": 27
+        },
+        "ranged_1e-6": {
+          "degree": 8,
+          "poles": 27
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "whole-domain tolerance x 10",
+      "red": "Curve2DApproximatedOverloadParityTests.swift:125:9: Expectation failed: w.degree == 8",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-approx-arclength-arctypes/",
+      "rewritten": "`degree != nil` on both; now pins degree 8 / 27 poles on both"
+    }
+  },
+  {
+    "test_name": "Curve2D Approximated Overload Parity Tests::Whole-domain overload's continuity is a live knob; ranged overload has none",
+    "bridge_function": "OCCTCurve2DApproximate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "C0_poles": 15,
+        "C2_poles": 13
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "C0_poles": 15,
+        "C2_poles": 13
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "ignore continuity (always C2)",
+      "red": "Curve2DApproximatedOverloadParityTests.swift:142:9: Expectation failed: c0.poleCount == 15",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-approx-arclength-arctypes/",
+      "rewritten": "two `!= nil` checks could not show the knob is live; now pins 15 poles at C0 and 13 at C2"
+    }
+  },
+  {
+    "test_name": "Curve2D.arcLength(from:to:) distinguishes failure from zero (#409)::A genuine failure is reported as -1.0, not 0.0",
+    "bridge_function": "OCCTCurve2DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": -1.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": -1.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip the parameter-range validation",
+      "red": "Curve2DArcLengthFailureTests.swift:32:9: Expectation failed: len == -1.0",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-approx-arclength-arctypes/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D.arcLength(from:to:) distinguishes failure from zero (#409)::Equal bounds are a genuine zero-length result, not the failure sentinel",
+    "bridge_function": "OCCTCurve2DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "report a zero-width interval as failure (-1)",
+      "red": "Curve2DArcLengthFailureTests.swift:39:9: Expectation failed: abs(len) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-approx-arclength-arctypes/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D.arcLength(from:to:) distinguishes failure from zero (#409)::Both spellings tolerate a reversed range and agree on it",
+    "bridge_function": "OCCTCurve2DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length(0.2, 0.8)": 6.34269563057
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length(0.2, 0.8)": 6.34269563057
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "scale every length by 1.01",
+      "red": "Curve2DArcLengthFailureTests.swift:50:9: Expectation failed: abs(forward - 6.34269563057) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-approx-arclength-arctypes/",
+      "rewritten": "agreement between the spellings passed a length both got wrong; now pins 6.34269563057"
+    }
+  },
+  {
+    "test_name": "Curve2D Arc Types Tests::Arc of hyperbola creation",
+    "bridge_function": "OCCTCurve2DCreateArcOfHyperbola",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          5.63812982603,
+          -1.56328591648
+        ],
+        "end": [
+          5.63812982603,
+          1.56328591648
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          5.63812982603,
+          -1.56328591648
+        ],
+        "end": [
+          5.63812982603,
+          1.56328591648
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "double the start parameter",
+      "red": "Curve2DArcTypesTests.swift:25:9: Expectation failed: simd_distance(a.startPoint, SIMD2(5.63812982603, -1.56328591648)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-approx-arclength-arctypes/",
+      "rewritten": "non-nil, open and two samples; now pins both end points"
+    }
+  },
+  {
+    "test_name": "Curve2D Arc Types Tests::Arc of parabola creation",
+    "bridge_function": "OCCTCurve2DCreateArcOfParabola",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          1.125,
+          -5
+        ],
+        "end": [
+          1.125,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          1.125,
+          -5
+        ],
+        "end": [
+          1.125,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "double the focal length",
+      "red": "Curve2DArcTypesTests.swift:41:9: Expectation failed: simd_distance(a.startPoint, SIMD2(1.125, -5)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-approx-arclength-arctypes/",
+      "rewritten": "non-nil, open and two samples; now pins both end points"
+    }
   }
 ]

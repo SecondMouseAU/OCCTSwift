@@ -41,14 +41,14 @@ struct Curve2DArcLengthFailureTests {
     }
 
     @Test("Both spellings tolerate a reversed range and agree on it")
-    func bothSpellingsTolerateReversedRange() {
-        let forward = Self.bezier.length(from: 0.2, to: 0.8)
-        let reversed = Self.bezier.length(from: 0.8, to: 0.2)
-        #expect(forward != nil)
-        #expect(reversed != nil)
-        if let forward, let reversed {
-            #expect(abs(forward - reversed) < 1e-9)
-            #expect(abs(Self.bezier.arcLength(from: 0.8, to: 0.2) - reversed) < 1e-9)
-        }
+    func bothSpellingsTolerateReversedRange() throws {
+        let forward = try #require(Self.bezier.length(from: 0.2, to: 0.8))
+        let reversed = try #require(Self.bezier.length(from: 0.8, to: 0.2))
+        // #1979: agreement alone passed a length both spellings got wrong the same way.
+        // GCPnts_AbscissaPoint::Length gives 6.34269563057 for [0.2, 0.8]
+        // (Scripts/repro/766-geom2d-approx-arclength-arctypes/).
+        #expect(abs(forward - 6.34269563057) < 1e-9)
+        #expect(abs(forward - reversed) < 1e-9)
+        #expect(abs(Self.bezier.arcLength(from: 0.8, to: 0.2) - reversed) < 1e-9)
     }
 }
