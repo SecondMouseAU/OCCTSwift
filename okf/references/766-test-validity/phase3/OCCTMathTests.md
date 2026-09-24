@@ -110,10 +110,31 @@
 
 **Total**: 342 tests
 
-### 766-math-coordinate-system-3d (#1983, measured)
+### 766-math-arcs-axes (#1983, measured)
 
 | Suite | Test | Bridge function | Injection | Red | Green | Parity |
 |-------|------|-----------------|-----------|-----|-------|--------|
+| **GC_MakeArcOfHyperbola** | Arc of hyperbola between parameters | `OCCTCurve3DArcOfHyperbola` | major and minor radius swapped into gp_Hypr | red | green | PASS |
+| **GC_MakeArcOfParabola** | Arc of parabola between parameters | `OCCTCurve3DArcOfParabola` | focal distance doubled (original test green; vertex offset +1 in x also turned the original red) | red | green | PASS |
+| **Axis1Placement Tests** | create and read | `OCCTAxis1PlacementLocation` | location x + 1 | red | green | PASS |
+| **Axis1Placement Tests** | reverse | `OCCTAxis1PlacementReverse` | Reverse() skipped | red | green | PASS |
+| **Axis1Placement Tests** | reversed copy | `OCCTAxis1PlacementReversed` | returns an unreversed copy | red | green | PASS |
+| **Axis1Placement Tests** | setDirection and setLocation | `OCCTAxis1PlacementSetDirection / OCCTAxis1PlacementSetLocation` | SetDirection skipped; SetLocation skipped (each red on its own line) | red | green | PASS |
+| **Axis2Placement Tests** | create and read directions | `OCCTAxis2PlacementYDirection` | Y direction y negated | red | green | PASS |
+| **Axis2Placement Tests** | location | `OCCTAxis2PlacementLocation` | location x + 1 | red | green | PASS |
+| **Axis2Placement Tests** | setDirection | `OCCTAxis2PlacementSetDirection` | SetDirection skipped | red | green | PASS |
+| **Axis2Placement Tests** | setXDirection | `OCCTAxis2PlacementSetXDirection` | SetXDirection skipped | red | green | PASS |
+### 766-math-roots-cones-coordsys (#1983, measured)
+| **BracketedRoot** | findRoot | `OCCTMathBracketedRoot` | returns bound1 instead of Root() | red | green | PASS |
+| **BracketedRoot** | findSinRoot | `OCCTMathBracketedRoot` | returns bound1 instead of Root() | red | green | PASS |
+| **BracketMinimum** | bracketQuadratic | `OCCTMathBracketMinimum` | fa and fb written to each other | red | green | PASS |
+| **GC_MakeConicalSurface** | Conical surface from axis and angle | `OCCTSurfaceConicalFromAxis` | semi-angle doubled | red | green | PASS |
+| **GC_MakeConicalSurface** | Conical surface from points and radii | `OCCTSurfaceConicalFromPointsRadii` | r1 and r2 swapped | red | green | PASS |
+| **Coordinate System Tests** | zUpDirection | `OCCTCoordSystemUpDirection` | XDirection() returned instead of Direction() | red | green | PASS |
+| **Coordinate System Tests** | yUpDirection | `OCCTCoordSystemUpDirection` | XDirection() returned instead of Direction() | red | green | PASS |
+| **Coordinate System Tests** | convertWithScaling | `OCCTCoordSystemConvert` | SetInputLengthUnit skipped | red | green | PASS |
+| **Coordinate System Tests** | convertZupToYup | `OCCTCoordSystemConvert` | SetOutputCoordinateSystem skipped | red | green | PASS |
+### 766-math-coordinate-system-3d (#1983, measured)
 | **CoordinateSystem3D** | defaultXYZ | `OCCTAx3Create` | Y direction y negated | red | green | PASS |
 | **CoordinateSystem3D** | fromNormal | `OCCTAx3CreateFromNormal` | isDirect inverted | red | green | PASS |
 | **CoordinateSystem3D** | angle | `OCCTAx3Angle` | a1.Angle(a1) instead of a1.Angle(a2) | red | green | PASS |
