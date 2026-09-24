@@ -1,0 +1,11 @@
+Prs3d_TextAspect default height=16 after SetHeight(30)=30
+point cloud of 3: count=3 bounds x[-1, 4] y[0, 5]
+TFunction_DriverTable::HasDriver(unknown)=false
+Function: fresh Failed=false after SetFailure(1) Failed=true GetFailure=1
+GraphNode: NotExecuted=1 Succeeded=3 AddNext(2)=true AddPrevious(1)=true RemoveAllNext ok
+Scope: AddFunction=true HasFunction=true count=2 RemoveFunction=true HasFunction after=false after RemoveAll count=0 FreeID=3
+Logbook: fresh IsEmpty=true after SetTouched IsEmpty=false IsModified(t1)=true IsModified(t2)=false after Clear IsEmpty=true
+Tick: before=false after Set=true after Forget=false
+UAttribute: has g1=true has g2=false
+Variable: name=velocity valued=true value=42.5 unit=m/s constant=true->false assigned=true->false
+TObj_Application::GetInstance null=false
