@@ -5524,5 +5524,50 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "IntAna PlaneSphere Tests::planeSphereIntersection",
+    "bridge_function": "OCCTIntAnaPlaneSphere",
+    "bridge_output": {
+      "type": "quad_quad",
+      "data": {
+        "solution_count": 1,
+        "result_type": "circle",
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "radius": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "quad_quad",
+      "data": {
+        "solution_count": 1,
+        "result_type": "circle",
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "radius": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

@@ -263,6 +263,7 @@
 | **Hatch Builder Tests** | addLinesAndCount | Hatch X lines | OCCTHatcherAddXLine drops AddXLine |
 | **Hatch Builder Tests** | addYLines | Hatch Y lines | OCCTHatcherAddYLine drops AddYLine |
 | **Hatch Builder Tests** | trimAndIntervals | Hatch trimming (rewritten: could not fail) | OCCTHatcherTrim drops Trim |
+| **IntAna PlaneSphere Tests** | planeSphereIntersection | Plane-sphere circle | OCCTIntAnaPlaneSphere doubles the circle radius (values pinned, #766) |
 
 ---
 
