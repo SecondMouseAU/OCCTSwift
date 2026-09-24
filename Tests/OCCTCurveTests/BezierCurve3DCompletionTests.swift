@@ -5,7 +5,7 @@ import simd
 @testable import OCCTSwift
 
 // Every value is Geom_BezierCurve's for the same poles
-// (Scripts/repro/766-curve-bezier-curve3d/transcript.txt). The earlier versions wrapped each
+// (Scripts/repro/766-curve-bezier-completions/transcript.txt). The earlier versions wrapped each
 // test body in `if let`, so a nil curve passed with nothing checked, and several checked one
 // coordinate of one point, so start and end swapped, or a pole's y wrong, passed (#766).
 @Suite("Bezier Curve 3D Completions")
