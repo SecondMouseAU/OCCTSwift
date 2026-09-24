@@ -282,3 +282,13 @@
 | **MathSolver BFGS v0.110** | minimizeRosenbrock | `OCCTMathBFGS` | location + 0.05 in every coordinate | red | green | PASS |
 | **MathSolver BrentMinimum v0.110** | minimizeQuadratic | `OCCTMathBrentMinimum` | Location() + 0.05 | red | green | PASS |
 | **MathSolver BrentMinimum v0.110** | minimizeSine | `OCCTMathBrentMinimum` | Location() + 0.05 | red | green | PASS |
+### 766-math-functionroots-gaussintegrate (#1983, measured)
+| **MathSolver FunctionRoots v0.111** | findAllRootsQuadratic | `OCCTMathFunctionRoots` | root values + 0.05 in OCCTMathFunctionRoots (this call resolves to the `findAllRoots(in:samples:function:)` overload that reaches it) | red | green | PASS |
+| **MathSolver FunctionRoots v0.111** | findAllRootsSin | `OCCTMathFunctionRoots` | root values + 0.05 in OCCTMathFunctionRoots (this call resolves to the `findAllRoots(in:samples:function:)` overload that reaches it) | red | green | PASS |
+| **MathSolver FunctionRoot v0.110** | findRoot(near:) finds both roots of x^2 - 4 | `OCCTMathFunctionRoot` | Root() + 0.5 | red | green | PASS |
+| **MathSolver FunctionRoot v0.110** | findRootBounded | `OCCTMathFunctionRootBounded` | Root() + 0.5 | red | green | PASS |
+| **MathSolver FunctionRoot v0.110** | findRootBisection | `OCCTMathBissecNewton` | Root() + 0.5 | red | green | PASS |
+| **MathSolver FunctionRoot v0.110** | findRootCubic | `OCCTMathFunctionRoot` | Root() + 0.5 | red | green | PASS |
+| **MathSolver GaussIntegrate v0.111** | integrateSin | `OCCTMathGaussIntegrate` | math_GaussSingleIntegration::Value() * 1.001 | red | green | PASS |
+| **MathSolver GaussIntegrate v0.111** | integratePolynomial | `OCCTMathGaussIntegrate` | math_GaussSingleIntegration::Value() * 1.001 | red | green | PASS |
+| **MathSolver GaussIntegrate v0.111** | integrateConstant | `OCCTMathGaussIntegrate` | math_GaussSingleIntegration::Value() * 1.001 | red | green | PASS |
