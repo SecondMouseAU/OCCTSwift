@@ -1,0 +1,5 @@
+NewtonMinimum minimizeQuadratic: done=1 x=3 4 min=0
+NewtonMinimum minimizeRosenbrock: done=1 x=1 1 min=0
+NewtonRoot findRoot: done=1 root=2
+scaleBox (2, 1, 0.5): done=1 size(BRepBndLib::Add, with gap)=20.000000399999998 10.000000400000001 5.0000003999999993 volume=999.99999999999977 ratio=1
+volumeRatio (2, 3, 0.5): done=1 size(BRepBndLib::Add, with gap)=20.0000006 30.0000006 5.0000005999999999 volume=3000 ratio=3.0000000000000009

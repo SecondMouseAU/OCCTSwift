@@ -18,8 +18,14 @@ struct AHTBezierCurve2DTests {
             #expect(Bool(false), "Failed to create 2D AHTBezier curve")
             return
         }
+        // #1979: the domain alone passed a curve built from the wrong poles. Pinned to the
+        // values Geom2dEval_AHTBezierCurve reports for these inputs
+        // (Scripts/repro/766-geom2d-aht-axisplacement/).
         let domain = curve.domain
-        #expect(domain.lowerBound >= 0)
-        #expect(domain.upperBound > 0)
+        #expect(abs(domain.lowerBound) < 1e-12)
+        #expect(abs(domain.upperBound - 1.0) < 1e-12)
+        let mid = curve.point(at: 0.5)
+        #expect(abs(mid.x - 7.72495409928) < 1e-9)
+        #expect(abs(mid.y - 0.135033262487) < 1e-9)
     }
 }
