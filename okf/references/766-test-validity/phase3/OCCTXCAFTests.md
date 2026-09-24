@@ -206,3 +206,14 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `nullBufferReportsTheLength` | `OCCTDocumentGetLayerName` clamps any index to 0 | :56 Expectation failed: OCCTDocumentGetLayerName(handle, count, nil, 0) == -1; :57 Expectation failed: OCCTDocumentGetLayerName(handle, -1, nil, 0) == -1 | passed | `OCCTDocumentGetLayerName` | PASS: 3 entries, so index 3 and -1 are out of range |
 | `shortBufferReportsTheFullLength` | `OCCTDocumentGetLayerName` reports the copied length, not the full one | :76 Expectation failed: reported == len | passed | `OCCTDocumentGetLayerName` | PASS: only `VisMaterials` (12) exceeds 10 |
 | `malformedBufferArgumentsAreRefused` | `OCCTDocumentGetLayerName` answers 5 for a negative length | :95 Expectation failed: OCCTDocumentGetLayerName(handle, 0, &buffer, -1) == -1 | passed | `OCCTDocumentGetLayerName` | N/A: bridge-only validation |
+### `DocumentModifiedTests.swift`
+| `setAndCheckModified` | `OCCTDocumentSetModified` returns without marking | :22 Expectation failed: doc.isModified(label) | passed | `OCCTDocumentIsLabelModified` | PASS: true = true |
+| `clearModified` | `OCCTDocumentClearModified` returns without purging | :39 Expectation failed: !doc.isModified(label) | passed | `OCCTDocumentClearModified` | PASS: true, then false after `PurgeModified` |
+### `DocumentTests.swift`
+| `createEmptyDocument` | `OCCTDocumentGetRootCount` returns 1 and `OCCTDocumentGetRootLabelId` returns 0 | :14 Expectation failed: doc.rootNodes.isEmpty | passed | `OCCTDocumentGetRootCount` | PASS: 0 = 0 |
+| `lengthUnitReadsBackFromSTEP` | `OCCTDocumentGetLengthUnit` returns false | :39 Expectation failed: doc.lengthUnit | passed | `OCCTDocumentGetLengthUnit` | PASS: kernel 0.001 "mm" |
+| `lengthUnitNilOnFreshDocument` | `OCCTDocumentGetLengthUnit` reports a 1.0 "m" unit | :50 Expectation failed: doc.lengthUnit == nil | passed | `OCCTDocumentGetLengthUnit` | PASS: absent = absent |
+### `DocumentTransactionTests.swift`
+| `openCommit` | `OCCTDocumentHasOpenTransaction` returns false | :18 Expectation failed: doc.hasOpenTransaction | passed | `OCCTDocumentHasOpenTransaction` | PASS: false, true, commit true, false |
+| `openAbort` | `OCCTDocumentAbortTransaction` returns without aborting | :40 Expectation failed: !doc.hasOpenTransaction | passed | `OCCTDocumentAbortTransaction` | PASS: false = false |
+| `hasOpenTransaction` | `OCCTDocumentCommitTransaction` returns true without committing | :53 Expectation failed: !doc.hasOpenTransaction | passed | `OCCTDocumentCommitTransaction` | PASS: false, true, false |
