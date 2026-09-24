@@ -65,7 +65,10 @@ static void select(const std::vector<TopoDS_Shell>& shells, std::vector<TopoDS_S
     {
       if (i == j)
         continue;
+      // A shell with no vertex is not counted as enclosed, as occtShellIsInsideSolid does.
       TopExp_Explorer v(shells[j], TopAbs_VERTEX);
+      if (!v.More())
+        continue;
       c.Perform(BRep_Tool::Pnt(TopoDS::Vertex(v.Current())), Precision::Confusion());
       if (c.State() == inside)
         enclosed[j]++;
