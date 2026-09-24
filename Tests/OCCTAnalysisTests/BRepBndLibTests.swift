@@ -50,9 +50,10 @@ struct BRepBndLibTests {
         let obb = b.orientedBoundingBoxDetailed()
         #expect(obb != nil)
         if let obb = obb {
-            #expect(obb.xHalfSize > 0)
-            #expect(obb.yHalfSize > 0)
-            #expect(obb.zHalfSize > 0)
+            // Box 10x20x30 centred at origin: half-sizes 5, 10, 15 (probed with tolerance: 5.0000001, 10.0000001, 15.0000001)
+            #expect(abs(obb.xHalfSize - 5.0) < 1e-6)
+            #expect(abs(obb.yHalfSize - 10.0) < 1e-6)
+            #expect(abs(obb.zHalfSize - 15.0) < 1e-6)
         }
     }
 
@@ -93,8 +94,9 @@ struct BRepBndLibTests {
         #expect(bb != nil)
         if let bb = bb {
             // Sphere of radius 10 should have bounds approximately [-10, 10] in each axis
-            #expect(bb.min.x < -9.0)
-            #expect(bb.max.x > 9.0)
+            // Probed with tolerance: -10.0000001, 10.0000001
+            #expect(abs(bb.min.x - (-10.0)) < 1e-6)
+            #expect(abs(bb.max.x - 10.0) < 1e-6)
         }
     }
 
