@@ -93,7 +93,8 @@ struct GeomFillProfilerTests {
             // #766: `firstMult > 0` passed a multiplicity of 1. GeomFill_Profiler reports knots
             // [0, 2 pi] with multiplicities [15, 15], see Scripts/repro/766-geomfill-d/.
             #expect(mults == [15, 15])
-            #expect(knots.count == 2 && abs((knots.last ?? 0) - 2 * .pi) < 1e-9 && knots.first == 0)
+            #expect(
+                knots.count == 2 && abs((knots.last ?? 0) - 2 * .pi) < 1e-9 && knots.first == 0.0)
         } else {
             Issue.record("failed to build probe curves")
         }

@@ -1,13 +1,5 @@
 [
   {
-    "test_name": "Surface domain kernel parity",
-    "bridge_function": "OCCTSurfacePlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
-    "status": "PENDING"
-  },
-  {
     "test_name": "GeomFill_Profiler::add curves and perform",
     "bridge_function": "OCCTGeomFillProfilerNbPoles",
     "bridge_output": {
