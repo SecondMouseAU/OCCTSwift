@@ -16,14 +16,44 @@
 #include <TCollection_AsciiString.hxx>
 #include <TCollection_ExtendedString.hxx>
 #include <sys/statvfs.h>
+#include <sys/resource.h>
 #include <sys/utsname.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <cstdio>
+#include <string>
+#include <atomic>
+#include <thread>
+#include <vector>
+#include <time.h>
 #include <cstdlib>
 #include <string>
 #include <vector>
 #include <algorithm>
+
+static double wallNow()
+{
+  struct timespec t;
+  clock_gettime(CLOCK_MONOTONIC, &t);
+  return t.tv_sec + t.tv_nsec * 1e-9;
+}
+
+static double processCPU()
+{
+  struct rusage r;
+  getrusage(RUSAGE_SELF, &r);
+  return r.ru_utime.tv_sec + r.ru_utime.tv_usec * 1e-6 + r.ru_stime.tv_sec + r.ru_stime.tv_usec * 1e-6;
+}
+
+// Spin until the calling thread has used `seconds` of its own CPU time.
+static void spinThreadCPU(double seconds)
+{
+  volatile double sum = 0;
+  double          t0  = clock_gettime_nsec_np(CLOCK_THREAD_CPUTIME_ID) * 1e-9;
+  while (clock_gettime_nsec_np(CLOCK_THREAD_CPUTIME_ID) * 1e-9 - t0 < seconds)
+    for (int i = 0; i < 1000; ++i)
+      sum += i;
+}
 
 static std::string sysName(const OSD_Path& p)
 {
@@ -44,15 +74,21 @@ int main()
     TCollection_AsciiString ip = host.InternetAddress();
     in_addr                 a;
     // The host name itself is not printed, so the committed transcript carries no machine name.
-    printf("HostName() == gethostname(): %d (length %d)\n",
-           (int)(host.HostName() == TCollection_AsciiString(buf)),
-           host.HostName().Length());
+    // OSD_Host::HostName() resolves through the system resolver, so its form can differ from
+    // gethostname(): on the macOS CI runner gethostname gave "<host>.local" and OSD_Host gave
+    // "<host>." (trailing dot). The Swift test therefore compares the first DNS label.
+    std::string kernel = host.HostName().ToCString();
+    std::string posix  = buf;
+    auto        label  = [](std::string x) { return x.substr(0, x.find('.')); };
+    printf("HostName() == gethostname(): %d; HostName() ends with '.': %d; first DNS labels equal: %d\n",
+           (int)(kernel == posix),
+           (int)(!kernel.empty() && kernel.back() == '.'),
+           (int)(label(kernel) == label(posix)));
     printf("SystemVersion() = \"%s\", uname sysname+release = \"%s %s\"\n",
            host.SystemVersion().ToCString(),
            u.sysname,
            u.release);
-    printf("InternetAddress() = \"%s\", parses as IPv4: %d\n",
-           ip.ToCString(),
+    printf("InternetAddress() parses as an IPv4 dotted quad: %d\n",
            inet_pton(AF_INET, ip.ToCString(), &a) == 1);
   }
 
@@ -65,21 +101,60 @@ int main()
     m.Stop();
     printf("Elapsed() after Start, 50 ms sleep, Stop = %.4f s\n", m.Elapsed());
 
-    // The bridge's OCCTPerfMeterCreate does Init + Start; the test then burns 100 ms of CPU.
-    OSD_PerfMeter  spin;
+    // The bridge's OCCTPerfMeterCreate does Init + Start. The test then spins until THIS thread
+    // has used 0.1 s of CPU (not 0.1 s of wall time, which a busy machine can shorten to 0.05 s
+    // of CPU: an earlier version of this probe read 0.0484 for that reason).
+    OSD_PerfMeter spin;
     spin.Init(TCollection_AsciiString("swift_test_766"));
+    double p0 = processCPU();
     spin.Start();
-    volatile double sum = 0;
-    struct timespec t0, t1;
-    clock_gettime(CLOCK_MONOTONIC, &t0);
-    do
-    {
-      for (int i = 0; i < 1000; ++i)
-        sum += i;
-      clock_gettime(CLOCK_MONOTONIC, &t1);
-    } while ((t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec) * 1e-9 < 0.1);
+    spinThreadCPU(0.1);
     spin.Stop();
-    printf("Elapsed() after Start, 100 ms CPU spin, Stop = %.4f s\n", spin.Elapsed());
+    double p1 = processCPU();
+    printf("Elapsed() after a 0.1 s thread-CPU spin = %.4f s; process CPU (getrusage) over the same interval = %.4f s\n",
+           spin.Elapsed(),
+           p1 - p0);
+    printf("  0.09 <= Elapsed() <= process CPU + 0.02: %d\n",
+           (int)(spin.Elapsed() >= 0.09 && spin.Elapsed() <= p1 - p0 + 0.02));
+
+    // OSD_PerfMeter reads CPU time summed over the process's LIVE threads, not the calling
+    // thread's and not wall time. Threads still running inflate a window; a thread that exits
+    // inside it takes its whole CPU history out of the sum. So the Swift test cannot bound the
+    // reading by wall time, and cannot rely on a lower bound holding in every window.
+    for (int mode = 0; mode < 3; ++mode)
+    {
+      int                      threads = mode == 0 ? 1 : 4;
+      OSD_PerfMeter            m2;
+      m2.Init(TCollection_AsciiString(("swift_test_766_mt" + std::to_string(mode)).c_str()));
+      std::atomic<bool> stopFlag{false};
+      double            c0 = processCPU();
+      m2.Start();
+      std::vector<std::thread> ts;
+      for (int i = 1; i < threads; ++i)
+        ts.emplace_back([&, mode] {
+          if (mode == 1)
+            spinThreadCPU(0.2);
+          else
+            while (!stopFlag)
+            {
+            }
+        });
+      spinThreadCPU(0.2);
+      if (mode == 1)
+        for (auto& t : ts)
+          t.join();
+      m2.Stop();
+      double c1 = processCPU();
+      stopFlag  = true;
+      for (auto& t : ts)
+        if (t.joinable())
+          t.join();
+      printf("%d thread(s), workers %s at Stop: Elapsed() = %.2f s, process CPU over the interval = %.2f s\n",
+             threads,
+             mode == 0 ? "none" : (mode == 1 ? "exited" : "still running"),
+             m2.Elapsed(),
+             c1 - c0);
+    }
   }
 
   printf("== OSD_Directory (OCCTDirectoryBuildTemporary / Create / Exists / Remove) ==\n");

@@ -919,13 +919,25 @@ struct ResourceManagerTests {
 @Suite("OSD_Host Tests")
 struct OSDHostTests {
 
-    // #1987: OSD_Host::HostName() is gethostname(2); pinned to it rather than to "non-empty".
+    // #1987: this accepted any non-empty string. OSD_Host::HostName() resolves the name through
+    // the system resolver, so it can differ from gethostname(2) in form: on the macOS CI runner
+    // gethostname gives "<host>.local" and OSD_Host gives "<host>." (trailing dot), while a
+    // developer machine gets the identical string from both. Both name the same host, so the two
+    // are compared by first DNS label, case-insensitively. That still rejects a bridge that
+    // returns a fixed or wrong name.
     @Test func hostName() {
         var buf = [CChar](repeating: 0, count: 256)
         #expect(gethostname(&buf, buf.count) == 0)
         let expected = String(cString: buf)
         #expect(!expected.isEmpty)
-        #expect(HostInfo.hostName == expected)
+        func firstLabel(_ name: String) -> String {
+            String(name.prefix { $0 != "." }).lowercased()
+        }
+        let actual = HostInfo.hostName
+        #expect(actual != nil)
+        guard let actual else { return }
+        #expect(!firstLabel(actual).isEmpty)
+        #expect(firstLabel(actual) == firstLabel(expected))
     }
 
     // #1987: OSD_Host::SystemVersion() is uname(3)'s sysname and release joined by a space.
@@ -939,8 +951,8 @@ struct OSDHostTests {
     }
 
     // #1987: this used to be `let _ = HostInfo.internetAddress`, with no assertion at all. The
-    // kernel returns a dotted-quad IPv4 address (127.0.0.1 on the machine it was probed on), so
-    // the result must parse as one.
+    // kernel returns a dotted-quad IPv4 address (the loopback address in one probe run, a LAN
+    // address in another), so the result must parse as one.
     @Test func internetAddress() {
         let address = HostInfo.internetAddress
         #expect(address != nil)
@@ -954,21 +966,53 @@ struct OSDHostTests {
 struct PerfMeterTests {
 
     // #1987: this asserted `elapsed >= 0` after a 10,000-iteration loop, which a meter that never
-    // started also satisfies. OSD_PerfMeter measures CPU time, not wall time: in the probe a
-    // 50 ms sleep reads 0.0000 s and a 100 ms spin reads 0.0484 s. The test spins for 200 ms of
-    // wall time and expects a clearly nonzero reading that does not exceed the wall time spent.
+    // started also satisfies. Two facts about OSD_PerfMeter shape the replacement
+    // (Scripts/repro/766-foundation-osd-io):
+    //
+    //  - It reads CPU time, not wall time: a sleeping process reads 0.0000.
+    //  - It reads the CPU summed over the process's LIVE threads, not the calling thread's. Other
+    //    threads inflate a window (three others still running at Stop: 1.03 against 0.26 s of
+    //    wall), and a thread that exits inside the window takes its whole CPU history out of the
+    //    sum (four workers exited before Stop read 0.193 of the 0.800 s the process used; under
+    //    thread churn single windows read as low as -1.17 s, and 72 of 150 fell below the
+    //    thread's own CPU).
+    //
+    // A first version bounded the reading by wall time and failed on the CI runner (0.2156
+    // against 0.2101), where thousands of other tests share the process. So both bounds are in
+    // CPU time. The reading can never exceed the CPU the whole process used across the window,
+    // however loaded, so that bound is checked on every window. The lower bound cannot hold in
+    // every window, so it must hold in at least one of up to 20: the window spins until THIS
+    // thread has used 0.1 s of CPU, which a live meter must then show. It costs one 0.1 s window
+    // in the normal case; a meter that never started, or reports the wrong unit, fails them all.
     @Test func measureTime() {
-        let start = Date()
-        let meter = PerfMeter(name: "swift_test_766")
-        var sum = 0.0
-        while Date().timeIntervalSince(start) < 0.2 {
-            for i in 0..<1000 { sum += Double(i) }
+        func processCPU() -> Double {
+            var r = rusage()
+            getrusage(RUSAGE_SELF, &r)
+            return Double(r.ru_utime.tv_sec) + Double(r.ru_utime.tv_usec) * 1e-6
+                + Double(r.ru_stime.tv_sec) + Double(r.ru_stime.tv_usec) * 1e-6
         }
-        meter.stop()
-        let wall = Date().timeIntervalSince(start)
-        #expect(meter.elapsed > 0.01)
-        #expect(meter.elapsed <= wall + 0.01)
-        #expect(sum > 0)
+        func threadCPU() -> Double {
+            Double(clock_gettime_nsec_np(CLOCK_THREAD_CPUTIME_ID)) * 1e-9
+        }
+        var readOwnCPU = false
+        var attempt = 0
+        while !readOwnCPU && attempt < 20 {
+            let cpuBefore = processCPU()
+            let meter = PerfMeter(name: "swift_test_766_\(attempt)")
+            let threadStart = threadCPU()
+            var sum = 0.0
+            while threadCPU() - threadStart < 0.1 {
+                for i in 0..<1000 { sum += Double(i) }
+            }
+            meter.stop()
+            let cpuAfter = processCPU()
+            let elapsed = meter.elapsed
+            #expect(sum > 0)
+            #expect(elapsed <= cpuAfter - cpuBefore + 0.02)
+            readOwnCPU = elapsed >= 0.09
+            attempt += 1
+        }
+        #expect(readOwnCPU)
     }
 }
 

@@ -100,11 +100,11 @@
     "bridge_function": "OCCTHostName",
     "bridge_output": {
       "type": "string",
-      "data": "== gethostname()"
+      "data": "same first DNS label as gethostname()"
     },
     "kernel_output": {
       "type": "string",
-      "data": "== gethostname()"
+      "data": "same first DNS label as gethostname(); CI runner: \"<host>.\" against \"<host>.local\""
     },
     "comparison": {
       "equal": true,
@@ -138,7 +138,7 @@
     },
     "kernel_output": {
       "type": "string",
-      "data": "127.0.0.1"
+      "data": "IPv4 dotted quad (loopback in one run, a LAN address in another)"
     },
     "comparison": {
       "equal": true,
@@ -151,13 +151,22 @@
     "bridge_function": "OCCTPerfMeterElapsed",
     "bridge_output": {
       "type": "seconds",
-      "data": "> 0.01 and <= wall time after a 200 ms spin"
+      "data": ">= 0.09 in at least one window, <= process CPU delta + 0.02 in every window"
     },
     "kernel_output": {
       "type": "seconds",
       "data": {
-        "sleep_50ms": 0.0,
-        "spin_100ms": 0.0484
+        "0.1s_thread_cpu_spin": 0.0965,
+        "process_cpu_same_interval": 0.1,
+        "4_workers_exited_at_stop": {
+          "elapsed": 0.19,
+          "process_cpu": 0.8
+        },
+        "4_workers_running_at_stop": {
+          "elapsed": 1.04,
+          "process_cpu": 1.05
+        },
+        "counts": "CPU of the process's live threads"
       }
     },
     "comparison": {

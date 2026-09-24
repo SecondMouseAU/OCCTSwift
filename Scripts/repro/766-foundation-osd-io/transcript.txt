@@ -1,10 +1,14 @@
 == OSD_Host (OCCTHostName / OCCTSystemVersion / OCCTInternetAddress) ==
-HostName() == gethostname(): 1 (length 21)
+HostName() == gethostname(): 1; HostName() ends with '.': 0; first DNS labels equal: 1; length 3
 SystemVersion() = "Darwin 27.0.0", uname sysname+release = "Darwin 27.0.0"
-InternetAddress() = "127.0.0.1", parses as IPv4: 1
+InternetAddress() parses as an IPv4 dotted quad: 1
 == OSD_PerfMeter (OCCTPerfMeterCreate / Stop / Elapsed) ==
 Elapsed() after Start, 50 ms sleep, Stop = 0.0000 s
-Elapsed() after Start, 100 ms CPU spin, Stop = 0.0670 s
+Elapsed() after a 0.1 s thread-CPU spin = 0.0965 s; process CPU (getrusage) over the same interval = 0.1000 s
+  0.09 <= Elapsed() <= process CPU + 0.02: 1
+1 thread(s), workers none at Stop: Elapsed() = 0.19 s, process CPU over the interval = 0.20 s
+4 thread(s), workers exited at Stop: Elapsed() = 0.19 s, process CPU over the interval = 0.80 s
+4 thread(s), workers still running at Stop: Elapsed() = 1.04 s, process CPU over the interval = 1.05 s
 == OSD_Directory (OCCTDirectoryBuildTemporary / Create / Exists / Remove) ==
 BuildTemporary() gives a path under /tmp: 1, Exists 1
 after Remove(): Exists 0
@@ -20,6 +24,6 @@ DirectoryIterator count 4: "." ".." "a" "b"
 FileIterator count 3: "x.txt" "y.txt" "z.dat"
 == OSD_Disk (OCCTDiskSize / DiskFree / IsValid / Name) ==
 DiskSize()/2 = 971350180 KB, statvfs f_blocks*(f_frsize/512)/2 = 971350180 KB
-DiskFree()/2 = 53869400 KB (> 0: 1)
+DiskFree()/2 = 40800504 KB (> 0: 1)
 Failed() after DiskSize on "/" = 0
 OSD_Disk(OSD_Path("/")).Name() system name = ""
