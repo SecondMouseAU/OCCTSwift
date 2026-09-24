@@ -166,3 +166,15 @@
 | **FRPR Minimizer** | minimizeQuadratic | `OCCTMathFRPR` | returns the start point instead of Location() | red | green | PASS |
 | **FunctionAllRoots** | sinRoots | `OCCTMathFunctionRoots` | every root + 0.05 (despite the suite name, `findAllRoots(in:)` resolves to the overload that calls OCCTMathFunctionRoots; injections in OCCTMathFunctionAllRoots left it green) | red | green | PASS |
 | **GaussLeastSquare** | overdetermined | `OCCTMathGaussLeastSquare` | matrix read column-major | red | green | PASS |
+### 766-math-elclib-elslib (#1983, measured)
+| **ElCLib Tests** | valueOnLine | `OCCTElCLibValueOnLine` | u negated | red | green | PASS |
+| **ElCLib Tests** | valueOnCircle | `OCCTElCLibValueOnCircle` | x and y outputs swapped | red | green | PASS |
+| **ElCLib Tests** | valueOnEllipse | `OCCTElCLibValueOnEllipse` | x from the minor radius | red | green | PASS |
+| **ElCLib Tests** | d1OnCircle | `OCCTElCLibD1OnCircle` | tangent reversed | red | green | PASS |
+| **ElCLib Tests** | parameterOnLine | `OCCTElCLibParameterOnLine` | line direction negated | red | green | PASS |
+| **ElCLib Tests** | inPeriod | `OCCTElCLibInPeriod` | returns uFirst | red | green | PASS |
+| **ElSLib Tests** | valueOnPlane | `OCCTElSLibValueOnPlane` | u and v swapped | red | green | PASS |
+| **ElSLib Tests** | valueOnSphere | `OCCTElSLibValueOnSphere` | radius doubled | red | green | PASS |
+| **ElSLib Tests** | valueOnCylinder | `OCCTElSLibValueOnCylinder` | u and v swapped | red | green | PASS |
+| **ElSLib Tests** | valueOnTorus | `OCCTElSLibValueOnTorus` | major and minor radius swapped | red | green | PASS |
+| **ElSLib Tests** | parametersOnSphere | `OCCTElSLibParametersOnSphere` | point x and y swapped | red | green | PASS |
