@@ -67,6 +67,7 @@ struct GeomLibCheckBSplineTests {
         if poles.count == 4 {
             #expect(simd_length(poles[0] - SIMD3(2, 0, 0)) < 1e-9)
             #expect(simd_length(poles[1] - SIMD3(3, 0, 0)) < 1e-9)
+            #expect(simd_length(poles[2] - SIMD3(4, 0, 0)) < 1e-9)
             #expect(simd_length(poles[3] - SIMD3(8, 0, 0)) < 1e-9)
         }
         let recheck = try #require(fixed.checkBSplineTangents())
@@ -120,6 +121,7 @@ struct GeomLibCheckBSplineTests {
         if poles.count == 4 {
             #expect(simd_length(poles[0] - SIMD2(2, 0)) < 1e-9)
             #expect(simd_length(poles[1] - SIMD2(3, 0)) < 1e-9)
+            #expect(simd_length(poles[2] - SIMD2(4, 0)) < 1e-9)
             #expect(simd_length(poles[3] - SIMD2(8, 0)) < 1e-9)
         }
         let recheck = try #require(fixed.checkBSplineTangents())
