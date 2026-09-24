@@ -268,6 +268,13 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **Geom_Ellipse Properties** | ellipseRadii | Ellipse radii | MajorRadius returns MinorRadius |
+| **Geom_Ellipse Properties** | ellipseSetRadii | Ellipse radius setters | SetMajorRadius returns true without writing |
+| **Geom_Ellipse Properties** | ellipseEccentricity | Ellipse eccentricity | Eccentricity returns minor/major (0.5) |
+| **Geom_Ellipse Properties** | ellipseFocal | Ellipse focal distance | Focal returns Parameter (2.5) |
+| **Geom_Ellipse Properties** | ellipseFoci | Ellipse foci | Focus1/Focus2 return without writing (both at origin) |
+| **Geom_Ellipse Properties** | ellipseParameter | Ellipse semi-latus rectum | Parameter returns Eccentricity |
+| **Geom_Ellipse Properties** | ellipseDirectrix1 | Ellipse directrix | Directrix1 returns Directrix2 |
 
 ---
 
@@ -475,6 +482,13 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| ellipseRadii | OCCTCurve3DEllipseMajorRadius | Ellipse radii | MajorRadius returns MinorRadius | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: a nil OCCTCurve3DCreateEllipse skipped every assertion under if-let |
+| ellipseSetRadii | OCCTCurve3DEllipseSetMajorRadius | Ellipse radius setters | SetMajorRadius returns true without writing | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: a nil OCCTCurve3DCreateEllipse skipped every assertion under if-let |
+| ellipseEccentricity | OCCTCurve3DEllipseEccentricity | Ellipse eccentricity | Eccentricity returns minor/major (0.5) | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: 0 < e < 1 accepted minor/major = 0.5; now pinned to sqrt(3)/2 |
+| ellipseFocal | OCCTCurve3DEllipseFocal | Ellipse focal distance | Focal returns Parameter (2.5) | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: focal > 0 accepted Parameter(); now pinned to 2*sqrt(75) |
+| ellipseFoci | OCCTCurve3DEllipseFocus1 | Ellipse foci | Focus1/Focus2 return without writing (both at origin) | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: f1.x + f2.x == 0 accepted two foci at the origin; also reaches OCCTCurve3DEllipseFocus2 |
+| ellipseParameter | OCCTCurve3DEllipseParameter | Ellipse semi-latus rectum | Parameter returns Eccentricity | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: parameter > 0 accepted Eccentricity(); now pinned to 25/10 |
+| ellipseDirectrix1 | OCCTCurve3DEllipseDirectrix1 | Ellipse directrix | Directrix1 returns Directrix2 | ✅ | ✅ | Could already fail; tightened to the probed position instead of majorRadius/eccentricity read through the wrapper, and try #require replaces if-let |
 
 ---
 
@@ -631,5 +645,12 @@ For each test, run ground-truth C++ comparison:
 | Measurement Tests: Get all vertices | ✅ | ✅ | ✅ |
 | Measurement Tests: Get vertex at index | ✅ | ✅ | ✅ |
 | Measurement Tests: Vertex out of bounds | ✅ | ✅ | ✅ |
+| ellipseRadii | ✅ | ✅ | ✅ |
+| ellipseSetRadii | ✅ | ✅ | ✅ |
+| ellipseEccentricity | ✅ | ✅ | ✅ |
+| ellipseFocal | ✅ | ✅ | ✅ |
+| ellipseFoci | ✅ | ✅ | ✅ |
+| ellipseParameter | ✅ | ✅ | ✅ |
+| ellipseDirectrix1 | ✅ | ✅ | ✅ |
 
 **Total**: 589 tests

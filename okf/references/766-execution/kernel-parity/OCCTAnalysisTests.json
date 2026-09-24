@@ -5835,5 +5835,192 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Ellipse Properties::ellipseRadii",
+    "bridge_function": "OCCTCurve3DEllipseMajorRadius",
+    "bridge_output": {
+      "type": "radii",
+      "data": {
+        "major": 10.0,
+        "minor": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "radii",
+      "data": {
+        "major": 10.0,
+        "minor": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Ellipse Properties::ellipseSetRadii",
+    "bridge_function": "OCCTCurve3DEllipseSetMajorRadius",
+    "bridge_output": {
+      "type": "radii_after_set",
+      "data": {
+        "major": 20.0,
+        "minor": 8.0
+      }
+    },
+    "kernel_output": {
+      "type": "radii_after_set",
+      "data": {
+        "major": 20.0,
+        "minor": 8.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Ellipse Properties::ellipseEccentricity",
+    "bridge_function": "OCCTCurve3DEllipseEccentricity",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "eccentricity": 0.8660254037844387
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "eccentricity": 0.8660254037844387
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Ellipse Properties::ellipseFocal",
+    "bridge_function": "OCCTCurve3DEllipseFocal",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "focal": 17.320508075688775
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "focal": 17.320508075688775
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Ellipse Properties::ellipseFoci",
+    "bridge_function": "OCCTCurve3DEllipseFocus1",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "focus1": [
+          8.660254037844387,
+          0.0,
+          0.0
+        ],
+        "focus2": [
+          -8.660254037844387,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "focus1": [
+          8.660254037844387,
+          0.0,
+          0.0
+        ],
+        "focus2": [
+          -8.660254037844387,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Ellipse Properties::ellipseParameter",
+    "bridge_function": "OCCTCurve3DEllipseParameter",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "parameter": 2.5
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "parameter": 2.5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Ellipse Properties::ellipseDirectrix1",
+    "bridge_function": "OCCTCurve3DEllipseDirectrix1",
+    "bridge_output": {
+      "type": "axis",
+      "data": {
+        "position": [
+          11.547005383792515,
+          0.0,
+          0.0
+        ],
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "axis",
+      "data": {
+        "position": [
+          11.547005383792515,
+          0.0,
+          0.0
+        ],
+        "direction": [
+          0.0,
+          1.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
