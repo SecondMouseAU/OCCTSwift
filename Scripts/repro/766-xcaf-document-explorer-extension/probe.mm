@@ -55,8 +55,9 @@ static void dump(const char* what, const Handle(TDocStd_Document)& d)
   {
     const XCAFPrs_DocumentNode& node = e.Current();
     gp_Trsf t = node.Location.Transformation();
-    printf("%s node[%d]: depth=%d IsAssembly=%s locIdentity=%s matrix=[", what, n, e.CurrentDepth(),
-           tf(XCAFDoc_ShapeTool::IsAssembly(node.RefLabel)), tf(node.Location.IsIdentity()));
+    printf("%s node[%d]: depth=%d IsAssembly(node.Label)=%s IsAssembly(node.RefLabel)=%s locIdentity=%s matrix=[", what, n,
+           e.CurrentDepth(), tf(XCAFDoc_ShapeTool::IsAssembly(node.Label)), tf(XCAFDoc_ShapeTool::IsAssembly(node.RefLabel)),
+           tf(node.Location.IsIdentity()));
     for (int r = 1; r <= 3; r++)
       for (int c = 1; c <= 4; c++)
         printf("%g%s", node.Location.IsIdentity() ? (r == c ? 1.0 : 0.0) : t.Value(r, c), (r == 3 && c == 4) ? "" : ", ");
@@ -65,12 +66,24 @@ static void dump(const char* what, const Handle(TDocStd_Document)& d)
   printf("%s leaf count=%d\n", what, n);
 }
 
+// The bridge's lookup (OCCTDocumentExplorerDepth / IsAssembly / Location): walk the leaf-only explorer
+// and stop at the node whose flat index equals `index`; report whether one was reached.
+static bool nodeAt(const Handle(TDocStd_Document)& d, int index)
+{
+  int i = 0;
+  for (XCAFPrs_DocumentExplorer e(d, XCAFPrs_DocumentExplorerFlags_OnlyLeafNodes, XCAFPrs_Style()); e.More(); e.Next(), i++)
+    if (i == index)
+      return true;
+  return false;
+}
+
 int main()
 {
   Handle(TDocStd_Application) app;
   Handle(TDocStd_Document)    d = newDoc(app);
   XCAFDoc_DocumentTool::ShapeTool(d->Main())->AddShape(centredBox(10, 10, 10), true);
   dump("box", d);
+  printf("box: node at index 0 reached=%s, node at index count+100 (101) reached=%s\n", tf(nodeAt(d, 0)), tf(nodeAt(d, 101)));
 
   Handle(TDocStd_Application) app2;
   Handle(TDocStd_Document)    d2 = newDoc(app2);

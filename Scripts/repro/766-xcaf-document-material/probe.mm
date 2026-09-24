@@ -44,9 +44,25 @@ static TopoDS_Shape centredBox(double w, double h, double dp)
 static const char* tf(bool b) { return b ? "true" : "false"; }
 
 #include <XCAFDoc_MaterialTool.hxx>
+#include <Standard_OutOfRange.hxx>
 
-// DocumentMaterialTests: XCAFDoc_MaterialTool::Set on a fresh document, as
-// OCCTDocumentGetMaterialCount / OCCTDocumentGetMaterialInfo do.
+// DocumentMaterialTests. The bridge (OCCTDocumentGetMaterialCount / OCCTDocumentGetMaterialInfo) calls
+// XCAFDoc_MaterialTool::Set(Main) and reads GetMaterialLabels; the document's own material table is
+// XCAFDoc_DocumentTool::MaterialTool(Main). Both are measured, and index 0 is measured as the 1-based
+// Value(0 + 1) the bridge would take, raising.
+static bool valueRaises(const TDF_LabelSequence& s, int oneBased)
+{
+  try
+  {
+    (void)s.Value(oneBased);
+    return false;
+  }
+  catch (const Standard_OutOfRange&)
+  {
+    return true;
+  }
+}
+
 int main()
 {
   Handle(TDocStd_Application)  app;
@@ -54,6 +70,11 @@ int main()
   Handle(XCAFDoc_MaterialTool) mt = XCAFDoc_MaterialTool::Set(d->Main());
   TDF_LabelSequence            ms;
   mt->GetMaterialLabels(ms);
-  printf("material labels=%d (so index 0 is out of range=%s)\n", ms.Length(), tf(0 >= ms.Length()));
+  printf("bridge call XCAFDoc_MaterialTool::Set(Main): material labels=%d\n", ms.Length());
+  Handle(XCAFDoc_MaterialTool) table = XCAFDoc_DocumentTool::MaterialTool(d->Main());
+  TDF_LabelSequence            ts;
+  table->GetMaterialLabels(ts);
+  printf("document material table XCAFDoc_DocumentTool::MaterialTool(Main): material labels=%d\n", ts.Length());
+  printf("index 0 (Value(1)) raises Standard_OutOfRange=%s\n", tf(valueRaises(ms, 1)));
   return 0;
 }

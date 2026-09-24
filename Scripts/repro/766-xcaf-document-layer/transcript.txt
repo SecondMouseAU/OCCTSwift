@@ -1,5 +1,7 @@
-layer labels=3
-  layer[0] GetLayer=true name="Shapes"
-  layer[1] GetLayer=true name="Colors"
-  layer[2] GetLayer=true name="VisMaterials"
-index 999 in range=false, index -1 in range=false
+bridge call XCAFDoc_LayerTool::Set(Main): tool on label 0:1, layer labels=3
+  layer[0] label 0:1:1 GetLayer=true name="Shapes"
+  layer[1] label 0:1:2 GetLayer=true name="Colors"
+  layer[2] label 0:1:10 GetLayer=true name="VisMaterials"
+document layer table XCAFDoc_DocumentTool::LayerTool(Main): tool on label 0:1:3, layer labels=0
+LayersLabel()=0:1:3
+index 999 (Value(1000)) raises Standard_OutOfRange=true, index -1 (Value(0)) raises Standard_OutOfRange=true

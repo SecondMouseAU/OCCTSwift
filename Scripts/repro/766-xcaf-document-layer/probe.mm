@@ -44,23 +44,55 @@ static TopoDS_Shape centredBox(double w, double h, double dp)
 static const char* tf(bool b) { return b ? "true" : "false"; }
 
 #include <XCAFDoc_LayerTool.hxx>
+#include <Standard_OutOfRange.hxx>
 
-// DocumentLayerTests: XCAFDoc_LayerTool::Set on a fresh document, as OCCTDocumentGetLayerCount /
-// OCCTDocumentGetLayerName do.
-int main()
+// DocumentLayerTests. The bridge (OCCTDocumentGetLayerCount / OCCTDocumentGetLayerName) calls
+// XCAFDoc_LayerTool::Set(Main) and reads GetLayerLabels; the document's own layer table is
+// XCAFDoc_DocumentTool::LayerTool(Main), attached to LayersLabel(). Both are measured, and a 0-based
+// index out of range is measured as the 1-based Value(index + 1) the bridge would take, raising.
+static const char* entry(const TDF_Label& l)
 {
-  Handle(TDocStd_Application) app;
-  Handle(TDocStd_Document)    d  = newDoc(app);
-  Handle(XCAFDoc_LayerTool)   lt = XCAFDoc_LayerTool::Set(d->Main());
-  TDF_LabelSequence           ls;
+  static TCollection_AsciiString s;
+  s.Clear();
+  TDF_Tool::Entry(l, s);
+  return s.ToCString();
+}
+
+static void list(const char* what, const Handle(XCAFDoc_LayerTool)& lt, TDF_LabelSequence& ls)
+{
   lt->GetLayerLabels(ls);
-  printf("layer labels=%d\n", ls.Length());
+  printf("%s: tool on label %s, layer labels=%d\n", what, entry(lt->Label()), ls.Length());
   for (int i = 1; i <= ls.Length(); i++)
   {
     TCollection_ExtendedString nm;
     bool                       ok = lt->GetLayer(ls.Value(i), nm);
-    printf("  layer[%d] GetLayer=%s name=\"%s\"\n", i - 1, tf(ok), TCollection_AsciiString(nm).ToCString());
+    printf("  layer[%d] label %s GetLayer=%s name=\"%s\"\n", i - 1, entry(ls.Value(i)), tf(ok),
+           TCollection_AsciiString(nm).ToCString());
   }
-  printf("index 999 in range=%s, index -1 in range=%s\n", tf(999 < ls.Length()), tf(false));
+}
+
+static bool valueRaises(const TDF_LabelSequence& s, int oneBased)
+{
+  try
+  {
+    (void)s.Value(oneBased);
+    return false;
+  }
+  catch (const Standard_OutOfRange&)
+  {
+    return true;
+  }
+}
+
+int main()
+{
+  Handle(TDocStd_Application) app;
+  Handle(TDocStd_Document)    d = newDoc(app);
+  TDF_LabelSequence           bridgeLabels, tableLabels;
+  list("bridge call XCAFDoc_LayerTool::Set(Main)", XCAFDoc_LayerTool::Set(d->Main()), bridgeLabels);
+  list("document layer table XCAFDoc_DocumentTool::LayerTool(Main)", XCAFDoc_DocumentTool::LayerTool(d->Main()), tableLabels);
+  printf("LayersLabel()=%s\n", entry(XCAFDoc_DocumentTool::LayersLabel(d->Main())));
+  printf("index 999 (Value(1000)) raises Standard_OutOfRange=%s, index -1 (Value(0)) raises Standard_OutOfRange=%s\n",
+         tf(valueRaises(bridgeLabels, 1000)), tf(valueRaises(bridgeLabels, 0)));
   return 0;
 }
