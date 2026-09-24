@@ -3958,5 +3958,1247 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::fixSolidMultiBody",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::fixSolidSingleBody",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::fixSolidHollow",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::fixSolidMulticonnex",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::fixSolidNoSolid",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellMultiBody",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellSingleBody",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellSkipsCavity",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellMulticonnex",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellCavityWithWiderSibling",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellFreeShells",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellDeduplicates",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellNoShell",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::documentedUnclosedCheck",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::openShellDoesNotPerturbParity",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "note": "bridge body selection; kernel classifier probed in the parity run for the closed-shell cases"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::reproducerTable",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "twoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "singleBox": {
+          "bodies": 1,
+          "volume": 1000.0
+        },
+        "hollow": {
+          "fixSolidVolume": 7000.0,
+          "solidFromShellBodies": 1,
+          "volume": 8000.0
+        },
+        "multiconnex": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "hollowPlusWiderSibling": {
+          "bodies": 2,
+          "volume": 35000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidFromSewnMultiBody",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidFromAgreesWithSibling",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidFromSingleShell",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidFromKeepsOpenBody",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidFromSkipsCavity",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidFromMulticonnex",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidFromNoShell",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::sewnHollowIsOneBody",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::sewnAndUnsewnHollowAgree",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::manyFreeShells",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::touchingBodiesNotPruned",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidWithHistoryMultiBody",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidWithHistoryQueryableForEveryBody",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidWithHistorySingleShell",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidWithHistoryKeepsOpenBody",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::upgradedMultiBody",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::upgradedFromLooseFaces",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::upgradedSingleBody",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::upgradedHollow",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::upgradedNestedBody",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::upgradedKeepsOpenBody",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 443: solid(from:) and upgraded() cover every body::upgradedNoShell",
+    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "bodies",
+      "data": "bodies and volumes as asserted"
+    },
+    "kernel_output": {
+      "type": "bodies",
+      "data": {
+        "sewnTwoBoxes": {
+          "bodies": 2,
+          "volume": 2000.0
+        },
+        "sewnHollow": {
+          "bodies": 1,
+          "volume": 8000.0
+        },
+        "hundredBoxesSewn": {
+          "bodies": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
