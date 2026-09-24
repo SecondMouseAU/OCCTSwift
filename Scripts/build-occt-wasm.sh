@@ -424,7 +424,9 @@ if [ -n "$PACKAGE_ONLY" ]; then
     fi
     cd occt-build-wasm
     census_all_toolkits || exit 1
+    census_all_toolkits || exit 1
     package_build
+    exit 0
     exit 0
 fi
 
