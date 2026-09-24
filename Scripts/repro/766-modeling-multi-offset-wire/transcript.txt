@@ -1,0 +1,3 @@
+multipleInwardOffsets: [offset -1: wire length 72] [offset -2: wire length 64] [offset -3: wire length 56] total wires=3
+outwardOffset: [offset 1: wire length 46.28318531] [offset 2: wire length 52.56637061] total wires=2
+emptyOffsets as a single 0 offset (injection comparison): [offset 0: wire length 40] total wires=1

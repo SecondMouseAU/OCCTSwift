@@ -4,60 +4,60 @@ import simd
 
 @testable import OCCTSwift
 
+// Pinned to BiTgte_CurveOnEdge on the same two edges of a 10 box
+// (Scripts/repro/766-curve-bitgte-pcurve-approx/transcript.txt). Shape.box centres the box, so
+// edges[0] runs (-5,-5,-5) -> (-5,-5,5) and edges[1] (-5,-5,5) -> (-5,5,5). The earlier versions
+// nested every expectation in `if let` and checked only that values were finite, so any domain
+// and any point passed, and a nil curve passed with nothing checked (#766).
 @Suite("BiTgte CurveOnEdge v0.112")
 struct BiTgteCurveOnEdgeTests {
 
-    @Test func createFromEdges() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let edges = box.subShapes(ofType: .edge)
-            if edges.count >= 2 {
-                // BiTgte_CurveOnEdge may fail for non-adjacent edges, that's OK
-                let curve = BiTgteCurveOnEdge(edgeOnFace: edges[0], edge: edges[1])
-                if let c = curve {
-                    let d = c.domain
-                    #expect(d.lowerBound.isFinite)
-                    #expect(d.upperBound.isFinite)
-                }
-            }
+    private static func boxEdges() -> [Shape] {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box not built")
+            return []
         }
+        let edges = box.subShapes(ofType: .edge)
+        if edges.count != 12 { Issue.record("box has \(edges.count) edges, not 12") }
+        return edges
+    }
+
+    private static func adjacentCurve() -> BiTgteCurveOnEdge? {
+        let edges = boxEdges()
+        guard edges.count >= 2 else { return nil }
+        let c = BiTgteCurveOnEdge(edgeOnFace: edges[0], edge: edges[1])
+        if c == nil { Issue.record("BiTgteCurveOnEdge(edges[0], edges[1]) returned nil") }
+        return c
+    }
+
+    @Test func createFromEdges() {
+        guard let c = Self.adjacentCurve() else { return }
+        // The domain is edges[0]'s own range.
+        #expect(c.domain == 0...10)
     }
 
     @Test func evaluatePoint() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let edges = box.subShapes(ofType: .edge)
-            if edges.count >= 2 {
-                if let curve = BiTgteCurveOnEdge(edgeOnFace: edges[0], edge: edges[1]) {
-                    let mid = (curve.domain.lowerBound + curve.domain.upperBound) / 2
-                    let p = curve.point(at: mid)
-                    #expect(p.x.isFinite)
-                    #expect(p.y.isFinite)
-                    #expect(p.z.isFinite)
-                }
-            }
-        }
+        guard let curve = Self.adjacentCurve() else { return }
+        // The kernel answers the shared vertex, (-5, -5, 5), at every parameter of this pair.
+        let mid = (curve.domain.lowerBound + curve.domain.upperBound) / 2
+        #expect(simd_distance(curve.point(at: mid), SIMD3(-5, -5, 5)) < 1e-9)
     }
 
     @Test func domainIsValid() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let edges = box.subShapes(ofType: .edge)
-            if edges.count >= 2 {
-                if let curve = BiTgteCurveOnEdge(edgeOnFace: edges[0], edge: edges[1]) {
-                    #expect(curve.domain.upperBound >= curve.domain.lowerBound)
-                }
-            }
-        }
+        guard let curve = Self.adjacentCurve() else { return }
+        #expect(curve.domain.upperBound > curve.domain.lowerBound)
+        #expect(abs(curve.domain.upperBound - curve.domain.lowerBound - 10) < 1e-12)
     }
 
     @Test func sameEdgeCreation() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let edges = box.subShapes(ofType: .edge)
-            if edges.count >= 1 {
-                // Same edge should create a valid curve
-                let curve = BiTgteCurveOnEdge(edgeOnFace: edges[0], edge: edges[0])
-                if let c = curve {
-                    #expect(c.domain.lowerBound.isFinite)
-                }
-            }
+        let edges = Self.boxEdges()
+        guard let first = edges.first else { return }
+        guard let c = BiTgteCurveOnEdge(edgeOnFace: first, edge: first) else {
+            Issue.record("BiTgteCurveOnEdge(edges[0], edges[0]) returned nil")
+            return
         }
+        #expect(c.domain == 0...10)
+        // On itself, the curve is the edge: its midpoint is (-5, -5, 0).
+        #expect(simd_distance(c.point(at: 5), SIMD3(-5, -5, 0)) < 1e-9)
     }
 }
