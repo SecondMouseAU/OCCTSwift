@@ -3331,5 +3331,155 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "#1185 DrawingDimension.Radial/.Diameter share Circular::DrawingDimension.value: .radial reports radius, .diameter reports 2*radius",
+    "bridge_function": "DrawingDimension.value",
+    "bridge_output": {
+      "radial": 7,
+      "diameter": 14
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1185 DrawingDimension.Radial/.Diameter share Circular::DrawingDimension.id/.label read through for both .radial and .diameter",
+    "bridge_function": "DrawingDimension.id",
+    "bridge_output": {
+      "id": [
+        "rid",
+        "did"
+      ]
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1185 DrawingDimension.Radial/.Diameter share Circular::DrawingDimension.transformed applies scale*p+translate for .diameter",
+    "bridge_function": "DrawingDimension.Circular.transformed",
+    "bridge_output": {
+      "centre": [
+        21,
+        21
+      ],
+      "radius": 8
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1185 DrawingDimension.Radial/.Diameter share Circular::DrawingDimension.keyPoints for .radial and .diameter (previously untested)",
+    "bridge_function": "DrawingDimension.Circular.keyPoints",
+    "bridge_output": {
+      "keyPoints": [
+        [
+          10,
+          20
+        ],
+        [
+          15,
+          20
+        ],
+        [
+          5,
+          20
+        ]
+      ]
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1185 DrawingDimension.Radial/.Diameter share Circular::Drawing.addRadialDimension/addDiameterDimension route through Circular correctly",
+    "bridge_function": "Drawing.addDiameterDimension",
+    "bridge_output": {
+      "diameterValue": 12
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Radius Dimension::Radius of circle wire",
+    "bridge_function": "OCCTDimensionCreateRadiusFromShape",
+    "bridge_output": {
+      "value": 7
+    },
+    "kernel_output": {
+      "value": 7,
+      "isValid": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Radius Dimension::Radius geometry has circle center",
+    "bridge_function": "OCCTDimensionGetGeometry",
+    "bridge_output": {
+      "circleRadius": 5,
+      "centre": [
+        0,
+        0,
+        0
+      ],
+      "isValid": true
+    },
+    "kernel_output": {
+      "circleRadius": 5,
+      "centre": [
+        0,
+        0,
+        0
+      ],
+      "isValid": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Radius Dimension::Nil for non-circular shape",
+    "bridge_function": "OCCTDimensionIsValid",
+    "bridge_output": {
+      "isValid": false
+    },
+    "kernel_output": {
+      "isValid": false,
+      "value": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
