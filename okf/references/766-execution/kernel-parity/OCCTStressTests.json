@@ -6830,5 +6830,421 @@
       "strengthened": true
     },
     "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: UnifySameDomainBuilder Lifecycle::normalCycle",
+    "bridge_function": "OCCTUnifySameDomainBuild, OCCTUnifySameDomainShape",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): disjoint pair: 12 faces stay 12, volume 2000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "disjoint pair: 12 faces stay 12, volume 2000",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTUnifySameDomainShape returns nil",
+      "env": "OCCT766=|NULL:OCCTUnifySameDomainShape|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:364 Expectation failed: unifier.shape",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: UnifySameDomainBuilder Lifecycle::buildWithoutModification",
+    "bridge_function": "OCCTUnifySameDomainShape",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): box: 6 faces, volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "box: 6 faces, volume 1000",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTUnifySameDomainShape returns nil",
+      "env": "OCCT766=|NULL:OCCTUnifySameDomainShape|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:374 Expectation failed: unifier.shape",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: UnifySameDomainBuilder Lifecycle::destroyWithoutBuild",
+    "bridge_function": "OCCTUnifySameDomainRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: deallocation without a prior call; no kernel value, the test exists to catch a crash in Release",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTUnifySameDomainRelease",
+      "env": "OCCT766=|CRASH:OCCTUnifySameDomainRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: UnifySameDomainBuilder Lifecycle::withTolerances",
+    "bridge_function": "OCCTUnifySameDomainSetLinearTolerance, OCCTUnifySameDomainShape",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): box: 6 faces, volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "box: 6 faces, volume 1000",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTUnifySameDomainShape returns nil",
+      "env": "OCCT766=|NULL:OCCTUnifySameDomainShape|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:393 Expectation failed: unifier.shape; the volume pin is red only under a second injection, OCCTUnifySameDomainShape returning the result scaled by 1.1 (still valid, 6 faces): StressBuilderLifecycleTests.swift:396 Expectation failed: abs((result.volume ?? 0) - 1000) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ThruSectionsBuilder Lifecycle::buildEmpty",
+    "bridge_function": "OCCTThruSectionsBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): no sections: unguarded Build returns normally, IsDone=0"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "no sections: unguarded Build returns normally, IsDone=0",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
+      "env": "OCCT766=|TSGUARD|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:409 Expectation failed: !ok",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ThruSectionsBuilder Lifecycle::normalCycle",
+    "bridge_function": "OCCTThruSectionsBuild, OCCTThruSectionsShape",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): frustum volume 513.1268001"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "frustum volume 513.1268001",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTThruSectionsShape",
+      "env": "OCCT766=|EARLY:OCCTThruSectionsShape|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:424 Expectation failed: loft.shape",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ThruSectionsBuilder Lifecycle::singleSection",
+    "bridge_function": "OCCTThruSectionsBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): one section: refused by the < 2 guard"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "one section: refused by the < 2 guard",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
+      "env": "OCCT766=|TSGUARD|",
+      "red": "CRASH exit 139: Segmentation fault: 11",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ThruSectionsBuilder Lifecycle::destroyWithoutBuild",
+    "bridge_function": "OCCTThruSectionsRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: deallocation without a prior call; no kernel value, the test exists to catch a crash in Release",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTThruSectionsRelease",
+      "env": "OCCT766=|CRASH:OCCTThruSectionsRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ThruSectionsBuilder Lifecycle::doubleBuild",
+    "bridge_function": "OCCTThruSectionsBuild, OCCTThruSectionsShape",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): both Builds done, volume 513.1268001"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "both Builds done, volume 513.1268001",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTThruSectionsShape",
+      "env": "OCCT766=|EARLY:OCCTThruSectionsShape|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:462 Expectation failed: loft.shape",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ThruSectionsBuilder Lifecycle::mismatchedSectionEdgeCountWithoutCheckFailsCleanly",
+    "bridge_function": "OCCTThruSectionsBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): mismatched third section without compatibility check: Build fails cleanly (patch 0027 is in the pinned kernel)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "mismatched third section without compatibility check: Build fails cleanly (patch 0027 is in the pinned kernel)",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
+      "env": "OCCT766=|TSGUARD|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:502 Expectation failed: !loft.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ThruSectionsBuilder Lifecycle::punctualApexWithMatchingSectionsStillSucceedsUnderCreateSmoothed",
+    "bridge_function": "OCCTThruSectionsAddVertex, OCCTThruSectionsShape",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): apex + 2 circles: done, shape present"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "apex + 2 circles: done, shape present",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTThruSectionsShape",
+      "env": "OCCT766=|EARLY:OCCTThruSectionsShape|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:526 Expectation failed: loft.shape != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ThruSectionsBuilder Lifecycle::generatedFaceNilAfterFailedRebuild",
+    "bridge_function": "OCCTThruSectionsBuild, OCCTThruSectionsGeneratedFace",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): open 4th section: NotSameTopology, Build fails"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "open 4th section: NotSameTopology, Build fails",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
+      "env": "OCCT766=|TSGUARD|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:574 Expectation failed: !loft.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ThruSectionsBuilder Lifecycle::generatedFaceNilAfterWrongUsageOnReusedBuilder",
+    "bridge_function": "OCCTThruSectionsBuild, OCCTThruSectionsGeneratedFace",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): punctual middle section: WrongUsage, Build fails"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "punctual middle section: WrongUsage, Build fails",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
+      "env": "OCCT766=|TSGUARD|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:619 Expectation failed: !loft.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ThruSectionsBuilder Lifecycle::generatedFaceNilAfterFailedRebuildRuledPath",
+    "bridge_function": "OCCTThruSectionsBuild, OCCTThruSectionsGeneratedFace",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): ruled path, open 4th section: Build fails"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "ruled path, open 4th section: Build fails",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
+      "env": "OCCT766=|TSGUARD|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:661 Expectation failed: !loft.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ThruSectionsBuilder Lifecycle::generatedFaceIsMemberOfShapeAfterSuccessFailureSuccessOnReusedBuilder",
+    "bridge_function": "OCCTThruSectionsBuild, OCCTThruSectionsGeneratedFace",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): build B fails, build C succeeds (patch 0027 in the pinned kernel)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "build B fails, build C succeeds (patch 0027 in the pinned kernel)",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
+      "env": "OCCT766=|TSGUARD|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:722 Expectation failed: !loft.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ThruSectionsBuilder Lifecycle::shapeNilAfterSettingChangedWithoutRebuild",
+    "bridge_function": "OCCTThruSectionsSetContinuity, OCCTThruSectionsShape",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): setting change invalidates the shape"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "setting change invalidates the shape",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTThruSectionsShape",
+      "env": "OCCT766=|EARLY:OCCTThruSectionsShape|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:758 Expectation failed: loft.shape != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]
