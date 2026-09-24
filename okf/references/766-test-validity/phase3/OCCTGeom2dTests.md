@@ -163,3 +163,16 @@ Probe: `Scripts/repro/766-geom2d-bspline-completions/`. Every row was run red wi
 | BSplineCurve 2D Completions v121::IncrementMultiplicity 2D | `OCCTCurve2DBSplineIncrementMultiplicity` | increment only index1 | ✅ | ✅ | MATCH | only the returned Bools, inside `if let` |
 | BSplineCurve 2D Completions v121::SetOrigin 2D fails on non-periodic | `OCCTCurve2DBSplineSetOrigin` | return true without calling SetOrigin | ✅ | ✅ | MATCH | nested in `if let curve`, so a nil curve passed |
 | BSplineCurve2d KnotSplitting Tests::knotSplits | `OCCTCurve2DSplitAtDiscontinuities` | split at continuity 3 whatever is asked | ✅ | ✅ | MATCH | `(indices?.count ?? 0) >= 0` is true for every result including nil |
+### #1979 executed: `BSplineCurve2DManipulationTests.swift`
+Probe: `Scripts/repro/766-geom2d-bspline-manipulation/`. Every row was run red with the injection applied and green after it was reverted.
+| BSpline Curve 2D Manipulation Tests::knotCount | `OCCTCurve2DBSplineKnotCount` | NbKnots() + 1 | ✅ | ✅ | MATCH | `nk > 0`, nested in `if let bsp`, so a nil curve passed |
+| BSpline Curve 2D Manipulation Tests::poleCount | `OCCTCurve2DBSplinePoleCount` | NbPoles() + 1 | ✅ | ✅ | MATCH | `np >= 4`, nested in `if let bsp`, so a nil curve passed |
+| BSpline Curve 2D Manipulation Tests::degree | `OCCTCurve2DBSplineDegree` | Degree() + 1 | ✅ | ✅ | MATCH | `deg >= 1`, nested in `if let bsp`, so a nil curve passed |
+| BSpline Curve 2D Manipulation Tests::isRational | `OCCTCurve2DBSplineIsRational` | negate IsRational() | ✅ | ✅ | MATCH | `let _ = bsp.bspline.isRational`, no assertion |
+| BSpline Curve 2D Manipulation Tests::setPole | `OCCTCurve2DBSplineSetPole` | store y + 1 | ✅ | ✅ | MATCH | the pole read-back was nested in `if let bsp`, so a nil curve passed; now also pins the moved midpoint |
+| BSpline Curve 2D Manipulation Tests::resolution | `OCCTCurve2DBSplineResolution` | double the resolution | ✅ | ✅ | MATCH | `res > 0`, nested in `if let bsp`, so a nil curve passed |
+| BSpline Curve 2D Manipulation Tests::insertKnot | `OCCTCurve2DBSplineInsertKnot` | return true without inserting | ✅ | ✅ | MATCH | only the returned Bool, nested in `if let bsp`, so a nil curve passed |
+| BSpline Curve 2D Manipulation Tests::segment | `OCCTCurve2DBSplineSegment` | return true without segmenting | ✅ | ✅ | MATCH | only the returned Bool, nested in `if let bsp`, so a nil curve passed |
+| BSpline Curve 2D Manipulation Tests::increaseDegree | `OCCTCurve2DBSplineIncreaseDegree` | return true without raising the degree | ✅ | ✅ | MATCH | nested in `if let bsp`, so a nil curve passed; now also pins the multiplicities and pole count |
+| BSpline Curve 2D Manipulation Tests::setWeight | `OCCTCurve2DBSplineSetWeight` | return true without setting the weight | ✅ | ✅ | MATCH | `let _ = setWeight(...)`, no assertion |
+| BSpline Curve 2D Manipulation Tests::removeKnot | `OCCTCurve2DBSplineRemoveKnot` | return true without removing | ✅ | ✅ | MATCH | `let _ = removeKnot(...)`, no assertion |
