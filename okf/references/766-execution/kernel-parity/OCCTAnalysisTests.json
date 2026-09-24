@@ -566,9 +566,11 @@
     "kernel_probe": "Scripts/repro/766-hatch/probe.mm",
     "comparison": {
       "equal": false,
-      "differences": ["key names differ: bridge uses 'empty_boundary_segments' vs kernel 'empty_boundary_segments_unguarded'; 'empty_boundary_with_island_segments' vs 'empty_boundary_with_island_segments_unguarded'"]
+      "differences": [
+        "Expected divergence, and the behaviour under test: HatchPattern.generate and OCCTHatchLines both reject a boundary with fewer than 3 points before any Hatch_Hatcher call, so the island-only case returns 0 segments through the bridge. The kernel probe deliberately skips both guards (the _unguarded keys): with an empty boundary and no island it also returns 0, but with an island alone the island sets the extent and its own edges trim the lines into 3 segments (transcript.txt: 'emptyBoundary + island (unguarded kernel path): segments=3'). Bridge 0 versus unguarded kernel 3 is a value difference caused by the guard, not a key-name difference."
+      ]
     },
-    "status": "MISMATCH"
+    "status": "EXPECTED_DIVERGENCE"
   },
   {
     "test_name": "Hatch Patterns::Triangle boundary",
