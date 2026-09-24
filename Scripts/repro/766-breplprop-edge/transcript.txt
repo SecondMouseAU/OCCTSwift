@@ -1,0 +1,22 @@
+box10 edges=12
+box10.edge[0] type=0 range=[0, 10]
+box10.edge[0] value(0.5)=(-5, -5, -4.5)
+box10.edge[0] tangent=(0, 0, 1)
+box10.edge[0] curvature=0
+box10.edge[0] d1=(0, 0, 1)
+cyl5x10 edges=3
+cyl5x10.edge[0] type=1 range=[0, 6.2831853071795862]
+cyl5x10.edge[0] value(0.5)=(4.3879128094518638, 2.397127693021015, 10)
+cyl5x10.edge[0] tangent=(-0.47942553860420301, 0.87758256189037276, 0)
+cyl5x10.edge[0] curvature=0.20000000000000001
+cyl5x10.edge[0] d1=(-2.397127693021015, 4.3879128094518638, 0)
+cyl5x10.edge[1] type=0 range=[0, 10]
+cyl5x10.edge[1] value(0.5)=(5, -1.2246467991473533e-15, 0.5)
+cyl5x10.edge[1] tangent=(0, 0, 1)
+cyl5x10.edge[1] curvature=0
+cyl5x10.edge[1] d1=(0, 0, 1)
+cyl5x10.edge[2] type=1 range=[0, 6.2831853071795862]
+cyl5x10.edge[2] value(0.5)=(4.3879128094518638, 2.397127693021015, 0)
+cyl5x10.edge[2] tangent=(-0.47942553860420301, 0.87758256189037276, 0)
+cyl5x10.edge[2] curvature=0.20000000000000001
+cyl5x10.edge[2] d1=(-2.397127693021015, 4.3879128094518638, 0)

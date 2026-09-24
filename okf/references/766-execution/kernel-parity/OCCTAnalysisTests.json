@@ -5835,5 +5835,117 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Edge v0.111::edgeValue",
+    "bridge_function": "OCCTEdgeLPropValue",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": -5.0,
+        "y": -5.0,
+        "z": -4.5
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": -5.0,
+        "y": -5.0,
+        "z": -4.5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Edge v0.111::edgeTangent",
+    "bridge_function": "OCCTEdgeLPropTangent",
+    "bridge_output": {
+      "type": "tangent",
+      "data": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "tangent",
+      "data": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 1.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Edge v0.111::edgeCurvature",
+    "bridge_function": "OCCTEdgeLPropCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "box_edge": 0.0,
+        "cylinder_circle": 0.2
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "box_edge": 0.0,
+        "cylinder_circle": 0.2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp Edge v0.111::edgeD1",
+    "bridge_function": "OCCTEdgeLPropD1",
+    "bridge_output": {
+      "type": "first_derivative",
+      "data": {
+        "box_edge": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 1.0
+        },
+        "cylinder_circle": {
+          "x": -2.397127693021015,
+          "y": 4.387912809451864,
+          "z": 0.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "first_derivative",
+      "data": {
+        "box_edge": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 1.0
+        },
+        "cylinder_circle": {
+          "x": -2.397127693021015,
+          "y": 4.387912809451864,
+          "z": 0.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
