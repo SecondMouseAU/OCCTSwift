@@ -59,10 +59,13 @@ struct Issue853UniformAbscissaDistanceCeiling {
         let params = edge.uniformAbscissa(distance: 3.0)
         #expect(params != nil)
         if let params = params { #expect(params.count >= 2) }
+        // #766: `>= 2` held for any answer; GCPnts_UniformAbscissa at 3 on a 10-unit edge gives 5.
+        #expect(params?.count == 5)
 
         let ranged = edge.uniformAbscissa(distance: 0.2, u1: 0, u2: 1)
         #expect(ranged != nil)
         if let ranged = ranged { #expect(ranged.count >= 2) }
+        #expect(ranged?.count == 6)  // #766: 0.2 over [0, 1] is 6 points
     }
 
     @Test("pointCount and its range sibling are unaffected by sharing the new helper")
