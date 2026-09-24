@@ -110,3 +110,43 @@ For each test, run ground-truth C++ comparison:
 | deferredModeToggle | ✅ | ✅ | ✅ |
 
 **Total**: 18 tests
+---
+
+## Measured: Build, ValidateMutation and CoEdge Queries (#1986)
+
+Measured on the pinned kernel: every row below was run red under the injection shown and
+green once it was reverted. Probes and transcripts are under `Scripts/repro/766-brepgraph-*/`.
+
+### Test Inventory
+
+| Suite | Test | Defect Category | Injection Target |
+|-------|------|-----------------|------------------|
+| **BRepGraph Builder ValidateMutation** | validateCleanGraph | Mutation validation | return false |
+| **BRepGraph Builder ValidateMutation** | validateAfterAddVertex | Mutation validation | return false |
+| **BRepGraph Build** | buildFromBox | Graph build counts | NbEdges + 1, NbNodes + 1 |
+| **BRepGraph Build** | buildParallel | Parallel build | return nullptr when parallel |
+| **BRepGraph Build** | buildFromSphere | Graph build counts | NbEdges + 1 |
+| **BRepGraph Build** | buildFromComplex | Graph validation | Validate returns false; NbEdges + 1 |
+| **BRepGraph CoEdge Queries** | coedgeEdge | CoEdge query | edge index + 1 |
+| **BRepGraph CoEdge Queries** | coedgeFace | CoEdge query | face index + 1 |
+| **BRepGraph CoEdge Queries** | coedgeSeamPairNilForBox | Seam pair | no pair returns the coedge itself |
+| **BRepGraph CoEdge Queries** | coedgeSeamPairForSphere | Seam pair | no pair returns the coedge itself |
+| **BRepGraph CoEdge Queries** | coedgeHasPCurve | PCurve presence | false for odd coedges |
+| **BRepGraph CoEdge Queries** | coedgeRange | CoEdge range | first/last swapped |
+
+### Injection Matrix
+
+| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
+|------|-----------------|--------|-----------|------|--------|-------|
+| validateCleanGraph | OCCTBRepGraphBuilderValidateMutation | Mutation validation | return false | ✅ :14 `valid` | ✅ | Original also red; #require only |
+| validateAfterAddVertex | OCCTBRepGraphBuilderValidateMutation | Mutation validation | return false | ✅ :24 `valid` | ✅ | Original also red; added vertex index pinned |
+| buildFromBox | OCCTBRepGraphNbNodes | Graph build counts | NbEdges + 1, NbNodes + 1 | ✅ :18 `edgeCount == 12`, :25 `nodeCount == 58` | ✅ | `nodeCount > 0` pinned to 58, coedge count added |
+| buildParallel | OCCTBRepGraphCreate | Parallel build | return nullptr when parallel | ✅ :30 `#require(BRepGraph(parallel: true))` | ✅ | Original also red (`graph != nil`) |
+| buildFromSphere | OCCTBRepGraphNbEdges | Graph build counts | NbEdges + 1 | ✅ :41 `edgeCount == 3`, :43 | ✅ | Rewritten: `faceCount > 0`, `edgeCount >= 0` (always true) stayed green |
+| buildFromComplex | OCCTBRepGraphValidate | Graph validation | Validate returns false; NbEdges + 1 | ✅ :53 `edgeCount == 15`, :55 `isValid` | ✅ | `faceCount > 6` pinned to 8 |
+| coedgeEdge | OCCTBRepGraphCoEdgeEdge | CoEdge query | edge index + 1 | ✅ :16 `coedgeEdge(0) == 0` | ✅ | Rewritten: `>= 0 && < edgeCount` stayed green |
+| coedgeFace | OCCTBRepGraphCoEdgeFace | CoEdge query | face index + 1 | ✅ :22 `coedgeFace(0) == 0` | ✅ | Rewritten: `>= 0 && < faceCount` stayed green |
+| coedgeSeamPairNilForBox | OCCTBRepGraphCoEdgeSeamPair | Seam pair | no pair returns the coedge itself | ✅ :31 | ✅ | Original also red; now checks all 24 coedges |
+| coedgeSeamPairForSphere | OCCTBRepGraphCoEdgeSeamPair | Seam pair | no pair returns the coedge itself | ✅ :41 `seamPair(0) == nil`, :43 | ✅ | Rewritten: asserted nothing (`let _ = foundSeam`) |
+| coedgeHasPCurve | OCCTBRepGraphCoEdgeHasPCurve | PCurve presence | false for odd coedges | ✅ :53 (12 coedges) | ✅ | Rewritten: "any coedge has one" stayed green |
+| coedgeRange | OCCTBRepGraphCoEdgeRange | CoEdge range | first/last swapped | ✅ :62, :63 | ✅ | Original also red (`first < last`); pinned |
