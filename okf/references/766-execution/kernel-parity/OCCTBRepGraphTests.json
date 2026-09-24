@@ -1421,5 +1421,331 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Edge Def Details::edgeStartEndVertex",
+    "bridge_function": "OCCTBRepGraphEdgeStartVertex",
+    "bridge_output": {
+      "type": "vertices",
+      "data": {
+        "starts": [
+          0,
+          0,
+          2,
+          1,
+          4,
+          4,
+          6,
+          5,
+          0,
+          1,
+          2,
+          3
+        ],
+        "ends": [
+          1,
+          2,
+          3,
+          3,
+          5,
+          6,
+          7,
+          7,
+          4,
+          5,
+          6,
+          7
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "vertices",
+      "data": {
+        "starts": [
+          0,
+          0,
+          2,
+          1,
+          4,
+          4,
+          6,
+          5,
+          0,
+          1,
+          2,
+          3
+        ],
+        "ends": [
+          1,
+          2,
+          3,
+          3,
+          5,
+          6,
+          7,
+          7,
+          4,
+          5,
+          6,
+          7
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Edge Def Details::edgeIsClosedOnBox",
+    "bridge_function": "OCCTBRepGraphEdgeIsClosed",
+    "bridge_output": {
+      "type": "bools",
+      "data": "all 12 false"
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": "all 12 false"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Edge Def Details::edgeClosedConsistency",
+    "bridge_function": "OCCTBRepGraphEdgeIsClosed",
+    "bridge_output": {
+      "type": "sphere",
+      "data": {
+        "closed": [
+          true,
+          false,
+          true
+        ],
+        "starts": [
+          0,
+          1,
+          1
+        ],
+        "ends": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "sphere",
+      "data": {
+        "closed": [
+          true,
+          false,
+          true
+        ],
+        "starts": [
+          0,
+          1,
+          1
+        ],
+        "ends": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Edge Geometry::edgeTolerance",
+    "bridge_function": "OCCTBRepGraphEdgeTolerance",
+    "bridge_output": {
+      "type": "double",
+      "data": 1e-07
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 1e-07
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Edge Geometry::edgeNotDegenerated",
+    "bridge_function": "OCCTBRepGraphEdgeIsDegenerated",
+    "bridge_output": {
+      "type": "bools",
+      "data": {
+        "box": "all false",
+        "sphere": [
+          true,
+          false,
+          true
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "box": "all false",
+        "sphere": [
+          true,
+          false,
+          true
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Edge Geometry::edgeSameParameter",
+    "bridge_function": "OCCTBRepGraphEdgeIsSameParameter",
+    "bridge_output": {
+      "type": "bools",
+      "data": "all 12 true"
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": "all 12 true"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Edge Geometry::edgeSameRange",
+    "bridge_function": "OCCTBRepGraphEdgeIsSameRange",
+    "bridge_output": {
+      "type": "bools",
+      "data": "all 12 true"
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": "all 12 true"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Edge Geometry::edgeRange",
+    "bridge_function": "OCCTBRepGraphEdgeRange",
+    "bridge_output": {
+      "type": "range",
+      "data": [
+        0,
+        10
+      ]
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": [
+        0,
+        10
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Edge Geometry::edgeHasCurve",
+    "bridge_function": "OCCTBRepGraphEdgeHasCurve",
+    "bridge_output": {
+      "type": "bools",
+      "data": {
+        "box": "all true",
+        "sphere": [
+          false,
+          true,
+          false
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "box": "all true",
+        "sphere": [
+          false,
+          true,
+          false
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Edge Geometry::edgeMaxContinuity",
+    "bridge_function": "OCCTBRepGraphEdgeMaxContinuity",
+    "bridge_output": {
+      "type": "int",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "none",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "No kernel call: the bridge returns 0 unconditionally because BRepGraph_LayerRegularity is absent from the pinned libOCCT. The value is a constant, not a measurement."
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "BRepGraph Edge Geometry::edgeNotClosedOnFace",
+    "bridge_function": "OCCTBRepGraphEdgeIsClosedOnFace",
+    "bridge_output": {
+      "type": "seam",
+      "data": {
+        "boxEdge0Faces": [
+          0,
+          2
+        ],
+        "boxSeam": false,
+        "sphereEdge1Seam": true
+      }
+    },
+    "kernel_output": {
+      "type": "seam",
+      "data": {
+        "boxEdge0Faces": [
+          0,
+          2
+        ],
+        "boxSeam": false,
+        "sphereEdge1Seam": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

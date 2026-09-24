@@ -196,3 +196,26 @@ green once it was reverted. Probes and transcripts are under `Scripts/repro/766-
 | uidCodableCarriesProvenance | OCCTBRepGraphNodeFromUID | UID provenance | Swift provenance guards dropped; UID mint fails | ✅ legacy resolve / :202 #require | ✅ | Rewritten: guard-return passed with the mint failing |
 | refAndItemUIDsDoNotCrossGraphs | OCCTBRepGraphRefFromUID | UID provenance | Swift provenance guards dropped; UID mint fails | ✅ cross-graph resolve / :226 #require | ✅ | Rewritten: both halves were `if let` and asserted nothing with the mint failing |
 | itemUIDOfNode | OCCTBRepGraphItemFromUID | Item UID | resolved index + 1; UID mint fails | ✅ `resolved.index == 0` / :244 #require | ✅ | Rewritten: `if let item` passed with the mint failing |
+## Measured: Edge Def and Edge Geometry (#1986)
+| **BRepGraph Edge Def Details** | edgeStartEndVertex | Edge vertices | start reads EndVertexId |
+| **BRepGraph Edge Def Details** | edgeIsClosedOnBox | Edge closure | IsClosed always true (separate run) |
+| **BRepGraph Edge Def Details** | edgeClosedConsistency | Edge closure | IsClosed always false |
+| **BRepGraph Edge Geometry** | edgeTolerance | Edge tolerance | tolerance x 10 |
+| **BRepGraph Edge Geometry** | edgeNotDegenerated | Degenerate edge | always false |
+| **BRepGraph Edge Geometry** | edgeSameParameter | SameParameter | negated |
+| **BRepGraph Edge Geometry** | edgeSameRange | SameRange | negated |
+| **BRepGraph Edge Geometry** | edgeRange | Edge range | first/last swapped |
+| **BRepGraph Edge Geometry** | edgeHasCurve | Edge curve presence | always true |
+| **BRepGraph Edge Geometry** | edgeMaxContinuity | Stubbed query | constant 0 -> 1 |
+| **BRepGraph Edge Geometry** | edgeNotClosedOnFace | Seam on face | IsSeamOnFace always false |
+| edgeStartEndVertex | OCCTBRepGraphEdgeStartVertex | Edge vertices | start reads EndVertexId | ✅ start list mismatch | ✅ | Rewritten: range check passed start == end |
+| edgeIsClosedOnBox | OCCTBRepGraphEdgeIsClosed | Edge closure | IsClosed always true (separate run) | ✅ :29 `!graph.isEdgeClosed(i)` | ✅ | Box half of the closure pair: catches always-true; edgeClosedConsistency catches always-false |
+| edgeClosedConsistency | OCCTBRepGraphEdgeIsClosed | Edge closure | IsClosed always false | ✅ closed list mismatch | ✅ | Rewritten: `if isEdgeClosed` loop asserted nothing when no edge reported closed |
+| edgeTolerance | OCCTBRepGraphEdgeTolerance | Edge tolerance | tolerance x 10 | ✅ `edgeTolerance(0) == 1e-7` | ✅ | Rewritten: `tol > 0` stayed green |
+| edgeNotDegenerated | OCCTBRepGraphEdgeIsDegenerated | Degenerate edge | always false | ✅ sphere list mismatch | ✅ | Strengthened: box-only loop passed a constant false; sphere poles added |
+| edgeSameParameter | OCCTBRepGraphEdgeIsSameParameter | SameParameter | negated | ✅ :38 | ✅ | Original also red |
+| edgeSameRange | OCCTBRepGraphEdgeIsSameRange | SameRange | negated | ✅ :50 | ✅ | Original also red |
+| edgeRange | OCCTBRepGraphEdgeRange | Edge range | first/last swapped | ✅ `range.first == 0` | ✅ | Original also red; pinned |
+| edgeHasCurve | OCCTBRepGraphEdgeHasCurve | Edge curve presence | always true | ✅ sphere list mismatch | ✅ | Strengthened: box-only loop passed a constant true |
+| edgeMaxContinuity | OCCTBRepGraphEdgeMaxContinuity | Stubbed query | constant 0 -> 1 | ✅ `edgeMaxContinuity(0) == 0` | ✅ | Pins the documented stub; `cont >= 0` held for every Int32. Finding: the API reports an uncomputed value |
+| edgeNotClosedOnFace | OCCTBRepGraphEdgeIsClosedOnFace | Seam on face | IsSeamOnFace always false | ✅ `sg.isEdgeClosedOnFace(edgeIndex: 1, faceIndex: 0)` | ✅ | Strengthened: box-only check passed a constant false |
