@@ -3217,5 +3217,318 @@
     "green": "passed",
     "probe": "Scripts/repro/766-curve-comp-conic-deflection/transcript.txt",
     "note": "Rewritten: any ranged count below the full one passed"
+  },
+  {
+    "test_name": "Curve3D conic factory families agree (#399)::Circle: both families reject zero and negative radius",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConicFactoryParityTests.swift",
+    "bridge_function": "OCCTGceMakeCircFromCenterNormal",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for 0 and -1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gce_MakeCirc radius 0: done=1 (so the bridge's own check is what rejects it); -1: done=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "radius precondition skipped in the gce family",
+    "red": "Curve3DConicFactoryParityTests.swift:26 Curve3D.circleFromCenterNormal(...) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D conic factory families agree (#399)::Ellipse: both families reject zero radii and inverted radii",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConicFactoryParityTests.swift",
+    "bridge_function": "OCCTGceMakeElips",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for all four"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gce_MakeElips (10,0)=1 (0,0)=1 (5,10)=0 (10,-1)=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "radii precondition skipped in the gce family",
+    "red": "Curve3DConicFactoryParityTests.swift:41 Curve3D.ellipseFromCenterNormal(...) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D conic factory families agree (#399)::Hyperbola: both families reject a zero or negative radius",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConicFactoryParityTests.swift",
+    "bridge_function": "OCCTGceMakeHypr",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for all four"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gce_MakeHypr (0,3)=1 (8,0)=1 (0,0)=1 (-8,3)=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "radii precondition skipped in the gce family",
+    "red": "Curve3DConicFactoryParityTests.swift:56 Curve3D.hyperbolaFromCenterNormal(...) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D conic factory families agree (#399)::Parabola: both families reject zero and negative focal length",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConicFactoryParityTests.swift",
+    "bridge_function": "OCCTGceMakeParab",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for 0 and -1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gce_MakeParab focal 0=1 -1=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "focal precondition skipped in the gce family",
+    "red": "Curve3DConicFactoryParityTests.swift:68 Curve3D.parabolaFromCenterNormal(...) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D conic factory families agree (#399)::Valid inputs still build the identical curve in both families",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConicFactoryParityTests.swift",
+    "bridge_function": "OCCTGceMakeElips",
+    "bridge_output": {
+      "type": "value",
+      "data": "identical samples for all four conics"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "direct vs gce max distance 0 for circle, ellipse, hyperbola, parabola"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "gce ellipse moved 0.5 in x",
+    "red": "Curve3DConicFactoryParityTests.swift:101 simd_distance(a.point(at: t), b.point(at: t)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Continuity Tests::lineContinuity",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "6 (CN)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Line::Continuity = 6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Continuity() - 1",
+    "red": "Curve3DContinuityTests.swift:18 line.continuity == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt",
+    "note": "Rewritten: c >= 0 held for every value"
+  },
+  {
+    "test_name": "Curve3D Continuity Tests::bsplineContinuity",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "4 (C2)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "interpolated BSpline Continuity = 4 (GeomAbs_C2)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Continuity() - 1",
+    "red": "Curve3DContinuityTests.swift:32 bsp.continuity == 4",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt",
+    "note": "Rewritten: c >= 0 held for every value"
+  },
+  {
+    "test_name": "Curve3D Continuity Queries v0.120.0::lineContinuityClass",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": ".cN"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Continuity() - 1",
+    "red": "Curve3DContinuityQueriesTests.swift:24 c.continuityClass == .cN",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Continuity Queries v0.120.0::isCN",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift",
+    "bridge_function": "OCCTCurve3DIsCN",
+    "bridge_output": {
+      "type": "value",
+      "data": "true for 0, 1, 2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "IsCN(0)=1 IsCN(1)=1 IsCN(2)=1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsCN() negated",
+    "red": "Curve3DContinuityQueriesTests.swift:33 c.isCN(0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Continuity Queries v0.120.0::reversedParameter",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift",
+    "bridge_function": "OCCTCurve3DReversedParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": "-2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "ReversedParameter(2) = -2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ReversedParameter + 1",
+    "red": "Curve3DContinuityQueriesTests.swift:45 abs(rp + u) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Continuity Queries v0.120.0::parametricTransformation",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift",
+    "bridge_function": "OCCTCurve3DParametricTransformation",
+    "bridge_output": {
+      "type": "value",
+      "data": "1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "ParametricTransformation(identity) = 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "result x 2",
+    "red": "Curve3DContinuityQueriesTests.swift:56 abs(scale - 1.0) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Continuity Queries v0.120.0::bezierResolution",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift",
+    "bridge_function": "OCCTCurve3DBezierResolution",
+    "bridge_output": {
+      "type": "value",
+      "data": "0.0025"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Resolution(0.01) = 0.0025000000000000001"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "resolution x 2",
+    "red": "Curve3DContinuityQueriesTests.swift:68 abs(c.bezierResolution(tolerance3d: 0.01) - 0.0025) < 1e-15",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt",
+    "note": "Rewritten: r > 0"
+  },
+  {
+    "test_name": "Curve3D Continuity Queries v0.120.0::bezierMaxDegree",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift",
+    "bridge_function": "OCCTCurve3DBezierMaxDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": "25"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_BezierCurve::MaxDegree() = 25"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "report 8",
+    "red": "Curve3DContinuityQueriesTests.swift:73 md == 25",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt",
+    "note": "Rewritten: md >= 25"
+  },
+  {
+    "test_name": "Curve3D Continuity Queries v0.120.0::bsplineMaxDegree",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineMaxDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": "25"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_BSplineCurve::MaxDegree() = 25"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "report 8",
+    "red": "Curve3DContinuityQueriesTests.swift:78 md == 25",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt",
+    "note": "Rewritten: md >= 25"
   }
 ]
