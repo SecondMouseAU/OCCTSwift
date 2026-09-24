@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import simd
 
 @testable import OCCTSwift
 
@@ -17,5 +18,9 @@ struct GeomEvalCircularHelicoidTests {
     @Test func circularHelicoidSurfaceCreate() {
         let surf = Surface.circularHelicoid(pitch: 5.0)
         #expect(surf != nil)
+        // #766: pinned to the GeomEval evaluator's own value on the same inputs, see Scripts/repro/766-geomeval-approx/; `!= nil` passed a surface built from the wrong parameters.
+        if let surf {
+            #expect(simd_length(surf.point(atU: .pi / 2, v: 2) - SIMD3(0, 2, 1.25)) < 1e-12)
+        }
     }
 }
