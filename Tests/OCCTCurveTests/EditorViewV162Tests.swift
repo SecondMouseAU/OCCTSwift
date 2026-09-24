@@ -8,10 +8,20 @@ import simd
 struct EditorViewV162Tests {
     @Test("Per-(edge, face1, face2) regularity setter reports failure on the pinned kernel")
     func edgeRegularitySetterReportsFailure() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph, graph.coedgeCount > 0, graph.edgeCount > 0, graph.faceCount > 1 {
+        // Was nested `if let`s, so a box or graph that failed to build passed with nothing
+        // checked (#766).
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box not built")
+            return
+        }
+        do {
+            guard let graph = BRepGraph(shape: box), graph.coedgeCount > 0, graph.edgeCount > 0,
+                graph.faceCount > 1
+            else {
+                Issue.record("box graph unavailable")
+                return
+            }
+            do {
                 // OCCT 8.0.0 GA replaced per-coedge SetContinuity / SetSeamContinuity /
                 // SetSeamPairId with EdgeOps:SetRegularity, continuity now lives on
                 // (edge, face1, face2). face1 == face2 expresses seam continuity.

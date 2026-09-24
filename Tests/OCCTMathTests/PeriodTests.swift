@@ -78,7 +78,11 @@ struct PeriodTests {
     }
 
     @Test func zeroPeriod() {
-        if let p = Period(totalSeconds: 0) {
+        // A zero period is valid (Quantity_Period::IsValid(0, 0) is true, probe), so nil is a
+        // failure. The bare if-let let a rejected zero period pass.
+        let p = Period(totalSeconds: 0)
+        #expect(p != nil)
+        if let p {
             #expect(p.totalSeconds == 0)
             #expect(p.totalMicroseconds == 0)
         }

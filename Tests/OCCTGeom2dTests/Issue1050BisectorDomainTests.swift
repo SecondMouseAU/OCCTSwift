@@ -36,32 +36,30 @@ struct Issue1050BisectorDomainTests {
     /// C(-155,0) D(-145,0) is the half-line running along +y from (-150,0). They meet at (-150, 5),
     /// at parameter 150 on the first, which the old `[-100, 100]` discarded.
     @Test("A meeting point past the old window is found")
-    func meetingPointBeyondOldWindowIsFound() {
+    func meetingPointBeyondOldWindowIsFound() throws {
         let hits = bisectorIntersections(
             a: (0, 0), b: (0, 10),
             c: (-155, 0), d: (-145, 0))
         #expect(!hits.isEmpty)
-        if let h = hits.first {
-            #expect(abs(h.x - (-150)) < 1e-6)
-            #expect(abs(h.y - 5) < 1e-6)
-            #expect(abs(h.paramOnFirst - 150) < 1e-6)
-        }
+        let h = try #require(hits.first)  // #1979: was `if let`
+        #expect(abs(h.x - (-150)) < 1e-6)
+        #expect(abs(h.y - 5) < 1e-6)
+        #expect(abs(h.paramOnFirst - 150) < 1e-6)
     }
 
     /// A meeting point well inside the old window is unchanged.
     ///
     /// So the fix widened the range the search covers rather than moving any answer it already had.
     @Test("A meeting point inside the old window is unchanged")
-    func meetingPointInsideOldWindowIsUnchanged() {
+    func meetingPointInsideOldWindowIsUnchanged() throws {
         let hits = bisectorIntersections(
             a: (0, 0), b: (0, 10),
             c: (-55, 0), d: (-45, 0))
         #expect(!hits.isEmpty)
-        if let h = hits.first {
-            #expect(abs(h.x - (-50)) < 1e-6)
-            #expect(abs(h.y - 5) < 1e-6)
-            #expect(abs(h.paramOnFirst - 50) < 1e-6)
-        }
+        let h = try #require(hits.first)  // #1979: was `if let`
+        #expect(abs(h.x - (-50)) < 1e-6)
+        #expect(abs(h.y - 5) < 1e-6)
+        #expect(abs(h.paramOnFirst - 50) < 1e-6)
     }
 
     /// Regression guard.
@@ -108,20 +106,19 @@ struct Issue1050BisectorDomainTests {
     /// `Scripts/repro/1050-bisector-domain/build-discriminating-fixture.py`. This is the case that
     /// pins the bound to the curve's own range rather than to anything computed from the input.
     @Test("A meeting point past any input-derived bound is found")
-    func meetingPointBeyondInputExtentIsFound() {
+    func meetingPointBeyondInputExtentIsFound() throws {
         let hits = bisectorIntersections(
             a: (0, 0), b: (0, 10),
             c: (-19.0558, 25.0900), d: (-20.9442, 34.9100))
         #expect(!hits.isEmpty)
-        if let h = hits.first {
-            // The expected value is the closed-form solve of the ROUNDED C and D actually
-            // passed, not of the construction's intended target, and OCCT agrees with it to
-            // 3e-14. 1e-9 matches the rest of this file; a looser 1e-4 would not notice a
-            // change that moved the crossing by 1e-5.
-            #expect(abs(h.x - (-150.004_236_390_595_37)) < 1e-9)
-            #expect(abs(h.y - 5) < 1e-6)
-            #expect(h.paramOnFirst > 82.42)
-        }
+        let h = try #require(hits.first)  // #1979: was `if let`
+        // The expected value is the closed-form solve of the ROUNDED C and D actually
+        // passed, not of the construction's intended target, and OCCT agrees with it to
+        // 3e-14. 1e-9 matches the rest of this file; a looser 1e-4 would not notice a
+        // change that moved the crossing by 1e-5.
+        #expect(abs(h.x - (-150.004_236_390_595_37)) < 1e-9)
+        #expect(abs(h.y - 5) < 1e-6)
+        #expect(h.paramOnFirst > 82.42)
     }
 
     /// The circumcentre example in `docs/reference/Shape-Recognition.md`, all four orderings.
@@ -130,13 +127,12 @@ struct Issue1050BisectorDomainTests {
     /// documented claim nobody executes drifts, and this one is the whole reason the half-line
     /// paragraph exists, so it is pinned here rather than left as prose.
     @Test("The documented circumcentre example holds, and its three reorderings do not")
-    func documentedCircumcentreExample() {
+    func documentedCircumcentreExample() throws {
         let hits = bisectorIntersections(a: (0, 0), b: (4, 0), c: (4, 0), d: (2, 3))
         #expect(hits.count == 1)
-        if let h = hits.first {
-            #expect(abs(h.x - 2) < 1e-9)
-            #expect(abs(h.y - 5.0 / 6.0) < 1e-9)
-        }
+        let h = try #require(hits.first)  // #1979: was `if let`
+        #expect(abs(h.x - 2) < 1e-9)
+        #expect(abs(h.y - 5.0 / 6.0) < 1e-9)
         #expect(bisectorIntersections(a: (4, 0), b: (0, 0), c: (4, 0), d: (2, 3)).isEmpty)
         #expect(bisectorIntersections(a: (0, 0), b: (4, 0), c: (2, 3), d: (4, 0)).isEmpty)
         #expect(bisectorIntersections(a: (4, 0), b: (0, 0), c: (2, 3), d: (4, 0)).isEmpty)
@@ -263,19 +259,23 @@ struct Issue1085BisectorNonFiniteTests {
         #expect(bisectorIntersections(a: (0, -large), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
     }
 
-    /// Coordinates just below the threshold (1e149) should still work normally.
+    /// Coordinates just below the threshold (1e149) still reach OCCT and are answered.
+    ///
+    /// #1979: this asserted nothing (`_ = hits`), and its fixture could not have been answered:
+    /// at 1e149, `-1e149 + 10 == -1e149` in `Double`, so C and D coincided and
+    /// `gp_Vec2d::Normalize()` refused the second bisector, an empty result indistinguishable from
+    /// the guard refusing. C and D now straddle the origin at +-1e149, so the second bisector is
+    /// the near-vertical half-line through (0, 5), and OCCT reports the meeting point there
+    /// (Scripts/repro/766-geom2d-bisector-domain-nonfinite/).
     @Test("Coordinates near but below threshold still work")
-    func coordinatesBelowThresholdWork() {
+    func coordinatesBelowThresholdWork() throws {
         let nearThreshold = 1e149  // Below the 1e150 safe magnitude threshold
-        // This should compute normally - using a simple case that has a known intersection
         let hits = bisectorIntersections(
             a: (0, 0), b: (0, 10),
-            c: (-nearThreshold, 0), d: (-nearThreshold + 10, 0))
-        // The bisectors should meet at x = -nearThreshold + 5, y = 5
-        // But due to the large coordinates, OCCT might still have issues
-        // The important thing is it doesn't hang - it either returns a result or empty
-        // We just verify it returns (doesn't hang)
-        _ = hits
+            c: (-nearThreshold, 0), d: (nearThreshold, 10))
+        try #require(hits.count == 1)
+        #expect(abs(hits[0].x) < 1e-9)
+        #expect(abs(hits[0].y - 5) < 1e-9)
     }
 }
 
@@ -283,10 +283,12 @@ struct Issue1085BisectorNonFiniteTests {
 /// Both bisectors are the same half-line, so they overlap everywhere.
 /// OCCT reports this as a segment; we return its endpoints (start and end at infinity).
 @Test("Coincident bisectors report intersection segment endpoints")
-func coincidentBisectorsReportSegmentEndpoints() {
+func coincidentBisectorsReportSegmentEndpoints() throws {
+    // #1979: each `count == 2` was an `#expect` followed by `hits[0]`/`hits[1]`, so a short
+    // result crashed the whole run instead of failing this test. Now `#require`.
     // Both pairs are (0,0) to (4,0) - same bisector (horizontal, midpoint at (2,0))
     let hits = bisectorIntersections(a: (0, 0), b: (4, 0), c: (0, 0), d: (4, 0))
-    #expect(hits.count == 2)
+    try #require(hits.count == 2)
     // First point: the shared midpoint
     #expect(abs(hits[0].x - 2.0) < 1e-9)
     #expect(abs(hits[0].y - 0.0) < 1e-9)
@@ -299,14 +301,14 @@ func coincidentBisectorsReportSegmentEndpoints() {
     // Pairs (0,0)-(4,0) and (1,0)-(3,0) - same line, different midpoints
     // Both bisectors are the same vertical half-line from x=2
     let hits2 = bisectorIntersections(a: (0, 0), b: (4, 0), c: (1, 0), d: (3, 0))
-    #expect(hits2.count == 2)
+    try #require(hits2.count == 2)
     #expect(abs(hits2[0].x - 2.0) < 1e-9)
     #expect(abs(hits2[0].y - 0.0) < 1e-9)
     #expect(hits2[1].paramOnFirst > 1e99)
     
     // Pairs (0,0)-(0,4) and (0,1)-(0,3) - same vertical line, horizontal bisector
     let hits3 = bisectorIntersections(a: (0, 0), b: (0, 4), c: (0, 1), d: (0, 3))
-    #expect(hits3.count == 2)
+    try #require(hits3.count == 2)
     #expect(abs(hits3[0].x - 0.0) < 1e-9)
     #expect(abs(hits3[0].y - 2.0) < 1e-9)
     #expect(hits3[1].paramOnFirst > 1e99)
