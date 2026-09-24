@@ -1,0 +1,5 @@
+TDF_IDFilter(true).IgnoreAll=true
+TDF_IDFilter(false).IgnoreAll=false
+ignore-all filter, Keep(g): IsKept=true
+keep-all filter, Ignore(g): IsIgnored=true
+IgnoreAll(false) on an ignore-all filter: IgnoreAll=false

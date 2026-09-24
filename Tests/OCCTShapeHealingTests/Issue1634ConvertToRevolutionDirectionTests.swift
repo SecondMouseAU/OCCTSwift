@@ -11,10 +11,11 @@ import Testing
 /// The assertion that catches it is a count of `Geom_SurfaceOfRevolution` faces before and after,
 /// not "the call returned non-nil": both directions return a valid shape with three faces.
 ///
-/// `Face.surfaceType` cannot be used here. It is `BRepAdaptor_Surface::GetType()`, which
-/// canonicalises a surface of revolution built on a line back to `GeomAbs_Cylinder`, so a
-/// converted cylinder still reports `.cylinder`. The Geom subclass is what changed, and
-/// `Shape.extractFaceSurface()?.typeName` is what reports it.
+/// The Geom subclass is what the conversion changes, and `Shape.extractFaceSurface()?.typeName`
+/// is what reports it. (An earlier version of this comment said `Face.surfaceType` could not be
+/// used because `BRepAdaptor_Surface::GetType()` canonicalises the result back to a cylinder;
+/// #766 measured the opposite on this fixture: GetType() reports `GeomAbs_SurfaceOfRevolution`,
+/// and `GeometryConversionTests.toRevolution` pins `.surfaceOfRevolution` through it.)
 @Suite("Issue #1634: ConvertToRevolution runs elementary -> revolution")
 struct Issue1634ConvertToRevolutionDirectionTests {
 
