@@ -228,64 +228,81 @@ Per `upstream-occt-patch-process.md`:
 
 Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
 
+### `OffsetByJoinTests.swift` (4 tests)
+
+Probe: `Scripts/repro/766-modeling-offset-by-join/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| offsetArc | `OCCTShapeOffsetByJoin` offsets by -distance | `:15 Expectation failed: o.volume! > box.volume!` | pass | `OCCTShapeOffsetByJoin` | PASS |
+| offsetInward | `OCCTShapeOffsetByJoin` offsets by -distance | `:26 Expectation failed: o.volume! < box.volume!` | pass | `OCCTShapeOffsetByJoin` | PASS |
+| offsetIntersection | `OCCTShapeOffsetByJoin` returns nullptr | `:34 Expectation failed: offset != nil` | pass | `OCCTShapeOffsetByJoin` | PASS |
+| offsetCylinder | `OCCTShapeOffsetByJoin` returns nullptr | `:44 Expectation failed: offset != nil` | pass | `OCCTShapeOffsetByJoin` | PASS |
+
+### `OffsetWireFaceTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-offset-wire-face/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| offsetWire | `OCCTOffsetWireOnPlane` returns nullptr | `:14 Expectation failed: offset != nil` | pass | `OCCTOffsetWireOnPlane` | PASS |
+| offsetWireIntersection | `OCCTOffsetWireOnPlane` returns nullptr | `:23 Expectation failed: offset != nil` | pass | `OCCTOffsetWireOnPlane` | PASS |
+| offsetFace | `OCCTBRepOffsetOffsetFace` returns nullptr | `:32 Expectation failed: offset != nil` | pass | `OCCTBRepOffsetOffsetFace` | PASS |
+
+### `MultiEdgeBlendTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-multi-edge-blend/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| blendMultipleEdges | `OCCTShapeBlendEdges` returns nullptr | `:20 Expectation failed: blended != nil` | pass | `OCCTShapeBlendEdges` | PASS |
+| blendSingleEdge | `OCCTShapeBlendEdges` returns nullptr | `:32 Expectation failed: blended != nil` | pass | `OCCTShapeBlendEdges` | PASS |
+| blendEmptyArray | `Shape.blendedEdges` returns the input shape for an empty list instead of nil | `:44 Expectation failed: blended == nil` | pass | `OCCTShapeBlendEdges` | N/A: refused in Swift and in occtShapeFilletEdgeList before any kernel call |
+
+### `MultiFuseTests.swift` (4 tests)
+
+Probe: `Scripts/repro/766-modeling-multi-fuse/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| fuseThreeBoxes | `OCCTShapeFuseMulti` returns nullptr | `:14 Expectation failed: result != nil` | pass | `OCCTShapeFuseMulti` | PASS |
+| fuseFourSpheres | `OCCTShapeFuseMulti` returns nullptr | `:30 Expectation failed: result != nil` | pass | `OCCTShapeFuseMulti` | PASS |
+| fuseTooFew | `Shape.commonAll` / `Shape.fuseAll` return the lone operand for a one-element list instead of nil | `:40 Expectation failed: result == nil` | pass | `OCCTShapeFuseMulti` | N/A: the guard is in Swift (and again in the bridge) before any kernel call |
+| fuseNonOverlapping | `OCCTShapeFuseMulti` returns nullptr | `:48 Expectation failed: result != nil` | pass | `OCCTShapeFuseMulti` | PASS |
+
+### `MultiOffsetWireTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-multi-offset-wire/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| multipleInwardOffsets | `OCCTWireMultiOffset` returns 0 wires | `:15 Expectation failed: wires.count >= 3` | pass | `OCCTWireMultiOffset` | PASS |
+| outwardOffset | `OCCTWireMultiOffset` returns 0 wires | `:32 Expectation failed: wires.count >= 2` | pass | `OCCTWireMultiOffset` | PASS |
+| emptyOffsets | `Shape.multiOffsetWires` treats an empty offset list as a single 0 offset | `:39 Expectation failed: wires.isEmpty` | pass | `OCCTWireMultiOffset` | N/A: an empty list is refused in Swift and in the bridge before any kernel call |
 ### `BOPAlgoBuilderFaceTests.swift` (1 tests)
-
 Probe: `Scripts/repro/766-modeling-bopalgo-builder-face/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | buildFaceFromEdges | `OCCTBOPAlgoBuilderFace` returns false | `:17 Expectation failed: result != nil` | pass | `OCCTBOPAlgoBuilderFace` | PASS |
-
 ### `BOPAlgoBuilderSolidTests.swift` (1 tests)
-
 Probe: `Scripts/repro/766-modeling-bopalgo-builder-solid/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | buildSolidFromFaces | `OCCTBOPAlgoBuilderSolid` returns false | `:14 Expectation failed: result != nil` | pass | `OCCTBOPAlgoBuilderSolid` | PASS |
-
 ### `BOPAlgoCellsBuilderTests.swift` (3 tests)
-
 Probe: `Scripts/repro/766-modeling-bopalgo-cells-builder/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | createCellsBuilder | `OCCTCellsBuilderCreate` returns nullptr | `:17 Expectation failed: builder != nil` | pass | `OCCTCellsBuilderCreate` | PASS |
 | addRemoveAll | `OCCTCellsBuilderRemoveAllFromResult` does nothing | `:50 Expectation failed: result2?.solids.count == 0` | pass | `OCCTCellsBuilderRemoveAllFromResult` | PASS: rewritten: all assertions sat inside if-let of the builder, and non-nil held after a no-op RemoveAll |
 | removeInternalBoundaries | `OCCTCellsBuilderRemoveInternalBoundaries` does nothing | `:81 Expectation failed: result.solids.count == 1` | pass | `OCCTCellsBuilderRemoveInternalBoundaries` | PASS: rewritten: AddAllToResult(update: true) already merges, so the old fixture could not observe RemoveInternalBoundaries |
-
 ### `BOPAlgoSectionTests.swift` (3 tests)
-
 Probe: `Scripts/repro/766-modeling-bopalgo-section/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | sectionBoxSphere | `OCCTBOPAlgoSection` returns nullptr | `:21 Issue recorded` | pass | `OCCTBOPAlgoSection` | PASS: rewritten: asserted only inside if-let of the result |
 | sectionTwoBoxes | `OCCTBOPAlgoSection` returns nullptr | `:34 Issue recorded` | pass | `OCCTBOPAlgoSection` | PASS: rewritten; the boxes only touch along the line x = y = 5 |
 | staticSection | `OCCTBOPAlgoSection` returns nullptr | `:47 Issue recorded` | pass | `OCCTBOPAlgoSection` | PASS: rewritten: asserted only inside if-let of the result |
-
 ### `BOPAlgoShellSplitterTests.swift` (1 tests)
-
 Probe: `Scripts/repro/766-modeling-bopalgo-shell-splitter/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | splitSingleShell | `OCCTBOPAlgoShellSplitter` returns false | `:15 Expectation failed: result != nil` | pass | `OCCTBOPAlgoShellSplitter` | PASS |
-
 ### `BOPAlgoSplitterTests.swift` (2 tests)
-
 Probe: `Scripts/repro/766-modeling-bopalgo-splitter/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | splitBoxes | `OCCTBOPAlgoSplit` returns nullptr | `:21 Issue recorded` | pass | `OCCTBOPAlgoSplit` | PASS: rewritten; the tool shares only the face x = 10 with the object, so nothing is split |
 | splitProducesMultipleSolids | `OCCTBOPAlgoSplit` never adds its tools to the BOPAlgo_Splitter | `:40 Issue recorded` | pass | `OCCTBOPAlgoSplit` | PASS: rewritten: asserted only inside if-let of the result |
-
 ### `BOPAlgoToolsTests.swift` (2 tests)
-
 Probe: `Scripts/repro/766-modeling-bopalgo-tools/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | edgesToWires | `OCCTBOPAlgoEdgesToWires` returns nullptr | `:18 Expectation failed: result != nil` | pass | `OCCTBOPAlgoEdgesToWires` | PASS |
 | wiresToFaces | `OCCTBOPAlgoWiresToFaces` returns nullptr | `:40 Expectation failed: result != nil` | pass | `OCCTBOPAlgoWiresToFaces` | PASS |
