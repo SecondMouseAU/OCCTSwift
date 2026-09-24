@@ -108,7 +108,8 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "NbSplits": 302
+        "count": 302,
+        "last": 302
       }
     },
     "comparison": {
@@ -116,6 +117,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the split count and the last split index. Bridge: indices.count and indices.last, both asserted by the test. Kernel: transcript.txt line 1 ('NbSplits=302 last=302'), Geom2dConvert_BSplineCurveKnotSplitting NbSplits() as count and SplitValue(NbSplits()) as last.",
     "evidence": {
       "injection": "no retry: result cut at 256",
       "red": "Issue562Curve2DKnotSplitDuplicateTests.swift:43:9: Expectation failed: indices.count == 302",
@@ -169,10 +171,8 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "pre-#615": {
-          "u": 1.57079632679,
-          "distance": 11
-        }
+        "u": 0,
+        "distance": 7.81024967590665
       }
     },
     "comparison": {
@@ -180,7 +180,13 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the nearest point of the half circle (radius 5, [0, pi]) to (0, -6), as parameter u and distance, both printed at 15 significant digits (the bridge value measured 7.810249675906654 at 17). Bridge: Curve2D.project(point:), which takes the nearest of the interior extrema and both ends. Kernel: transcript.txt line 5 ('half circle from (0,-6): ... nearest u=0 distance=7.81024967590665'), the probe taking the same nearest-of-extrema-and-ends. The pre-#615 answer (interior extrema only, distance 11 at u = pi/2, transcript.txt line 9) is the defect the injection reproduces, not the current kernel answer, so it is kept under evidence.defect_reference and is not compared.",
     "evidence": {
+      "defect_reference": {
+        "what": "Geom2dAPI_ProjectPointOnCurve interior extrema only, from (0, -6)",
+        "u": 1.57079632679,
+        "distance": 11
+      },
       "injection": "pre-#615 projection: Geom2dAPI_ProjectPointOnCurve interior extrema only, ends ignored",
       "red": "Issue615Curve2DNearestPointTests.swift:59:9: Expectation failed: abs(projected.distance - truth) < 1e-9",
       "green": "passed after revert (Sources/ clean)",
