@@ -104,24 +104,46 @@ For each test, run ground-truth C++ comparison:
 
 Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
 
-### `CurrentTests.swift`
+### `AssemblyNodeIdentityTests.swift`
 
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
+| `labelIdRoundTrip` | `OCCTDocumentLabelIsNull` returns true for every id | :26 Issue recorded | passed | `OCCTDocumentLabelIsNull` | PASS: one free shape, root label `0:1:1:1` not null and stable across re-fetch |
+| `unknownLabelIdRejected` | `OCCTDocumentLabelIsNull` returns false for every id | :40 Expectation failed: doc.node(at: .max) == nil | passed | `OCCTDocumentLabelIsNull` | PASS: fresh document has 0 free shapes, so no label can be registered at Int64.max |
+| `nodeAtFreshDocumentDoesNotRequireWarmup` | `Document.node(at:)` skips its root warm-up loop (the #95 defect) | :60 Expectation failed: node != nil | passed | `OCCTDocumentGetRootLabelId` | PASS: kernel has the one free-shape root the warm-up registers as id 0 |
+
+### `ChildNodeIteratorTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `noTreeNode` | `OCCTChildNodeIteratorCount` returns 1 | :12 Expectation failed: doc.childNodeCount(tag: 400) == 0 | passed | `OCCTChildNodeIteratorCount` | PASS: 0 = 0 |
+
+### `ColorToolCompletionsTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `addAndFindColor` | `OCCTDocumentColorToolFindColor` returns -1 | :14 Expectation failed: found == tag | passed | `OCCTDocumentColorToolFindColor` | PASS: `FindColor` returns the label `AddColor` made |
+| `colorCount` | `OCCTDocumentColorToolGetColorCount` returns 0 | :23 Expectation failed: after == before + 1 | passed | `OCCTDocumentColorToolGetColorCount` | PASS: 0 then 1 |
+| `removeColor` | `OCCTDocumentColorToolRemoveColor` returns true without removing | :34 Expectation failed: after == before - 1 | passed | `OCCTDocumentColorToolRemoveColor` | PASS: 1 then 0 |
+| `visibility` | `OCCTDocumentColorToolSetVisibility` returns true without setting | :48 Expectation failed: !doc.colorToolIsVisible(labelId: labelId) | passed | `OCCTDocumentColorToolIsVisible` | PASS: true, false, true |
+| `colorByLayer` | `OCCTDocumentColorToolSetColorByLayer` returns true without setting | :65 Expectation failed: doc.colorToolIsColorByLayer(labelId: labelId) | passed | `OCCTDocumentColorToolIsColorByLayer` | PASS: false, then true |
+### `DocumentColorMaterialTests.swift`
+| `setLabelColor` | `OCCTDocumentSetLabelColor` returns without setting | :24 Expectation failed: color != nil | passed | `OCCTDocumentSetLabelColor` | PASS: (1, 0, 0); no colour before the set |
+| `colorAttrRoundTrips` | `OCCTDocumentSetColorAttr` builds the colour as `Quantity_TOC_sRGB` (the #1508 defect) | :58 Expectation failed: abs(readBack.red - 0.5) < 1e-6; :59 Expectation failed: abs(readBack.green - 0.25) < 1e-6 | passed | `OCCTDocumentGetColorAttr` | PASS: (0.5, 0.25, 0.75); built as TOC_sRGB the kernel gives (0.214041, 0.050876, 0.522522), the #1508 values |
+| `colorRGBAAttrRoundTrips` | `OCCTDocumentSetColorRGBAAttr` builds the colour as `Quantity_TOC_sRGB` (the #1508 defect) | :86 Expectation failed: abs(readBack.red - 0.5) < 1e-6; :87 Expectation failed: abs(readBack.green - 0.25) < 1e-6 | passed | `OCCTDocumentGetColorRGBAAttr` | PASS: (0.5, 0.25, 0.75, 0.4) |
+| `setLabelMaterial` | `OCCTDocumentSetLabelMaterial` stores roughness as metallic | :117 Expectation failed: abs(readMat.metallic - 0.9) < 0.01 | passed | `OCCTDocumentGetLabelMaterial` | PASS: metallic 0.9, roughness 0.3 |
+### `DocumentExplorerTests.swift`
+| `exploreDocumentWithShape` | `OCCTDocumentExplorerCount` returns 0 | :15 Expectation failed: count >= 1 | passed | `OCCTDocumentExplorerCount` | PASS: kernel 1 leaf, test asserts >= 1 |
+| `explorerShapeAtIndex` | `OCCTDocumentExplorerShape` returns null | :25 Expectation failed: shape != nil | passed | `OCCTDocumentExplorerShape` | PASS: leaf 0 has a shape |
+| `explorerPathId` | `OCCTDocumentExplorerPathId` returns null | :35 Expectation failed: pathId != nil | passed | `OCCTDocumentExplorerPathId` | PASS: path id `0:1:1:1.` |
+| `findShapeFromPathId` | `OCCTDocumentExplorerFindShape` returns null | :46 Expectation failed: found != nil | passed | `OCCTDocumentExplorerFindShape` | PASS: `FindShapeFromPathId` gives the solid |
+### `CurrentTests.swift`
 | `setAndGet` | `OCCTDocumentSetCurrentLabel` returns true without setting | :12 `doc.currentLabel() == 510` (rewritten; the old `if let` passed this injection) | passed | `OCCTDocumentGetCurrentLabel` | PASS: tag 510 = 510 |
 | `hasCurrent` | `OCCTDocumentHasCurrentLabel` returns true | :17 Expectation failed: !doc.hasCurrentLabel() | passed | `OCCTDocumentHasCurrentLabel` | PASS: false, then true |
 | `noCurrentReturnsNil` | `OCCTDocumentGetCurrentLabel` returns tag 0 | :24 Expectation failed: doc.currentLabel() == nil | passed | `OCCTDocumentGetCurrentLabel` | PASS: has_current false on both sides (bridge -1 maps to nil; kernel `TDataStd_Current::Has` false) |
-
 ### `DimTolToolTests.swift`
-
-| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | `emptyDocumentCounts` | `OCCTDocumentDimTolDimensionCount` returns 1 (`F2`, the tolerance count returning 1, also red at :11) | :10 Expectation failed: doc.dimTolToolDimensionCount == 0 | passed | `OCCTDocumentDimTolDimensionCount` | PASS: 0 and 0 |
-
 ### `DirectoryTests.swift`
-
-| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | `createDirectory` | `OCCTDocumentDirectoryNew` returns false | :11 Expectation failed: ok | passed | `OCCTDocumentDirectoryNew` | PASS: created true on both sides (`!dir.IsNull()`; kernel `New(100)` non-null) |
 | `findDirectory` | `OCCTDocumentDirectoryFind` returns false | :18 Expectation failed: doc.hasDirectory(at: 100) | passed | `OCCTDocumentDirectoryFind` | PASS: true = true |
 | `addSubDirectory` | `OCCTDocumentDirectoryAddSubDirectory` returns -1 | :26 Expectation failed: childTag != nil | passed | `OCCTDocumentDirectoryAddSubDirectory` | PASS: tag_non_nil true on both sides (kernel sub-directory tag 1 >= 0; raw tags not compared) |

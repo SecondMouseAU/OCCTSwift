@@ -1,0 +1,4 @@
+singleFlange (50 x 25, t 3): 3750
+singleFlangeVolumeSanity (40 x 20, t 2.5): 2000
+flangesOnlyNoBends (fused): 600
+fusedTwoFlangeVolume (fused): 13260

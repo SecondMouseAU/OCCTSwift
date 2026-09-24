@@ -1,0 +1,4 @@
+faces=3 edges=3 face1 surface=Geom_CylindricalSurface
+edge[0]: source length=62.831853071795862 approx length=62.831907482185159 start=(10, -3.55271368e-15, 20) end=(10, -1.77635684e-15, 20) maxError3d=4.6e-05
+edge[1]: source length=20 approx length=20 start=(10, -2.4492936e-15, 0) end=(10, -2.4492936e-15, 20) maxError3d=1.47e-15
+edge[2]: source length=62.831853071795862 approx length=62.831907482185159 start=(10, -3.55271368e-15, 0) end=(10, -1.77635684e-15, 0) maxError3d=4.6e-05
