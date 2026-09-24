@@ -1,0 +1,22 @@
+trimSurface: [0, 3.1415926535897931]x[-1.5707963267948966, 0]
+offsetSurface S(0,0)=(7, 0, 0)
+translateSurface S(0,0)=(15, 0, 0)
+scaleSurface S(0,0)=(10, 0, 0)
+mirrorSurface original S(0,0)=(2, 0, 5)
+mirrorSurface mirrored S(0,0)=(2, 0, -5)
+rotateSurface S(0.3,0.2)=(-1.4481473881275762, 14.681466817920995, 5.9933466539753057)
+mirrorPointSurface S(0.4,0.1)=(0.16708094898402104, 3.2250542547344572, 0.80033316670634369)
+mirrorAxisSurface S(0.785398,0.523599)=(-6.2247448713915894, -1.2247448713915889, 0.99999999999999989)
+pipeCircular: Geom_RectangularTrimmedSurface bounds=[0, 6.2831853071795862]x[0, 10]
+  pipeCircular S(1.88496,6)=(-1.9021130325903073, -0.61803398874989446, 6)
+pipeWithSection: Geom_RectangularTrimmedSurface bounds=[0, 6.2831853071795862]x[0, 10]
+  pipeWithSection S(1.88496,6)=(-0.92705098312484202, 2.8531695488854609, 6)
+cylinderUPeriod: 6.2831853071795862  planePeriod: IsUPeriodic=0 IsVPeriodic=0
+singularities (1e-6): plane=0 sphere=2 cylinder=0; sphere IsDegenerated((0,0,5), 0.1)=1
+linearExtrusion S(5,2.5)=(5, 0, 2.5)
+revolution: bounds=[0, 6.28319]x[0, 10] periodic=1
+revolution S(0,0)=(5, 0, 0)
+revolution S(1.5708,4)=(5.5511151231257827e-16, 5, 4)
+toBezierPatches untrimmed cylinder: threw GeomConvert::SurfaceToBSplineSurface() - infinite surface
+toBezierPatches trimmedCylinder(5, 10): 3 x 1 patches
+toBezierPatches plane trimmed to [-5,5]^2: 1 x 1 patches
