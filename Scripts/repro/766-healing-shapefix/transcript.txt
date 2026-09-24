@@ -1,0 +1,20 @@
+edge0: FixRemoveCurve3d=0 FixAddCurve3d=0 FixAddPCurve(face0)=0 FixRemovePCurve(face0)=0 FixReversed2d(face0)=0
+EdgeProjAux(face0, edge0): firstDone=1 first=0 lastDone=1 last=10
+box edges (explored, 24): FixSameParameter count=0 FixVertexTolerance count=0
+ShapeFixer(box) Perform=0 valid=1 type=2 volume=1000.000000000 FAIL=0
+fixed(0.001, fixSolid=1): valid=1 type=2 volume=1000.000000000
+fixed(0.001, fixSolid=0): valid=1 type=2 volume=1000.000000000
+healed(box) (ShapeFix_Shape): valid=1 volume=1000.000000000
+IntersectionTool FixIntersectingWires(box face0)=0
+overlapping hole face: edges before=8 FixIntersectingWires=1 edges after=12
+FixSmallSolid Remove(big + tiny, 1.0): solids=1 volume=1000.000000
+FixSmallSolid Merge(big + thin slab, 1.0): null=0 solids=2 valid=1 volume=1001.000000
+ShapeFix_Solid(box): type=2 valid=1 volume=1000.000000; SolidFromShell: type=2 volume=1000.000000
+SplitCommonVertex(box): valid=1 vertices=8 volume=1000.000000
+SetTolerance(box, 1e-5): valid=1 max=1.000e-05 min=1.000e-05
+LimitTolerance(box, 1e-7, 1e-3)=0 valid=1 max=1.000e-07
+SetTolerance(box, 0.5): max=5.000e-01 min=5.000e-01
+FixWireGaps(box): valid=1 edges=12 volume=1000.000000
+FixSmallEdges(box, drop=1): valid=1 edges=12 volume=1000.000000
+FixSmallEdges(box, drop=0): valid=1 edges=12 volume=1000.000000
+WireVertex Fix(box wires, 1e-4) total=0
