@@ -266,3 +266,18 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 ### `Issue1435DatumDocumentToolTableTests.swift`
 | `datumIsUnderDocumentToolLabel` | `OCCTDocumentCreateDatum` writes through `XCAFDoc_DimTolTool::Set(Main())` (the #1435 regression) | :62 Expectation failed: dgts.childCount == 1; :69 Expectation failed: doc.datumCount == 1 | passed | `OCCTDocumentCreateDatum` | PASS: the datum lands under 0:1:4 |
 | `datumCountAgreesWithRealTable` | `OCCTDocumentCreateDatum` writes through `XCAFDoc_DimTolTool::Set(Main())` (the #1435 regression) | :89 Expectation failed: dgts.childCount == 3; :90 Expectation failed: doc.datumCount == 3 | passed | `OCCTDocumentGetDatumCount` | PASS: 3 = 3; a tool set on Main() never makes 0:1:4 |
+### `TDataXtdShapeAttributeTests.swift`
+| `setGetShape` | `OCCTDocumentHasShapeAttr` returns false | :18 Expectation failed: label.hasShapeAttribute | passed | `OCCTDocumentHasShapeAttr` | PASS: stored |
+| `noShapeAttribute` | `OCCTDocumentHasShapeAttr` returns true | :28 Expectation failed: !label.hasShapeAttribute | passed | `OCCTDocumentHasShapeAttr` | PASS: none on a fresh label |
+### `TDataXtdTriangulationAttributeTests.swift`
+| `setTriangulation` | `OCCTDocumentTriangulationNbNodes` answers 0 | :18 Expectation failed: label.triangulationNodeCount > 0 | passed | `OCCTDocumentTriangulationNbNodes` | PASS: sphere at 1.0: 168 nodes, 306 triangles |
+| `triangulationDeflection` | `OCCTDocumentTriangulationDeflection` answers 0 | :29 Expectation failed: label.triangulationDeflection > 0 | passed | `OCCTDocumentTriangulationDeflection` | PASS: the mesher records a positive deflection |
+### `TDFAttributeIteratorTests.swift`
+| `attributeCount` | `OCCTDocumentAttributeCount` answers 0 | :19 Expectation failed: count >= 3 | passed | `OCCTDocumentAttributeCount` | PASS: 3 |
+| `emptyLabel` | `OCCTDocumentAttributeCount` answers -1 | :26 Expectation failed: count >= 0 | passed | `OCCTDocumentAttributeCount` | PASS: 0 |
+| `dataSetIsEmpty` | `OCCTDocumentDataSetIsEmpty` returns true | :33 Expectation failed: !empty | passed | `OCCTDocumentDataSetIsEmpty` | PASS: a label with attributes gives a non-empty data set |
+### `TDFChildIDIteratorTests.swift`
+| `countByGUID` | `OCCTDocumentChildIDCount` answers 0 | :28 Expectation failed: count == 2 | passed | `OCCTDocumentChildIDCount` | PASS: 2 integer children |
+| `emptyResult` | `OCCTDocumentChildIDCount` answers 1 | :36 Expectation failed: count == 0 | passed | `OCCTDocumentChildIDCount` | PASS: 0 |
+### `TDFComparisonToolTests.swift`
+| `isSelfContained` | `OCCTDocumentIsSelfContained` returns false | :16 Expectation failed: result == true | passed | `OCCTDocumentIsSelfContained` | PASS: true |
