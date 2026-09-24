@@ -1,0 +1,8 @@
+fresh datum: child 17 exists=true child 14 exists=true, point array present=false
+point array written: bounds 1..3 value(1)=7 value(3)=7
+point, no plane location (the #1030 shape): GetObject null=false name=Datum1030
+datum labels=1
+point and plane location: GetObject null=false name=Datum1030
+plane location 1..3, point at 1000000: GetObject null=false name=Datum1030
+point array of length 2: GetObject null=false name=Datum1030
+RescaleGeometry(Main, 2.0, force) with one readable datum=true
