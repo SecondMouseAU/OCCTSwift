@@ -31,15 +31,20 @@ struct BRepExtremaExtPCTests {
         #expect(abs(try #require(nearest) - 10) < 1e-9)
     }
 
+    /// The earlier form sat inside `if let result`, so an entry point that returned nil for this
+    /// edge passed it (#766). Values probed in `Scripts/repro/766-brepextrema-extpc/transcript.txt`.
     @Test("Point to wire edge, known distance")
     func pointToWireEdge() throws {
         // Use a wire from (0,0,0) to (10,0,0), single edge
-        let wire = Wire.polygon3D([SIMD3(0.0, 0.0, 0.0), SIMD3(10.0, 0.0, 0.0)], closed: false)!
-        let shape = Shape.fromWire(wire)!
-        // Point at (5, 3, 0), distance should be 3.0
-        if let result = shape.pointEdgeExtrema(point: SIMD3(5.0, 3.0, 0.0), edgeIndex: 0) {
-            #expect(abs(result.distance - 3.0) < 0.1)
-            #expect(abs(result.pointOnEdge.x - 5.0) < 0.5)
-        }
+        let wire = try #require(
+            Wire.polygon3D([SIMD3(0.0, 0.0, 0.0), SIMD3(10.0, 0.0, 0.0)], closed: false))
+        let shape = try #require(Shape.fromWire(wire))
+        // Point at (5, 3, 0): the foot is (5, 0, 0), halfway along, distance 3.
+        let result = try #require(
+            shape.pointEdgeExtrema(point: SIMD3(5.0, 3.0, 0.0), edgeIndex: 0))
+        #expect(abs(result.distance - 3.0) < 1e-9)
+        #expect(simd_distance(result.pointOnEdge, SIMD3(5, 0, 0)) < 1e-9)
+        #expect(abs(result.parameter - 5.0) < 1e-9)
+        #expect(result.solutionCount == 1)
     }
 }
