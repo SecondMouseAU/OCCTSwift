@@ -268,6 +268,12 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **Curve-Surface Intersection** | Line intersects sphere | Curve-surface intersection | Output points |
+| **Curve-Surface Intersection** | Line parallel to plane doesn't intersect | Curve-surface intersection | Empty result |
+| **Curve-Surface Intersection** | Line through sphere produces two points (X-axis) | Curve-surface intersection | Output points |
+| **Curve-Surface Intersection** | Line tangent to sphere produces one point | Curve-surface intersection | Tangent point |
+| **Curve-Surface Intersection** | Line missing sphere produces no points | Curve-surface intersection | Empty result |
+| **Curve-Surface Intersection** | Line through plane produces one point | Curve-surface intersection | Output points |
 
 ---
 
@@ -475,6 +481,12 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Line intersects sphere | OCCTCurveSurfaceIntersect | Curve-surface intersection | Shift every point by +1 in x and z (red :18); duplicate the last point (red :14) | ✅ | ✅ |  |
+| Line parallel to plane doesn't intersect | OCCTCurveSurfaceIntersect | Curve-surface intersection | Report one spurious point when NbPoints is 0 | ✅ | ✅ |  |
+| Line through sphere produces two points (X-axis) | OCCTCurveSurfaceIntersect | Curve-surface intersection | Shift x/z +1 (red :39); duplicate last point (red :36) | ✅ | ✅ |  |
+| Line tangent to sphere produces one point | OCCTCurveSurfaceIntersect | Curve-surface intersection | Duplicate the last point (red :52); shift x/z +1 (red :54) | ✅ | ✅ | Rewritten: count >= 1 passed a duplicated or displaced tangent point |
+| Line missing sphere produces no points | OCCTCurveSurfaceIntersect | Curve-surface intersection | Report one spurious point when NbPoints is 0 | ✅ | ✅ |  |
+| Line through plane produces one point | OCCTCurveSurfaceIntersect | Curve-surface intersection | Duplicate last point (red :74); shift x/z +1 (red :76) | ✅ | ✅ |  |
 
 ---
 
