@@ -7701,5 +7701,659 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade ClosedEdgeDivide::closedEdgeOnCylinder",
+    "bridge_function": "OCCTShapeUpgradeClosedEdgeDivideCompute",
+    "bridge_output": {
+      "type": "bool_per_edge",
+      "data": [
+        true,
+        false,
+        true
+      ]
+    },
+    "kernel_output": {
+      "type": "bool_per_edge",
+      "data": {
+        "cylinderEdgesOnFace0": [
+          true,
+          false,
+          true
+        ],
+        "edgeKinds": [
+          "circle",
+          "seam line",
+          "circle"
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade ConvertCurves3dToBezier::convertBoxCurves",
+    "bridge_function": "OCCTShapeUpgradeConvertCurves3dToBezier",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "nil for every input (known issue: Set3dConversion never set)"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "asBridgeDrivesIt": {
+          "Perform": false,
+          "Result": null
+        },
+        "withSet3dConversion": {
+          "box T,T,T": {
+            "edges": 12,
+            "bezierEdges": 12,
+            "volume": 1000.0,
+            "valid": false
+          },
+          "cyl T,T,T": {
+            "edges": 17,
+            "bezierEdges": 17,
+            "volume": 785.398163,
+            "valid": false
+          },
+          "cyl F,T,F": {
+            "Perform": false,
+            "edges": 3,
+            "bezierEdges": 0
+          }
+        }
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "ShapeUpgrade ConvertCurves3dToBezier::convertCylinderCurves",
+    "bridge_function": "OCCTShapeUpgradeConvertCurves3dToBezier",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "nil for every input (known issue: Set3dConversion never set)"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "asBridgeDrivesIt": {
+          "Perform": false,
+          "Result": null
+        },
+        "withSet3dConversion": {
+          "box T,T,T": {
+            "edges": 12,
+            "bezierEdges": 12,
+            "volume": 1000.0,
+            "valid": false
+          },
+          "cyl T,T,T": {
+            "edges": 17,
+            "bezierEdges": 17,
+            "volume": 785.398163,
+            "valid": false
+          },
+          "cyl F,T,F": {
+            "Perform": false,
+            "edges": 3,
+            "bezierEdges": 0
+          }
+        }
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "ShapeUpgrade ConvertCurves3dToBezier::convertSelectiveModes",
+    "bridge_function": "OCCTShapeUpgradeConvertCurves3dToBezier",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "nil for every input (known issue: Set3dConversion never set)"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "asBridgeDrivesIt": {
+          "Perform": false,
+          "Result": null
+        },
+        "withSet3dConversion": {
+          "box T,T,T": {
+            "edges": 12,
+            "bezierEdges": 12,
+            "volume": 1000.0,
+            "valid": false
+          },
+          "cyl T,T,T": {
+            "edges": 17,
+            "bezierEdges": 17,
+            "volume": 785.398163,
+            "valid": false
+          },
+          "cyl F,T,F": {
+            "Perform": false,
+            "edges": 3,
+            "bezierEdges": 0
+          }
+        }
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "ShapeUpgrade ConvertSurfacesToBezier::convertCylinderSurfaces",
+    "bridge_function": "OCCTShapeUpgradeConvertSurfaceToBezier",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "nil for every input (known issue: SetSurfaceConversion never set)"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "asBridgeDrivesIt": {
+          "Perform": false,
+          "Result": null
+        },
+        "withSetSurfaceConversion": {
+          "cyl T,T,T,T": {
+            "faces": 3,
+            "bezierFaces": 2,
+            "volume": 785.398163,
+            "valid": true
+          },
+          "cyl F,T,F,F": {
+            "Perform": false,
+            "faces": 3,
+            "bezierFaces": 0
+          },
+          "box T,F,F,F": {
+            "faces": 6,
+            "bezierFaces": 6,
+            "volume": 1000.0,
+            "valid": false
+          }
+        }
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "ShapeUpgrade ConvertSurfacesToBezier::convertSelectiveModes",
+    "bridge_function": "OCCTShapeUpgradeConvertSurfaceToBezier",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "nil for every input (known issue: SetSurfaceConversion never set)"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "asBridgeDrivesIt": {
+          "Perform": false,
+          "Result": null
+        },
+        "withSetSurfaceConversion": {
+          "cyl T,T,T,T": {
+            "faces": 3,
+            "bezierFaces": 2,
+            "volume": 785.398163,
+            "valid": true
+          },
+          "cyl F,T,F,F": {
+            "Perform": false,
+            "faces": 3,
+            "bezierFaces": 0
+          },
+          "box T,F,F,F": {
+            "faces": 6,
+            "bezierFaces": 6,
+            "volume": 1000.0,
+            "valid": false
+          }
+        }
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "ShapeUpgrade ConvertSurfacesToBezier::convertBoxSurfaces",
+    "bridge_function": "OCCTShapeUpgradeConvertSurfaceToBezier",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "nil for every input (known issue: SetSurfaceConversion never set)"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "asBridgeDrivesIt": {
+          "Perform": false,
+          "Result": null
+        },
+        "withSetSurfaceConversion": {
+          "cyl T,T,T,T": {
+            "faces": 3,
+            "bezierFaces": 2,
+            "volume": 785.398163,
+            "valid": true
+          },
+          "cyl F,T,F,F": {
+            "Perform": false,
+            "faces": 3,
+            "bezierFaces": 0
+          },
+          "box T,F,F,F": {
+            "faces": 6,
+            "bezierFaces": 6,
+            "volume": 1000.0,
+            "valid": false
+          }
+        }
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "ShapeUpgrade DivideClosed Tests::divideCylinder",
+    "bridge_function": "OCCTShapeUpgradeDivideClosed",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 4
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "cyl splitPoints 1": {
+          "Perform": true,
+          "faces": 4,
+          "volume": 785.398163
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade EdgeDivide::analyzeEdgeDivide",
+    "bridge_function": "OCCTShapeUpgradeEdgeDivideCompute",
+    "bridge_output": {
+      "type": "edge_divide",
+      "data": "nil (the wrapper maps Compute false to nil)"
+    },
+    "kernel_output": {
+      "type": "edge_divide",
+      "data": {
+        "boxEdge0Face0": {
+          "Compute": false,
+          "HasCurve2d": true,
+          "HasCurve3d": true
+        },
+        "cylEdges0to2Face0": {
+          "Compute": [
+            false,
+            false,
+            false
+          ],
+          "HasCurve2d": true,
+          "HasCurve3d": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade EdgeDivide::edgeDivideCurveInfo",
+    "bridge_function": "OCCTShapeUpgradeEdgeDivideCompute",
+    "bridge_output": {
+      "type": "edge_divide",
+      "data": "nil (the wrapper maps Compute false to nil)"
+    },
+    "kernel_output": {
+      "type": "edge_divide",
+      "data": {
+        "boxEdge0Face0": {
+          "Compute": false,
+          "HasCurve2d": true,
+          "HasCurve3d": true
+        },
+        "cylEdges0to2Face0": {
+          "Compute": [
+            false,
+            false,
+            false
+          ],
+          "HasCurve2d": true,
+          "HasCurve3d": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade FaceDivide::divideCylinderFace",
+    "bridge_function": "OCCTShapeUpgradeFaceDivide",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "cyl r5 h20 face0": {
+          "Perform": false,
+          "faces": 1,
+          "area": 628.318531,
+          "sameAsInput": true
+        },
+        "box 100 face0": {
+          "Perform": false,
+          "faces": 1,
+          "area": 10000.0,
+          "sameAsInput": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade FaceDivide::divideBoxFace",
+    "bridge_function": "OCCTShapeUpgradeFaceDivide",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "cyl r5 h20 face0": {
+          "Perform": false,
+          "faces": 1,
+          "area": 628.318531,
+          "sameAsInput": true
+        },
+        "box 100 face0": {
+          "Perform": false,
+          "faces": 1,
+          "area": 10000.0,
+          "sameAsInput": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade ShellSewing Tests::sewBoxShells",
+    "bridge_function": "OCCTShapeUpgradeShellSewing",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "box 1e-6": {
+          "type": "SOLID",
+          "valid": true,
+          "faces": 6,
+          "volume": 1000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade SplitCurve Tests::splitSmooth3D",
+    "bridge_function": "OCCTSplitCurve3dContinuity / OCCTSplitCurve2dContinuity / OCCTConvertCurve2dToBezier",
+    "bridge_output": {
+      "type": "curve_pieces",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "curve_pieces",
+      "data": {
+        "singleSpan": {
+          "split3d": 1,
+          "split2d": 1,
+          "bezier2d": 1,
+          "ends": [
+            [
+              0,
+              0
+            ],
+            [
+              4,
+              0
+            ]
+          ]
+        },
+        "C1at0.5": {
+          "split3d": 2,
+          "split2d": 2,
+          "bezier2d": 2,
+          "pieces": [
+            [
+              [
+                0,
+                0
+              ],
+              [
+                2.5,
+                1.5
+              ]
+            ],
+            [
+              [
+                2.5,
+                1.5
+              ],
+              [
+                5,
+                1
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade SplitCurve Tests::splitSmooth2D",
+    "bridge_function": "OCCTSplitCurve3dContinuity / OCCTSplitCurve2dContinuity / OCCTConvertCurve2dToBezier",
+    "bridge_output": {
+      "type": "curve_pieces",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "curve_pieces",
+      "data": {
+        "singleSpan": {
+          "split3d": 1,
+          "split2d": 1,
+          "bezier2d": 1,
+          "ends": [
+            [
+              0,
+              0
+            ],
+            [
+              4,
+              0
+            ]
+          ]
+        },
+        "C1at0.5": {
+          "split3d": 2,
+          "split2d": 2,
+          "bezier2d": 2,
+          "pieces": [
+            [
+              [
+                0,
+                0
+              ],
+              [
+                2.5,
+                1.5
+              ]
+            ],
+            [
+              [
+                2.5,
+                1.5
+              ],
+              [
+                5,
+                1
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade SplitCurve Tests::convertToBezier",
+    "bridge_function": "OCCTSplitCurve3dContinuity / OCCTSplitCurve2dContinuity / OCCTConvertCurve2dToBezier",
+    "bridge_output": {
+      "type": "curve_pieces",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "curve_pieces",
+      "data": {
+        "singleSpan": {
+          "split3d": 1,
+          "split2d": 1,
+          "bezier2d": 1,
+          "ends": [
+            [
+              0,
+              0
+            ],
+            [
+              4,
+              0
+            ]
+          ]
+        },
+        "C1at0.5": {
+          "split3d": 2,
+          "split2d": 2,
+          "bezier2d": 2,
+          "pieces": [
+            [
+              [
+                0,
+                0
+              ],
+              [
+                2.5,
+                1.5
+              ]
+            ],
+            [
+              [
+                2.5,
+                1.5
+              ],
+              [
+                5,
+                1
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade WireDivide::divideWireOnFace",
+    "bridge_function": "OCCTShapeUpgradeWireDivideOnFace",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "boxWire0Face0": {
+          "StatusDONE": false,
+          "edges": 4,
+          "sameAsInput": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
