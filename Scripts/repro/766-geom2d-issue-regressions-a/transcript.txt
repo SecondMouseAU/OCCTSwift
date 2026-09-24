@@ -1,0 +1,11 @@
+sine amplitude 0: throws Geom2dEval_SineWaveCurve: amplitude must be > 0
+involute radius 0: throws Geom2dEval_CircleInvoluteCurve: radius must be > 0
+spiral growth 0: throws Geom2dEval_ArchimedeanSpiralCurve: growth rate must be > 0
+approx r10 tol 1e-9 C0 1 seg deg 3: done=1 hasResult=1 maxError=5.10851410302 poles=4
+approx r5 tol 1e-3 C2 100 seg deg 8: done=1 hasResult=1 maxError=0.000338005413908 poles=13 degree=7
+join l1=1 arc1=1 l2=1 arc2=1
+ApproxArcsSegments tol 0.1 angTol 0.1: pieces=11
+gapped: add (0,0)-(1,0)=1 add (50,50)-(51,50)=0
+out of order: a=1 c=0 b=1
+continuous: c1=1 c2=1 start=(0, 0) end=(10, 2.58474609444e-16)
+line GetType=0 (GeomAbs_OffsetCurve=7, GeomAbs_OtherCurve=8)
