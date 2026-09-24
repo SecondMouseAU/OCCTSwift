@@ -1,0 +1,2 @@
+weightedCentroid Mass=4 CentreOfMass=(7.5, 0, 0)
+barycentre Mass=3 CentreOfMass=(3.3333333333333335, 3.3333333333333335, 0)
