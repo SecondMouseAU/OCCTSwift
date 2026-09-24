@@ -1,0 +1,4 @@
+hollowHousing: null=0 valid=1 volume=7790.992701270 (pi*(15^2-10.05^2)*20 = 7790.992701270)
+positionedHousing: valid=1
+clearance: done=1 n=3 value=0.050000000000
+interference: null=0 volume=6283.185307180 (pi*100*20 = 6283.185307180)
