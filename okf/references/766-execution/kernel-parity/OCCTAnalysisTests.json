@@ -5020,5 +5020,101 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_SelfIntersection Pair Tests::noSelfIntersectionOnBox",
+    "bridge_function": "OCCTShapeSelfIntersectionPairs",
+    "bridge_output": {
+      "type": "pairs",
+      "data": {
+        "box": [],
+        "overlapping_compound_nonempty": true
+      }
+    },
+    "kernel_output": {
+      "type": "pairs",
+      "data": {
+        "box": [],
+        "overlapping_compound_nonempty": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_SelfIntersection Pair Tests::selfIntersectionReturnsArray",
+    "bridge_function": "OCCTShapeSelfIntersectionPairs",
+    "bridge_output": {
+      "type": "pairs",
+      "data": {
+        "sphere": [],
+        "overlapping_compound": [
+          [
+            1,
+            8
+          ],
+          [
+            1,
+            10
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            3,
+            10
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            8
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "pairs",
+      "data": {
+        "sphere": [],
+        "overlapping_compound": [
+          [
+            1,
+            8
+          ],
+          [
+            1,
+            10
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            3,
+            10
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            8
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

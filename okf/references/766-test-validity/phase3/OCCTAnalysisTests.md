@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **BRepExtrema_SelfIntersection Pair Tests** | noSelfIntersectionOnBox | Self-intersection pairs | Never report a pair |
+| **BRepExtrema_SelfIntersection Pair Tests** | selfIntersectionReturnsArray | Self-intersection pairs | Never report a pair |
 | **Extrema_ExtPElS Point-Cone** | pointToCone | Point-cone extrema | Store SquareDistance(1) for every extremum |
 | **BRepExtrema ExtFF Tests** | Face-face distance between separated boxes | Face-face extrema | Return SquareDistance(1) without sqrt |
 | **Bnd_Sphere Tests** | createAndQuery | Bounding sphere construction | Exchange cx and cy in OCCTBndSphereCreate |
@@ -357,6 +359,8 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| SelfIntersection Pair: noSelfIntersectionOnBox | OCCTShapeSelfIntersectionPairs | Self-intersection pairs | Never report a pair | ✅ | ✅ | strengthened: positive control added; the original stayed green under the injection |
+| SelfIntersection Pair: selfIntersectionReturnsArray | OCCTShapeSelfIntersectionPairs | Self-intersection pairs | Never report a pair | ✅ | ✅ | rewritten: count >= 0 could not fail |
 | A straight curve reports 0; a curve with no tangent reports nothing | OCCTCurve3DGetCurvature | Curve3D curvature definedness | Return true (curvature 0) when IsTangentDefined() is false | ✅ | ✅ |  |
 | Canonical recognition callable on box | OCCTShapeRecognizeCanonical | Canonical recognition of a solid | Feed the solid's first TopExp_Explorer face to ShapeAnalysis_CanonicalRecognition | ✅ | ✅ |  |
 | Canonical recognition callable on cylinder | OCCTShapeRecognizeCanonical | Canonical recognition of a solid | Feed the solid's first TopExp_Explorer face to ShapeAnalysis_CanonicalRecognition | ✅ | ✅ |  |
@@ -554,6 +558,8 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| SelfIntersection Pair: noSelfIntersectionOnBox | ✅ | ✅ | ✅ |
+| SelfIntersection Pair: selfIntersectionReturnsArray | ✅ | ✅ | ✅ |
 | Triangle boundary | ✅ | ✅ | ✅ |
 | An island polygon cuts a hole in the hatch fill | ✅ | ✅ | ✅ |
 | cylinderRadius | ✅ | ✅ | ✅ |
@@ -604,4 +610,4 @@ For each test, run ground-truth C++ comparison:
 | Measurement Tests: Get vertex at index | ✅ | ✅ | ✅ |
 | Measurement Tests: Vertex out of bounds | ✅ | ✅ | ✅ |
 
-**Total**: 587 tests
+**Total**: 589 tests
