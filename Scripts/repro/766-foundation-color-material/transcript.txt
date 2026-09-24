@@ -1,0 +1,27 @@
+signal: square polygon IsDone=1, collinear polygon IsDone=1
+signal: ThruSections(solid) IsDone=0
+signal: unit box meshed at 0.01/0.5: triangles=12
+fromName(RED): ok=1 : r=1 g=0 b=0
+fromName(BLUE): ok=1 : r=0 g=0 b=1
+fromName(NOTACOLOR_XYZ): ok=0
+fromHex(#FF0000): ok=1 : r=1 g=0 b=0
+fromHex(NOT_HEX): ok=0
+toHex(red, prefix=true)=[#FF0000] toHex(red, prefix=false)=[FF0000]
+fromHexRGBA(#FF000080): ok=1 r=1 g=0 b=0 a=0.50196081399917603
+toHexRGBA(0.5,0.5,0.5,0.5)=[#BCBCBC80]
+toHexRGBA(red,1, prefix=true)=[#FF0000FF] prefix=false=[FF0000FF]
+distance(red, blue)=1.4142135623730951
+squareDistance(red, green)=2
+deltaE2000((0.5,0,0), (0.6,0,0))=3.2403708811651222
+deltaE2000(same (0.3,0.5,0.7))=0
+hls(red): hue=0 light=0.99999994039535522 sat=1
+hls(0.4,0.6,0.2): hue=85.392547607421875 light=0.797737717628479 sat=0.39262089133262634 -> back: r=0.40000000596046448 g=0.60000008344650269 b=0.20000001788139343
+changeIntensity(gray 0.5, +0.1): r=0.50111722946166992 g=0.50111722946166992 b=0.50111722946166992
+changeContrast(gray 0.5, +10): r=0.50000011920928955 g=0.50000011920928955 b=0.50000011920928955
+changeContrast((0.8,0.3,0.2), +10): r=0.80000001192092896 g=0.26492810249328613 b=0.16450574994087219
+linearToSRGB(0.5)=0.735356987
+sRGBToLinear(0.5)=0.214041144
+sRGB roundtrip (0.3,0.6,0.9): r=0.300000042 g=0.600000083 b=0.899999797
+lab(gray 0.5): L=76.0692673 a=-1.32283412e-05 b=5.29133649e-06
+StringName(0)=[BLACK]
+Epsilon=0.0001
