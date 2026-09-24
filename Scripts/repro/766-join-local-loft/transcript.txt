@@ -1,0 +1,37 @@
+joinPatches: IsDone=1 poles 3x2 bounds=[0, 2]x[0, 1] S(75%,50%)=(7.5, 5, 0)
+identicalPlanes C1: IsDone=1 Status=2 IsC0=1 C0Value=0
+identicalPlanes G1: IsDone=1 IsG1=1
+planeVsCylinder C1: IsDone=1 Status=2 IsC0=0 C0Value=5
+revolveAroundZ (box 3x3x0.1, pi/2): type=0 valid=1 faces=0 volume=0 area=0
+revolveProducesSolid (box 2x2x0.1, pi/4): type=0 valid=1 faces=12 volume=0.79999999999999993 area=17.599999999999998
+revolveWithOffset (pi/2, offset pi/4): type=0 valid=1 faces=0 volume=0 area=0
+fullRevolution (2 pi): type=2 valid=1 faces=6 volume=0.39999999999999997 area=8.8000000000000007
+pipeSweep (2x2 square face along X, 10): type=2 valid=0 faces=6 volume=0 area=48
+revolutionForm (box 3x3x0.1, pi/2): type=0 valid=1 faces=0 volume=0 area=0
+loft solid=1 ruled=1: IsDone=1
+  loft: type=2 valid=1 faces=6 volume=0 area=200.00000000000003
+loft solid=1 ruled=0: IsDone=1
+  loft: type=2 valid=1 faces=6 volume=0 area=200.00000000000003
+loft solid=0 ruled=1: IsDone=1
+  loft: type=3 valid=1 faces=4 volume=0 area=75
+--- well-posed inputs ---
+LocOpe_Revol XZ face angle=1.5708 offset=0: type=2 valid=1 faces=6 volume=157.07963267948972 area=239.91148575128551
+  bbox y=[-1e-07, 11] x=[-1e-07, 11]
+LocOpe_Revol XZ face angle=0.785398 offset=0: type=2 valid=1 faces=6 volume=78.539816339744817 area=129.95574287564276
+  bbox y=[-1e-07, 7.77817] x=[6.36396, 11]
+LocOpe_Revol XZ face angle=1.5708 offset=0.785398: type=2 valid=1 faces=6 volume=157.07963267948972 area=239.91148575128551
+  bbox y=[6.36396, 11] x=[-7.77817, 7.77817]
+LocOpe_Revol XZ face angle=6.28319 offset=0: type=2 valid=1 faces=4 volume=628.31853071795877 area=879.64594300514204
+  bbox y=[-11, 11] x=[-11, 11]
+LocOpe_RevolutionForm XZ face pi/2: type=2 valid=1 faces=6 volume=157.07963267948972 area=239.91148575128551
+LocOpe_Pipe YZ face along X: type=2 valid=1 faces=6 volume=39.999999999999993 area=88
+loft 10@0 -> 5@10 solid=1 ruled=1 IsDone=1
+  loft: type=2 valid=1 faces=6 volume=583.33333333333337 area=434.23292192132453
+loft 10@0 -> 5@10 solid=1 ruled=0 IsDone=1
+  loft: type=2 valid=1 faces=6 volume=583.33333333333337 area=434.23292192132453
+loft 10@0 -> 5@10 shell ruled IsDone=1
+  loft: type=3 valid=1 faces=4 volume=375 area=309.23292192132453
+loft 10@0 -> 5@5 -> 10@10 smooth solid IsDone=1
+  loft: type=2 valid=1 faces=6 volume=466.66666666666686 area=513.59039110850711
+loft 10@0 -> 5@5 -> 10@10 ruled solid IsDone=1
+  loft: type=2 valid=1 faces=10 volume=583.33333333333348 area=535.41019662496842
