@@ -10,7 +10,7 @@ struct MathSolverNewtonSystemTests {
         // x^2 + y^2 = 25, x - y = 1, starting near (4, 3)
         if let sol = MathSolver.solveSystemNewton(
             variables: 2, equations: 2,
-            startPoint: [4.0, 3.0],
+            startPoint: [4.5, 3.5],
             values: { x in [x[0] * x[0] + x[1] * x[1] - 25, x[0] - x[1] - 1] },
             jacobian: { x in [2 * x[0], 2 * x[1], 1.0, -1.0] }
         ) {
@@ -18,6 +18,9 @@ struct MathSolverNewtonSystemTests {
             #expect(abs(eq1) < 1e-4)
             let eq2 = sol[0] - sol[1] - 1
             #expect(abs(eq2) < 1e-4)
+            // math_NewtonFunctionSetRoot from (4.5, 3.5) converges to (4, 3) (probe).
+            #expect(abs(sol[0] - 4.0) < 1e-6)
+            #expect(abs(sol[1] - 3.0) < 1e-6)
         }
     }
 }

@@ -1,0 +1,5 @@
+boxNoSelfIntersection: done=1 overlapCount=0
+sphereNoSelfIntersection: done=1 overlapCount=0
+cylinderNoSelfIntersection: done=1 overlapCount=0
+customParameters: done=1 overlapCount=0
+overlappingCompoundReportsOverlaps: done=1 overlapCount=6
