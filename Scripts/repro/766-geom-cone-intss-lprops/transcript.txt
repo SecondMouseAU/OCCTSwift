@@ -1,0 +1,22 @@
+coneSemiAngle: semiAngle=0.29999999999999999
+coneRefRadius: refRadius=5
+coneApex: apex=(1, 2, -13.163640718829139) (3 - 5/tan(0.3)=-13.163640718829139)
+coneAxis: position=(1, 2, 3) direction=(0, 0, 1)
+planeCylinderIntersection: 3 cylinder faces x 6 box faces
+  pair (1,5) line 1: Geom_TrimmedCurve edge=1 curvature@first=0.10000000000000001 point@first=(10, 0, -0.5)
+  pair (1,6) line 1: Geom_TrimmedCurve edge=1 curvature@first=0.10000000000000001 point@first=(10, 0, 0.5)
+  pair (2,1) line 1: Geom_Line edge=1 curvature@first=0 point@first=(-15, -2e+100, 20)
+  pair (2,2) line 1: Geom_Line edge=1 curvature@first=0 point@first=(15, -2e+100, 20)
+  pair (2,3) line 1: Geom_Line edge=1 curvature@first=0 point@first=(2e+100, -15, 20)
+  pair (2,4) line 1: Geom_Line edge=1 curvature@first=0 point@first=(2e+100, 15, 20)
+  pair (3,1) line 1: Geom_Line edge=1 curvature@first=0 point@first=(-15, -2e+100, 0)
+  pair (3,2) line 1: Geom_Line edge=1 curvature@first=0 point@first=(15, -2e+100, 0)
+  pair (3,3) line 1: Geom_Line edge=1 curvature@first=0 point@first=(2e+100, -15, 0)
+  pair (3,4) line 1: Geom_Line edge=1 curvature@first=0 point@first=(2e+100, 15, 0)
+planeCylinderIntersection: first pair with lines=(1,5) total lines=10, of which circles (curvature 0.1)=2
+curvePropsOnCircle: edge 1 Geom_Circle point=(10, 0, 5) tangentDefined=1 curvature=0.10000000000000001 tangent=(-0, 1, 0) normal=(-1, -0, 0) centre=(0, 0, 5)
+curvePropsOnCircle: edge 2 Geom_Line point=(10, -2.4492935982947065e-15, 0) tangentDefined=1 curvature=0 tangent=(0, 0, 1)
+curvePropsOnCircle: edge 3 Geom_Circle point=(10, 0, 0) tangentDefined=1 curvature=0.10000000000000001 tangent=(-0, 1, 0) normal=(-1, -0, 0) centre=(0, 0, 0)
+tangentOnLineEdge: edge 1 Geom_Line range=[0, 10] point@0.5=(-5, -5, -4.5) tangentDefined=1 tangent=(0, 0, 1) curvature=0
+surfacePropsOnSphere: faces=1 curvatureDefined=1 max=-0.099999999999999992 min=-0.099999999999999992
+normalOnPlaneFace: curvatureDefined=1 max=0 min=0
