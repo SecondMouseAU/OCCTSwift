@@ -5223,5 +5223,187 @@
     "green": "passed",
     "probe": "Scripts/repro/766-curve-toana-cuttingplane/transcript.txt",
     "note": "Rewritten: `lines >= 9` was met by the view's own edges"
+  },
+  {
+    "test_name": "v0.147 Edge.curve3D accessor::Linear edge returns a Curve3D",
+    "test_file": "Tests/OCCTCurveTests/EdgeCurve3DTests.swift",
+    "bridge_function": "OCCTEdgeGetCurve3D",
+    "bridge_output": {
+      "type": "value",
+      "data": "line, domain [-2e100, 2e100]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRep_Tool::Curve: Geom_Line [-2e+100, 2e+100], edge range [0, 10]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "raw curve trimmed to the edge range",
+    "red": "EdgeCurve3DTests.swift:24 c.domain == -2e100...2e100",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-edgecurve-ellipsearc/transcript.txt",
+    "note": "Rewritten: lowerBound <= upperBound held for any range"
+  },
+  {
+    "test_name": "v0.147 Edge.curve3D accessor::Cylindrical face's circular edge yields circleProperties",
+    "test_file": "Tests/OCCTCurveTests/EdgeCurve3DTests.swift",
+    "bridge_function": "OCCTEdgeGetCurve3D",
+    "bridge_output": {
+      "type": "value",
+      "data": "radius 5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Circle radius 5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "raw curve scaled 1.01 about the origin (and, separately, trimmed)",
+    "red": "EdgeCurve3DTests.swift:40 abs(props.radius - 5.0) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-edgecurve-ellipsearc/transcript.txt"
+  },
+  {
+    "test_name": "v0.147 Edge.curve3D accessor::Straight edge's curve3D domain is the underlying Geom_Line's unbounded range, not the edge's own finite span",
+    "test_file": "Tests/OCCTCurveTests/EdgeCurve3DTests.swift",
+    "bridge_function": "OCCTEdgeGetCurve3D",
+    "bridge_output": {
+      "type": "value",
+      "data": "+-2e100"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Line [-2e+100, 2e+100]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "raw curve trimmed to the edge range",
+    "red": "EdgeCurve3DTests.swift:65 curve.domain.upperBound > 1e100",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-edgecurve-ellipsearc/transcript.txt",
+    "note": "Comment corrected: the range is +-2e100, not +-1.8e308 as it said"
+  },
+  {
+    "test_name": "v0.147 Edge.curve3D accessor::Circular edge's curve3D domain is the underlying circle's full period, not the arc's own sweep",
+    "test_file": "Tests/OCCTCurveTests/EdgeCurve3DTests.swift",
+    "bridge_function": "OCCTEdgeGetCurve3D",
+    "bridge_output": {
+      "type": "value",
+      "data": "[0, 2 pi]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "quarter arc edge: raw Geom_Circle [0, 6.2831853071795862], edge range [0, pi/2]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "raw curve trimmed to the edge range",
+    "red": "EdgeCurve3DTests.swift:96 curve.domain.upperBound - curve.domain.lowerBound > 6.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-edgecurve-ellipsearc/transcript.txt"
+  },
+  {
+    "test_name": "Ellipse Arc Tests::Arc of ellipse from angles",
+    "test_file": "Tests/OCCTCurveTests/EllipseArcTests.swift",
+    "bridge_function": "OCCTCurve3DArcOfEllipse",
+    "bridge_output": {
+      "type": "value",
+      "data": "(10,0,0) -> (0,5,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfEllipse [0, pi/2]: (10,0,0) -> (6.1e-16, 5, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "end angle x 0.9",
+    "red": "EllipseArcTests.swift:30 simd_distance(arc.endPoint, SIMD3(0, 5, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-edgecurve-ellipsearc/transcript.txt",
+    "note": "Rewritten: 0.1 of slack inside `if let`"
+  },
+  {
+    "test_name": "Ellipse Arc Tests::Arc of ellipse between two points",
+    "test_file": "Tests/OCCTCurveTests/EllipseArcTests.swift",
+    "bridge_function": "OCCTCurve3DArcOfEllipsePoints",
+    "bridge_output": {
+      "type": "value",
+      "data": "(10,0,0) -> (0,5,0) -> (-10,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "by points: start (10,0,0), mid (6.1e-16, 5, 0), end (-10, 6.1e-16, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "sense inverted",
+    "red": "EllipseArcTests.swift:47 simd_distance(arc.startPoint, SIMD3(10, 0, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-edgecurve-ellipsearc/transcript.txt",
+    "note": "Rewritten: end x only, to 0.1; the midpoint now fixes the direction"
+  },
+  {
+    "test_name": "Ellipse Arc Tests::Full semi-ellipse arc",
+    "test_file": "Tests/OCCTCurveTests/EllipseArcTests.swift",
+    "bridge_function": "OCCTCurve3DArcOfEllipse",
+    "bridge_output": {
+      "type": "value",
+      "data": "(10,0,0) -> (-10,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "[0, pi]: (10,0,0) -> (-10, 6.1e-16, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "end angle x 0.9",
+    "red": "EllipseArcTests.swift:70 simd_distance(arc.endPoint, SIMD3(-10, 0, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-edgecurve-ellipsearc/transcript.txt",
+    "note": "Rewritten: x only, to 0.1"
+  },
+  {
+    "test_name": "Ellipse Arc Tests::Ellipse arc properties",
+    "test_file": "Tests/OCCTCurveTests/EllipseArcTests.swift",
+    "bridge_function": "OCCTCurve3DArcOfEllipse",
+    "bridge_output": {
+      "type": "value",
+      "data": "domain [0, pi/2], mid (7.071, 3.536, 0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "domain [0, 1.5707963267948966], mid (7.0710678118654755, 3.5355339059327373, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "end angle x 0.9",
+    "red": "EllipseArcTests.swift:88 arc.domain == 0...(Double.pi / 2)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-edgecurve-ellipsearc/transcript.txt",
+    "note": "Rewritten: start.x > 9, end.y > 4"
   }
 ]
