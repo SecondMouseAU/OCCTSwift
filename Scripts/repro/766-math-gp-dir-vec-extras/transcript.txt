@@ -1,0 +1,9 @@
+isOpposite: 1
+isNotOpposite: 0
+isNormal: 1
+isNotNormal: 0
+isNormalDiagonal: 1
+crossMagnitude: 1
+crossMagnitudeParallel: 0
+crossSquareMagnitude: 1
+crossMagnitudeScaled: 12

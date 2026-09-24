@@ -15,6 +15,9 @@ import simd
 @Suite("Surface.approximated defaults match Curve3D/Curve2D (#406)")
 struct SurfaceApproximateDefaultsParityTests {
 
+    // #766: pole counts and deviations pinned below are GeomConvert_ApproxSurface's own at the
+    // same arguments occtApproxSurface passes, see Scripts/repro/766-surface-approx-defaults/.
+
     @Test("Default call succeeds and respects the shared maxDegree cap")
     func defaultCallRespectsSharedMaxDegree() {
         let sphere = Surface.sphere(center: .zero, radius: 5)!
@@ -24,6 +27,8 @@ struct SurfaceApproximateDefaultsParityTests {
         if let approx = approx {
             #expect(approx.uDegree <= 8)
             #expect(approx.vDegree <= 8)
+            // Degree 8 x 8 and 15 x 9 poles at 1e-3; the old 1e-2 / 10 defaults gave 10 x 8.
+            #expect(approx.uPoleCount == 15 && approx.vPoleCount == 9)
         }
     }
 
@@ -45,25 +50,25 @@ struct SurfaceApproximateDefaultsParityTests {
     func tighterDefaultsSucceedOnCommonSurfaces() {
         let sphere = Surface.sphere(center: .zero, radius: 5)!
         #expect(sphere.approximated() != nil)
-
-        if let torus = Surface.torus(
+        // #766: the three `if let`s let a nil primitive skip its check. The kernel's pole
+        // counts are 23 x 23 (torus) and 15 x 6 (cylinder, cone).
+        let torus = Surface.torus(
             origin: .zero, axis: SIMD3(0, 0, 1),
             majorRadius: 10, minorRadius: 3)
-        {
-            #expect(torus.approximated() != nil)
-        }
-        if let cylinder = Surface.trimmedCylinder(
+        let cylinder = Surface.trimmedCylinder(
             origin: .zero, direction: SIMD3(0, 0, 1),
             radius: 5, height: 20)
-        {
-            #expect(cylinder.approximated() != nil)
-        }
-        if let cone = Surface.trimmedCone(
+        let cone = Surface.trimmedCone(
             point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 10),
             r1: 5, r2: 2)
-        {
-            #expect(cone.approximated() != nil)
-        }
+        #expect(torus != nil && cylinder != nil && cone != nil)
+        let t = torus?.approximated()
+        let c = cylinder?.approximated()
+        let k = cone?.approximated()
+        #expect(t != nil && c != nil && k != nil)
+        if let t { #expect(t.uPoleCount == 23 && t.vPoleCount == 23) }
+        if let c { #expect(c.uPoleCount == 15 && c.vPoleCount == 6) }
+        if let k { #expect(k.uPoleCount == 15 && k.vPoleCount == 6) }
     }
 
     /// Review follow-up on #406/PR #460: the suite above only exercises primitives (sphere,
@@ -138,6 +143,10 @@ struct SurfaceApproximateDefaultsParityTests {
                 }
             }
             #expect(maxDeviation < 0.5)
+            // #766: `< 0.5` passed exactly the regression this test names: approximating the
+            // un-offset base deviates by the offset distance, 0.300. The kernel's approximation
+            // of the offset surface deviates by 0.0269 on this grid.
+            #expect(abs(maxDeviation - 0.026897065170123618) < 1e-6)
         }
     }
 }
