@@ -18,6 +18,7 @@ struct Geom2dEvalSineWaveTests {
         let t = Double.pi / (2.0 * omega)
         let p = try #require(Geom2dEval.sineWaveD0(amplitude: 1.5, omega: omega, phase: 0.0, u: t))
         #expect(abs(p.y - 1.5) < 1e-6)  // A*sin(pi/2) = A
+        #expect(abs(p.x - t) < 1e-12)  // #1979: x = t, which the y check alone did not pin
     }
 
     @Test func sineWave2DD1() throws {
