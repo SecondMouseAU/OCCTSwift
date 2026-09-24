@@ -37,9 +37,9 @@ struct PolynomialConvertTests {
             // Probed: 1 + x + x^2 on [0, 1] has Bezier poles 1, 1.5, 3.
             #expect(r.degree == 2)
             #expect(r.poles.count == 3)
-            #expect(r.knots.count == 3)
+            #expect(r.knots.count == 2)
             #expect(zip(r.poles, [1.0, 1.5, 3.0]).allSatisfy { abs($0 - $1) < 1e-12 })
-            #expect(zip(r.knots, [0.0, 0.5, 1.0]).allSatisfy { abs($0 - $1) < 1e-12 })
+            #expect(zip(r.knots, [0.0, 1.0]).allSatisfy { abs($0 - $1) < 1e-12 })
         }
     }
 

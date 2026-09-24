@@ -200,7 +200,7 @@
     "kernel_output": {"type": "probe", "data": "degree 2, poles [1, 1.5, 3], knots [0, 1]", "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS",
-    "red": {"injection": "each pole + 0.5", "failing_expectation": "original: **green**; rewritten: :40 `zip(r.poles, [1.0, 1.5, 3.0]).allSatisfy { abs($0 - $1) < 1e-12 }`"},
+    "red": {"injection": "each pole + 0.5", "failing_expectation": "original: **green**; rewritten: :41 `zip(r.poles, [1.0, 1.5, 3.0]).allSatisfy { abs($0 - $1) < 1e-12 }`"},
     "green": true
   },
   {
@@ -210,7 +210,7 @@
     "kernel_output": {"type": "probe", "data": "degree 1, poles [0, 1], knots [-1, 1]", "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS",
-    "red": {"injection": "knots reported on the polynomial interval instead of the true interval (also red under P4_CPTP_POLE)", "failing_expectation": "original: **green**; rewritten: :58 `zip(r.knots, [-1.0, 1.0]).allSatisfy { abs($0 - $1) < 1e-12 }`"},
+    "red": {"injection": "knots reported on the polynomial interval instead of the true interval (also red under P4_CPTP_POLE)", "failing_expectation": "original: **green**; rewritten: :60 `zip(r.knots, [-1.0, 1.0]).allSatisfy { abs($0 - $1) < 1e-12 }`"},
     "green": true
   },
   {
