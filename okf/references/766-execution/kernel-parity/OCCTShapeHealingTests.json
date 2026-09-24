@@ -5630,5 +5630,542 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "ShapeConstruct Curve Tests::convert3DLine",
+    "bridge_function": "OCCTCurve3DConvertSegmentToBSpline / OCCTCurve2DConvertSegmentToBSpline / OCCTCurve3DAdjustEndpoints",
+    "bridge_output": {
+      "type": "curve",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": {
+        "line[0,10]": {
+          "degree": 1,
+          "poles": 2,
+          "start": [
+            0,
+            0,
+            0
+          ],
+          "end": [
+            10,
+            0,
+            0
+          ]
+        },
+        "AdjustCurve": true,
+        "circle[0,pi]": {
+          "degree": 7,
+          "start": [
+            5,
+            0,
+            0
+          ],
+          "end": [
+            -5,
+            0,
+            0
+          ],
+          "mid": [
+            0,
+            4.999934,
+            0
+          ]
+        },
+        "2dLine[0,5]": {
+          "degree": 1,
+          "start": [
+            0,
+            0
+          ],
+          "end": [
+            5,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeConstruct Curve Tests::convert3DCircle",
+    "bridge_function": "OCCTCurve3DConvertSegmentToBSpline / OCCTCurve2DConvertSegmentToBSpline / OCCTCurve3DAdjustEndpoints",
+    "bridge_output": {
+      "type": "curve",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": {
+        "line[0,10]": {
+          "degree": 1,
+          "poles": 2,
+          "start": [
+            0,
+            0,
+            0
+          ],
+          "end": [
+            10,
+            0,
+            0
+          ]
+        },
+        "AdjustCurve": true,
+        "circle[0,pi]": {
+          "degree": 7,
+          "start": [
+            5,
+            0,
+            0
+          ],
+          "end": [
+            -5,
+            0,
+            0
+          ],
+          "mid": [
+            0,
+            4.999934,
+            0
+          ]
+        },
+        "2dLine[0,5]": {
+          "degree": 1,
+          "start": [
+            0,
+            0
+          ],
+          "end": [
+            5,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeConstruct Curve Tests::convert2DLine",
+    "bridge_function": "OCCTCurve3DConvertSegmentToBSpline / OCCTCurve2DConvertSegmentToBSpline / OCCTCurve3DAdjustEndpoints",
+    "bridge_output": {
+      "type": "curve",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": {
+        "line[0,10]": {
+          "degree": 1,
+          "poles": 2,
+          "start": [
+            0,
+            0,
+            0
+          ],
+          "end": [
+            10,
+            0,
+            0
+          ]
+        },
+        "AdjustCurve": true,
+        "circle[0,pi]": {
+          "degree": 7,
+          "start": [
+            5,
+            0,
+            0
+          ],
+          "end": [
+            -5,
+            0,
+            0
+          ],
+          "mid": [
+            0,
+            4.999934,
+            0
+          ]
+        },
+        "2dLine[0,5]": {
+          "degree": 1,
+          "start": [
+            0,
+            0
+          ],
+          "end": [
+            5,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeConstruct Curve Tests::adjust3D",
+    "bridge_function": "OCCTCurve3DConvertSegmentToBSpline / OCCTCurve2DConvertSegmentToBSpline / OCCTCurve3DAdjustEndpoints",
+    "bridge_output": {
+      "type": "curve",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": {
+        "line[0,10]": {
+          "degree": 1,
+          "poles": 2,
+          "start": [
+            0,
+            0,
+            0
+          ],
+          "end": [
+            10,
+            0,
+            0
+          ]
+        },
+        "AdjustCurve": true,
+        "circle[0,pi]": {
+          "degree": 7,
+          "start": [
+            5,
+            0,
+            0
+          ],
+          "end": [
+            -5,
+            0,
+            0
+          ],
+          "mid": [
+            0,
+            4.999934,
+            0
+          ]
+        },
+        "2dLine[0,5]": {
+          "degree": 1,
+          "start": [
+            0,
+            0
+          ],
+          "end": [
+            5,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeConstruct Triangulation Tests::fromPoints",
+    "bridge_function": "OCCTShapeTriangulationFromPoints / FromWire",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "fromPoints": {
+          "done": true,
+          "faces": 1,
+          "area": 100.0
+        },
+        "fromTriangleWire": {
+          "done": true,
+          "faces": 1,
+          "area": 50.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeConstruct Triangulation Tests::fromWire",
+    "bridge_function": "OCCTShapeTriangulationFromPoints / FromWire",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "fromPoints": {
+          "done": true,
+          "faces": 1,
+          "area": 100.0
+        },
+        "fromTriangleWire": {
+          "done": true,
+          "faces": 1,
+          "area": 50.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom BSplineRestriction Tests::bsplineRestrictionBox",
+    "bridge_function": "OCCTShapeCustomBSplineRestriction",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "defaults": {
+          "valid": true,
+          "faces": 6,
+          "planes": 6,
+          "volume": 1000.0
+        },
+        "custom": {
+          "valid": true,
+          "faces": 6,
+          "planes": 6,
+          "volume": 1000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom BSplineRestriction Tests::bsplineRestrictionCustom",
+    "bridge_function": "OCCTShapeCustomBSplineRestriction",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "defaults": {
+          "valid": true,
+          "faces": 6,
+          "planes": 6,
+          "volume": 1000.0
+        },
+        "custom": {
+          "valid": true,
+          "faces": 6,
+          "planes": 6,
+          "volume": 1000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom DirectModification::directModification",
+    "bridge_function": "OCCTShapeCustomDirectModification",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "valid": true,
+        "faces": 6,
+        "planes": 6,
+        "volume": 1000.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom Surface Periodic Tests::convertToPeriodic",
+    "bridge_function": "OCCTSurfaceConvertToPeriodic / OCCTSurfaceConversionGap",
+    "bridge_output": {
+      "type": "surface",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "surface",
+      "data": {
+        "ConvertToPeriodic(cylinder)": null,
+        "conversionGap": "deprecated sentinel -1.0 (#1510)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom Surface Periodic Tests::conversionGapIsDeprecatedSentinel",
+    "bridge_function": "OCCTSurfaceConvertToPeriodic / OCCTSurfaceConversionGap",
+    "bridge_output": {
+      "type": "surface",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "surface",
+      "data": {
+        "ConvertToPeriodic(cylinder)": null,
+        "conversionGap": "deprecated sentinel -1.0 (#1510)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom TrsfModification::trsfModificationScale",
+    "bridge_function": "OCCTShapeCustomTrsfModification",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "scale2": {
+          "valid": true,
+          "faces": 6,
+          "volume": 8000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeExtend Explorer::sortedCompoundSolids",
+    "bridge_function": "OCCTShapeExtendSortedCompound / OCCTShapeExtendPredominantType",
+    "bridge_output": {
+      "type": "counts",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "solids": 2,
+        "faces": 12,
+        "edges": 12,
+        "ShapeType": "SOLID (2)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeExtend Explorer::sortedCompoundFaces",
+    "bridge_function": "OCCTShapeExtendSortedCompound / OCCTShapeExtendPredominantType",
+    "bridge_output": {
+      "type": "counts",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "solids": 2,
+        "faces": 12,
+        "edges": 12,
+        "ShapeType": "SOLID (2)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeExtend Explorer::sortedCompoundEdges",
+    "bridge_function": "OCCTShapeExtendSortedCompound / OCCTShapeExtendPredominantType",
+    "bridge_output": {
+      "type": "counts",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "solids": 2,
+        "faces": 12,
+        "edges": 12,
+        "ShapeType": "SOLID (2)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeExtend Explorer::predominantType",
+    "bridge_function": "OCCTShapeExtendSortedCompound / OCCTShapeExtendPredominantType",
+    "bridge_output": {
+      "type": "counts",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "solids": 2,
+        "faces": 12,
+        "edges": 12,
+        "ShapeType": "SOLID (2)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
