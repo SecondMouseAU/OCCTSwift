@@ -229,3 +229,30 @@ Probe: `Scripts/repro/766-foundation-font-pixmap-units/` (Font_FontMgr, Image_Al
 | UnitsAPI Tests | fromSI | `OCCTUnitsAnyFromSI` | calls AnyToSI | OCCTFoundationTests.swift:676 abs(result - 1000.0) < 1e-6 | passed (84/84 in the nine suites, after the revert) | MATCH |
 | UnitsAPI Tests | kgToG | `OCCTUnitsAnyToAny` | from and to units swapped | OCCTFoundationTests.swift:681 abs(result - 1000.0) < 1e-6 | passed (84/84 in the nine suites, after the revert) | MATCH |
 | UnitsAPI Tests | localSystem | `OCCTUnitsSetLocalSystem` | SetLocalSystem skipped (REWRITTEN: set only .si, the default, so a no-op setter passed) | OCCTFoundationTests.swift:688 Units.localSystem == .mdtv | passed (84/84 in the nine suites, after the revert) | MATCH |
+| OSD Environment Tests | setGetRemove | `OCCTEnvironmentGet` | Get appends "x" (B) | ✅ `:799` | ✅ | MATCH "hello", then empty after Remove |  |
+| OSD Environment Tests | readHome | `OCCTEnvironmentGet` | Get appends "x" (B) | ✅ `:809` (original: green) | ✅ | MATCH, == getenv(HOME) | Rewritten: `!= nil` |
+| OSD Chronometer Tests | processCPU | `OCCTGetProcessCPU` | user seconds forced to 0 (B) | ✅ `:837`, `:838` (original: green) | ✅ | MATCH within 0.02 s of getrusage (0.060 vs 0.0611; 1/100 s steps) | Rewritten: `user >= 0` |
+| OSD Process Tests | processId | `OCCTProcessId` | ProcessId() + 1 (B) | ✅ `:850` (original: green) | ✅ | MATCH, == getpid() | Rewritten: `> 0` |
+| OSD Process Tests | userName | `OCCTProcessUserName` | return "root" (B) | ✅ `:856` (original: green) | ✅ | MATCH, == getpwuid(getuid()).pw_name | Rewritten: `!= nil` |
+| OSD_File Tests | writeAndReadBack | `OCCTFileReadLine` | Open returns false (A); ReadLine drops the last char (B) | ✅ A `:870`, B `:883` (original: green under both) | ✅ | MATCH "Hello, OSD_File!\n" (ReadLine keeps the newline) | Rewritten: silent return on open failure, `if let` prefix check |
+| OSD_File Tests | fileSize | `OCCTFileSize` | Open returns false (A); Size + 1 (B) | ✅ A `:892`, B `:903` (original: green under both) | ✅ | MATCH 5 | Rewritten: silent return, `sz >= 5` |
+| OSD_File Tests | isOpenFalseAfterClose | `OCCTFileIsOpen` | Open returns false (A); IsOpen always true (B) | ✅ A `:912` (original: green), B `:917` | ✅ | MATCH, 1 then 0 | Rewritten: silent return on open failure |
+| Resource_Manager Tests | setAndGetString | `OCCTResourceManagerGetString` | SetString no-op (B) | ✅ `:928` | ✅ | MATCH "hello", Find 1 |  |
+| Resource_Manager Tests | setAndGetInt | `OCCTResourceManagerGetInt` | Integer() + 1 (B) | ✅ `:934` | ✅ | MATCH 42 |  |
+| Resource_Manager Tests | setAndGetReal | `OCCTResourceManagerGetReal` | Real() × 2 (B) | ✅ `:940` | ✅ | MATCH 3.14 |  |
+| Resource_Manager Tests | findNonExistent | `OCCTResourceManagerFind` | Find returns true (B) | ✅ `:945` | ✅ | MATCH false |  |
+| Message_Messenger Tests | createMessenger | `OCCTMessengerCreate` | Create returns nullptr (A) | ✅ `:685` | ✅ | MATCH, constructs |  |
+| Message_Messenger Tests | printerCount | `OCCTMessengerPrinterCount` | Create nullptr (A); Size() + 1 (C) | ✅ A `:692` (original: green), C `:695` | ✅ | MATCH 1 (default printer) | Rewritten: `if let msg` |
+| Message_Messenger Tests | sendMessage | `OCCTMessengerSend` | Create nullptr (A); Send no-op (B) | ✅ A `:701`, B `:710` (original: green under both) | ✅ | MATCH, file printer receives the text | Rewritten: asserted nothing; now reads the file printer's output |
+| Message_Messenger Tests | addFilePrinter | `OCCTMessengerAddFilePrinter` | Create nullptr (A); AddPrinter skipped (B); Size() + 1 (C) | ✅ A `:715` (original: green), B `:721`, C `:721` | ✅ | MATCH, AddPrinter 1, Size 2 | Rewritten: `if let msg` |
+| Message_Messenger Tests | removeAllPrinters | `OCCTMessengerRemoveAllPrinters` | Create nullptr (A); RemovePrinters no-op (B) | ✅ A `:727` (original: green), B `:731` | ✅ | MATCH 0 | Rewritten: `if let msg` |
+| Message_Report Tests | createReport | `OCCTReportCreate` | Create returns nullptr (A) | ✅ `:739` | ✅ | MATCH, constructs |  |
+| Message_Report Tests | setAndGetLimit | `OCCTReportSetLimit` | Create nullptr (A); SetLimit no-op (B) | ✅ A `:744` (original: green), B `:750` | ✅ | MATCH, default -1, then 100 | Rewritten: `if let report`; pins the default |
+| Message_Report Tests | clearReport | `OCCTReportClear` | Create nullptr (A); Clear adds an alert (B) | ✅ A `:758`, B `:764`, `:765` (original: green under both) | ✅ | MATCH, Dump 0 bytes after Clear, limit kept 100 | Rewritten: asserted nothing. Gap: Swift cannot add an alert, so Clear is only observable on an empty report |
+| Message_Report Tests | dumpReport | `OCCTReportDump` | Create nullptr (A); Dump appends "x" (B) | ✅ A `:771`, B `:774` (original: green under both) | ✅ | MATCH "" | Rewritten: `_ = str` |
+| OSD Timer Tests | basicTiming | `OCCTTimerElapsedTime` | Start no-op (B) | ✅ `:789` (original: green) | ✅ | MATCH in kind: wall time, 0.060 s over 50 ms | Rewritten: `>= 0` |
+| OSD Timer Tests | reset | `OCCTTimerReset` | Reset no-op (C) | ✅ `:803` (original: also red) | ✅ | MATCH 0 after Reset | Strengthened: runs 20 ms and checks the reading before the reset |
+| OSD Timer Tests | wallClockTime | `OCCTTimerGetWallClockTime` | return 1.0 (B) | ✅ `:814` (original: green) | ✅ | MATCH in kind: advances with real time; not epoch (1.79e9 s below gettimeofday) | Rewritten: `> 0` |
+| OSD MemInfo Tests | heapUsage | `OCCTMemInfoHeapUsage` | return 0 (A) | ✅ `:825` | ✅ | MATCH, > 0 (about 1.15 MiB) |  |
+| OSD MemInfo Tests | heapUsageMiB | `OCCTMemInfoHeapUsageMiB` | HeapUsage in KB (/1024) (B) | ✅ `:838` (original: green) | ✅ | MATCH, ValuePreciseMiB × 2^20 / Value = 1.000000 | Rewritten: `>= 0`; a 2 MiB absolute slack first let the injection through, the heap is only 1.15 MiB |
+| OSD MemInfo Tests | infoString | `OCCTMemInfoString` | return "x" (B) | ✅ `:846` (original: green) | ✅ | MATCH, contains "Heap memory" | Rewritten: `count > 0` |

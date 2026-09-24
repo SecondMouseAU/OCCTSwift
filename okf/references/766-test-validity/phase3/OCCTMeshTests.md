@@ -21,6 +21,9 @@ beside it as `transcript.txt`.
 
 **Covered so far**: 24 of 97 tests.
 **Covered so far**: 40 of 97 tests.
+**Covered so far**: 58 of 97 tests.
+**Covered so far**: 79 of 97 tests.
+**Covered so far**: 97 of 97 tests.
 
 ## `Issue197MeshDeflectionTests.swift` (3 tests)
 ## Findings filed from this execution
@@ -175,3 +178,108 @@ Probe: `Scripts/repro/766-mesh-core-1/`.
 Rewritten because the original could not fail for the defect its title names:
 - **Mesh from shape**: read vertexCount and triangleCount and asserted nothing; now pins 24 / 12 and the enclosed volume 150.
 - **Mesh data access**: its two length checks are true by construction (all arrays are sized from vertexCount / triangleCount); now checks every index addresses a vertex and every vertex lies on the sphere.
+## `OCCTMeshTests.swift` (34 tests)
+Probe: `Scripts/repro/766-mesh-core-1/`, `Scripts/repro/766-mesh-core-2/`.
+| Presentation Mesh Tests | Box shaded mesh has 12 triangles **(rewritten)** | `OCCTShapeGetShadedMesh` | D1: computed vertex normals never accumulated (left zero) | :354 `len > 0.5` (every vertex) | ✔ | MATCH |
+| Presentation Mesh Tests | Cylinder shaded mesh has triangles **(rewritten)** | `OCCTShapeGetShadedMesh` | D1b: the shape's first face skipped in both passes | :363 `mesh.triangleCount == 100`, :364 | ✔ | MATCH |
+| Presentation Mesh Tests | Box edge mesh has 12 segments **(rewritten)** | `OCCTShapeGetEdgeMesh` | D1: every edge emitted twice (the per-face explorer duplicate the edge map exists to prevent) | :372 `edges.segmentCount == 12`, :373 | ✔ | MATCH |
+| Presentation Mesh Tests | Sphere edge mesh produces valid segments **(rewritten)** | `OCCTShapeGetEdgeMesh` | D1: every edge emitted twice | :382 `edges.segmentCount == 3`, :383 | ✔ | MATCH |
+| Drawer Mesh Extraction | Shaded mesh with default drawer produces valid mesh | `OCCTShapeGetShadedMeshWithDrawer` | D4: the drawer entry points return false | :398 `mesh != nil` | ✔ | MATCH |
+| Drawer Mesh Extraction | Edge mesh with default drawer produces valid segments | `OCCTShapeGetEdgeMeshWithDrawer` | D4: the drawer entry points return false | :412 `mesh != nil` | ✔ | MATCH |
+| Drawer Mesh Extraction | Finer deviation produces more triangles for curved shape | `OCCTShapeGetShadedMeshWithDrawer, OCCTDrawerSetDeviationCoefficient` | D2b: DisplayDrawer.deviationCoefficient's setter drops the value | :435 `fine.triangleCount > coarse.triangleCount` | ✔ | MATCH |
+| Drawer Mesh Extraction | Absolute deflection type works **(rewritten)** | `OCCTShapeGetShadedMeshWithDrawer, OCCTDrawerSetTypeOfDeflection` | D2b: DisplayDrawer.deflectionType's setter drops the value | :451 `mesh.triangleCount == 648` | ✔ | MATCH |
+| Drawer Mesh Extraction | Relative deflection scales with shape size, matching OCCT's own reference caller (#1418) | `OCCTShapeGetShadedMeshWithDrawer (occtDrawerGetEffectiveDeflection)` | D2b: the raw DeviationCoefficient used as an absolute deflection (the pre-#1418 bug) | :480 `ratio < 10` | ✔ | MATCH |
+| Issue1224 Presentation Mesh Overload Parity | shadedMesh(deflection:) and shadedMesh(drawer:) deinterleave identically | `OCCTShapeGetShadedMesh, OCCTShapeGetShadedMeshWithDrawer` | D2: shadedMesh(drawer:) negates the normals after the shared deinterleave (a fix applied to one overload only) | :517 `a.normals == b.normals` | ✔ | MATCH on counts; the equality under test is between two Swift overloads, which has no kernel counterpart |
+| Issue1224 Presentation Mesh Overload Parity | edgeMesh(deflection:) and edgeMesh(drawer:) deinterleave identically | `OCCTShapeGetEdgeMesh, OCCTShapeGetEdgeMeshWithDrawer` | D2: edgeMesh(drawer:) reverses the vertex order after the shared deinterleave | :535 `a.vertices == b.vertices` | ✔ | MATCH on counts; the equality under test is between two Swift overloads, which has no kernel counterpart |
+| MeshCoordinateSystem Enum | Raw values | `none (Swift enum mirroring RWMesh_CoordinateSystem)` | D1: case yUp = 2 | :549 `MeshCoordinateSystem.yUp.rawValue == 1` | ✔ | MATCH |
+| MeshCoordinateSystem Enum | Aliases | `none (Swift enum mirroring RWMesh_CoordinateSystem)` | D1: gltf aliased to .zUp | :555 `MeshCoordinateSystem.gltf == .yUp` | ✔ | MATCH |
+| MeshCoordinateSystem Enum | Init from raw value | `none (Swift enum mirroring RWMesh_CoordinateSystem)` | D1: case yUp = 2 | :562 `MeshCoordinateSystem(rawValue: 1) == .yUp` | ✔ | MATCH |
+| BRepMesh Deflection | Compute absolute deflection **(rewritten)** | `OCCTComputeAbsoluteDeflection` | D1: relative deflection ignored (0.1 passed) | :578 `abs(absDef - 0.150000001) < 1e-9` | ✔ | MATCH |
+| BRepMesh Deflection | Deflection consistency check **(rewritten)** | `OCCTDeflectionIsConsistent` | D1: always returns true | :588 `!Shape.deflectionIsConsistent(current: 0.3, required: 0.2)` | ✔ | MATCH |
+| BRepBuilderAPI MakeShapeOnMesh | Build shape from mesh **(rewritten)** | `OCCTShapeFromMesh` | D1: builder result dropped (null on success) | :611 `#require(Shape.fromMesh(...))` | ✔ | MATCH |
+| BRepBuilderAPI MakeShapeOnMesh | Mesh with minimal geometry | `OCCTShapeFromMesh` | D1: builder result dropped (null on success) | :627 `shape != nil` | ✔ | MATCH |
+- **Box shaded mesh has 12 triangles**: force-unwrapped inside #expect (a nil result crashed the process instead of failing); now #require.
+- **Cylinder shaded mesh has triangles**: force-unwrapped inside #expect (a nil result crashed the process instead of failing) and asserted only `> 0`; now pins 100 / 106.
+- **Box edge mesh has 12 segments**: force-unwrapped inside #expect (a nil result crashed the process instead of failing); now #require, and pins 24 vertices.
+- **Sphere edge mesh produces valid segments**: force-unwrapped inside #expect (a nil result crashed the process instead of failing) and asserted only `> 0`; now pins 3 / 18.
+- **Absolute deflection type works**: meshed a box, which gives 12 triangles at any deflection; now a sphere, where absolute 0.5 (648) and the relative default (1244) differ.
+- **Compute absolute deflection**: was `if let absDef { #expect(absDef > 0) }`, which a nil result skipped; now pins the kernel value.
+- **Deflection consistency check**: asserted only true cases, so an always-true answer passed; adds 0.3 against 0.2, which the kernel calls inconsistent.
+- **Build shape from mesh**: was `if let shape`, so a nil result passed; now #require, and pins 4 faces and 6 edges.
+## `OCCTMeshTests.swift` (55 tests)
+Probe: `Scripts/repro/766-mesh-core-1/`, `Scripts/repro/766-mesh-core-2/`, `Scripts/repro/766-mesh-core-3/`.
+| BRepGProp MeshCinert Tests | prepare polygon and compute **(rewritten)** | `OCCTMeshCinertPreparePolygon, OCCTMeshCinertCompute` | E1: PreparePolygon drops the last point | :646 `points.count == 2`, :648 `abs(result.mass - 10) < 1e-9` | ✔ | MATCH |
+| BRepGProp MeshProps Tests | surface mesh properties **(rewritten)** | `OCCTMeshPropsCompute` | E1: Surface and Volume swapped in the type mapping | :660 `abs(result.mass - 100) < 1e-9` | ✔ | MATCH |
+| BRepGProp MeshProps Tests | volume mesh properties **(rewritten)** | `OCCTMeshPropsCompute` | E1: Surface and Volume swapped in the type mapping | :671 `abs(result.mass - 500.0 / 3.0) < 1e-9` | ✔ | MATCH |
+| BRepMesh ShapeTool Tests | max face tolerance **(rewritten)** | `OCCTMeshShapeToolMaxFaceTolerance` | E1: guard inverted, returns the 0 fallback | :683 `abs(face.maxMeshTolerance - 1e-7) < 1e-15` | ✔ | MATCH |
+| BRepMesh ShapeTool Tests | box max dimension **(rewritten)** | `OCCTMeshShapeToolBoxMaxDimension` | E1: bounding box enlarged by 1.0 | :691 `abs(maxDim - 10.0000002) < 1e-9` | ✔ | MATCH |
+| BRepMesh ShapeTool Tests | UV points on edge **(rewritten)** | `OCCTMeshShapeToolUVPoints` | E1: the two UV points swapped | :703 first point, :704 second point | ✔ | MATCH |
+| Poly_Polygon3D | create without parameters **(rewritten)** | `OCCTPolyPolygon3DCreate, OCCTPolyPolygon3DHasParameters` | E1: HasParameters always true | :715 `!poly.hasParameters` | ✔ | MATCH |
+| Poly_Polygon3D | create with parameters **(rewritten)** | `OCCTPolyPolygon3DCreateWithParams, OCCTPolyPolygon3DParameter` | E1: CreateWithParams builds the no-parameter polygon | :725 `abs(poly.parameter(at: 1) - 10.0) < 1e-10` | ✔ | MATCH |
+| Poly_Polygon3D | deflection **(rewritten)** | `OCCTPolyPolygon3DSetDeflection` | E1: SetDeflection is a no-op | :733 `abs(poly.deflection - 1.0) < 1e-10` | ✔ | MATCH |
+| Poly_PolygonOnTriangulation | create without parameters **(rewritten)** | `OCCTPolyPolygonOnTriCreate, OCCTPolyPolygonOnTriHasParameters` | E1: HasParameters always true | :746 `!poly.hasParameters` | ✔ | MATCH |
+| Poly_PolygonOnTriangulation | create with parameters **(rewritten)** | `OCCTPolyPolygonOnTriCreateWithParams` | E1: CreateWithParams builds the no-parameter polygon | :756 `abs(poly.parameter(at: 1) - 1.0) < 1e-10` | ✔ | MATCH |
+| Poly_PolygonOnTriangulation | deflection **(rewritten)** | `OCCTPolyPolygonOnTriSetDeflection` | E1: SetDeflection is a no-op | :764 `abs(poly.deflection - 0.1) < 1e-10` | ✔ | MATCH |
+| Poly_MergeNodesTool | merge mesh nodes from shape **(rewritten)** | `OCCTPolyMergeNodes` | E1: smoothAngle ignored (pi) | :777 `merged.vertexCount == 24` | ✔ | MATCH |
+| Poly_CoherentTriangulation | create empty and add nodes | `OCCTCoherentTriangulationSetNode` | E1: SetNode returns index + 1 | :807, :808, :809 | ✔ | MATCH |
+| Poly_CoherentTriangulation | add and count triangles | `OCCTCoherentTriangulationAddTriangle` | E2: AddTriangle returns false without adding | :815 `ct.triangleCount == 2` | ✔ | MATCH |
+| Poly_CoherentTriangulation | remove triangle | `OCCTCoherentTriangulationRemoveTriangle, OCCTCoherentTriangulationNTriangles` | E1: NTriangles reads the bridge's own add-list, which removal does not shrink | :822 `ct.triangleCount == 1` | ✔ | MATCH |
+| Poly_CoherentTriangulation | compute links **(rewritten)** | `OCCTCoherentTriangulationComputeLinks` | E1: ComputeLinks returns 0 without computing | :830 `nLinks == 5`, :831 `ct.linkCount == 5` | ✔ | MATCH |
+| Poly_CoherentTriangulation | deflection set/get | `OCCTCoherentTriangulationSetDeflection` | E1: SetDeflection is a no-op | :838 `abs(ct.deflection - 0.5) < 1e-10` | ✔ | MATCH |
+| Poly_CoherentTriangulation | convert back to triangulation **(rewritten)** | `OCCTCoherentTriangulationGetResult` | E3: result dropped, reports failure | :848 `#require(ct.getResult())` | ✔ | MATCH |
+| Poly_CoherentTriangulation | create from mesh **(rewritten)** | `OCCTCoherentTriangulationCreateFromMesh` | E1: returns null for a meshed shape | :858 `#require(CoherentTriangulation.createFromMesh(box))` | ✔ | MATCH |
+| Poly_CoherentTriangulation | node coordinates after result **(rewritten)** | `OCCTCoherentTriangulationNodeCoords` | E1: reads Node(index + 1), one past the node asked for | :873, :874, :875 | ✔ | MATCH |
+- **prepare polygon and compute**: wrapped its assertions in `if let`, so a nil result skipped them; now #require, and pins 2 points and a mass of 10 (it asserted `> 0`).
+- **surface mesh properties**: wrapped its assertions in `if let`, so a nil result skipped them; now #require, and pins the area 100.
+- **volume mesh properties**: asserted nothing ("just don't crash"); now pins the face's volume contribution 500/3.
+- **max face tolerance**: wrapped its assertions in `if let`, so a nil result skipped them; now #require, and pins 1e-7 (it asserted `> 0`).
+- **box max dimension**: asserted `abs(maxDim - 10) < 1.0`, which a 1.0 enlargement passes; now 1e-9 about the kernel value.
+- **UV points on edge**: asserted nothing ("just verify no crash"); now pins both UV points.
+- **create without parameters**: wrapped its assertions in `if let`, so a nil result skipped them; now #require.
+- **create with parameters**: wrapped its assertions in `if let`, so a nil result skipped them; now #require.
+- **deflection**: wrapped its assertions in `if let`, so a nil result skipped them; now #require.
+- **create without parameters**: wrapped its assertions in `if let`, so a nil result skipped them; now #require.
+- **create with parameters**: wrapped its assertions in `if let`, so a nil result skipped them; now #require.
+- **deflection**: wrapped its assertions in `if let`, so a nil result skipped them; now #require.
+- **merge mesh nodes from shape**: wrapped its assertions in `if let`, so a nil result skipped them; now #require, and pins 24 / 12 (it asserted `> 0`).
+- **compute links**: asserted `> 0`; now pins the 5 links two edge-sharing triangles have.
+- **convert back to triangulation**: wrapped its assertions in `if let`, so a nil result skipped them; now #require.
+- **create from mesh**: wrapped its assertions in `if let`, so a nil result skipped them; now #require, and pins 2 triangles (it asserted `> 0`).
+- **node coordinates after result**: wrapped its assertions in `if let`, so a nil result skipped them; now #require.
+## `OCCTMeshTests.swift` (73 tests)
+Probe: `Scripts/repro/766-mesh-core-1/`, `Scripts/repro/766-mesh-core-2/`, `Scripts/repro/766-mesh-core-3/`, `Scripts/repro/766-mesh-core-4/`.
+| Poly_Connect Mesh Adjacency Tests | triangleAdjacency **(rewritten)** | `OCCTMeshTriangleAdjacency` | F1: the first and third neighbour swapped | :893 `adj.0 == 0 && adj.1 == 0 && adj.2 == 2` | ✔ | MATCH |
+| Poly_Connect Mesh Adjacency Tests | nodeTriangle **(rewritten)** | `OCCTMeshNodeTriangle` | F1: Triangle(node) + 1 | :900 `triIdx == 1` | ✔ | MATCH |
+| Poly_Connect Mesh Adjacency Tests | nodeTriangleCount **(rewritten)** | `OCCTMeshNodeTriangleCount` | F1: the fan count starts at 1 | :907 `count == 1` | ✔ | MATCH |
+| v0.115.0 - Triangulation Queries | faceTriangulation **(rewritten)** | `OCCTFaceTriangulationNodeCount (and TriangleCount, Deflection, Node, Triangle)` | F1: NodeCount returns NbTriangles | :919 `face.triangulationNodeCount == 4` | ✔ | MATCH |
+| v0.115.0 - Triangulation Queries | triangulationUVNodes **(rewritten)** | `OCCTFaceTriangulationHasUVNodes, OCCTFaceTriangulationUVNode` | F1: HasUVNodes returns false | :941 `face.triangulationHasUVNodes` | ✔ | MATCH |
+| v0.160 MeshCache write API | Triangulation create from arrays round-trips **(rewritten)** | `OCCTPolyTriangulationCreate` | F1: the 2nd and 3rd index of each triangle swapped | :961 `t0.0 == 0 && t0.1 == 1 && t0.2 == 2` | ✔ | MATCH |
+| v0.160 MeshCache write API | Triangulation rejects malformed inputs | `Triangulation.create (Swift guard) / OCCTPolyTriangulationCreate` | F1: Triangulation.create's index-range guard removed (the bridge does not check range) | :972 `Triangulation.create(nodes:triangles: [0, 1, 99]) == nil` | ✔ | N/A: input validation in the Swift layer; the bridge and kernel accept an out-of-range index |
+| v0.160 MeshCache write API | Create triangulation rep and bind it to a face **(rewritten)** | `OCCTBRepGraphMeshCreateTriangulationRep, OCCTBRepGraphMeshAppendCachedTriangulation, OCCTBRepGraphMeshFaceActiveTriangulationRepId` | F1: AppendCachedTriangulation is a no-op | :993 `graph.meshFaceActiveTriangulationRepId(0) != nil` | ✔ | MATCH |
+| v0.160 MeshCache write API | Create polygon3D rep and bind it to an edge **(rewritten)** | `OCCTBRepGraphMeshCreatePolygon3DRep, OCCTBRepGraphMeshSetCachedPolygon3D, OCCTBRepGraphMeshEdgePolygon3DRepId` | F2 (alone): SetCachedPolygon3D is a no-op | :1006 `graph.meshEdgePolygon3DRepId(0) != nil` | ✔ | MATCH |
+| v0.158 MeshView two-tier mesh storage | Mesh count properties are non-negative on a fresh graph **(rewritten)** | `OCCTBRepGraphNbTriangulations, NbPolygons3D, MeshNbPolygons2D, MeshNbPolygonsOnTri, MeshNbActive*` | F1: BRepGraph.triangulationCount reads the face count | :1018 `graph.triangulationCount == 0` | ✔ | MATCH |
+| v0.158 MeshView two-tier mesh storage | Mesh rep id queries return nil when no mesh is present **(rewritten)** | `OCCTBRepGraphMeshFaceActiveTriangulationRepId, OCCTBRepGraphMeshEdgePolygon3DRepId, OCCTBRepGraphMeshCoEdgeHasMesh` | F1: EdgePolygon3DRepId reports presence unconditionally | :1034 `graph.meshEdgePolygon3DRepId(0) == nil` | ✔ | MATCH |
+| v0.158 MeshView two-tier mesh storage | Mesh counts after incremental meshing **(rewritten)** | `OCCTBRepGraphFaceHasTriangulation, OCCTBRepGraphMeshFaceActiveTriangulationRepId, OCCTBRepGraphNbTriangulations` | F1: face triangulation presence reads the cache tier only (the #1547 regression) | :1051 `graph.faceHasTriangulation(0) == true`, :1052 | ✔ | MATCH |
+| v0.158 MeshView two-tier mesh storage | Mesh edge polygon3D rep id resolves the persistent tier (#1547) **(rewritten)** | `OCCTBRepGraphSetEdgePolygon3DRepId, OCCTBRepGraphEdgeHasPolygon3D` | F1: SetEdgePolygon3DRepId is a no-op | :1065 `graph.edgeHasPolygon3D(0) == true` | ✔ | MATCH |
+| Poly Copy & Mutators | Polygon2D copy preserves contents **(rewritten)** | `OCCTPolyPolygon2DCopy` | F1: copy rebuilt from the nodes alone, dropping the deflection | :1088 `abs(copy.deflection - 0.25) < 1e-12` | ✔ | MATCH |
+| Poly Copy & Mutators | PolygonOnTriangulation copy preserves nodes **(rewritten)** | `OCCTPolyPolygonOnTriCopy` | F1: the copy's first node overwritten | :1098 `copy.nodeIndex(at: i) == Int(indices[i])` | ✔ | MATCH |
+| Poly Copy & Mutators | PolygonOnTriangulation setNodes mutates in place **(rewritten)** | `OCCTPolyPolygonOnTriSetNodes` | F1: size mismatch clamped instead of refused | :1110 `!poly.setNodes([1, 2])` | ✔ | MATCH |
+| Poly Copy & Mutators | PolygonOnTriangulation setParameters mutates in place **(rewritten)** | `OCCTPolyPolygonOnTriSetParameters` | F1: size mismatch clamped instead of refused | :1122 `!poly.setParameters([1.0])` | ✔ | MATCH |
+| Poly Copy & Mutators | setParameters fails when polygon has no parameters **(rewritten)** | `OCCTPolyPolygonOnTriSetParameters` | F1: the HasParameters() refusal returns true | :1130 `!poly.setParameters([0.0, 1.0, 2.0])` | ✔ | MATCH |
+- **triangleAdjacency**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require, and pins (0, 0, 2) where it asserted every index `>= 0`.
+- **nodeTriangle**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require, and pins 1 where it asserted `>= 1`.
+- **nodeTriangleCount**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require, and pins 1 where it asserted `>= 1`.
+- **faceTriangulation**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require; `mag >= 0` and `n >= 1` could not fail, so node 1 and triangle 1 are pinned, and `defl > 0` (held only by 3e-16 rounding) is now `0 <= defl < 1e-9`.
+- **triangulationUVNodes**: asserted nothing (`let _ = uv`), and only if HasUVNodes; now asserts HasUVNodes and pins UV node 1.
+- **Triangulation create from arrays round-trips**: node and triangle checks sat in `if let`; now #require.
+- **Create triangulation rep and bind it to a face**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require; adds the unbound precondition (nil before binding).
+- **Create polygon3D rep and bind it to an edge**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require; adds the unbound precondition (nil before binding).
+- **Mesh count properties are non-negative on a fresh graph**: asserted each count `>= 0` and active `<=` total, which no count can fail; now pins each to 0.
+- **Mesh rep id queries return nil when no mesh is present**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require.
+- **Mesh counts after incremental meshing**: `triangulationCount + polygon3DCount >= 0` could not fail; now pins 6 triangulations and 24 polygons on triangulation.
+- **Mesh edge polygon3D rep id resolves the persistent tier (#1547)**: nested its assertions in `if let` / returned early from a guard, so a nil result passed; now #require.
+- **Polygon2D copy preserves contents**: returned silently on a nil polygon and compared nodes inside `if let`; now #require.
+- **PolygonOnTriangulation copy preserves nodes**: returned silently on nil; now #require, and compares against the input rather than the source polygon.
+- **PolygonOnTriangulation setNodes mutates in place**: returned silently on nil; now #require.
+- **PolygonOnTriangulation setParameters mutates in place**: returned silently on nil; now #require.
+- **setParameters fails when polygon has no parameters**: returned silently on nil; now #require.
