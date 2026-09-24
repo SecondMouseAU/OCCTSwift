@@ -1,0 +1,12 @@
+labelTag: Main tag=1 entry=0:1
+labelDepth: Main depth=1 child-of-Main depth=2
+labelIsNull: Main IsNull=false
+labelIsRoot: Main IsRoot=false Main.Root IsRoot=true
+labelFather: child.Father is Main=true (father entry 0:1)
+labelRoot: child.Root IsRoot=true
+labelAttributes: fresh HasAttribute=false NbAttributes=0; after Name HasAttribute=true NbAttributes=1
+labelChildren: new label HasChild=false NbChildren=0; after two children HasChild=true NbChildren=2
+labelFindChild: existing found=true (IsEqual child=true); FindChild(999, false) null=true; FindChild(999, true) null=false; NbChildren after=2
+labelForgetAllAttributes: HasAttribute before=true after ForgetAllAttributes(true)=false
+labelDescendants: direct=2 all=4
+labelDescendantsBeyondBufferCap: 1029 children created, TDF_ChildIterator(direct) walks 1029

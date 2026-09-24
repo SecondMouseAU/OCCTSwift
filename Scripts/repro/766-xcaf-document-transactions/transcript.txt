@@ -1,0 +1,16 @@
+modified: after SetModified contains=true
+modified: after PurgeModified contains=false
+txn: initial HasOpenCommand=false
+txn: after OpenCommand=true
+txn: CommitCommand=true HasOpenCommand=false
+txn: after AbortCommand HasOpenCommand=false
+undo: GetUndoLimit=10 undos=0 redos=0
+undo: after 1 commit undos=1
+undo: after 2 commits undos=2
+undo: Undo=true undos=1 redos=1
+redo: Redo=true undos=2 redos=0
+undoNothing: Undo=false
+multi: undos=3
+multi: after 3 Undo undos=0 redos=3
+multi: after 2 Redo undos=2 redos=1
+abortNoUndo: undos=1

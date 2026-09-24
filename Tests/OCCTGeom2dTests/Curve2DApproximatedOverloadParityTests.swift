@@ -13,15 +13,20 @@ import simd
 struct Curve2DApproximatedOverloadParityTests {
 
     @Test("Both overloads succeed on the same curve using only their own implicit defaults")
-    func bothOverloadsSucceedWithDefaults() {
+    func bothOverloadsSucceedWithDefaults() throws {
         let circle = Curve2D.circle(center: .zero, radius: 10)!
         let d = circle.domain
 
-        let wholeDomain = circle.approximated()
-        let ranged = circle.approximatedInRange(first: d.lowerBound, last: d.upperBound)
+        let wholeDomain = try #require(circle.approximated())
+        let ranged = try #require(circle.approximatedInRange(first: d.lowerBound, last: d.upperBound))
 
-        #expect(wholeDomain != nil)
-        #expect(ranged != nil)
+        // #1979: `!= nil` passed a fit made at any tolerance. Each default gives its own fit:
+        // Geom2dConvert_ApproxCurve at 1e-3 is degree 7 with 13 poles, Approx_Curve2d at 1e-6 is
+        // degree 8 with 27 (Scripts/repro/766-geom2d-approx-arclength-arctypes/).
+        #expect(wholeDomain.degree == 7)
+        #expect(wholeDomain.poleCount == 13)
+        #expect(ranged.degree == 8)
+        #expect(ranged.poleCount == 27)
     }
 
     /// A curve complex enough that `Geom2dConvert_ApproxCurve`/`Approx_Curve2d` can't trivially
@@ -62,7 +67,7 @@ struct Curve2DApproximatedOverloadParityTests {
 
     @Test(
         "Whole-domain overload's implicit default tolerance produces a real, non-trivial fit error")
-    func wholeDomainDefaultToleranceProducesMeasurableError() {
+    func wholeDomainDefaultToleranceProducesMeasurableError() throws {
         // Calls with NO explicit `tolerance:` — exercising Curve2D.swift's actual `1e-3` default,
         // not a copy of the literal. Measured on `toleranceSensitiveCurve()`: the default gives
         // ~5.5e-4 max deviation, comfortably inside (1e-5, 5e-3). If the real default were
@@ -71,17 +76,14 @@ struct Curve2DApproximatedOverloadParityTests {
         // 8e-3 and fails the upper bound. Verified both directions by temporarily editing the
         // real default in Curve2D.swift and confirming this test fails, then restoring it.
         let curve = Self.toleranceSensitiveCurve()
-        let approx = curve.approximated()
-        #expect(approx != nil)
-        if let approx {
-            let dev = Self.maxSampledDeviation(curve, approx)
-            #expect(dev > 1e-5)
-            #expect(dev < 5e-3)
-        }
+        let approx = try #require(curve.approximated())
+        let dev = Self.maxSampledDeviation(curve, approx)
+        #expect(dev > 1e-5)
+        #expect(dev < 5e-3)
     }
 
     @Test("Ranged overload's implicit default tolerance produces a near-exact fit")
-    func rangedDefaultToleranceProducesNearExactFit() {
+    func rangedDefaultToleranceProducesNearExactFit() throws {
         // Calls with NO explicit `toleranceU`/`toleranceV` — exercising the actual `1e-6`
         // defaults. Measured on the same curve: ~1.8e-14 max deviation, i.e. this tolerance is
         // tight enough that the fit is essentially exact. If the real default were mistakenly
@@ -90,18 +92,15 @@ struct Curve2DApproximatedOverloadParityTests {
         // Curve2D.swift and confirming this test fails, then restoring it.
         let curve = Self.toleranceSensitiveCurve()
         let d = curve.domain
-        let approx = curve.approximatedInRange(first: d.lowerBound, last: d.upperBound)
-        #expect(approx != nil)
-        if let approx {
-            let dev = Self.maxSampledDeviation(curve, approx)
-            #expect(dev < 1e-9)
-        }
+        let approx = try #require(curve.approximatedInRange(first: d.lowerBound, last: d.upperBound))
+        let dev = Self.maxSampledDeviation(curve, approx)
+        #expect(dev < 1e-9)
     }
 
     @Test(
         "Both overloads independently succeed on the same curve; neither promises to structurally match the other"
     )
-    func bothOverloadsSucceedIndependentlyOnSameCurve() {
+    func bothOverloadsSucceedIndependentlyOnSameCurve() throws {
         // Addresses the issue's own gap: no prior test called both overloads on the same input
         // and compared results. Checked empirically before writing this test (pole/degree counts
         // across a circle, an off-center circle, an ellipse, and a wiggly interpolated curve, at
@@ -120,24 +119,27 @@ struct Curve2DApproximatedOverloadParityTests {
             first: d.lowerBound, last: d.upperBound,
             toleranceU: 1e-6, toleranceV: 1e-6)
 
-        #expect(wholeDomain != nil)
-        #expect(ranged != nil)
-        if let wholeDomain, let ranged {
-            #expect(wholeDomain.degree != nil)
-            #expect(ranged.degree != nil)
-        }
+        // #1979: `degree != nil` passed any fit. At 1e-6 both give degree 8 with 27 poles.
+        let w = try #require(wholeDomain)
+        let r = try #require(ranged)
+        #expect(w.degree == 8)
+        #expect(w.poleCount == 27)
+        #expect(r.degree == 8)
+        #expect(r.poleCount == 27)
     }
 
     @Test("Whole-domain overload's continuity is a live knob; ranged overload has none")
-    func continuityIsConfigurableOnlyOnWholeDomainOverload() {
+    func continuityIsConfigurableOnlyOnWholeDomainOverload() throws {
         // `approximated(tolerance:continuity:...)` threads `continuity` into
         // `Geom2dConvert_ApproxCurve`. `approximatedInRange` has no such parameter at all —
         // the bridge hardcodes GeomAbs_C2. Both continuity settings below must still succeed
         // on the whole-domain overload, confirming the knob is live, not vestigial.
         let circle = Curve2D.circle(center: .zero, radius: 10)!
-        let c0 = circle.approximated(tolerance: 1e-3, continuity: 0)
-        let c2 = circle.approximated(tolerance: 1e-3, continuity: 2)
-        #expect(c0 != nil)
-        #expect(c2 != nil)
+        // #1979: two non-nil results did not show the knob does anything; a bridge that dropped
+        // `continuity` passed. The two settings give different fits: 15 poles at C0, 13 at C2.
+        let c0 = try #require(circle.approximated(tolerance: 1e-3, continuity: 0))
+        let c2 = try #require(circle.approximated(tolerance: 1e-3, continuity: 2))
+        #expect(c0.poleCount == 15)
+        #expect(c2.poleCount == 13)
     }
 }
