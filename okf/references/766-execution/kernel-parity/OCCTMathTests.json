@@ -2525,5 +2525,173 @@
       "failing_expectation": "original: red; rewritten: :85 `abs(volume - 150.0) < 0.1`"
     },
     "green": true
+  },
+  {
+    "test_name": "GeomVector3D Tests::magnitude",
+    "bridge_function": "OCCTGeomVector3DMagnitude",
+    "bridge_output": {
+      "type": "observed",
+      "data": "5",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "5",
+      "source": "Scripts/repro/766-math-geom-vector3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "SquareMagnitude instead of Magnitude",
+      "failing_expectation": ":12 `abs(v.magnitude - 5.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomVector3D Tests::from two points",
+    "bridge_function": "OCCTGeomVector3DFromPoints",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(3, 4, 0) magnitude=5",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(3, 4, 0) magnitude=5",
+      "source": "Scripts/repro/766-math-geom-vector3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "first point ignored (vector from the origin to p2)",
+      "failing_expectation": ":18 `abs(v.magnitude - 5.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomVector3D Tests::dot product",
+    "bridge_function": "OCCTGeomVector3DDot",
+    "bridge_output": {
+      "type": "observed",
+      "data": "32",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "32",
+      "source": "Scripts/repro/766-math-geom-vector3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "dot with itself instead of other (14)",
+      "failing_expectation": ":25 `abs(v1.dot(v2) - 32.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomVector3D Tests::added",
+    "bridge_function": "OCCTGeomVector3DAdded",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1, 1, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1, 1, 0)",
+      "source": "Scripts/repro/766-math-geom-vector3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Subtracted instead of Added",
+      "failing_expectation": ":34 `abs(c.x - 1) < 1e-10 && abs(c.y - 1) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomVector3D Tests::multiplied",
+    "bridge_function": "OCCTGeomVector3DMultiplied",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(2, 4, 6)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(2, 4, 6)",
+      "source": "Scripts/repro/766-math-geom-vector3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "multiplied by 1/scalar",
+      "failing_expectation": ":41 `abs(m.coordinates.x - 2) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomVector3D Tests::normalized",
+    "bridge_function": "OCCTGeomVector3DNormalized",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(0, 0, 1) magnitude=1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(0, 0, 1) magnitude=1",
+      "source": "Scripts/repro/766-math-geom-vector3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "return an unnormalized copy",
+      "failing_expectation": ":48 `abs(n.magnitude - 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomVector3D Tests::crossed",
+    "bridge_function": "OCCTGeomVector3DCrossed",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(0, 0, 1)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(0, 0, 1)",
+      "source": "Scripts/repro/766-math-geom-vector3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "operands swapped (other x self)",
+      "failing_expectation": ":57 `abs(cross.coordinates.z - 1.0) < 1e-10`"
+    },
+    "green": true
   }
 ]

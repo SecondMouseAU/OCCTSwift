@@ -211,3 +211,11 @@
 | **Geometry Construction Tests** | Create face with hole | `OCCTShapeCreateFaceWithHoles` | hole wires never added to BRepBuilderAPI_MakeFace (area becomes 400) | red | green | PASS |
 | **Geometry Construction Tests** | Create face with multiple holes | `OCCTShapeCreateFaceWithHoles` | hole wires never added (area becomes 900) | red | green | PASS |
 | **Geometry Construction Tests** | Extrude face to create solid | `OCCTShapeCreateExtrusion` | prism vector doubled (volume 300) | red | green | PASS |
+### 766-math-geom-vector3d (#1983, measured)
+| **GeomVector3D Tests** | magnitude | `OCCTGeomVector3DMagnitude` | SquareMagnitude instead of Magnitude | red | green | PASS |
+| **GeomVector3D Tests** | from two points | `OCCTGeomVector3DFromPoints` | first point ignored (vector from the origin to p2) | red | green | PASS |
+| **GeomVector3D Tests** | dot product | `OCCTGeomVector3DDot` | dot with itself instead of other (14) | red | green | PASS |
+| **GeomVector3D Tests** | added | `OCCTGeomVector3DAdded` | Subtracted instead of Added | red | green | PASS |
+| **GeomVector3D Tests** | multiplied | `OCCTGeomVector3DMultiplied` | multiplied by 1/scalar | red | green | PASS |
+| **GeomVector3D Tests** | normalized | `OCCTGeomVector3DNormalized` | return an unnormalized copy | red | green | PASS |
+| **GeomVector3D Tests** | crossed | `OCCTGeomVector3DCrossed` | operands swapped (other x self) | red | green | PASS |
