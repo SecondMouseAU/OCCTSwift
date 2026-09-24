@@ -33,7 +33,7 @@ struct BRepLPropEdgeTests {
             return
         }
         #expect(abs(p.x - (-5)) < 1e-12, "x: expected -5, got \(p.x)")
-        #expect(abs(p.y - (-5)) < 1e-9, "y: expected -5, got \(p.y)")
+        #expect(abs(p.y - (-5)) < 1e-12, "y: expected -5, got \(p.y)")
         #expect(abs(p.z - (-4.5)) < 1e-12, "z: expected -4.5, got \(p.z)")
     }
 
