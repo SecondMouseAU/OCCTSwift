@@ -1,0 +1,23 @@
+AHT domain=[0, 1]
+AHT value(0)=(6, 0.0118333591023)
+AHT value(0.5)=(7.72495409928, 0.135033262487)
+AHT value(1)=(8.94698464117, 0.486450810014)
+AnaFillet perform=1
+AnaFillet fillet type=1 (GeomAbs_Circle=1)
+AnaFillet fillet center=(2, 2, 0) radius=2
+AnaFillet fillet first=(2, 0, 0) last=(0, 2, 0) length=3.14159265359
+AnaFillet edge1 first=(2, 0, 0) last=(10, 0, 0) length=8
+AnaFillet edge2 first=(0, 0, 0) last=(0, 2, 0) length=2
+ApproxArcs circle count=2
+  [1] Geom2d_TrimmedCurve (5, 0)->(5.66254507943e-16, 5)
+  [2] Geom2d_TrimmedCurve (3.06161699787e-16, 5)->(-5, 7.23805648632e-16)
+ApproxArcs line count=1
+  [1] Geom2d_TrimmedCurve (0, 0)->(10, 0)
+ApproxCurve2d done=1 result=1 maxErr2dU=6.92e-08 maxErr2dV=6.92e-08
+ApproxCurve2d domain=[0, 6.28318530718] degree=8 poles=27
+ApproxCurve2d value(0)=(10, -8.881784197e-16) radius=10
+ApproxCurve2d value(1.0471975512)=(5.00000003486, 8.66025400622) radius=9.99999999004
+ApproxCurve2d value(3.14159265359)=(-10, 1.66533453694e-15) radius=10
+Axis create origin=(1, 2) dir=(0, 1)
+Axis reversed origin=(0, 0) dir=(-1, -0)
+Axis angle=1.5707963267948966 (pi/2=1.5707963267948966)
