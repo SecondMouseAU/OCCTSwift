@@ -432,3 +432,17 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `deleteEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :124 Expectation failed: doc.namingEvolution(on: label) == .delete | passed | `OCCTDocumentNamingGetEvolution` | PASS: DELETE (3) |
 | `generatedEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :135 Expectation failed: doc.namingEvolution(on: label) == .generated | passed | `OCCTDocumentNamingGetEvolution` | PASS: GENERATED (1), old and new |
 | `multipleHistoryEntries` | `OCCTDocumentNamingHistoryCount` answers 0 | :153 Expectation failed: history.count >= 1 | passed | `OCCTDocumentNamingHistoryCount` | PASS: at least 1 |
+### `TNamingCopyShapeTests.swift`
+| `deepCopyBox` | `OCCTShapeDeepCopy` returns a null shape | :15 Expectation failed: copy.isValid | passed | `OCCTShapeDeepCopy` | PASS: copy exists and is not the same TShape |
+| `deepCopySphere` | `OCCTShapeDeepCopy` returns a null shape | :24 Expectation failed: copy.isValid | passed | `OCCTShapeDeepCopy` | PASS: copy exists |
+### `TNamingExtensionTests.swift`
+| `namingIsEmpty` | `OCCTNamingIsEmpty` returns false | :15 Expectation failed: doc.namingIsEmpty(on: node) | passed | `OCCTNamingIsEmpty` | PASS: empty |
+| `namingIsEmptyAfterRecord` | `OCCTNamingIsEmpty` returns true | :23 Expectation failed: !doc.namingIsEmpty(on: node) | passed | `OCCTNamingIsEmpty` | PASS: not empty |
+| `namingVersion` | `OCCTNamingGetVersion` answers 7 | :31 Expectation failed: doc.namingVersion(on: node) == 0; :33 Expectation failed: doc.namingVersion(on: node) == 42 | passed | `OCCTNamingGetVersion` | PASS: 0, then 42 |
+| `namingOriginalShape` | `OCCTNamingOriginalShape` returns a (null) shape where there is none | :43 Expectation failed: original == nil | passed | `OCCTNamingOriginalShape` | PASS: a primitive has no old shape |
+| `namingOriginalShapeFromModify` | `OCCTNamingOriginalShape` returns null | :55 Expectation failed: original != nil | passed | `OCCTNamingOriginalShape` | PASS: the box |
+| `namingHasLabel` | `OCCTNamingHasLabel` returns false | :63 Expectation failed: doc.namingHasLabel(shape: box) | passed | `OCCTNamingHasLabel` | PASS: true |
+| `namingFindLabel` | `OCCTNamingFindLabel` answers -1 | :72 Expectation failed: found != nil | passed | `OCCTNamingFindLabel` | PASS: the recording label |
+| `namingValidUntil` | `OCCTNamingValidUntil` answers -1 | :81 Expectation failed: valid >= 0 | passed | `OCCTNamingValidUntil` | PASS: 1 |
+| `sameShapeCount` | `OCCTNamingSameShapeCount` answers 1 | :92 Expectation failed: count >= 2 | passed | `OCCTNamingSameShapeCount` | PASS: 3 labels hold the box |
+| `sameShapeLabels` | `OCCTNamingSameShapeLabels` answers 1 | :103 Expectation failed: labels.count >= 2 | passed | `OCCTNamingSameShapeLabels` | PASS: 3 |
