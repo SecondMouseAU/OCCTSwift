@@ -7291,5 +7291,320 @@
     },
     "status": "PASS",
     "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Location Tests::setAndGetLocation",
+    "bridge_function": "OCCTDocumentGetLocationTranslation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "translation": [
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "translation": [
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Location Tests::noLocation",
+    "bridge_function": "OCCTDocumentHasLocation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Material Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetMaterialAttrName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": "Steel",
+        "description": "Carbon steel",
+        "density": 7850.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name": "Steel",
+        "description": "Carbon steel",
+        "density": 7850
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Material Tests::noMaterial",
+    "bridge_function": "OCCTDocumentHasMaterialAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NoteBalloon Tests::setAndGet",
+    "bridge_function": "OCCTDocumentSetNoteBalloon",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: ok, the note attribute was set. Bridge: OCCTDocumentSetNoteBalloon returns !XCAFDoc_NoteBalloon::Set(label, user, timeStamp, comment).IsNull(); the test observed true. Kernel: XCAFDoc_NoteBalloon::Set with the test's arguments printed non-null=true (transcript.txt, the NoteBalloon::Set line).",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NoteBinData Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetNoteBinDataSize",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "size": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "size": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NoteComment Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetNoteCommentText",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true,
+        "text": "This is a comment",
+        "user": "TestUser"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "ok": true,
+        "text": "This is a comment",
+        "user": "TestUser"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: ok, text and user of the note. Bridge: OCCTDocumentSetNoteComment returns !XCAFDoc_NoteComment::Set(...).IsNull() and OCCTDocumentGetNoteCommentText / OCCTDocumentGetNoteUserName read Comment() and UserName() back; the test observed true, \"This is a comment\" and \"TestUser\". Kernel: XCAFDoc_NoteComment::Set with the test's arguments printed non-null=true, then Comment() and UserName() through FindAttribute (transcript.txt, the NoteComment::Set line).",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::createAndCountNotes",
+    "bridge_function": "OCCTDocumentNotesToolNbNotes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "after": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "after": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::createBalloon",
+    "bridge_function": "OCCTDocumentNotesToolCreateBalloon",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "note": true,
+        "count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "note": true,
+        "count": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: note (the creation returned a note) and count (NbNotes after it, on a fresh document). Bridge: OCCTDocumentNotesToolCreateBalloon returns the registered note label or -1 and Document.notesToolCreateBalloon maps -1 to nil; the test observed a non-nil note and notesToolNoteCount == 1. Kernel: XCAFDoc_NotesTool::CreateBalloon on a fresh document printed note non-null=true NbNotes=1.",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::createBinData",
+    "bridge_function": "OCCTDocumentNotesToolCreateBinData",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "note": true,
+        "count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "note": true,
+        "count": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: note (the creation returned a note) and count (NbNotes after it, on a fresh document). Bridge: OCCTDocumentNotesToolCreateBinData returns the registered note label or -1 and Document.notesToolCreateBinData maps -1 to nil; the test observed a non-nil note and notesToolNoteCount == 1. Kernel: XCAFDoc_NotesTool::CreateBinData with the test's 4 bytes on a fresh document printed note non-null=true NbNotes=1. The test does not read the data size, so it is not compared (the kernel size, 4, is on the XCAFDoc_NoteBinData Tests::setAndGet record).",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::deleteAllNotes",
+    "bridge_function": "OCCTDocumentNotesToolDeleteAllNotes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 3,
+        "deleted": 3,
+        "after": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 3,
+        "deleted": 3,
+        "after": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::orphanNotes",
+    "bridge_function": "OCCTDocumentNotesToolNbOrphanNotes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonnegative": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "nonnegative": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: nonnegative, whether the orphan-note count is >= 0. Bridge: the test creates one unattached comment and asserts notesToolOrphanNoteCount >= 0; that bound is all it observes, so the bridge's raw count is not compared. Kernel: XCAFDoc_NotesTool::NbOrphanNotes() printed 1 for one unattached comment on a fresh document, so >= 0 is true.",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_ShapeMapTool Tests::setShapeAndQuery",
+    "bridge_function": "OCCTDocumentShapeMapToolIsSubShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "sub": true,
+        "extent_positive": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "sub": true,
+        "extent": 33
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
   }
 ]
