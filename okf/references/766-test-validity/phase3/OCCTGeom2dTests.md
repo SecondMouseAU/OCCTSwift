@@ -550,3 +550,13 @@ Probe: `Scripts/repro/766-geom2d-point-matrix-polygon/`. Every row was run red w
 | Point2D Transforms::mirrorPoint | `OCCTPoint2DMirroredPoint` | mirror point x + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |
 | Point2D Transforms::mirrorAxis | `OCCTPoint2DMirroredAxis` | axis origin y + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |
 | Point2D Transforms::transformedByTransform2D | `OCCTPoint2DTransformed` | identity applied instead of the transform | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |
+### #1979 executed: `Polygon2DTests.swift`, `Matrix2DTests.swift`
+| Poly_Polygon2D::create and query | `OCCTPolyPolygon2DNode` | 0-based index passed through (off by one) | ✅ | ✅ | MATCH | two `if let`s; now `#require` |
+| Poly_Polygon2D::deflection | `OCCTPolyPolygon2DSetDeflection` | Deflection() setter skipped | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Poly_Polygon2D::all nodes | `OCCTPolyPolygon2DNode` | 0-based index passed through (off by one) | ✅ | ✅ | MATCH | `if let`, and `#expect(count)` before `nodes[2]` crashed the run; now `#require` |
+| Matrix2D::identity | `OCCTMat2dIdentity` | (1,2) + 1e-3 | ✅ | ✅ | MATCH | determinant only; now every entry |
+| Matrix2D::rotation | `OCCTMat2dRotation` | angle negated | ✅ | ✅ | MATCH | determinant only (1 for every rotation); now every entry |
+| Matrix2D::scale | `OCCTMat2dScale` | factor negated | ✅ | ✅ | MATCH | determinant only (9 for +-3); now every entry |
+| Matrix2D::multiplyAndInvert | `OCCTMat2dMultiply` | returns A instead of A*B | ✅ | ✅ | MATCH | one entry; now every entry |
+| Matrix2D::transpose | `OCCTMat2dTranspose` | returns the input | ✅ | ✅ | MATCH | one entry; now every entry |
+| Matrix2D::invert | `OCCTMat2dInvert` | returns the input | ✅ | ✅ | MATCH | `if let`, one entry of the product; now `#require`, the inverse and the product pinned |
