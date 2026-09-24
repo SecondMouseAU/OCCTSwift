@@ -1,0 +1,41 @@
+rect edges=4 area=100
+vertex index 0 = (-5, -5, 0)
+AddFillet status=5 (IsDone=5)
+  fillet result edges=5 area=99.1415926536
+AddChamfer(e0, e1, 2, 2) status=5
+  chamfer result edges=5 area=98
+AddChamfer(e0, v0, 2, pi/4) status=5
+  chamfer-angle result edges=5 area=98
+ChamferAPI perform=1
+  chamfer (7, 0, 0)->(10, 3, 0) length=4.24264068712
+  edge1 (0, 0, 0)->(7, 0, 0) length=7
+  edge2 (10, 3, 0)->(10, 10, 0) length=7
+FilletAlgo perform=1 NbResults(corner)=1
+  fillet (-1.06581410364e-14, 2, 0)->(2, 0, 0) length=3.14159265359
+  edge1 (2, 0, 0)->(10, 0, 0) length=8
+  edge2 (0, 2, 0)->(0, 10, 0) length=8
+FilletAPI perform=1 NbResults=1
+  fillet (8, 0, 0)->(10, 2, 0) length=3.14159265359
+  edge1 (0, 0, 0)->(8, 0, 0) length=8
+  edge2 (10, 2, 0)->(10, 10, 0) length=8
+FilletAPI z=10 perform=1 NbResults=1
+  fillet (1, 0, 10)->(0, 1, 10) length=1.57079632679
+  edge1 (1, 0, 10)->(5, 0, 10) length=4
+  edge2 (0, 0, 10)->(0, 1, 10) length=1
+CompBezier quadratic degree=2 poles=3 knots=2
+  pole 1 (0, 0)
+  pole 2 (1, 2)
+  pole 3 (2, 0)
+  knot 0 mult 3
+  knot 1 mult 3
+CompBezier two cubics degree=3 poles=6 knots=3
+  pole 1 (0, 0)
+  pole 2 (1, 1)
+  pole 3 (2, 1)
+  pole 4 (4, -1)
+  pole 5 (5, -1)
+  pole 6 (6, 0)
+  knot 0 mult 4
+  knot 0.5 mult 2
+  knot 1 mult 4
+CompBezier 60 cubics (bridge rejects > 100 poles or > 50 knots) degree=3 poles=122 knots=61
