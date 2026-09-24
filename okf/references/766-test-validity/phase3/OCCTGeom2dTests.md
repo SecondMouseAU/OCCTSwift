@@ -354,3 +354,15 @@ Probe: `Scripts/repro/766-geom2d-gccana-circ3tan-lines/`. Every row was run red 
 | GccAna/Geom2dGcc Circle On-Constraint Solvers::Circle tangent to line center on line given radius | `OCCTGccAnaCirc2dTanOnRadLin` | radius + 1 | ✅ | ✅ | MATCH | `count >= 1` |
 | GccAna/Geom2dGcc Circle On-Constraint Solvers::Geom2dGcc circle tangent to 2 curves center on curve | `OCCTGeom2dGccCirc2d2TanOn` | pass the first curve twice | ✅ | ✅ | MATCH | `count >= 1` inside `if let` |
 | GccAna/Geom2dGcc Circle On-Constraint Solvers::Geom2dGcc circle tangent to curve center on curve given radius | `OCCTGeom2dGccCirc2dTanOnRad` | radius + 1 | ✅ | ✅ | MATCH | `count >= 1` inside `if let` |
+### #1979 executed: `GceMakeCirc2dTests.swift`, `GceMakeElips2dTests.swift`, `GceMakeHypr2dTests.swift`, `GceMakeLin2dTests.swift`, `GceMakeParab2dTests.swift`, `Geom2dAPIInterpolateTests.swift`, `Geom2dAPIPointsToBSplineTests.swift`
+Probe: `Scripts/repro/766-geom2d-gce-geom2dapi/`. Every row was run red with the injection applied and green after it was reverted.
+| gce_MakeCirc2d Tests::circleFromCenterRadius | `OCCTGceMakeCirc2dFromCenterRadius` | centre x + 1 | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed |
+| gce_MakeCirc2d Tests::circleThrough3Points | `OCCTGceMakeCirc2dFrom3Points` | second point y + 1 | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed |
+| gce_MakeElips2d Tests::ellipseFromCenterDir | `OCCTGceMakeElips2d` | centre x + 1 | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed |
+| gce_MakeHypr2d Tests::hyperbolaFromCenterDir | `OCCTGceMakeHypr2d` | centre x + 1 | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed |
+| gce_MakeLin2d Tests::lineFrom2Points | `OCCTGceMakeLin2dFrom2Points` | first point x + 1 | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed |
+| gce_MakeLin2d Tests::lineFromEquation | `OCCTGceMakeLin2dFromEquation` | c - 1 | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed |
+| gce_MakeParab2d Tests::parabolaFromCenterDir | `OCCTGceMakeParab2d` | vertex x + 1 | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed |
+| Geom2dAPI Interpolate Tests::basicInterpolation | `OCCTCurve2DInterpolate2D` | drop the last point | ✅ | ✅ | MATCH | `!= nil` only |
+| Geom2dAPI Interpolate Tests::periodicInterpolation | `OCCTCurve2DInterpolate2D` | ignore periodic | ✅ | ✅ | MATCH | `!= nil` only |
+| Geom2dAPI PointsToBSpline Tests::basicApproximation | `OCCTCurve2DApproximate2D` | last point y + 1 | ✅ | ✅ | MATCH | `!= nil` only |

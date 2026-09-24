@@ -6931,5 +6931,415 @@
       "probe": "Scripts/repro/766-geom2d-gccana-circ3tan-lines/",
       "rewritten": "`count >= 1` inside `if let`"
     }
+  },
+  {
+    "test_name": "gce_MakeCirc2d Tests::circleFromCenterRadius",
+    "bridge_function": "OCCTGceMakeCirc2dFromCenterRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          5,
+          0
+        ],
+        "point(pi/2)": [
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          5,
+          0
+        ],
+        "point(pi/2)": [
+          0,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "centre x + 1",
+      "red": "GceMakeCirc2dTests.swift:14:9: Expectation failed: simd_distance(circ.point(at: 0), SIMD2(5, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gce-geom2dapi/",
+      "rewritten": "`upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed"
+    }
+  },
+  {
+    "test_name": "gce_MakeCirc2d Tests::circleThrough3Points",
+    "bridge_function": "OCCTGceMakeCirc2dFrom3Points",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          5,
+          0
+        ],
+        "point(1)": [
+          2.70151152934,
+          4.20735492404
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          5,
+          0
+        ],
+        "point(1)": [
+          2.70151152934,
+          4.20735492404
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second point y + 1",
+      "red": "GceMakeCirc2dTests.swift:22:9: Expectation failed: simd_distance(circ.point(at: 1), SIMD2(2.70151152934, 4.20735492404)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gce-geom2dapi/",
+      "rewritten": "`upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed"
+    }
+  },
+  {
+    "test_name": "gce_MakeElips2d Tests::ellipseFromCenterDir",
+    "bridge_function": "OCCTGceMakeElips2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          8,
+          0
+        ],
+        "point(pi/2)": [
+          0,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          8,
+          0
+        ],
+        "point(pi/2)": [
+          0,
+          4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "centre x + 1",
+      "red": "GceMakeElips2dTests.swift:15:9: Expectation failed: simd_distance(elips.point(at: 0), SIMD2(8, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gce-geom2dapi/",
+      "rewritten": "`upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed"
+    }
+  },
+  {
+    "test_name": "gce_MakeHypr2d Tests::hyperbolaFromCenterDir",
+    "bridge_function": "OCCTGceMakeHypr2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          6,
+          0
+        ],
+        "point(1)": [
+          9.25848380889,
+          3.52560358093
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          6,
+          0
+        ],
+        "point(1)": [
+          9.25848380889,
+          3.52560358093
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "centre x + 1",
+      "red": "GceMakeHypr2dTests.swift:16:9: Expectation failed: simd_distance(hypr.point(at: 0), SIMD2(6, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gce-geom2dapi/",
+      "rewritten": "`upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed"
+    }
+  },
+  {
+    "test_name": "gce_MakeLin2d Tests::lineFrom2Points",
+    "bridge_function": "OCCTGceMakeLin2dFrom2Points",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          0,
+          0
+        ],
+        "point(3)": [
+          3,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          0,
+          0
+        ],
+        "point(3)": [
+          3,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "first point x + 1",
+      "red": "GceMakeLin2dTests.swift:11:24: Expectation failed: Curve2D.lineFrom2Points(SIMD2(0, 0), SIMD2(1, 0))",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gce-geom2dapi/",
+      "rewritten": "`upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed"
+    }
+  },
+  {
+    "test_name": "gce_MakeLin2d Tests::lineFromEquation",
+    "bridge_function": "OCCTGceMakeLin2dFromEquation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          5,
+          0
+        ],
+        "point(3)": [
+          5,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          5,
+          0
+        ],
+        "point(3)": [
+          5,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "c - 1",
+      "red": "GceMakeLin2dTests.swift:19:9: Expectation failed: simd_distance(line.point(at: 0), SIMD2(5, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gce-geom2dapi/",
+      "rewritten": "`upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed"
+    }
+  },
+  {
+    "test_name": "gce_MakeParab2d Tests::parabolaFromCenterDir",
+    "bridge_function": "OCCTGceMakeParab2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          0,
+          0
+        ],
+        "point(6)": [
+          3,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          0,
+          0
+        ],
+        "point(6)": [
+          3,
+          6
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "vertex x + 1",
+      "red": "GceMakeParab2dTests.swift:16:9: Expectation failed: simd_distance(parab.point(at: 0), SIMD2(0, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gce-geom2dapi/",
+      "rewritten": "`upperBound > lowerBound` inside `if let`: any curve, and a nil one, passed"
+    }
+  },
+  {
+    "test_name": "Geom2dAPI Interpolate Tests::basicInterpolation",
+    "bridge_function": "OCCTCurve2DInterpolate2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poles": 6,
+        "domain_upper": 4.24264068712,
+        "point(sqrt 2)": [
+          1,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poles": 6,
+        "domain_upper": 4.24264068712,
+        "point(sqrt 2)": [
+          1,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "drop the last point",
+      "red": "Geom2dAPIInterpolateTests.swift:14:9: Expectation failed: curve.poleCount == 6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gce-geom2dapi/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "Geom2dAPI Interpolate Tests::periodicInterpolation",
+    "bridge_function": "OCCTCurve2DInterpolate2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "periodic": true,
+        "poles": 5,
+        "domain_upper": 5.65685424949
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "periodic": true,
+        "poles": 5,
+        "domain_upper": 5.65685424949
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "ignore periodic",
+      "red": "Geom2dAPIInterpolateTests.swift:23:9: Expectation failed: curve.isPeriodic",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gce-geom2dapi/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "Geom2dAPI PointsToBSpline Tests::basicApproximation",
+    "bridge_function": "OCCTCurve2DApproximate2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "degree": 4,
+        "poles": 5,
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          4,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "degree": 4,
+        "poles": 5,
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          4,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "last point y + 1",
+      "red": "Geom2dAPIPointsToBSplineTests.swift:17:9: Expectation failed: simd_distance(curve.endPoint, SIMD2(4, 0)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gce-geom2dapi/",
+      "rewritten": "`!= nil` only"
+    }
   }
 ]
