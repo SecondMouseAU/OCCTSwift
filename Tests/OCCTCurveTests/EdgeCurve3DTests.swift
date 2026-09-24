@@ -17,7 +17,11 @@ struct EdgeCurve3DTests {
         let edges = box.edges()
         #expect(edges.count > 0)
         if let c = edges.first?.curve3D {
-            #expect(c.domain.lowerBound <= c.domain.upperBound)
+            // The raw Geom_Line under box edge 0, not its 10-long span
+            // (BRep_Tool::Curve, Scripts/repro/766-curve-edgecurve-ellipsearc/transcript.txt). The
+            // earlier `lowerBound <= upperBound` held for any range (#766).
+            #expect(c.curveType == 0)
+            #expect(c.domain == -2e100...2e100)
         } else {
             Issue.record("curve3D nil")
         }
@@ -54,7 +58,8 @@ struct EdgeCurve3DTests {
             // The edge itself spans a finite, small range (a box edge is length 10).
             #expect(bounds.last - bounds.first < 100)
             // But the raw underlying Geom_Line reports its own unbounded domain
-            // (±Precision::Infinite(), ~1.8e308), not the edge's trimmed extent.
+            // (+-2e100, Geom_Line's infinite range as BRep_Tool::Curve returns it; measured, #766),
+            // not the edge's trimmed extent.
             // If curve3D ever returned a Geom_TrimmedCurve over the edge's own
             // range instead, this would fail: domain would equal parameterBounds.
             #expect(curve.domain.upperBound > 1e100)

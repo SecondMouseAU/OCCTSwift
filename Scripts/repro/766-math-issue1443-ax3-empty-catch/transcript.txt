@@ -1,0 +1,6 @@
+createParallelDirectionOverwritesSentinel: raised 26Standard_ConstructionError (gp_Dir::CrossCross() - result vector has zero norm)
+createFromNormalZeroNormalOverwritesSentinel: raised 26Standard_ConstructionError (gp_Dir() - input vector has zero norm)
+mirrorPointDegenerateSourceOverwritesSentinel: raised 26Standard_ConstructionError (gp_Dir::CrossCross() - result vector has zero norm)
+rotateZeroAxisDirectionOverwritesSentinel (input axis alone): no exception
+rotateZeroAxisDirectionOverwritesSentinel (rotation axis): raised 26Standard_ConstructionError (gp_Dir() - input vector has zero norm)
+translateDegenerateSourceOverwritesSentinel: raised 26Standard_ConstructionError (gp_Dir::CrossCross() - result vector has zero norm)
