@@ -1,0 +1,11 @@
+defaultIsFalse: IMeshTools_Parameters().AllowQualityDecrease=0
+meshesWithFlag:
+  fresh sphere: deflection=0.10000000000000001 allowQualityDecrease=1 vertexCount=273 triangleCount=516
+coarserReplacesFiner (original test: two separate shapes):
+  fresh fine: deflection=0.050000000000000003 allowQualityDecrease=0 vertexCount=506 triangleCount=976
+  fresh coarse: deflection=1 allowQualityDecrease=1 vertexCount=168 triangleCount=306
+coarserReplacesFiner (rewritten test: one shape, re-meshed):
+  same shape, fine: deflection=0.050000000000000003 allowQualityDecrease=0 vertexCount=506 triangleCount=976
+  same shape, coarse, flag off: deflection=1 allowQualityDecrease=0 vertexCount=506 triangleCount=976
+  same shape, fine: deflection=0.050000000000000003 allowQualityDecrease=0 vertexCount=506 triangleCount=976
+  same shape, coarse, flag on: deflection=1 allowQualityDecrease=1 vertexCount=168 triangleCount=306

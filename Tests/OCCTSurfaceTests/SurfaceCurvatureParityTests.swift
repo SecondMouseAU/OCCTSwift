@@ -64,6 +64,9 @@ struct SurfaceCurvatureParityTests {
         // entry points must now report the same non-zero mean curvature.
         let pair = cone.curvatures(u: 0, v: 1e-6)
         #expect((pair?.mean ?? 0) < -1e5)
+        // #766: the kernel's value there, GeomLProp_SLProps at Precision::Confusion()
+        // (Scripts/repro/766-surface-conversion/).
+        #expect(abs((pair?.mean ?? 0) - (-866025.40378443873)) < 1e-3)
         #expect(pair?.mean == cone.meanCurvature(atU: 0, v: 1e-6))
     }
 
@@ -87,7 +90,10 @@ struct SurfaceCurvatureParityTests {
         let poles: [[SIMD3<Double>]] = (0..<4).map { i in
             (0..<4).map { j in SIMD3(Double(i), Double(j), Double(i * j) * 0.3) }
         }
-        guard let bezier = Surface.bezier(poles: poles) else { return }
+        // #766: was `guard let ... else { return }`, which skipped the whole test on a nil patch.
+        let built = Surface.bezier(poles: poles)
+        #expect(built != nil)
+        guard let bezier = built else { return }
         let dom = bezier.domain
         for (u, v) in [(dom.uMin, dom.vMin), (dom.uMax, dom.vMax), (dom.uMin, dom.vMax)] {
             expectAgreement(bezier, u: u, v: v)

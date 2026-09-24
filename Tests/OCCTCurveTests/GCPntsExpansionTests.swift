@@ -4,54 +4,44 @@ import simd
 
 @testable import OCCTSwift
 
+// Pinned to GCPnts_AbscissaPoint on edge 0 of the centred 10 box, (-5,-5,-5) -> (-5,-5,5) over
+// [0, 10] (Scripts/repro/766-curve-gcpnts-approx/transcript.txt). The earlier versions asserted
+// `> 0` or a parameter inside the domain, inside two `if`s each (#766).
 @Suite("v0.115.0 - GCPnts Expansion")
 struct GCPntsExpansionTests {
+    private static func edge0() -> Shape? {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+            let e = box.subShapes(ofType: .edge).first
+        else {
+            Issue.record("box edge 0 unavailable")
+            return nil
+        }
+        return e
+    }
 
     @Test func edgeArcLength() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let edges = box.subShapes(ofType: .edge)
-            if edges.count > 0 {
-                let len = edges[0].edgeArcLength
-                #expect(len > 0)
-            }
-        }
+        guard let e = Self.edge0() else { return }
+        #expect(abs(e.edgeArcLength - 10) < 1e-12)
     }
 
     @Test func edgeArcLengthBetween() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let edges = box.subShapes(ofType: .edge)
-            if edges.count > 0 {
-                let domain = edges[0].edgeAdaptorDomain
-                let halfLen = edges[0].edgeArcLength(
-                    from: domain.lowerBound,
-                    to: (domain.lowerBound + domain.upperBound) / 2.0)
-                #expect(halfLen > 0)
-            }
-        }
+        guard let e = Self.edge0() else { return }
+        let domain = e.edgeAdaptorDomain
+        let halfLen = e.edgeArcLength(
+            from: domain.lowerBound,
+            to: (domain.lowerBound + domain.upperBound) / 2.0)
+        #expect(abs(halfLen - 5) < 1e-12)
     }
 
     @Test func edgeParameterAtFraction() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let edges = box.subShapes(ofType: .edge)
-            if edges.count > 0 {
-                let midParam = edges[0].edgeParameterAtFraction(0.5)
-                let domain = edges[0].edgeAdaptorDomain
-                #expect(midParam >= domain.lowerBound)
-                #expect(midParam <= domain.upperBound)
-            }
-        }
+        guard let e = Self.edge0() else { return }
+        #expect(abs(e.edgeParameterAtFraction(0.5) - 5) < 1e-9)
     }
 
     @Test func edgeParameterAtArcLength() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let edges = box.subShapes(ofType: .edge)
-            if edges.count > 0 {
-                let domain = edges[0].edgeAdaptorDomain
-                let totalLen = edges[0].edgeArcLength
-                let param = edges[0].edgeParameterAtArcLength(
-                    totalLen * 0.5, from: domain.lowerBound)
-                #expect(param >= domain.lowerBound)
-            }
-        }
+        guard let e = Self.edge0() else { return }
+        let domain = e.edgeAdaptorDomain
+        let param = e.edgeParameterAtArcLength(e.edgeArcLength * 0.5, from: domain.lowerBound)
+        #expect(abs(param - 5) < 1e-9)
     }
 }

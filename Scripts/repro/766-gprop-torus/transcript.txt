@@ -1,0 +1,2 @@
+torusSurfaceArea: GProp_SelGProps=1184.352528130723 closed form 4 pi^2 R r=1184.352528130723 diff=0
+torusVolume: GProp_VelGProps=1776.528792196084 closed form 2 pi^2 R r^2=1776.528792196084 diff=0
