@@ -416,3 +416,10 @@
 | **Vector3DMath** | dot | `OCCTXYZDot` | z term dropped | red | green | PASS |
 | **Vector3DMath** | dotCross | `OCCTXYZDotCross` | b and c swapped in the triple product | red | green | PASS |
 | **Vector3DMath** | normalize | `OCCTXYZNormalize` | normalized x and y swapped | red | green | PASS |
+### 766-math-issue1643-eigenvalue-offdiagonal (#1983, measured)
+| **Issue #1643: eigenvalues take the n-1 real off-diagonal entries** | A constant-diagonal matrix returns 2 - sqrt(2), 2, 2 + sqrt(2), not 1, 2, 3 | `OCCTMathEigenValues` | Swift wrapper passes the pre-#1643 convention (first entry lost, last slot zero) | red | green | PASS |
+| **Issue #1643: eigenvalues take the n-1 real off-diagonal entries** | An asymmetric diagonal pins the off-diagonal ORDER as well as its magnitudes | `OCCTMathEigenValues` | off-diagonal order reversed (the case the test names); also red under the old convention | red | green | PASS |
+| **Issue #1643: eigenvalues take the n-1 real off-diagonal entries** | Each eigenvector solves A v = lambda v for the matrix the caller described | `OCCTMathEigenValuesAndVectors` | Swift wrapper passes the pre-#1643 convention to the vectors path | red | green | PASS |
+| **Issue #1643: eigenvalues take the n-1 real off-diagonal entries** | A 1x1 matrix takes an empty offDiagonal and returns its single entry | `OCCTMathEigenValues` | Swift result gate count > 1 instead of count > 0 (off by one) | red | green | PASS |
+| **Issue #1643: eigenvalues take the n-1 real off-diagonal entries** | offDiagonal.count must be diagonal.count - 1, so the old n-element call returns nil | `none (Swift guard MathDimension.tridiagonal before OCCTMathEigenValues)` | tridiagonal accepts count >= n - 1 (too-long arrays pass) | red | green | N/A |
+| **Issue #1643: eigenvalues take the n-1 real off-diagonal entries** | MathDimension.tridiagonal is the shared check, not a hand-written == at each site | `none (pure Swift MathDimension.tridiagonal)` | tridiagonal accepts count >= n - 1 | red | green | N/A |

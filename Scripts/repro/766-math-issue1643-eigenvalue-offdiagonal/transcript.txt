@@ -1,0 +1,5 @@
+constantDiagonalSpectrum: done=1 dim=3 values: 0.58578643762690497 2 3.4142135623730949  max|Av - lambda v|=2.42e-16 max||v|-1|=1.11e-16
+constantDiagonalSpectrum [old convention]: done=1 dim=3 values: 1.0000000000000002 3 2  max|Av - lambda v|=1 max||v|-1|=1.11e-16
+asymmetricDiagonalSpectrum / eigenvectorsSolveTheIntendedMatrix: done=1 dim=3 values: -0.14510269120042221 1.4760236029181337 4.6690790882822881  max|Av - lambda v|=3.18e-16 max||v|-1|=3.33e-16
+asymmetricDiagonalSpectrum reversed offDiagonal: done=1 dim=3 values: -0.66907908828228857 2.5239763970818663 4.1451026912004227  max|Av - lambda v|=5.18e-16 max||v|-1|=0
+oneByOne: done=1 dim=1 values: 5  max|Av - lambda v|=0 max||v|-1|=0
