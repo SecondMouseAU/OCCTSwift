@@ -1976,5 +1976,399 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1433, BRepGProp_Face knot-array sizing::V-direction integration knots are not truncated on a planar face",
+    "bridge_function": "OCCTBRepGPropFaceVKnots",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "SVIntSubs": 1,
+        "VKnots": [
+          0,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "SVIntSubs": 1,
+        "VKnots": [
+          0,
+          10
+        ]
+      },
+      "source": "Scripts/repro/766-issue1433-1502-1515/transcript.txt 1433 vKnots"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1433, BRepGProp_Face knot-array sizing::Boundary integration knots are not truncated on a straight face edge",
+    "bridge_function": "OCCTBRepGPropFaceBoundaryIntegration",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "LIntSubs": 1,
+        "LKnots": [
+          0,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "LIntSubs": 1,
+        "LKnots": [
+          0,
+          10
+        ]
+      },
+      "source": "Scripts/repro/766-issue1433-1502-1515/transcript.txt 1433 edge 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1433, BRepGProp_Face knot-array sizing::V knots and boundary knots agree with their own already-correct subinterval counts",
+    "bridge_function": "OCCTBRepGPropFaceVKnots",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "knots": 2,
+        "vSubs": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "knots": 2,
+        "vSubs": 1
+      },
+      "source": "Scripts/repro/766-issue1433-1502-1515/transcript.txt 1433 vKnots"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Plate point constraint G1 domain restriction (#1460)::All-g1 orders are rejected for a point constraint",
+    "bridge_function": "OCCTShapePlatePointsAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Swift precondition; the kernel accepts an order-1 point constraint and silently drops the tangent (the #1460 defect), see Scripts/repro/766-advanced-plate-surface/ platePointsMixedOrders(unrefused)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Plate point constraint G1 domain restriction (#1460)::A single g1 among otherwise-g0 orders poisons the whole call",
+    "bridge_function": "OCCTShapePlatePointsAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Swift precondition; the kernel accepts an order-1 point constraint and silently drops the tangent (the #1460 defect), see Scripts/repro/766-advanced-plate-surface/ platePointsMixedOrders(unrefused)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Plate point constraint G1 domain restriction (#1460)::A g1 point constraint is rejected even alongside otherwise-valid curve constraints",
+    "bridge_function": "OCCTShapePlateMixed",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Swift precondition; the kernel accepts an order-1 point constraint and silently drops the tangent (the #1460 defect), see Scripts/repro/766-advanced-plate-surface/ platePointsMixedOrders(unrefused)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Plate point constraint G1 domain restriction (#1460)::g1 alone, and g1 alongside g2, are both rejected for a point constraint",
+    "bridge_function": "OCCTShapePlatePointsAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Swift precondition; the kernel accepts an order-1 point constraint and silently drops the tangent (the #1460 defect), see Scripts/repro/766-advanced-plate-surface/ platePointsMixedOrders(unrefused)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Plate point constraint G1 domain restriction (#1460)::The point-order guard's decision is unaffected by an accompanying g1 curve order",
+    "bridge_function": "(Swift) Shape.plateMixedRejectsPointOrders",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "g0": false,
+        "g1": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "g0": false,
+        "g1": true
+      },
+      "source": "pure Swift predicate, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #1502: Darboux trihedron on a real curve-on-surface::darbouxOnCircleEdgeOnFace",
+    "bridge_function": "OCCTGeomFillDarbouxTrihedron",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "T": [
+          -0.0998334166,
+          0.995004165,
+          0
+        ],
+        "N": [
+          -0.995004165,
+          -0.0998334166,
+          0
+        ],
+        "B": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "T": [
+          -0.0998334166,
+          0.995004165,
+          0
+        ],
+        "N": [
+          -0.995004165,
+          -0.0998334166,
+          0
+        ],
+        "B": [
+          0,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-issue1433-1502-1515/transcript.txt 1502 r=5 param=0.1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1502: Darboux trihedron on a real curve-on-surface::darbouxOnMultipleParameters",
+    "bridge_function": "OCCTGeomFillDarbouxTrihedron",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "T.N_max": 2.7e-17
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "T.N_max": 2.7e-17
+      },
+      "source": "Scripts/repro/766-issue1433-1502-1515/transcript.txt 1502 r=3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue1515 Coons patch samples the U boundaries at U::every sample is the bilinear point, not its diagonal collapse",
+    "bridge_function": "OCCTGeomFillCoonsAlgPatchEval",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "Value(1,0)": [
+          10,
+          0,
+          0
+        ],
+        "Value(0,1)": [
+          0,
+          10,
+          0
+        ],
+        "max|Value - bilinear|": 1.51e-14
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "Value(1,0)": [
+          10,
+          0,
+          0
+        ],
+        "Value(0,1)": [
+          0,
+          10,
+          0
+        ],
+        "max|Value - bilinear|": 1.51e-14
+      },
+      "source": "Scripts/repro/766-issue1433-1502-1515/transcript.txt 1515 coons"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue1515 Coons patch samples the U boundaries at U::the off-diagonal corners are not the diagonal's corners",
+    "bridge_function": "OCCTGeomFillCoonsAlgPatchEval",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "Value(1,0)": [
+          10,
+          0,
+          0
+        ],
+        "Value(0,1)": [
+          0,
+          10,
+          0
+        ],
+        "max|Value - bilinear|": 1.51e-14
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "Value(1,0)": [
+          10,
+          0,
+          0
+        ],
+        "Value(0,1)": [
+          0,
+          10,
+          0
+        ],
+        "max|Value - bilinear|": 1.51e-14
+      },
+      "source": "Scripts/repro/766-issue1433-1502-1515/transcript.txt 1515 coons"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue1515 Coons patch samples the U boundaries at U::holding v fixed and varying u moves the point",
+    "bridge_function": "OCCTGeomFillCoonsAlgPatchEval",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "Value(1,0)": [
+          10,
+          0,
+          0
+        ],
+        "Value(0,1)": [
+          0,
+          10,
+          0
+        ],
+        "max|Value - bilinear|": 1.51e-14
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "Value(1,0)": [
+          10,
+          0,
+          0
+        ],
+        "Value(0,1)": [
+          0,
+          10,
+          0
+        ],
+        "max|Value - bilinear|": 1.51e-14
+      },
+      "source": "Scripts/repro/766-issue1433-1502-1515/transcript.txt 1515 coons"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
