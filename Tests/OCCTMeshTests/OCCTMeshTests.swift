@@ -134,29 +134,57 @@ struct MeshFromArraysTests {
 @Suite("Mesh Tests")
 struct MeshTests {
 
-    @Test("Mesh from shape")
-    func meshFromShape() {
-        let box = Shape.box(width: 10, height: 5, depth: 3)!
-        let mesh = box.mesh(linearDeflection: 0.1)!
-
-        // With stubs, mesh will be empty
-        // With real OCCT, will have vertices and triangles
-        _ = mesh.vertexCount
-        _ = mesh.triangleCount
+    /// Volume enclosed by a closed, outward-wound triangle mesh (divergence theorem).
+    static func enclosedVolume(_ mesh: Mesh) -> Double {
+        let v = mesh.vertices
+        let idx = mesh.indices
+        var volume = 0.0
+        var i = 0
+        while i + 2 < idx.count {
+            let a = SIMD3<Double>(v[Int(idx[i])])
+            let b = SIMD3<Double>(v[Int(idx[i + 1])])
+            let c = SIMD3<Double>(v[Int(idx[i + 2])])
+            volume += simd_dot(a, simd_cross(b, c)) / 6
+            i += 3
+        }
+        return volume
     }
 
+    // This read vertexCount and triangleCount and asserted nothing, so it passed against an
+    // empty mesh. A box meshes as two triangles per face on four nodes per face
+    // (Scripts/repro/766-mesh-core-1/transcript.txt), and encloses its own volume.
+    @Test("Mesh from shape")
+    func meshFromShape() throws {
+        let box = try #require(Shape.box(width: 10, height: 5, depth: 3))
+        let mesh = try #require(box.mesh(linearDeflection: 0.1))
+        #expect(mesh.vertexCount == 24)
+        #expect(mesh.triangleCount == 12)
+        #expect(abs(Self.enclosedVolume(mesh) - 150) < 1e-3)
+    }
+
+    // The two length checks this held are true by construction (`vertices` and `normals` are
+    // both sized from `vertexCount`, `indices` from `triangleCount`), so they passed whatever the
+    // arrays contained. Now the contents: every index addresses a vertex, and every vertex lies
+    // on the sphere to within the 0.5 deflection. Counts are BRepMesh's for the same input
+    // (Scripts/repro/766-mesh-core-1/transcript.txt).
     @Test("Mesh data access")
-    func meshDataAccess() {
-        let sphere = Shape.sphere(radius: 5)!
-        let mesh = sphere.mesh(linearDeflection: 0.5)!
+    func meshDataAccess() throws {
+        let sphere = try #require(Shape.sphere(radius: 5))
+        let mesh = try #require(sphere.mesh(linearDeflection: 0.5))
 
         let vertices = mesh.vertices
         let normals = mesh.normals
         let indices = mesh.indices
 
-        // Lengths should be consistent
-        #expect(vertices.count == normals.count)
-        #expect(indices.count == mesh.triangleCount * 3)
+        #expect(vertices.count == 168)
+        #expect(normals.count == vertices.count)
+        #expect(indices.count == 306 * 3)
+        #expect(indices.allSatisfy { Int($0) < vertices.count })
+        let offSphere = vertices.filter {
+            let r = Double(simd_length($0))
+            return r > 5 + 1e-4 || r < 5 - 0.5
+        }
+        #expect(offSphere.isEmpty, "\(offSphere.count) vertices off the r = 5 sphere")
     }
 
     @Test("Enhanced mesh parameters")
@@ -257,6 +285,11 @@ struct MeshTests {
         #expect(unionMesh != nil)
         if let union = unionMesh {
             #expect(union.triangleCount > 0)
+            // The union of two unit-overlapping 10-boxes encloses 1500. The mesh boolean
+            // operates on sewn shells, not solids, and encloses 2000 (#2301).
+            withKnownIssue("#2301: mesh booleans operate on sewn shells, not solids") {
+                #expect(abs(Self.enclosedVolume(union) - 1500) < 1)
+            }
         }
     }
 
@@ -270,6 +303,12 @@ struct MeshTests {
 
         let diffMesh = boxMesh.subtracting(cylMesh, deflection: 0.5)
         #expect(diffMesh != nil)
+        if let diff = diffMesh {
+            // BRepAlgoAPI_Cut on the solids leaves 858.63; the mesh boolean removes nothing (#2301).
+            withKnownIssue("#2301: mesh booleans operate on sewn shells, not solids") {
+                #expect(abs(Self.enclosedVolume(diff) - 858.63) < 5)
+            }
+        }
     }
 
     @Test("Mesh boolean intersection")
@@ -282,23 +321,34 @@ struct MeshTests {
 
         let intersectMesh = boxMesh.intersection(with: sphereMesh, deflection: 0.5)
         #expect(intersectMesh != nil)
+        if let common = intersectMesh {
+            // BRepAlgoAPI_Common on the solids encloses 959.23; the mesh boolean returns an empty
+            // mesh, which `!= nil` accepts (#2301).
+            withKnownIssue("#2301: mesh booleans operate on sewn shells, not solids") {
+                #expect(common.triangleCount > 0)
+                #expect(abs(Self.enclosedVolume(common) - 959.23) < 5)
+            }
+        }
     }
 }
 
 @Suite("Presentation Mesh Tests")
 struct PresentationMeshTests {
 
+    // The four tests below force-unwrapped inside #expect, which crashes the process on nil
+    // rather than failing the test; they now #require. Counts are pinned to what BRepMesh gives
+    // the same inputs (Scripts/repro/766-mesh-core-2/transcript.txt): the cylinder and sphere
+    // tests asserted only `> 0`, so a dropped face or a duplicated edge passed them.
     @Test("Box shaded mesh has 12 triangles")
-    func boxShadedMesh() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let mesh = box.shadedMesh(deflection: 0.1)
+    func boxShadedMesh() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let mesh = try #require(box.shadedMesh(deflection: 0.1))
 
-        #expect(mesh != nil)
-        #expect(mesh!.triangleCount == 12)  // 6 faces * 2 triangles each
-        #expect(mesh!.vertices.count == mesh!.normals.count)
+        #expect(mesh.triangleCount == 12)  // 6 faces * 2 triangles each
+        #expect(mesh.vertices.count == mesh.normals.count)
 
         // All normals should be non-zero
-        for normal in mesh!.normals {
+        for normal in mesh.normals {
             let len = Float(
                 sqrt(Double(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z)))
             #expect(len > 0.5)
@@ -306,33 +356,31 @@ struct PresentationMeshTests {
     }
 
     @Test("Cylinder shaded mesh has triangles")
-    func cylinderShadedMesh() {
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
-        let mesh = cyl.shadedMesh(deflection: 0.1)
+    func cylinderShadedMesh() throws {
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
+        let mesh = try #require(cyl.shadedMesh(deflection: 0.1))
 
-        #expect(mesh != nil)
-        #expect(mesh!.triangleCount > 0)
-        #expect(mesh!.vertices.count > 0)
+        #expect(mesh.triangleCount == 100)
+        #expect(mesh.vertices.count == 106)
     }
 
     @Test("Box edge mesh has 12 segments")
-    func boxEdgeMesh() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let edges = box.edgeMesh(deflection: 0.1)
+    func boxEdgeMesh() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let edges = try #require(box.edgeMesh(deflection: 0.1))
 
-        #expect(edges != nil)
-        #expect(edges!.segmentCount == 12)  // A box has 12 edges
-        #expect(edges!.vertices.count > 0)
+        #expect(edges.segmentCount == 12)  // A box has 12 edges
+        #expect(edges.vertices.count == 24)
     }
 
     @Test("Sphere edge mesh produces valid segments")
-    func sphereEdgeMesh() {
-        let sphere = Shape.sphere(radius: 5)!
-        let edges = sphere.edgeMesh(deflection: 0.1)
+    func sphereEdgeMesh() throws {
+        let sphere = try #require(Shape.sphere(radius: 5))
+        let edges = try #require(sphere.edgeMesh(deflection: 0.1))
 
-        #expect(edges != nil)
-        #expect(edges!.segmentCount > 0)
-        #expect(edges!.vertices.count > 0)
+        // Three distinct edges: the seam and the two degenerate pole edges.
+        #expect(edges.segmentCount == 3)
+        #expect(edges.vertices.count == 18)
     }
 }
 
@@ -388,18 +436,19 @@ struct DrawerMeshTests {
         }
     }
 
+    // This meshed a box, which tessellates to 12 triangles at any deflection, so it could not
+    // tell an absolute deflection from a relative one. A sphere can: absolute 0.5 gives 648
+    // triangles, while the default relative coefficient on the same sphere gives 1244
+    // (Scripts/repro/766-mesh-core-2/transcript.txt).
     @Test("Absolute deflection type works")
-    func absoluteDeflection() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func absoluteDeflection() throws {
+        let sphere = try #require(Shape.sphere(radius: 10))
         let drawer = DisplayDrawer()
         drawer.deflectionType = .absolute
         drawer.maximalChordialDeviation = 0.5
 
-        let mesh = box.shadedMesh(drawer: drawer)
-        #expect(mesh != nil)
-        if let mesh = mesh {
-            #expect(mesh.triangleCount == 12)
-        }
+        let mesh = try #require(sphere.shadedMesh(drawer: drawer))
+        #expect(mesh.triangleCount == 648)
     }
 
     @Test("Relative deflection scales with shape size, matching OCCT's own reference caller (#1418)")
@@ -523,10 +572,10 @@ struct BRepMeshDeflectionTests {
             #expect(Bool(false), "Failed to create box")
             return
         }
+        // Was `if let absDef { #expect(absDef > 0) }`, which a nil result skipped. Pinned to
+        // BRepMesh_Deflection::ComputeAbsoluteDeflection for the same inputs.
         let absDef = box.computeAbsoluteDeflection(relativeDeflection: 0.01, maxShapeSize: 30.0)
-        if let absDef = absDef {
-            #expect(absDef > 0)
-        }
+        #expect(absDef.map { abs($0 - 0.150000001) < 1e-9 } == true)
     }
 
     @Test("Deflection consistency check")
@@ -534,13 +583,16 @@ struct BRepMeshDeflectionTests {
         // current <= required → consistent
         #expect(Shape.deflectionIsConsistent(current: 0.1, required: 0.2))
         #expect(Shape.deflectionIsConsistent(current: 0.2, required: 0.2))
+        // And the other side, without which an always-true answer passed: 0.3 against 0.2 is
+        // outside the 0.1 ratio (BRepMesh_Deflection::IsConsistent says false).
+        #expect(!Shape.deflectionIsConsistent(current: 0.3, required: 0.2))
     }
 }
 
 @Suite("BRepBuilderAPI MakeShapeOnMesh")
 struct MakeShapeOnMeshTests {
     @Test("Build shape from mesh")
-    func buildShapeFromMesh() {
+    func buildShapeFromMesh() throws {
         // Tetrahedron mesh
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0),
@@ -554,12 +606,12 @@ struct MakeShapeOnMeshTests {
             (2, 3, 4),  // right
             (3, 1, 4),  // left
         ]
-        let shape = Shape.fromMesh(points: points, triangles: triangles)
-        if let shape = shape {
-            #expect(shape.isValid)
-            let faceCount = shape.faces().count
-            #expect(faceCount > 0)
-        }
+        // Was `if let shape`, so a nil result passed. BRepBuilderAPI_MakeShapeOnMesh gives four
+        // faces and six edges for this tetrahedron, and BRepCheck_Analyzer calls it valid.
+        let shape = try #require(Shape.fromMesh(points: points, triangles: triangles))
+        #expect(shape.isValid)
+        #expect(shape.faces().count == 4)
+        #expect(shape.edges().count == 6)
     }
 
     @Test("Mesh with minimal geometry")

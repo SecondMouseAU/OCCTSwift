@@ -6,15 +6,15 @@ import simd
 
 @Suite("BRepGraph Deduplicate")
 struct BRepGraphDeduplicateTests {
-    @Test func deduplicateBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                let result = graph.deduplicate()
-                #expect(result.canonicalSurfaces == 6)
-                #expect(result.canonicalCurves == 12)
-            }
-        }
+    // A box has nothing to merge: every surface and curve is already canonical and nothing is
+    // rewritten (BRepGraph_Deduplicate::Perform in the kernel probe).
+    @Test func deduplicateBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        let result = graph.deduplicate()
+        #expect(result.canonicalSurfaces == 6)
+        #expect(result.canonicalCurves == 12)
+        #expect(result.surfaceRewrites == 0)
+        #expect(result.curveRewrites == 0)
     }
 }
