@@ -247,6 +247,7 @@ struct IntegrationZLevelSlicingTests {
 
         // Step 5: the lengths are the circumferences, 2 pi 25 once and 2 pi 3 three times
         let lengths = midWires.compactMap { $0.length }.sorted()
+        #expect(lengths.count == 4, "every section wire reports a length")
         if lengths.count == 4 {
             for k in 0..<3 { #expect(near(lengths[k], 2 * Double.pi * 3, 1e-9)) }
             #expect(near(lengths[3], 2 * Double.pi * 25, 1e-9))
@@ -427,6 +428,7 @@ struct IntegrationPocketClearingTests {
         let wires = pocket.sectionWiresAtZ(0.0)
         #expect(wires.count == 2)
         let lengths = wires.compactMap { $0.length }.sorted()
+        #expect(lengths.count == 2, "every section wire reports a length")
         if lengths.count == 2 {
             #expect(near(lengths[0], 240))
             #expect(near(lengths[1], 400))
@@ -575,6 +577,8 @@ struct IntegrationCrossSectionRegressionTests {
                 lengths.append(len)
             }
         }
+        // A wire with no length was skipped above, which would leave the checks below empty.
+        #expect(lengths.count == nLevels, "every section's first wire reports a length")
 
         // All section lengths should be approximately the same
         for len in lengths {
