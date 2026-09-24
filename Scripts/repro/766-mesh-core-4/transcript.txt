@@ -1,0 +1,20 @@
+Poly_Connect (box at 0.1, face index 1):
+  triangles=2 nodes=4 adjacency(1)=(0, 0, 2) Triangle(node 1)=1 fan(node 1)=1
+Triangulation queries (box at 1.0, face index 0):
+  nodes=4 triangles=2 deflection=3.1401849173675503e-16 node(1)=(-5, -5, -5) triangle(1)=(2, 1, 3) hasUV=1 uv(1)=(0, 0)
+Triangulation create from arrays:
+  nodes=4 triangles=2 node(1)=(0, 0, 0) triangle(1) 1-based=(1, 2, 3) deflection=0.01
+  graph face 0 after SetCachedTriangulation: Effective().Faces().Has=1
+  graph edge 0 before: Effective().Edges().Has=0, after SetCachedPolygon3D=1
+  graph edge 0 after SetPersistentPolygon3D: Effective().Edges().Has=1
+MeshView:
+  fresh graph, unmeshed box: triangulations=0 polygons3D=0 polygons2D=0 polygonsOnTri=0 active: tri=0 p3d=0 p2d=0 pot=0
+  face 0 Has=0 edge 0 Has=0 coedge 0 cache Has=0
+  graph of a box meshed at 0.5: triangulations=6 polygons3D=0 polygons2D=0 polygonsOnTri=24 active: tri=6 p3d=0 p2d=0 pot=24
+  face 0 Has=1
+Poly copy / mutators:
+  Polygon2D copy: nbNodes=3 node(3)=(1, 1) deflection=0.25
+  PolygonOnTriangulation copy: nbNodes=4 nodes=(1, 2, 3, 4)
+  after ChangeNodeArray <- 5...8: node(1)=5 node(4)=8 length=4
+  after ChangeParameterArray <- 10, 20, 30: parameter(2)=20 length=3
+  without parameters: HasParameters=0
