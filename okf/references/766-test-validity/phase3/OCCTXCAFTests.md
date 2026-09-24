@@ -388,3 +388,18 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `pointCloudRetrieval` | `OCCTPointCloudGetPoints` answers 0 | :89 Expectation failed: retrieved.count == 2 | passed | `OCCTPointCloudGetPoints` | N/A: points are the bridge's copy |
 | `coloredPointCloud` | `OCCTPointCloudGetColors` answers 0 | :102 Expectation failed: retrievedColors.count == 2 | passed | `OCCTPointCloudGetColors` | N/A: colours are the bridge's copy |
 | `emptyPointCloud` | `OCCTPointCloudCreate` builds a one-point cloud from zero points | :110 Expectation failed: cloud == nil | passed | `OCCTPointCloudCreate` | N/A: refused before any OCCT call |
+### `TFunctionDriverTableTests.swift`
+| `hasDriverUnknown` | `OCCTFunctionDriverTableHasDriver` returns true | :11 Expectation failed: !has | passed | `OCCTFunctionDriverTableHasDriver` | PASS: false |
+| `clear` | `OCCTFunctionDriverTableClear` calls `abort()` | process crash (the test has no expectation) | passed | `OCCTFunctionDriverTableClear` | N/A: no expectation; crash-only |
+### `TFunctionFunctionAttrTests.swift`
+| `createFunction` | `OCCTDocumentFunctionIsFailed` returns true | :18 Expectation failed: !label.functionIsFailed | passed | `OCCTDocumentFunctionIsFailed` | PASS: false |
+| `functionFailure` | `OCCTDocumentFunctionGetFailure` answers 0 | :30 Expectation failed: failure == 1 | passed | `OCCTDocumentFunctionGetFailure` | PASS: 1 |
+### `TFunctionGraphNodeTests.swift`
+| `graphNodeStatus` | `OCCTDocumentGraphNodeGetStatus` answers 99 | :18 Expectation failed: label.graphNodeStatus() == .notExecuted; :21 Expectation failed: label.graphNodeStatus() == .succeeded | passed | `OCCTDocumentGraphNodeGetStatus` | PASS: 1, 3 |
+| `graphNodeDeps` | `OCCTDocumentGraphNodeAddNext` returns false | :34 Expectation failed: node1.graphNodeAddNext(tag: node2.tag) | passed | `OCCTDocumentGraphNodeAddNext` | PASS: true, true |
+| `allStatuses` | `OCCTDocumentGraphNodeGetStatus` answers 99 | :52 Expectation failed: label.graphNodeStatus() == status; :52 Expectation failed: label.graphNodeStatus() == status | passed | `OCCTDocumentGraphNodeGetStatus` | PASS: round-trips |
+### `TFunctionIFunctionTests.swift`
+| `newFunction` | `OCCTDocumentNewFunction` returns false | :16 Expectation failed: ok | passed | `OCCTDocumentNewFunction` | N/A: TFunction_IFunction::NewFunction; not probed in this pass, so no kernel value is claimed |
+| `deleteFunction` | `OCCTDocumentDeleteFunction` returns false | :26 Expectation failed: deleted | passed | `OCCTDocumentDeleteFunction` | N/A: TFunction_IFunction::DeleteFunction; not probed in this pass, so no kernel value is claimed |
+| `functionExecStatus` | `OCCTDocumentFunctionSetExecStatus` returns true without setting | :41 Expectation failed: status == .succeeded | passed | `OCCTDocumentFunctionSetExecStatus` | N/A: status round-trip; not probed in this pass, so no kernel value is claimed |
+| `noFunction` | `OCCTDocumentFunctionGetExecStatus` answers 0 | :50 Expectation failed: status == nil | passed | `OCCTDocumentFunctionGetExecStatus` | N/A: no function on a fresh label; not probed in this pass, so no kernel value is claimed |
