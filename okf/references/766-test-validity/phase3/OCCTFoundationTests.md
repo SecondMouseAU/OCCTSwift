@@ -94,3 +94,30 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 200 tests
+
+---
+
+## Measured runs (#1987)
+
+Rows below were run: each test was turned red by the injection named, the injection was reverted, and the test was re-run green. Parity is against the probe named in each section.
+
+### UnicodeUtils.convertFromUnicode at any length (#1078), Issue1078UnicodeConvertLengthTests.swift, 6 tests
+
+Probe: `Scripts/repro/766-issue1078-unicode-convert-length/` (`Resource_Unicode::ConvertUnicodeToFormat` under ANSI). Injections, applied together: in `OCCTUnicodeConvertFromUnicode`, a negative maxSize returns the length instead of -1, and the length-only query returns length + 1; in `UnicodeUtils.convertFromUnicode`, the buffer is capped at the old fixed 4096 instead of `maxSize`. Every test failed on the line listed. Note from the probe: ANSI maps U+6F22 to 0x20, so the 5000-character string converts to 5000 spaces; the tests pin lengths, which is what #1078 is about, and the kernel agrees on every length.
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity |
+|---|---|---|---|---|---|---|
+| UnicodeUtils.convertFromUnicode at any length (#1078) | longStringConverts | `OCCTUnicodeConvertFromUnicode` | length-only query returns length + 1 | Issue1078UnicodeConvertLengthTests.swift:34 actual == len | passed (22/22 with the two sibling files) | MATCH |
+| UnicodeUtils.convertFromUnicode at any length (#1078) | nullBufferReportsTheLength | `OCCTUnicodeConvertFromUnicode` | length-only query returns length + 1 | Issue1078UnicodeConvertLengthTests.swift:49 len == 5 | passed (22/22 with the two sibling files) | MATCH |
+| UnicodeUtils.convertFromUnicode at any length (#1078) | shortBufferReportsTheFullLength | `OCCTUnicodeConvertFromUnicode` | length-only query returns length + 1 | Issue1078UnicodeConvertLengthTests.swift:64 reported == len | passed (22/22 with the two sibling files) | MATCH |
+| UnicodeUtils.convertFromUnicode at any length (#1078) | malformedBufferArgumentsAreRefused | `OCCTUnicodeConvertFromUnicode` | negative maxSize returns the length, not -1 | Issue1078UnicodeConvertLengthTests.swift:80 OCCTUnicodeConvertFromUnicode("hello", &buffer, -1) == -1 | passed (22/22 with the two sibling files) | N/A: bridge-side argument validation (negative maxSize, null buffer with positive size, zero size), refused before any kernel conversion; no OCCT counterpart |
+| UnicodeUtils.convertFromUnicode at any length (#1078) | swiftAPIReturnsFullString | `OCCTUnicodeConvertFromUnicode` | UnicodeUtils.convertFromUnicode (Swift wrapper) caps the buffer at 4096 | Issue1078UnicodeConvertLengthTests.swift:93 r.count == Self.longString.count | passed (22/22 with the two sibling files) | MATCH |
+| UnicodeUtils.convertFromUnicode at any length (#1078) | swiftAPIRespectsMaxSize | `OCCTUnicodeConvertFromUnicode` | UnicodeUtils.convertFromUnicode (Swift wrapper) caps the buffer at 4096 | Issue1078UnicodeConvertLengthTests.swift:109 r.count <= 9 | passed (22/22 with the two sibling files) | MATCH |
+### OCCTBridge_IO_OSDUtilities disk size/free/valid + Unicode UTF-8 (#1442), Issue1442DiskUnicodeOSDUtilitiesTests.swift, 6 tests
+Probe: `Scripts/repro/766-issue1442-disk-unicode/` (`OSD_Disk(const char*)` and `Resource_Unicode::ConvertFormatToUnicode`). Injections, applied together, restore the three #1442 defects: `OCCTDiskSize`/`OCCTDiskFree` return the raw 512-byte block count, `OCCTUnicodeConvertToUnicode` skips every code unit >= 0x80, `OCCTDiskIsValid` returns `Failed()` instead of `!Failed()`. Every test failed on the line listed. Disk figures are this machine's at probe time.
+| OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442) | diskSizeMatchesStatvfsInKB | `OCCTDiskSize` | return DiskSize() undivided (raw 512-byte blocks) | Issue1442DiskUnicodeOSDUtilitiesTests.swift:56 actual == expectedKB | passed (22/22 with the two sibling files) | MATCH |
+| OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442) | diskFreeMatchesStatvfsInKB | `OCCTDiskFree` | return DiskFree() undivided (raw 512-byte blocks) | Issue1442DiskUnicodeOSDUtilitiesTests.swift:80 abs(actual - expectedKB) <= tolerance | passed (22/22 with the two sibling files) | MATCH |
+| OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442) | twoByteRangeCodeUnitIsUTF8Encoded | `OCCTUnicodeConvertToUnicode` | skip code units >= 0x80 | Issue1442DiskUnicodeOSDUtilitiesTests.swift:99 result == "A\u{00E9}B" | passed (22/22 with the two sibling files) | MATCH |
+| OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442) | threeByteRangeCodeUnitIsUTF8Encoded | `OCCTUnicodeConvertToUnicode` | skip code units >= 0x80 | Issue1442DiskUnicodeOSDUtilitiesTests.swift:117 result == "\u{3042}" | passed (22/22 with the two sibling files) | MATCH |
+| OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442) | diskIsValidAcceptsRealPath | `OCCTDiskIsValid` | return Failed() instead of !Failed() | Issue1442DiskUnicodeOSDUtilitiesTests.swift:126 DiskInfo.isValid(path: "/") == true | passed (22/22 with the two sibling files) | MATCH |
+| OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442) | diskIsValidRejectsNonexistentPath | `OCCTDiskIsValid` | return Failed() instead of !Failed() | Issue1442DiskUnicodeOSDUtilitiesTests.swift:132 DiskInfo.isValid(path: bogus) == false | passed (22/22 with the two sibling files) | MATCH |
