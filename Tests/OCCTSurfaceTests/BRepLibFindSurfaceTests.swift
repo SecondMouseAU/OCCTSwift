@@ -16,7 +16,7 @@ struct BRepLibFindSurfaceTests {
             .subShapes(ofType: .wire).first
     }
 
-    @Test func findSurfaceFromBoxFaceWire() {
+    @Test func findSurfaceFromBoxFaceWire() throws {
         let wire = firstFaceWire()
         #expect(wire != nil)
         if let wire {
@@ -24,7 +24,10 @@ struct BRepLibFindSurfaceTests {
             #expect(surface != nil)
             if let surface {
                 // On the plane x = -5: a point of it projects at distance 0, (5, 5, 5) at 10.
-                #expect((surface.projectPoint(SIMD3(-5, 3, -2))?.distance ?? -1) < 1e-12)
+                // `#require`, not `?? -1`: with a nil projection the fallback gave -1 < 1e-12,
+                // which passes.
+                let onPlane = try #require(surface.projectPoint(SIMD3(-5, 3, -2)))
+                #expect(onPlane.distance < 1e-12)
                 #expect(abs((surface.projectPoint(SIMD3(5, 5, 5))?.distance ?? -1) - 10) < 1e-12)
             }
         }
