@@ -92,9 +92,10 @@ struct BRepGraphHistoryReadbackTests {
         graph.recordHistory(operationName: "Op2", original: a, replacements: [b, c])
 
         let derived = Set(graph.findDerived(of: orig))
-        // Transitively, orig should reach b and c (and possibly a depending on OCCT's
-        // definition of "leaves", we accept either but require at least b, c).
-        #expect(derived.isSuperset(of: [b, c]))
+        // Transitively, orig reaches b and c. BRepGraph_LayerHistory::FindDerived also returns
+        // the intermediate a (kernel probe, Scripts/repro/766-brepgraph-face-history), so the
+        // set is pinned: `isSuperset(of: [b, c])` accepted stray extra nodes (#1986).
+        #expect(derived == [a, b, c])
     }
 
     // MARK: - #167: untouched-vs-deleted disambiguation

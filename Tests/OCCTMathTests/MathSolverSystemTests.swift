@@ -11,7 +11,7 @@ struct MathSolverSystemTests {
         // Starting near (4, 3)
         if let sol = MathSolver.solveSystem(
             variables: 2, equations: 2,
-            startPoint: [4.0, 3.0],
+            startPoint: [4.5, 3.5],
             values: { x in
                 [x[0] * x[0] + x[1] * x[1] - 25, x[0] - x[1] - 1]
             },
@@ -24,6 +24,9 @@ struct MathSolverSystemTests {
             let eq2 = sol[0] - sol[1] - 1
             #expect(abs(eq1) < 1e-4)
             #expect(abs(eq2) < 1e-4)
+            // math_FunctionSetRoot from (4.5, 3.5) converges to (4, 3) (probe).
+            #expect(abs(sol[0] - 4.0) < 1e-6)
+            #expect(abs(sol[1] - 3.0) < 1e-6)
         }
     }
 
