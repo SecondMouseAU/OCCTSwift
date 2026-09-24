@@ -1,0 +1,7 @@
+magnitude: 5
+fromPoints: (3, 4, 0) magnitude=5
+dot: 32
+added: (1, 1, 0) magnitude=1.414213562
+multiplied: (2, 4, 6) magnitude=7.483314774
+normalized: (0, 0, 1) magnitude=1
+crossed: (0, 0, 1) magnitude=1

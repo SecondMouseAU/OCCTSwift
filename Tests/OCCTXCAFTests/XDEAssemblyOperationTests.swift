@@ -98,8 +98,19 @@ struct XDEAssemblyOperationTests {
             #expect(Bool(false), "Failed to create document")
             return
         }
+        // `#expect(Bool(true))` after the call could not fail (#766). Instance a part in an
+        // assembly, update, and check the assembly's own shape now holds the part.
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil")
+            return
+        }
+        let partId = doc.addShape(box, makeAssembly: false)
+        let asmId = doc.newShapeLabel()
+        #expect(
+            doc.addComponent(
+                assemblyLabelId: asmId, shapeLabelId: partId, translation: (20, 0, 0)) >= 0)
         doc.updateAssemblies()
-        // No crash = success
-        #expect(Bool(true))
+        #expect(doc.componentCount(assemblyLabelId: asmId) == 1)
+        #expect(doc.node(at: asmId)?.shape?.subShapes(ofType: .solid).count == 1)
     }
 }
