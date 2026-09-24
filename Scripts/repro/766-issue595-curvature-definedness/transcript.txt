@@ -1,0 +1,3 @@
+line through origin along +X at u=3: IsTangentDefined=1 curvature=0
+Bezier with four coincident poles at u=0.5: IsTangentDefined=0 -> curvature(at:) == nil
+circle r=4 at u=1: IsTangentDefined=1 curvature=0.25

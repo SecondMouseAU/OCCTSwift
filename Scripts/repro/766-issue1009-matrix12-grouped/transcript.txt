@@ -1,0 +1,17 @@
+== shapeTransformedAppliesTheGroupedTranslation ==
+box before: min (-5.0000001, -5.0000001, -5.0000001) max (5.0000001, 5.0000001, 5.0000001)
+box after GROUPED translate567: min (-1e-07, 0.9999999, 1.9999999) max (10.0000001, 11.0000001, 12.0000001)
+box after the same array read INTERLEAVED: min (nan, nan, nan) max (nan, nan, nan)
+== groupedAgreesWithItsInterleavedConversion ==
+rotated via GROUPED reader: min (-1.83012711892, -0.830127118922, 1.9999999) max (11.8301271189, 12.8301271189, 12.0000001)
+rotated via INTERLEAVED reader on the reshuffled array: min (-1.83012711892, -0.830127118922, 1.9999999) max (11.8301271189, 12.8301271189, 12.0000001)
+== curve3dParametricTransformationReadsTheGroupedLayout ==
+ParametricTransformation GROUPED scale 2 = 2
+ParametricTransformation GROUPED translate567 = 1
+wire before: min (-1e-07, -1e-07, -1e-07) max (1.0000001, 1e-07, 1e-07)
+wire after GROUPED translate567: min (4.9999999, 5.9999999, 6.9999999) max (6.0000001, 6.0000001, 7.0000001)
+== documentAddComponentReadsTheGroupedLayout ==
+box located by TopLoc_Location(GROUPED translate567): min (-1e-07, 0.9999999, 1.9999999) max (10.0000001, 11.0000001, 12.0000001)
+== documentAddComponentAcceptsAReflection ==
+SetValues(mirror in X) accepted: IsNegative=1 ScaleFactor=-1
+corner box located by TopLoc_Location(GROUPED mirror in X): min (-11.0000001, -1e-07, -1e-07) max (-0.9999999, 10.0000001, 10.0000001)
