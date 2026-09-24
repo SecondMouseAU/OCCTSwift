@@ -268,6 +268,14 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **The nearest point on an edge of a shape (#580)** | A point below a half arc gets the nearer end, not the far side | Point-edge nearest point | OCCTBRepExtremaExtPC |
+| **The nearest point on an edge of a shape (#580)** | A point on the circle but off the arc measures to the arc | Point-edge nearest point | OCCTBRepExtremaExtPC |
+| **The nearest point on an edge of a shape (#580)** | A point past the end of a segment is answered, not refused | Point-edge nearest point | OCCTBRepExtremaExtPC |
+| **The nearest point on an edge of a shape (#580)** | A point with a perpendicular foot reports it, and lands on it | Point-edge nearest point | OCCTBRepExtremaExtPC |
+| **The nearest point on an edge of a shape (#580)** | nil is reserved for an index that names no edge | Edge index contract | OCCTBRepExtremaExtPC |
+| **The nearest point on an edge of a shape (#580)** | edgeIndex names the edge Shape.edges() names | Edge index contract | OCCTBRepExtremaExtPC |
+| **The nearest point on an edge of a shape (#580)** | Shape.pointEdgeExtrema and Edge.project agree | Point-edge nearest point | OCCTBRepExtremaExtPC |
+| **The nearest point on an edge of a shape (#580)** | A proximity scan over a shape's edges reads the real distances | Point-edge nearest point | OCCTBRepExtremaExtPC |
 
 ---
 
@@ -475,6 +483,14 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| A point below a half arc gets the nearer end, not the far side | OCCTBRepExtremaExtPC | Point-edge nearest point | distance + 1 | ✅ | ✅ |  |
+| A point on the circle but off the arc measures to the arc | OCCTBRepExtremaExtPC | Point-edge nearest point | distance + 1 | ✅ | ✅ |  |
+| A point past the end of a segment is answered, not refused | OCCTBRepExtremaExtPC | Point-edge nearest point | distance + 1 | ✅ | ✅ |  |
+| A point with a perpendicular foot reports it, and lands on it | OCCTBRepExtremaExtPC | Point-edge nearest point | distance + 1 | ✅ | ✅ |  |
+| nil is reserved for an index that names no edge | OCCTBRepExtremaExtPC | Edge index contract | edgeIndex + 1 | ✅ | ✅ |  |
+| edgeIndex names the edge Shape.edges() names | OCCTBRepExtremaExtPC | Edge index contract | distance + 1; separately edgeIndex + 1 | ✅ | ✅ |  |
+| Shape.pointEdgeExtrema and Edge.project agree | OCCTBRepExtremaExtPC | Point-edge nearest point | distance + 1 | ✅ | ✅ |  |
+| A proximity scan over a shape's edges reads the real distances | OCCTBRepExtremaExtPC | Point-edge nearest point | distance + 1 | ✅ | ✅ |  |
 
 ---
 
