@@ -1137,5 +1137,381 @@
     },
     "status": "PASS",
     "probe": "Scripts/repro/766-xcaf-document-gdt/"
+  },
+  {
+    "test_name": "GD&T dimension accessors (#1004)::A qualifier written on a dimension reads back, and an unqualified one reads .none",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "qualifier",
+      "data": {
+        "fresh": "none",
+        "after_max": "max",
+        "after_none": "none"
+      }
+    },
+    "kernel_output": {
+      "type": "qualifier",
+      "data": {
+        "fresh": 0,
+        "after_max": 2,
+        "after_none": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
+  },
+  {
+    "test_name": "GD&T dimension accessors (#1004)::An angular qualifier round-trips independently of the dimension qualifier",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "qualifier",
+      "data": {
+        "qualifier": "min",
+        "angular": "large"
+      }
+    },
+    "kernel_output": {
+      "type": "qualifier",
+      "data": {
+        "qualifier": 1,
+        "angular": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
+  },
+  {
+    "test_name": "GD&T dimension accessors (#1004)::Decimal places read back as written, and as nil when never written",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "places",
+      "data": {
+        "fresh": null,
+        "p23": [
+          2,
+          3
+        ],
+        "p04": [
+          0,
+          4
+        ],
+        "p00": null
+      }
+    },
+    "kernel_output": {
+      "type": "places",
+      "data": {
+        "fresh": [
+          0,
+          0
+        ],
+        "p23": [
+          2,
+          3
+        ],
+        "p04": [
+          0,
+          4
+        ],
+        "p00": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
+  },
+  {
+    "test_name": "GD&T dimension accessors (#1004)::A modifier sequence round-trips in order, and clears",
+    "bridge_function": "OCCTDocumentGetDimensionModifier",
+    "bridge_output": {
+      "type": "modifiers",
+      "data": {
+        "read": [
+          "anyCrossSection",
+          "square",
+          "statisticalTolerance"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "modifiers",
+      "data": {
+        "read": [
+          19,
+          1,
+          2
+        ],
+        "cleared": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
+  },
+  {
+    "test_name": "GD&T dimension accessors (#1004)::The dimension type classifiers agree with OCCT for a location, a size and neither",
+    "bridge_function": "OCCTDimensionTypeIsDimensionalLocation",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "linear": [
+          true,
+          false
+        ],
+        "diameter": [
+          false,
+          true
+        ],
+        "common": [
+          false,
+          false
+        ],
+        "both_count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "linear": [
+          true,
+          false
+        ],
+        "diameter": [
+          false,
+          true
+        ],
+        "common": [
+          false,
+          false
+        ],
+        "both_count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
+  },
+  {
+    "test_name": "GD&T dimension accessors (#1004)::Two dimensions on one document keep their own accessor values",
+    "bridge_function": "OCCTDocumentSetDimensionDecimalPlaces",
+    "bridge_output": {
+      "type": "dims",
+      "data": {
+        "a": {
+          "qualifier": "max",
+          "modifiers": [
+            "square"
+          ],
+          "places": null
+        },
+        "b": {
+          "qualifier": "none",
+          "places": [
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "objects",
+      "data": {
+        "separate_objects_keep_separate_values": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
+  },
+  {
+    "test_name": "GD&T dimension accessors (#1004)::Out-of-range indices are refused by both the accessors and the mutators",
+    "bridge_function": "OCCTDocumentSetDimensionQualifier",
+    "bridge_output": {
+      "type": "refused",
+      "data": {
+        "index": 5,
+        "labels": 1
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "dimension_labels": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-gdt/"
+  },
+  {
+    "test_name": "GD&T Document Tests::Empty document has zero dimensions",
+    "bridge_function": "OCCTDocumentGetDimensionCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "dimensions": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
+  },
+  {
+    "test_name": "GD&T Document Tests::Empty document has zero geometric tolerances",
+    "bridge_function": "OCCTDocumentGetGeomToleranceCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "tolerances": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
+  },
+  {
+    "test_name": "GD&T Document Tests::Empty document has zero datums",
+    "bridge_function": "OCCTDocumentGetDatumCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "datum_labels_fresh": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T Document Tests::Dimension at invalid index returns nil",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "dimension",
+      "data": {
+        "at": [
+          0,
+          -1,
+          999
+        ],
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "dimensions": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
+  },
+  {
+    "test_name": "GD&T Document Tests::Geom tolerance at invalid index returns nil",
+    "bridge_function": "OCCTDocumentGetGeomToleranceInfo",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "at": [
+          0,
+          -1
+        ],
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "tolerances": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
+  },
+  {
+    "test_name": "GD&T Document Tests::Datum at invalid index returns nil",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "datum",
+      "data": {
+        "at": [
+          0,
+          -1
+        ],
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "datum_labels_fresh": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
   }
 ]
