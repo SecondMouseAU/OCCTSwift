@@ -5835,5 +5835,310 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BndLib Analytic Bounding Tests::lineSegmentBounds",
+    "bridge_function": "OCCTBndLibLine",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BndLib Analytic Bounding Tests::circleBounds",
+    "bridge_function": "OCCTBndLibCircle",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          -5,
+          -5,
+          0
+        ],
+        "max": [
+          5,
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          -5,
+          -5,
+          0
+        ],
+        "max": [
+          5,
+          5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BndLib Analytic Bounding Tests::sphereBounds",
+    "bridge_function": "OCCTBndLibSphere",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          -3,
+          -3,
+          -3
+        ],
+        "max": [
+          3,
+          3,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          -3,
+          -3,
+          -3
+        ],
+        "max": [
+          3,
+          3,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BndLib Analytic Bounding Tests::cylinderBounds",
+    "bridge_function": "OCCTBndLibCylinder",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          -2,
+          -2,
+          0
+        ],
+        "max": [
+          2,
+          2,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          -2,
+          -2,
+          0
+        ],
+        "max": [
+          2,
+          2,
+          10
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BndLib Analytic Bounding Tests::torusBounds",
+    "bridge_function": "OCCTBndLibTorus",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          -12,
+          -12,
+          -2
+        ],
+        "max": [
+          12,
+          12,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "min": [
+          -12,
+          -12,
+          -2
+        ],
+        "max": [
+          12,
+          12,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BndLib Analytic Bounding Tests::edgeBounds",
+    "bridge_function": "OCCTBndLibEdge",
+    "bridge_output": {
+      "type": "box_edges_bounds",
+      "data": {
+        "edge_count": 12,
+        "extents_sorted": [
+          10,
+          10,
+          10,
+          10,
+          20,
+          20,
+          20,
+          20,
+          30,
+          30,
+          30,
+          30
+        ],
+        "union_min": [
+          -5,
+          -10,
+          -15
+        ],
+        "union_max": [
+          5,
+          10,
+          15
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "box_edges_bounds",
+      "data": {
+        "edge_count": 12,
+        "extents_sorted": [
+          10,
+          10,
+          10,
+          10,
+          20,
+          20,
+          20,
+          20,
+          30,
+          30,
+          30,
+          30
+        ],
+        "union_min": [
+          -5,
+          -10,
+          -15
+        ],
+        "union_max": [
+          5,
+          10,
+          15
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BndLib Analytic Bounding Tests::faceBounds",
+    "bridge_function": "OCCTBndLibFace",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "face_count": 1,
+        "min": [
+          -5,
+          -5,
+          -5
+        ],
+        "max": [
+          5,
+          5,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "face_count": 1,
+        "min": [
+          -5,
+          -5,
+          -5
+        ],
+        "max": [
+          5,
+          5,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
