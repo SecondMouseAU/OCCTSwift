@@ -7,6 +7,12 @@ import simd
 
 @Suite("Filling Surface Tests")
 struct FillingSurfaceTests {
+
+    // #766: the builds asserted only non-nil / isDone and the errors only `< 0.01` or non-nil, so
+    // a fill that dropped its point constraint or treated a free edge as a bound one passed. The
+    // first four box edges are the x = -5 face's square (the box is centred), so the plain fill
+    // is that 10 x 10 square. Pinned values are BRepOffsetAPI_MakeFilling's own with the same
+    // defaults, see Scripts/repro/766-filling-surface/.
     /// Helper to get 4 coplanar edges from a box face
     private func getFaceEdges() -> [Edge] {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -31,6 +37,9 @@ struct FillingSurfaceTests {
         let result = filling.build()
         #expect(result != nil)
         #expect(filling.isDone)
+        if let result {
+            #expect(abs((result.surfaceArea ?? 0) - 100) < 1e-9)
+        }
     }
 
     @Test("G0 error is small for planar fill")
@@ -47,6 +56,8 @@ struct FillingSurfaceTests {
         #expect(g0 != nil)
         if let g0 {
             #expect(g0 < 0.01)
+            // The kernel reports 1.33e-15 for this exactly planar fill.
+            #expect(g0 < 1e-12)
         }
     }
 
@@ -60,10 +71,15 @@ struct FillingSurfaceTests {
         }
         // Add interior point above the plane
         filling.add(point: SIMD3(5, 5, 3))
-
         let result = filling.build()
         #expect(result != nil)
         #expect(filling.isDone)
+        // The boundary square sits at x = -5, so (5, 5, 3) is 10 off its plane: the constraint
+        // pulls the surface out to an area of 1038.99, against 100 without it. (It does not reach
+        // the point: the kernel's face stays 10 from it.)
+        if let result {
+            #expect(abs((result.surfaceArea ?? 0) - 1038.9910066176521) < 1e-6)
+        }
     }
 
     @Test("G1 and G2 errors are available after build")
@@ -78,9 +94,9 @@ struct FillingSurfaceTests {
 
         let g1 = filling.g1Error
         let g2 = filling.g2Error
-        // Errors should be retrievable (may be 0 for a planar fill)
-        #expect(g1 != nil)
-        #expect(g2 != nil)
+        // Errors should be retrievable, and for C0 constraints the kernel reports exactly 0.
+        #expect(g1 == 0)
+        #expect(g2 == 0)
     }
 
     @Test("Filling with free edge constraint")
@@ -93,9 +109,13 @@ struct FillingSurfaceTests {
             filling.add(edge: edges[i], continuity: .g0)
         }
         filling.add(freeEdge: edges[3], continuity: .g0)
-
         let result = filling.build()
         #expect(result != nil)
+        // A free edge only attracts the surface, it does not bound it: 125.0 against the 100 of
+        // the four-bound fill.
+        if let result {
+            #expect(abs((result.surfaceArea ?? 0) - 124.99804710385433) < 1e-6)
+        }
     }
 
     @Test("Unfilled filling is not done")
