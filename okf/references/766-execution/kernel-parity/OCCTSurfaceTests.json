@@ -13083,5 +13083,229 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Surface measured continuity encoding after the retirement (#619)::An analytic surface reports CN as ordinal 6, the old encoding's 99 is unreachable",
+    "bridge_function": "OCCTSurfaceGetContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "plane": 6,
+        "sphere": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "plane": 6,
+        "sphere": 6
+      },
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 485 plane/sphere"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface measured continuity encoding after the retirement (#619)::A C1 surface reports C1 as ordinal 2, not 1",
+    "bridge_function": "OCCTSurfaceGetContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "mult 2": 2,
+        "mult 1": 4
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "mult 2": 2,
+        "mult 1": 4
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 619/623 continuity"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface measured continuity encoding after the retirement (#619)::The sibling bezierContinuity accessor uses the same encoding, so CN is 6 there too",
+    "bridge_function": "OCCTSurfaceBezierContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "bezierContinuity": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "bezierContinuity": 6
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 619 Bezier 3x3 Continuity()=6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface measured continuity encoding after the retirement (#619)::A raw threshold of 2 now admits a merely-C1 surface; satisfies(.c2) still refuses it",
+    "bridge_function": "OCCTSurfaceGetContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "continuity": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "continuity": 2
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 619/623 continuity mult2=2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ContinuityClass floor checks agree with the ordering (#623)::A geometric class meets the C0 floor, and nothing above it",
+    "bridge_function": "(Swift) ContinuityClass.satisfies",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Swift predicate over ContinuityClass, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "ContinuityClass floor checks agree with the ordering (#623)::Every measured class clears the positional floor",
+    "bridge_function": "(Swift) ContinuityClass.satisfies",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Swift predicate over ContinuityClass, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "ContinuityClass floor checks agree with the ordering (#623)::satisfies() and >= agree across the whole 7x7 matrix, bar one documented pair",
+    "bridge_function": "(Swift) ContinuityClass",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Swift predicate over ContinuityClass, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "ContinuityClass floor checks agree with the ordering (#623)::A floor check never claims more than the ordering allows",
+    "bridge_function": "(Swift) ContinuityClass",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Swift predicate over ContinuityClass, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "ContinuityClass floor checks agree with the ordering (#623)::The floor is monotonic in the requested order, and in the measured class bar one pair",
+    "bridge_function": "(Swift) ContinuityClass",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Swift predicate over ContinuityClass, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "ContinuityClass floor checks agree with the ordering (#623)::The junction-analysis bitmask contract is independent of the floor check",
+    "bridge_function": "(Swift) ContinuityClass.analysisFlagBit",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "the bit layout the bridge writes in OCCTLocalAnalysisSurfaceContinuityFlags"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "ContinuityClass floor checks agree with the ordering (#623)::The floor gate holds on geometry OCCT actually measured",
+    "bridge_function": "OCCTSurfaceGetContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "plane": 6,
+        "mult 3": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "plane": 6,
+        "mult 3": 0
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 619/623 continuity mult3=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
