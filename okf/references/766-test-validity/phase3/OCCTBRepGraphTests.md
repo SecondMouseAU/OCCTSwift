@@ -105,6 +105,15 @@
 | **v0.142 ConstructionAxis resolution** | normalToFaceOriginIsOnFaceNotRawPoint | Axis normal to face | raw point returned |
 | **v0.142 ConstructionAxis resolution** | alongEdgeUndefinedStartTangentFailsLoudNotSilent | Axis along edge | undefined tangent accepted |
 | **v0.142 ConstructionAxis resolution** | coaxialCrossSectionAcceptsMeasuredEdgeToleranceNoise | Axis along edge | edge tolerance ignored |
+| **packSIMD3 shared helper** | exactMapping | SIMD3 packing | y/z swapped |
+| **packSIMD3 shared helper** | emptyInputIsEmpty | SIMD3 packing | empty input yields a zero |
+| **packSIMD3 shared helper** | floatScalarBuffer | SIMD3 packing | y/z swapped |
+| **packSIMD3 shared helper** | roundTripsThroughUnpack | SIMD3 packing | y/z swapped in pack, x/y in unpack |
+| **unpackSIMD3 shared helper** | exactMapping | SIMD3 unpacking | x/y swapped |
+| **unpackSIMD3 shared helper** | zeroCountIsEmpty | SIMD3 unpacking | count ignored |
+| **unpackSIMD3 shared helper** | stopsAtActualCountNotBufferLength | SIMD3 unpacking | count ignored |
+| **unpackSIMD3 shared helper** | floatScalarBuffer | SIMD3 unpacking | x/y swapped |
+| **unpackSIMD3 shared helper** | unsafeBufferPointerBuffer | SIMD3 unpacking | x/y swapped |
 
 ---
 
@@ -207,6 +216,15 @@
 | normalToFaceOriginIsOnFaceNotRawPoint | OCCTFaceProjectPoint | Axis normal to face | projectedNormal returns (point, normal) instead of (projection.point, normal) | ✅ | ✅ |  |
 | alongEdgeUndefinedStartTangentFailsLoudNotSilent | OCCTEdgeGetTangent3D | Axis along edge | nil tangent replaced by zero vector (R2); redirect skipped (R1) | ✅ | ✅ |  |
 | coaxialCrossSectionAcceptsMeasuredEdgeToleranceNoise | OCCTEdgeGetPointAtParam | Axis along edge | crossSectionTolerance = floor only | ✅ | ✅ |  |
+| exactMapping | none (pure Swift: packSIMD3) | SIMD3 packing | append x, z, y | ✅ | ✅ |  |
+| emptyInputIsEmpty | none (pure Swift: packSIMD3) | SIMD3 packing | if values.isEmpty append 0 (Double only) | ✅ | ✅ |  |
+| floatScalarBuffer | none (pure Swift: packSIMD3) | SIMD3 packing | append x, z, y | ✅ | ✅ |  |
+| roundTripsThroughUnpack | none (pure Swift: packSIMD3 / unpackSIMD3) | SIMD3 packing | both helpers' swaps (they do not cancel) | ✅ | ✅ |  |
+| exactMapping | none (pure Swift: unpackSIMD3) | SIMD3 unpacking | count guard removed, reads buffer.count / 3, x/y swapped | ✅ | ✅ |  |
+| zeroCountIsEmpty | none (pure Swift: unpackSIMD3) | SIMD3 unpacking | same | ✅ | ✅ |  |
+| stopsAtActualCountNotBufferLength | none (pure Swift: unpackSIMD3) | SIMD3 unpacking | same | ✅ | ✅ |  |
+| floatScalarBuffer | none (pure Swift: unpackSIMD3) | SIMD3 unpacking | same | ✅ | ✅ |  |
+| unsafeBufferPointerBuffer | none (pure Swift: unpackSIMD3) | SIMD3 unpacking | same | ✅ | ✅ |  |
 
 ---
 
@@ -242,8 +260,18 @@ For each test, run ground-truth C++ comparison:
 | alongEdge T-branch | ✅ | ✅ | ✅ |
 | v0.142 ConstructionAxis | ✅ | ✅ | ✅ |
 | deferredModeToggle | ✅ | ✅ | ✅ |
+| packSIMD3 exactMapping | ✅ | N/A | ✅ |
+| packSIMD3 emptyInputIsEmpty | ✅ | N/A | ✅ |
+| packSIMD3 floatScalarBuffer | ✅ | N/A | ✅ |
+| packSIMD3 roundTripsThroughUnpack | ✅ | N/A | ✅ |
+| unpackSIMD3 exactMapping | ✅ | N/A | ✅ |
+| unpackSIMD3 zeroCountIsEmpty | ✅ | N/A | ✅ |
+| unpackSIMD3 stopsAtActualCountNotBufferLength | ✅ | N/A | ✅ |
+| unpackSIMD3 floatScalarBuffer | ✅ | N/A | ✅ |
+| unpackSIMD3 unsafeBufferPointerBuffer | ✅ | N/A | ✅ |
 
-**Total**: 18 tests
+**Total**: 27 tests
+
 ---
 
 ## Measured: Build, ValidateMutation and CoEdge Queries (#1986)
