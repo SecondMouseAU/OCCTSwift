@@ -284,3 +284,13 @@ Probe: `Scripts/repro/766-geom2d-tangents-islinear-line/`. Every row was run red
 | Curve2D IsLinear Tests::Non-BSpline curve returns nil, not a false result | `OCCTCurve2DIsLinear` | report (false, 0) for a non-BSpline (the #1542 defect) | ✅ | ✅ | MATCH |  |
 | GC_MakeLine2d::Create 2D line through two points | `OCCTCurve2DMakeLineThroughPoints` | swap the two points | ✅ | ✅ | MATCH | `!= nil`; now pins the line |
 | GC_MakeLine2d::Create 2D line parallel to direction at distance | `OCCTCurve2DMakeLineParallel` | negate the distance | ✅ | ✅ | MATCH | `!= nil`; now pins the offset side |
+### #1979 executed: `Curve2DLocalPropertiesTests.swift`
+Probe: `Scripts/repro/766-geom2d-localprops-operations/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D Local Properties Tests::Curvature of circle equals 1/radius | `OCCTCurve2DGetCurvature` | curvature + 0.1 | ✅ | ✅ | MATCH |  |
+| Curve2D Local Properties Tests::Curvature of line is zero | `OCCTCurve2DGetCurvature` | curvature + 0.1 | ✅ | ✅ | MATCH |  |
+| Curve2D Local Properties Tests::Normal on circle points toward center | `OCCTCurve2DGetNormal` | reverse the normal | ✅ | ✅ | MATCH | unit length only passed an outward normal; now pins (-1, 0) |
+| Curve2D Local Properties Tests::Tangent direction on segment is along direction | `OCCTCurve2DGetTangentDir` | reverse the tangent | ✅ | ✅ | MATCH | `abs(t.y)` passed a reversed tangent; now pins (1, 0) |
+| Curve2D Local Properties Tests::Center of curvature on circle is at center | `OCCTCurve2DGetCenterOfCurvature` | centre x + 1 | ✅ | ✅ | MATCH | nested in `if let cc`; now required |
+| Curve2D Local Properties Tests::Inflection points of cubic BSpline | `OCCTCurve2DGetInflectionPoints` | report no inflections | ✅ | ✅ | MATCH | `count >= 1` inside `if let`; now one inflection at u = 10.3042 |
+| Curve2D Local Properties Tests::Curvature extrema of ellipse | `OCCTCurve2DGetCurvatureExtrema` | drop the last extremum | ✅ | ✅ | MATCH | `count >= 2`; now all four parameters |
+| Curve2D Local Properties Tests::All special points of ellipse | `OCCTCurve2DGetAllSpecialPoints` | drop the last point | ✅ | ✅ | MATCH | `count >= 2`; now `== 4` |
