@@ -503,16 +503,21 @@ struct OCCTDateTests {
 
 @Suite("FontManager Tests")
 struct FontManagerTests {
+    // #766: initDatabase and fontCount asserted `fontCount >= 0`, which no count can fail. The
+    // pinned kernel is built with USE_FREETYPE=OFF (Scripts/build-occt.sh), so Font_FontMgr
+    // registers no fonts at all: GetAvailableFonts() is empty after InitFontDataBase()
+    // (Scripts/repro/766-foundation-font-pixmap-units/). That is what these now pin; a kernel
+    // built with FreeType will fail them, and should, since the font surface then changes.
     @Test func initDatabase() {
         FontManager.initDatabase()
-        // Should not crash
-        #expect(FontManager.fontCount >= 0)
+        #expect(FontManager.fontCount == 0)
+        #expect(FontManager.allFontNames.isEmpty)
     }
 
     @Test func fontCount() {
         FontManager.initDatabase()
-        let count = FontManager.fontCount
-        #expect(count >= 0)
+        #expect(FontManager.fontCount == 0)
+        #expect(FontManager.fontName(at: 0) == nil)  // index 0 is already past the end
     }
 
     @Test func aspectToString() {
@@ -536,76 +541,80 @@ struct FontManagerTests {
 
 @Suite("PixMap Tests")
 struct PixMapTests {
-    @Test func createEmpty() {
-        if let img = PixMap() {
-            #expect(img.isEmpty)
-        }
+    // #766: every PixMap test below nested its assertions in `if let img = PixMap()`, so a
+    // bridge whose OCCTImageCreate returned nil passed all of them. They now require the image;
+    // each value matches Image_AlienPixMap (Scripts/repro/766-foundation-font-pixmap-units/).
+    @Test func createEmpty() throws {
+        let img = try #require(PixMap())
+        #expect(img.isEmpty)
     }
 
-    @Test func initTrash() {
-        if let img = PixMap() {
-            let ok = img.initTrash(format: .rgba, width: 64, height: 64)
-            #expect(ok)
-            #expect(!img.isEmpty)
-            #expect(img.width == 64)
-            #expect(img.height == 64)
-            #expect(img.format == .rgba)
-        }
+    @Test func initTrash() throws {
+        let img = try #require(PixMap())
+        let ok = img.initTrash(format: .rgba, width: 64, height: 64)
+        #expect(ok)
+        #expect(!img.isEmpty)
+        #expect(img.width == 64)
+        #expect(img.height == 64)
+        #expect(img.format == .rgba)
     }
 
-    @Test func initTrashRGB() {
-        if let img = PixMap() {
-            let ok = img.initTrash(format: .rgb, width: 100, height: 50)
-            #expect(ok)
-            #expect(img.width == 100)
-            #expect(img.height == 50)
-            #expect(img.format == .rgb)
-        }
+    @Test func initTrashRGB() throws {
+        let img = try #require(PixMap())
+        let ok = img.initTrash(format: .rgb, width: 100, height: 50)
+        #expect(ok)
+        #expect(img.width == 100)
+        #expect(img.height == 50)
+        #expect(img.format == .rgb)
     }
 
-    @Test func setAndGetPixel() {
-        if let img = PixMap() {
-            img.initTrash(format: .rgba, width: 4, height: 4)
-            let c = Color(red: 0.8, green: 0.2, blue: 0.5, alpha: 1.0)
-            img.setPixel(at: 2, y: 2, color: c)
-            let got = img.pixel(at: 2, y: 2)
-            #expect(abs(got.red - 0.8) < 0.02)
-        }
+    @Test func setAndGetPixel() throws {
+        let img = try #require(PixMap())
+        img.initTrash(format: .rgba, width: 4, height: 4)
+        let c = Color(red: 0.8, green: 0.2, blue: 0.5, alpha: 1.0)
+        img.setPixel(at: 2, y: 2, color: c)
+        let got = img.pixel(at: 2, y: 2)
+        #expect(abs(got.red - 0.8) < 0.02)
+        #expect(abs(got.green - 0.2) < 0.02)
+        #expect(abs(got.blue - 0.5) < 0.02)  // 8-bit storage: 0.498039, as the kernel reads it back
+        #expect(got.alpha == 1)
     }
 
-    @Test func savePPM() {
-        if let img = PixMap() {
-            img.initTrash(format: .rgb, width: 16, height: 16)
-            for y in 0..<16 {
-                for x in 0..<16 {
-                    img.setPixel(
-                        at: x, y: y,
-                        color: Color(red: Double(x) / 16.0, green: Double(y) / 16.0, blue: 0.5))
-                }
+    @Test func savePPM() throws {
+        let img = try #require(PixMap())
+        img.initTrash(format: .rgb, width: 16, height: 16)
+        for y in 0..<16 {
+            for x in 0..<16 {
+                img.setPixel(
+                    at: x, y: y,
+                    color: Color(red: Double(x) / 16.0, green: Double(y) / 16.0, blue: 0.5))
             }
-            let saved = img.save(to: "/tmp/occt_pixmap_test.ppm")
-            #expect(saved)
         }
+        // A per-run path: a fixed /tmp name is shared by every concurrent test process.
+        let path = FileManager.default.temporaryDirectory
+            .appendingPathComponent("occt_pixmap_test_\(UUID().uuidString).ppm").path
+        defer { try? FileManager.default.removeItem(atPath: path) }
+        #expect(img.save(to: path))
+        #expect(FileManager.default.fileExists(atPath: path))
     }
 
-    @Test func clear() {
-        if let img = PixMap() {
-            img.initTrash(format: .rgb, width: 32, height: 32)
-            #expect(!img.isEmpty)
-            img.clear()
-            #expect(img.isEmpty)
-        }
+    @Test func clear() throws {
+        let img = try #require(PixMap())
+        img.initTrash(format: .rgb, width: 32, height: 32)
+        #expect(!img.isEmpty)
+        img.clear()
+        #expect(img.isEmpty)
     }
 
-    @Test func initCopy() {
-        if let src = PixMap(), let dst = PixMap() {
-            src.initTrash(format: .rgb, width: 8, height: 8)
-            src.setPixel(at: 0, y: 0, color: .red)
-            let ok = dst.initCopy(from: src)
-            #expect(ok)
-            #expect(dst.width == 8)
-            #expect(dst.height == 8)
-        }
+    @Test func initCopy() throws {
+        let src = try #require(PixMap())
+        let dst = try #require(PixMap())
+        src.initTrash(format: .rgb, width: 8, height: 8)
+        src.setPixel(at: 0, y: 0, color: .red)
+        let ok = dst.initCopy(from: src)
+        #expect(ok)
+        #expect(dst.width == 8)
+        #expect(dst.height == 8)
     }
 
     @Test func formatBytesPerPixel() {
@@ -615,16 +624,16 @@ struct PixMapTests {
     }
 
     @Test func isTopDownDefault() {
-        // Just verify it doesn't crash
-        _ = PixMap.isTopDownDefault
+        // #766: this asserted nothing. Image_AlienPixMap::IsTopDownDefault() is false in the
+        // pinned kernel (bottom-up rows, the OpenGL convention).
+        #expect(PixMap.isTopDownDefault == false)
     }
 
-    @Test func grayFormat() {
-        if let img = PixMap() {
-            img.initTrash(format: .gray, width: 10, height: 10)
-            #expect(img.format == .gray)
-            #expect(!img.isEmpty)
-        }
+    @Test func grayFormat() throws {
+        let img = try #require(PixMap())
+        img.initTrash(format: .gray, width: 10, height: 10)
+        #expect(img.format == .gray)
+        #expect(!img.isEmpty)
     }
 }
 
@@ -670,6 +679,10 @@ struct UnitsAPITests {
     }
 
     @Test func localSystem() {
+        // #766: this only set .si, which is already UnitsAPI's default, so a setter that did
+        // nothing passed. Switch to MDTV and back; UnitsAPI::LocalSystem() follows both.
+        Units.setLocalSystem(.mdtv)
+        #expect(Units.localSystem == .mdtv)
         Units.setLocalSystem(.si)
         #expect(Units.localSystem == .si)
     }
