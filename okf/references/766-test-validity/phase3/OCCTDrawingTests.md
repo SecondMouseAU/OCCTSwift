@@ -228,3 +228,16 @@ Rows below were run: the injection turned the test red at the line named, the te
 | v0.149 DrawingTolerance | Fit class appended inline with space | `formatTolerance / DrawingTolerance (Swift)` | fit class appended without the space | `:65` | ✔ | N/A (pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call) |
 | v0.149 DrawingTolerance | Limits tolerance stacks upper over lower | `formatTolerance / DrawingTolerance (Swift)` | limits drops the lower value | `:77` | ✔ | N/A (pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call) |
 | v0.149 DrawingTolerance | DrawingTolerance Codable round-trip | `formatTolerance / DrawingTolerance (Swift)` | `init(from:)` decoding every case as `.none` | `:95` `back == t` | ✔ | N/A (pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call) |
+| Z-Layer Settings | Default values | `OCCTZLayerSettingsCreate` | create also turns the environment texture off | `:20` `useEnvironmentTexture == true` | ✔ | PASS |
+| Z-Layer Settings | Depth test toggle | `OCCTZLayerSettingsSetDepthTest` | setter no-op | `:28` | ✔ | PASS |
+| Z-Layer Settings | Depth write toggle | `OCCTZLayerSettingsSetDepthWrite` | setter no-op | `:37` | ✔ | PASS |
+| Z-Layer Settings | Clear depth toggle | `OCCTZLayerSettingsSetClearDepth` | setter no-op | `:44` | ✔ | PASS |
+| Z-Layer Settings | Polygon offset roundtrip | `OCCTZLayerSettingsSetPolygonOffset` | factor written as 0 | `:55` | ✔ | PASS |
+| Z-Layer Settings | Depth offset positive convenience | `OCCTZLayerSettingsSetDepthOffsetPositive` | calls `SetDepthOffsetNegative` | `:66` | ✔ | PASS |
+| Z-Layer Settings | Depth offset negative convenience | `OCCTZLayerSettingsSetDepthOffsetNegative` | calls `SetDepthOffsetPositive` | `:76` | ✔ | PASS |
+| Z-Layer Settings | Immediate mode toggle | `OCCTZLayerSettingsSetImmediate` | setter no-op | `:83` | ✔ | PASS |
+| Z-Layer Settings | Raytracable toggle | `OCCTZLayerSettingsSetRaytracable` | setter no-op | `:90` | ✔ | PASS |
+| Z-Layer Settings | Culling distance | `OCCTZLayerSettingsSetCullingDistance` | setter no-op | `:97` | ✔ | PASS |
+| Z-Layer Settings | Culling size | `OCCTZLayerSettingsSetCullingSize` | setter no-op | `:104` | ✔ | PASS |
+| Z-Layer Settings | Origin roundtrip | `OCCTZLayerSettingsSetOrigin` | setter no-op | `:112` to `:114` | ✔ | PASS |
+| Z-Layer Settings | Predefined layer IDs | `ZLayerSettings layer-id constants (Swift) vs Graphic3d_ZLayerId` | Swift `top` constant -1 | `:121` `ZLayerSettings.top == -2` | ✔ | PASS |
