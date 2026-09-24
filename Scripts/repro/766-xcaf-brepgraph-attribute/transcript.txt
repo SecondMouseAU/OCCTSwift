@@ -1,0 +1,13 @@
+g1 faces=6 edges=12 vertices=8
+g2 faces=6 edges=12 vertices=8
+  v0 g1=(-5, -10, -15) g2=(-5, -10, -15)
+  v1 g1=(-5, -10, 15) g2=(-5, -10, 15)
+  v2 g1=(-5, 10, -15) g2=(-5, 10, -15)
+  v3 g1=(-5, 10, 15) g2=(-5, 10, 15)
+  v4 g1=(5, -10, -15) g2=(5, -10, -15)
+  v5 g1=(5, -10, 15) g2=(5, -10, 15)
+  v6 g1=(5, 10, -15) g2=(5, 10, -15)
+  v7 g1=(5, 10, 15) g2=(5, 10, 15)
+max vertex distance across rebuild=0
+File was not written with this version of the topology
+BRepTools::Read("not a brep") null=true

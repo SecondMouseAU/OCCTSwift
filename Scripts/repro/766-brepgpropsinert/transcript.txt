@@ -1,0 +1,6 @@
+faceSurfaceInertia box faces()[0]: Mass=100 CentreOfMass=(-5, 2.7755575615628914e-17, 2.7755575615628914e-17)
+sphere r=10 face count=1 (4*pi*r^2 = 1256.6370614359173)
+adaptiveSurfaceInertia sphere faces()[0], eps=1e-6: Mass=0 error=0 CentreOfMass=(0, 0, 0)
+  non-adaptive Perform on the same face, for comparison: Mass=1256.6370614359173
+  adaptive Perform(face, BRepGProp_Domain(face), 1e-6), for comparison: Mass=1256.6370614359171 error=4.2632564145606015e-16
+  adaptive Perform(face, 1e-6) on box faces()[0] (planar, area 100): Mass=0 error=0
