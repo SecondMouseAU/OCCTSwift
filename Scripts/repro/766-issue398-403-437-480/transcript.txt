@@ -1,0 +1,18 @@
+403 trimmed cylinder BSpline: bounds=[0, 6.2831853071795862]x[0, 10]
+403 C0 splits (0, 0): U=0 6.28318530718 V=0 10 
+480 bicubic (0, 0): U=0 5 V=0 5 
+480 bicubic (1, 1): U=0 5 V=0 5 
+480 bicubic (2, 2): U=0 5 V=0 5 
+480 bicubic (3, 3): U=0 1 2 3 4 5 V=0 1 2 3 4 5 
+480 bicubic mixed (3, 1): U=0 1 2 3 4 5 V=0 5 
+480 bump at knot 2 x3 (1, 1): U=0 2 5 V=0 2 5 
+480 degree 5 (0, 0): U=0 5 V=0 5 
+480 degree 5 (1, 1): U=0 5 V=0 5 
+480 degree 5 (2, 2): U=0 5 V=0 5 
+480 degree 5 (3, 3): U=0 5 V=0 5 
+480 bicubic continuity -1 (-1, -1): threw 
+437 GeomPlate_PointConstraint(point, 0): accepted, Order()=0
+437 GeomPlate_PointConstraint(point, 1): accepted, Order()=1
+437 GeomPlate_PointConstraint(point, 2): threw GeomPlate_PointConstraint : the constraint must 0 or -1 with a point
+437 mixed g0 point + rectangle: area=264.49343438299809
+398 GeomAbs_Shape: C0=0 G1=1 C1=2 G2=3 C2=4 C3=5 CN=6
