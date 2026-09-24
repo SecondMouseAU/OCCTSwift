@@ -21,7 +21,11 @@ struct MathSolverPSOTests {
                 (x[0] - 3) * (x[0] - 3) + (x[1] - 4) * (x[1] - 4)
             }
         ) {
-            #expect(result.minimum < 1.0)
+            // math_PSO reaches F = 1.4e-7 at (3.00036, 4.00008) (probe); < 1.0 passed a point
+            // 0.5 away in both coordinates.
+            #expect(result.minimum < 1e-5)
+            #expect(abs(result.point[0] - 3.0) < 0.01)
+            #expect(abs(result.point[1] - 4.0) < 0.01)
         }
     }
 
@@ -39,7 +43,10 @@ struct MathSolverPSOTests {
             }
         ) {
             // PSO may not find exact minimum, but should get close
-            #expect(result.minimum < 10.0)
+            // Probe: F = 3.6e-8 at (1.00002, 1.00003). < 10.0 passed almost anything.
+            #expect(result.minimum < 1e-5)
+            #expect(abs(result.point[0] - 1.0) < 0.01)
+            #expect(abs(result.point[1] - 1.0) < 0.01)
         }
     }
 }

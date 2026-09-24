@@ -1,0 +1,7 @@
+sphereToBSpline: degree 2x2, S(pi,0) bspline=(-5,-2.4434307830552143e-17,0) sphere=(-5,6.1232339957367663e-16,0)
+approximateSurface: degree 8x8 poles 15x9
+uIsoCurve: start=(-9.18485e-16,0,-5) at 0=(5,0,0)
+vIsoCurve: closed=1 at pi/2=(3.06e-16,5,0)
+toleranceWindowAgrees: cone v=1e-6 resolution 1e-07 defined=1 mean=-866025.40378443885
+toleranceWindowAgrees: cone v=1e-6 resolution 1e-06 defined=0 mean=0
+undefinedPointsAgree: apex defined=0
