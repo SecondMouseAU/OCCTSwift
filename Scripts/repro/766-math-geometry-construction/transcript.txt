@@ -1,0 +1,5 @@
+faceFromRectangle: valid=1 area=50.0000000000
+faceFromCircle: valid=1 area=78.5398163397
+faceWithHole: valid=1 area=321.4601836603
+faceWithMultipleHoles: valid=1 area=843.4513322354
+extrudeFace: valid=1 volume=150.0000000000

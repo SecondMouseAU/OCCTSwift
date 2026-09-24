@@ -20,6 +20,11 @@ struct VisMaterialPBRTests {
         pbr.baseColor = (0.8, 0.2, 0.1)
         #expect(abs(pbr.metallic) < 1e-6)
         #expect(abs(pbr.roughness - 0.5) < 1e-6)
+        // Reading stored properties back could not fail (#766); a different roughness has to
+        // reach the kernel material and make it compare unequal.
+        var other = pbr
+        other.roughness = 0.6
+        #expect(!pbr.isEqual(to: other))
     }
 
     @Test func equality() {
