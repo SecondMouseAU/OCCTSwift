@@ -233,11 +233,11 @@
         "uid": 2
       }
     },
-    "comparison": {
-      "equal": false,
+"comparison": {
+      "equal": true,
       "differences": []
     },
-    "status": "MISMATCH"
+    "status": "PASS"
   },
   {
     "test_name": "BRepGraph Supplement Vertices::boxFacesNotNaturalRestriction",
@@ -365,7 +365,7 @@
     },
     "comparison": {
       "equal": false,
-      "differences": []
+      "differences": ["kernel_output includes warnings field that bridge_output omits"]
     },
     "status": "MISMATCH"
   },

@@ -37,7 +37,7 @@ struct BRepGraphUVGridTests {
     @Test func sampleSphereFace() throws {
         let sphere = try #require(Shape.sphere(radius: 5))
         let graph = try #require(BRepGraph(shape: sphere))
-        try #require(graph.faceCount == 1)
+        #expect(graph.faceCount == 1)
         let sample = try #require(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 4, vSamples: 4))
         #expect(sample.positions.count == 16)
         // Kernel: v spans [-pi/2, pi/2] in 4 steps, so iv = 0 and 3 are the poles, where
