@@ -9,7 +9,7 @@ import simd
 // reproduce. It prints the values the tests observe (the BRIDGE rows of transcript.txt) and
 // writes each shape to BREP (no triangles, written before any measurement) for probe.mm.
 // dumpDir is the session scratch directory it was run from; point it anywhere writable.
-private let dumpDir = "/private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/03ea3706-6435-49df-95a8-a2f5c6dc159c/scratchpad/Thread-C/breps/"
+private let dumpDir = FileManager.default.temporaryDirectory.appendingPathComponent("OCCTSwift_766_Thread_C_breps").path
 
 private func out(_ s: String) { print("DUMP " + s) }
 

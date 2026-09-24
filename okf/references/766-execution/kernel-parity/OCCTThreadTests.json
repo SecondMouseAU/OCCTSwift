@@ -745,3 +745,4 @@
     "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
   }
 ]
+
