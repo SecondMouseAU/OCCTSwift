@@ -259,6 +259,10 @@
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
 | **Extrema_ExtPElS Point-Plane** | pointToPlane | Point-plane extrema | SquareDistance * 2 in OCCTExtremaExtPElSPlane |
+| **Hatch Builder Tests** | createHatcher | Hatcher construction | OCCTHatcherCreate returns nullptr |
+| **Hatch Builder Tests** | addLinesAndCount | Hatch X lines | OCCTHatcherAddXLine drops AddXLine |
+| **Hatch Builder Tests** | addYLines | Hatch Y lines | OCCTHatcherAddYLine drops AddYLine |
+| **Hatch Builder Tests** | trimAndIntervals | Hatch trimming (rewritten: could not fail) | OCCTHatcherTrim drops Trim |
 
 ---
 
