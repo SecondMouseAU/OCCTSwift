@@ -1,0 +1,13 @@
+defaultXYZ direct=1
+defaultXYZ yDirection (-0, 1, 0)
+fromNormal direct=1
+fromNormal xDirection (1, 0, -0)
+angle 1.5707963267949 (pi/2=1.5707963267949)
+isCoplanar 1
+mirrorPoint origin (-1, 0, 0)
+rotate origin (1.11022302463e-16, 1, 0)
+translate origin (1, 2, 3)
+parallel direction/xDirection: throws Standard_ConstructionError
+zero direction: throws Standard_ConstructionError
+rotate source direct=1
+zero rotation axis: throws Standard_ConstructionError
