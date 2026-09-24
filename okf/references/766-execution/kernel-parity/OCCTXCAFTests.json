@@ -139,7 +139,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "area": 2200
+        "area": 2200.0
       }
     },
     "comparison": {
@@ -147,7 +147,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xde/"
+    "source": "Same quantity on both sides: area, as a double. Bridge: node.area was within 1e-5 of 2200.0 after node.setArea(2200.0) (OCCTDocumentGetArea). Kernel: XCAFDoc_Area::Set(label, 2200.0) then Get read back 2200 (printed %.17g, exact). Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-parity/"
   },
   {
     "test_name": "XDE Area Volume Centroid::Set and get volume",
@@ -161,7 +162,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "volume": 6000
+        "volume": 6000.0
       }
     },
     "comparison": {
@@ -169,7 +170,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xde/"
+    "source": "Same quantity on both sides: volume, as a double. Bridge: node.volume was within 1e-5 of 6000.0 after node.setVolume(6000.0) (OCCTDocumentGetVolume). Kernel: XCAFDoc_Volume::Set(label, 6000.0) then Get read back 6000 (printed %.17g, exact). Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-parity/"
   },
   {
     "test_name": "XDE Area Volume Centroid::Set and get centroid",
@@ -229,13 +231,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "referred": true
+        "component_found": true,
+        "referred_shape_found": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "referred_is_part": true
+        "component_found": true,
+        "referred_shape_found": true
       }
     },
     "comparison": {
@@ -243,7 +247,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xde/"
+    "source": "Same quantities on both sides. Bridge: componentLabelId(at: 0) >= 0 and componentReferredLabelId >= 0 (OCCTDocumentGetComponentReferredLabelId returns -1 unless GetReferredShape succeeds with a non-null label). Kernel: GetComponents returned 1 component, the first being the one added, and GetReferredShape returned true with a non-null label, which IsEqual the part label. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-parity/"
   },
   {
     "test_name": "XDE Assembly Operations::RemoveComponent",
@@ -281,7 +286,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "users": 2
+        "users_positive": true
       }
     },
     "comparison": {
@@ -289,7 +294,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xde/"
+    "source": "Same quantity on both sides: users_positive. Bridge: shapeUserCount(shapeLabelId:) > 0 for a box used by one component (the test asserts a lower bound). Kernel: XCAFDoc_ShapeTool::GetUsers on that box label printed 1, so users_positive is true. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-parity/"
   },
   {
     "test_name": "XDE Assembly Operations::UpdateAssemblies",
@@ -297,15 +303,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "components": 1,
-        "solids": 1
+        "component_count": 1,
+        "solids_in_assembly_shape": 1
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "components": 1,
-        "solids_after_update": 1
+        "component_count": 1,
+        "solids_in_assembly_shape": 1
       }
     },
     "comparison": {
@@ -313,7 +319,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xde/"
+    "source": "Same quantities on both sides. Bridge: after updateAssemblies the test observed componentCount == 1 and the assembly node's shape holding one solid (node.shape?.subShapes(ofType: .solid).count == 1). Kernel: after UpdateAssemblies NbComponents is 1 and XCAFDoc_ShapeTool::GetShape of the assembly holds 1 solid. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-parity/"
   },
   {
     "test_name": "XDE Editor::EditorExpand compound to assembly",
@@ -321,15 +328,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true,
-        "components": 2
+        "expand_ok": true,
+        "component_count": 2
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "expand": true,
-        "components": 2
+        "expand_ok": true,
+        "component_count": 2
       }
     },
     "comparison": {
@@ -337,6 +344,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: editorExpand returned true and componentCount(assemblyLabelId:) == 2 for a box-plus-sphere compound added with makeAssembly false. Kernel: XCAFDoc_Editor::Expand(Main, label, false) on the same two-body compound returned true and NbComponents is 2.",
     "probe": "Scripts/repro/766-xcaf-xde/"
   },
   {
@@ -345,13 +353,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true
+        "rescale_ok": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "rescale": true
+        "rescale_ok": true
       }
     },
     "comparison": {
@@ -359,6 +367,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: rescale_ok. Bridge: rescaleGeometry(labelId:, scaleFactor: 2.0, forceIfNotRoot: true) returned true for a box added with the default makeAssembly. Kernel: XCAFDoc_Editor::RescaleGeometry(label, 2.0, true) on a free box label returned true.",
     "probe": "Scripts/repro/766-xcaf-xde/"
   }
 ]

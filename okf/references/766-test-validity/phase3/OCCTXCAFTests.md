@@ -108,8 +108,8 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
-| `area` | `OCCTDocumentSetArea` stores twice the area | :21 Expectation failed: abs(area - 2200.0) < 1e-5 | passed | `OCCTDocumentGetArea` | PASS: 2200 |
-| `volume` | `OCCTDocumentSetVolume` stores twice the volume | :40 Expectation failed: abs(vol - 6000.0) < 1e-5 | passed | `OCCTDocumentGetVolume` | PASS: 6000 |
+| `area` | `OCCTDocumentSetArea` stores twice the area | :21 Expectation failed: abs(area - 2200.0) < 1e-5 | passed | `OCCTDocumentGetArea` | PASS: area 2200.0 on both sides |
+| `volume` | `OCCTDocumentSetVolume` stores twice the volume | :40 Expectation failed: abs(vol - 6000.0) < 1e-5 | passed | `OCCTDocumentGetVolume` | PASS: volume 6000.0 on both sides |
 | `centroid` | `OCCTDocumentSetCentroid` stores x plus 1 | :59 Expectation failed: abs(c.x - 5.0) < 1e-5 | passed | `OCCTDocumentGetCentroid` | PASS: (5, 10, 15) |
 
 ### `XDEAssemblyOperationTests.swift`
@@ -117,14 +117,14 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
 | `addComponent` | `OCCTDocumentGetComponentCount` answers 1 | :34 Expectation failed: doc.componentCount(assemblyLabelId: assemblyLabelId) == 2 | passed | `OCCTDocumentGetComponentCount` | PASS: 2 |
-| `getComponents` | `OCCTDocumentGetComponentReferredLabelId` answers -1 | :55 Expectation failed: referredId >= 0 | passed | `OCCTDocumentGetComponentReferredLabelId` | PASS: the part |
+| `getComponents` | `OCCTDocumentGetComponentReferredLabelId` answers -1 | :55 Expectation failed: referredId >= 0 | passed | `OCCTDocumentGetComponentReferredLabelId` | PASS: the component and its referred shape are found on both sides (the referred label is the part) |
 | `removeComponent` | `OCCTDocumentRemoveComponent` returns without removing | :75 Expectation failed: doc.componentCount(assemblyLabelId: asmId) == 1 | passed | `OCCTDocumentRemoveComponent` | PASS: 2, then 1 |
-| `userCount` | `OCCTDocumentGetShapeUserCount` answers 0 | :91 Expectation failed: doc.shapeUserCount(shapeLabelId: boxId) > 0 | passed | `OCCTDocumentGetShapeUserCount` | PASS: 2 users |
-| `updateAssemblies` | `OCCTDocumentUpdateAssemblies` returns without updating | the assembly-shape solid count (rewritten; the old test asserted `Bool(true)` after the call) | passed | `OCCTDocumentUpdateAssemblies` | PASS: one solid in the assembly shape |
+| `userCount` | `OCCTDocumentGetShapeUserCount` answers 0 | :91 Expectation failed: doc.shapeUserCount(shapeLabelId: boxId) > 0 | passed | `OCCTDocumentGetShapeUserCount` | PASS: the part has at least one user on both sides (kernel count 1) |
+| `updateAssemblies` | `OCCTDocumentUpdateAssemblies` returns without updating | the assembly-shape solid count (rewritten; the old test asserted `Bool(true)` after the call) | passed | `OCCTDocumentUpdateAssemblies` | PASS: 1 component and 1 solid in the updated assembly shape, on both sides |
 
 ### `XDEEditorTests.swift`
 
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
-| `editorExpand` | `OCCTDocumentEditorExpand` returns false | `editorExpand(...)` and the component count (rewritten; the old test discarded the result and asserted `Bool(true)`) | passed | `OCCTDocumentEditorExpand` | PASS: true, 2 components |
-| `rescaleGeometry` | `OCCTDocumentEditorRescaleGeometry` returns false | `rescaleGeometry(...)` (rewritten; the old test discarded the result and asserted `Bool(true)`) | passed | `OCCTDocumentEditorRescaleGeometry` | PASS: true |
+| `editorExpand` | `OCCTDocumentEditorExpand` returns false | `editorExpand(...)` and the component count (rewritten; the old test discarded the result and asserted `Bool(true)`) | passed | `OCCTDocumentEditorExpand` | PASS: Expand returns true and the two-body compound becomes 2 components, on both sides |
+| `rescaleGeometry` | `OCCTDocumentEditorRescaleGeometry` returns false | `rescaleGeometry(...)` (rewritten; the old test discarded the result and asserted `Bool(true)`) | passed | `OCCTDocumentEditorRescaleGeometry` | PASS: RescaleGeometry with force returns true on both sides |
