@@ -1,0 +1,4 @@
+#885 aggregate SurfaceProperties(shape)=1256.6370614359175 (4*pi*100=1256.6370614359173)
+#885 per-face total eps=1e-6: 1256.6370614359171 (|diff| 4.55e-13)
+#885 per-face total eps=0.5: 1216.3113108798664 (|diff| 40.325750556051162)
+#885 per-face total eps=1e-9: 1256.6370614359171 (tight != loose: 1)
