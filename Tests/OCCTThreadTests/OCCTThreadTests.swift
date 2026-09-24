@@ -92,120 +92,129 @@ struct ThreadSpecParsingTests {
 
 @Suite("v0.139 Thread Form v2")
 struct ThreadedFeatureTests {
+    // #1990 rewrite. The four tests below used to place the thread axis at (15, 15, 0) on the
+    // assumption that `Shape.box(width: 30, height: 30, depth: 30)` spans 0...30. It is centred
+    // on the origin (OCCTShapeCreateBox), so that axis ran down the block's +X+Y corner edge: the
+    // "bore" removed a quarter-cylinder over half the height (206.6 mm^3 of 27000) and the thread
+    // cut a quarter of a groove. Every assertion also sat inside an `if let`, so a nil result
+    // passed, and the two-start case WAS nil on that fixture (measured), so `multiStart` asserted
+    // nothing at all. The axis now runs through the block's centre from z = -15, results are
+    // required, and the removed volumes are pinned to the values the kernel produced, which
+    // Scripts/repro/766-thread-occtthreadtests/ re-measures.
+
+    /// Bore axis: through the centre of the origin-centred 30 mm block, entering at its -Z face.
+    static let axisOrigin = SIMD3<Double>(0, 0, -15)
+    static let axis = SIMD3<Double>(0, 0, 1)
+
+    /// Returns the block bored through at the spec minor diameter, per #1578.
+    static func boredBlock(_ spec: ThreadSpec) throws -> Shape {
+        let block = try #require(Shape.box(width: 30, height: 30, depth: 30))
+        let drill = try #require(
+            Shape.cylinder(
+                at: axisOrigin, direction: axis, radius: spec.minorDiameter / 2, height: 30))
+        return try #require(block.subtracting(drill))
+    }
+
+    /// `|measured - expected| <= 1%` of `expected`.
+    static func near(_ measured: Double, _ expected: Double) -> Bool {
+        abs(measured - expected) <= 0.01 * expected
+    }
+
     @Test("threadedHole cuts material from a bored block")
     func threadedHole() throws {
-        let spec = ThreadSpec.parse("M10x1.5")!
-        // Pre-bored to the MINOR diameter (#1578): see Issue187ScrewThreadTests for why.
-        guard let block = Shape.box(width: 30, height: 30, depth: 30),
-            let drillAxis = Shape.cylinder(
-                at: SIMD3(15, 15, 0), direction: SIMD3(0, 0, 1),
-                radius: spec.minorDiameter / 2, height: 30),
-            let blockWithHole = block.subtracting(drillAxis)
-        else {
-            Issue.record("setup nil")
-            return
-        }
-        let threaded = blockWithHole.threadedHole(
-            axisOrigin: SIMD3(15, 15, 0),
-            axisDirection: SIMD3(0, 0, 1),
-            spec: spec,
-            depth: 20
-        )
-        // V-profile cut removes material from the wall → threaded volume < bored volume.
-        if let t = threaded, let vOrig = blockWithHole.volume, let vThreaded = t.volume {
-            #expect(vThreaded < vOrig)
-        }
+        let spec = try #require(ThreadSpec.parse("M10x1.5"))
+        let bored = try Self.boredBlock(spec)
+        let threaded = try #require(
+            bored.threadedHole(
+                axisOrigin: Self.axisOrigin, axisDirection: Self.axis, spec: spec, depth: 20))
+        let vBored = try #require(bored.volume)
+        let vThreaded = try #require(threaded.volume)
+        #expect(threaded.isValid)
+        // Probed: bored 25346.875894685, threaded 25095.711887881 → 251.164 mm^3 of groove.
+        #expect(vThreaded < vBored)
+        #expect(
+            Self.near(vBored - vThreaded, 251.164),
+            "removed \(vBored - vThreaded) mm^3, expected 251.164 (±1%)")
     }
 
     @Test("threadedShaft cuts helical V-grooves into the shaft")
-    func threadedShaft() {
-        guard let shaft = Shape.cylinder(radius: 5, height: 30) else {
-            Issue.record("shaft nil")
-            return
-        }
+    func threadedShaft() throws {
+        let shaft = try #require(Shape.cylinder(radius: 5, height: 30))
         let spec = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.5)
-        let threaded = shaft.threadedShaft(
-            axisOrigin: SIMD3(0, 0, 0),
-            axisDirection: SIMD3(0, 0, 1),
-            spec: spec,
-            length: 20
-        )
-        if let t = threaded, let vOrig = shaft.volume, let vThreaded = t.volume {
-            // External thread = cut from shaft → threaded volume < shaft volume.
-            #expect(vThreaded < vOrig)
-        }
+        let threaded = try #require(
+            shaft.threadedShaft(
+                axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), spec: spec, length: 20))
+        let vShaft = try #require(shaft.volume)
+        let vThreaded = try #require(threaded.volume)
+        #expect(threaded.isValid)
+        // Probed: shaft 2356.194490192, threaded 2088.251072397 → 267.943 mm^3 of groove. That
+        // is for an UNMESHED shaft. Meshing the shaft first inflates `bounds` by the deflection,
+        // which the direct build reads as the rod's axial extent, and the same call then returns
+        // 2092.033005646 (264.161 removed, 11 faces instead of 9): a #1990 finding, not pinned.
+        #expect(vThreaded < vShaft)
+        #expect(
+            Self.near(vShaft - vThreaded, 267.943),
+            "removed \(vShaft - vThreaded) mm^3, expected 267.943 (±1%)")
     }
 
     @Test("threadedHole respects left-handed helix parameter")
-    func leftHanded() {
+    func leftHanded() throws {
         let rh = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.5, leftHanded: false)
         let lh = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.5, leftHanded: true)
-        // Pre-bored to the MINOR diameter (#1578): see Issue187ScrewThreadTests for why.
-        // Handedness doesn't affect minorDiameter, so either spec's value works here.
-        guard let block = Shape.box(width: 30, height: 30, depth: 30),
-            let drillAxis = Shape.cylinder(
-                at: SIMD3(15, 15, 0), direction: SIMD3(0, 0, 1),
-                radius: rh.minorDiameter / 2, height: 30),
-            let bored = block.subtracting(drillAxis)
-        else {
-            Issue.record("setup nil")
-            return
-        }
-        let rhResult = bored.threadedHole(
-            axisOrigin: SIMD3(15, 15, 0),
-            axisDirection: SIMD3(0, 0, 1),
-            spec: rh, depth: 10)
-        let lhResult = bored.threadedHole(
-            axisOrigin: SIMD3(15, 15, 0),
-            axisDirection: SIMD3(0, 0, 1),
-            spec: lh, depth: 10)
-        // Both should produce valid shapes with equivalent volume, a mirror-image
-        // thread has the same volume as the original up to tessellation artefacts.
-        // The absolute tolerance is generous (~1% of a typical V-cut volume) to
-        // accommodate BOP/triangulation noise; the point of the test is that both
-        // handedness values produce valid threaded geometry, not that they're
-        // bit-identical.
-        if let r = rhResult, let l = lhResult,
-            let vr = r.volume, let vl = l.volume
-        {
-            let originalVolume = bored.volume ?? 1
-            let cutR = originalVolume - vr
-            let cutL = originalVolume - vl
-            #expect(cutR > 0 && cutL > 0)
-            #expect(abs(cutR - cutL) / max(cutR, cutL) < 0.1)
-        }
+        // Handedness doesn't affect minorDiameter, so either spec bores the same block.
+        let bored = try Self.boredBlock(rh)
+        let r = try #require(
+            bored.threadedHole(
+                axisOrigin: Self.axisOrigin, axisDirection: Self.axis, spec: rh, depth: 10))
+        let l = try #require(
+            bored.threadedHole(
+                axisOrigin: Self.axisOrigin, axisDirection: Self.axis, spec: lh, depth: 10))
+        let vBored = try #require(bored.volume)
+        let vr = try #require(r.volume)
+        let vl = try #require(l.volume)
+        #expect(vBored - vr > 0 && vBored - vl > 0)
+
+        // The previous version asserted only that the two removed volumes agree to 10%, which an
+        // implementation that ignores `leftHanded` satisfies exactly. Handedness is WHERE the
+        // groove runs, so test that: the thread starts at the radial datum (0, 1, 0) and turns
+        // through +90 degrees to -X after a quarter pitch when right-handed, to +X when
+        // left-handed. Three and a quarter turns in (z = -15 + 0.375 + 4.5), a point half the
+        // cut depth into the wall is in the groove on one side and in solid wall on the other,
+        // and the two hands swap sides.
+        let rMid = rh.minorDiameter / 2 + rh.cutDepth / 2
+        let z = -15 + 0.25 * 1.5 + 3 * 1.5
+        let minusX = SIMD3<Double>(-rMid, 0, z)
+        let plusX = SIMD3<Double>(rMid, 0, z)
+        #expect(bored.classify(point: minusX) == .inside, "the point is wall before threading")
+        #expect(r.classify(point: minusX) == .outside, "RH groove runs through -X here")
+        #expect(r.classify(point: plusX) == .inside)
+        #expect(l.classify(point: minusX) == .inside)
+        #expect(l.classify(point: plusX) == .outside, "LH groove runs through +X here")
+        // Not asserted: equal removed volumes. Measured on this fixture, RH removes 124.88 mm^3
+        // (the analytic cutter's boolean is a near no-op, so the smooth loft fallback cuts) and
+        // LH 155.89 mm^3 (the analytic cutter cuts), 20% apart. Recorded as a #1990 finding.
     }
 
     @Test("Multi-start thread (starts: 2) removes more material than single-start")
-    func multiStart() {
+    func multiStart() throws {
         let spec = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 2.0)
-        // Pre-bored to the MINOR diameter (#1578): see Issue187ScrewThreadTests for why.
-        guard let block = Shape.box(width: 30, height: 30, depth: 30),
-            let drillAxis = Shape.cylinder(
-                at: SIMD3(15, 15, 0), direction: SIMD3(0, 0, 1),
-                radius: spec.minorDiameter / 2, height: 30),
-            let bored = block.subtracting(drillAxis)
-        else {
-            Issue.record("setup nil")
-            return
-        }
-        let single = bored.threadedHole(
-            axisOrigin: SIMD3(15, 15, 0),
-            axisDirection: SIMD3(0, 0, 1),
-            spec: spec, depth: 10, starts: 1)
-        let double = bored.threadedHole(
-            axisOrigin: SIMD3(15, 15, 0),
-            axisDirection: SIMD3(0, 0, 1),
-            spec: spec, depth: 10, starts: 2)
-        if let s = single, let d = double,
-            let vs = s.volume, let vd = d.volume
-        {
-            // Two helices remove roughly twice the material (allow for overlap at crossovers).
-            let originalBore = bored.volume ?? 0
-            let singleCut = originalBore - vs
-            let doubleCut = originalBore - vd
-            #expect(doubleCut > singleCut)
-        }
+        let bored = try Self.boredBlock(spec)
+        let single = try #require(
+            bored.threadedHole(
+                axisOrigin: Self.axisOrigin, axisDirection: Self.axis, spec: spec, depth: 10,
+                starts: 1))
+        let double = try #require(
+            bored.threadedHole(
+                axisOrigin: Self.axisOrigin, axisDirection: Self.axis, spec: spec, depth: 10,
+                starts: 2))
+        let vBored = try #require(bored.volume)
+        let singleCut = vBored - (try #require(single.volume))
+        let doubleCut = vBored - (try #require(double.volume))
+        // Probed: bored 25553.621035462, 1-start 25393.593571728 (160.027 removed),
+        // 2-start 25284.150077539 (269.471 removed).
+        #expect(doubleCut > singleCut)
+        #expect(Self.near(singleCut, 160.027), "1-start removed \(singleCut), expected 160.027")
+        #expect(Self.near(doubleCut, 269.471), "2-start removed \(doubleCut), expected 269.471")
     }
 }
 
