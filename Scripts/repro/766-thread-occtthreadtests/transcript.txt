@@ -1,0 +1,61 @@
+# Scripts/repro/766-thread-occtthreadtests/probe.mm, run 2026-09-24 against the pinned
+# v4.0.0-kernel.1 OCCT.xcframework (macos-arm64). Part B's BREP files were exported by a temporary
+# diagnostic test (not committed) calling the same Swift API with the tests' inputs:
+#   c*_  = the rewritten fixture (axis through the block centre from (0,0,-15))
+#   f*_  = the shipped fixture (axis at (15,15,0), the block's corner edge)
+#   c2_shaft_threaded_unmeshed / _meshed = threadedShaft on a fresh vs a previously meshed shaft
+#
+# Swift-side values from that diagnostic (Shape.volume), for comparison with Part B:
+#   c1_bored 25346.875894685  c1_hole 25095.711887881  c3_rh 25221.995818538  c3_lh 25190.987760384
+#   c4_bored 25553.621035462  c4_single 25393.593571728  c4_double 25284.150077539
+#   c2_shaft_threaded_unmeshed 2088.251072397  c2_shaft_threaded_meshed 2092.033005646
+#   f1_bored 26793.359486836  f1_hole 26752.777856076  f3_rh 26765.390611720  f3_lh 26766.412977268
+#   f4_bored 26819.202629433  f4_single 26783.159264223  f4_double: threadedHole returned nil
+#
+# The volume of applyThreadCut's analytic-cutter candidate as the Swift run saw it (temporary
+# print, reverted), for comparison with Part A:
+#   shipped:   hole 26788.497010052  rh 26788.184580007  lh 26770.516550674
+#              1-start 26802.526593509  2-start 25988.892235181
+#   rewritten: hole 25346.875882973  rh 25346.875749343  lh 25190.987760384
+#              1-start 25553.621637061  2-start 25553.621035462
+# Every one matches Part A to the printed 9 decimals. Only the rewritten LH candidate passes
+# isSoundCut (removes >0.1%), so it is the only analytic result a test ever receives; the other
+# four fall back to the screw-loft cutter, whose results Part B re-measures.
+
+== Part A: pure-OCCT rebuild of each ThreadedFeatureTests scenario ==
+[shipped fixture, axis on the block's corner edge (15,15,0)]
+  M10x1.5 minor=8.376202368 cutDepth=0.811898816
+  bored        vol=26793.359486836 valid=1 faces=8
+  hole d=20    analytic vol=26788.497010052 valid=1 faces=38
+  rh d=10      analytic vol=26788.184580007 valid=0 faces=34
+  lh d=10      analytic vol=26770.516550674 valid=1 faces=34
+  bored P2     vol=26819.202629433 valid=1 faces=8
+  1-start P2   analytic vol=26802.526593509 valid=1 faces=25
+  2-start P2   analytic vol=25988.892235181 valid=0 faces=17
+[rewritten fixture, axis through the block's centre from (0,0,-15)]
+  M10x1.5 minor=8.376202368 cutDepth=0.811898816
+  bored        vol=25346.875894685 valid=1 faces=7
+  hole d=20    analytic vol=25346.875882973 valid=1 faces=34
+  rh d=10      analytic vol=25346.875749343 valid=1 faces=20
+  lh d=10      analytic vol=25190.987760384 valid=1 faces=18
+  bored P2     vol=25553.621035462 valid=1 faces=7
+  1-start P2   analytic vol=25553.621637061 valid=1 faces=18
+  2-start P2   analytic vol=25553.621035462 valid=1 faces=7
+shaft r5 h30  vol=2356.194490192 valid=1 faces=3
+== Part B: kernel re-measure of the shapes the Swift run exported ==
+c1_bored           vol=25346.875894685 valid=1 faces=7
+c1_hole            vol=25095.711887881 valid=1 faces=25
+c3_rh              vol=25221.995818538 valid=1 faces=18
+c3_lh              vol=25190.987760384 valid=1 faces=18
+c4_bored           vol=25553.621035462 valid=1 faces=7
+c4_single          vol=25393.593571728 valid=1 faces=17
+c4_double          vol=25284.150077539 valid=1 faces=19
+f2_shaft           vol=2356.194490192 valid=1 faces=3
+c2_shaft_threaded_unmeshed vol=2088.251072397 valid=1 faces=9
+c2_shaft_threaded_meshed vol=2092.033005646 valid=1 faces=11
+f1_bored           vol=26793.359486836 valid=1 faces=8
+f1_hole            vol=26752.777856076 valid=1 faces=177
+f3_rh              vol=26765.390611720 valid=1 faces=104
+f3_lh              vol=26766.412977268 valid=1 faces=114
+f4_bored           vol=26819.202629433 valid=1 faces=8
+f4_single          vol=26783.159264223 valid=1 faces=78
