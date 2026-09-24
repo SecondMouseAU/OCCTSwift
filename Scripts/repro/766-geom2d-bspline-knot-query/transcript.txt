@@ -1,0 +1,9 @@
+degree=2 FirstUKnotIndex=1 LastUKnotIndex=2 NbKnots=2 KnotDistribution=3
+  knot 1 = 0 mult 3
+  knot 2 = 2.8284271247461903 mult 3
+poles=3
+  pole 1 = (0, 0)
+  pole 2 = (1, 2)
+  pole 3 = (2, 0)
+start=(0, 0) end=(2, 0)
+closed=0 periodic=0 continuity=6 IsCN(0..4)=11111

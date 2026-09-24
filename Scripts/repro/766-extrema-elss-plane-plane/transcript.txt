@@ -1,0 +1,3 @@
+parallelPlanesReportTheSquareDistance: done=1 parallel=1 nbExt=1 squareDistance=100
+parallelPlanesReportTheSquareDistance (via Extrema_ExtPElS): done=1 nbExt=1 squareDistance[1]=100
+crossingPlanesReportNoDistance: done=1 parallel=0 nbExt=0
