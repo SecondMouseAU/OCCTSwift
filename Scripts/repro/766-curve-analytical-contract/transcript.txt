@@ -1,0 +1,18 @@
+circle r=5 full domain: tol=0.0001 range=[0, 6.2831853071795862] ok=1 result=Geom_Circle sameHandleAsInput=1 newFirst=0 newLast=6.2831853071795862 gap=0 result(mid)=(-5, 6.1232339957367663e-16, 0) |xy|=5
+half-circle BSpline domain [0, 3.1415926535897931]
+half-circle BSpline full domain: tol=0.0001 range=[0, 3.1415926535897931] ok=1 result=Geom_Circle sameHandleAsInput=0 newFirst=0 newLast=3.1415926535897922 gap=3.5527136788005009e-15 result(mid)=(-1.1663921185146846e-15, 5, 0) |xy|=5
+half-circle BSpline domain + 1e-3: tol=0.0001 range=[0.001, 3.1415926535897931] ok=1 result=Geom_Circle sameHandleAsInput=0 newFirst=0 newLast=3.1406921694287426 gap=1.7763568394002505e-15 result(mid)=(-0.002251210326565859, 4.9999994932051832, 0) |xy|=5.0000000000000027
+freeform curve 1e-4: tol=0.0001 range=[0, 28.912502659708977] ok=0
+freeform curve 1e-6: tol=1e-06 range=[0, 28.912502659708977] ok=0
+full-circle BSpline domain [0, 6.2831853071795862]
+full-circle BSpline middle half: tol=0.0001 range=[1.5707963267948966, 4.7123889803846897] ok=1 result=Geom_Circle sameHandleAsInput=0 newFirst=0 newLast=3.0646505987751356 gap=2.6645352591003757e-15 result(mid)=(-4.9999999999999991, 6.3934113719755787e-16, 0) |xy|=4.9999999999999991
+plane at (1,2,3): tol=0.0001 ok=1 result=Geom_Plane sameHandleAsInput=0 gap=0 result(0.3,0.4)=(1.3, 2.3999999999999999, 3) input(0.3,0.4)=(1.3, 2.3999999999999999, 3)
+BSpline plane bounds u [-10, 10] v [-10, 10]
+BSpline plane: tol=0.0001 ok=1 result=Geom_Plane sameHandleAsInput=0 gap=0 result(0.3,0.4)=(0.29999999999999999, 0.40000000000000002, 0) input(0.3,0.4)=(0.30000000000000049, 0.40000000000000036, 0)
+BSpline plane, full UV bounds: tol=0.0001 ok=1 result=Geom_Plane sameHandleAsInput=0 gap=0 result(0.3,0.4)=(0.29999999999999999, 0.40000000000000002, 0) input(0.3,0.4)=(0.30000000000000049, 0.40000000000000036, 0)
+BSpline plane, middle-half UV bounds: tol=0.0001 ok=1 result=Geom_Plane sameHandleAsInput=0 gap=9.9301366129890925e-16 result(0.3,0.4)=(0.37094611159291574, 0.33525957450026145, 0) input(0.3,0.4)=(0.30000000000000049, 0.40000000000000036, 0)
+BSpline plane, inverted UV bounds: tol=0.0001 threw Standard_Failure: Geom_BSplineSurface::Segment
+cylinder r=5: tol=0.0001 ok=1 result=Geom_CylindricalSurface sameHandleAsInput=0 gap=0 result(0.3,0.4)=(4.7766824456280297, 1.4776010333066978, 0.40000000000000002) input(0.3,0.4)=(4.7766824456280297, 1.4776010333066978, 0.40000000000000002)
+freeform surface 1e-4: tol=0.0001 ok=0
+freeform surface 1e-6: tol=1e-06 ok=0
+freeform surface 1e-6 on [0,1]x[0,1]: tol=1e-06 ok=0
