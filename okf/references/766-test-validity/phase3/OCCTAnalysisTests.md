@@ -105,8 +105,6 @@
 | **Hatch Patterns** | Generate horizontal hatches in rectangle | Hatch_Hatcher fill | return 0 segments after the input guards |
 | **Hatch Patterns** | Diagonal hatches | Hatch_Hatcher fill | return 0 segments after the input guards |
 | **Hatch Patterns** | Empty boundary returns nothing | Degenerate boundary rejection | drop the boundary.count >= 3 guard in HatchPattern.generate AND the boundaryCount < 3 guard in OCCTHatchLines |
-| **Hatch Patterns** | Triangle boundary | Hatch_Hatcher fill | return 0 segments after the input guards |
-| **Hatch Patterns** | An island polygon cuts a hole in the hatch fill | Island trim (#1172) | skip trimPolygon for islands |
 
 ---
 
@@ -224,8 +222,6 @@
 | Generate horizontal hatches in rectangle | OCCTHatchLines | Hatch_Hatcher fill | return 0 segments after the input guards | ✅ | ✅ | Red: HatchTests.swift:19 `segments.count > 0`. Parity MATCH, `Scripts/repro/766-hatch-redo/`. |
 | Diagonal hatches | OCCTHatchLines | Hatch_Hatcher fill | return 0 segments after the input guards | ✅ | ✅ | Red: HatchTests.swift:32 `segments.count > 0`. Parity MATCH, `Scripts/repro/766-hatch-redo/`. |
 | Empty boundary returns nothing | OCCTHatchLines | Degenerate boundary rejection | drop the boundary.count >= 3 guard in HatchPattern.generate AND the boundaryCount < 3 guard in OCCTHatchLines | ✅ | ✅ | Red: HatchTests.swift:58 `islandOnly.isEmpty` (the original assertion at :50 stays green under the same injection). Parity EXPECTED_DIVERGENCE, `Scripts/repro/766-hatch-redo/`: the bridge guard returns 0 for the island-only case where the unguarded kernel path returns 3. Rewritten: could not fail. The kernel itself returns nothing for an empty boundary, so the original assertion passed with every guard removed. Island case added. |
-| Triangle boundary | OCCTHatchLines | Hatch_Hatcher fill | return 0 segments after the input guards | ✅ | ✅ | Red: HatchTests.swift:72 `segments.count > 0`. Parity MATCH, `Scripts/repro/766-hatch-redo/`. |
-| An island polygon cuts a hole in the hatch fill | OCCTHatchLines | Island trim (#1172) | skip trimPolygon for islands | ✅ | ✅ | Red: HatchTests.swift:99 `atY10.count == 2` and :105 `hi <= 7.0 + 1e-6 \|\| lo >= 13.0 - 1e-6`. Parity MATCH, `Scripts/repro/766-hatch-redo/`. |
 
 ---
 
@@ -331,7 +327,5 @@ For each test, run ground-truth C++ comparison:
 | Generate horizontal hatches in rectangle | ✅ | ✅ | ✅ |
 | Diagonal hatches | ✅ | ✅ | ✅ |
 | Empty boundary returns nothing | ✅ | ✅ | ✅ |
-| Triangle boundary | ✅ | ✅ | ✅ |
-| An island polygon cuts a hole in the hatch fill | ✅ | ✅ | ✅ |
 
 **Total**: 559 tests
