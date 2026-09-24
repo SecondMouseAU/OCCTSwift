@@ -628,167 +628,156 @@ struct MakeShapeOnMeshTests {
     }
 }
 
+// Epic #766: every test from here to "Poly_Connect Mesh Adjacency Tests" wrapped its assertions in
+// `if let`, so a nil result (a failed build, an empty polygon) skipped them and passed. They now
+// `#require`, and pin the values the kernel gives the same inputs
+// (Scripts/repro/766-mesh-core-3/transcript.txt). "First face" and "first edge" are index 0 of
+// faces() / edges(): the x = -5 face and the edge from (-5, -5, -5) to (-5, -5, 5).
+
 @Suite("BRepGProp MeshCinert Tests")
 struct MeshCinertTests {
     @Test("prepare polygon and compute")
-    func prepareAndCompute() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func prepareAndCompute() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let _ = box.mesh(linearDeflection: 0.1)
-        let edges = box.edges()
-        if let edge = edges.first {
-            let points = edge.meshPolygonPoints()
-            #expect(points.count > 0)
-            if points.count >= 2 {
-                let result = meshCinertCompute(points: points)
-                #expect(result.mass > 0)
-            }
-        }
+        let edge = try #require(box.edges().first)
+        let points = edge.meshPolygonPoints()
+        // A straight 10-unit edge: two polygon points, and a mass (length) of 10.
+        #expect(points.count == 2)
+        let result = meshCinertCompute(points: points)
+        #expect(abs(result.mass - 10) < 1e-9)
     }
 }
 
 @Suite("BRepGProp MeshProps Tests")
 struct MeshPropsTests {
     @Test("surface mesh properties")
-    func surfaceProps() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func surfaceProps() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let _ = box.mesh(linearDeflection: 0.1)
-        let faces = box.faces()
-        if let face = faces.first {
-            let result = face.meshProps(type: .surface)
-            #expect(result.mass > 0)
-        }
+        let face = try #require(box.faces().first)
+        let result = face.meshProps(type: .surface)
+        #expect(abs(result.mass - 100) < 1e-9)
     }
 
+    // This asserted nothing ("just don't crash"). The x = -5 face's volume contribution about the
+    // origin is (1/3) * 5 * 100 = 166.67, which BRepGProp_MeshProps(Vinert) gives.
     @Test("volume mesh properties")
-    func volumeProps() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func volumeProps() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let _ = box.mesh(linearDeflection: 0.1)
-        let faces = box.faces()
-        if let face = faces.first {
-            let result = face.meshProps(type: .volume)
-            // Volume contribution from single face may be zero or small, just don't crash
-            let _ = result.mass
-        }
+        let face = try #require(box.faces().first)
+        let result = face.meshProps(type: .volume)
+        #expect(abs(result.mass - 500.0 / 3.0) < 1e-9)
     }
 }
 
 @Suite("BRepMesh ShapeTool Tests")
 struct MeshShapeToolTests {
     @Test("max face tolerance")
-    func maxFaceTolerance() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func maxFaceTolerance() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let _ = box.mesh(linearDeflection: 0.1)
-        let faces = box.faces()
-        if let face = faces.first {
-            let tol = face.maxMeshTolerance
-            #expect(tol > 0)
-        }
+        let face = try #require(box.faces().first)
+        // BRepBuilderAPI's default tolerance, Precision::Confusion().
+        #expect(abs(face.maxMeshTolerance - 1e-7) < 1e-15)
     }
 
     @Test("box max dimension")
-    func boxMaxDimension() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func boxMaxDimension() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let maxDim = box.meshMaxDimension
-        #expect(abs(maxDim - 10.0) < 1.0)
+        // 10 plus the bounding box's 1e-7 enlargement on each side.
+        #expect(abs(maxDim - 10.0000002) < 1e-9)
     }
 
+    // This asserted nothing ("just verify no crash"). The first edge lies on the first face, and
+    // BRepMesh_ShapeTool::UVPoints gives its end points in that face's UV space.
     @Test("UV points on edge")
-    func uvPoints() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func uvPoints() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let _ = box.mesh(linearDeflection: 0.1)
-        let faces = box.faces()
-        if let face = faces.first {
-            // Get edges of this face by exploring box edges
-            let edges = box.edges()
-            if let edge = edges.first {
-                let uv = face.uvPoints(edge: edge)
-                // Some edges may not be on this face, just verify no crash
-                let _ = uv
-            }
-        }
+        let face = try #require(box.faces().first)
+        let edge = try #require(box.edges().first)
+        let uv = try #require(face.uvPoints(edge: edge))
+        #expect(abs(uv.u1) < 1e-9 && abs(uv.v1) < 1e-9)
+        #expect(abs(uv.u2 - 10) < 1e-9 && abs(uv.v2) < 1e-9)
     }
 }
 
 @Suite("Poly_Polygon3D")
 struct Polygon3DTests {
     @Test("create without parameters")
-    func createWithoutParams() {
+    func createWithoutParams() throws {
         let points: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0)]
-        if let poly = Polygon3D.create(points: points) {
-            #expect(poly.nodeCount == 3)
-            #expect(!poly.hasParameters)
-        }
+        let poly = try #require(Polygon3D.create(points: points))
+        #expect(poly.nodeCount == 3)
+        #expect(!poly.hasParameters)
     }
 
     @Test("create with parameters")
-    func createWithParams() {
+    func createWithParams() throws {
         let points: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(20, 0, 0)]
         let params: [Double] = [0.0, 10.0, 20.0]
-        if let poly = Polygon3D.create(points: points, parameters: params) {
-            #expect(poly.nodeCount == 3)
-            #expect(poly.hasParameters)
-            #expect(abs(poly.parameter(at: 1) - 10.0) < 1e-10)
-        }
+        let poly = try #require(Polygon3D.create(points: points, parameters: params))
+        #expect(poly.nodeCount == 3)
+        #expect(poly.hasParameters)
+        #expect(abs(poly.parameter(at: 1) - 10.0) < 1e-10)
     }
 
     @Test("deflection")
-    func deflection() {
+    func deflection() throws {
         let points: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]
-        if let poly = Polygon3D.create(points: points) {
-            poly.deflection = 1.0
-            #expect(abs(poly.deflection - 1.0) < 1e-10)
-        }
+        let poly = try #require(Polygon3D.create(points: points))
+        poly.deflection = 1.0
+        #expect(abs(poly.deflection - 1.0) < 1e-10)
     }
 }
 
 @Suite("Poly_PolygonOnTriangulation")
 struct PolygonOnTriangulationTests {
     @Test("create without parameters")
-    func createWithoutParams() {
+    func createWithoutParams() throws {
         let indices: [Int32] = [1, 2, 3, 4]
-        if let poly = PolygonOnTriangulation.create(nodeIndices: indices) {
-            #expect(poly.nodeCount == 4)
-            #expect(poly.nodeIndex(at: 0) == 1)
-            #expect(poly.nodeIndex(at: 3) == 4)
-            #expect(!poly.hasParameters)
-        }
+        let poly = try #require(PolygonOnTriangulation.create(nodeIndices: indices))
+        #expect(poly.nodeCount == 4)
+        #expect(poly.nodeIndex(at: 0) == 1)
+        #expect(poly.nodeIndex(at: 3) == 4)
+        #expect(!poly.hasParameters)
     }
 
     @Test("create with parameters")
-    func createWithParams() {
+    func createWithParams() throws {
         let indices: [Int32] = [1, 2, 3]
         let params: [Double] = [0.0, 1.0, 2.0]
-        if let poly = PolygonOnTriangulation.create(nodeIndices: indices, parameters: params) {
-            #expect(poly.nodeCount == 3)
-            #expect(poly.hasParameters)
-            #expect(abs(poly.parameter(at: 1) - 1.0) < 1e-10)
-        }
+        let poly = try #require(PolygonOnTriangulation.create(nodeIndices: indices, parameters: params))
+        #expect(poly.nodeCount == 3)
+        #expect(poly.hasParameters)
+        #expect(abs(poly.parameter(at: 1) - 1.0) < 1e-10)
     }
 
     @Test("deflection")
-    func deflection() {
+    func deflection() throws {
         let indices: [Int32] = [1, 2]
-        if let poly = PolygonOnTriangulation.create(nodeIndices: indices) {
-            poly.deflection = 0.1
-            #expect(abs(poly.deflection - 0.1) < 1e-10)
-        }
+        let poly = try #require(PolygonOnTriangulation.create(nodeIndices: indices))
+        poly.deflection = 0.1
+        #expect(abs(poly.deflection - 0.1) < 1e-10)
     }
 }
 
 @Suite("Poly_MergeNodesTool")
 struct MergeNodesToolTests {
     @Test("merge mesh nodes from shape")
-    func mergeFromShape() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            // Triangulate first
-            let _ = box.mesh(linearDeflection: 1.0)
-            if let merged = mergedMeshNodes(from: box, smoothAngle: .pi / 4) {
-                #expect(merged.vertexCount > 0)
-                #expect(merged.triangleCount > 0)
-                #expect(merged.vertices.count == merged.vertexCount)
-                #expect(merged.indices.count == merged.triangleCount * 3)
-            }
-        }
+    func mergeFromShape() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        // Triangulate first
+        let _ = box.mesh(linearDeflection: 1.0)
+        let merged = try #require(mergedMeshNodes(from: box, smoothAngle: .pi / 4))
+        // At pi/4 no box edge is smooth, so each face keeps its own four corner nodes.
+        #expect(merged.vertexCount == 24)
+        #expect(merged.triangleCount == 12)
+        #expect(merged.vertices.count == merged.vertexCount)
+        #expect(merged.indices.count == merged.triangleCount * 3)
     }
 }
 
@@ -833,12 +822,13 @@ struct CoherentTriangulationTests {
         #expect(ct.triangleCount == 1)
     }
 
+    // Two triangles sharing one edge have five distinct links; `> 0` accepted any count.
     @Test("compute links")
     func computeLinks() {
         let ct = Self.twoTriangleMesh()
         let nLinks = ct.computeLinks()
-        #expect(nLinks > 0)
-        #expect(ct.linkCount > 0)
+        #expect(nLinks == 5)
+        #expect(ct.linkCount == 5)
     }
 
     @Test("deflection set/get")
@@ -849,42 +839,40 @@ struct CoherentTriangulationTests {
     }
 
     @Test("convert back to triangulation")
-    func getResult() {
+    func getResult() throws {
         let ct = CoherentTriangulation.create()
         let _ = ct.setNode(x: 0, y: 0, z: 0)
         let _ = ct.setNode(x: 1, y: 0, z: 0)
         let _ = ct.setNode(x: 0, y: 1, z: 0)
         ct.addTriangle(0, 1, 2)
-        if let result = ct.getResult() {
-            #expect(result.nodeCount == 3)
-            #expect(result.triangleCount == 1)
-        }
+        let result = try #require(ct.getResult())
+        #expect(result.nodeCount == 3)
+        #expect(result.triangleCount == 1)
     }
 
+    // The first face of a box meshed at 1.0 is two triangles; `> 0` accepted any face.
     @Test("create from mesh")
-    func createFromMesh() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let _ = box.mesh(linearDeflection: 1.0)
-            if let ct = CoherentTriangulation.createFromMesh(box) {
-                #expect(ct.triangleCount > 0)
-            }
-        }
+    func createFromMesh() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let _ = box.mesh(linearDeflection: 1.0)
+        let ct = try #require(CoherentTriangulation.createFromMesh(box))
+        #expect(ct.triangleCount == 2)
     }
 
+    // nodeCoords(at:) reads the result triangulation, whose nodes are 1-based: node 1 is the
+    // first node set.
     @Test("node coordinates after result")
-    func nodeCoords() {
+    func nodeCoords() throws {
         let ct = CoherentTriangulation.create()
         let _ = ct.setNode(x: 1.5, y: 2.5, z: 3.5)
         let _ = ct.setNode(x: 4, y: 5, z: 6)
         let _ = ct.setNode(x: 7, y: 8, z: 9)
         ct.addTriangle(0, 1, 2)
-        if ct.getResult() != nil {
-            if let coords = ct.nodeCoords(at: 1) {
-                #expect(abs(coords.x - 1.5) < 1e-6)
-                #expect(abs(coords.y - 2.5) < 1e-6)
-                #expect(abs(coords.z - 3.5) < 1e-6)
-            }
-        }
+        _ = try #require(ct.getResult())
+        let coords = try #require(ct.nodeCoords(at: 1))
+        #expect(abs(coords.x - 1.5) < 1e-6)
+        #expect(abs(coords.y - 2.5) < 1e-6)
+        #expect(abs(coords.z - 3.5) < 1e-6)
     }
 }
 
