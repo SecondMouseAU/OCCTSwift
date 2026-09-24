@@ -30,7 +30,7 @@ struct BezierSurfaceWeightTests {
             if p.count == 9 {
                 #expect(p[1] == SIMD3(0, 5, 2) && p[4] == SIMD3(5, 5, 3) && p[7] == SIMD3(10, 5, 2))
             }
-            #expect(surf.bezierWeights == [1, 3, 1, 1, 3, 1, 1, 3, 1])
+            #expect(surf.bezierWeights == [1.0, 3.0, 1.0, 1.0, 3.0, 1.0, 1.0, 3.0, 1.0])
         }
     }
 
@@ -54,7 +54,7 @@ struct BezierSurfaceWeightTests {
             if p.count == 9 {
                 #expect(Array(p[3...5]) == newPoles)
             }
-            #expect(surf.bezierWeights == [1, 1, 1, 4, 4, 4, 1, 1, 1])
+            #expect(surf.bezierWeights == [1.0, 1.0, 1.0, 4.0, 4.0, 4.0, 1.0, 1.0, 1.0])
         }
     }
 }

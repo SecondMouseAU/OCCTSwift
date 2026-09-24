@@ -96,17 +96,17 @@ struct BezierSurfaceCompletionsV129Tests {
             let initPoles = (0..<nbU).map { i in SIMD3<Double>(Double(i), 0.0, 0.0) }
             let initWeights = [Double](repeating: 2.0, count: nbU)
             #expect(surf.bezierSetPoleColWeights(vIndex: 1, poles: initPoles, weights: initWeights))
-            #expect(surf.bezierWeights == [2, 1, 2, 1])
+            #expect(surf.bezierWeights == [2.0, 1.0, 2.0, 1.0])
             // Now set weight column
             let colWeights = [Double](repeating: 1.5, count: nbU)
             let ok1 = surf.bezierSetWeightCol(vIndex: 1, weights: colWeights)
             #expect(ok1)
-            #expect(surf.bezierWeights == [1.5, 1, 1.5, 1])
+            #expect(surf.bezierWeights == [1.5, 1.0, 1.5, 1.0])
             // Set weight row
             let rowWeights = [Double](repeating: 1.2, count: nbV)
             let ok2 = surf.bezierSetWeightRow(uIndex: 1, weights: rowWeights)
             #expect(ok2)
-            #expect(surf.bezierWeights == [1.2, 1.2, 1.5, 1])
+            #expect(surf.bezierWeights == [1.2, 1.2, 1.5, 1.0])
         }
     }
 }
