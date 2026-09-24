@@ -19,7 +19,10 @@ struct RevolutionFormTests {
             axisDirection: SIMD3(0, 0, 1),
             height1: 0.2, height2: 0.2
         )
-        // Revolution form is complex; just test API is callable
-        _ = result
+        // #766: was `_ = result`, so it asserted nothing, and the result is always nil: the bridge
+        // needs BRepLib_FindSurface to find the profile's plane, and a single straight segment
+        // does not define one (the kernel reports Found() = false, Scripts/repro/766-projection-trim-revolution-section/). The
+        // refusal is pinned.
+        #expect(result == nil)
     }
 }
