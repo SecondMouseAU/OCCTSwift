@@ -504,3 +504,13 @@ Probe: `Scripts/repro/766-geom2d-transform-split-continuity/`. Every row was run
 | Curve2D measured continuity (#485)::A G1-only 2D curve is reachable and reports ordinal 1 | `OCCTCurve2DGetContinuity` | pre-#485 encoding | ✅ | ✅ | MATCH | `guard` + `Issue.record`; now `#require` |
 | Curve2D measured continuity (#485)::continuity and continuityClass agree on the same curve, in every class | `OCCTCurve2DGetContinuity` | pre-#485 encoding | ✅ | ✅ | MATCH |  |
 | Issue 486: Curve2D batch-eval spellings agree::empty parameters give an empty result, not one padded with zeroes | `Curve2D.evaluateGrid (Swift)` | empty input returns one zero point | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+### #1979 executed: `Issue549Curve2DArcLengthRangeTests.swift`
+Probe: `Scripts/repro/766-geom2d-arclength-zero-radius/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D ranged arc-length contract after the #549 bridge removal::A reversed in-domain range measures the span, not the failure sentinel | `OCCTCurve2DGetLengthBetween` | u1 > u2 returns -1 | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::A reversed range on a single-span curve measures the span too | `OCCTCurve2DGetLengthBetween` | u1 > u2 returns -1 | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::Parameters past both ends clamp to the domain instead of extrapolating | `OCCTCurve2DGetLengthBetween` | pre-bounded adaptor over [u1, u2] (the pre-#549 extrapolation) | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::A range wholly outside the domain measures zero, not a fragment of the extrapolation | `OCCTCurve2DGetLengthBetween` | pre-bounded adaptor over [u1, u2] | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::Equal parameters are still a genuine zero, not the failure sentinel | `OCCTCurve2DGetLengthBetween` | u1 == u2 returns -1 | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::The -1.0 sentinel still reports a genuine failure | `OCCTCurve2DGetLengthBetween` | NaN bound measured as 0 | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::The two spellings are one computation, on the ranges that used to diverge | `Curve2D.arcLength (Swift)` | arcLength returns -1 on a reversed range while length(from:to:) measures it | ✅ | ✅ | MATCH |  |
+| Curve2D ranged arc-length contract after the #549 bridge removal::2D and 3D answer the same on a reversed and an out-of-domain range | `OCCTCurve2DGetLengthBetween` | u1 > u2 returns -1 | ✅ | ✅ | MATCH |  |
