@@ -1,0 +1,12 @@
+plus/minus before: range=false plusMinus=true value=20 lowerTol=-0.3 upperTol=0.7 lower=0 upper=0
+plus/minus after SetLower/UpperBound(10, 12) (bridge refuses before this): range=false plusMinus=true value=10 lowerTol=12 upperTol=0.7 lower=0 upper=0
+simple after SetLower/UpperBound(10, 12): range=true plusMinus=false value=11 lowerTol=0 upperTol=0 lower=10 upper=12
+radius 25 -0.1/+0.1: range=false plusMinus=true value=25 lowerTol=-0.1 upperTol=0.1 lower=0 upper=0
+radius type ordinal=17
+stored radius, read back via GetObject: range=false plusMinus=true value=25 lowerTol=-0.1 upperTol=0.1 lower=0 upper=0
+dimension labels=1 (index of new = 0)
+ref dimension labels for the shape=1
+datum labels before any AddDatum=0
+datum[0] name=A, datum labels after two AddDatum=2
+XCAFDimTolObjects_DimensionType cases=32
+XCAFDimTolObjects_GeomToleranceType cases=16

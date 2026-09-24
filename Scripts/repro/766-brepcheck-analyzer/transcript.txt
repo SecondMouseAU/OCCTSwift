@@ -1,0 +1,4 @@
+boxValid: BRepCheck_Analyzer(box, true).IsValid()=1
+sphereValid: BRepCheck_Analyzer(sphere, true).IsValid()=1
+cylinderValid: BRepCheck_Analyzer(cylinder, true).IsValid()=1
+noGeomChecks: BRepCheck_Analyzer(box, false).IsValid()=1
