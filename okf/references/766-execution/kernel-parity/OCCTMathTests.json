@@ -2693,5 +2693,221 @@
       "failing_expectation": ":57 `abs(cross.coordinates.z - 1.0) < 1e-10`"
     },
     "green": true
+  },
+  {
+    "test_name": "gp_Dir Extras v0.120.0::isOpposite",
+    "bridge_function": "OCCTDirIsOpposite",
+    "bridge_output": {
+      "type": "observed",
+      "data": "1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1",
+      "source": "Scripts/repro/766-math-gp-dir-vec-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "IsOpposite result negated",
+      "failing_expectation": ":13 `Shape.dirIsOpposite(d1, d2, tolerance: 0.01)`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Dir Extras v0.120.0::isNotOpposite",
+    "bridge_function": "OCCTDirIsOpposite",
+    "bridge_output": {
+      "type": "observed",
+      "data": "0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "0",
+      "source": "Scripts/repro/766-math-gp-dir-vec-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "IsOpposite result negated",
+      "failing_expectation": ":19 `!Shape.dirIsOpposite(d1, d2, tolerance: 0.01)`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Dir Extras v0.120.0::isNormal",
+    "bridge_function": "OCCTDirIsNormal",
+    "bridge_output": {
+      "type": "observed",
+      "data": "1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1",
+      "source": "Scripts/repro/766-math-gp-dir-vec-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "IsParallel instead of IsNormal",
+      "failing_expectation": ":25 `Shape.dirIsNormal(d1, d2, tolerance: 0.01)`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Dir Extras v0.120.0::isNotNormal",
+    "bridge_function": "OCCTDirIsNormal",
+    "bridge_output": {
+      "type": "observed",
+      "data": "0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "0",
+      "source": "Scripts/repro/766-math-gp-dir-vec-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "IsParallel instead of IsNormal",
+      "failing_expectation": ":31 `!Shape.dirIsNormal(d1, d2, tolerance: 0.01)`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Dir Extras v0.120.0::isNormalDiagonal",
+    "bridge_function": "OCCTDirIsNormal",
+    "bridge_output": {
+      "type": "observed",
+      "data": "1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1",
+      "source": "Scripts/repro/766-math-gp-dir-vec-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "IsParallel instead of IsNormal",
+      "failing_expectation": ":38 `Shape.dirIsNormal(d1, d2, tolerance: 0.01)`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Vec Extras v0.120.0::crossMagnitude",
+    "bridge_function": "OCCTVecCrossMagnitude",
+    "bridge_output": {
+      "type": "observed",
+      "data": "1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1",
+      "source": "Scripts/repro/766-math-gp-dir-vec-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Dot instead of CrossMagnitude",
+      "failing_expectation": ":14 `abs(mag - 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Vec Extras v0.120.0::crossMagnitudeParallel",
+    "bridge_function": "OCCTVecCrossMagnitude",
+    "bridge_output": {
+      "type": "observed",
+      "data": "0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "0",
+      "source": "Scripts/repro/766-math-gp-dir-vec-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Dot instead of CrossMagnitude (2)",
+      "failing_expectation": ":21 `abs(mag) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Vec Extras v0.120.0::crossSquareMagnitude",
+    "bridge_function": "OCCTVecCrossSquareMagnitude",
+    "bridge_output": {
+      "type": "observed",
+      "data": "1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1",
+      "source": "Scripts/repro/766-math-gp-dir-vec-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Dot instead of CrossSquareMagnitude",
+      "failing_expectation": ":28 `abs(sqMag - 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Vec Extras v0.120.0::crossMagnitudeScaled",
+    "bridge_function": "OCCTVecCrossMagnitude",
+    "bridge_output": {
+      "type": "observed",
+      "data": "12",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "12",
+      "source": "Scripts/repro/766-math-gp-dir-vec-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Dot instead of CrossMagnitude",
+      "failing_expectation": ":35 `abs(mag - 12.0) < 1e-10`"
+    },
+    "green": true
   }
 ]
