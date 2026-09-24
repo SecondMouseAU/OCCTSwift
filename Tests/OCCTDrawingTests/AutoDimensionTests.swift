@@ -38,7 +38,9 @@ struct AutoDimensionTests {
         let linearCount = result.added.filter {
             if case .linear = $0 { return true } else { return false }
         }.count
-        #expect(diaCount >= 1)
+        // #766: pinned to the kernel's count, the two circular edges (top and bottom), both
+        // facing +Z; `>= 1` would have passed with one of them dropped.
+        #expect(diaCount == 2)
         #expect(linearCount == 2)
     }
 

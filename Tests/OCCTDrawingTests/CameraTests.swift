@@ -107,14 +107,31 @@ struct CameraTests {
         cam.aspect = 1.0
         cam.zRange = (near: 0.1, far: 10000)
 
-        let bboxMin = SIMD3<Double>(-5, -5, -5)
-        let bboxMax = SIMD3<Double>(5, 5, 5)
+        // #766: this used a box centred on the point the camera already looked at, and asserted
+        // the projected centre within 0.5 of the origin, so a fit that did nothing passed (the
+        // centre was already at (0, 0)). An off-centre box makes the fit do the work:
+        // Graphic3d_Camera::FitMinMax moves the centre to (25, 25, 0) and scales so the box's
+        // widest corner lands on the NDC edge, measured in
+        // Scripts/repro/766-drawing-autodim-balloon-camera/transcript.txt. Unfitted, the box
+        // centre projects to (0.05, 0.05).
+        let bboxMin = SIMD3<Double>(20, 20, -5)
+        let bboxMax = SIMD3<Double>(30, 30, 5)
         cam.fit(boundingBox: (min: bboxMin, max: bboxMax))
 
-        // Project the center of the bounding box, should be near screen origin
-        let boxCenter = SIMD3<Double>(0, 0, 0)
-        let projected = cam.project(boxCenter)
-        #expect(abs(projected.x) < 0.5)
-        #expect(abs(projected.y) < 0.5)
+        let c = cam.center
+        #expect(abs(c.x - 25) < 1e-9 && abs(c.y - 25) < 1e-9 && abs(c.z) < 1e-9, "centre \(c)")
+        let projected = cam.project(SIMD3(25, 25, 0))
+        #expect(abs(projected.x) < 1e-9)
+        #expect(abs(projected.y) < 1e-9)
+        var widest = 0.0
+        for i in 0..<8 {
+            let corner = SIMD3(
+                i & 1 == 0 ? bboxMin.x : bboxMax.x,
+                i & 2 == 0 ? bboxMin.y : bboxMax.y,
+                i & 4 == 0 ? bboxMin.z : bboxMax.z)
+            let s = cam.project(corner)
+            widest = max(widest, abs(s.x), abs(s.y))
+        }
+        #expect(abs(widest - 1) < 1e-6, "widest corner should sit on the NDC edge, got \(widest)")
     }
 }

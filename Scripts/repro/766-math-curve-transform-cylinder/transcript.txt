@@ -1,0 +1,15 @@
+translateCurve before (0, 0, 0)
+translateCurve after (10, 0, 0)
+rotateCurve (1.11022302463e-16, 1, 0)
+scaleCurve (2, 0, 0)
+mirrorPointCurve (-1, 0, 0)
+mirrorAxisCurve (1, -1, 0)
+mirrorPlaneCurve (1, 0, -5)
+fromAxis done=1 radius=3
+fromAxis S(0,0) (3, 0, 0)
+fromAxis S(pi/2,4) (1.83697019872e-16, 3, 4)
+fromPoints done=1 radius=5
+fromPoints location (0, 0, 0)
+fromPoints axis (0, 0, 1)
+fromPoints S(0,0) (5, 0, 0)
+fromPoints S(0,5) (5, 0, 5)
