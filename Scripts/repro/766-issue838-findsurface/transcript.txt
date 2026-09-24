@@ -1,0 +1,4 @@
+cylinder lateral wire tol=0.5 onlyPlane=0: Found=1 type=1 (GeomAbs_Plane=0, Cylinder=1) ToleranceReached=0 Existed=1
+cylinder lateral wire tol=0.5 onlyPlane=1: Found=0
+quad, corner lifted 0.4 tol=1e-06 onlyPlane=0: Found=0
+quad, corner lifted 0.4 tol=5 onlyPlane=0: Found=1 type=0 (GeomAbs_Plane=0, Cylinder=1) ToleranceReached=0.1 Existed=0
