@@ -177,9 +177,9 @@
     "test_name": "TDataStd_Current Tests::noCurrentReturnsNil",
     "bridge_function": "OCCTDocumentGetCurrentLabel",
     "bridge_output": {
-      "type": "label",
+      "type": "bool",
       "data": {
-        "tag": null
+        "has_current": false
       }
     },
     "kernel_output": {
@@ -193,6 +193,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: has_current. Bridge: OCCTDocumentGetCurrentLabel returns -1 exactly when TDataStd_Current::Has(Main) is false, and Document.currentLabel() maps -1 to nil; the test observed nil, so has_current is false. Kernel: TDataStd_Current::Has(Main) printed false on a fresh document.",
     "probe": "Scripts/repro/766-xcaf-current/"
   },
   {
@@ -225,13 +226,13 @@
     "bridge_output": {
       "type": "bool",
       "data": {
-        "ok": true
+        "created": true
       }
     },
     "kernel_output": {
       "type": "bool",
       "data": {
-        "new_is_null": false
+        "created": true
       }
     },
     "comparison": {
@@ -239,6 +240,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: created. Bridge: OCCTDocumentDirectoryNew returns !dir.IsNull() for TDataStd_Directory::New(label 100); the test observed true. Kernel: New(100) printed null=false, so created = !IsNull = true.",
     "probe": "Scripts/repro/766-xcaf-directory/"
   },
   {
@@ -275,7 +277,7 @@
     "kernel_output": {
       "type": "label",
       "data": {
-        "tag": 1
+        "tag_non_nil": true
       }
     },
     "comparison": {
@@ -283,6 +285,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: tag_non_nil. Bridge: OCCTDocumentDirectoryAddSubDirectory returns subDir->Label().Tag() or -1, and Document.addSubDirectory maps tag >= 0 to non-nil; the test observed non-nil. Kernel: TDataStd_Directory::AddDirectory returned a non-null directory on label tag 1, and 1 >= 0 gives tag_non_nil true. The bridge's raw tag was not printed, so raw tags are not compared.",
     "probe": "Scripts/repro/766-xcaf-directory/"
   },
   {
@@ -297,7 +300,7 @@
     "kernel_output": {
       "type": "label",
       "data": {
-        "tag": 2
+        "tag_non_nil": true
       }
     },
     "comparison": {
@@ -305,6 +308,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: tag_non_nil. Bridge: OCCTDocumentDirectoryMakeObjectLabel returns objLabel.Tag() or -1, and Document.makeObjectLabel maps tag >= 0 to non-nil; the test observed non-nil. Kernel: TDataStd_Directory::MakeObjectLabel returned a non-null label with tag 2, and 2 >= 0 gives tag_non_nil true. The bridge's raw tag was not printed, so raw tags are not compared.",
     "probe": "Scripts/repro/766-xcaf-directory/"
   }
 ]

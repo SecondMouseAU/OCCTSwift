@@ -110,7 +110,7 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 |---|---|---|---|---|---|
 | `setAndGet` | `OCCTDocumentSetCurrentLabel` returns true without setting | :12 `doc.currentLabel() == 510` (rewritten; the old `if let` passed this injection) | passed | `OCCTDocumentGetCurrentLabel` | PASS: tag 510 = 510 |
 | `hasCurrent` | `OCCTDocumentHasCurrentLabel` returns true | :17 Expectation failed: !doc.hasCurrentLabel() | passed | `OCCTDocumentHasCurrentLabel` | PASS: false, then true |
-| `noCurrentReturnsNil` | `OCCTDocumentGetCurrentLabel` returns tag 0 | :24 Expectation failed: doc.currentLabel() == nil | passed | `OCCTDocumentGetCurrentLabel` | PASS: no current label on a fresh document |
+| `noCurrentReturnsNil` | `OCCTDocumentGetCurrentLabel` returns tag 0 | :24 Expectation failed: doc.currentLabel() == nil | passed | `OCCTDocumentGetCurrentLabel` | PASS: has_current false on both sides (bridge -1 maps to nil; kernel `TDataStd_Current::Has` false) |
 
 ### `DimTolToolTests.swift`
 
@@ -122,7 +122,7 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
-| `createDirectory` | `OCCTDocumentDirectoryNew` returns false | :11 Expectation failed: ok | passed | `OCCTDocumentDirectoryNew` | PASS: `New(100)` non-null |
+| `createDirectory` | `OCCTDocumentDirectoryNew` returns false | :11 Expectation failed: ok | passed | `OCCTDocumentDirectoryNew` | PASS: created true on both sides (`!dir.IsNull()`; kernel `New(100)` non-null) |
 | `findDirectory` | `OCCTDocumentDirectoryFind` returns false | :18 Expectation failed: doc.hasDirectory(at: 100) | passed | `OCCTDocumentDirectoryFind` | PASS: true = true |
-| `addSubDirectory` | `OCCTDocumentDirectoryAddSubDirectory` returns -1 | :26 Expectation failed: childTag != nil | passed | `OCCTDocumentDirectoryAddSubDirectory` | PASS: kernel sub-directory tag 1 |
-| `makeObjectLabel` | `OCCTDocumentDirectoryMakeObjectLabel` returns -1 | :34 Expectation failed: objTag != nil | passed | `OCCTDocumentDirectoryMakeObjectLabel` | PASS: kernel object label tag 2 |
+| `addSubDirectory` | `OCCTDocumentDirectoryAddSubDirectory` returns -1 | :26 Expectation failed: childTag != nil | passed | `OCCTDocumentDirectoryAddSubDirectory` | PASS: tag_non_nil true on both sides (kernel sub-directory tag 1 >= 0; raw tags not compared) |
+| `makeObjectLabel` | `OCCTDocumentDirectoryMakeObjectLabel` returns -1 | :34 Expectation failed: objTag != nil | passed | `OCCTDocumentDirectoryMakeObjectLabel` | PASS: tag_non_nil true on both sides (kernel object label tag 2 >= 0; raw tags not compared) |
