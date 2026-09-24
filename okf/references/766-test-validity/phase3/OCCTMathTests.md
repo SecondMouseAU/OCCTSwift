@@ -178,3 +178,17 @@
 | **ElSLib Tests** | valueOnCylinder | `OCCTElSLibValueOnCylinder` | u and v swapped | red | green | PASS |
 | **ElSLib Tests** | valueOnTorus | `OCCTElSLibValueOnTorus` | major and minor radius swapped | red | green | PASS |
 | **ElSLib Tests** | parametersOnSphere | `OCCTElSLibParametersOnSphere` | point x and y swapped | red | green | PASS |
+### 766-math-gce-make (#1983, measured)
+| **gce_MakeCirc Tests** | circleThrough3Points | `OCCTGceMakeCircFrom3Points` | p2 built as (y, x, z), which equals p1: gce refuses, bridge returns nil | red | green | PASS |
+| **gce_MakeCirc Tests** | circleFromCenterNormal | `OCCTGceMakeCircFromCenterNormal` | radius halved | red | green | PASS |
+| **gce_MakeCone Tests** | coneFrom2PointsRadii | `OCCTSurfaceConicalFromPointsRadii` | r1 and r2 swapped | red | green | PASS |
+| **gce_MakeCone Tests** | parityWithConicalSurface | `OCCTSurfaceConicalFromPointsRadii (both routes)` | Swift: coneFrom2PointsRadii forwards the radii swapped | red | green | PASS |
+| **gce_MakeCylinder Tests** | cylinderFrom3Points | `OCCTSurfaceCylindricalFromPoints` | p1 and p3 swapped | red | green | PASS |
+| **gce_MakeCylinder Tests** | parityWithCylindricalSurface | `OCCTSurfaceCylindricalFromPoints (both routes)` | Swift: cylinderFrom3Points forwards p1 and p3 swapped | red | green | PASS |
+| **gce_MakeDir Tests** | directionFrom2Points | `OCCTGceMakeDir` | points passed in reverse order | red | green | PASS |
+| **gce_MakeElips Tests** | ellipseFromCenterNormal | `OCCTGceMakeElips` | radii swapped: gce refuses, bridge returns nil | red | green | PASS |
+| **gce_MakeHypr Tests** | hyperbolaFromCenterNormal | `OCCTGceMakeHypr` | radii swapped | red | green | PASS |
+| **gce_MakeLin Tests** | lineFrom2Points | `OCCTGceMakeLinFrom2Points` | points passed in reverse order | red | green | PASS |
+| **gce_MakeParab Tests** | parabolaFromCenterNormal | `OCCTGceMakeParab` | focal doubled | red | green | PASS |
+| **gce_MakePln Tests** | planeFromEquation | `OCCTGceMakePlnFromEquation` | d negated | red | green | PASS |
+| **gce_MakePln Tests** | planeFrom3Points | `OCCTSurfacePlaneFromPoints` | p2 and p3 swapped | red | green | PASS |
