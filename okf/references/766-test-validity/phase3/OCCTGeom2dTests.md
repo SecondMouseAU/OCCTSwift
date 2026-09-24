@@ -248,3 +248,17 @@ Probe: `Scripts/repro/766-geom2d-conic-factory-parity/`. Every row was run red w
 | Curve2D conic factories agree (#487)::Valid ellipse radii still build the identical curve in both families | `OCCTGceMakeElips2d` | centre x + 1 | ✅ | ✅ | MATCH | returned early on nil and compared only the two factories; now pins two points |
 | Curve2D conic factories agree (#487)::Valid hyperbola radii still build the identical curve in both families | `OCCTGceMakeHypr2d` | centre x + 1 | ✅ | ✅ | MATCH | returned early on nil and compared only the two factories; now pins the vertex |
 | Curve2D conic factories agree (#487)::Valid focal length still builds the identical parabola in both families | `OCCTGceMakeParab2d` | vertex x + 1 | ✅ | ✅ | MATCH | returned early on nil and compared only the two factories; now pins point(2) |
+### #1979 executed: `Curve2DCircleInvoluteTests.swift`
+Probe: `Scripts/repro/766-geom2d-circle-involute/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D — Circle Involute::createCircleInvolute | `OCCTGeom2dEvalCircleInvoluteCurveCreate` | bridge returns nil | ✅ | ✅ | MATCH | optional-chained flags; now `#require` and the domain start |
+| Curve2D — Circle Involute::createCircleInvoluteRejectsZeroRadius | `OCCTGeom2dEvalCircleInvoluteCurveCreate` | Swift guard skipped and the bridge clamps radius <= 0 to 1 | ✅ | ✅ | MATCH |  |
+| Curve2D — Circle Involute::createCircleInvoluteRejectsNegativeRadius | `OCCTGeom2dEvalCircleInvoluteCurveCreate` | Swift guard skipped and the bridge clamps radius <= 0 to 1 | ✅ | ✅ | MATCH |  |
+| Curve2D — Circle Involute::circleInvolutePointAtZero | `OCCTGeom2dEvalCircleInvoluteCurveCreate` | origin x + 1 | ✅ | ✅ | MATCH | u = 0 only, where the involute term vanishes; now also pins C(1) |
+| Curve2D — Circle Involute::circleInvoluteTranslated | `OCCTGeom2dEvalCircleInvoluteCurveCreate` | origin x + 1 | ✅ | ✅ | MATCH | u = 0 only; now also pins C(1) |
+| Curve2D — Circle Involute::circleInvoluteRotated | `OCCTGeom2dEvalCircleInvoluteCurveCreate` | ignore the direction (always +x) | ✅ | ✅ | MATCH | u = 0 only; now also pins C(1) |
+| Curve2D — Circle Involute::circleInvoluteMirroredFlank | `OCCTGeom2dEvalCircleInvoluteCurveCreate` | ignore the direction (always +x) | ✅ | ✅ | MATCH | signs only, force-unwraps, and a comment placing the mirrored C(0) at (2, 0); now pins both curves |
+| Curve2D — Circle Involute::circleInvoluteCanBuildEdge | `OCCTMakeEdge2dCurveRange` | build the edge on half the requested range | ✅ | ✅ | MATCH | edge count only; now pins the arc length R u^2 / 2 = 4 |
+| Curve2D — Circle Involute::createCircleInvoluteRejectsZeroLengthDirection | `OCCTGeom2dEvalCircleInvoluteCurveCreate` | Swift guard skipped, zero direction replaced by (1, 0) | ✅ | ✅ | MATCH |  |
+| Curve2D — Circle Involute::createCircleInvoluteRejectsNearZeroLengthDirection | `OCCTGeom2dEvalCircleInvoluteCurveCreate` | Swift guard skipped, near-zero direction replaced by (1, 0) | ✅ | ✅ | MATCH |  |
+| Curve2D — Circle Involute::circleInvoluteD0WithPlacementRejectsZeroLengthDirection | `OCCTGeom2dEvalCircleInvoluteD0WithPlacement` | Swift guard skipped, zero direction replaced by (1, 0) | ✅ | ✅ | MATCH |  |
+| Curve2D — Circle Involute::circleInvoluteD1WithPlacementRejectsZeroLengthDirection | `OCCTGeom2dEvalCircleInvoluteD1WithPlacement` | Swift guard skipped, zero direction replaced by (1, 0) | ✅ | ✅ | MATCH |  |

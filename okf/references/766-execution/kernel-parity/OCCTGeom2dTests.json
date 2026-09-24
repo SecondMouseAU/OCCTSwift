@@ -3810,5 +3810,403 @@
       "probe": "Scripts/repro/766-geom2d-conic-factory-parity/",
       "rewritten": "returned early on nil and compared only the two factories; now pins point(2)"
     }
+  },
+  {
+    "test_name": "Curve2D — Circle Involute::createCircleInvolute",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteCurveCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "periodic": false,
+        "closed": false,
+        "domain_lower": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "periodic": false,
+        "closed": false,
+        "domain_lower": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "bridge returns nil",
+      "red": "Curve2DCircleInvoluteTests.swift:18:25: Expectation failed: Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 2.0)",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-circle-involute/",
+      "rewritten": "optional-chained flags; now `#require` and the domain start"
+    }
+  },
+  {
+    "test_name": "Curve2D — Circle Involute::createCircleInvoluteRejectsZeroRadius",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteCurveCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "Geom2dEval_CircleInvoluteCurve radius 0": "constructor raises"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Swift guard skipped and the bridge clamps radius <= 0 to 1",
+      "red": "Curve2DCircleInvoluteTests.swift:27:9: Expectation failed: curve == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-circle-involute/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D — Circle Involute::createCircleInvoluteRejectsNegativeRadius",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteCurveCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "Geom2dEval_CircleInvoluteCurve radius -1": "constructor raises"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Swift guard skipped and the bridge clamps radius <= 0 to 1",
+      "red": "Curve2DCircleInvoluteTests.swift:32:9: Expectation failed: curve == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-circle-involute/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D — Circle Involute::circleInvolutePointAtZero",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteCurveCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "C(0)": [
+          2,
+          0
+        ],
+        "C(1)": [
+          2.76354658135,
+          0.60233735788
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "C(0)": [
+          2,
+          0
+        ],
+        "C(1)": [
+          2.76354658135,
+          0.60233735788
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "origin x + 1",
+      "red": "Curve2DCircleInvoluteTests.swift:41:9: Expectation failed: abs(p.x - 2.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-circle-involute/",
+      "rewritten": "u = 0 only, where the involute term vanishes; now also pins C(1)"
+    }
+  },
+  {
+    "test_name": "Curve2D — Circle Involute::circleInvoluteTranslated",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteCurveCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "C(0)": [
+          12,
+          20
+        ],
+        "C(1)": [
+          12.7635465814,
+          20.6023373579
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "C(0)": [
+          12,
+          20
+        ],
+        "C(1)": [
+          12.7635465814,
+          20.6023373579
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "origin x + 1",
+      "red": "Curve2DCircleInvoluteTests.swift:52:9: Expectation failed: abs(p.x - 12.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-circle-involute/",
+      "rewritten": "u = 0 only; now also pins C(1)"
+    }
+  },
+  {
+    "test_name": "Curve2D — Circle Involute::circleInvoluteRotated",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteCurveCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "C(0)": [
+          0,
+          2
+        ],
+        "C(1)": [
+          -0.60233735788,
+          2.76354658135
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "C(0)": [
+          0,
+          2
+        ],
+        "C(1)": [
+          -0.60233735788,
+          2.76354658135
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "ignore the direction (always +x)",
+      "red": "Curve2DCircleInvoluteTests.swift:64:9: Expectation failed: abs(p.x) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-circle-involute/",
+      "rewritten": "u = 0 only; now also pins C(1)"
+    }
+  },
+  {
+    "test_name": "Curve2D — Circle Involute::circleInvoluteMirroredFlank",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteCurveCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "mirrored C(0)": [
+          -2,
+          0
+        ],
+        "mirrored C(1)": [
+          -2.76354658135,
+          -0.60233735788
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "mirrored C(0)": [
+          -2,
+          0
+        ],
+        "mirrored C(1)": [
+          -2.76354658135,
+          -0.60233735788
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "ignore the direction (always +x)",
+      "red": "Curve2DCircleInvoluteTests.swift:79:9: Expectation failed: simd_distance(mirroredCurve.point(at: 0), SIMD2(-2, 0)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-circle-involute/",
+      "rewritten": "signs only, force-unwraps, and a comment placing the mirrored C(0) at (2, 0); now pins both curves"
+    }
+  },
+  {
+    "test_name": "Curve2D — Circle Involute::circleInvoluteCanBuildEdge",
+    "bridge_function": "OCCTMakeEdge2dCurveRange",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 1,
+        "length": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 1,
+        "length": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "build the edge on half the requested range",
+      "red": "Curve2DCircleInvoluteTests.swift:99:9: Expectation failed: abs(edges[0].length - 4) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-circle-involute/",
+      "rewritten": "edge count only; now pins the arc length R u^2 / 2 = 4"
+    }
+  },
+  {
+    "test_name": "Curve2D — Circle Involute::createCircleInvoluteRejectsZeroLengthDirection",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteCurveCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Swift guard skipped, zero direction replaced by (1, 0)",
+      "red": "Curve2DCircleInvoluteTests.swift:104:9: Expectation failed: curve == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-circle-involute/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D — Circle Involute::createCircleInvoluteRejectsNearZeroLengthDirection",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteCurveCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Swift guard skipped, near-zero direction replaced by (1, 0)",
+      "red": "Curve2DCircleInvoluteTests.swift:110:9: Expectation failed: curve == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-circle-involute/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D — Circle Involute::circleInvoluteD0WithPlacementRejectsZeroLengthDirection",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteD0WithPlacement",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Swift guard skipped, zero direction replaced by (1, 0)",
+      "red": "Curve2DCircleInvoluteTests.swift:119:9: Expectation failed: p == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-circle-involute/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D — Circle Involute::circleInvoluteD1WithPlacementRejectsZeroLengthDirection",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteD1WithPlacement",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Swift guard skipped, zero direction replaced by (1, 0)",
+      "red": "Curve2DCircleInvoluteTests.swift:125:9: Expectation failed: r == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-circle-involute/",
+      "rewritten": ""
+    }
   }
 ]
