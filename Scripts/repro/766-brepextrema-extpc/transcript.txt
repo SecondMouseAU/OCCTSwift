@@ -1,0 +1,15 @@
+pointToEdge edge count=12
+pointToEdge edge[0] distance=17.320508075688775 parameter=10 point=(-5, -5, 5) ExtPC.NbExt=-1
+pointToEdge edge[1] distance=14.142135623730951 parameter=10 point=(-5, 5, 5) ExtPC.NbExt=1
+pointToEdge edge[2] distance=14.142135623730951 parameter=10 point=(-5, 5, 5) ExtPC.NbExt=-1
+pointToEdge edge[3] distance=22.360679774997898 parameter=10 point=(-5, 5, -5) ExtPC.NbExt=1
+pointToEdge edge[4] distance=14.142135623730951 parameter=10 point=(5, -5, 5) ExtPC.NbExt=-1
+pointToEdge edge[5] distance=10 parameter=10 point=(5, 5, 5) ExtPC.NbExt=1
+pointToEdge edge[6] distance=10 parameter=10 point=(5, 5, 5) ExtPC.NbExt=-1
+pointToEdge edge[7] distance=20 parameter=10 point=(5, 5, -5) ExtPC.NbExt=1
+pointToEdge edge[8] distance=22.360679774997898 parameter=10 point=(5, -5, -5) ExtPC.NbExt=1
+pointToEdge edge[9] distance=14.142135623730951 parameter=10 point=(5, -5, 5) ExtPC.NbExt=1
+pointToEdge edge[10] distance=20 parameter=10 point=(5, 5, -5) ExtPC.NbExt=1
+pointToEdge edge[11] distance=10 parameter=10 point=(5, 5, 5) ExtPC.NbExt=1
+pointToWireEdge edge count=1
+pointToWireEdge edge[0] distance=3 parameter=5 point=(5, 0, 0) ExtPC.NbExt=1
