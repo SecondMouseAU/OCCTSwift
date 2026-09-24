@@ -1,0 +1,6 @@
+createAndQuery radius=5 center=(1, 2, 3)
+distanceToPoint (10,0,0) distance=10
+distanceToPoint (0,3,4) distance=5
+isOutsidePoint (100,0,0)=1 (1,0,0)=0 (0,0,0)=0 (6,0,0)=1 (4.9,0,0)=0
+isOutsideSphere far=1 overlapping=0
+addMerge radius=10 center=(5, 0, 0)

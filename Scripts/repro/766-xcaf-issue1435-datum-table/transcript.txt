@@ -1,0 +1,4 @@
+DocumentTool::DimTolTool label=0:1:4
+after one AddDatum: Main().FindChild(4) children=1
+after three: children=3 GetDatumLabels=3
+DimTolTool::Set(Main) label=0:1; after AddDatum Main().FindChild(4) does not exist

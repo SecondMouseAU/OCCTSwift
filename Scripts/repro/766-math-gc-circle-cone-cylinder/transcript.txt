@@ -1,0 +1,45 @@
+circleFromAxisAndRadius done=1 radius=5 closed=1
+  center (0, 0, 0)
+  P(0) (5, 0, 0)
+  P(pi/2) (3.06161699787e-16, 5, 0)
+circleFrom3Points done=1 radius=1 closed=1
+  center (-7.85046229342e-17, 1.01465363576e-17, 0)
+  P(0) (1, 0, 0)
+  P(pi/2) (-7.12574661925e-18, 1, 0)
+circleCenterNormal done=1 radius=10 closed=1
+  center (1, 2, 3)
+  P(0) (11, 2, 3)
+  P(pi/2) (1, 12, 3)
+circleParallel (radius 5, dist 3) done=1 radius=8 closed=1
+  center (0, 0, 0)
+  P(0) (8, 0, 0)
+  P(pi/2) (4.89858719659e-16, 8, 0)
+circleParallel with dist -3 done=1 radius=2 closed=1
+  center (0, 0, 0)
+  P(0) (2, 0, 0)
+  P(pi/2) (1.22464679915e-16, 2, 0)
+conicalFromAxisAngleRadius done=1 semiAngle=0.523598775598299 refRadius=5
+  S(0,1) (5.5, 0, 0.866025403784)
+conicalFrom2PtsRadii done=1 semiAngle=-0.291456794477867 refRadius=5
+  S(0,0) (5, 0, 0)
+conicalFrom4Pts done=0 status=7
+cylindricalFromAxisRadius done=1 radius=5 axis (0, 0, 1)
+  location (0, 0, 0)
+  S(0,0) (5, 0, 0)
+  S(pi/2,3) (3.06161699787e-16, 5, 3)
+cylindricalFrom3Pts done=1 radius=7.07106781187 axis (-0.707106781187, 0.707106781187, 0)
+  location (5, 0, 0)
+  S(0,0) (0, -5, 0)
+  S(pi/2,3) (2.87867965644, 2.12132034356, 7.07106781187)
+cylindricalFromCircle done=1 radius=5 axis (0, 0, 1)
+  location (0, 0, 0)
+  S(0,0) (5, 0, 0)
+  S(pi/2,3) (3.06161699787e-16, 5, 3)
+cylindricalParallel (radius 5, dist 2) done=1 radius=3 axis (0, 0, 1)
+  location (0, 0, 0)
+  S(0,0) (3, 0, 0)
+  S(pi/2,3) (1.83697019872e-16, 3, 3)
+cylindricalFromAxis done=1 radius=5 axis (0, 0, 1)
+  location (0, 0, 0)
+  S(0,0) (5, 0, 0)
+  S(pi/2,3) (3.06161699787e-16, 5, 3)
