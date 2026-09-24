@@ -376,3 +376,15 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 ### `TDataXtdGeometryAttributeTests.swift`
 | `setGetGeometryType` | `OCCTDocumentGetGeometryType` answers 0 | :18 Expectation failed: label.geometryType() == .point; :21 Expectation failed: label.geometryType() == .plane | passed | `OCCTDocumentGetGeometryType` | PASS: 1, 6, 7 |
 | `allGeometryTypes` | `OCCTDocumentGetGeometryType` answers 0 | :36 Expectation failed: label.geometryType() == type; :36 Expectation failed: label.geometryType() == type | passed | `OCCTDocumentGetGeometryType` | PASS: each type reads back |
+### `TextLabelAndPointCloudTests.swift`
+| `createTextLabel` | `OCCTTextLabelGetInfo` returns false | :15 Expectation failed: label!.text == "Hello" | passed | `OCCTTextLabelGetInfo` | N/A: the text is the bridge's own record |
+| `textLabelPosition` | `OCCTTextLabelGetInfo` returns false | :22 Expectation failed: abs(pos.x - 10) < 1e-6; :23 Expectation failed: abs(pos.y - 20) < 1e-6 | passed | `OCCTTextLabelGetInfo` | N/A: position is the bridge's own record |
+| `updateText` | `OCCTTextLabelSetText` returns without setting | :31 Expectation failed: label.text == "Updated" | passed | `OCCTTextLabelSetText` | N/A: bridge-held |
+| `updatePosition` | `OCCTTextLabelSetPosition` returns without setting | :39 Expectation failed: abs(pos.x - 5) < 1e-6; :40 Expectation failed: abs(pos.y - 10) < 1e-6 | passed | `OCCTTextLabelSetPosition` | N/A: bridge-held |
+| `textLabelDefaultHeightMatchesOCCT` | `OCCTTextLabelGetInfo` returns false | :49 Expectation failed: OCCTTextLabelGetInfo(label.handle, &info); :50 Expectation failed: abs(info.height - 16.0) < 1e-6 | passed | `OCCTTextLabelGetInfo` | PASS: 16 = 16 |
+| `textLabelHeightRoundTrips` | `OCCTTextLabelSetHeight` returns without setting | :59 Expectation failed: abs(info.height - 30.0) < 1e-6 | passed | `OCCTTextLabelSetHeight` | PASS: 30 |
+| `createPointCloud` | `OCCTPointCloudGetCount` answers 0 | :67 Expectation failed: cloud!.count == 3 | passed | `OCCTPointCloudGetCount` | PASS: 3 |
+| `pointCloudBounds` | `OCCTPointCloudGetBounds` returns false | :75 Expectation failed: bounds != nil | passed | `OCCTPointCloudGetBounds` | PASS: x -1..4, y 0..5 |
+| `pointCloudRetrieval` | `OCCTPointCloudGetPoints` answers 0 | :89 Expectation failed: retrieved.count == 2 | passed | `OCCTPointCloudGetPoints` | N/A: points are the bridge's copy |
+| `coloredPointCloud` | `OCCTPointCloudGetColors` answers 0 | :102 Expectation failed: retrievedColors.count == 2 | passed | `OCCTPointCloudGetColors` | N/A: colours are the bridge's copy |
+| `emptyPointCloud` | `OCCTPointCloudCreate` builds a one-point cloud from zero points | :110 Expectation failed: cloud == nil | passed | `OCCTPointCloudCreate` | N/A: refused before any OCCT call |
