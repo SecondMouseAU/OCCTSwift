@@ -1,0 +1,4 @@
+pickBoxAtCenter, 10-box, eye z 50, pixel (400,300) (zeroToOne=1): NbPicked=0
+pickMiss-style corner pixel (0,0) (zeroToOne=1): NbPicked=0
+pickBoxAtCenter, 10-box, eye z 50, pixel (400,300) (zeroToOne=0): NbPicked=0
+pickMiss-style corner pixel (0,0) (zeroToOne=0): NbPicked=0
