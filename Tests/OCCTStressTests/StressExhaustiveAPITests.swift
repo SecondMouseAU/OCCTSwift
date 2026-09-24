@@ -614,7 +614,6 @@ struct StressMathUtilTests {
     @Test func polynomialSolverQuadratic() {
         let roots = PolynomialSolver.quadraticRc4(a: 1, b: -3, c: 2)
         #expect(roots != nil)
-        if let r = roots { #expect(r.count == 2) }
         // math_DirectPolynomialRoots: 1 and 2.
         let sorted = (roots ?? []).sorted()
         #expect(sorted.count == 2)

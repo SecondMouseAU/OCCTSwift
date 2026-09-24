@@ -67,7 +67,7 @@
     "red_green": {
       "injection": "EARLY:OCCTMathPolyQuadratic",
       "env": "OCCT766=|EARLY:OCCTMathPolyQuadratic|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:617 Expectation failed: r.count == 2",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:619 Expectation failed: sorted.count == 2",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -93,7 +93,7 @@
     "red_green": {
       "injection": "EARLY:OCCTMathPolyCubic",
       "env": "OCCT766=|EARLY:OCCTMathPolyCubic|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:631 Expectation failed: (roots ?? []).sorted() == [-1, 0, 1]",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:630 Expectation failed: (roots ?? []).sorted() == [-1, 0, 1]",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -119,7 +119,7 @@
     "red_green": {
       "injection": "EARLY:OCCTMathIntegGauss",
       "env": "OCCT766=|EARLY:OCCTMathIntegGauss|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:636 Expectation failed: result != nil",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:635 Expectation failed: result != nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -145,7 +145,7 @@
     "red_green": {
       "injection": "EARLY:OCCTPlaneDistanceToPoint",
       "env": "OCCT766=|EARLY:OCCTPlaneDistanceToPoint|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:643 Expectation failed: abs(dist - 5.0) < 0.001",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:642 Expectation failed: abs(dist - 5.0) < 0.001",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -171,7 +171,7 @@
     "red_green": {
       "injection": "EARLY:OCCTLineDistanceToPoint",
       "env": "OCCT766=|EARLY:OCCTLineDistanceToPoint|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:649 Expectation failed: abs(dist - 3.0) < 0.001",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:648 Expectation failed: abs(dist - 3.0) < 0.001",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -197,7 +197,7 @@
     "red_green": {
       "injection": "EARLY:OCCTVecCrossMagnitude",
       "env": "OCCT766=|EARLY:OCCTVecCrossMagnitude|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:654 Expectation failed: abs(mag - 1.0) < 0.001",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:653 Expectation failed: abs(mag - 1.0) < 0.001",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -223,7 +223,7 @@
     "red_green": {
       "injection": "EARLY:OCCTDirIsOpposite",
       "env": "OCCT766=|EARLY:OCCTDirIsOpposite|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:658 Expectation failed: Shape.dirIsOpposite(SIMD3(1, 0, 0), SIMD3(-1, 0, 0))",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:657 Expectation failed: Shape.dirIsOpposite(SIMD3(1, 0, 0), SIMD3(-1, 0, 0))",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -249,7 +249,7 @@
     "red_green": {
       "injection": "EARLY:OCCTDirIsNormal",
       "env": "OCCT766=|EARLY:OCCTDirIsNormal|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:663 Expectation failed: Shape.dirIsNormal(SIMD3(1, 0, 0), SIMD3(0, 1, 0))",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:662 Expectation failed: Shape.dirIsNormal(SIMD3(1, 0, 0), SIMD3(0, 1, 0))",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -275,7 +275,7 @@
     "red_green": {
       "injection": "EARLY:OCCTMeshGetTriangleCount",
       "env": "OCCT766=|EARLY:OCCTMeshGetTriangleCount|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:678 Expectation failed: m.triangleCount > 0",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:677 Expectation failed: m.triangleCount > 0",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -301,7 +301,7 @@
     "red_green": {
       "injection": "EARLY:OCCTMeshGetVertices",
       "env": "OCCT766=|EARLY:OCCTMeshGetVertices|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:691 Expectation failed: abs(rad - 5) < 1e-4",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:690 Expectation failed: abs(rad - 5) < 1e-4",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -327,7 +327,7 @@
     "red_green": {
       "injection": "EARLY:OCCTMeshGetNormals",
       "env": "OCCT766=|EARLY:OCCTMeshGetNormals|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:704 Expectation failed: abs(len - 1) < 1e-5",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:703 Expectation failed: abs(len - 1) < 1e-5",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -353,7 +353,7 @@
     "red_green": {
       "injection": "EARLY:OCCTMeshGetTriangleCount",
       "env": "OCCT766=|EARLY:OCCTMeshGetTriangleCount|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:710 Expectation failed: m.triangleCount > 0",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:709 Expectation failed: m.triangleCount > 0",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -379,7 +379,7 @@
     "red_green": {
       "injection": "OCCTShapeCreateMesh returns nil",
       "env": "OCCT766=|NULL:OCCTShapeCreateMesh|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:717 Expectation failed: m != nil",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:716 Expectation failed: m != nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -405,7 +405,7 @@
     "red_green": {
       "injection": "EARLY:OCCTShapeGetOrientedFaces",
       "env": "OCCT766=|EARLY:OCCTShapeGetOrientedFaces|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:730 Expectation failed: aag.nodes.count == 6",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:729 Expectation failed: aag.nodes.count == 6",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -431,7 +431,7 @@
     "red_green": {
       "injection": "EARLY:OCCTShapeGetOrientedFaces",
       "env": "OCCT766=|EARLY:OCCTShapeGetOrientedFaces|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:736 Expectation failed: aag.nodes.count > 6",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:735 Expectation failed: aag.nodes.count > 6",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -457,7 +457,7 @@
     "red_green": {
       "injection": "EARLY:OCCTShapeGetOrientedFaces",
       "env": "OCCT766=|EARLY:OCCTShapeGetOrientedFaces|",
-      "red": "RED exit 1: StressExhaustiveAPITests.swift:744 Expectation failed: aag.nodes.count > 6",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:743 Expectation failed: aag.nodes.count > 6",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
