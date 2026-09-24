@@ -10,7 +10,10 @@ struct GceMakeCylinderTests {
         let cyl = try #require(
             Surface.cylinderFrom3Points(
                 p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10), p3: SIMD3(3, 0, 0)))
-        #expect(cyl.handle != nil)
+        // A non-nil handle held for any cylinder, including one built from swapped points.
+        // Kernel values from Scripts/repro/766-math-gce-make/transcript.txt.
+        #expect(abs(cyl.cylinderProperties.radius - 3) < 1e-12)
+        #expect(simd_length(cyl.cylinderProperties.axis.direction - SIMD3(0, 0, 1)) < 1e-12)
     }
 
     // #420: cylinderFrom3Points and cylindricalSurface(point1:point2:point3:) now
