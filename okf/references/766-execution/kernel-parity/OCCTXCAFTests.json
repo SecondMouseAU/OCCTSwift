@@ -177,13 +177,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "v": null
+        "integer_present": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "present": false
+        "integer_present": false
       }
     },
     "comparison": {
@@ -191,7 +191,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+    "source": "Same quantity on both sides: integer_present. Bridge: label.integer on a fresh child label returned nil (OCCTDocumentGetIntegerAttr returned false), so integer_present is false. Kernel: a child of a child of Main has no TDataStd_Integer attribute (IsAttribute false).",
+    "probe": "Scripts/repro/766-xcaf-intpackedmap/"
   },
   {
     "test_name": "IntPackedMap Tests::setAndAdd",
@@ -245,14 +246,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "contains": false,
-        "extent": 1
+        "removed": true,
+        "contains_10_after_remove": false,
+        "extent_after_remove": 1
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "contains_after_remove": false
+        "removed": true,
+        "contains_10_after_remove": false,
+        "extent_after_remove": 1
       }
     },
     "comparison": {
@@ -260,7 +264,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+    "source": "Same quantities on both sides, from the test's own scenario (add 10 and 20, remove 10). Bridge: the test observed intPackedMapRemove true, intPackedMapContains(10) false and intPackedMapCount == 1. Kernel: TDataStd_IntPackedMap Remove(10) returned true, Contains(10) false, Extent 1.",
+    "probe": "Scripts/repro/766-xcaf-intpackedmap/"
   },
   {
     "test_name": "IntPackedMap Tests::clearAndEmpty",
@@ -268,14 +273,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "empty": true,
-        "count": 0
+        "empty_before_clear": false,
+        "empty_after_clear": true,
+        "extent_after_clear": 0
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "empty": true
+        "empty_before_clear": false,
+        "empty_after_clear": true,
+        "extent_after_clear": 0
       }
     },
     "comparison": {
@@ -283,7 +291,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+    "source": "Same quantities on both sides, from the test's own scenario (add 5, clear). Bridge: the test observed intPackedMapIsEmpty false before, true after intPackedMapClear, and intPackedMapCount == 0. Kernel: TDataStd_IntPackedMap IsEmpty false before Clear, true after, Extent 0.",
+    "probe": "Scripts/repro/766-xcaf-intpackedmap/"
   },
   {
     "test_name": "IntPackedMap Tests::getValues",
@@ -291,7 +300,8 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "values": [
+        "extent": 3,
+        "values_sorted": [
           7,
           42,
           99
@@ -301,7 +311,12 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "extent_after_3_adds": 3
+        "extent": 3,
+        "values_sorted": [
+          7,
+          42,
+          99
+        ]
       }
     },
     "comparison": {
@@ -309,7 +324,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+    "source": "Same quantities on both sides, from the test's own scenario (add 7, 42 and 99). Bridge: the test observed values.count == 3 and that values contains 7, 42 and 99; it asserts no order, so the values are recorded sorted. Kernel: Extent 3, and iterating GetMap() gave 7, 42, 99 (sorted).",
+    "probe": "Scripts/repro/766-xcaf-intpackedmap/"
   },
   {
     "test_name": "IntPackedMap Tests::changeValues",

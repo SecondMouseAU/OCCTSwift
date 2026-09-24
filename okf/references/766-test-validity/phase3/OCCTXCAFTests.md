@@ -110,7 +110,7 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 |---|---|---|---|---|---|
 | `setGetInteger` | `OCCTDocumentGetIntegerAttr` returns false | :17 Expectation failed: label.integer == 42 | passed | `OCCTDocumentGetIntegerAttr` | PASS: 42 |
 | `changeInteger` | `OCCTDocumentGetIntegerAttr` returns false | :26 Expectation failed: label.integer == 99 | passed | `OCCTDocumentGetIntegerAttr` | PASS: 99 after the second Set |
-| `noInteger` | `OCCTDocumentGetIntegerAttr` answers 0 where there is none | :34 Expectation failed: label.integer == nil | passed | `OCCTDocumentGetIntegerAttr` | PASS: none on a fresh child |
+| `noInteger` | `OCCTDocumentGetIntegerAttr` answers 0 where there is none | :34 Expectation failed: label.integer == nil | passed | `OCCTDocumentGetIntegerAttr` | PASS: no integer attribute on a fresh child label, on both sides |
 
 ### `TDataStdIntPackedMapTests.swift`
 
@@ -118,7 +118,7 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 |---|---|---|---|---|---|
 | `setAndAdd` | `OCCTIntPackedMapContains` returns false | :13 Expectation failed: doc.intPackedMapContains(tag: 100, value: 42); :14 Expectation failed: doc.intPackedMapContains(tag: 100, value: 100) | passed | `OCCTIntPackedMapContains` | PASS: both contained |
 | `extent` | `OCCTIntPackedMapExtent` returns 0 | :23 Expectation failed: doc.intPackedMapCount(tag: 101) == 3 | passed | `OCCTIntPackedMapExtent` | PASS: 3 |
-| `remove` | `OCCTIntPackedMapRemove` returns true without removing | :32 Expectation failed: !doc.intPackedMapContains(tag: 102, value: 10); :33 Expectation failed: doc.intPackedMapCount(tag: 102) == 1 | passed | `OCCTIntPackedMapRemove` | PASS: gone after Remove |
-| `clearAndEmpty` | `OCCTIntPackedMapClear` returns true without clearing | :42 Expectation failed: doc.intPackedMapIsEmpty(tag: 103); :43 Expectation failed: doc.intPackedMapCount(tag: 103) == 0 | passed | `OCCTIntPackedMapClear` | PASS: empty after Clear |
-| `getValues` | `OCCTIntPackedMapGetValues` returns no values | :53 Expectation failed: values.count == 3; :54 Expectation failed: values.contains(7) | passed | `OCCTIntPackedMapGetValues` | PASS: 3 values |
+| `remove` | `OCCTIntPackedMapRemove` returns true without removing | :32 Expectation failed: !doc.intPackedMapContains(tag: 102, value: 10); :33 Expectation failed: doc.intPackedMapCount(tag: 102) == 1 | passed | `OCCTIntPackedMapRemove` | PASS: Remove(10) true, Contains(10) false and extent 1 on both sides |
+| `clearAndEmpty` | `OCCTIntPackedMapClear` returns true without clearing | :42 Expectation failed: doc.intPackedMapIsEmpty(tag: 103); :43 Expectation failed: doc.intPackedMapCount(tag: 103) == 0 | passed | `OCCTIntPackedMapClear` | PASS: not empty before Clear, empty with extent 0 after, on both sides |
+| `getValues` | `OCCTIntPackedMapGetValues` returns no values | :53 Expectation failed: values.count == 3; :54 Expectation failed: values.contains(7) | passed | `OCCTIntPackedMapGetValues` | PASS: extent 3 and values {7, 42, 99} on both sides (compared as a set, sorted) |
 | `changeValues` | `OCCTIntPackedMapChangeValues` returns true without changing | :64 Expectation failed: doc.intPackedMapCount(tag: 105) == 5; :65 Expectation failed: doc.intPackedMapContains(tag: 105, value: 30) | passed | `OCCTIntPackedMapChangeValues` | PASS: 5; 30 in, 1 out |
