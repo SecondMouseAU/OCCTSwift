@@ -6,16 +6,16 @@ import Testing
 struct GeomFillEvolvedSectionTests {
     @Test("Evolved section info on circle edge")
     func evolvedSectionInfo() {
-        guard let cyl = Shape.cylinder(radius: 5, height: 10) else { return }
-        let edges = cyl.subShapes(ofType: .edge)
-        guard !edges.isEmpty else { return }
-        for edge in edges {
-            let info = edge.evolvedSectionInfo()
-            if info.nbPoles > 0 {
-                #expect(info.degree > 0)
-                #expect(info.nbKnots > 0)
-                return
-            }
-        }
+        // #766: this looped until an edge answered, checked only `> 0`, and its guards returned
+        // silently. Edge 0 is a Geom_Circle; GeomFill_EvolvedSection's SectionShape gives 6 poles,
+        // 2 knots, degree 6, rational, see Scripts/repro/766-geomfill-a/.
+        let cyl = Shape.cylinder(radius: 5, height: 10)
+        #expect(cyl != nil)
+        guard let edge = cyl?.subShapes(ofType: .edge).first else { return }
+        let info = edge.evolvedSectionInfo()
+        #expect(info.nbPoles == 6)
+        #expect(info.nbKnots == 2)
+        #expect(info.degree == 6)
+        #expect(info.isRational)
     }
 }

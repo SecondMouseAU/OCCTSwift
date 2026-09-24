@@ -18,10 +18,14 @@ struct GeomFillAppSurfTests {
             return
         }
         #expect(result.isDone)
-        #expect(result.uDegree > 0)
-        #expect(result.vDegree > 0)
-        #expect(result.nbUPoles > 0)
-        #expect(result.nbVPoles > 0)
+        // #766: `> 0` passed any shape, including one approximated at a lower degree cap.
+        // GeomFill_AppSurf on the same two sections reports degree (14, 1) with 15 x 2 poles
+        // and 2 x 2 knots, see Scripts/repro/766-geomfill-a/.
+        #expect(result.uDegree == 14)
+        #expect(result.vDegree == 1)
+        #expect(result.nbUPoles == 15)
+        #expect(result.nbVPoles == 2)
+        #expect(result.nbUKnots == 2 && result.nbVKnots == 2)
     }
 
     // #644: GeomFill_AppSurf's approximation solver SIGSEGVs (uncatchably) when driven with fewer
