@@ -11,14 +11,17 @@ struct CanonicalRecognitionDetailedTests {
         shape.subShapes(ofType: .face).first { Face($0)?.surfaceType == surfaceType }
     }
 
-    @Test func recognizePlane() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let faces = box.subShapes(ofType: .face)
-            if let face = faces.first {
-                let result = face.recognizeCanonicalSurface()
-                #expect(result.type == .plane)
-            }
-        }
+    // #1859: this sat inside `if let box` and `if let face`, so a box with no faces passed it, and
+    // it checked only the type. The first face in subShapes order is the box's x = -5 side,
+    // measured in Scripts/repro/766-canonical-recognition-detailed/transcript.txt.
+    @Test func recognizePlane() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let face = try #require(box.subShapes(ofType: .face).first)
+        let result = face.recognizeCanonicalSurface()
+        #expect(result.type == .plane)
+        // The recognised plane is x = -5: normal along X, through a point with x = -5.
+        #expect(abs(abs(result.direction.x) - 1) < 1e-9)
+        #expect(abs(result.origin.x - -5) < 1e-9)
     }
 
     // MARK: - #1509 regression
@@ -73,18 +76,14 @@ struct CanonicalRecognitionDetailedTests {
         #expect(abs(result.param1 - 5) < 1e-6)
     }
 
-    @Test func recognizeEdgeLine() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let edges = box.subShapes(ofType: .edge)
-            var foundLine = false
-            for edge in edges {
-                let result = edge.recognizeCanonicalCurve()
-                if result.type == .line {
-                    foundLine = true
-                    break
-                }
-            }
-            #expect(foundLine)
+    // #1862: this sat inside `if let box` and passed on the first line it found. Every one of a
+    // box's twelve edges is a straight line, and the kernel recognises all twelve.
+    @Test func recognizeEdgeLine() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let edges = box.subShapes(ofType: .edge)
+        #expect(edges.count == 12)
+        for edge in edges {
+            #expect(edge.recognizeCanonicalCurve().type == .line)
         }
     }
 

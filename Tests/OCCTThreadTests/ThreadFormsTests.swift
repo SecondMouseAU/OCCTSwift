@@ -159,13 +159,19 @@ struct ThreadFormsTests {
 
     @Test("ThreadProfile validation + JSON round-trip")
     func profileValidationAndCodable() throws {
-        // invalid: doesn't span a root
+        // Each invalid profile has three vertices and breaks exactly ONE rule. The two-vertex
+        // profiles this test used before were rejected by the `count >= 3` guard first, so it
+        // stayed green with the span guard or the start/end guard deleted (#1990, measured).
+        // invalid: doesn't span a root (depth never reaches 1)
         #expect(
-            ThreadProfile(vertices: [.init(axial: 0, depth: 0), .init(axial: 1, depth: 0)]) == nil)
-        // invalid: doesn't start/end at 0/1
+            ThreadProfile(vertices: [
+                .init(axial: 0, depth: 0), .init(axial: 0.5, depth: 0.5), .init(axial: 1, depth: 0),
+            ]) == nil)
+        // invalid: doesn't start at axial 0 (ends at 1, spans crest and root)
         #expect(
-            ThreadProfile(vertices: [.init(axial: 0.1, depth: 1), .init(axial: 0.9, depth: 0)])
-                == nil)
+            ThreadProfile(vertices: [
+                .init(axial: 0.1, depth: 1), .init(axial: 0.5, depth: 0), .init(axial: 1, depth: 1),
+            ]) == nil)
         let prof = ThreadProfile.acme29
         let data = try JSONEncoder().encode(prof)
         let back = try JSONDecoder().decode(ThreadProfile.self, from: data)
