@@ -424,3 +424,22 @@ green once it was reverted. Probes and transcripts are under `Scripts/repro/766-
 | refOrientation | OCCTBRepGraphRefOrientation | Ref orientation | always FORWARD | ✅ orientation list | ✅ | Rewritten: `0...3` accepted any orientation |
 | hasRoots | OCCTBRepGraphRootNodes | Root nodes | root count + 1 | ✅ `roots.count == 1` | ✅ | Rewritten: `count > 0` passed a duplicate root |
 | boxNoSameDomain | OCCTBRepGraphFaceSameDomainIndices | Same-domain derivation | never same-domain | ✅ `fg.sameDomainFaces(of: 1) == [5]` | ✅ | Rewritten: a box alone passes an always-empty answer; fused coplanar boxes added. Kernel side is the probe re-deriving the bridge rule from Tool::Face::Surface |
+## Measured: Active Geometry and Builder Add (#1986)
+| **BRepGraph Active Geometry** | activeGeometryCounts | Active geometry count | NbActiveCoEdgeCurves2D() + 1 |
+| **BRepGraph Builder AddCompound** | addCompoundFromSolids | Builder add | return -1 (add fails) |
+| **BRepGraph Builder AddCompSolid** | addCompSolidFromSolids | Builder add | return -1 (add fails) |
+| **BRepGraph Builder AddFaceToShell** | linkFaceToShell | Builder link | returned ref index + 1 |
+| **BRepGraph Builder AddShell** | addEmptyShell | Builder add | return -1 (add fails) |
+| **BRepGraph Builder AddShellToSolid** | linkShellToSolid | Builder link | returned ref index + 1 |
+| **BRepGraph Builder AddSolid** | addEmptySolid | Builder add | return -1 (add fails) |
+| **BRepGraph Builder AddVertex** | addVertexToGraph | Builder add | return -1 (add fails) |
+| **BRepGraph Builder AddVertex** | addMultipleVertices | Builder add | return -1 (add fails) |
+| activeGeometryCounts | OCCTBRepGraphNbActiveCurves2D | Active geometry count | NbActiveCoEdgeCurves2D() + 1 | ✅ :18 `activeCurve2DCount == 24` | ✅ | Rewritten: `activeCurve2DCount > 0` stayed green under +1; pinned to 24 |
+| addCompoundFromSolids | OCCTBRepGraphBuilderAddCompound | Builder add | return -1 (add fails) | ✅ :20 `#require(addCompound)` | ✅ | Rewritten: `if let cidx` passed a failing add; now #require + index pinned |
+| addCompSolidFromSolids | OCCTBRepGraphBuilderAddCompSolid | Builder add | return -1 (add fails) | ✅ :17 `#require(addCompSolid)` | ✅ | Rewritten: `if let csIdx` passed a failing add |
+| linkFaceToShell | OCCTBRepGraphBuilderAddFaceToShell | Builder link | returned ref index + 1 | ✅ :19 `refIdx == 6` | ✅ | Rewritten: `refIdx != nil` passed a wrong ref, and `if let shellIdx` skipped it when addShell failed |
+| addEmptyShell | OCCTBRepGraphBuilderAddShell | Builder add | return -1 (add fails) | ✅ :16 `#require(addShell)` | ✅ | Rewritten: `if let sidx` passed a failing add |
+| linkShellToSolid | OCCTBRepGraphBuilderAddShellToSolid | Builder link | returned ref index + 1 | ✅ :21 `refIdx == 1` | ✅ | Rewritten: `refIdx != nil` passed a wrong ref |
+| addEmptySolid | OCCTBRepGraphBuilderAddSolid | Builder add | return -1 (add fails) | ✅ :16 `#require(addSolid)` | ✅ | Rewritten: `if let sidx` passed a failing add |
+| addVertexToGraph | OCCTBRepGraphBuilderAddVertex | Builder add | return -1 (add fails) | ✅ :18 `#require(addVertex)` | ✅ | Rewritten: `if let vidx` passed a failing add |
+| addMultipleVertices | OCCTBRepGraphBuilderAddVertex | Builder add | return -1 (add fails) | ✅ :32 `#require(addVertex)` | ✅ | Original also red (`v1 != nil`, now the `#require`); indices pinned: a returned index + 1 is red at :34 `v1 == 8` and :35 `v2 == 9` |
