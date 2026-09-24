@@ -6,61 +6,52 @@ import simd
 
 // MARK: - BRepGraph Tests (v0.129.0)
 
+// Counts pinned to the kernel probe (Scripts/repro/766-brepgraph-build-coedge). The sphere
+// and fused-shape tests asserted `faceCount > 0`, `edgeCount >= 0` (always true) and
+// `faceCount > 6`, which accepted a miscounting graph (#1986).
 @Suite("BRepGraph Build")
 struct BRepGraphBuildTests {
-    @Test func buildFromBox() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            #expect(graph != nil)
-            if let graph {
-                #expect(graph.faceCount == 6)
-                #expect(graph.edgeCount == 12)
-                #expect(graph.vertexCount == 8)
-                #expect(graph.shellCount == 1)
-                #expect(graph.solidCount == 1)
-                #expect(graph.wireCount == 6)
-                #expect(graph.compoundCount == 0)
-                #expect(graph.nodeCount > 0)
-            }
-        }
+    @Test func buildFromBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let graph = try #require(BRepGraph(shape: box))
+        #expect(graph.faceCount == 6)
+        #expect(graph.edgeCount == 12)
+        #expect(graph.vertexCount == 8)
+        #expect(graph.shellCount == 1)
+        #expect(graph.solidCount == 1)
+        #expect(graph.wireCount == 6)
+        #expect(graph.compoundCount == 0)
+        #expect(graph.coedgeCount == 24)
+        #expect(graph.nodeCount == 58)
     }
 
-    @Test func buildParallel() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)
-        if let box {
-            let graph = BRepGraph(shape: box, parallel: true)
-            #expect(graph != nil)
-            if let graph {
-                #expect(graph.faceCount == 6)
-            }
-        }
+    @Test func buildParallel() throws {
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let graph = try #require(BRepGraph(shape: box, parallel: true))
+        #expect(graph.faceCount == 6)
+        #expect(graph.edgeCount == 12)
+        #expect(graph.nodeCount == 58)
     }
 
-    @Test func buildFromSphere() {
-        let sphere = Shape.sphere(radius: 5)
-        if let sphere {
-            let graph = BRepGraph(shape: sphere)
-            if let graph {
-                #expect(graph.faceCount > 0)
-                #expect(graph.edgeCount >= 0)
-                #expect(graph.nodeCount > 0)
-            }
-        }
+    @Test func buildFromSphere() throws {
+        let sphere = try #require(Shape.sphere(radius: 5))
+        let graph = try #require(BRepGraph(shape: sphere))
+        // One spherical face bounded by a seam edge and two degenerate pole edges.
+        #expect(graph.faceCount == 1)
+        #expect(graph.edgeCount == 3)
+        #expect(graph.vertexCount == 2)
+        #expect(graph.nodeCount == 13)
     }
 
-    @Test func buildFromComplex() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)
-        let cyl = Shape.cylinder(radius: 5, height: 30)
-        if let box, let cyl {
-            let fused = box + cyl
-            if let fused {
-                let graph = BRepGraph(shape: fused)
-                if let graph {
-                    #expect(graph.faceCount > 6)
-                    #expect(graph.isValid)
-                }
-            }
-        }
+    @Test func buildFromComplex() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 30))
+        let union: Shape? = box + cyl
+        let fused = try #require(union)
+        let graph = try #require(BRepGraph(shape: fused))
+        #expect(graph.faceCount == 8)
+        #expect(graph.edgeCount == 15)
+        #expect(graph.compoundCount == 1)
+        #expect(graph.isValid)
     }
 }
