@@ -29,7 +29,11 @@ struct MathPolynomialRootsTests {
 
     @Test func noRealRoots() {
         // x²+1=0
-        if let roots = MathPolynomialRoots.solve(coefficients: [1.0, 0.0, 1.0]) {
+        // No real roots is a result, not a failure: math_DirectPolynomialRoots reports
+        // IsDone with zero solutions. A bare if-let let a failure (nil) pass silently.
+        let roots = MathPolynomialRoots.solve(coefficients: [1.0, 0.0, 1.0])
+        #expect(roots != nil)
+        if let roots {
             #expect(roots.count == 0)
         }
     }
