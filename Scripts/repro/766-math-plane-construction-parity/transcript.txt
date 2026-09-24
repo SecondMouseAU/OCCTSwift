@@ -1,0 +1,8 @@
+fromPoints / threePointControlMatches (0,0,0) (10,0,0) (0,10,0): IsDone=1 point(0,0)=0 0 0 normal=0 0 1
+threePointCollinearRejectedByBoth: IsDone=0 (bridge returns nil)
+threePointCollinearUnevenRejectedByBoth: IsDone=0 (bridge returns nil)
+threePointTwoCoincidentRejectedByBoth: IsDone=0 (bridge returns nil)
+threePointAllCoincidentRejectedByBoth: IsDone=0 (bridge returns nil)
+fromPointNormal / pointNormalControlMatches (5,5,5) n(1,1,1): IsDone=1 point(0,0)=5 5 5 normal=0.57735026918962573 0.57735026918962584 0.57735026918962573
+pointNormalZeroLengthRejectedByBoth: threw gp_Dir() - input vector has zero norm (bridge returns nil)
+pointNormalNearZeroLengthRejectedByBoth: threw gp_Dir() - input vector has zero norm (bridge returns nil)
