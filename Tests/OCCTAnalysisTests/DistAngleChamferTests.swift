@@ -35,7 +35,7 @@ struct DistAngleChamferTests {
         let expected = 1000.0 - 0.5 * 1.0 * 1.0 * tan(angleDegrees * .pi / 180.0) * 10.0
         guard let v = r.volume else {
             Issue.record("a chamfered box has a volume")
-            return
+        let v = try #require(r.volume)
         }
         #expect(abs(v - expected) < 1e-9, "at \(angleDegrees) degrees expected \(expected), got \(v)")
     }
