@@ -1,0 +1,16 @@
+multi-span interpolation: domain=[0, 318.433243004] length=353.507365698
+  [0.1, 0.6] of the span: 169.45666827
+  full-curve adaptor over [-span, 2 span] (clamped): 353.507365698
+  pre-bounded adaptor over [-span, 2 span] (the pre-#549 extrapolation): 8082.24153603
+  pre-bounded adaptor over [last + 1, last + 2]: 1.25897863731
+GccAna_Circ2dBisec r0/r2: n=4; r3/r2: n=4
+GccAna_CircPnt2dBisec r0: n=2; r2: n=2
+GccAna_Circ2d3Tan r0: n=8; r2: n=8
+IntAna2d x-axis vs r0 circle: n=1 (0, 0) ParamOnSecond throws Standard_DomainError
+IntAna2d r3 at 0 vs r3 at 4: n=2
+Extrema_ExtPElC2d (0,10) to r0: done=1 n=0; to r3: n=2
+GC_MakeCircle2d r0: IsDone=1
+GC_MakeCircle2d parallel to r5 at -5: IsDone=1 radius=0
+GC_MakeCircle2d parallel to r5 at -6: IsDone=1 radius=1
+GC_MakeCircle2d parallel to r5 at -2: IsDone=1 radius=3
+gp_Circ2d r-1: throws gp_Circ2d() - radius should be positive number

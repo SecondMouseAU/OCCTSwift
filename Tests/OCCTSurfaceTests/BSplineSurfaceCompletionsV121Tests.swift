@@ -13,17 +13,27 @@ struct BSplineSurfaceCompletionsV121Tests {
     // The fixture (an explicit, hand-written 4x4 pole grid) lives in
     // `SurfaceTestFixtures.swift` as `makeExplicitPoleBSplineSurface()`; see #1254.
     private func makeBSplineSurface() -> Surface? {
-        makeExplicitPoleBSplineSurface()
+        let s = makeExplicitPoleBSplineSurface()
+        // #766: every test used `if let surf = makeBSplineSurface()`, so a nil fixture passed
+        // silently; this records an issue instead. Values below are Geom_BSplineSurface's own
+        // after the same edit, see Scripts/repro/766-bspline-surface-completions/.
+        #expect(s != nil, "fixture surface")
+        return s
     }
 
     @Test("SetUNotPeriodic / SetVNotPeriodic")
     func setNotPeriodic() {
         if let surf = makeBSplineSurface() {
             // Non-periodic surface, calling SetNotPeriodic is a no-op but should succeed
+            let before = surf.point(atU: 0.3, v: 0.7)
             let r1 = surf.bsplineSetUNotPeriodic()
             let r2 = surf.bsplineSetVNotPeriodic()
             #expect(r1)
             #expect(r2)
+            // A no-op on a non-periodic surface: still non-periodic, geometry untouched.
+            #expect(!surf.isUPeriodic && !surf.isVPeriodic)
+            #expect(simd_length(surf.point(atU: 0.3, v: 0.7) - before) == 0)
+            #expect(simd_length(before - SIMD3(7.084, 2.916, 1.0269)) < 1e-12)
         }
     }
 
@@ -34,8 +44,10 @@ struct BSplineSurfaceCompletionsV121Tests {
             let inserted = surf.bsplineInsertUKnots([0.5], multiplicities: [1])
             #expect(inserted)
             // Now increase multiplicity of the new knot (index 2)
+            #expect(surf.bsplineUMultiplicities == [4, 1, 4])
             let r = surf.bsplineIncreaseUMultiplicity(index: 2, multiplicity: 2)
             #expect(r)
+            #expect(surf.bsplineUMultiplicities == [4, 2, 4])
         }
     }
 
@@ -48,6 +60,8 @@ struct BSplineSurfaceCompletionsV121Tests {
             #expect(inserted)
             let r = surf.bsplineIncreaseVMultiplicity(index: 2, multiplicity: 2)
             #expect(r)
+            #expect(surf.bsplineVMultiplicities == [4, 2, 4])
+            #expect(surf.bsplineUMultiplicities == [4, 4])
         }
     }
 
@@ -79,6 +93,8 @@ struct BSplineSurfaceCompletionsV121Tests {
             #expect(r2)
             let nvk = surf.bsplineSurface.nbVKnots
             #expect(nvk == 3)  // original 2 + 1 new
+            #expect(surf.bsplineUKnots() == [0, 0.25, 0.75, 1])
+            #expect(surf.bsplineVKnots() == [0, 0.5, 1])
         }
     }
 
@@ -90,10 +106,12 @@ struct BSplineSurfaceCompletionsV121Tests {
                 u: 0.5, v: 0.5, to: target,
                 uPoleRange: 1...4, vPoleRange: 1...4)
             #expect(r)
-            // Evaluate at (0.5, 0.5), should be close to target
+            // GeomLib's MovePoint puts S(0.5, 0.5) on the target (z = 9.9999999999999982 in the
+            // kernel); the old check tested x and y to within 1.0 and never looked at z.
             let p = surf.point(atU: 0.5, v: 0.5)
-            #expect(abs(p.x - target.x) < 1.0)
-            #expect(abs(p.y - target.y) < 1.0)
+            #expect(simd_length(p - target) < 1e-9)
+            // and the rest of the surface follows the kernel's pole update
+            #expect(simd_length(surf.point(atU: 0.2, v: 0.2) - SIMD3(1.904, 1.904, 7.1359567567567552)) < 1e-9)
         }
     }
 
@@ -113,13 +131,18 @@ struct BSplineSurfaceCompletionsV121Tests {
             ]
             let r2 = surf.bsplineSetPoleRow(uIndex: 1, poles: newRow)
             #expect(r2)
+            // Column 1 keeps newCol except its first pole, which row 1 then overwrote.
+            let bs = surf.bsplineSurface
+            #expect((1...4).map { bs.pole(uIndex: $0, vIndex: 1) } == [newRow[0]] + newCol.dropFirst())
+            #expect((1...4).map { bs.pole(uIndex: 1, vIndex: $0) } == newRow)
         }
     }
 
     @Test("SetUOrigin / SetVOrigin fail on non-periodic")
     func setOriginNonPeriodic() {
         if let surf = makeBSplineSurface() {
-            // SetOrigin only works on periodic surfaces, should fail gracefully
+            // SetOrigin only works on periodic surfaces: the kernel throws "surface is not U
+            // periodic" (and V), and the bridge turns that into false.
             let r1 = surf.bsplineSetUOrigin(index: 1)
             #expect(!r1)
             let r2 = surf.bsplineSetVOrigin(index: 1)
