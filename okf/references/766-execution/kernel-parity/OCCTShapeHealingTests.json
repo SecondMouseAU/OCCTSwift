@@ -1630,5 +1630,247 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1636: fixedFreeBounds returns the shape, not a bag of wires::resultIsTheModifiedSourceShape",
+    "bridge_function": "OCCTShapeFixFreeBounds",
+    "bridge_output": {
+      "type": "free_bounds_fix",
+      "data": {
+        "faces": 2,
+        "edges": 8
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds_fix",
+      "data": {
+        "faces": 2,
+        "edges": 8,
+        "inputEdges": 8,
+        "isSameInput": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1636: fixedFreeBounds returns the shape, not a bag of wires::openShellKeepsItsFaces",
+    "bridge_function": "OCCTShapeFixFreeBounds",
+    "bridge_output": {
+      "type": "free_bounds_fix",
+      "data": {
+        "faces": 5,
+        "closed": 1
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds_fix",
+      "data": {
+        "faces": 5,
+        "closedWires": 1,
+        "openWires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1636: fixedFreeBounds returns the shape, not a bag of wires::wiresAreStillAvailable",
+    "bridge_function": "OCCTShapeFixFreeBounds",
+    "bridge_output": {
+      "type": "free_bounds_fix",
+      "data": {
+        "closed": 1,
+        "open": 0,
+        "compoundFaces": 0
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds_fix",
+      "data": {
+        "closedWires": 1,
+        "openWires": 0,
+        "closedCompoundFaces": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1636: fixedFreeBounds returns the shape, not a bag of wires::gapWiderThanTheSewingToleranceIsNotSewn",
+    "bridge_function": "OCCTShapeFixFreeBounds",
+    "bridge_output": {
+      "type": "free_bounds_fix",
+      "data": {
+        "faces": 2,
+        "closed": 2
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds_fix",
+      "data": {
+        "faces": 2,
+        "closedWires": 2,
+        "swappedTolerancesClosedWires": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1637: BSplineRestriction's per-surface-kind switches are reachable::defaultsMatchTheKernel",
+    "bridge_function": "occtDefaultBSplineRestrictionParameters",
+    "bridge_output": {
+      "type": "flags",
+      "data": "matches Swift occtDefaults field by field"
+    },
+    "kernel_output": {
+      "type": "flags",
+      "data": {
+        "plane": 0,
+        "bezier": 0,
+        "revolution": 1,
+        "extrusion": 1,
+        "offset": 1,
+        "cylindrical": 0,
+        "conical": 0,
+        "toroidal": 0,
+        "spherical": 0,
+        "segment": 1,
+        "curve3d": 1,
+        "offset3d": 1,
+        "curve2d": 1,
+        "offset2d": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1637: BSplineRestriction's per-surface-kind switches are reachable::occtDefaultsConvertNothingOnACylinder",
+    "bridge_function": "OCCTShapeCustomBSplineRestriction",
+    "bridge_output": {
+      "type": "surface_kinds",
+      "data": {
+        "Geom_CylindricalSurface": 1,
+        "Geom_Plane": 2
+      }
+    },
+    "kernel_output": {
+      "type": "surface_kinds",
+      "data": {
+        "Geom_CylindricalSurface": 1,
+        "Geom_Plane": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1637: BSplineRestriction's per-surface-kind switches are reachable::allSurfaceTypesConvertsEverything",
+    "bridge_function": "OCCTShapeCustomBSplineRestriction",
+    "bridge_output": {
+      "type": "surface_kinds",
+      "data": {
+        "cylinder": 3,
+        "sphere": 1,
+        "torus": 1
+      }
+    },
+    "kernel_output": {
+      "type": "surface_kinds",
+      "data": {
+        "cylinder": {
+          "Geom_BSplineSurface": 3
+        },
+        "sphere": {
+          "Geom_BSplineSurface": 1
+        },
+        "torus": {
+          "Geom_BSplineSurface": 1
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1637: BSplineRestriction's per-surface-kind switches are reachable::perKindSwitchesActIndependently",
+    "bridge_function": "OCCTShapeCustomBSplineRestriction",
+    "bridge_output": {
+      "type": "surface_kinds",
+      "data": {
+        "cylindricalOnly": {
+          "bspline": 1,
+          "plane": 2
+        },
+        "planesOnly": {
+          "bspline": 2,
+          "cylinder": 1
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "surface_kinds",
+      "data": {
+        "cylindricalOnly": {
+          "Geom_BSplineSurface": 1,
+          "Geom_Plane": 2
+        },
+        "planesOnly": {
+          "Geom_BSplineSurface": 2,
+          "Geom_CylindricalSurface": 1
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1637: BSplineRestriction's per-surface-kind switches are reachable::conversionPreservesTheSolid",
+    "bridge_function": "OCCTShapeCustomBSplineRestriction",
+    "bridge_output": {
+      "type": "volume",
+      "data": {
+        "relativeChange": "< 0.01"
+      }
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "before": 785.398163397,
+        "after_tol0.001": 785.399994533,
+        "after_tol1.0": 772.797704085
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
