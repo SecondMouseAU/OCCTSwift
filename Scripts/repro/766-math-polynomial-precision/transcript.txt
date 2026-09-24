@@ -1,0 +1,11 @@
+quadratic: done=1 count=2 roots=[ 2 3 ]
+quadraticNoRoots: done=1 count=0 roots=[ ]
+quadraticOneRoot: done=1 count=2 roots=[ 1 1 ]
+cubic: done=1 count=3 roots=[ 1 2 3 ]
+quartic: done=1 count=4 roots=[ -3 -1 1 3 ]
+confusion: 9.9999999999999995e-08
+angular: 9.9999999999999998e-13
+isInfinite: isInfinite(3e100)=1 isInfinite(1.0)=0
+ordering: intersection=1.0000000000000001e-09 confusion=9.9999999999999995e-08 approximation=9.9999999999999995e-07
+infinite: 2e+100 isInfinite(infinite)=1
+pConfusion: 1.0000000000000001e-09 confusion/100=9.9999999999999986e-10

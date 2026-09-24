@@ -1,0 +1,38 @@
+cylinder: edges=3 faces=3 face0 type=1
+  edge0: curveType=1 closed=1 seamOnFace0=0 ClosedEdgeDivide.Compute(face0)=1
+  edge1: curveType=0 closed=0 seamOnFace0=1 ClosedEdgeDivide.Compute(face0)=0
+  edge2: curveType=1 closed=1 seamOnFace0=0 ClosedEdgeDivide.Compute(face0)=1
+box: type=2 valid=1 edges(non-degenerate)=12 bezierEdges=0 faces=6 bezierFaces=0 volume=1000.000000
+cylinder: type=2 valid=1 edges(non-degenerate)=3 bezierEdges=0 faces=3 bezierFaces=0 volume=785.398163
+curves->Bezier(box, T,T,T) Perform=0 : null (bridge returns nil)
+curves->Bezier(cyl, T,T,T) Perform=0 : null (bridge returns nil)
+curves->Bezier(cyl, F,T,F) Perform=0 : null (bridge returns nil)
+surfaces->Bezier(cyl, T,T,T,T) Perform=0 : null (bridge returns nil)
+surfaces->Bezier(cyl, F,T,F,F) Perform=0 : null (bridge returns nil)
+surfaces->Bezier(box, T,F,F,F) Perform=0 : null (bridge returns nil)
+with Set3dConversion(true): curves->Bezier(box, T,T,T) Perform=1 : type=2 valid=0 edges(non-degenerate)=12 bezierEdges=12 faces=6 bezierFaces=0 volume=1000.000000
+with Set3dConversion(true): curves->Bezier(cyl, T,T,T) Perform=1 : type=2 valid=0 edges(non-degenerate)=17 bezierEdges=17 faces=3 bezierFaces=0 volume=785.398163
+with Set3dConversion(true): curves->Bezier(cyl, F,T,F) Perform=0 : type=2 valid=1 edges(non-degenerate)=3 bezierEdges=0 faces=3 bezierFaces=0 volume=785.398163
+with SetSurfaceConversion(true): surfaces->Bezier(cyl, T,T,T,T) Perform=1 : type=2 valid=1 edges(non-degenerate)=3 bezierEdges=0 faces=3 bezierFaces=2 volume=785.398163
+with SetSurfaceConversion(true): surfaces->Bezier(cyl, F,T,F,F) Perform=0 : type=2 valid=1 edges(non-degenerate)=3 bezierEdges=0 faces=3 bezierFaces=0 volume=785.398163
+with SetSurfaceConversion(true): surfaces->Bezier(box, T,F,F,F) Perform=1 : type=2 valid=0 edges(non-degenerate)=12 bezierEdges=0 faces=6 bezierFaces=6 volume=1000.000000
+DivideClosed(cyl, 1): Perform=1 : type=2 valid=1 edges(non-degenerate)=6 bezierEdges=0 faces=4 bezierFaces=0 volume=785.398163
+EdgeDivide(box edge0, face0): Compute=0 HasCurve2d=1 HasCurve3d=1
+EdgeDivide(cyl edge0, face0): Compute=0 HasCurve2d=1 HasCurve3d=1
+EdgeDivide(cyl edge1, face0): Compute=0 HasCurve2d=1 HasCurve3d=1
+EdgeDivide(cyl edge2, face0): Compute=0 HasCurve2d=1 HasCurve3d=1
+FaceDivide(cyl r5 h20 face0): Perform=0 resultNull=0 type=4 faces=1 area=628.318531 inputArea=628.318531 isSameAsInput=1
+FaceDivide(box 100 face0): Perform=0 resultNull=0 type=4 faces=1 area=10000.000000 inputArea=10000.000000 isSameAsInput=1
+ShellSewing(box, 1e-6): : type=2 valid=1 edges(non-degenerate)=12 bezierEdges=0 faces=6 bezierFaces=0 volume=1000.000000
+  isSameAsInput=0
+single-span: continuity3d=6
+  C(0.5)=(2.000000000, 1.125000000)
+  SplitCurve3dContinuity(C2): curves=1 [(0, 0, 0)-(4, 0, 0)]
+  SplitCurve2dContinuity(C2): curves=1 [(0, 0)-(4, 0) bezier=0]
+  ConvertCurve2dToBezier: curves=1 [(0, 0)-(4, 0) bezier=1]
+C1 at 0.5: continuity3d=2
+  C(0.5)=(2.500000000, 1.500000000)
+  SplitCurve3dContinuity(C2): curves=2 [(0, 0, 0)-(2.5, 1.5, 0)] [(2.5, 1.5, 0)-(5, 1, 0)]
+  SplitCurve2dContinuity(C2): curves=2 [(0, 0)-(2.5, 1.5) bezier=0] [(2.5, 1.5)-(5, 1) bezier=0]
+  ConvertCurve2dToBezier: curves=2 [(0, 0)-(2.5, 1.5) bezier=1] [(2.5, 1.5)-(5, 1) bezier=1]
+WireDivide(box wire0, face0): every edge has a pcurve on face0=1 StatusDONE=0 wireNull=0 edges=4 isSameAsInput=1
