@@ -305,15 +305,16 @@ struct ColorOCCTTests {
 
 @Suite("Material OCCT Operations Tests")
 struct MaterialOCCTTests {
+    // #766: the `if let` tests below passed when the bridge returned nil, and the `>= 0` bounds
+    // accepted any material. They now require the value and pin what Graphic3d_MaterialAspect
+    // reports (Scripts/repro/766-foundation-material-date/).
     @Test func predefinedMaterialCount() {
-        let count = Material.predefinedMaterialCount
-        #expect(count > 10)
+        #expect(Material.predefinedMaterialCount == 24)
     }
 
     @Test func predefinedMaterialName() {
-        if let name = Material.predefinedMaterialName(at: 1) {
-            #expect(!name.isEmpty)
-        }
+        // 1-based: index 1 is Graphic3d_NameOfMaterial 0.
+        #expect(Material.predefinedMaterialName(at: 1) == "Brass")
     }
 
     @Test func predefinedMaterialNameOutOfRange() {
@@ -321,12 +322,11 @@ struct MaterialOCCTTests {
         #expect(name == nil)
     }
 
-    @Test func predefinedMaterialByName() {
-        if let brass = Material.predefinedMaterial(named: "Brass") {
-            #expect(brass.isPhysic)
-            #expect(brass.shininess >= 0)
-            #expect(brass.transparency >= 0)
-        }
+    @Test func predefinedMaterialByName() throws {
+        let brass = try #require(Material.predefinedMaterial(named: "Brass"))
+        #expect(brass.isPhysic)
+        #expect(abs(brass.shininess - 0.65) < 1e-6)
+        #expect(brass.transparency == 0)
     }
 
     @Test func predefinedMaterialByNameInvalid() {
@@ -334,11 +334,12 @@ struct MaterialOCCTTests {
         #expect(m == nil)
     }
 
-    @Test func predefinedMaterialByIndex() {
-        if let m = Material.predefinedMaterial(at: 1) {
-            #expect(m.shininess >= 0)
-            #expect(m.pbrRoughness >= 0)
-        }
+    @Test func predefinedMaterialByIndex() throws {
+        // Index 1 is Brass, the same material predefinedMaterialByName reads by name.
+        let m = try #require(Material.predefinedMaterial(at: 1))
+        #expect(m == Material.predefinedMaterial(named: "Brass"))
+        #expect(abs(m.shininess - 0.65) < 1e-6)
+        #expect(abs(Double(m.pbrRoughness) - 0.212132) < 1e-4)
     }
 
     @Test func predefinedMaterialByIndexOutOfRange() {
@@ -346,20 +347,18 @@ struct MaterialOCCTTests {
         #expect(m == nil)
     }
 
-    @Test func predefinedMaterialColors() {
-        if let gold = Material.predefinedMaterial(named: "Gold") {
-            #expect(gold.diffuseColor.red >= 0)
-            #expect(gold.specularColor.red >= 0)
-            #expect(gold.ambientColor.red >= 0)
-        }
+    @Test func predefinedMaterialColors() throws {
+        let gold = try #require(Material.predefinedMaterial(named: "Gold"))
+        #expect(abs(gold.diffuseColor.red - 0.525642991) < 1e-6)
+        #expect(abs(gold.specularColor.red - 1.0) < 1e-6)
+        #expect(abs(gold.ambientColor.red - 0.0732389987) < 1e-6)
     }
 
-    @Test func predefinedMaterialPBR() {
-        if let copper = Material.predefinedMaterial(named: "Copper") {
-            #expect(copper.pbrMetallic >= 0)
-            #expect(copper.pbrRoughness >= 0)
-            #expect(copper.pbrIOR > 1.0)
-        }
+    @Test func predefinedMaterialPBR() throws {
+        let copper = try #require(Material.predefinedMaterial(named: "Copper"))
+        #expect(copper.pbrMetallic == 1)
+        #expect(abs(Double(copper.pbrRoughness) - 0.212132) < 1e-4)
+        #expect(abs(copper.pbrIOR - 1.5) < 1e-6)
     }
 
     @Test func minRoughness() {
@@ -368,7 +367,7 @@ struct MaterialOCCTTests {
         #expect(mr < 0.1)
     }
 
-    @Test func predefinedMaterialRoughnessIsAuthoredValueNotRemap() {
+    @Test func predefinedMaterialRoughnessIsAuthoredValueNotRemap() throws {
         // #1419: Graphic3d_MaterialAspect(Graphic3d_NameOfMaterial_Water)'s PBR material has an
         // authored (NormalizedRoughness) roughness of exactly 0.0 --
         // Graphic3d_PBRMaterial::SetBSDF's dielectric-glass branch calls SetRoughness(0.f)
@@ -377,31 +376,29 @@ struct MaterialOCCTTests {
         // it, for ANY material. Measured directly against the pinned kernel, see
         // Scripts/repro/1419-pbr-roughness-accessor/: Water/Glass/Diamond/Neon/Ionized all report
         // normalized=0.0, remapped=0.01.
-        if let water = Material.predefinedMaterial(named: "Water") {
-            #expect(Double(water.pbrRoughness) < Double(Material.minRoughness))
-            #expect(abs(water.pbrRoughness) < 1e-4)
-        }
+        let water = try #require(Material.predefinedMaterial(named: "Water"))
+        #expect(Double(water.pbrRoughness) < Double(Material.minRoughness))
+        #expect(abs(water.pbrRoughness) < 1e-4)
     }
 
-    @Test func predefinedMaterialRoughnessMatchesNormalizedNotRemappedMetallic() {
+    @Test func predefinedMaterialRoughnessMatchesNormalizedNotRemappedMetallic() throws {
         // #1419: Brass's PBR material has an authored roughness of 0.212132 (sqrt(0.045),
         // Graphic3d_BSDF::CreateMetallic's roughness parameter); Roughness() would remap it to
         // 0.220011 in [MinRoughness,1] space. The two are close enough that a loose tolerance
         // would pass either way, so this pins the value tightly against the authored one.
-        if let brass = Material.predefinedMaterial(named: "Brass") {
-            #expect(abs(Double(brass.pbrRoughness) - 0.212132) < 1e-4)
-            #expect(abs(Double(brass.pbrRoughness) - 0.220011) > 1e-4)
-        }
+        let brass = try #require(Material.predefinedMaterial(named: "Brass"))
+        #expect(abs(Double(brass.pbrRoughness) - 0.212132) < 1e-4)
+        #expect(abs(Double(brass.pbrRoughness) - 0.220011) > 1e-4)
     }
 
     @Test func roughnessFromSpecular() {
+        // Graphic3d_PBRMaterial::RoughnessFromSpecular(white, 0.8) = 1 - 0.8.
         let r = Material.roughnessFromSpecular(color: .white, shininess: 0.8)
-        #expect(r >= 0 && r <= 1)
+        #expect(abs(r - 0.2) < 1e-6)
     }
 
     @Test func metallicFromSpecular() {
-        let m = Material.metallicFromSpecular(color: .white)
-        #expect(m >= 0 && m <= 1)
+        #expect(Material.metallicFromSpecular(color: .white) == 1)
     }
 
     @Test func allPredefinedMaterialsAccessible() {
@@ -426,68 +423,57 @@ struct OCCTDateTests {
         #expect(c.day == 1)
     }
 
-    @Test func createDate() {
-        if let d = OCCTDate(month: 6, day: 15, year: 2000, hour: 14, minute: 30) {
-            #expect(d.year == 2000)
-            #expect(d.month == 6)
-            #expect(d.day == 15)
-            #expect(d.hour == 14)
-            #expect(d.minute == 30)
-        }
+    // #766: every test below that builds a date or period nested its assertions in `if let`, so
+    // a bridge that refused every date passed them all. They now require the values; each result
+    // matches Quantity_Date (Scripts/repro/766-foundation-material-date/).
+    @Test func createDate() throws {
+        let d = try #require(OCCTDate(month: 6, day: 15, year: 2000, hour: 14, minute: 30))
+        #expect(d.year == 2000)
+        #expect(d.month == 6)
+        #expect(d.day == 15)
+        #expect(d.hour == 14)
+        #expect(d.minute == 30)
     }
 
-    @Test func addPeriod() {
-        if let d = OCCTDate(month: 1, day: 1, year: 2000),
-            let oneDay = Period(days: 1)
-        {
-            let d2 = d.adding(oneDay)
-            #expect(d2.day == 2)
-        }
+    @Test func addPeriod() throws {
+        let d = try #require(OCCTDate(month: 1, day: 1, year: 2000))
+        let oneDay = try #require(Period(days: 1))
+        let d2 = d.adding(oneDay)
+        #expect(d2.day == 2)
     }
 
-    @Test func subtractPeriod() {
-        if let d = OCCTDate(month: 1, day: 15, year: 2000, hour: 12),
-            let sixHours = Period(hours: 6)
-        {
-            if let d2 = d.subtracting(sixHours) {
-                #expect(d2.hour == 6)
-            }
-        }
+    @Test func subtractPeriod() throws {
+        let d = try #require(OCCTDate(month: 1, day: 15, year: 2000, hour: 12))
+        let sixHours = try #require(Period(hours: 6))
+        let d2 = try #require(d.subtracting(sixHours))
+        #expect(d2.hour == 6)
     }
 
-    @Test func difference() {
-        if let d1 = OCCTDate(month: 1, day: 1, year: 2000),
-            let d2 = OCCTDate(month: 1, day: 2, year: 2000)
-        {
-            let diff = d1.difference(to: d2)
-            #expect(diff.totalSeconds == 86400)
-        }
+    @Test func difference() throws {
+        let d1 = try #require(OCCTDate(month: 1, day: 1, year: 2000))
+        let d2 = try #require(OCCTDate(month: 1, day: 2, year: 2000))
+        let diff = d1.difference(to: d2)
+        #expect(diff.totalSeconds == 86400)
     }
 
-    @Test func equality() {
-        let d1 = OCCTDate(month: 6, day: 15, year: 2000, hour: 12)
-        let d2 = OCCTDate(month: 6, day: 15, year: 2000, hour: 12)
-        if let a = d1, let b = d2 {
-            #expect(a == b)
-        }
+    @Test func equality() throws {
+        let a = try #require(OCCTDate(month: 6, day: 15, year: 2000, hour: 12))
+        let b = try #require(OCCTDate(month: 6, day: 15, year: 2000, hour: 12))
+        #expect(a == b)
     }
 
-    @Test func comparison() {
-        if let d1 = OCCTDate(month: 1, day: 1, year: 2000),
-            let d2 = OCCTDate(month: 1, day: 2, year: 2000)
-        {
-            #expect(d1 < d2)
-            #expect(d2 > d1)
-        }
+    @Test func comparison() throws {
+        let d1 = try #require(OCCTDate(month: 1, day: 1, year: 2000))
+        let d2 = try #require(OCCTDate(month: 1, day: 2, year: 2000))
+        #expect(d1 < d2)
+        #expect(d2 > d1)
     }
 
-    @Test func operatorPlus() {
-        if let d = OCCTDate(month: 1, day: 1, year: 2000),
-            let p = Period(hours: 24)
-        {
-            let d2 = d + p
-            #expect(d2.day == 2)
-        }
+    @Test func operatorPlus() throws {
+        let d = try #require(OCCTDate(month: 1, day: 1, year: 2000))
+        let p = try #require(Period(hours: 24))
+        let d2 = d + p
+        #expect(d2.day == 2)
     }
 
     @Test func isValid() {
@@ -502,11 +488,11 @@ struct OCCTDateTests {
         #expect(OCCTDate.isLeap(year: 2024))
     }
 
-    @Test func millisecondMicrosecond() {
-        if let d = OCCTDate(month: 1, day: 1, year: 2000, millisecond: 123, microsecond: 456) {
-            #expect(d.millisecond == 123)
-            #expect(d.microsecond == 456)
-        }
+    @Test func millisecondMicrosecond() throws {
+        let d = try #require(
+            OCCTDate(month: 1, day: 1, year: 2000, millisecond: 123, microsecond: 456))
+        #expect(d.millisecond == 123)
+        #expect(d.microsecond == 456)
     }
 
     @Test func invalidDate() {
