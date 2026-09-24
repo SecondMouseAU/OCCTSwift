@@ -416,3 +416,9 @@
 | **Vector3DMath** | dot | `OCCTXYZDot` | z term dropped | red | green | PASS |
 | **Vector3DMath** | dotCross | `OCCTXYZDotCross` | b and c swapped in the triple product | red | green | PASS |
 | **Vector3DMath** | normalize | `OCCTXYZNormalize` | normalized x and y swapped | red | green | PASS |
+### 766-math-gtrsf-hyperbola-precision (#1983, measured)
+| **BRepTools_GTrsfModification** | non-uniform scale | `OCCTShapeGTrsfModification` | a11 ignored (set to 1) | red | green | PASS |
+| **GC_MakeHyperbola, 3 Points** | Create hyperbola through three points | `OCCTCurve3DMakeHyperbolaThreePoints` | S1 and S2 exchanged before GC_MakeHyperbola | red | green | PASS |
+| **Integration: Precision Extremes** | microScale | `OCCTShapeCreateBox / OCCTShapeGetVolume` | volume reported 1% high | red | green | PASS |
+| **Integration: Precision Extremes** | macroScale | `OCCTShapeCreateBox / OCCTShapeGetVolume` | volume reported 1% high | red | green | PASS |
+| **Integration: Precision Extremes** | mixedScaleLargeBoxSmallHole | `OCCTShapeDrillHole` | return the undrilled shape | red | green | PASS |

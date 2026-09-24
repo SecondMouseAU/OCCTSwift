@@ -1,0 +1,5 @@
+nonUniformScale: done=1 valid=1 volume=2000 bnd=(-10,-5,-5)-(10,5,5)
+hyperbolaFromThreePoints: done=1 major=5 minor=3 first=-2e+100 last=2e+100 P(0)=(5,0,0) P(1)=(7.715403174,3.525603581,0)
+microScale: valid=1 volume=1.0000000000000001e-09
+macroScale: valid=1 volume=999999999.99999988
+mixedScaleLargeBoxSmallHole: done=1 valid=1 faces=7 volume=999999999.68584061 expected=999999999.68584073

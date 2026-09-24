@@ -6941,5 +6941,125 @@
       "failing_expectation": "original: **green**; rewritten: :35 `abs(n.x - 1.0 / 3.0) < 1e-12`"
     },
     "green": true
+  },
+  {
+    "test_name": "BRepTools_GTrsfModification::non-uniform scale",
+    "bridge_function": "OCCTShapeGTrsfModification",
+    "bridge_output": {
+      "type": "observed",
+      "data": "done=1 valid=1 volume=2000 bnd=(-10,-5,-5)-(10,5,5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "done=1 valid=1 volume=2000 bnd=(-10,-5,-5)-(10,5,5)",
+      "source": "Scripts/repro/766-math-gtrsf-hyperbola-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "a11 ignored (set to 1)",
+      "failing_expectation": "original: **green**; rewritten: :27 `abs(volume - 2000.0) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeHyperbola, 3 Points::Create hyperbola through three points",
+    "bridge_function": "OCCTCurve3DMakeHyperbolaThreePoints",
+    "bridge_output": {
+      "type": "observed",
+      "data": "major=5 minor=3 first=-2e100 last=2e100 P(0)=(5,0,0) P(1)=(7.715403174,3.525603581,0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "major=5 minor=3 first=-2e100 last=2e100 P(0)=(5,0,0) P(1)=(7.715403174,3.525603581,0)",
+      "source": "Scripts/repro/766-math-gtrsf-hyperbola-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "S1 and S2 exchanged before GC_MakeHyperbola",
+      "failing_expectation": "original: **green**; rewritten: :26 `simd_length(c.point(at: 0) - SIMD3(5, 0, 0)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Integration: Precision Extremes::microScale",
+    "bridge_function": "OCCTShapeCreateBox / OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "observed",
+      "data": "valid=1 volume=1.0000000000000001e-09",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "valid=1 volume=1.0000000000000001e-09",
+      "source": "Scripts/repro/766-math-gtrsf-hyperbola-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "volume reported 1% high",
+      "failing_expectation": "original: red; rewritten: :18 `abs(vol - 1e-9) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Integration: Precision Extremes::macroScale",
+    "bridge_function": "OCCTShapeCreateBox / OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "observed",
+      "data": "valid=1 volume=999999999.99999988",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "valid=1 volume=999999999.99999988",
+      "source": "Scripts/repro/766-math-gtrsf-hyperbola-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "volume reported 1% high",
+      "failing_expectation": "original: red; rewritten: :25 `abs(vol - 1e9) < 1e3`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Integration: Precision Extremes::mixedScaleLargeBoxSmallHole",
+    "bridge_function": "OCCTShapeDrillHole",
+    "bridge_output": {
+      "type": "observed",
+      "data": "done=1 valid=1 faces=7 volume=999999999.68584061 (analytic 999999999.68584073)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "done=1 valid=1 faces=7 volume=999999999.68584061 (analytic 999999999.68584073)",
+      "source": "Scripts/repro/766-math-gtrsf-hyperbola-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "return the undrilled shape",
+      "failing_expectation": "original: **green**; rewritten: :36 `drilled.faces().count == 7`"
+    },
+    "green": true
   }
 ]
