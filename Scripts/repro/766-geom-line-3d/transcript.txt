@@ -1,0 +1,6 @@
+lineDirection: direction=(1, 0, 0)
+lineLocation: location=(1, 2, 3)
+lineSetDirection: direction after SetDirection(0,1,0)=(0, 1, 0)
+lineSetLocation: location after SetLocation(5,5,5)=(5, 5, 5)
+linePosition: location=(1, 2, 3) direction=(1, 0, 0)
+lineLin: location=(1, 2, 3) direction=(1, 0, 0)

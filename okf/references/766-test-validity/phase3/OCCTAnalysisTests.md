@@ -268,6 +268,12 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **Geom_Line Properties** | lineDirection | Geom_Line | Lin().Direction() |
+| **Geom_Line Properties** | lineLocation | Geom_Line | Lin().Location() |
+| **Geom_Line Properties** | lineSetDirection | Geom_Line setter | SetDirection() |
+| **Geom_Line Properties** | lineSetLocation | Geom_Line setter | SetLocation() |
+| **Geom_Line Properties** | linePosition | Geom_Line | Position() |
+| **Geom_Line Properties** | lineLin | Geom_Line | Lin() |
 
 ---
 
@@ -475,6 +481,12 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| lineDirection | OCCTCurve3DLineDirection | Geom_Line | swap dx/dy | ✅ | ✅ | Fixture now #require'd |
+| lineLocation | OCCTCurve3DLineLocation | Geom_Line | x + 1 | ✅ | ✅ | Fixture now #require'd |
+| lineSetDirection | OCCTCurve3DLineSetDirection | Geom_Line setter | skip SetDirection | ✅ | ✅ | Fixture now #require'd |
+| lineSetLocation | OCCTCurve3DLineSetLocation | Geom_Line setter | skip SetLocation | ✅ | ✅ | Fixture now #require'd |
+| linePosition | OCCTCurve3DLinePosition | Geom_Line | location y + 1 | ✅ | ✅ | Fixture now #require'd |
+| lineLin | OCCTCurve3DLineLin | Geom_Line | location z + 1 | ✅ | ✅ | Fixture now #require'd |
 
 ---
 
