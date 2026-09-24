@@ -1,0 +1,2 @@
+dimensions=0
+geom tolerances=0
