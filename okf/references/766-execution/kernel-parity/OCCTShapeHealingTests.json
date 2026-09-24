@@ -8355,5 +8355,576 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Shell Tests::analyzeBox",
+    "bridge_function": "OCCTShapeAnalyzeShell",
+    "bridge_output": {
+      "type": "shell_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shell_analysis",
+      "data": {
+        "box": {
+          "orientationProblem": false,
+          "freeEdges": false,
+          "badEdges": false,
+          "connected": true,
+          "freeCount": 0
+        },
+        "sphere": {
+          "orientationProblem": false,
+          "freeEdges": false,
+          "badEdges": false,
+          "connected": true,
+          "freeCount": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Shell Tests::analyzeSphere",
+    "bridge_function": "OCCTShapeAnalyzeShell",
+    "bridge_output": {
+      "type": "shell_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shell_analysis",
+      "data": {
+        "box": {
+          "orientationProblem": false,
+          "freeEdges": false,
+          "badEdges": false,
+          "connected": true,
+          "freeCount": 0
+        },
+        "sphere": {
+          "orientationProblem": false,
+          "freeEdges": false,
+          "badEdges": false,
+          "connected": true,
+          "freeCount": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade_SplitSurface::splitSurfaceByContinuity",
+    "bridge_function": "OCCTSplitSurfaceContinuity / Angle / Area",
+    "bridge_output": {
+      "type": "split_counts",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "split_counts",
+      "data": {
+        "toBSpline(infinite cylinder)": "throws: infinite surface",
+        "continuity(bsp r10 h10, C2)": {
+          "u": 4,
+          "v": 2
+        },
+        "angle(infinite cylinder, pi/2)": {
+          "u": 5,
+          "v": 2
+        },
+        "area([0,10]^2, 4)": {
+          "u": 3,
+          "v": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade_SplitSurface::splitByAngle",
+    "bridge_function": "OCCTSplitSurfaceContinuity / Angle / Area",
+    "bridge_output": {
+      "type": "split_counts",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "split_counts",
+      "data": {
+        "toBSpline(infinite cylinder)": "throws: infinite surface",
+        "continuity(bsp r10 h10, C2)": {
+          "u": 4,
+          "v": 2
+        },
+        "angle(infinite cylinder, pi/2)": {
+          "u": 5,
+          "v": 2
+        },
+        "area([0,10]^2, 4)": {
+          "u": 3,
+          "v": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade_SplitSurface::splitByArea",
+    "bridge_function": "OCCTSplitSurfaceContinuity / Angle / Area",
+    "bridge_output": {
+      "type": "split_counts",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "split_counts",
+      "data": {
+        "toBSpline(infinite cylinder)": "throws: infinite surface",
+        "continuity(bsp r10 h10, C2)": {
+          "u": 4,
+          "v": 2
+        },
+        "angle(infinite cylinder, pi/2)": {
+          "u": 5,
+          "v": 2
+        },
+        "area([0,10]^2, 4)": {
+          "u": 3,
+          "v": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeCustom_Surface ConvertToAnalytical::recognizeCylinder",
+    "bridge_function": "OCCTSurfaceConvertToAnalytical",
+    "bridge_output": {
+      "type": "surface",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "surface",
+      "data": {
+        "type": "Geom_CylindricalSurface",
+        "radius": 5.0,
+        "gap": 3.58e-15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeUpgrade_SplitSurfaceContinuity::splitByContinuity",
+    "bridge_function": "OCCTSurfaceSplitByContinuity",
+    "bridge_output": {
+      "type": "split",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "split",
+      "data": {
+        "OK": false,
+        "DONE1": true,
+        "u": 4,
+        "v": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Surface ValueOfUV Tests::projectOntoPlane",
+    "bridge_function": "OCCTSurfaceValueOfUV / NextValueOfUV",
+    "bridge_output": {
+      "type": "uv",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "uv",
+      "data": {
+        "plane(5,3,2)": {
+          "uv": [
+            5,
+            3
+          ],
+          "gap": 2
+        },
+        "next(5.5,3.5,0)": {
+          "uv": [
+            5.5,
+            3.5
+          ],
+          "gap": 0
+        },
+        "sphere(0,0,10)": {
+          "uv": [
+            0,
+            1.570796327
+          ],
+          "gap": 5
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Surface ValueOfUV Tests::projectOntoSphere",
+    "bridge_function": "OCCTSurfaceValueOfUV / NextValueOfUV",
+    "bridge_output": {
+      "type": "uv",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "uv",
+      "data": {
+        "plane(5,3,2)": {
+          "uv": [
+            5,
+            3
+          ],
+          "gap": 2
+        },
+        "next(5.5,3.5,0)": {
+          "uv": [
+            5.5,
+            3.5
+          ],
+          "gap": 0
+        },
+        "sphere(0,0,10)": {
+          "uv": [
+            0,
+            1.570796327
+          ],
+          "gap": 5
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis Surface ValueOfUV Tests::nextValueOfUV",
+    "bridge_function": "OCCTSurfaceValueOfUV / NextValueOfUV",
+    "bridge_output": {
+      "type": "uv",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "uv",
+      "data": {
+        "plane(5,3,2)": {
+          "uv": [
+            5,
+            3
+          ],
+          "gap": 2
+        },
+        "next(5.5,3.5,0)": {
+          "uv": [
+            5.5,
+            3.5
+          ],
+          "gap": 0
+        },
+        "sphere(0,0,10)": {
+          "uv": [
+            0,
+            1.570796327
+          ],
+          "gap": 5
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.123.0, UnifySameDomain builder::basicUnification",
+    "bridge_function": "OCCTUnifySameDomain*",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "fused": {
+          "faces": 10,
+          "edges": 20,
+          "volume": 2000
+        },
+        "default / AllowInternalEdges / SafeInputMode / tolerances": {
+          "faces": 6,
+          "edges": 12,
+          "valid": true,
+          "volume": 2000
+        },
+        "KeepShape(top seam)": {
+          "faces": 7,
+          "edges": 15,
+          "valid": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.123.0, UnifySameDomain builder::allowInternalEdges",
+    "bridge_function": "OCCTUnifySameDomain*",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "fused": {
+          "faces": 10,
+          "edges": 20,
+          "volume": 2000
+        },
+        "default / AllowInternalEdges / SafeInputMode / tolerances": {
+          "faces": 6,
+          "edges": 12,
+          "valid": true,
+          "volume": 2000
+        },
+        "KeepShape(top seam)": {
+          "faces": 7,
+          "edges": 15,
+          "valid": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.123.0, UnifySameDomain builder::keepShape",
+    "bridge_function": "OCCTUnifySameDomain*",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "fused": {
+          "faces": 10,
+          "edges": 20,
+          "volume": 2000
+        },
+        "default / AllowInternalEdges / SafeInputMode / tolerances": {
+          "faces": 6,
+          "edges": 12,
+          "valid": true,
+          "volume": 2000
+        },
+        "KeepShape(top seam)": {
+          "faces": 7,
+          "edges": 15,
+          "valid": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.123.0, UnifySameDomain builder::safeInputMode",
+    "bridge_function": "OCCTUnifySameDomain*",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "fused": {
+          "faces": 10,
+          "edges": 20,
+          "volume": 2000
+        },
+        "default / AllowInternalEdges / SafeInputMode / tolerances": {
+          "faces": 6,
+          "edges": 12,
+          "valid": true,
+          "volume": 2000
+        },
+        "KeepShape(top seam)": {
+          "faces": 7,
+          "edges": 15,
+          "valid": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.123.0, UnifySameDomain builder::tolerances",
+    "bridge_function": "OCCTUnifySameDomain*",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "fused": {
+          "faces": 10,
+          "edges": 20,
+          "volume": 2000
+        },
+        "default / AllowInternalEdges / SafeInputMode / tolerances": {
+          "faces": 6,
+          "edges": 12,
+          "valid": true,
+          "volume": 2000
+        },
+        "KeepShape(top seam)": {
+          "faces": 7,
+          "edges": 15,
+          "valid": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Update Tolerances::updateTolerancesBox",
+    "bridge_function": "OCCTShapeUpdateTolerances",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "maxTol": 1.0000000200000005e-06
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "box": {
+          "valid": true,
+          "volume": 1000,
+          "maxTol": 1.0000000200000005e-06
+        },
+        "cylinder": {
+          "valid": true,
+          "volume": 785.398163397,
+          "maxTol": 1.0000000200000005e-06
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Update Tolerances::updateTolerancesPreservesVolume",
+    "bridge_function": "OCCTShapeUpdateTolerances",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "maxTol": 1.0000000200000005e-06
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "box": {
+          "valid": true,
+          "volume": 1000,
+          "maxTol": 1.0000000200000005e-06
+        },
+        "cylinder": {
+          "valid": true,
+          "volume": 785.398163397,
+          "maxTol": 1.0000000200000005e-06
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_WireVertex::wireVertex",
+    "bridge_function": "OCCTShapeWireVertexAnalysis / Status",
+    "bridge_output": {
+      "type": "wire_vertex",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "wire_vertex",
+      "data": {
+        "done": true,
+        "nbEdges": 2,
+        "status": [
+          1,
+          -1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
