@@ -2,9 +2,426 @@
   {
     "test_name": "Surface domain kernel parity",
     "bridge_function": "OCCTSurfacePlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
+  },
+  {
+    "test_name": "Advanced Plate Surface Tests::Plate surface with G0 constraint orders",
+    "bridge_function": "OCCTShapePlatePointsAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 272.8680319618861,
+        "maxPointDistance_lt": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 272.8680319618861,
+        "maxPointDistance_lt": 1e-06
+      },
+      "source": "Scripts/repro/766-advanced-plate-surface/transcript.txt platePointsAdvancedG0: area=272.86803196188612 maxPointDistance=1.12e-07"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Plate Surface Tests::Plate surface rejects mixed G0/G1 orders (a bare point cannot carry tangent data)",
+    "bridge_function": "OCCTShapePlatePointsAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": "nil (refused in Swift before the bridge)"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": "nil (refused in Swift before the bridge)"
+      },
+      "source": "Scripts/repro/766-advanced-plate-surface/transcript.txt platePointsMixedOrders(unrefused): the kernel accepts the order-1 point constraint and builds area=270.88137743005177, so the refusal is the wrapper's (#1460)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Plate Surface Tests::Plate surface with custom degree and iterations",
+    "bridge_function": "OCCTShapePlatePointsAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 137.30983411355206,
+        "maxPointDistance_lt": 0.001
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 137.30983411355206,
+        "maxPointDistance_lt": 0.001
+      },
+      "source": "Scripts/repro/766-advanced-plate-surface/transcript.txt platePointsCustomParams: area=137.30983411355206 maxPointDistance=0.000169"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Plate Surface Tests::Plate surface rejects mismatched point/order counts",
+    "bridge_function": "OCCTShapePlatePointsAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": "nil"
+      },
+      "source": "refused in Swift before the bridge; with the guard removed the bridge builds a surface from 3 points, so the refusal is the wrapper's"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Advanced Plate Surface Tests::Plate surface rejects fewer than 3 points",
+    "bridge_function": "OCCTShapePlatePointsAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": "nil"
+      },
+      "source": "Scripts/repro/766-advanced-plate-surface/transcript.txt platePointsTooFew(unrefused): threw Geom_RectangularTrimmedSurface::V1==V2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Plate Surface Tests::Mixed plate surface with points and curves",
+    "bridge_function": "OCCTShapePlateMixed",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 266.0526366309989,
+        "maxPointDistance_lt": 0.002
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 266.0526366309989,
+        "maxPointDistance_lt": 0.002
+      },
+      "source": "Scripts/repro/766-advanced-plate-surface/transcript.txt plateMixedPointsAndCurves: area=266.0526366309989 maxPointDistance=0.000801"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Plate Surface Tests::Mixed plate surface with points only",
+    "bridge_function": "OCCTShapePlateMixed",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 244.4080195083624,
+        "maxPointDistance_lt": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 244.4080195083624,
+        "maxPointDistance_lt": 1e-06
+      },
+      "source": "Scripts/repro/766-advanced-plate-surface/transcript.txt plateMixedPointsOnly: area=244.4080195083624 maxPointDistance=1.78e-15"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Plate Surface Tests::Advanced plate produces face with nonzero area",
+    "bridge_function": "OCCTShapePlatePointsAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 161.0299905620775
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 161.0299905620775
+      },
+      "source": "Scripts/repro/766-advanced-plate-surface/transcript.txt plateAdvancedArea: area=161.0299905620775"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval AHTBezier 3D Curve::createAndEval",
+    "bridge_function": "OCCTGeomEvalAHTBezierCurveCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "domain": [
+          0,
+          1
+        ],
+        "point(0.5)": [
+          7.724954099280609,
+          1.1276259652063807,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "domain": [
+          0,
+          1
+        ],
+        "point(0.5)": [
+          7.724954099280609,
+          1.1276259652063807,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-aht-bezier/transcript.txt createAndEval"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval AHTBezier 3D Curve::rationalAHTBezier",
+    "bridge_function": "OCCTGeomEvalAHTBezierCurveCreateRational",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "point(0.5)": [
+          1.9441876464157528,
+          0.43933290852097595,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "point(0.5)": [
+          1.9441876464157528,
+          0.43933290852097595,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-aht-bezier/transcript.txt rationalAHTBezier"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval AHTBezier Surface::createSurface",
+    "bridge_function": "OCCTGeomEvalAHTBezierSurfaceCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3,0.7)": [
+          31.415697292121592,
+          29.74530741910133,
+          -0.039437938300482867
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3,0.7)": [
+          31.415697292121592,
+          29.74530741910133,
+          -0.039437938300482867
+        ]
+      },
+      "source": "Scripts/repro/766-aht-bezier/transcript.txt createSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Approx CurveOnSurface::Approximate curve on surface from edge PCurve",
+    "bridge_function": "OCCTApproxCurveOnSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "lengths": [
+          62.83190748218516,
+          20.0,
+          62.83190748218516
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "lengths": [
+          62.83190748218516,
+          20.0,
+          62.83190748218516
+        ]
+      },
+      "source": "Scripts/repro/766-approx-curve-on-surface/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Batch Surface Evaluation::Evaluate grid on plane",
+    "bridge_function": "OCCTSurfaceEvaluateGrid",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "rows": 3,
+        "cols": 2,
+        "max|z|": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "rows": 3,
+        "cols": 2,
+        "max|z|": 0
+      },
+      "source": "Scripts/repro/766-batch-surface/transcript.txt evalGridPlane"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Batch Surface Evaluation::Evaluate grid on sphere",
+    "bridge_function": "OCCTSurfaceEvaluateGrid",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "rows": 8,
+        "cols": 4,
+        "max|r-5|": 8.88e-16
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "rows": 8,
+        "cols": 4,
+        "max|r-5|": 8.88e-16
+      },
+      "source": "Scripts/repro/766-batch-surface/transcript.txt evalGridSphere"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Batch Surface Evaluation::evaluateGrid indexes each (u, v) at its own parameter, not transposed",
+    "bridge_function": "OCCTSurfaceEvaluateGrid",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "max|grid-D0|": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "max|grid-D0|": 0
+      },
+      "source": "Scripts/repro/766-batch-surface/transcript.txt evalGridAsymmetricMatchesDirectEvaluation"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Batch Surface Evaluation::drawMesh and evaluateGrid agree at matching parameters",
+    "bridge_function": "OCCTSurfaceDrawMesh",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "max|D0 sweep - EvaluateGrid|": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "max|D0 sweep - EvaluateGrid|": 0
+      },
+      "source": "Scripts/repro/766-batch-surface/transcript.txt drawMeshAndEvaluateGridAgree"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
