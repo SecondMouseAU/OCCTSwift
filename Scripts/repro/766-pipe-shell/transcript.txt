@@ -1,0 +1,17 @@
+pipeFeatureCallable: IsDone=1 : type=0 valid=1 volume=7748.6725877128156 area=2626.1946710584648
+pipeFeatureCurvedSpine: IsDone=1 : type=0 valid=1 volume=26880 area=5632
+circularSpineCircularProfile: IsReady=1 status=0 simulate(5)=5 Build=1 ErrorOnSurface=0 first=shape last=shape shape(): type=3 valid=1 volume=2664.793188294127 area=1776.5287921960849
+  after MakeSolid=1 : type=2 valid=1 volume=2664.793188294127 area=1776.5287921960849
+highLevelPipeShellClosed: IsDone=1 : type=3 valid=1 volume=789.56835208714836 area=789.56835208714881
+getStatus (no Set): IsReady=1 status=0 simulate(5)=5
+simulate: IsReady=1 status=0 simulate(5)=5
+pipeShellMaxDegreeAndSegments: IsReady=1 status=0 simulate(5)=5
+pipeShellErrorAndShapes: IsReady=1 status=0 simulate(5)=5 Build=1 ErrorOnSurface=0 first=shape last=shape shape(): type=3 valid=1 volume=5.5805895968138108e-14 area=254.09525268599498
+  after MakeSolid=1 : type=2 valid=1 volume=5.5805895968138108e-14 area=254.09525268599498
+basicPipeShell: IsReady=1 status=0 simulate(5)=5 Build=1 ErrorOnSurface=0 first=shape last=shape shape(): type=3 valid=1 volume=-1.4394785280526677e-14 area=206.14333993362635
+  after MakeSolid=1 : type=2 valid=1 volume=-1.4394785280526677e-14 area=206.14333993362635
+pipeShellIsReady: IsReady before Add=0
+pipeTransformed: IsDone=1 MakeSolid=1 : type=2 valid=1 volume=0 area=86.85947937118199
+pipeTransformed (profile normal X): IsDone=1 MakeSolid=1 : type=2 valid=1 volume=31.415926535897935 area=109.35485527399277
+pipeRightCorner: IsDone=1 MakeSolid=1 : type=2 valid=1 volume=251.32741228691418 area=276.46015351531958
+pipeRoundCorner: IsDone=1 MakeSolid=1 : type=2 valid=1 volume=249.03832602994237 area=273.02652412968405
