@@ -26,6 +26,8 @@ struct ParametricPlateSurfaceTests {
             let d = s.domain
             #expect(d.uMax > d.uMin)
             #expect(abs(d.uMin - -7.91905785) < 1e-6 && abs(d.uMax - 7.79192669) < 1e-6)
+            #expect(abs(d.vMin - -7.77817459) < 1e-6)
+            #expect(abs(d.vMax - 7.77817459) < 1e-6)
             #expect(maxDistance(s, points) < 1e-6)
         }
     }

@@ -35,7 +35,7 @@ struct NLPlateG2G3Tests {
                 ])
             #expect(result != nil)
             if let result {
-                withKnownIssue("#766 parity MISMATCH: NLPlate_NLPlate's G2/G3 solve is well behaved at the constraint (probe) but the bridge's fitted surface is not: z is about -2e12 (G2) and -1e21 (G3) there. See Scripts/repro/766-nlplate-g2g3-platethrough/") {
+                withKnownIssue("#766 parity MISMATCH: NLPlate_NLPlate's G2 solve is well behaved at the constraint (probe) but the bridge's fitted surface is not: z is about -2e12 there. See Scripts/repro/766-nlplate-g2g3-platethrough/") {
                     #expect(near(result, SIMD2(0.5, 0.5), SIMD3(0.5, 0.5, 1.0), 0.01))
                 }
             }
@@ -65,7 +65,7 @@ struct NLPlateG2G3Tests {
                 ])
             #expect(result != nil)
             if let result {
-                withKnownIssue("#766 parity MISMATCH: NLPlate_NLPlate's G2/G3 solve is well behaved at the constraint (probe) but the bridge's fitted surface is not: z is about -2e12 (G2) and -1e21 (G3) there. See Scripts/repro/766-nlplate-g2g3-platethrough/") {
+                withKnownIssue("#766 parity MISMATCH: NLPlate_NLPlate's G3 solve is well behaved at the constraint (probe) but the bridge's fitted surface is not: z is about -1e21 there. See Scripts/repro/766-nlplate-g2g3-platethrough/") {
                     #expect(near(result, SIMD2(0.3, 0.3), SIMD3(0.3, 0.3, 0.5), 0.01))
                 }
             }
@@ -82,7 +82,7 @@ struct NLPlateG2G3Tests {
                     (uv: SIMD2(0.5, 0.5), target: SIMD3(0.5, 0.5, 1.0))
                 ])
             #expect(result != nil)
-            // The fitted surface meets the target to 5e-5.
+            // The fitted surface meets the target to about 5e-5 (measured 4.97e-5); asserted to 1e-3.
             if let result { #expect(near(result, SIMD2(0.5, 0.5), SIMD3(0.5, 0.5, 1.0), 1e-3)) }
         } else {
             Issue.record("plane")
