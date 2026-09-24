@@ -639,7 +639,7 @@
     "red_green": {
       "injection": "OCCTBRepToolsEvalAndUpdateTol returns the edge tolerance without evaluating",
       "env": "OCCT766=|SKIPEVAL:OCCTBRepToolsEvalAndUpdateTol|",
-      "red": "StressNullInvalidTests.swift:643 Expectation failed: tols == [3.5, 6.5, 6.5, 6.5, 6.5, 6.5]",
+      "red": "StressNullInvalidTests.swift:644 Expectation failed: abs(got - want) < 1e-9",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },

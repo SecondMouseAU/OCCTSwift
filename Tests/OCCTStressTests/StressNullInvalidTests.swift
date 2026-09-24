@@ -316,8 +316,8 @@ struct StressPostOperationStateTests {
         let r2 = box.subtracting(sphere)
         // Epic #766: both used to sit behind `if let`. The sphere of radius 5 is inscribed in the
         // 10-wide box, so the union is the box and the cut is 1000 - 4/3·π·125.
-        #expect(abs(v1! - 1000.0) < 1e-6)
-        #expect(abs(v2! - 523.5987756) < 1e-6)
+        #expect(abs((v1 ?? 0) - 1000.0) < 1e-6)
+        #expect(abs((v2 ?? 0) - 523.5987756) < 1e-6)
         #expect(abs((r1?.volume ?? 0) - 1000.0) < 1e-6)
         #expect(abs((r2?.volume ?? 0) - 476.4012244) < 1e-6)
         #expect(r1?.isValid == true)
@@ -607,7 +607,7 @@ struct StressEvalAndUpdateTolNullPCurveTests {
             #expect(tol >= 0)
             tols.append(tol)
         }
-        #expect(tols.count == 3)
+        try #require(tols.count == 3)
         #expect(abs(tols[0] - 1e-7) < 1e-12)
         #expect(abs(tols[1] - 15) < 1e-9)
         #expect(abs(tols[2] - 15) < 1e-9)
