@@ -99,19 +99,19 @@
 
 | Suite | Test | Bridge function | Injection | Red | Green | Parity | Notes |
 |-------|------|-----------------|-----------|-----|-------|--------|-------|
-| Thread Safety: OCCTSerial | serialLockBasic | `OCCTSerialLockAcquire` | Acquire/Release made no-ops | ✅ `:1252` `!ranWhileHeld` (original: green) | ✅ | N/A lock (bridge std::recursive_mutex); box volume MATCH 1000 | Rewritten: `box != nil` inside the lock passed with no lock |
-| Thread Safety: OCCTSerial | serialLockReentrant | `OCCTSerialLockAcquire` | plain std::mutex in place of the recursive one | ✅ `:1271` `finished` (10 s timeout) | ✅ | N/A lock; volume MATCH 125 | Nested call moved to a worker with a timeout so a non-recursive lock fails instead of hanging the runner |
-| Thread Safety: OCCTSerial | deepCopyForParallel | `OCCTShapeDeepCopy` | `copy = shape->shape` in place of TNaming_CopyShape::CopyTool | ✅ `:1287` `!copy.isSame(as: orig)` (original: green) | ✅ | MATCH, IsSame false, volume 1000 both | Rewritten: three nested `if let`s; a shared or nil copy passed |
-| Thread Safety: OCCTSerial | serializedConcurrentAccess | `OCCTSerialLockAcquire` | Acquire/Release made no-ops | ✅ `:1314` `state.maxInside == 1` (original: green) | ✅ | volumes MATCH 1000/8000/27000/64000 | Rewritten: now counts workers inside the lock and pins volumes |
-| v0.149 Sheet.standardLayout | firstAngleTopBelow | `OCCTDrawingCreate` | swap upper/lower row in cellCentre | ✅ `:1335` | ✅ | view bounds MATCH (HLRBRep_Algo) |  |
-| v0.149 Sheet.standardLayout | thirdAngleTopAbove | `OCCTDrawingCreate` | swap upper/lower row in cellCentre | ✅ `:1347` | ✅ | view bounds MATCH |  |
-| v0.149 Sheet.standardLayout | viewsFitInsideInnerFrame | `OCCTDrawingCreate` | drop the fit-to-cell clamp (`appliedScale = scale.factor`) | ✅ `:1372`-`:1375` (original: green) | ✅ | view bounds MATCH | Rewritten: checked only view centres at 1:1; now 100:1 and full placed extents |
-| v0.149 Sheet.standardLayout | interCellGapIsHalfMargin | `OCCTDrawingCreate` | pre-#1572 `cellW = (innerW - margin) / 2` | ✅ `:1423` | ✅ | view bounds MATCH | A column-step injection left it green: front sits in column 0, so only cellW moves it |
-| v0.149 Sheet.standardLayout | includeIsoFalseOmits | `OCCTDrawingCreate` | ignore includeIso | ✅ `:1435`, `:1436` | ✅ | view bounds MATCH |  |
-| v0.149 Sheet.standardLayout | renderEmitsEveryView | `OCCTDrawingCreate` | render `placed.dropLast()` | ✅ `:1454` `counts.lines == 36` (original: green) | ✅ | MATCH, 36 lines = 8+8+8+12 HLR sharp edges | Rewritten: `> 0` passed with views missing |
-| v0.149 Sheet.standardLayout | renderEmitsEveryViewPDF | `OCCTDrawingCreate` | render `placed.dropLast()` | ✅ `:1474` (original: green) | ✅ | MATCH, 36 | Rewritten, as above |
-| v0.149 Sheet.standardLayout | renderEmitsEveryViewSVG | `OCCTDrawingCreate` | render `placed.dropLast()` | ✅ `:1491` (original: green) | ✅ | MATCH, 36 | Rewritten, as above |
-| v0.150 BillOfMaterials | emptyBOMHeader | `none (pure Swift)` | `0..<rowCount` separators | ✅ `:1509` | ✅ | N/A, no OCCT call |  |
-| v0.150 BillOfMaterials | threeItemBOM | `none (pure Swift)` | `0..<rowCount` separators | ✅ `:1524` | ✅ | N/A, no OCCT call |  |
-| v0.150 BillOfMaterials | codableRoundTrip | `none (pure Swift)` | CodingKeys without `title` | ✅ `:1537` | ✅ | N/A, no OCCT call |  |
-| v0.150 BillOfMaterials | sheetRenderBOM | `none (pure Swift)` | anchor at the frame's bottom-left | ✅ `:1553`-`:1555` (original: green) | ✅ | N/A, no OCCT call | Rewritten: one-sided bounds passed a table hanging 177 mm off the frame |
+| Thread Safety: OCCTSerial | serialLockBasic | `OCCTSerialLockAcquire` | Acquire/Release made no-ops | ✅ `:1269` `!ranWhileHeld` (original: green) | ✅ | N/A lock (bridge std::recursive_mutex); box volume MATCH 1000 | Rewritten: `box != nil` inside the lock passed with no lock |
+| Thread Safety: OCCTSerial | serialLockReentrant | `OCCTSerialLockAcquire` | plain std::mutex in place of the recursive one | ✅ `:1298` `gotInner` (30 s, after the worker holds the outer lock) | ✅ | N/A lock; volume MATCH 125 | Nested acquire tried on a worker thread; only the nested step has a tight timeout, waits behind other suites are 600 s (CI run of #2291: a 10 s wait failed under contention) |
+| Thread Safety: OCCTSerial | deepCopyForParallel | `OCCTShapeDeepCopy` | `copy = shape->shape` in place of TNaming_CopyShape::CopyTool | ✅ `:1318` `!copy.isSame(as: orig)` (original: green) | ✅ | MATCH, IsSame false, volume 1000 both | Rewritten: three nested `if let`s; a shared or nil copy passed |
+| Thread Safety: OCCTSerial | serializedConcurrentAccess | `OCCTSerialLockAcquire` | Acquire/Release made no-ops | ✅ `:1345` `state.maxInside == 1` (original: green) | ✅ | volumes MATCH 1000/8000/27000/64000 | Rewritten: now counts workers inside the lock and pins volumes |
+| v0.149 Sheet.standardLayout | firstAngleTopBelow | `OCCTDrawingCreate` | swap upper/lower row in cellCentre | ✅ `:1366` | ✅ | view bounds MATCH (HLRBRep_Algo) |  |
+| v0.149 Sheet.standardLayout | thirdAngleTopAbove | `OCCTDrawingCreate` | swap upper/lower row in cellCentre | ✅ `:1378` | ✅ | view bounds MATCH |  |
+| v0.149 Sheet.standardLayout | viewsFitInsideInnerFrame | `OCCTDrawingCreate` | drop the fit-to-cell clamp (`appliedScale = scale.factor`) | ✅ `:1403`-`:1406` (original: green) | ✅ | view bounds MATCH | Rewritten: checked only view centres at 1:1; now 100:1 and full placed extents |
+| v0.149 Sheet.standardLayout | interCellGapIsHalfMargin | `OCCTDrawingCreate` | pre-#1572 `cellW = (innerW - margin) / 2` | ✅ `:1454` | ✅ | view bounds MATCH | A column-step injection left it green: front sits in column 0, so only cellW moves it |
+| v0.149 Sheet.standardLayout | includeIsoFalseOmits | `OCCTDrawingCreate` | ignore includeIso | ✅ `:1466`, `:1467` | ✅ | view bounds MATCH |  |
+| v0.149 Sheet.standardLayout | renderEmitsEveryView | `OCCTDrawingCreate` | render `placed.dropLast()` | ✅ `:1485` `counts.lines == 36` (original: green) | ✅ | MATCH, 36 lines = 8+8+8+12 HLR sharp edges | Rewritten: `> 0` passed with views missing |
+| v0.149 Sheet.standardLayout | renderEmitsEveryViewPDF | `OCCTDrawingCreate` | render `placed.dropLast()` | ✅ `:1505` (original: green) | ✅ | MATCH, 36 | Rewritten, as above |
+| v0.149 Sheet.standardLayout | renderEmitsEveryViewSVG | `OCCTDrawingCreate` | render `placed.dropLast()` | ✅ `:1522` (original: green) | ✅ | MATCH, 36 | Rewritten, as above |
+| v0.150 BillOfMaterials | emptyBOMHeader | `none (pure Swift)` | `0..<rowCount` separators | ✅ `:1540` | ✅ | N/A, no OCCT call |  |
+| v0.150 BillOfMaterials | threeItemBOM | `none (pure Swift)` | `0..<rowCount` separators | ✅ `:1555` | ✅ | N/A, no OCCT call |  |
+| v0.150 BillOfMaterials | codableRoundTrip | `none (pure Swift)` | CodingKeys without `title` | ✅ `:1568` | ✅ | N/A, no OCCT call |  |
+| v0.150 BillOfMaterials | sheetRenderBOM | `none (pure Swift)` | anchor at the frame's bottom-left | ✅ `:1584`-`:1586` (original: green) | ✅ | N/A, no OCCT call | Rewritten: one-sided bounds passed a table hanging 177 mm off the frame |

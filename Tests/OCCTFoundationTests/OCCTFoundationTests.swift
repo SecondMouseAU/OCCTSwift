@@ -1208,7 +1208,7 @@ struct ColorToolGetAllColorsTests {
 
 // MARK: - Thread Safety Tests
 
-/// Mutable state shared between the test thread and GCD workers, every access under one NSLock.
+/// Mutable state shared between the test thread and worker threads, every access under one NSLock.
 private final class SerialLockProbeState: @unchecked Sendable {
     private let lock = NSLock()
     private var _otherRan = false
@@ -1233,41 +1233,72 @@ private final class SerialLockProbeState: @unchecked Sendable {
 
 @Suite("Thread Safety: OCCTSerial")
 struct ThreadSafetyTests {
+    // OCCTSerial is one process-wide lock, and on CI this suite shares a process with thousands
+    // of tests that take it (Shape, Drawing and every STEP/IGES entry point do, for seconds at a
+    // time). Waiting behind them is not a hang, so the two tests below wait up to `contended` for
+    // anything that depends on another suite releasing the lock. The first version waited 10 s on
+    // a GCD worker and failed on the runner: the worker was still queued behind other tests,
+    // `volume(0)` was nil, and the 126.0 in that failure is abs(-1 - 125).
+    private static let contended: TimeInterval = 600
+
     // #1987: this used to assert only `box != nil` inside the lock, which passes with
     // OCCTSerialLockAcquire/Release reduced to no-ops. It now checks the lock excludes: while this
     // thread holds it, a second thread's `withLock` body must not run.
     @Test func serialLockBasic() {
         let state = SerialLockProbeState()
+        let started = DispatchSemaphore(value: 0)
         let done = DispatchSemaphore(value: 0)
+        var workerStarted = false
         let ranWhileHeld = OCCTSerial.withLock { () -> Bool in
             state.setVolume(0, Shape.box(width: 10, height: 10, depth: 10)?.volume)
-            DispatchQueue.global().async {
+            Thread.detachNewThread {
+                started.signal()
                 OCCTSerial.withLock { state.markOtherRan() }
                 done.signal()
             }
+            // Starting a thread does not need the lock. The 0.2 s hold begins once the worker is
+            // running and about to contend, so a lock that does not exclude is caught even when
+            // the machine is slow to schedule it.
+            workerStarted = started.wait(timeout: .now() + 60) == .success
             Thread.sleep(forTimeInterval: 0.2)
             return state.otherRan
         }
-        let finished = done.wait(timeout: .now() + 10) == .success
+        // Joining the worker waits for the lock, which other suites may hold: see `contended`.
+        let finished = done.wait(timeout: .now() + Self.contended) == .success
+        #expect(workerStarted)
         #expect(!ranWhileHeld)
         #expect(finished)
         #expect(abs((state.volume(0) ?? -1) - 1000) < 1e-6)
     }
 
-    // #1987: the nested call runs on a worker thread with a timeout, so a lock that is not
-    // recursive fails this test instead of hanging the process.
+    // #1987: the nested acquire is tried on a worker thread so that a lock that is not recursive
+    // fails this test rather than hanging it. The worker signals once it holds the OUTER lock; from
+    // then on no other thread can be in the way, so the nested acquire of a recursive lock is
+    // immediate and only that step gets a tight timeout. Waiting for the outer lock is a wait
+    // behind other suites and is not bounded tightly (see `contended`).
     @Test func serialLockReentrant() {
         let state = SerialLockProbeState()
+        let outerHeld = DispatchSemaphore(value: 0)
+        let innerHeld = DispatchSemaphore(value: 0)
         let done = DispatchSemaphore(value: 0)
-        DispatchQueue.global().async {
+        Thread.detachNewThread {
             OCCTSerial.withLock {
+                outerHeld.signal()
                 OCCTSerial.withLock {
+                    innerHeld.signal()
                     state.setVolume(0, Shape.box(width: 5, height: 5, depth: 5)?.volume)
                 }
             }
             done.signal()
         }
-        let finished = done.wait(timeout: .now() + 10) == .success
+        let gotOuter = outerHeld.wait(timeout: .now() + Self.contended) == .success
+        #expect(gotOuter)
+        guard gotOuter else { return }
+        let gotInner = innerHeld.wait(timeout: .now() + 30) == .success
+        #expect(gotInner)
+        // A worker stuck on its own nested acquire never finishes; there is nothing left to check.
+        guard gotInner else { return }
+        let finished = done.wait(timeout: .now() + Self.contended) == .success
         #expect(finished)
         #expect(abs((state.volume(0) ?? -1) - 125) < 1e-6)
     }
