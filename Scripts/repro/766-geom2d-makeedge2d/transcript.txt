@@ -1,0 +1,8 @@
+points (0,0)-(10,5): vertices=2 (0, 0, 0) (10, 5, 0)
+circle r5 arc [0, pi]: vertices=2 (5, 0, 0) (-5, 6.12323399574e-16, 0)
+line (0,0)+(1,1) [0, 10]: vertices=2 (0, 0, 0) (7.07106781187, 7.07106781187, 0)
+full circle r5: vertices=1 (5, 0, 0)
+full ellipse 10x5: vertices=1 (10, 0, 0)
+ellipse 10x5 arc [0, pi]: vertices=2 (10, 0, 0) (-10, 6.12323399574e-16, 0)
+Geom2d_Line (1,1) [0, 10]: vertices=2 (0, 0, 0) (7.07106781187, 7.07106781187, 0)
+Geom2d_Circle r5 full range: vertices=1 (5, 0, 0)
