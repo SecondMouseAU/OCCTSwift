@@ -1,0 +1,62 @@
+== Micro
+microBox1e6: valid=1 volume=1e-18 faces=6
+microBox1e9: threw (nil): 
+microCylinder: valid=1 volume=3.14159265359e-18 faces=3
+microSphere: valid=1 volume=4.18879020479e-18 faces=1
+microBoolean: valid=1 volume=8.75e-13 faces=12
+microFillet: valid=1 volume=9.75587013891e-10 faces=26
+microMesh: nodes=24
+== Macro
+macroBox1e6: valid=1 volume=1e+18 faces=6
+macroBox1e9: valid=1 volume=1e+27 faces=6
+macroCylinder: valid=1 volume=3.14159265359e+18 faces=3
+macroSphere: valid=1 volume=4.18879020479e+18 faces=1
+macroBoolean: valid=1 volume=8.75e+17 faces=12
+macroFillet: valid=1 volume=999743817030 faces=26
+== Mixed
+largeBoxTinyHole: valid=1 volume=999999999.686 faces=7
+largeBoxMicroFillet: valid=1 volume=999999999.997 faces=26
+tinyBoxLargeOffset: valid=1 volume=1 faces=6
+tinyBoxLargeOffset: max.x=1000000.5 min.x=999999.5
+largeBoxSmallSubtract: valid=1 volume=999999.999 faces=12
+== Coincident
+identicalBoxUnion: valid=1 volume=1000 faces=6
+identicalBoxSubtract: valid=1 volume=nil/0 faces=0
+identicalBoxIntersect: valid=1 volume=1000 faces=6
+touchingFaceUnion: valid=1 volume=2000 faces=12
+touchingFaceSubtract: valid=1 volume=1000 faces=6
+overlappingBoxes union: valid=1 volume=2000 faces=12
+overlappingBoxes cut: valid=1 volume=1000 faces=6
+overlappingBoxes common: valid=1 volume=nil/0 faces=0
+nestedSpheres: valid=1 volume=3665.19142919 faces=2
+nestedSpheres: expected 4/3*pi*875=3665.19142919
+concentricCylinders: valid=1 volume=4712.38898038 faces=4
+concentricCylinders: pi*(100-25)*20=4712.38898038
+== Degenerate
+filletRadiusEqualsHalfEdge: not done (nil)
+filletRadiusExceedsEdge: valid=0 volume=nil/0 faces=26
+shellThicknessEqualsHalf: not done (nil)
+shellThicknessExceedsHalf: not done (nil)
+offsetByZero: valid=1 volume=1000 faces=6
+rotateByTwoPi: valid=1 volume=1000 faces=6
+rotateByLargeAngle: valid=1 volume=1000 faces=6
+scaleByVerySmall: valid=1 volume=1e-27 faces=6
+scaleByVeryLarge: valid=1 volume=1e+33 faces=6
+drillRadiusLargerThanBox: valid=1 volume=nil/0 faces=0
+drillOutsideBox: valid=1 volume=1000 faces=6
+== Near-degenerate
+veryThinBox: valid=1 volume=10 faces=6
+verySmallFillet: valid=1 volume=999.999999997 faces=26
+verySmallChamfer: valid=1 volume=999.999999994 faces=26
+nearlyTouchingBoxes: valid=1 volume=2000 faces=12
+nearlyCoincidentSubtract: valid=1 volume=875.00000075 faces=9
+veryThinShell: not done (nil)
+verySmallDrill: valid=1 volume=999.999999997 faces=7
+== Curve/Surface
+curveEvalAtDomainBounds: start=(5, 0) end=(5, -1.22464679915e-15)
+curveEvalSlightlyOutside: p1=(4.9999975000002088, -0.004999999166666708, 0) p2=(4.9999975000002088, 0.0049999991666671529, 0)
+periodicCurveAtPeriodBoundary: |start-end|=1.22e-15
+surfaceEvalAtDomainCorners: corners (0,0)=(0,0,0) (1,1)=(15,15,0)
+surfaceCurvatureAtBounds: curvatureDefined(0,0)=1 gaussian=-0.0064 curvatureDefined(1,1)=1 mean=0
+curve2DEvalAtDomainBounds: start=(5, 0) end=(5, -1.22464679915e-15)
+curveCurvatureAtBounds: domain=[0, 21.8072234461] k(first)=0.0674635578751 k(last)=0.0185120076021
