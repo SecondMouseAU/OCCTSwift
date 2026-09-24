@@ -102,7 +102,9 @@ struct Issue495SurfaceAnalysisOrderTests {
     func flagsStayInsideMeasured() throws {
         let pair = try #require(identicalSpheres())
         for order in [ContinuityClass.c0, .g1, .c1, .g2, .c2] {
-            guard let a = analyse(pair, order) else { continue }
+            let analysed = analyse(pair, order)
+            #expect(analysed != nil, "order \(order)")  // #766: `continue` skipped a nil silently
+            guard let a = analysed else { continue }
             var measuredMask = 0
             for c in a.measured { measuredMask |= c.analysisFlagBit }
             #expect(
