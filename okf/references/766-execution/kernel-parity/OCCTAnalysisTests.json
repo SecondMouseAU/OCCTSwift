@@ -580,8 +580,16 @@
       "type": "bounds",
       "data": {
         "face_count": 1,
-        "min_x": -5,
-        "max_x": 5
+        "min": [
+          -5,
+          -5,
+          -5
+        ],
+        "max": [
+          5,
+          5,
+          5
+        ]
       }
     },
     "kernel_output": {
