@@ -18,7 +18,8 @@ struct LocOpePipeTests {
             [SIMD3(0, -1, -1), SIMD3(0, 1, -1), SIMD3(0, 1, 1), SIMD3(0, -1, 1)], closed: true)
         let profileFace = profileWire.flatMap { Shape.face(from: $0) }
         let spine = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))
-        #expect(profileFace != nil && spine != nil)
+        #expect(profileFace != nil)
+        #expect(spine != nil)
         guard let profileFace, let spine else { return }
         let result = profileFace.localPipe(along: spine)
         #expect(result != nil, "Pipe sweep should produce a shape")

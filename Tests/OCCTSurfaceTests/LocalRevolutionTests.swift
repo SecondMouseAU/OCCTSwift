@@ -68,7 +68,8 @@ struct LocalRevolutionTests {
         // where the unoffset quarter turn spans y from 0 and x from 0 (kernel bounding boxes).
         check(result, volume: 157.07963267948972, faces: 6)
         if let result, let box = result.bounds {
-            #expect(box.min.y > 6.3 && box.min.x < -7.7)
+            #expect(box.min.y > 6.3)
+            #expect(box.min.x < -7.7)
         }
     }
 

@@ -23,7 +23,8 @@ struct JoinBezierPatchesTests {
         // BSpline on [0, 2] x [0, 1] with 3 x 2 poles, and the second patch's midpoint (7.5, 5, 0)
         // sits at 75% / 50% of it, per GeomConvert_CompBezierSurfacesToBSplineSurface
         // (Scripts/repro/766-join-local-loft/).
-        #expect(joined.bsplineSurface.nbUPoles == 3 && joined.bsplineSurface.nbVPoles == 2)
+        #expect(joined.bsplineSurface.nbUPoles == 3)
+        #expect(joined.bsplineSurface.nbVPoles == 2)
         let d = joined.domain
         #expect(d.uMin == 0 && d.uMax == 2 && d.vMin == 0 && d.vMax == 1)
         #expect(simd_length(joined.point(atU: 1.5, v: 0.5) - SIMD3(7.5, 5, 0)) < 1e-12)
