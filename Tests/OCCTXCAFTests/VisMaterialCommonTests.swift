@@ -18,6 +18,11 @@ struct VisMaterialCommonTests {
         mat.transparency = 0.3
         #expect(abs(mat.shininess - 0.5) < 1e-6)
         #expect(abs(mat.transparency - 0.3) < 1e-6)
+        // Reading stored properties back could not fail (#766); the values have to reach the
+        // kernel material, where a different shininess makes it compare unequal.
+        var other = mat
+        other.shininess = 0.6
+        #expect(!mat.isEqual(to: other))
     }
 
     @Test func equality() {
