@@ -2369,5 +2369,279 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Path Parsing Contract (#499)::nonASCIIPathSurvivesParsing",
+    "bridge_function": "OCCTOSDPathName",
+    "bridge_output": {
+      "type": "strings",
+      "data": {
+        "/home/üser/mødel.step": "mødel",
+        "/home/user/模型.step": "模型"
+      }
+    },
+    "kernel_output": {
+      "type": "strings",
+      "data": {
+        "/home/üser/mødel.step": "mødel",
+        "/home/user/模型.step": "模型"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Path Parsing Contract (#499)::extensionKeepsItsLeadingDot",
+    "bridge_function": "OCCTOSDPathExtension",
+    "bridge_output": {
+      "type": "strings",
+      "data": {
+        "model.step": ".step",
+        "archive.tar.gz": ".gz",
+        "model": ""
+      }
+    },
+    "kernel_output": {
+      "type": "strings",
+      "data": {
+        "model.step": ".step",
+        "archive.tar.gz": ".gz",
+        "model": ""
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Path Parsing Contract (#499)::nameDropsBothDirectoryAndExtension",
+    "bridge_function": "OCCTOSDPathName",
+    "bridge_output": {
+      "type": "strings",
+      "data": {
+        "model.step": "model",
+        "archive.tar.gz": "archive.tar"
+      }
+    },
+    "kernel_output": {
+      "type": "strings",
+      "data": {
+        "model.step": "model",
+        "archive.tar.gz": "archive.tar"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Path Parsing Contract (#499)::trekIsPortableSyntaxNotAFilesystemPath",
+    "bridge_function": "OCCTOSDPathTrek",
+    "bridge_output": {
+      "type": "strings",
+      "data": {
+        "/home/user/model.step": "|home|user|",
+        "../up/f.txt": "^|up|",
+        "model.step": ""
+      }
+    },
+    "kernel_output": {
+      "type": "strings",
+      "data": {
+        "/home/user/model.step": "|home|user|",
+        "../up/f.txt": "^|up|",
+        "model.step": ""
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Path Parsing Contract (#499)::folderAndFileSplitOnTheLastSeparator",
+    "bridge_function": "OCCTOSDPathFolderAndFile",
+    "bridge_output": {
+      "type": "strings",
+      "data": {
+        "folder": "/home/user/",
+        "file": "model.step"
+      }
+    },
+    "kernel_output": {
+      "type": "strings",
+      "data": {
+        "folder": "/home/user/",
+        "file": "model.step"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Path Parsing Contract (#499)::folderIsARealPathUnlikeTrek",
+    "bridge_function": "OCCTOSDPathFolderAndFile",
+    "bridge_output": {
+      "type": "strings",
+      "data": {
+        "/home/user/model.step": "/home/user/",
+        "/home/user/model": "/home/user/",
+        "./sub/f.txt": "./sub/",
+        "model.step": ""
+      }
+    },
+    "kernel_output": {
+      "type": "strings",
+      "data": {
+        "/home/user/model.step": "/home/user/",
+        "/home/user/model": "/home/user/",
+        "./sub/f.txt": "./sub/",
+        "model.step": ""
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Path Parsing Contract (#499)::folderAndFileRecomposeTheInput",
+    "bridge_function": "OCCTOSDPathFolderAndFile",
+    "bridge_output": {
+      "type": "strings",
+      "data": {
+        "/home/user/model.step": [
+          "/home/user/",
+          "model.step"
+        ],
+        "./sub/f.txt": [
+          "./sub/",
+          "f.txt"
+        ],
+        "model.step": [
+          "",
+          "model.step"
+        ],
+        "/home/a.b/model": [
+          "/home/a.b/",
+          "model"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "strings",
+      "data": {
+        "/home/user/model.step": [
+          "/home/user/",
+          "model.step"
+        ],
+        "./sub/f.txt": [
+          "./sub/",
+          "f.txt"
+        ],
+        "model.step": [
+          "",
+          "model.step"
+        ],
+        "/home/a.b/model": [
+          "/home/a.b/",
+          "model"
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Path Parsing Contract (#499)::systemNameRoundTripsTheInput",
+    "bridge_function": "OCCTOSDPathSystemName",
+    "bridge_output": {
+      "type": "strings",
+      "data": {
+        "/home/user/model.step": "/home/user/model.step",
+        "./sub/f.txt": "./sub/f.txt"
+      }
+    },
+    "kernel_output": {
+      "type": "strings",
+      "data": {
+        "/home/user/model.step": "/home/user/model.step",
+        "./sub/f.txt": "./sub/f.txt"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Path Parsing Contract (#499)::absoluteAndRelativeAreSyntaxOnly",
+    "bridge_function": "OCCTOSDPathIsAbsolute",
+    "bridge_output": {
+      "type": "strings",
+      "data": {
+        "isAbsolute(/home/user/model.step)": true,
+        "isRelative(./sub/f.txt)": true,
+        "isRelative(model.step)": true,
+        "isUnixPath(/home/user/model.step)": true,
+        "isUnixPath(model.step)": false
+      }
+    },
+    "kernel_output": {
+      "type": "strings",
+      "data": {
+        "isAbsolute(/home/user/model.step)": true,
+        "isRelative(./sub/f.txt)": true,
+        "isRelative(model.step)": true,
+        "isUnixPath(/home/user/model.step)": true,
+        "isUnixPath(model.step)": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Path Parsing Contract (#499)::validityCheckAcceptsAnythingParsable",
+    "bridge_function": "OCCTOSDPathIsValid",
+    "bridge_output": {
+      "type": "strings",
+      "data": {
+        "/tmp/test.txt": true,
+        "": true,
+        "/home/üser/mødel.step": true
+      }
+    },
+    "kernel_output": {
+      "type": "strings",
+      "data": {
+        "/tmp/test.txt": true,
+        "": true,
+        "/home/üser/mødel.step": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
