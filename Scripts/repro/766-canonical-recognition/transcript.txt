@@ -1,0 +1,16 @@
+box solid 10x10x10: ShapeType=2
+  IsPlane=0 status=1
+  IsCylinder=0 status=0
+  IsCone=0 status=0
+  IsSphere=0 status=0
+  IsLine=0 status=1
+  IsCircle=0 status=1
+  IsEllipse=0 status=1
+cylinder solid r=5 h=10: ShapeType=2
+  IsPlane=0 status=1
+  IsCylinder=0 status=0
+  IsCone=0 status=0
+  IsSphere=0 status=0
+  IsLine=0 status=1
+  IsCircle=0 status=1
+  IsEllipse=0 status=1
