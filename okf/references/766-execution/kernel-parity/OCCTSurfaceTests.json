@@ -2370,5 +2370,421 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Completions v121::SetUNotPeriodic / SetVNotPeriodic",
+    "bridge_function": "OCCTSurfaceBSplineSetUNotPeriodic",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3,0.7)": [
+          7.084,
+          2.916,
+          1.0269
+        ],
+        "periodic": [
+          false,
+          false
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3,0.7)": [
+          7.084,
+          2.916,
+          1.0269
+        ],
+        "periodic": [
+          false,
+          false
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-surface-completions/transcript.txt setNotPeriodic"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Completions v121::IncreaseUMultiplicity / IncreaseVMultiplicity",
+    "bridge_function": "OCCTSurfaceBSplineIncreaseUMultiplicity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "uMults": [
+          4,
+          2,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "uMults": [
+          4,
+          2,
+          4
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-surface-completions/transcript.txt increaseMultiplicity"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Completions v121::IncreaseVMultiplicity",
+    "bridge_function": "OCCTSurfaceBSplineIncreaseVMultiplicity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "vMults": [
+          4,
+          2,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "vMults": [
+          4,
+          2,
+          4
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-surface-completions/transcript.txt increaseVMultiplicity"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Completions v121::SetUKnot / SetVKnot single index",
+    "bridge_function": "OCCTSurfaceBSplineSetUKnot",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "firstUKnot": -1,
+        "firstVKnot": -1
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "firstUKnot": -1,
+        "firstVKnot": -1
+      },
+      "source": "Scripts/repro/766-bspline-surface-completions/transcript.txt setKnot"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Completions v121::InsertUKnots / InsertVKnots batch",
+    "bridge_function": "OCCTSurfaceBSplineInsertUKnots",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "uKnots": [
+          0,
+          0.25,
+          0.75,
+          1
+        ],
+        "vKnots": [
+          0,
+          0.5,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "uKnots": [
+          0,
+          0.25,
+          0.75,
+          1
+        ],
+        "vKnots": [
+          0,
+          0.5,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-surface-completions/transcript.txt insertKnotsBatch"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Completions v121::MovePoint on BSpline surface",
+    "bridge_function": "OCCTSurfaceBSplineMovePoint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,0.5)": [
+          5,
+          5,
+          9.999999999999998
+        ],
+        "S(0.2,0.2)": [
+          1.904,
+          1.904,
+          7.135956756756755
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,0.5)": [
+          5,
+          5,
+          9.999999999999998
+        ],
+        "S(0.2,0.2)": [
+          1.904,
+          1.904,
+          7.135956756756755
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-surface-completions/transcript.txt movePoint"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Completions v121::SetPoleCol and SetPoleRow",
+    "bridge_function": "OCCTSurfaceBSplineSetPoleCol",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "col1": "(0,0,3)(0,3,5)(0,7,5)(0,10,5)",
+        "row1": "(0,0,3)(3,0,3)(7,0,3)(10,0,3)"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "col1": "(0,0,3)(0,3,5)(0,7,5)(0,10,5)",
+        "row1": "(0,0,3)(3,0,3)(7,0,3)(10,0,3)"
+      },
+      "source": "Scripts/repro/766-bspline-surface-completions/transcript.txt setPoleColRow"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Completions v121::SetUOrigin / SetVOrigin fail on non-periodic",
+    "bridge_function": "OCCTSurfaceBSplineSetUOrigin",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "SetUOrigin": false,
+        "SetVOrigin": false
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "SetUOrigin": false,
+        "SetVOrigin": false
+      },
+      "source": "Scripts/repro/766-bspline-surface-completions/transcript.txt setOriginNonPeriodic: both throw \"surface is not U/V periodic\""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Completions v129::SetWeightCol and SetWeightRow",
+    "bridge_function": "OCCTSurfaceBSplineSetWeightCol",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "col1": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "row1": [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "w(2,2)": 0.3535533905932738
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "col1": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "row1": [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "w(2,2)": 0.3535533905932738
+      },
+      "source": "Scripts/repro/766-bspline-surface-completions/transcript.txt setWeightColRow"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Completions v129::IncrementUMultiplicity and IncrementVMultiplicity range",
+    "bridge_function": "OCCTSurfaceBSplineIncrementUMultiplicity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "sphere uMults": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "sphere vMults": [
+          3,
+          2,
+          3
+        ],
+        "cubic after": [
+          4,
+          2,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "sphere uMults": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "sphere vMults": [
+          3,
+          2,
+          3
+        ],
+        "cubic after": [
+          4,
+          2,
+          4
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-surface-completions/transcript.txt incrementMultiplicity: every sphere knot is already at the degree-2 maximum, the kernel caps the step"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Completions v129::First/Last U/V KnotIndex",
+    "bridge_function": "OCCTSurfaceBSplineFirstUKnotIndex",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "firstU": 1,
+        "lastU": 4,
+        "firstV": 1,
+        "lastV": 3
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "firstU": 1,
+        "lastU": 4,
+        "firstV": 1,
+        "lastV": 3
+      },
+      "source": "Scripts/repro/766-bspline-surface-completions/transcript.txt knotIndices"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Completions v129::CheckAndSegment",
+    "bridge_function": "OCCTSurfaceBSplineCheckAndSegment",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "bounds after": [
+          0,
+          1,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "bounds after": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-surface-completions/transcript.txt checkAndSegment"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
