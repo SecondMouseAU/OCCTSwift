@@ -456,3 +456,20 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `backwardTraceExcludesGenerated` | `OCCTDocumentNamingTraceBackward` answers the given shape | :116 Expectation failed: !shape.isSame(as: sphere) | passed | `OCCTDocumentNamingTraceBackward` | PASS: the shape is not in its own backward trace |
 ### `TNamingTranslatorTests.swift`
 | `translatorCopy` | `OCCTShapeTranslatorCopy` returns null | :12 Expectation failed: Bool(false) | passed | `OCCTShapeTranslatorCopy` | PASS: copied, a distinct TShape |
+### `XCAFDocAssemblyIteratorTests.swift`
+| `iterateAssembly` | `OCCTDocumentAssemblyItemCount` answers 0 | :16 Expectation failed: count >= 1 | passed | `OCCTDocumentAssemblyItemCount` | PASS: 3 items |
+| `smallAssemblyCountIsComplete` | `OCCTDocumentAssemblyItemCount` answers 0 | :32 Expectation failed: count >= 3 | passed | `OCCTDocumentAssemblyItemCount` | PASS: 3 |
+### `XCAFDocClippingPlaneToolTests.swift`
+| `addAndGet` | `OCCTDocumentClipPlaneToolIsClipPlane` returns false | :15 Expectation failed: doc.clippingPlaneToolIsClipPlane(clip) | passed | `OCCTDocumentClipPlaneToolIsClipPlane` | PASS: z 5, normal z, capping |
+| `remove` | `OCCTDocumentClipPlaneToolRemove` returns false | :32 Expectation failed: doc.clippingPlaneToolRemove(clip) | passed | `OCCTDocumentClipPlaneToolRemove` | PASS: removed |
+### `XCAFDocColorTests.swift`
+| `setAndGetRGB` | `OCCTDocumentSetColorAttr` returns false | :11 Expectation failed: label.setColorAttribute(red: 1.0, green: 0.0, blue: 0.0) | passed | `OCCTDocumentGetColorAttr` | PASS: (1, 0, 0) |
+| `setAndGetRGBA` | `OCCTDocumentGetColorAlphaAttr` answers 0 | :27 Expectation failed: abs(label.colorAlphaAttribute - 0.8) < 0.02 | passed | `OCCTDocumentGetColorAlphaAttr` | PASS: 0.8 |
+| `namedColor` | `OCCTDocumentGetColorNOCAttr` answers -1 | :38 Expectation failed: noc >= 0 | passed | `OCCTDocumentGetColorNOCAttr` | PASS: 407 for pure red |
+### `XCAFDocDimTolTests.swift`
+| `setAndGet` | `OCCTDocumentGetDimTolKind` answers 2 | :19 Expectation failed: kind == 1 | passed | `OCCTDocumentGetDimTolKind` | PASS: all four round-trip |
+| `noDimTol` | `OCCTDocumentGetDimTolKind` answers 0 where there is none | :39 Expectation failed: doc.dimTolKind(labelId: node.labelId) == nil | passed | `OCCTDocumentGetDimTolKind` | N/A: none on a fresh label |
+### `XCAFDocGraphNodeTests.swift`
+| `setAndRelate` | `OCCTDocumentGraphNodeNbChildren` answers 0 | :17 Expectation failed: l1.xcafGraphNodeChildCount == 1 | passed | `OCCTDocumentGraphNodeNbChildren` | PASS: 1, 1 |
+| `unsetRelationship` | `OCCTDocumentGraphNodeNbFathers` answers 1 | :35 Expectation failed: l2.xcafGraphNodeFatherCount == 0 | passed | `OCCTDocumentGraphNodeNbFathers` | PASS: 0, 0 |
+| `isFatherIsChild` | `OCCTDocumentGraphNodeIsFather` / `IsChild` return false and `NbChildren` answers 0 | :52 Expectation failed: isFather \|\| isChild \|\| l1.xcafGraphNodeChildCount > 0 | passed | `OCCTDocumentGraphNodeIsFather` | PASS: IsFather true |

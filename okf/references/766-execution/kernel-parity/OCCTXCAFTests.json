@@ -6997,5 +6997,299 @@
     },
     "status": "PASS",
     "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "XCAFDoc AssemblyIterator Tests::iterateAssembly",
+    "bridge_function": "OCCTDocumentAssemblyItemCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "items": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc AssemblyIterator Tests::smallAssemblyCountIsComplete",
+    "bridge_function": "OCCTDocumentAssemblyItemCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_at_least": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "items": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_ClippingPlaneTool Tests::addAndGet",
+    "bridge_function": "OCCTDocumentClipPlaneToolIsClipPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "is_clip": true,
+        "origin_z": 5,
+        "normal_z": 1,
+        "capping": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "is_clip": true,
+        "origin_z": 5,
+        "normal_z": 1,
+        "capping": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_ClippingPlaneTool Tests::remove",
+    "bridge_function": "OCCTDocumentClipPlaneToolRemove",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "removed": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "removed": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Color Tests::setAndGetRGB",
+    "bridge_function": "OCCTDocumentGetColorAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "rgb": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "rgb": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Color Tests::setAndGetRGBA",
+    "bridge_function": "OCCTDocumentGetColorAlphaAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "alpha": 0.8
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "alpha": 0.8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Color Tests::namedColor",
+    "bridge_function": "OCCTDocumentGetColorNOCAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "noc_nonnegative": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "noc": 407
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc DimTol Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetDimTolKind",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "kind": 1,
+        "name": "Flatness",
+        "description": "Surface flatness tolerance",
+        "values": [
+          0.01,
+          0.05
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "kind": 1,
+        "name": "Flatness",
+        "description": "Surface flatness tolerance",
+        "values": [
+          0.01,
+          0.05
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc DimTol Tests::noDimTol",
+    "bridge_function": "OCCTDocumentGetDimTolKind",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "kind": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_GraphNode Tests::setAndRelate",
+    "bridge_function": "OCCTDocumentGraphNodeNbChildren",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "children": 1,
+        "fathers": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "children": 1,
+        "fathers": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_GraphNode Tests::unsetRelationship",
+    "bridge_function": "OCCTDocumentGraphNodeNbFathers",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "children": 0,
+        "fathers": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "children": 0,
+        "fathers": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_GraphNode Tests::isFatherIsChild",
+    "bridge_function": "OCCTDocumentGraphNodeIsFather",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "some_relation": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "is_father": true,
+        "is_child": false,
+        "children": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
   }
 ]

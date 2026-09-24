@@ -14,35 +14,6 @@
 #include <XCAFDoc_ColorTool.hxx>
 #include <XCAFDoc_VisMaterialTool.hxx>
 #include <TopoDS_Shape.hxx>
-#include <cstdio>
-
-// OCCTDocument(): a private TDocStd_Application (#371), NewDocument("MDTV-XCAF"), then the three
-// XCAF tools occtDocumentInit fetches.
-static Handle(TDocStd_Document) newDoc(Handle(TDocStd_Application)& app)
-{
-  app = new TDocStd_Application();
-  Handle(TDocStd_Document) d;
-  app->NewDocument("MDTV-XCAF", d);
-  XCAFDoc_DocumentTool::ShapeTool(d->Main());
-  XCAFDoc_DocumentTool::ColorTool(d->Main());
-  XCAFDoc_DocumentTool::VisMaterialTool(d->Main());
-  return d;
-}
-
-// getLabelForTag: tag 0 is Main, otherwise Main().FindChild(tag, create).
-static TDF_Label tagLabel(const Handle(TDocStd_Document)& d, int tag)
-{
-  return tag == 0 ? d->Main() : d->Main().FindChild(tag, Standard_True);
-}
-
-// OCCTShapeCreateBox: centred on the origin.
-static TopoDS_Shape centredBox(double w, double h, double dp)
-{
-  return BRepPrimAPI_MakeBox(gp_Pnt(-w / 2, -h / 2, -dp / 2), w, h, dp).Shape();
-}
-
-static const char* tf(bool b) { return b ? "true" : "false"; }
-
 #include <XCAFPrs_Style.hxx>
 #include <XCAFDoc_VisMaterialCommon.hxx>
 #include <XCAFDoc_VisMaterialPBR.hxx>
@@ -69,10 +40,32 @@ static const char* tf(bool b) { return b ? "true" : "false"; }
 #include <TCollection_HExtendedString.hxx>
 #include <TopExp_Explorer.hxx>
 #include <gp_Pln.hxx>
+#include <XCAFDoc_Note.hxx>
+#include <cmath>
+#include <cstdio>
+
+// OCCTDocument(): a private TDocStd_Application (#371), NewDocument("MDTV-XCAF"), then the three
+// XCAF tools occtDocumentInit fetches.
+static Handle(TDocStd_Document) newDoc(Handle(TDocStd_Application)& app)
+{
+  app = new TDocStd_Application();
+  Handle(TDocStd_Document) d;
+  app->NewDocument("MDTV-XCAF", d);
+  XCAFDoc_DocumentTool::ShapeTool(d->Main());
+  XCAFDoc_DocumentTool::ColorTool(d->Main());
+  XCAFDoc_DocumentTool::VisMaterialTool(d->Main());
+  return d;
+}
+
+// OCCTShapeCreateBox: centred on the origin.
+static TopoDS_Shape centredBox(double w, double h, double dp)
+{
+  return BRepPrimAPI_MakeBox(gp_Pnt(-w / 2, -h / 2, -dp / 2), w, h, dp).Shape();
+}
+
+static const char* tf(bool b) { return b ? "true" : "false"; }
 
 // VisMaterial*, XCAFPrsStyle, XCAFComponentMatrix and XCAFDoc* / XCAFNoteObjects / XCAFView tests.
-static TCollection_AsciiString a(const TCollection_ExtendedString& s) { return TCollection_AsciiString(s); }
-
 int main()
 {
   XCAFPrs_Style empty;
@@ -206,6 +199,47 @@ int main()
   Handle(XCAFDoc_NoteBinData) bd = Handle(XCAFDoc_NoteBinData)::DownCast(nt->CreateBinData("u", "t", "data", "application/octet-stream", bytes));
   printf(" after balloon + bindata=%d bindata size=%d orphans=%d", nt->NbNotes(), bd->Size(), nt->NbOrphanNotes());
   printf(" DeleteAllNotes=%d after=%d\n", nt->DeleteAllNotes(), nt->NbNotes());
+
+  // XCAFDoc_NoteBalloon / XCAFDoc_NoteComment Set as OCCTDocumentSetNoteBalloon / OCCTDocumentSetNoteComment call
+  // them (XCAFDoc_NoteBalloonTests.setAndGet, XCAFDoc_NoteCommentTests.setAndGet), then the NotesTool creations on a
+  // fresh document each (createBalloon, createBinData, orphanNotes), with the Swift tests' arguments.
+  {
+    Handle(TDocStd_Application) noteApp;
+    Handle(TDocStd_Document)    nd  = newDoc(noteApp);
+    TDF_Label                   nbl = nd->Main().NewChild();
+    Handle(XCAFDoc_NoteBalloon) nb  = XCAFDoc_NoteBalloon::Set(nbl, "User", "2026-03-14", "Balloon text");
+    printf("NoteBalloon::Set non-null=%s\n", tf(!nb.IsNull()));
+    TDF_Label                   ncl = nd->Main().NewChild();
+    Handle(XCAFDoc_NoteComment) ncs = XCAFDoc_NoteComment::Set(ncl, "TestUser", "2026-03-14", "This is a comment");
+    Handle(XCAFDoc_NoteComment) nc;
+    ncl.FindAttribute(XCAFDoc_NoteComment::GetID(), nc);
+    printf("NoteComment::Set non-null=%s text=\"%s\" user=\"%s\"\n", tf(!ncs.IsNull()), TCollection_AsciiString(nc->Comment()).ToCString(),
+           TCollection_AsciiString(nc->UserName()).ToCString());
+  }
+  {
+    Handle(TDocStd_Application) a1;
+    Handle(TDocStd_Document)    d1 = newDoc(a1);
+    Handle(XCAFDoc_NotesTool)   t1 = XCAFDoc_DocumentTool::NotesTool(d1->Main());
+    Handle(XCAFDoc_Note)        b1 = t1->CreateBalloon("User", "2026-03-14", "Balloon");
+    printf("createBalloon on a fresh document: note non-null=%s NbNotes=%d\n", tf(!b1.IsNull()), t1->NbNotes());
+  }
+  {
+    Handle(TDocStd_Application) a2;
+    Handle(TDocStd_Document)    d2 = newDoc(a2);
+    Handle(XCAFDoc_NotesTool)   t2 = XCAFDoc_DocumentTool::NotesTool(d2->Main());
+    Handle(TColStd_HArray1OfByte) data = new TColStd_HArray1OfByte(1, 4);
+    for (int i = 1; i <= 4; i++)
+      data->SetValue(i, (Standard_Byte)i);
+    Handle(XCAFDoc_Note) b2 = t2->CreateBinData("User", "2026-03-14", "data.bin", "application/octet-stream", data);
+    printf("createBinData on a fresh document: note non-null=%s NbNotes=%d\n", tf(!b2.IsNull()), t2->NbNotes());
+  }
+  {
+    Handle(TDocStd_Application) a3;
+    Handle(TDocStd_Document)    d3 = newDoc(a3);
+    Handle(XCAFDoc_NotesTool)   t3 = XCAFDoc_DocumentTool::NotesTool(d3->Main());
+    t3->CreateComment("U", "T", "orphan");
+    printf("orphanNotes: one unattached comment, NbOrphanNotes=%d (>= 0: %s)\n", t3->NbOrphanNotes(), tf(t3->NbOrphanNotes() >= 0));
+  }
 
   TDF_Label sml = d->Main().NewChild();
   Handle(XCAFDoc_ShapeMapTool) smt = XCAFDoc_ShapeMapTool::Set(sml);
