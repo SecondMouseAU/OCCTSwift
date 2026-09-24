@@ -1,0 +1,85 @@
+--- wellConditionedSurfacesAgree
+sphere r=5 u=0 v=0.29999999999999999 res=1e-07: curvatureDefined=1 K=0.040000000000000015 H=-0.20000000000000004 kmax=-0.20000000000000001 kmin=-0.20000000000000004 umbilic=0
+cylinder r=3 u=1.2 v=-0.80000000000000004 res=1e-07: curvatureDefined=1 K=-0 H=-0.16666666666666663 kmax=0 kmin=-0.33333333333333326 umbilic=0
+apex cone u=0 v=0.01 res=1e-07: curvatureDefined=1 K=-0 H=-86.602540378443877 kmax=0 kmin=-173.20508075688775 umbilic=0
+plane u=1 v=2 res=1e-07: curvatureDefined=1 K=0 H=0 kmax=0 kmin=0 umbilic=1
+--- surfaceToleranceWindowAgrees: the window where 1e-10 and Confusion() disagree
+apex cone u=0 v=1.0000000000000001e-09 res=1e-07: curvatureDefined=0
+apex cone u=0 v=1.0000000000000001e-09 res=1e-10: curvatureDefined=1 K=-0 H=-866025403.78443885 kmax=0 kmin=-1732050807.5688777 umbilic=0
+apex cone u=0 v=1e-08 res=1e-07: curvatureDefined=0
+apex cone u=0 v=1e-08 res=1e-10: curvatureDefined=1 K=-0 H=-86602540.378443882 kmax=0 kmin=-173205080.75688776 umbilic=0
+apex cone u=0 v=9.9999999999999995e-08 res=1e-07: curvatureDefined=0
+apex cone u=0 v=9.9999999999999995e-08 res=1e-10: curvatureDefined=1 K=-0 H=-8660254.0378443878 kmax=0 kmin=-17320508.075688776 umbilic=0
+apex cone u=0 v=2.9999999999999999e-07 res=1e-07: curvatureDefined=1 K=-0 H=-2886751.3459481299 kmax=0 kmin=-5773502.6918962598 umbilic=0
+apex cone u=0 v=2.9999999999999999e-07 res=1e-10: curvatureDefined=1 K=-0 H=-2886751.3459481299 kmax=0 kmin=-5773502.6918962598 umbilic=0
+apex cone u=0 v=9.9999999999999995e-07 res=1e-07: curvatureDefined=1 K=-0 H=-866025.40378443885 kmax=0 kmin=-1732050.8075688777 umbilic=0
+apex cone u=0 v=9.9999999999999995e-07 res=1e-10: curvatureDefined=1 K=-0 H=-866025.40378443885 kmax=0 kmin=-1732050.8075688777 umbilic=0
+sphere r=3 pole- u=0 v=1.5707963257948965 res=1e-07: curvatureDefined=0
+sphere r=3 pole- u=0 v=1.5707963257948965 res=1e-10: curvatureDefined=1 K=0.1111111111111111 H=-0.33333333333333331 kmax=-0.33333333333333331 kmin=-0.33333333333333331 umbilic=1
+sphere r=3 pole- u=0 v=1.5707963167948966 res=1e-07: curvatureDefined=0
+sphere r=3 pole- u=0 v=1.5707963167948966 res=1e-10: curvatureDefined=1 K=0.1111111111111111 H=-0.33333333333333331 kmax=-0.33333333333333331 kmin=-0.33333333333333331 umbilic=1
+sphere r=3 pole- u=0 v=1.5707962267948965 res=1e-07: curvatureDefined=1 K=0.1111111111111111 H=-0.33333333333333331 kmax=-0.33333333333333331 kmin=-0.33333333333333331 umbilic=1
+sphere r=3 pole- u=0 v=1.5707962267948965 res=1e-10: curvatureDefined=1 K=0.1111111111111111 H=-0.33333333333333331 kmax=-0.33333333333333331 kmin=-0.33333333333333331 umbilic=1
+--- degenerateSurfacePointsAgree
+apex cone u=0 v=0 res=1e-07: curvatureDefined=0
+sphere r=3 pole u=0 v=1.5707963267948966 res=1e-07: curvatureDefined=0
+sphere r=3 pole u=0 v=-1.5707963267948966 res=1e-07: curvatureDefined=0
+--- wellConditionedCurvesAgree
+circle r=5 u=0.7 res=1e-07: tangentDefined=1 tangent=(-0.644218, 0.764842, 0) curvature=0.20000000000000001 raw CentreOfCurvature=(4.44089e-16, 0, 0)
+line u=1 res=1e-07: tangentDefined=1 tangent=(1, 0, 0) curvature=0 raw CentreOfCurvature raises 16LProp_NotDefined
+bezier spacing=1 u=0.25 res=1e-07: tangentDefined=1 tangent=(0.894427, 0.447214, 0) curvature=0.61059562905594267 raw CentreOfCurvature=(-0.138672, 1.60547, 0)
+--- curveToleranceWindowAgrees / cuspCentreOfCurvatureIsUndefined / NonFinite
+cusp bezier u=0 res=1e-07: tangentDefined=1 tangent=(0.707107, 0.707107, 0) curvature=1.7976931348623157e+308 (RealLast) raw CentreOfCurvature raises 26Standard_ConstructionError
+cusp bezier u=0 res=1e-10: tangentDefined=1 tangent=(0.707107, 0.707107, 0) curvature=1.7976931348623157e+308 (RealLast) raw CentreOfCurvature raises 26Standard_ConstructionError
+cusp bezier u=0 res=1e-07: tangentDefined=1 tangent=(0.707107, 0.707107, 0) curvature=1.7976931348623157e+308 (RealLast) raw CentreOfCurvature=(nan, inf, nan)
+cusp bezier u=0 res=1e-10: tangentDefined=1 tangent=(0.707107, 0.707107, 0) curvature=1.7976931348623157e+308 (RealLast) raw CentreOfCurvature=(nan, inf, nan)
+cusp bezier u=0 res=1e-07: tangentDefined=1 tangent=(0.707107, 0.707107, 0) curvature=1.7976931348623157e+308 (RealLast) raw CentreOfCurvature=(nan, inf, nan)
+cusp bezier u=0 res=1e-10: tangentDefined=1 tangent=(0.707107, 0.707107, 0) curvature=1.7976931348623157e+308 (RealLast) raw CentreOfCurvature=(nan, inf, nan)
+cusp bezier u=0 res=1e-07: tangentDefined=1 tangent=(0.707107, 0.707107, 0) curvature=1.7976931348623157e+308 (RealLast) raw CentreOfCurvature=(nan, inf, nan)
+cusp bezier u=0 res=1e-10: tangentDefined=1 tangent=(0.707107, 0.707107, 0) curvature=1.7976931348623157e+308 (RealLast) raw CentreOfCurvature=(nan, inf, nan)
+cusp bezier u=0 res=1e-07: tangentDefined=1 tangent=(0.707107, 0.707107, 0) curvature=1.7976931348623157e+308 (RealLast) raw CentreOfCurvature=(nan, inf, nan)
+cusp bezier u=0 res=1e-10: tangentDefined=1 tangent=(1, 0, 0) curvature=6.6666666666666664e+19 raw CentreOfCurvature=(0, 1.5e-20, 0)
+cusp bezier u=0 res=1e-07: tangentDefined=1 tangent=(0.707107, 0.707107, 0) curvature=1.7976931348623157e+308 (RealLast) raw CentreOfCurvature=(inf, inf, nan)
+cusp bezier u=0 res=1e-10: tangentDefined=1 tangent=(1, 0, 0) curvature=6.6666666666666637e+17 raw CentreOfCurvature=(1.71194e-34, 1.5e-18, 0)
+cusp bezier u=0 res=1e-07: tangentDefined=1 tangent=(0.707107, 0.707107, 0) curvature=1.7976931348623157e+308 (RealLast) raw CentreOfCurvature=(nan, inf, nan)
+cusp bezier u=0 res=1e-10: tangentDefined=1 tangent=(1, 0, 0) curvature=6666666666666665 raw CentreOfCurvature=(0, 1.5e-16, 0)
+cusp bezier u=0 res=1e-07: tangentDefined=1 tangent=(1, 0, 0) curvature=66666666666666.672 raw CentreOfCurvature=(2.80484e-30, 1.5e-14, 0)
+cusp bezier u=0 res=1e-10: tangentDefined=1 tangent=(1, 0, 0) curvature=66666666666666.672 raw CentreOfCurvature=(2.80484e-30, 1.5e-14, 0)
+cusp bezier u=0 res=1e-07: tangentDefined=1 tangent=(1, 0, 0) curvature=666666666666.66663 raw CentreOfCurvature=(0, 1.5e-12, 0)
+cusp bezier u=0 res=1e-10: tangentDefined=1 tangent=(1, 0, 0) curvature=666666666666.66663 raw CentreOfCurvature=(0, 1.5e-12, 0)
+cusp bezier u=0 res=1e-07: tangentDefined=1 tangent=(1, 0, 0) curvature=666666.66666666674 raw CentreOfCurvature=(1.8823e-22, 1.5e-06, 0)
+cusp bezier u=0 res=1e-10: tangentDefined=1 tangent=(1, 0, 0) curvature=666666.66666666674 raw CentreOfCurvature=(1.8823e-22, 1.5e-06, 0)
+--- curveLocalPropsAgreesWithEdge / surfaceLocalPropsAgreesWithFace (1e-6 vs Confusion)
+cylinder edge 0 u=0.5 res=1e-07: tangentDefined=1 tangent=(-0.479426, 0.877583, 0) curvature=0.10000000000000001 raw CentreOfCurvature=(1.77636e-15, 0, 5)
+cylinder edge 1 u=0.5 res=1e-07: tangentDefined=1 tangent=(0, 0, 1) curvature=0 raw CentreOfCurvature raises 16LProp_NotDefined
+cylinder edge 2 u=0.5 res=1e-07: tangentDefined=1 tangent=(-0.479426, 0.877583, 0) curvature=0.10000000000000001 raw CentreOfCurvature=(1.77636e-15, 0, 0)
+cylinder edge 3 u=0.5 res=1e-07: tangentDefined=1 tangent=(0, 0, 1) curvature=0 raw CentreOfCurvature raises 16LProp_NotDefined
+cylinder edge 4 u=0.5 res=1e-07: tangentDefined=1 tangent=(-0.479426, 0.877583, 0) curvature=0.10000000000000001 raw CentreOfCurvature=(1.77636e-15, 0, 5)
+cylinder edge 5 u=0.5 res=1e-07: tangentDefined=1 tangent=(-0.479426, 0.877583, 0) curvature=0.10000000000000001 raw CentreOfCurvature=(1.77636e-15, 0, 0)
+cylinder face 0 u=0.5 v=1 res=1e-07: curvatureDefined=1 K=-0 H=-0.050000000000000003 kmax=0 kmin=-0.10000000000000001 umbilic=0
+cylinder face 1 u=0.5 v=1 res=1e-07: curvatureDefined=1 K=0 H=0 kmax=0 kmin=0 umbilic=1
+cylinder face 2 u=0.5 v=1 res=1e-07: curvatureDefined=1 K=0 H=0 kmax=0 kmin=0 umbilic=1
+--- surfaceLocalPropsAgreesNearConeApex (1e-6 vs Confusion)
+cone lateral u=0 v=1e-08 res=1e-07: curvatureDefined=1 K=-0 H=-0.089442719179991567 kmax=0 kmin=-0.17888543835998313 umbilic=0
+cone lateral u=0 v=1e-08 res=1e-06: curvatureDefined=1 K=-0 H=-0.089442719179991567 kmax=0 kmin=-0.17888543835998313 umbilic=0
+cone lateral u=0 v=9.9999999999999995e-08 res=1e-07: curvatureDefined=1 K=-0 H=-0.089442719899991599 kmax=0 kmin=-0.1788854397999832 umbilic=0
+cone lateral u=0 v=9.9999999999999995e-08 res=1e-06: curvatureDefined=1 K=-0 H=-0.089442719899991599 kmax=0 kmin=-0.1788854397999832 umbilic=0
+cone lateral u=0 v=4.9999999999999998e-07 res=1e-07: curvatureDefined=1 K=-0 H=-0.089442723099991767 kmax=0 kmin=-0.17888544619998353 umbilic=0
+cone lateral u=0 v=4.9999999999999998e-07 res=1e-06: curvatureDefined=1 K=-0 H=-0.089442723099991767 kmax=0 kmin=-0.17888544619998353 umbilic=0
+cone lateral u=0 v=9.9999999999999995e-07 res=1e-07: curvatureDefined=1 K=-0 H=-0.08944272709999232 kmax=0 kmin=-0.17888545419998464 umbilic=0
+cone lateral u=0 v=9.9999999999999995e-07 res=1e-06: curvatureDefined=1 K=-0 H=-0.08944272709999232 kmax=0 kmin=-0.17888545419998464 umbilic=0
+cone lateral u=0 v=1.0000000000000001e-05 res=1e-07: curvatureDefined=1 K=-0 H=-0.089442799100063128 kmax=0 kmin=-0.17888559820012626 umbilic=0
+cone lateral u=0 v=1.0000000000000001e-05 res=1e-06: curvatureDefined=1 K=-0 H=-0.089442799100063128 kmax=0 kmin=-0.17888559820012626 umbilic=0
+cone lateral: RefRadius=5 SemiAngle=-0.46364760900080615 apex at v=11.180339887498947, apex point (0, 0, 10)
+cone lateral near apex u=0 v=11.180339877498946 res=1e-07: curvatureDefined=0
+cone lateral near apex u=0 v=11.180339877498946 res=1e-06: curvatureDefined=0
+cone lateral near apex u=0 v=11.180339787498948 res=1e-07: curvatureDefined=0
+cone lateral near apex u=0 v=11.180339787498948 res=1e-06: curvatureDefined=0
+cone lateral near apex u=0 v=11.180339387498947 res=1e-07: curvatureDefined=1 K=-0 H=-1999999.9974047977 kmax=0 kmin=-3999999.9948095954 umbilic=0
+cone lateral near apex u=0 v=11.180339387498947 res=1e-06: curvatureDefined=0
+cone lateral near apex u=0 v=11.180338887498948 res=1e-07: curvatureDefined=1 K=-0 H=-1000000.000613578 kmax=0 kmin=-2000000.001227156 umbilic=0
+cone lateral near apex u=0 v=11.180338887498948 res=1e-06: curvatureDefined=0
+cone lateral near apex u=0 v=11.180337887498947 res=1e-07: curvatureDefined=1 K=-0 H=-499999.99989640538 kmax=0 kmin=-999999.99979281076 umbilic=0
+cone lateral near apex u=0 v=11.180337887498947 res=1e-06: curvatureDefined=0
+cone lateral near apex u=0 v=11.180329887498948 res=1e-07: curvatureDefined=1 K=-0 H=-100000.00000243752 kmax=0 kmin=-200000.00000487504 umbilic=0
+cone lateral near apex u=0 v=11.180329887498948 res=1e-06: curvatureDefined=1 K=-0 H=-100000.00000243752 kmax=0 kmin=-200000.00000487504 umbilic=0
