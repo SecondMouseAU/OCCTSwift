@@ -89,9 +89,9 @@ int main()
   printf("fresh label NamedShape=%s\n", tf(d->Main().NewChild().IsAttribute(TNaming_NamedShape::GetID())));
   ns->SetVersion(42);
   printf("SetVersion(42) -> %d\n", ns->Version());
-  int transDef = 0;
+  int order = 0;
   printf("HasLabel(box)=%s FindLabel IsEqual l1=%s ValidUntil=%d\n", tf(TNaming_Tool::HasLabel(d->Main(), box)),
-         tf(TNaming_Tool::Label(d->Main(), box, transDef).IsEqual(l1)), TNaming_Tool::ValidUntil(d->Main(), box));
+         tf(TNaming_Tool::Label(d->Main(), box, order).IsEqual(l1)), TNaming_Tool::ValidUntil(d->Main(), box));
   TopoDS_Shape bigger = centredBox(20, 20, 20);
   TDF_Label    lm     = d->Main().NewChild();
   { TNaming_Builder b(lm); b.Generated(box); }
