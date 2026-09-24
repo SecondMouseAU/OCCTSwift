@@ -41,8 +41,12 @@ struct Geom2dEvalCircleInvolutePlacementTests {
         let pPlaced = try #require(
             Geom2dEval.circleInvoluteD0(
                 origin: SIMD2(5, 5), direction: SIMD2(0, 1), radius: 2.0, u: 1.0))
-        // Results should differ because placement is different
+        // Results should differ because placement is different. #1979: "differ" passed any wrong
+        // placement; both are now pinned to Geom2dEval_CircleInvoluteCurve
+        // (Scripts/repro/766-geom2d-eval-involute-logspiral/).
         #expect(abs(pIdentity.x - pPlaced.x) > 1e-10 || abs(pIdentity.y - pPlaced.y) > 1e-10)
+        #expect(simd_distance(pIdentity, SIMD2(2.76354658135, 0.60233735788)) < 1e-9)
+        #expect(simd_distance(pPlaced, SIMD2(4.39766264212, 7.76354658135)) < 1e-9)
     }
 
     @Test func involuteD1WithPlacement() throws {
@@ -50,6 +54,9 @@ struct Geom2dEvalCircleInvolutePlacementTests {
             Geom2dEval.circleInvoluteD1(
                 origin: SIMD2(10, 20), direction: SIMD2(1, 0), radius: 2.0, u: 1.0))
         let speed = sqrt(r.d1.x * r.d1.x + r.d1.y * r.d1.y)
-        #expect(speed > 0)  // |D1(t)| = R*t
+        #expect(abs(speed - 2) < 1e-9)  // |D1(t)| = R*t
+        // #1979: `speed > 0` passed any derivative; D1 = R t (cos t, sin t) and the point is pinned.
+        #expect(simd_distance(r.d1, SIMD2(1.08060461174, 1.68294196962)) < 1e-9)
+        #expect(simd_distance(r.point, SIMD2(12.7635465814, 20.6023373579)) < 1e-9)
     }
 }

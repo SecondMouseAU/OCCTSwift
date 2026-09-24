@@ -75,6 +75,11 @@ struct TrsfExtrasTests {
             from: (point: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1)),
             to: (point: SIMD3(5, 5, 5), direction: SIMD3(0, 0, 1)))
         #expect(m.values.count == 12)
+        // SetTransformation maps coordinates into the target frame, so moving the frame by
+        // (5, 5, 5) gives a translation of (-5, -5, -5); SetDisplacement would give (+5, +5, +5).
+        // Probed (Scripts/repro/766-math-trimmed-trsf-extras).
+        let want: [Double] = [1, 0, 0, -5, 0, 1, 0, -5, 0, 0, 1, -5]
+        #expect(zip(m.values, want).allSatisfy { abs($0 - $1) < 1e-12 })
     }
 
     /// Exercises the deprecated `[Double]`-taking overload directly (an array literal here

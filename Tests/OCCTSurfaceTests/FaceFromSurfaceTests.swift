@@ -5,6 +5,11 @@ import simd
 
 @Suite("Face from Surface")
 struct FaceFromSurfaceTests {
+
+    // #766: the areas are what BRepBuilderAPI_MakeFace + BRepGProp report for the same surface
+    // and UV box, which equal the closed forms to the last digit, so the tolerances are tightened
+    // from 0.1 / 0.5 to 1e-9, and `surfaceArea!` inside `#expect` is gone. See
+    // Scripts/repro/766-convert-check-evolved-revol/.
     @Test("Face from plane surface with full domain")
     func faceFromPlane() {
         let surface = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))!
@@ -12,9 +17,8 @@ struct FaceFromSurfaceTests {
         let face = Shape.face(from: surface, uRange: -5.0...5.0, vRange: -5.0...5.0)
         #expect(face != nil)
         if let f = face {
-            #expect(f.surfaceArea! > 0)
-            // 10x10 plane => area ~100
-            #expect(abs(f.surfaceArea! - 100.0) < 1e-6)
+            // 10x10 plane => area 100
+            #expect(abs((f.surfaceArea ?? 0) - 100.0) < 1e-9)
         }
     }
 
@@ -29,7 +33,7 @@ struct FaceFromSurfaceTests {
         #expect(face != nil)
         if let f = face {
             // Half-cylinder: area = π*r*h = π*5*10 ≈ 157.08
-            #expect(abs(f.surfaceArea! - Double.pi * 5 * 10) < 0.1)
+            #expect(abs((f.surfaceArea ?? 0) - Double.pi * 5 * 10) < 1e-9)
         }
     }
 
@@ -40,7 +44,7 @@ struct FaceFromSurfaceTests {
         #expect(face != nil)
         if let f = face {
             // Full sphere surface area = 4πr² = 4π*9 ≈ 113.1
-            #expect(abs(f.surfaceArea! - 4 * Double.pi * 9) < 0.5)
+            #expect(abs((f.surfaceArea ?? 0) - 4 * Double.pi * 9) < 1e-9)
         }
     }
 
@@ -52,7 +56,7 @@ struct FaceFromSurfaceTests {
         #expect(face != nil)
         if let f = face {
             // Upper hemisphere: 2πr² = 2π*9 ≈ 56.5
-            #expect(abs(f.surfaceArea! - 2 * Double.pi * 9) < 0.5)
+            #expect(abs((f.surfaceArea ?? 0) - 2 * Double.pi * 9) < 1e-9)
         }
     }
 }
