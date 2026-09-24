@@ -19,7 +19,6 @@
 #include <cmath>
 #include <cstdio>
 #include <limits>
-#include <numbers>
 #include <string>
 
 static bool load(const std::string& path, TopoDS_Shape& s)
@@ -79,7 +78,7 @@ int main(int argc, char** argv)
     int    hits = 0;
     for (int k = 0; k < 72; k++)
     {
-      double th = k * 2 * std::numbers::pi / 72;
+      double th = k * 2 * M_PI / 72;
       gp_Pnt p(station * a.X() + probeR * (std::cos(th) * d.X() + std::sin(th) * t.X()),
                station * a.Y() + probeR * (std::cos(th) * d.Y() + std::sin(th) * t.Y()),
                station * a.Z() + probeR * (std::cos(th) * d.Z() + std::sin(th) * t.Z()));
@@ -94,7 +93,7 @@ int main(int argc, char** argv)
     double vb = vol(shank), vt = vol(threaded);
     std::printf("%s: degrees=%.6f grooveFraction=%.6f removed=%.9f (blank %.9f, threaded %.9f)\n",
                 names[i],
-                hits ? std::atan2(y, x) * 180 / std::numbers::pi : std::numeric_limits<double>::quiet_NaN(),
+                hits ? std::atan2(y, x) * 180 / M_PI : std::numeric_limits<double>::quiet_NaN(),
                 hits / 72.0,
                 vb - vt,
                 vb,

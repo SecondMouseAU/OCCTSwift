@@ -235,7 +235,7 @@
       "differences": []
     },
     "status": "PASS",
-    "note": "Kernel side is Scripts/repro/766-thread-784-991/probe.mm: gp_Ax2 datum for the six axes, then the same 72-point BRepClass3d_SolidClassifier ring and BRepGProp volumes on the solids the Swift run exported to BREP. The threaded solid itself is built by Swift composition (buildThreadedRodDirect), so parity covers the datum and the measurement, not a C++ rebuild of the thread. Datum signs of zero differ in print only."
+    "note": "Kernel side is Scripts/repro/766-thread-784-991/probe.mm: gp_Ax2 datum for the six axes, then the same 72-point BRepClass3d_SolidClassifier ring and BRepGProp volumes on the solids the Swift run exported to BREP. The threaded solid itself is built by Swift composition (buildThreadedRodDirect), so parity covers the datum and the measurement, not a C++ rebuild of the thread. Datum signs of zero differ in print only. bridge_output threaded_volume and removed_volume are the +X, -X, +Z and -Z Swift measurements (1003.1466921110966 and 127.82666318122892); the +Y and -Y runs measured 1003.1466921110967 and 127.82666318122881, a last-digit difference that vanishes at the 9 decimals the probe prints, where all six axes agree (threaded 1003.146692111, removed 127.826663181)."
   },
   {
     "test_name": "Issue #991: the profile owns its own flat widths::flat widths match each form's standard",
