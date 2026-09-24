@@ -35,7 +35,12 @@ struct Issue403SurfaceKnotSplitParamsTests {
         let bspline = try bsplineCylinder()
         let result = bspline.knotSplitting(uContinuity: .c0, vContinuity: .c0)
         let domain = bspline.domain
-
+        // #766: the `if let`s below skipped their checks on an empty list and the ascending checks
+        // pass vacuously on one, so an empty result passed. GeomConvert_BSplineSurfaceKnotSplitting
+        // at C0 on this surface splits only at the ends: [0, 2 pi] in u and [0, 10] in v
+        // (Scripts/repro/766-issue398-403-437-480/).
+        #expect(result.uSplitParams.count == 2)
+        #expect(result.vSplitParams.count == 2)
         if let uFirst = result.uSplitParams.first, let uLast = result.uSplitParams.last {
             #expect(abs(uFirst - domain.uMin) < 1e-6)
             #expect(abs(uLast - domain.uMax) < 1e-6)

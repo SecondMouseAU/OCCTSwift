@@ -1,0 +1,18 @@
+ComposeShell(10x10 face, 1x1): null=0 type=4 faces=1 area=100.000000000 valid=1
+EdgeConnect(box): faces=6 edges=24 volume=1000.000000000 valid=0
+  after EdgeConnect: type 7 invalid 0 of 48
+  after EdgeConnect: type 6 invalid 0 of 24
+  after EdgeConnect: type 5 invalid 3 of 6
+  after EdgeConnect: type 4 invalid 5 of 6
+  after EdgeConnect: type 3 invalid 1 of 1
+  after EdgeConnect: type 2 invalid 1 of 1
+fresh box valid=1
+elongated 100x1 DivideByNumber(5,1) SetNumbersUVSplits=1: Perform=1 faces=5
+elongated 100x1 DivideByNumber(1,5) SetNumbersUVSplits=1: Perform=1 faces=5
+elongated 100x1 DivideByNumber(6,1) SetNumbersUVSplits=1: Perform=1 faces=6
+elongated 100x1 DivideByNumber(5,1) SetNumbersUVSplits=0: Perform=1 faces=44
+elongated 100x1 DivideByNumber(1,5) SetNumbersUVSplits=0: Perform=1 faces=44
+elongated 100x1 DivideByNumber(6,1) SetNumbersUVSplits=0: Perform=1 faces=48
+tiny-edge face edges=6
+FixSmallEdges(tol=0.5, drop): edges=5
+FixSmallEdges(tol=1e-07, drop): edges=6
