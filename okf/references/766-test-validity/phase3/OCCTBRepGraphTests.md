@@ -28,6 +28,16 @@
 | **alongEdge on T-branch** | alongEdge on a T-branch between two non-coaxial cylinders falls back to the chord | Edge traversal | Remove alongEdge |
 | **v0.142 ConstructionAxis resolution** | v0.142 ConstructionAxis resolution | Graph axis | Remove axis resolution |
 | **deferredModeToggle()** | deferredModeToggle() | Graph mutation | Remove deferred toggle |
+| **BRepGraph Shape Reconstruction** | reconstructFace | Node to shape | ShapeFromNode returns Shell 0 for a Face request |
+| **BRepGraph Shape Reconstruction** | reconstructSolid | Node to shape | ShapeFromNode returns Shell 0 for a Solid request |
+| **BRepGraph Shape Reconstruction** | findNode | Shape to node | FindNode index + 1 |
+| **BRepGraph Shape Reconstruction** | hasNodeFalseForUnrelated | Shape to node | HasNode always true |
+| **BRepGraph Shape Reconstruction** | reconstructOccurrenceWithPlacement | Occurrence placement | LinkProducts drops the placement |
+| **BRepGraph Shell Extended** | shellCompoundCount | Shell parents | compound count + 1 |
+| **BRepGraph Shell Extended** | shellIsClosed | Shell closure | IsClosed negated |
+| **BRepGraph Shell Queries** | shellSolids | Shell parents | solid index + 1 |
+| **BRepGraph Solid Extended** | solidCompoundCount | Solid parents | compound count + 1 |
+| **BRepGraph Solid Queries** | solidCompSolidCount | Solid parents | comp-solid count + 1 |
 
 ---
 
@@ -53,6 +63,16 @@
 | alongEdge T-branch | OCCTBRepGraphAlongEdge | Edge traversal | Remove alongEdge | ✅ | ✅ |  |
 | v0.142 ConstructionAxis | OCCTBRepGraphConstructionAxis | Graph axis | Remove axis resolution | ✅ | ✅ |  |
 | deferredModeToggle | OCCTBRepGraphDeferredModeToggle | Graph mutation | Remove deferred toggle | ✅ | ✅ |  |
+| reconstructFace | OCCTBRepGraphShapeFromNode | Node to shape | Face/Solid request answered with Shell 0 | ✅ | ✅ | Rewritten: `face != nil` passed the wrong node; now pins type and area 100 |
+| reconstructSolid | OCCTBRepGraphShapeFromNode | Node to shape | Face/Solid request answered with Shell 0 | ✅ | ✅ | Rewritten: `solid != nil` passed the wrong node; now pins type and volume 1000 |
+| findNode | OCCTBRepGraphFindNode | Shape to node | outIndex = nid.Index + 1 | ✅ | ✅ | Rewritten: `node != nil` passed a wrong index; now pins (solid, 0) |
+| hasNodeFalseForUnrelated | OCCTBRepGraphHasNode | Shape to node | return true | ✅ | ✅ |  |
+| reconstructOccurrenceWithPlacement | OCCTBRepGraphLinkProducts | Occurrence placement | placement location replaced by identity | ✅ | ✅ | Kernel Shape(occurrence) already carries the (5,6,7) placement |
+| shellCompoundCount | OCCTBRepGraphShellCompoundCount | Shell parents | return n + 1 | ✅ | ✅ |  |
+| shellIsClosed | OCCTBRepGraphShellIsClosed | Shell closure | !IsClosed | ✅ | ✅ |  |
+| shellSolids | OCCTBRepGraphShellSolidIndices | Shell parents | outIndices[i] = Index + 1 | ✅ | ✅ |  |
+| solidCompoundCount | OCCTBRepGraphSolidCompoundCount | Solid parents | return n + 1 | ✅ | ✅ |  |
+| solidCompSolidCount | OCCTBRepGraphSolidCompSolidCount | Solid parents | return n + 1 | ✅ | ✅ |  |
 
 ---
 
@@ -92,7 +112,7 @@ For each test, run ground-truth C++ comparison:
 **Total**: 18 tests
 ---
 
-## Measured: Compact, Compound, CompSolid, Copy, Counts and Deduplicate (#1986)
+## Measured: Build, ValidateMutation and CoEdge Queries (#1986)
 
 Measured on the pinned kernel: every row below was run red under the injection shown and
 green once it was reverted. Probes and transcripts are under `Scripts/repro/766-brepgraph-*/`.
@@ -101,6 +121,36 @@ green once it was reverted. Probes and transcripts are under `Scripts/repro/766-
 
 | Suite | Test | Defect Category | Injection Target |
 |-------|------|-----------------|------------------|
+| **BRepGraph Builder ValidateMutation** | validateCleanGraph | Mutation validation | return false |
+| **BRepGraph Builder ValidateMutation** | validateAfterAddVertex | Mutation validation | return false |
+| **BRepGraph Build** | buildFromBox | Graph build counts | NbEdges + 1, NbNodes + 1 |
+| **BRepGraph Build** | buildParallel | Parallel build | return nullptr when parallel |
+| **BRepGraph Build** | buildFromSphere | Graph build counts | NbEdges + 1 |
+| **BRepGraph Build** | buildFromComplex | Graph validation | Validate returns false; NbEdges + 1 |
+| **BRepGraph CoEdge Queries** | coedgeEdge | CoEdge query | edge index + 1 |
+| **BRepGraph CoEdge Queries** | coedgeFace | CoEdge query | face index + 1 |
+| **BRepGraph CoEdge Queries** | coedgeSeamPairNilForBox | Seam pair | no pair returns the coedge itself |
+| **BRepGraph CoEdge Queries** | coedgeSeamPairForSphere | Seam pair | no pair returns the coedge itself |
+| **BRepGraph CoEdge Queries** | coedgeHasPCurve | PCurve presence | false for odd coedges |
+| **BRepGraph CoEdge Queries** | coedgeRange | CoEdge range | first/last swapped |
+
+### Injection Matrix
+
+| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
+|------|-----------------|--------|-----------|------|--------|-------|
+| validateCleanGraph | OCCTBRepGraphBuilderValidateMutation | Mutation validation | return false | ✅ :14 `valid` | ✅ | Original also red; #require only |
+| validateAfterAddVertex | OCCTBRepGraphBuilderValidateMutation | Mutation validation | return false | ✅ :24 `valid` | ✅ | Original also red; added vertex index pinned |
+| buildFromBox | OCCTBRepGraphNbNodes | Graph build counts | NbEdges + 1, NbNodes + 1 | ✅ :18 `edgeCount == 12`, :25 `nodeCount == 58` | ✅ | `nodeCount > 0` pinned to 58, coedge count added |
+| buildParallel | OCCTBRepGraphCreate | Parallel build | return nullptr when parallel | ✅ :30 `#require(BRepGraph(parallel: true))` | ✅ | Original also red (`graph != nil`) |
+| buildFromSphere | OCCTBRepGraphNbEdges | Graph build counts | NbEdges + 1 | ✅ :41 `edgeCount == 3`, :43 | ✅ | Rewritten: `faceCount > 0`, `edgeCount >= 0` (always true) stayed green |
+| buildFromComplex | OCCTBRepGraphValidate | Graph validation | Validate returns false; NbEdges + 1 | ✅ :53 `edgeCount == 15`, :55 `isValid` | ✅ | `faceCount > 6` pinned to 8 |
+| coedgeEdge | OCCTBRepGraphCoEdgeEdge | CoEdge query | edge index + 1 | ✅ :16 `coedgeEdge(0) == 0` | ✅ | Rewritten: `>= 0 && < edgeCount` stayed green |
+| coedgeFace | OCCTBRepGraphCoEdgeFace | CoEdge query | face index + 1 | ✅ :22 `coedgeFace(0) == 0` | ✅ | Rewritten: `>= 0 && < faceCount` stayed green |
+| coedgeSeamPairNilForBox | OCCTBRepGraphCoEdgeSeamPair | Seam pair | no pair returns the coedge itself | ✅ :31 | ✅ | Original also red; now checks all 24 coedges |
+| coedgeSeamPairForSphere | OCCTBRepGraphCoEdgeSeamPair | Seam pair | no pair returns the coedge itself | ✅ :41 `seamPair(0) == nil`, :43 | ✅ | Rewritten: asserted nothing (`let _ = foundSeam`) |
+| coedgeHasPCurve | OCCTBRepGraphCoEdgeHasPCurve | PCurve presence | false for odd coedges | ✅ :53 (12 coedges) | ✅ | Rewritten: "any coedge has one" stayed green |
+| coedgeRange | OCCTBRepGraphCoEdgeRange | CoEdge range | first/last swapped | ✅ :62, :63 | ✅ | Original also red (`first < last`); pinned |
+## Measured: Compact, Compound, CompSolid, Copy, Counts and Deduplicate (#1986)
 | **BRepGraph Compact** | compactBox | Compaction result | nodesAfter + 1 |
 | **BRepGraph Compound Queries** | compoundQueriesOnCompound | Compound relations | child count + 1, parent count + 1 |
 | **BRepGraph CompSolid Count** | compSolidCount | CompSolid count | always 0 |
@@ -111,11 +161,6 @@ green once it was reverted. Probes and transcripts are under `Scripts/repro/766-
 | **BRepGraph Counts** | geometryCounts | Geometry count | NbCoEdgeCurves2D + 1 |
 | **BRepGraph Counts** | coedgeCounts | CoEdge count | Nb - 1 |
 | **BRepGraph Deduplicate** | deduplicateBox | Deduplication result | surface/curve counts swapped |
-
-### Injection Matrix
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
 | compactBox | OCCTBRepGraphCompact | Compaction result | nodesAfter + 1 | ✅ :19, :25 | ✅ | Rewritten: `nodesAfter > 0` stayed green |
 | compoundQueriesOnCompound | OCCTBRepGraphCompoundChildCount | Compound relations | child count + 1, parent count + 1 | ✅ :18 `compoundChildCount(0) == 2`, :20 | ✅ | `>= 1` / `>= 2` pinned (child +1 was not caught) |
 | compSolidCount | OCCTBRepGraphNbCompSolids | CompSolid count | always 0 | ✅ :16 `compSolidCount == 1` | ✅ | Rewritten: `== 0` alone passed a counter stuck at 0 |

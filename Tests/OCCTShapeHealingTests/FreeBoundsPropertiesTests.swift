@@ -12,36 +12,30 @@ struct FreeBoundsPropertiesTests {
         let compound = twoFaces()
 
         let analysis = compound.freeBoundsAnalysis(tolerance: 0.01)
-        #expect(analysis.totalCount > 0)
-        #expect(analysis.closedCount > 0)
+        // #766: kernel (Scripts/repro/766-healing-freebounds-props): total=2 closed=2 open=0.
+        #expect(analysis.totalCount == 2)
+        #expect(analysis.closedCount == 2)
+        #expect(analysis.openCount == 0)
     }
 
+    // #766: this and the next test nested every assertion inside `if closedCount > 0` and
+    // `if let`, so a bridge that found no bounds, or returned nil for index 0, passed both.
     @Test("Closed free bound info, area and perimeter")
     func closedBoundInfo() throws {
         let compound = twoFaces()
-
-        let analysis = compound.freeBoundsAnalysis(tolerance: 0.01)
-        if analysis.closedCount > 0 {
-            if let info = compound.closedFreeBoundInfo(tolerance: 0.01, index: 0) {
-                #expect(info.area > 0)
-                #expect(info.perimeter > 0)
-                #expect(abs(info.area - 100.0) < 5.0)  // 10x10 face
-                #expect(abs(info.perimeter - 40.0) < 2.0)
-            }
-        }
+        let info = try #require(compound.closedFreeBoundInfo(tolerance: 0.01, index: 0))
+        // Kernel: area=100 perimeter=40 ratio=0 width=0 notches=0 for each 10x10 bound.
+        #expect(abs(info.area - 100.0) < 1e-9)
+        #expect(abs(info.perimeter - 40.0) < 1e-9)
+        #expect(info.notchCount == 0)
     }
 
     @Test("Free bound wire extraction")
     func freeBoundWire() throws {
         let compound = twoFaces()
-
-        let analysis = compound.freeBoundsAnalysis(tolerance: 0.01)
-        if analysis.closedCount > 0 {
-            if let wire = compound.closedFreeBoundWire(tolerance: 0.01, index: 0) {
-                #expect(wire.isValid)
-                #expect(wire.edges().count > 0)
-            }
-        }
+        let wire = try #require(compound.closedFreeBoundWire(tolerance: 0.01, index: 0))
+        #expect(wire.isValid)
+        #expect(wire.edges().count == 4)
     }
 
     // Two stacked 10x10 faces: two disjoint closed free bounds, no open ones.

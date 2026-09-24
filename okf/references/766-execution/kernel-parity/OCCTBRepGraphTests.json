@@ -2,145 +2,797 @@
   {
     "test_name": "BRepGraph Builder RemoveNode",
     "bridge_function": "OCCTBRepGraphBuilderRemoveNode",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BRepGraph Shell Extended",
     "bridge_function": "OCCTBRepGraphShellExtended",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Split (1-to-N) mapping round-trips",
     "bridge_function": "OCCTBRepGraphSplitMapping",
-    "bridge_output": {"type": "bool", "data": true},
-    "kernel_output": {"type": "bool", "data": true},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BRepGraph CompSolid Count",
     "bridge_function": "OCCTBRepGraphCompSolidCount",
-    "bridge_output": {"type": "int", "data": 0},
-    "kernel_output": {"type": "int", "data": 0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "int",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "findDerivedOrSelf",
     "bridge_function": "OCCTBRepGraphFindDerivedOrSelf",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BRepGraph Edge Queries",
     "bridge_function": "OCCTBRepGraphEdgeQueries",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BRepGraph Builder AddFaceToShell",
     "bridge_function": "OCCTBRepGraphBuilderAddFaceToShell",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BRepGraph Shell Queries",
     "bridge_function": "OCCTBRepGraphShellQueries",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Graph history absorb",
     "bridge_function": "OCCTBRepGraphHistoryAbsorb",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "v0.141 BRepGraph history record readback",
     "bridge_function": "OCCTBRepGraphHistoryReadback",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BRepGraph Vertex Geometry",
     "bridge_function": "OCCTBRepGraphVertexGeometry",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BRepGraph Builder AddShellToSolid",
     "bridge_function": "OCCTBRepGraphBuilderAddShellToSolid",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BRepGraph Edge Sampling",
     "bridge_function": "OCCTBRepGraphEdgeSampling",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BRepGraph Builder Deferred",
     "bridge_function": "OCCTBRepGraphBuilderDeferred",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "alongEdge on a helical thread edge does not silently return the cylinder's centerline",
     "bridge_function": "OCCTBRepGraphAlongEdge",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "alongEdge on a T-branch between two non-coaxial cylinders falls back to the chord",
     "bridge_function": "OCCTBRepGraphAlongEdge",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "v0.142 ConstructionAxis resolution",
     "bridge_function": "OCCTBRepGraphConstructionAxis",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "deferredModeToggle",
     "bridge_function": "OCCTBRepGraphDeferredModeToggle",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Shape Reconstruction::reconstructFace",
+    "bridge_function": "OCCTBRepGraphShapeFromNode",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "shapeType": "face",
+        "area": 100.0
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "shapeType": "face",
+        "area": 100.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Shape Reconstruction::reconstructSolid",
+    "bridge_function": "OCCTBRepGraphShapeFromNode",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "shapeType": "solid",
+        "volume": 1000.0
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "shapeType": "solid",
+        "volume": 1000.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Shape Reconstruction::findNode",
+    "bridge_function": "OCCTBRepGraphFindNode",
+    "bridge_output": {
+      "type": "node",
+      "data": {
+        "hasNode": true,
+        "kind": "solid",
+        "index": 0
+      }
+    },
+    "kernel_output": {
+      "type": "node",
+      "data": {
+        "hasNode": true,
+        "kind": "solid",
+        "index": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Shape Reconstruction::hasNodeFalseForUnrelated",
+    "bridge_function": "OCCTBRepGraphHasNode",
+    "bridge_output": {
+      "type": "bool",
+      "data": false
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Shape Reconstruction::reconstructOccurrenceWithPlacement",
+    "bridge_function": "OCCTBRepGraphLinkProducts",
+    "bridge_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          0,
+          1,
+          2
+        ],
+        "max": [
+          10,
+          11,
+          12
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          0,
+          1,
+          2
+        ],
+        "max": [
+          10,
+          11,
+          12
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Shell Extended::shellCompoundCount",
+    "bridge_function": "OCCTBRepGraphShellCompoundCount",
+    "bridge_output": {
+      "type": "int",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Shell Extended::shellIsClosed",
+    "bridge_function": "OCCTBRepGraphShellIsClosed",
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Shell Queries::shellSolids",
+    "bridge_function": "OCCTBRepGraphShellSolidIndices",
+    "bridge_output": {
+      "type": "int_array",
+      "data": {
+        "count": 1,
+        "solids": [
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "int_array",
+      "data": {
+        "count": 1,
+        "solids": [
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Solid Extended::solidCompoundCount",
+    "bridge_function": "OCCTBRepGraphSolidCompoundCount",
+    "bridge_output": {
+      "type": "int",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Solid Queries::solidCompSolidCount",
+    "bridge_function": "OCCTBRepGraphSolidCompSolidCount",
+    "bridge_output": {
+      "type": "int",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder ValidateMutation::validateCleanGraph",
+    "bridge_function": "OCCTBRepGraphBuilderValidateMutation",
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder ValidateMutation::validateAfterAddVertex",
+    "bridge_function": "OCCTBRepGraphBuilderValidateMutation",
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Build::buildFromBox",
+    "bridge_function": "OCCTBRepGraphNbNodes",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "shells": 1,
+        "solids": 1,
+        "wires": 6,
+        "compounds": 0,
+        "coedges": 24,
+        "nodes": 58
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "shells": 1,
+        "solids": 1,
+        "wires": 6,
+        "compounds": 0,
+        "coedges": 24,
+        "nodes": 58
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Build::buildParallel",
+    "bridge_function": "OCCTBRepGraphCreate",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "nodes": 58
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "nodes": 58
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Build::buildFromSphere",
+    "bridge_function": "OCCTBRepGraphNbEdges",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faces": 1,
+        "edges": 3,
+        "vertices": 2,
+        "nodes": 13
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faces": 1,
+        "edges": 3,
+        "vertices": 2,
+        "nodes": 13
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Build::buildFromComplex",
+    "bridge_function": "OCCTBRepGraphValidate",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faces": 8,
+        "edges": 15,
+        "compounds": 1,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faces": 8,
+        "edges": 15,
+        "compounds": 1,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph CoEdge Queries::coedgeEdge",
+    "bridge_function": "OCCTBRepGraphCoEdgeEdge",
+    "bridge_output": {
+      "type": "int",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph CoEdge Queries::coedgeFace",
+    "bridge_function": "OCCTBRepGraphCoEdgeFace",
+    "bridge_output": {
+      "type": "int",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph CoEdge Queries::coedgeSeamPairNilForBox",
+    "bridge_function": "OCCTBRepGraphCoEdgeSeamPair",
+    "bridge_output": {
+      "type": "seam_pairs",
+      "data": "none of 24"
+    },
+    "kernel_output": {
+      "type": "seam_pairs",
+      "data": "none of 24"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph CoEdge Queries::coedgeSeamPairForSphere",
+    "bridge_function": "OCCTBRepGraphCoEdgeSeamPair",
+    "bridge_output": {
+      "type": "seam_pairs",
+      "data": [
+        null,
+        3,
+        null,
+        1
+      ]
+    },
+    "kernel_output": {
+      "type": "seam_pairs",
+      "data": [
+        null,
+        3,
+        null,
+        1
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph CoEdge Queries::coedgeHasPCurve",
+    "bridge_function": "OCCTBRepGraphCoEdgeHasPCurve",
+    "bridge_output": {
+      "type": "count",
+      "data": 24
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": 24
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph CoEdge Queries::coedgeRange",
+    "bridge_function": "OCCTBRepGraphCoEdgeRange",
+    "bridge_output": {
+      "type": "range",
+      "data": [
+        0,
+        10
+      ]
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": [
+        0,
+        10
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
