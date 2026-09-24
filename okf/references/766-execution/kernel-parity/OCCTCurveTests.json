@@ -2,305 +2,4011 @@
   {
     "test_name": "A whole ellipse measures its own circumference not 0.3 to 1.7 percent more",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A parabola over a wide range measures its arc not 3 percent less",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A hyperbola over a wide range measures its arc",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A whipping cubic Bezier",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "The closed forms stay exact",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Accurate sub-ranges sum to whole",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A wound range winds correctly",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A fraction of the length matches",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A negative abscissa measures correctly",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A 2D ellipse measures correctly",
     "bridge_function": "OCCTCurve2DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "An elliptical edge measures correctly",
     "bridge_function": "OCCTShapeEdgeArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A wire containing elliptical edges",
     "bridge_function": "OCCTWireArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "An EdgeCurve measures correctly",
     "bridge_function": "OCCTEdgeCurveArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "parameterAtLength walks correctly",
     "bridge_function": "OCCTCurve3DParameterAtLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Two unbounded parallel lines extrema is empty not a crash",
     "bridge_function": "OCCTExtremaExtCC",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Two bounded parallel segments with overlapping ranges extrema is empty",
     "bridge_function": "OCCTExtremaExtCC",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "minDistance keeps reporting true offset for parallel pairs",
     "bridge_function": "OCCTCurve3DMinDistance",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "mirrorAxisZeroDirection",
     "bridge_function": "OCCTMakeMirrorAxis",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "mirrorPlaneZeroNormal",
     "bridge_function": "OCCTMakeMirrorPlane",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "geomDirectionZeroVector",
     "bridge_function": "OCCTGeomDirectionCreate",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A genuine zero-width interval reports exactly 0.0 not a failure sentinel",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A genuinely failing computation is distinguishable from real zero-length",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "length of a multi-span interpolated BSpline matches reference",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "length from to over a sub-range matches reference",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "all five arc-length spellings agree with same reference",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BSpline Curve 3D Manipulation Tests",
     "bridge_function": "OCCTBSplineCurve3DManipulate",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Analytical conversion contract",
     "bridge_function": "OCCTGeomConvertCurveToAnaCurve",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "The nearest point is on the curve not on its basis",
     "bridge_function": "OCCTCurve3DNearestPoint",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Curve3D Primitive Tests",
     "bridge_function": "OCCTCurve3DPrimitive",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Curve3D Operations Tests",
     "bridge_function": "OCCTCurve3DOperations",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "An out-of-domain range measures the curve not its extrapolation",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Bezier Curve Manipulation Tests",
     "bridge_function": "OCCTBezierCurve3DManipulate",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Non-finite arc-length bounds report failure",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Helix Curves",
     "bridge_function": "OCCTHelixCurve3D",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Bezier Curve 3D Completions",
     "bridge_function": "OCCTBezierCurve3DComplete",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Curve3D arc-length accuracy on multi-span curves",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BSplineCurve 3D Completions",
     "bridge_function": "OCCTBSplineCurve3DComplete",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Law Function Tests",
     "bridge_function": "OCCTLawFunctionEvaluate",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
+  },
+  {
+    "test_name": "Adaptor3d IsoCurve::U-iso points on cylinder face",
+    "test_file": "Tests/OCCTCurveTests/Adaptor3dIsoCurveTests.swift",
+    "bridge_function": "OCCTAdaptor3dIsoCurveEval",
+    "bridge_output": {
+      "type": "points",
+      "data": "(10, 0, z), z = -1e6, -5e5, 0, 5e5, 1e6 (within 1e-6)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "(10, 0, z), z = -1e6, -5e5, 0, 5e5, 1e6; raw iso range [-2e100, 2e100] clamped to 1e6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "U and V iso type swapped",
+    "red": "Adaptor3dIsoCurveTests.swift:35 abs(p.z - zk) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: picked any face, checked only the count"
+  },
+  {
+    "test_name": "Adaptor3d IsoCurve::V-iso points on cylinder face",
+    "test_file": "Tests/OCCTCurveTests/Adaptor3dIsoCurveTests.swift",
+    "bridge_function": "OCCTAdaptor3dIsoCurveEval",
+    "bridge_output": {
+      "type": "points",
+      "data": "(10cos u, 10sin u, 10), u = 2 pi i / 9, i = 0..9 (within 1e-9)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "(10cos u, 10sin u, 10), u = 2 pi i / 9; e.g. pt[1] = (7.6604444311897799, 6.4278760968653925, 10)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "U and V iso type swapped",
+    "red": "Adaptor3dIsoCurveTests.swift:50 abs(p.x - 10 * cos(u)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: picked any face, checked only the count"
+  },
+  {
+    "test_name": "Adaptor3d IsoCurve::U-iso curve edge from face",
+    "test_file": "Tests/OCCTCurveTests/Adaptor3dIsoCurveTests.swift",
+    "bridge_function": "OCCTAdaptor3dIsoCurveEdge",
+    "bridge_output": {
+      "type": "edge",
+      "data": "line, length 10, (10,0,0) -> (10,0,10)"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": "type 0 (line), range [0, 10], length 10, (10,0,0) -> (10,0,10)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "U and V iso type swapped",
+    "red": "Adaptor3dIsoCurveTests.swift:65 edge.edgeAdaptorCurveType == 0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: checked only shapeType == .edge"
+  },
+  {
+    "test_name": "Adaptor3d IsoCurve::V-iso curve edge from face",
+    "test_file": "Tests/OCCTCurveTests/Adaptor3dIsoCurveTests.swift",
+    "bridge_function": "OCCTAdaptor3dIsoCurveEdge",
+    "bridge_output": {
+      "type": "edge",
+      "data": "circle arc, length 10 pi, (10,0,10) -> (-10,0,10)"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": "type 1 (circle), range [0, pi], length 31.415926535897931, (10,0,10) -> (-10,1.2e-15,10)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "U and V iso type swapped",
+    "red": "Adaptor3dIsoCurveTests.swift:84 edge.edgeAdaptorCurveType == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: checked only shapeType == .edge"
+  },
+  {
+    "test_name": "Approx CurvilinearParameter::Arc-length reparameterize circle edge",
+    "test_file": "Tests/OCCTCurveTests/ApproxCurvilinearParameterTests.swift",
+    "bridge_function": "OCCTApproxCurvilinearParameter",
+    "bridge_output": {
+      "type": "edge",
+      "data": "BSpline, range [0, 1], length 20 pi within 1e-3, half-parameter length = half length within 1e-6"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": "BSpline degree 7, 14 poles, range [0, 1], length 62.831818308373776, length to u=0.5 31.415909154186899, MaxError3d 1.886e-4"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input edge instead of Approx_CurvilinearParameter's curve",
+    "red": "ApproxCurvilinearParameterTests.swift:27 result.edgeAdaptorCurveType == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: checked only isValid"
+  },
+  {
+    "test_name": "Approx SameParameter Tests::same parameter on line/plane",
+    "test_file": "Tests/OCCTCurveTests/ApproxSameParameterTests.swift",
+    "bridge_function": "OCCTApproxSameParameter",
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": "IsDone 1, IsSameParameter 1 (TolReached 1.48e50 on these unbounded lines, not asserted)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsSameParameter() negated",
+    "red": "ApproxSameParameterTests.swift:25 r.isSameParameter",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: `if let` let a nil result pass unchecked"
+  },
+  {
+    "test_name": "Analytical conversion contract (#492)::Curve result does not alias the input curve",
+    "test_file": "Tests/OCCTCurveTests/AnalyticalConversionContractTests.swift",
+    "bridge_function": "OCCTGeomConvertCurveToAnalytical",
+    "bridge_output": {
+      "type": "curve",
+      "data": "circle, independent of the input (input point unchanged after translating the result)"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": "Geom_Circle, sameHandleAsInput=1, gap 0: the kernel itself aliases, which the bridge's Copy() breaks"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input curve handle instead of the Copy()",
+    "red": "AnalyticalConversionContractTests.swift:61 Self.dist(before, after) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analytical-contract/transcript.txt"
+  },
+  {
+    "test_name": "Analytical conversion contract (#492)::Range-aware curve result does not alias the input curve",
+    "test_file": "Tests/OCCTCurveTests/AnalyticalConversionContractTests.swift",
+    "bridge_function": "OCCTGeomConvertCurveToAnalytical",
+    "bridge_output": {
+      "type": "curve",
+      "data": "circle over [0, 2pi], independent of the input"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": "Geom_Circle, newFirst 0, newLast 6.2831853071795862, sameHandleAsInput=1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input curve handle instead of the Copy()",
+    "red": "AnalyticalConversionContractTests.swift:83 Self.dist(before, after) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analytical-contract/transcript.txt"
+  },
+  {
+    "test_name": "Analytical conversion contract (#492)::Surface result does not alias the input surface",
+    "test_file": "Tests/OCCTCurveTests/AnalyticalConversionContractTests.swift",
+    "bridge_function": "OCCTGeomConvertSurfToAnalytical",
+    "bridge_output": {
+      "type": "surface",
+      "data": "plane, independent of the input"
+    },
+    "kernel_output": {
+      "type": "surface",
+      "data": "Geom_Plane, sameHandleAsInput=0, gap 0, value(0.3,0.4)=(1.3, 2.4, 3)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input surface handle instead of the Copy()",
+    "red": "AnalyticalConversionContractTests.swift:97 Self.dist(before, after) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analytical-contract/transcript.txt"
+  },
+  {
+    "test_name": "Analytical conversion contract (#492)::Gap-returning surface result does not alias the input surface",
+    "test_file": "Tests/OCCTCurveTests/AnalyticalConversionContractTests.swift",
+    "bridge_function": "OCCTGeomConvertSurfToAnalytical",
+    "bridge_output": {
+      "type": "surface",
+      "data": "plane, independent of the input"
+    },
+    "kernel_output": {
+      "type": "surface",
+      "data": "Geom_Plane, sameHandleAsInput=0, gap 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input surface handle instead of the Copy()",
+    "red": "AnalyticalConversionContractTests.swift:111 Self.dist(before, after) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analytical-contract/transcript.txt"
+  },
+  {
+    "test_name": "Analytical conversion contract (#492)::Both curve spellings agree over the curve's own range",
+    "test_file": "Tests/OCCTCurveTests/AnalyticalConversionContractTests.swift",
+    "bridge_function": "OCCTGeomConvertCurveToAnalytical",
+    "bridge_output": {
+      "type": "curve",
+      "data": "both spellings give the same circle"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": "half-circle BSpline [0, pi]: Geom_Circle, newFirst 0, newLast 3.1415926535897922, gap 3.6e-15; from 1e-3: newLast 3.1406921694287426"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift toAnalyticalWithGap starts its range 1e-3 late",
+    "red": "AnalyticalConversionContractTests.swift:135 Self.dist(plain.point(at: u), ranged.curve.point(at: u)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analytical-contract/transcript.txt"
+  },
+  {
+    "test_name": "Analytical conversion contract (#492)::Full-range curve spelling agrees with the explicit-range spelling",
+    "test_file": "Tests/OCCTCurveTests/AnalyticalConversionContractTests.swift",
+    "bridge_function": "OCCTGeomConvertCurveToAnalytical",
+    "bridge_output": {
+      "type": "range",
+      "data": "identical newFirst/newLast/gap for both spellings; freeform nil for both"
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": "newLast 3.1415926535897922 over the full range vs 3.1406921694287426 from 1e-3; freeform ok=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift toAnalyticalWithGap starts its range 1e-3 late",
+    "red": "AnalyticalConversionContractTests.swift:160 full.newLast == explicit.newLast",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analytical-contract/transcript.txt"
+  },
+  {
+    "test_name": "Analytical conversion contract (#492)::Both surface spellings agree on success and on geometry",
+    "test_file": "Tests/OCCTCurveTests/AnalyticalConversionContractTests.swift",
+    "bridge_function": "OCCTGeomConvertSurfToAnalytical",
+    "bridge_output": {
+      "type": "surface",
+      "data": "BSpline plane -> plane, cylinder -> cylinder, freeform -> nil for both spellings"
+    },
+    "kernel_output": {
+      "type": "surface",
+      "data": "Geom_Plane gap 0; Geom_CylindricalSurface gap 0; freeform ok=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift Surface.toAnalytical returns self unconverted",
+    "red": "AnalyticalConversionContractTests.swift:181 (plain == nil) == (withGap == nil)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analytical-contract/transcript.txt"
+  },
+  {
+    "test_name": "Analytical conversion contract (#492)::Already-analytical inputs convert rather than being rejected",
+    "test_file": "Tests/OCCTCurveTests/AnalyticalConversionContractTests.swift",
+    "bridge_function": "OCCTGeomConvertCurveToAnalytical",
+    "bridge_output": {
+      "type": "result",
+      "data": "circle converts; cylinder converts with gap 0"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": "circle ok=1 gap 0; cylinder ok=1 gap 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "both conversions report failure",
+    "red": "AnalyticalConversionContractTests.swift:201 circle.toAnalytical(tolerance: 1e-4) != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analytical-contract/transcript.txt"
+  },
+  {
+    "test_name": "Analytical conversion contract (#492)::Freeform inputs are rejected by every spelling",
+    "test_file": "Tests/OCCTCurveTests/AnalyticalConversionContractTests.swift",
+    "bridge_function": "OCCTGeomConvertCurveToAnalytical",
+    "bridge_output": {
+      "type": "result",
+      "data": "nil for every spelling"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": "freeform curve ok=0 at 1e-4 and 1e-6; freeform surface ok=0 at 1e-4, 1e-6 and on [0,1]x[0,1]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift toAnalytical returns self unconverted",
+    "red": "AnalyticalConversionContractTests.swift:219 curve.toAnalytical(tolerance: 1e-6) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analytical-contract/transcript.txt"
+  },
+  {
+    "test_name": "Analytical conversion contract (#492)::UV-bounded conversion recognizes a plane over full bounds and over a sub-range",
+    "test_file": "Tests/OCCTCurveTests/AnalyticalConversionContractTests.swift",
+    "bridge_function": "OCCTGeomConvertSurfToAnalyticalBounded",
+    "bridge_output": {
+      "type": "surface",
+      "data": "plane over full and middle-half bounds, gap < 1e-3"
+    },
+    "kernel_output": {
+      "type": "surface",
+      "data": "full bounds: Geom_Plane gap 0; middle half: Geom_Plane gap 9.9e-16"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "both conversions report failure",
+    "red": "AnalyticalConversionContractTests.swift:249 full != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analytical-contract/transcript.txt"
+  },
+  {
+    "test_name": "Analytical conversion contract (#492)::UV-bounded conversion rejects inverted bounds instead of trapping",
+    "test_file": "Tests/OCCTCurveTests/AnalyticalConversionContractTests.swift",
+    "bridge_function": "OCCTGeomConvertSurfToAnalyticalBounded",
+    "bridge_output": {
+      "type": "result",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": "threw Standard_Failure: Geom_BSplineSurface::Segment (caught in the bridge, reported as failure)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "bridge swaps inverted UV bounds into order",
+    "red": "AnalyticalConversionContractTests.swift:274 bspline.toAnalyticalWithGap(... inverted ...) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analytical-contract/transcript.txt"
+  },
+  {
+    "test_name": "Analytical conversion contract (#492)::Explicit sub-range reparameterizes the recognized curve",
+    "test_file": "Tests/OCCTCurveTests/AnalyticalConversionContractTests.swift",
+    "bridge_function": "OCCTGeomConvertCurveToAnalytical",
+    "bridge_output": {
+      "type": "range",
+      "data": "newFirst 0, newLast 3.0646505987751356 (within 1e-9), radius 5 at mid"
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": "Geom_Circle, newFirst 0, newLast 3.0646505987751356, gap 2.7e-15"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "newLast set to newFirst",
+    "red": "AnalyticalConversionContractTests.swift:304 result.newLast - result.newFirst > 0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analytical-contract/transcript.txt",
+    "note": "Pinned newFirst/newLast to the kernel's values"
+  },
+  {
+    "test_name": "Batch Curve3D Evaluation::Evaluate grid on circle",
+    "test_file": "Tests/OCCTCurveTests/BatchCurve3DTests.swift",
+    "bridge_function": "OCCTCurve3DEvaluateGrid",
+    "bridge_output": {
+      "type": "points",
+      "data": "(5cos u, 5sin u, 0) at u = k pi/4, k = 0..7 (within 1e-10)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "GeomGridEval_Curve::EvaluateGrid, identical to Geom_Curve::D0 at all 8 parameters"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "results written in reverse order",
+    "red": "BatchCurve3DTests.swift:23 abs(p.x - 5 * cos(u)) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt",
+    "note": "Rewritten: checked only the first sample"
+  },
+  {
+    "test_name": "Batch Curve3D Evaluation::Evaluate grid D1 on circle",
+    "test_file": "Tests/OCCTCurveTests/BatchCurve3DTests.swift",
+    "bridge_function": "OCCTCurve3DEvaluateGridD1",
+    "bridge_output": {
+      "type": "points",
+      "data": "u=0: (5,0,0), (0,5,0); u=pi/2: (0,5,0), (-5,0,0)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "u=0: p=(5,0,0) d1=(-0,5,0); u=pi/2: p=(3.1e-16,5,0) d1=(-5,3.1e-16,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "D1.Y negated",
+    "red": "BatchCurve3DTests.swift:40 simd_distance(results[0].tangent, SIMD3(0, 5, 0)) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt",
+    "note": "Rewritten: checked the first tangent's x and y only"
+  },
+  {
+    "test_name": "Batch Curve3D Evaluation::Grid matches individual evaluation",
+    "test_file": "Tests/OCCTCurveTests/BatchCurve3DTests.swift",
+    "bridge_function": "OCCTCurve3DEvaluateGrid",
+    "bridge_output": {
+      "type": "points",
+      "data": "13 points equal to point(at:)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "13 points, EvaluateGrid == D0 at every u = 0, 0.5, ..., 6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "results written in reverse order",
+    "red": "BatchCurve3DTests.swift:58 simd_distance(g, p) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Conversion Tests::Cylinder converts to Bezier",
+    "test_file": "Tests/OCCTCurveTests/BezierConversionTests.swift",
+    "bridge_function": "OCCTShapeConvertToBezier",
+    "bridge_output": {
+      "type": "shape",
+      "data": "3 faces (2 Bezier), 17 edges"
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": "ShapeUpgrade_ShapeConvertToBezier: 3 faces (type1 x1, type5 x2), 17 edges (all type5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input shape unconverted",
+    "red": "BezierConversionTests.swift:28 bezier.subShapeCount(ofType: .edge) == 17",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt",
+    "note": "Rewritten: faceCount > 0 and edgeCount > 0 passed an unconverted shape"
+  },
+  {
+    "test_name": "Bezier Conversion Tests::Sphere converts to Bezier",
+    "test_file": "Tests/OCCTCurveTests/BezierConversionTests.swift",
+    "bridge_function": "OCCTShapeConvertToBezier",
+    "bridge_output": {
+      "type": "shape",
+      "data": "1 face, 6 edges"
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": "1 face (type3, sphere kept), 6 edges (type5 x4, type8 x2)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input shape unconverted",
+    "red": "BezierConversionTests.swift:40 bezier.subShapeCount(ofType: .edge) == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt",
+    "note": "Rewritten: faceCount > 0 passed an unconverted shape"
+  },
+  {
+    "test_name": "Bezier Conversion Tests::Box converts to Bezier",
+    "test_file": "Tests/OCCTCurveTests/BezierConversionTests.swift",
+    "bridge_function": "OCCTShapeConvertToBezier",
+    "bridge_output": {
+      "type": "shape",
+      "data": "6 Bezier faces, 12 Bezier edges"
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": "6 faces all type5, 12 edges all type5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input shape unconverted",
+    "red": "BezierConversionTests.swift:54 Self.faceTypes(bezier) == Array(repeating: 5, count: 6)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt",
+    "note": "Rewritten: 6 faces and 12 edges also describe the unconverted box"
+  },
+  {
+    "test_name": "Bezier Conversion Tests::Cone converts to Bezier",
+    "test_file": "Tests/OCCTCurveTests/BezierConversionTests.swift",
+    "bridge_function": "OCCTShapeConvertToBezier",
+    "bridge_output": {
+      "type": "shape",
+      "data": "3 faces (2 Bezier), 17 edges"
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": "3 faces (type2 x1, type5 x2), 17 edges (all type5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input shape unconverted",
+    "red": "BezierConversionTests.swift:68 bezier.subShapeCount(ofType: .edge) == 17",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt",
+    "note": "Rewritten: faceCount > 0 passed an unconverted shape"
+  },
+  {
+    "test_name": "BSpline Bezier Patch Grid::BSpline surface decomposes to Bezier patches",
+    "test_file": "Tests/OCCTCurveTests/BezierPatchGridTests.swift",
+    "bridge_function": "OCCTSurfaceBSplineToBezierPatches",
+    "bridge_output": {
+      "type": "grid",
+      "data": "1 x 1, patch(0.3,0.4) = (9, 12, 0.80424)"
+    },
+    "kernel_output": {
+      "type": "grid",
+      "data": "GeomConvert_BSplineSurfaceToBezierSurface: 1 x 1, 4x4 poles, patch(0.3,0.4) = surface(0.3,0.4) = (9, 12, 0.80423999999999995)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "NbUPatches reported one too many",
+    "red": "BezierPatchGridTests.swift:39 grid.uCount == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt",
+    "note": "Rewritten: `if let` and >= 1 bounds"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::SetNotPeriodic on non-periodic curve",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineSetNotPeriodic",
+    "bridge_output": {
+      "type": "curve",
+      "data": "not periodic, knots 0x4 1x4, end (10,0,0)"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": "periodic=0, knotSeq 0 0 0 0 1 1 1 1, end (10,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "SetPeriodic called instead",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:34 !curve.isPeriodic",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::IncreaseMultiplicity",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineIncreaseMultiplicity",
+    "bridge_output": {
+      "type": "knots",
+      "data": [
+        0,
+        0,
+        0,
+        0,
+        0.5,
+        0.5,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "kernel_output": {
+      "type": "knots",
+      "data": [
+        0,
+        0,
+        0,
+        0,
+        0.5,
+        0.5,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IncreaseMultiplicity skipped",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:46 Self.near(curve.bsplineKnotSequence(), [0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1])",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::IncrementMultiplicity",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineIncrementMultiplicity",
+    "bridge_output": {
+      "type": "knots",
+      "data": [
+        0,
+        0,
+        0,
+        0,
+        0.3,
+        0.3,
+        0.7,
+        0.7,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "kernel_output": {
+      "type": "knots",
+      "data": [
+        0,
+        0,
+        0,
+        0,
+        0.3,
+        0.3,
+        0.7,
+        0.7,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IncrementMultiplicity skipped",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:56 Self.near(curve.bsplineKnotSequence(), [0, 0, 0, 0, 0.3, 0.3, 0.7, 0.7, 1, 1, 1, 1])",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::Reverse parameterization",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineReverse",
+    "bridge_output": {
+      "type": "points",
+      "data": "start (10,0,0), end (0,0,0)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "start (10,0,0), end (0,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Reverse skipped",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:66 simd_distance(curve.startPoint, SIMD3(10, 0, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::SetKnots batch",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineSetKnots",
+    "bridge_output": {
+      "type": "knots",
+      "data": "domain [0, 2], knots 0x4 2x4"
+    },
+    "kernel_output": {
+      "type": "knots",
+      "data": "domain [0, 2], knotSeq 0 0 0 0 2 2 2 2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "SetKnots skipped",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:75 curve.domain == 0...2",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::SetKnot single index",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineSetKnot",
+    "bridge_output": {
+      "type": "knots",
+      "data": "domain [-1, 3]"
+    },
+    "kernel_output": {
+      "type": "knots",
+      "data": "domain [-1, 3], knotSeq -1 -1 -1 -1 3 3 3 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "SetKnot skipped",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:87 Self.near(seq, [-1, -1, -1, -1, 3, 3, 3, 3])",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::SetOrigin fails on non-periodic",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineSetOrigin",
+    "bridge_output": {
+      "type": "bool",
+      "data": false
+    },
+    "kernel_output": {
+      "type": "exception",
+      "data": "SetOrigin(1) threw Geom_BSplineCurve::SetOrigin"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "report success without calling SetOrigin on a non-periodic curve",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:95 !curve.bsplineSetOrigin(index: 1)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::MovePointAndTangent",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineMovePointAndTangent",
+    "bridge_output": {
+      "type": "bool",
+      "data": "false, curve unchanged, C(0.5)=(5,3.75,0)"
+    },
+    "kernel_output": {
+      "type": "status",
+      "data": "errorStatus 2, C(0.5)=(5, 3.75, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "errorStatus test inverted",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:110 !r",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::MovePointAndTangent with unordered independent conditions",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineMovePointAndTangent",
+    "bridge_output": {
+      "type": "bool",
+      "data": "true, C(0.5) = target within 1e-9"
+    },
+    "kernel_output": {
+      "type": "status",
+      "data": "errorStatus 0, C(0.5)=(5.0000000000000009, 10.000000000000002, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "errorStatus test inverted",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:126 r",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt"
+  },
+  {
+    "test_name": "BSplineCurve3D LocalD v129::LocalD0 matches LocalValue",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DLocalDTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineLocalD0",
+    "bridge_output": {
+      "type": "point",
+      "data": [
+        0.07210645169493488,
+        0.9569546020668996,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": [
+        0.07210645169493488,
+        0.9569546020668996,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "LocalD0 y + 0.5 (and separately LocalValue x + 0.5)",
+    "red": "BSplineCurve3DLocalDTests.swift:39 Self.near(val, d0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Strengthened: pinned to the kernel point, not only to each other"
+  },
+  {
+    "test_name": "BSplineCurve3D LocalD v129::LocalD1 returns point + tangent",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DLocalDTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineLocalD1",
+    "bridge_output": {
+      "type": "vector",
+      "data": [
+        0.2477669679230789,
+        1.5575211306967534,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "vector",
+      "data": [
+        0.2477669679230789,
+        1.5575211306967534,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "LocalD1 V1.x + 0.5",
+    "red": "BSplineCurve3DLocalDTests.swift:50 Self.near(result.d1, Self.d1)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Rewritten: asserted only |d1| > 0.01"
+  },
+  {
+    "test_name": "BSplineCurve3D LocalD v129::LocalD2 returns curvature information",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DLocalDTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineLocalD2",
+    "bridge_output": {
+      "type": "vector",
+      "data": [
+        0.395452364913007,
+        -1.353239504689607,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "vector",
+      "data": [
+        0.395452364913007,
+        -1.353239504689607,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "LocalD2 V2.y + 0.5",
+    "red": "BSplineCurve3DLocalDTests.swift:60 Self.near(result.d2, Self.d2)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Rewritten: never checked d2"
+  },
+  {
+    "test_name": "BSplineCurve3D LocalD v129::LocalD3 returns all derivatives",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DLocalDTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineLocalD3",
+    "bridge_output": {
+      "type": "vector",
+      "data": [
+        -0.11258335931896467,
+        0.43387673435137636,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "vector",
+      "data": [
+        -0.11258335931896467,
+        0.43387673435137636,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "LocalD3 V3.y + 0.5",
+    "red": "BSplineCurve3DLocalDTests.swift:71 Self.near(result.d3, Self.d3)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Rewritten: never checked d2 or d3"
+  },
+  {
+    "test_name": "BSplineCurve3D LocalD v129::LocalDN matches D1 for n=1",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DLocalDTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineLocalDN",
+    "bridge_output": {
+      "type": "vector",
+      "data": [
+        0.2477669679230789,
+        1.5575211306967534,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "vector",
+      "data": [
+        0.2477669679230789,
+        1.5575211306967534,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "LocalDN y + 0.5",
+    "red": "BSplineCurve3DLocalDTests.swift:80 Self.near(dn1, d1result.d1)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::StartPoint and EndPoint",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierStartPoint",
+    "bridge_output": {
+      "type": "points",
+      "data": "(0,0,0), (2,0,0)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "StartPoint (0,0,0), EndPoint (2,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "StartPoint and EndPoint swapped",
+    "red": "BezierCurve3DCompletionTests.swift:24 simd_distance(c.bezierStartPoint, SIMD3(0, 0, 0)) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt",
+    "note": "Rewritten: `if let` body, x only"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::GetPoles bulk",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierGetPoles",
+    "bridge_output": {
+      "type": "points",
+      "data": "(0,0,0) (1,2,0) (2,0,0)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "(0,0,0) (1,2,0) (2,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "each pole's Y written into X",
+    "red": "BezierCurve3DCompletionTests.swift:32 p == Self.open",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt",
+    "note": "Rewritten: `if let` body, x only"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::GetWeights returns nil for non-rational",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierGetWeights",
+    "bridge_output": {
+      "type": "weights",
+      "data": null
+    },
+    "kernel_output": {
+      "type": "weights",
+      "data": "Geom_BezierCurve::Weights() is nullptr for the non-rational curve"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "report all-1.0 weights for a non-rational curve",
+    "red": "BezierCurve3DCompletionTests.swift:39 c.bezierWeights == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt",
+    "note": "Rewritten: accepted nil or all-1.0, and `if let` hid a nil curve"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::GetWeights returns values for rational",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierGetWeights",
+    "bridge_output": {
+      "type": "weights",
+      "data": [
+        1,
+        2,
+        1
+      ]
+    },
+    "kernel_output": {
+      "type": "weights",
+      "data": [
+        1,
+        2,
+        1
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Weights() treated as null",
+    "red": "BezierCurve3DCompletionTests.swift:48 c.bezierWeights == [1.0, 2.0, 1.0]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::IsClosed for open curve",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierIsClosed",
+    "bridge_output": {
+      "type": "bool",
+      "data": false
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsClosed() negated",
+    "red": "BezierCurve3DCompletionTests.swift:54 !c.bezierIsClosed",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::IsClosed for closed curve",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierIsClosed",
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsClosed() negated",
+    "red": "BezierCurve3DCompletionTests.swift:67 c.bezierIsClosed",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::IsPeriodic always false for Bezier",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierIsPeriodic",
+    "bridge_output": {
+      "type": "bool",
+      "data": false
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsPeriodic() negated",
+    "red": "BezierCurve3DCompletionTests.swift:73 !c.bezierIsPeriodic",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::Continuity is CN for Bezier",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierContinuity",
+    "bridge_output": {
+      "type": "int",
+      "data": 6
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 6
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Continuity() - 1",
+    "red": "BezierCurve3DCompletionTests.swift:79 c.bezierContinuity == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::IsCN always true for Bezier",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierIsCN",
+    "bridge_output": {
+      "type": "bool",
+      "data": "true for 0, 1, 10"
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": "IsCN(0)=1 IsCN(1)=1 IsCN(10)=1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsCN() negated",
+    "red": "BezierCurve3DCompletionTests.swift:85 c.bezierIsCN(0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::degreeAndPoleCount",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierDegree",
+    "bridge_output": {
+      "type": "int",
+      "data": "degree 3, 4 poles"
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": "degree 3, NbPoles 4"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Degree() + 1",
+    "red": "BezierCurveManipulationTests.swift:29 bez.bezier.degree == 3",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::isRational",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierIsRational",
+    "bridge_output": {
+      "type": "bool",
+      "data": false
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsRational() negated",
+    "red": "BezierCurveManipulationTests.swift:35 !bez.bezier.isRational",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::getPole",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierGetPole",
+    "bridge_output": {
+      "type": "points",
+      "data": "(0,0,0) (3,5,0) (7,5,0) (10,0,0)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "(0,0,0) (3,5,0) (7,5,0) (10,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "index + 1 read",
+    "red": "BezierCurveManipulationTests.swift:41 Self.near(bez.bezier.pole(at: i + 1), p)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt",
+    "note": "Strengthened: all four poles, not pole 1 alone"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::setPole",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierSetPole",
+    "bridge_output": {
+      "type": "points",
+      "data": "(0,0,0) (3,8,0) (7,5,0)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "(0,0,0) (3,8,0) (7,5,0) (10,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "SetPole skipped",
+    "red": "BezierCurveManipulationTests.swift:48 Self.near(bez.bezier.pole(at: 2), SIMD3(3, 8, 0))",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::segment",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierSegment",
+    "bridge_output": {
+      "type": "points",
+      "data": "(2.40625,2.8125,0) (4.09375,4.0625,0) (5.90625,4.0625,0) (7.59375,2.8125,0)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "(2.40625,2.8125,0) (4.09375,4.0625,0) (5.90625,4.0625,0) (7.59375,2.8125,0); S(0.5)=(5,3.75)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Segment skipped",
+    "red": "BezierCurveManipulationTests.swift:58 Self.near(bez.bezier.pole(at: 1), SIMD3(2.40625, 2.8125, 0))",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::increaseDegree",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierIncreaseDegree",
+    "bridge_output": {
+      "type": "curve",
+      "data": "degree 5, 6 poles, pole 2 (1.8,3,0), C(0.3)=(2.916,3.15,0)"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": "degree 5, 6 poles, pole 2 (1.8,3,0), C(0.3)=(2.9160000000000008, 3.1499999999999999)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Increase skipped",
+    "red": "BezierCurveManipulationTests.swift:68 bez.bezier.degree == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::insertPoleAfter",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierInsertPoleAfter",
+    "bridge_output": {
+      "type": "curve",
+      "data": "5 poles, degree 4, pole 3 (5,6,0)"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": "degree 4, 5 poles: (0,0,0) (3,5,0) (5,6,0) (7,5,0) (10,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "InsertPoleAfter skipped",
+    "red": "BezierCurveManipulationTests.swift:78 bez.bezier.poleCount == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::removePole",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierRemovePole",
+    "bridge_output": {
+      "type": "curve",
+      "data": "4 poles, pole 3 (7,5,0)"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": "degree 3, 4 poles: (0,0,0) (3,5,0) (7,5,0) (10,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "RemovePole skipped",
+    "red": "BezierCurveManipulationTests.swift:91 bez.bezier.poleCount == 4",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::setWeight",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierSetWeight",
+    "bridge_output": {
+      "type": "weights",
+      "data": [
+        1,
+        2,
+        1,
+        1
+      ]
+    },
+    "kernel_output": {
+      "type": "weights",
+      "data": "rational, weights 1 2 1 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "SetWeight skipped",
+    "red": "BezierCurveManipulationTests.swift:98 bez.bezier.isRational",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
+  },
+  {
+    "test_name": "BiTgte CurveOnEdge v0.112::createFromEdges",
+    "test_file": "Tests/OCCTCurveTests/BiTgteCurveOnEdgeTests.swift",
+    "bridge_function": "OCCTBiTgteCurveOnEdgeDomain",
+    "bridge_output": {
+      "type": "range",
+      "data": [
+        0,
+        10
+      ]
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": [
+        0,
+        10
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "LastParameter + 1",
+    "red": "BiTgteCurveOnEdgeTests.swift:36 c.domain == 0...10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bitgte-pcurve-approx/transcript.txt",
+    "note": "Rewritten: checked only that the bounds were finite"
+  },
+  {
+    "test_name": "BiTgte CurveOnEdge v0.112::evaluatePoint",
+    "test_file": "Tests/OCCTCurveTests/BiTgteCurveOnEdgeTests.swift",
+    "bridge_function": "OCCTBiTgteCurveOnEdgeValue",
+    "bridge_output": {
+      "type": "point",
+      "data": [
+        -5,
+        -5,
+        5
+      ]
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": "(-5, -5, 5) at first, mid and last: the shared vertex"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "D0 z + 1",
+    "red": "BiTgteCurveOnEdgeTests.swift:43 simd_distance(curve.point(at: mid), SIMD3(-5, -5, 5)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bitgte-pcurve-approx/transcript.txt",
+    "note": "Rewritten: checked only that the point was finite"
+  },
+  {
+    "test_name": "BiTgte CurveOnEdge v0.112::domainIsValid",
+    "test_file": "Tests/OCCTCurveTests/BiTgteCurveOnEdgeTests.swift",
+    "bridge_function": "OCCTBiTgteCurveOnEdgeDomain",
+    "bridge_output": {
+      "type": "range",
+      "data": [
+        0,
+        10
+      ]
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": [
+        0,
+        10
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "LastParameter + 1",
+    "red": "BiTgteCurveOnEdgeTests.swift:49 abs(curve.domain.upperBound - curve.domain.lowerBound - 10) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bitgte-pcurve-approx/transcript.txt",
+    "note": "Rewritten: upper >= lower held for any domain"
+  },
+  {
+    "test_name": "BiTgte CurveOnEdge v0.112::sameEdgeCreation",
+    "test_file": "Tests/OCCTCurveTests/BiTgteCurveOnEdgeTests.swift",
+    "bridge_function": "OCCTBiTgteCurveOnEdgeValue",
+    "bridge_output": {
+      "type": "point",
+      "data": [
+        -5,
+        -5,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": "domain [0, 10], D0(5) = (-5, -5, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "D0 z + 1 (and LastParameter + 1)",
+    "red": "BiTgteCurveOnEdgeTests.swift:61 simd_distance(c.point(at: 5), SIMD3(-5, -5, 0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bitgte-pcurve-approx/transcript.txt",
+    "note": "Rewritten: checked only a finite lower bound"
+  },
+  {
+    "test_name": "BRepAdaptor PCurve::PCurve params on box face",
+    "test_file": "Tests/OCCTCurveTests/BRepAdaptorPCurveTests.swift",
+    "bridge_function": "OCCTEdgePCurveParams",
+    "bridge_output": {
+      "type": "range",
+      "data": [
+        0,
+        30
+      ]
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": "BRepAdaptor_Curve2d(edges[0], faces[0]) range [0, 30]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "LastParameter halved",
+    "red": "BRepAdaptorPCurveTests.swift:36 params.last == 30",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bitgte-pcurve-approx/transcript.txt",
+    "note": "Rewritten: any increasing range passed"
+  },
+  {
+    "test_name": "BRepAdaptor PCurve::PCurve value evaluation",
+    "test_file": "Tests/OCCTCurveTests/BRepAdaptorPCurveTests.swift",
+    "bridge_function": "OCCTEdgePCurveValue",
+    "bridge_output": {
+      "type": "uv",
+      "data": [
+        15,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "uv",
+      "data": [
+        15,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "u reported as v",
+    "red": "BRepAdaptorPCurveTests.swift:48 abs(uv.x - 15) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bitgte-pcurve-approx/transcript.txt",
+    "note": "Rewritten: ended in #expect(Bool(true)), could not fail"
+  },
+  {
+    "test_name": "BSplineApproxInterp, Constrained Least-Squares Fitting::basicApproximation",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpMaxError",
+    "bridge_output": {
+      "type": "fit",
+      "data": "maxError 2.2151330264909389e-4, domain [0, 1], (1,0,0) -> (1,0,0.2 pi)"
+    },
+    "kernel_output": {
+      "type": "fit",
+      "data": "PointsToBSpline deg 8, 9 poles, maxError 0.00022151330264909389"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "maxError doubled plus 1e-6 (and, separately, done = false)",
+    "red": "BSplineApproxInterpTests.swift:31 abs(solver.maxError - 0.00022151330264909389) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bitgte-pcurve-approx/transcript.txt",
+    "note": "Rewritten: maxError >= 0 and domain != nil could not fail"
+  },
+  {
+    "test_name": "BSplineApproxInterp, Constrained Least-Squares Fitting::withInterpolationConstraints",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpMaxError",
+    "bridge_output": {
+      "type": "fit",
+      "data": "maxError 2.7501864739553364e-4"
+    },
+    "kernel_output": {
+      "type": "fit",
+      "data": "deg 8, 21 poles, maxError 0.00027501864739553364; interpolatePoint is a documented no-op"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "maxError doubled plus 1e-6 (and, separately, done = false)",
+    "red": "BSplineApproxInterpTests.swift:57 abs(solver.maxError - 0.00027501864739553364) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bitgte-pcurve-approx/transcript.txt"
+  },
+  {
+    "test_name": "BSplineApproxInterp, Constrained Least-Squares Fitting::performOptimal",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpPerformOptimal",
+    "bridge_output": {
+      "type": "fit",
+      "data": "maxError 4.5471476354564305e-4, (0,0,0) -> (1,1,0)"
+    },
+    "kernel_output": {
+      "type": "fit",
+      "data": "deg 5, 6 poles, maxError 0.00045471476354564305"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "maxError doubled plus 1e-6 (and, separately, done = false)",
+    "red": "BSplineApproxInterpTests.swift:72 abs(solver.maxError - 0.00045471476354564305) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bitgte-pcurve-approx/transcript.txt",
+    "note": "Rewritten: domain != nil could not fail"
+  },
+  {
+    "test_name": "BSplineApproxInterp, Constrained Least-Squares Fitting::setters",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpSetProjectionTol",
+    "bridge_output": {
+      "type": "fit",
+      "data": "maxError 0, (1,0,0) -> (10,0,0)"
+    },
+    "kernel_output": {
+      "type": "fit",
+      "data": "tol3D min(1e-4, 1e-7): deg 3, 4 poles, maxError 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "maxError doubled plus 1e-6 (and, separately, done = false)",
+    "red": "BSplineApproxInterpTests.swift:99 solver.maxError < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bitgte-pcurve-approx/transcript.txt"
+  },
+  {
+    "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::The 3D fit tolerance does change the fitted curve",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpSetConvergenceTol",
+    "bridge_output": {
+      "type": "double",
+      "data": "fits at 1e-1 and 1e-8 differ"
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": "maxDeviation(1e-1 fit, 1e-8 fit) = 0.15018794079369741 (deg 4/5 poles vs deg 3/26 poles)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "setConvergenceTolerance made a no-op",
+    "red": "BSplineApproxInterpContractTests.swift:58 Self.maxDeviation(a, b) > 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+  },
+  {
+    "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::setParametrizationAlpha / setMinPivot / setClosedTolerance / setKnotInsertionTolerance are no-ops",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpSetClosedTol",
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": "the setters never reach GeomAPI_PointsToBSpline: the same call twice, maxDeviation 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "setClosedTolerance wired to the fit tolerance",
+    "red": "BSplineApproxInterpContractTests.swift:80 Self.maxDeviation(a, b) == 0.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt",
+    "note": "A first injection, setMinPivot(1e-3) setting the fit tolerance, stayed green because 1e-3 is already the default tolerance"
+  },
+  {
+    "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::interpolatePoint is a no-op, with or without a kink",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpInterpolatePoint",
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": "same PointsToBSpline call twice, maxDeviation 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "interpolatePoint nudges the constrained point by 0.01 in z",
+    "red": "BSplineApproxInterpContractTests.swift:99 Self.maxDeviation(a, b) == 0.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+  },
+  {
+    "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::performOptimal matches perform and ignores maxIterations",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpPerformOptimal",
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": "same PointsToBSpline call, maxDeviation 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "maxIterations <= 1 loosens the fit tolerance to 1e-1",
+    "red": "BSplineApproxInterpContractTests.swift:117 Self.maxDeviation(a, b) == 0.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+  },
+  {
+    "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::nbControlPoints and continuousIfClosed are advisory",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpCreate",
+    "bridge_output": {
+      "type": "int",
+      "data": "same pole count for 4 and 40 requested"
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": "default fit degree 8, 9 poles, whatever is requested"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "nbControlPoints caps the maximum degree",
+    "red": "BSplineApproxInterpContractTests.swift:138 Self.maxDeviation(a, b) == 0.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+  },
+  {
+    "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::setConvergenceTolerance and setProjectionTolerance drive one shared tolerance",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpSetProjectionTol",
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": "both orders reach tol3D 1e-8: maxDeviation 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "setProjectionTolerance assigns instead of taking the minimum",
+    "red": "BSplineApproxInterpContractTests.swift:166 Self.maxDeviation(a, b) == 0.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+  },
+  {
+    "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::maxError is the worst back-projection distance from an input point to the fit",
+    "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
+    "bridge_function": "OCCTBSplineApproxInterpMaxError",
+    "bridge_output": {
+      "type": "double",
+      "data": "within the sampled bound of the true projection distance"
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": "tol3D 1e-6: degree 8, 15 poles, max projection distance 5.3473650477313526e-07"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "maxError doubled plus 1e-6",
+    "red": "BSplineApproxInterpContractTests.swift:208 abs(solver.maxError - 5.3473650477313526e-07) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::knotCount",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineKnotCount",
+    "bridge_output": {
+      "type": "value",
+      "data": "5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "NbKnots 5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "NbKnots() + 1",
+    "red": "BSplineCurve3DManipulationTests.swift:38 bsp.bspline.knotCount == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: knotCount > 0"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::poleCount",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplinePoleCount",
+    "bridge_output": {
+      "type": "value",
+      "data": "7"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "NbPoles 7"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "NbPoles() + 1",
+    "red": "BSplineCurve3DManipulationTests.swift:43 bsp.bspline.poleCount == 7",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: poleCount >= 5"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::degree",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": "3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Degree 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Degree() + 1",
+    "red": "BSplineCurve3DManipulationTests.swift:48 bsp.bspline.degree == 3",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: degree >= 1"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::isRational",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineIsRational",
+    "bridge_output": {
+      "type": "value",
+      "data": "false"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "IsRational 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsRational() negated",
+    "red": "BSplineCurve3DManipulationTests.swift:54 !bsp.bspline.isRational",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: asserted nothing"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::knotsArray",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineGetKnots",
+    "bridge_output": {
+      "type": "value",
+      "data": "[0, 3.6055512754639891, 7.2111025509279782, 10.816653826391967, 14.422205101855956]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "[0, 3.6055512754639891, 7.2111025509279782, 10.816653826391967, 14.422205101855956]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "knots doubled",
+    "red": "BSplineCurve3DManipulationTests.swift:59 Self.near(bsp.bspline.knots, Self.knots)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: count > 0 and last > first"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::multiplicities",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineGetMults",
+    "bridge_output": {
+      "type": "value",
+      "data": "[4,1,1,1,4]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "mults 4 1 1 1 4"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "multiplicities + 1",
+    "red": "BSplineCurve3DManipulationTests.swift:64 bsp.bspline.multiplicities == [4, 1, 1, 1, 4]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: count > 0 and first > 0"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::getPole",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineGetPole",
+    "bridge_output": {
+      "type": "value",
+      "data": "poles 1, 2, 7"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "(0,0,0) (0.38888888888888895, 0.83333333333333337, 0) ... (10,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "index + 1 read",
+    "red": "BSplineCurve3DManipulationTests.swift:69 Self.near(bsp.bspline.pole(at: 1), SIMD3(0, 0, 0))",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: |x| < 1.0 on pole 1"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::setPole",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineSetPole",
+    "bridge_output": {
+      "type": "value",
+      "data": "(5,7,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Pole(3) = (5, 7, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "SetPole skipped",
+    "red": "BSplineCurve3DManipulationTests.swift:78 Self.near(bsp.bspline.pole(at: 3), SIMD3(5, 7, 0))",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::getAndSetWeight",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineGetWeight",
+    "bridge_output": {
+      "type": "value",
+      "data": "1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Weight(1) = 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Weight() + 0.5",
+    "red": "BSplineCurve3DManipulationTests.swift:83 bsp.bspline.weight(at: 1) == 1.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::insertKnot",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineInsertKnot",
+    "bridge_output": {
+      "type": "value",
+      "data": "5 knots, mults [4,1,2,1,4], 8 poles"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "InsertKnot(mid): nbKnots 5, mults 4 1 2 1 4, nbPoles 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "InsertKnot skipped",
+    "red": "BSplineCurve3DManipulationTests.swift:93 bsp.bspline.multiplicities == [4, 1, 2, 1, 4]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: knotCount >= before passed a skipped insert"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::segment",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineSegment",
+    "bridge_output": {
+      "type": "value",
+      "data": "domain [3.6055512754639891, 10.816653826391967], 5 poles, (2,3,0) -> (8,3,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "same"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Segment skipped",
+    "red": "BSplineCurve3DManipulationTests.swift:103 abs(bsp.domain.lowerBound - 3.6055512754639891) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::increaseDegree",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineIncreaseDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": "degree 4, 11 poles, mults [5,2,2,2,5]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "same"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IncreaseDegree skipped",
+    "red": "BSplineCurve3DManipulationTests.swift:114 bsp.bspline.degree == 4",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::resolution",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineResolution",
+    "bridge_output": {
+      "type": "value",
+      "data": "0.00059678090076645284"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Resolution(0.001) = 0.00059678090076645284"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "resolution doubled",
+    "red": "BSplineCurve3DManipulationTests.swift:122 abs(res - 0.00059678090076645284) < 1e-15",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: res > 0"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::setPeriodic",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineSetPeriodic",
+    "bridge_output": {
+      "type": "value",
+      "data": "not periodic, 7 poles, knots unchanged"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "SetNotPeriodic: periodic 0, 7 poles"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "periodic flag inverted",
+    "red": "BSplineCurve3DManipulationTests.swift:129 !bsp.isPeriodic",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "BSpline Curve 3D Manipulation Tests::removeKnot",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineRemoveKnot",
+    "bridge_output": {
+      "type": "value",
+      "data": "true, 4 knots, mults [4,2,1,4], 7 poles"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "RemoveKnot(2, 0, 1.0) = 1, nbKnots 4, mults 4 2 1 4, nbPoles 7"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "report success without removing",
+    "red": "BSplineCurve3DManipulationTests.swift:141 bsp.bspline.knotCount == 4",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-manip/transcript.txt",
+    "note": "Rewritten: asserted nothing"
+  },
+  {
+    "test_name": "v0.143 Circle property extraction::Cylindrical face exposes revolutionProperties with correct radius",
+    "test_file": "Tests/OCCTCurveTests/CirclePropertyTests.swift",
+    "bridge_function": "OCCTFaceGetPrimaryAxis (radius computed in Swift, Face.revolutionProperties)",
+    "bridge_output": {
+      "type": "value",
+      "data": "5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "cylinder face radius 5, axis (0,0,0) +Z"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: radius scaled by 1.01",
+    "red": "CirclePropertyTests.swift:19 abs(rp.radius - 5.0) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt"
+  },
+  {
+    "test_name": "v0.143 Circle property extraction::Circle through three points recovers correct centre and radius",
+    "test_file": "Tests/OCCTCurveTests/CirclePropertyTests.swift",
+    "bridge_function": "none: pure Swift circleThroughThreePoints",
+    "bridge_output": {
+      "type": "value",
+      "data": "centre (0,0,0), radius 1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gce_MakeCirc through the same points: centre (-7.9e-17, 1.0e-17, 0), radius 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: centre offset by (0.01, 0, 0)",
+    "red": "CirclePropertyTests.swift:36 abs(simd_length(circle.center - SIMD3<Double>(0, 0, 0))) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt",
+    "note": "Swift-side geometry; the kernel counterpart is gce_MakeCirc"
+  },
+  {
+    "test_name": "v0.143 Circle property extraction::Three collinear points → nil circle",
+    "test_file": "Tests/OCCTCurveTests/CirclePropertyTests.swift",
+    "bridge_function": "none: pure Swift circleThroughThreePoints",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gce_MakeCirc: not done, gce_ColinearPoints"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: collinearity guard skipped",
+    "red": "CirclePropertyTests.swift:45 circleThroughThreePoints(p1, p2, p3) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt",
+    "note": "Swift-side geometry; the kernel counterpart is gce_MakeCirc"
+  },
+  {
+    "test_name": "v0.143 Circle property extraction::Edge.circleProperties recovers a full-circle cap edge (#378)",
+    "test_file": "Tests/OCCTCurveTests/CirclePropertyTests.swift",
+    "bridge_function": "OCCTEdgeGetParameterBounds + OCCTEdgeGetPointAtParam (circle recovered in Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": "radius 3, full circle over [0, 2 pi]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "cap circles: radius 3, range [0, 6.2831853071795862]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: isFullCircle inverted (and, separately, centre offset)",
+    "red": "CirclePropertyTests.swift:63 Issue recorded (isFullCircle false for the full cap circle)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt"
+  },
+  {
+    "test_name": "Convert_CompBezierCurvesToBSplineCurve Tests::singleCubicSegment3D",
+    "test_file": "Tests/OCCTCurveTests/CompBezierToBSplineTests.swift",
+    "bridge_function": "OCCTConvertCompBezierToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "degree 3, the four input poles, knots [0,1], mults [4,4]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "degree 3, 4 poles (0,0,0) (1,2,0) (2,2,0) (3,0,0), knots 0 1, mults 4 4"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pole x + 1",
+    "red": "CompBezierToBSplineTests.swift:24 result.poles == seg",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt",
+    "note": "Strengthened: all poles, knots and multiplicities; the old last-pole check force-unwrapped inside #expect"
+  },
+  {
+    "test_name": "Convert_CompBezierCurvesToBSplineCurve Tests::twoCubicSegments3D",
+    "test_file": "Tests/OCCTCurveTests/CompBezierToBSplineTests.swift",
+    "bridge_function": "OCCTConvertCompBezierToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "6 poles, knots [0,0.5,1], mults [4,2,4]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "degree 3, 6 poles (0,0,0) (1,1,0) (2,1,0) (4,-1,0) (5,-1,0) (6,0,0), knots 0 0.5 1, mults 4 2 4"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pole x + 1",
+    "red": "CompBezierToBSplineTests.swift:44 result.poles == [...]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt",
+    "note": "Rewritten: poles.count >= 4 and knots.count >= 2 inside `if let`"
+  },
+  {
+    "test_name": "Convert_CompBezierCurvesToBSplineCurve Tests::emptySegmentsReturnsNil",
+    "test_file": "Tests/OCCTCurveTests/CompBezierToBSplineTests.swift",
+    "bridge_function": "none: Swift guard in CompBezierConverter.toBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected before the kernel is reached"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "No kernel counterpart: the Swift guard rejects the input"
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: empty input returns an empty result instead of nil",
+    "red": "CompBezierToBSplineTests.swift:55 result == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt",
+    "note": "No kernel counterpart: the Swift guard rejects the input"
+  },
+  {
+    "test_name": "Convert_CompBezierCurvesToBSplineCurve Tests::mismatchedSegmentSizesReturnsNil",
+    "test_file": "Tests/OCCTCurveTests/CompBezierToBSplineTests.swift",
+    "bridge_function": "none: Swift guard in CompBezierConverter.toBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected before the kernel is reached"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "No kernel counterpart: the Swift guard rejects the input"
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: segment-size check skipped",
+    "red": "CompBezierToBSplineTests.swift:62 result == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt",
+    "note": "No kernel counterpart: the Swift guard rejects the input"
+  },
+  {
+    "test_name": "Convert_CompBezierCurvesToBSplineCurve Tests::manySegmentsExceedingCapacityReturnsNil",
+    "test_file": "Tests/OCCTCurveTests/CompBezierToBSplineTests.swift",
+    "bridge_function": "OCCTConvertCompBezierToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "60 segments give 122 poles and 61 knots, over the bridge's 100/50 buffer"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "over-capacity result reported as success (empty)",
+    "red": "CompBezierToBSplineTests.swift:80 result == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-circle-compbezier/transcript.txt"
+  },
+  {
+    "test_name": "CompCurve Tests::concatenate3DCurves",
+    "test_file": "Tests/OCCTCurveTests/CompCurveTests.swift",
+    "bridge_function": "OCCTConcatenateCurves3D",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0) -> (2,1,0) over [0, 1 + sqrt 2]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "degree 1, 3 poles, domain [0, 2.4142135623730949], (0,0,0) -> (2,1,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "second curve not added",
+    "red": "CompCurveTests.swift:26 simd_distance(combined.endPoint, SIMD3(2, 1, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-comp-conic-deflection/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "CompCurve Tests::concatenate2DCurves",
+    "test_file": "Tests/OCCTCurveTests/CompCurveTests.swift",
+    "bridge_function": "OCCTConcatenateCurves2D",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0) -> (2,1) over [0, 1 + sqrt 2]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "degree 1, 3 poles, domain [0, 2.4142135623730949], (0,0) -> (2,1)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "second curve not added",
+    "red": "CompCurveTests.swift:42 simd_distance(combined.endPoint, SIMD2(2, 1)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-comp-conic-deflection/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Conical Projection::Project wire onto box from eye point",
+    "test_file": "Tests/OCCTCurveTests/ConicalProjectionTests.swift",
+    "bridge_function": "OCCTShapeProjectWireConical",
+    "bridge_output": {
+      "type": "value",
+      "data": "4 edges, 4 vertices, x in [-4.65, 0], z in [-5.5, -4.5]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepProj_Projection: 4 edges, vertices (-4.65,0,-5.5) (0,0,-5.5) (0,0,-4.5) (-4.35,0,-4.5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "eye z + 5",
+    "red": "ConicalProjectionTests.swift:34 abs(b.min.x + 4.65) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-comp-conic-deflection/transcript.txt",
+    "note": "Rewritten: `_ = result` could not fail"
+  },
+  {
+    "test_name": "Convert Circle Tests::circleArcToBSpline",
+    "test_file": "Tests/OCCTCurveTests/ConvertCircleTests.swift",
+    "bridge_function": "OCCTConvertCircleToBSpline2D",
+    "bridge_output": {
+      "type": "value",
+      "data": "(10,0) -> (-10,0), every sample at radius 10"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "degree 2, 5 poles, domain [0, pi], (10,0) (7.07,7.07) (0,10) (-7.07,7.07) (-10,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "every pole shifted 0.5 in x",
+    "red": "ConvertCircleTests.swift:18 simd_distance(curve.startPoint, SIMD2(10, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-comp-conic-deflection/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Convert Conic Curves Tests::ellipseArc",
+    "test_file": "Tests/OCCTCurveTests/ConvertConicCurvesTests.swift",
+    "bridge_function": "OCCTConvertEllipseToBSpline2D",
+    "bridge_output": {
+      "type": "value",
+      "data": "(20,0) -> (-20,0), samples on x^2/400 + y^2/100 = 1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "degree 2, 5 poles, (20,0) ... (-20,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "every pole shifted 0.5 in x",
+    "red": "ConvertConicCurvesTests.swift:27 simd_distance(curve.startPoint, SIMD2(20, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-comp-conic-deflection/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Convert Conic Curves Tests::hyperbolaArc",
+    "test_file": "Tests/OCCTCurveTests/ConvertConicCurvesTests.swift",
+    "bridge_function": "OCCTConvertHyperbolaToBSpline2D",
+    "bridge_output": {
+      "type": "value",
+      "data": "(10 cosh u, 5 sinh u), u in [-1, 1]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "degree 2, 3 poles, (15.430806348152437, -5.8760059682190064) ... (15.43, 5.876)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "every pole shifted 0.5 in x",
+    "red": "ConvertConicCurvesTests.swift:43 simd_distance(curve.startPoint, SIMD2(10 * cosh(-1.0), 5 * sinh(-1.0))) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-comp-conic-deflection/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Convert Conic Curves Tests::parabolaArc",
+    "test_file": "Tests/OCCTCurveTests/ConvertConicCurvesTests.swift",
+    "bridge_function": "OCCTConvertParabolaToBSpline2D",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0.2,-2) -> (0.2,2), samples on y^2 = 20x"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "degree 2, 3 poles, (0.2,-2) (0.05,-1) (0,0) (0.05,1) (0.2,2)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "every pole shifted 0.5 in x",
+    "red": "ConvertConicCurvesTests.swift:57 simd_distance(curve.startPoint, SIMD2(0.2, -2)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-comp-conic-deflection/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "CPnts UniformDeflection::Uniform deflection on circle edge",
+    "test_file": "Tests/OCCTCurveTests/CPntsUniformDeflectionTests.swift",
+    "bridge_function": "OCCTCPntsUniformDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": "24 points over [0, 2 pi]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "CPnts_UniformDeflection at 0.1: 24 points, params 0 .. 6.2831853071795862"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "deflection x4",
+    "red": "CPntsUniformDeflectionTests.swift:30 result.points.count == 24",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-comp-conic-deflection/transcript.txt",
+    "note": "Rewritten: any count above 4 passed"
+  },
+  {
+    "test_name": "CPnts UniformDeflection::Uniform deflection with range",
+    "test_file": "Tests/OCCTCurveTests/CPntsUniformDeflectionTests.swift",
+    "bridge_function": "OCCTCPntsUniformDeflectionRange",
+    "bridge_output": {
+      "type": "value",
+      "data": "14 points over [0, 3.2361593398235615]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "ranged: 14 points, params 0 .. 3.2361593398235615"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "deflection x4",
+    "red": "CPntsUniformDeflectionTests.swift:43 Issue recorded (full sampling not 24 points)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-comp-conic-deflection/transcript.txt",
+    "note": "Rewritten: any ranged count below the full one passed"
+  },
+  {
+    "test_name": "Curve3D conic factory families agree (#399)::Circle: both families reject zero and negative radius",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConicFactoryParityTests.swift",
+    "bridge_function": "OCCTGceMakeCircFromCenterNormal",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for 0 and -1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gce_MakeCirc radius 0: done=1 (so the bridge's own check is what rejects it); -1: done=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "radius precondition skipped in the gce family",
+    "red": "Curve3DConicFactoryParityTests.swift:26 Curve3D.circleFromCenterNormal(...) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D conic factory families agree (#399)::Ellipse: both families reject zero radii and inverted radii",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConicFactoryParityTests.swift",
+    "bridge_function": "OCCTGceMakeElips",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for all four"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gce_MakeElips (10,0)=1 (0,0)=1 (5,10)=0 (10,-1)=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "radii precondition skipped in the gce family",
+    "red": "Curve3DConicFactoryParityTests.swift:41 Curve3D.ellipseFromCenterNormal(...) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D conic factory families agree (#399)::Hyperbola: both families reject a zero or negative radius",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConicFactoryParityTests.swift",
+    "bridge_function": "OCCTGceMakeHypr",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for all four"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gce_MakeHypr (0,3)=1 (8,0)=1 (0,0)=1 (-8,3)=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "radii precondition skipped in the gce family",
+    "red": "Curve3DConicFactoryParityTests.swift:56 Curve3D.hyperbolaFromCenterNormal(...) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D conic factory families agree (#399)::Parabola: both families reject zero and negative focal length",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConicFactoryParityTests.swift",
+    "bridge_function": "OCCTGceMakeParab",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for 0 and -1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gce_MakeParab focal 0=1 -1=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "focal precondition skipped in the gce family",
+    "red": "Curve3DConicFactoryParityTests.swift:68 Curve3D.parabolaFromCenterNormal(...) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D conic factory families agree (#399)::Valid inputs still build the identical curve in both families",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConicFactoryParityTests.swift",
+    "bridge_function": "OCCTGceMakeElips",
+    "bridge_output": {
+      "type": "value",
+      "data": "identical samples for all four conics"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "direct vs gce max distance 0 for circle, ellipse, hyperbola, parabola"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "gce ellipse moved 0.5 in x",
+    "red": "Curve3DConicFactoryParityTests.swift:101 simd_distance(a.point(at: t), b.point(at: t)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Continuity Tests::lineContinuity",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "6 (CN)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Line::Continuity = 6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Continuity() - 1",
+    "red": "Curve3DContinuityTests.swift:18 line.continuity == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt",
+    "note": "Rewritten: c >= 0 held for every value"
+  },
+  {
+    "test_name": "Curve3D Continuity Tests::bsplineContinuity",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "4 (C2)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "interpolated BSpline Continuity = 4 (GeomAbs_C2)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Continuity() - 1",
+    "red": "Curve3DContinuityTests.swift:32 bsp.continuity == 4",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt",
+    "note": "Rewritten: c >= 0 held for every value"
+  },
+  {
+    "test_name": "Curve3D Continuity Queries v0.120.0::lineContinuityClass",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": ".cN"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Continuity() - 1",
+    "red": "Curve3DContinuityQueriesTests.swift:24 c.continuityClass == .cN",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Continuity Queries v0.120.0::isCN",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift",
+    "bridge_function": "OCCTCurve3DIsCN",
+    "bridge_output": {
+      "type": "value",
+      "data": "true for 0, 1, 2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "IsCN(0)=1 IsCN(1)=1 IsCN(2)=1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsCN() negated",
+    "red": "Curve3DContinuityQueriesTests.swift:33 c.isCN(0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Continuity Queries v0.120.0::reversedParameter",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift",
+    "bridge_function": "OCCTCurve3DReversedParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": "-2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "ReversedParameter(2) = -2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ReversedParameter + 1",
+    "red": "Curve3DContinuityQueriesTests.swift:45 abs(rp + u) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Continuity Queries v0.120.0::parametricTransformation",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift",
+    "bridge_function": "OCCTCurve3DParametricTransformation",
+    "bridge_output": {
+      "type": "value",
+      "data": "1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "ParametricTransformation(identity) = 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "result x 2",
+    "red": "Curve3DContinuityQueriesTests.swift:56 abs(scale - 1.0) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Continuity Queries v0.120.0::bezierResolution",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift",
+    "bridge_function": "OCCTCurve3DBezierResolution",
+    "bridge_output": {
+      "type": "value",
+      "data": "0.0025"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Resolution(0.01) = 0.0025000000000000001"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "resolution x 2",
+    "red": "Curve3DContinuityQueriesTests.swift:68 abs(c.bezierResolution(tolerance3d: 0.01) - 0.0025) < 1e-15",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt",
+    "note": "Rewritten: r > 0"
+  },
+  {
+    "test_name": "Curve3D Continuity Queries v0.120.0::bezierMaxDegree",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift",
+    "bridge_function": "OCCTCurve3DBezierMaxDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": "25"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_BezierCurve::MaxDegree() = 25"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "report 8",
+    "red": "Curve3DContinuityQueriesTests.swift:73 md == 25",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt",
+    "note": "Rewritten: md >= 25"
+  },
+  {
+    "test_name": "Curve3D Continuity Queries v0.120.0::bsplineMaxDegree",
+    "test_file": "Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineMaxDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": "25"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_BSplineCurve::MaxDegree() = 25"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "report 8",
+    "red": "Curve3DContinuityQueriesTests.swift:78 md == 25",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-continuity/transcript.txt",
+    "note": "Rewritten: md >= 25"
+  },
+  {
+    "test_name": "Curve3D Conversion Tests::Circle to BSpline",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConversionTests.swift",
+    "bridge_function": "OCCTCurve3DToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "degree 2, 6 poles, periodic"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert::CurveToBSplineCurve: degree 2, 6 poles, rational, periodic"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "degree raised by one after conversion",
+    "red": "Curve3DConversionTests.swift:28 b.poleCount == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: poleCount > 0 and degree > 0"
+  },
+  {
+    "test_name": "Curve3D Conversion Tests::BSpline to Bezier segments",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConversionTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineToBeziers",
+    "bridge_output": {
+      "type": "value",
+      "data": "3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert_BSplineCurveToBezierCurve: NbArcs 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one arc fewer",
+    "red": "Curve3DConversionTests.swift:40 segs.count == 3",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: count >= 2"
+  },
+  {
+    "test_name": "Curve3D Conversion Tests::Join two segments into BSpline",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConversionTests.swift",
+    "bridge_function": "OCCTCurve3DJoinToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0) -> (10,5,0) over [0, 5 + sqrt 50]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Add=1, start (0,0,0), end (10,5,0), domain [0, 12.071067811865474]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "later curves not added",
+    "red": "Curve3DConversionTests.swift:56 simd_distance(j.endPoint, SIMD3(10, 5, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: end points to 0.1"
+  },
+  {
+    "test_name": "Curve3D Conversion Tests::Join returns nil rather than silently dropping a disconnected curve",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConversionTests.swift",
+    "bridge_function": "OCCTCurve3DJoinToBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert_CompCurveToBSplineCurve::Add = 0 for the 4-unit gap"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Add() failure ignored",
+    "red": "Curve3DConversionTests.swift:71 Curve3D.join([seg1, seg2]) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Conversion Tests::Approximate curve",
+    "test_file": "Tests/OCCTCurveTests/Curve3DConversionTests.swift",
+    "bridge_function": "OCCTCurve3DApproximate",
+    "bridge_output": {
+      "type": "value",
+      "data": "every sample within 0.01 of radius 5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: occtApproxCurve's result is checked against the arc it approximates"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "tolerance x 1000",
+    "red": "Curve3DConversionTests.swift:90 abs(simd_length(p) - 5) < 0.01",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Curve3D Draw Tests::Adaptive draw on circle produces points",
+    "test_file": "Tests/OCCTCurveTests/Curve3DDrawTests.swift",
+    "bridge_function": "OCCTCurve3DDrawAdaptive",
+    "bridge_output": {
+      "type": "value",
+      "data": "64 points on radius 5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_TangentialDeflection(0.1, 0.01): 64 points"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "deflections x 4 (and, separately, one point fewer)",
+    "red": "Curve3DDrawTests.swift:23 points.count == 64",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: count >= 10, radius to 0.1"
+  },
+  {
+    "test_name": "Curve3D Draw Tests::Uniform draw produces exact count",
+    "test_file": "Tests/OCCTCurveTests/Curve3DDrawTests.swift",
+    "bridge_function": "OCCTCurve3DDrawUniform",
+    "bridge_output": {
+      "type": "value",
+      "data": "32 points on radius 5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_UniformAbscissa(32): 32 points"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one point fewer",
+    "red": "Curve3DDrawTests.swift:33 points.count == 32",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Draw Tests::Deflection draw produces points",
+    "test_file": "Tests/OCCTCurveTests/Curve3DDrawTests.swift",
+    "bridge_function": "OCCTCurve3DDrawDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": "17"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_UniformDeflection(0.1): 17 points"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "deflection x 4",
+    "red": "Curve3DDrawTests.swift:44 points.count == 17",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: count >= 4"
+  },
+  {
+    "test_name": "Curve3D Draw Tests::Adaptive draw on segment produces at least 2 points",
+    "test_file": "Tests/OCCTCurveTests/Curve3DDrawTests.swift",
+    "bridge_function": "OCCTCurve3DDrawAdaptive",
+    "bridge_output": {
+      "type": "value",
+      "data": "2, (0,0,0) and (10,5,3)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_TangentialDeflection on the segment: 2 points"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one point fewer",
+    "red": "Curve3DDrawTests.swift:55 points.count == 2",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: count >= 2. The first rewrite compared the last point with == and failed green by 4e-16; it now uses a distance"
+  },
+  {
+    "test_name": "Curve3D Evaluation v0.110::evalD0BSpline",
+    "test_file": "Tests/OCCTCurveTests/Curve3DEvalTests.swift",
+    "bridge_function": "OCCTCurve3DEvalD0",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "EvalD0(first) = (0,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "x + 0.5",
+    "red": "Curve3DEvalTests.swift:30 simd_length(p) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: tolerance 1e-3 inside `if let`"
+  },
+  {
+    "test_name": "Curve3D Evaluation v0.110::evalD1BSpline",
+    "test_file": "Tests/OCCTCurveTests/Curve3DEvalTests.swift",
+    "bridge_function": "OCCTCurve3DEvalD1",
+    "bridge_output": {
+      "type": "value",
+      "data": "P (5,5,0), D1 (0.8782753106899468, 0, 0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "EvalD3(mid): P=(4.9999999999999991, 4.9999999999999991, 0) D1=(0.8782753106899468, -6.4e-17, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "D1.y + 0.5",
+    "red": "Curve3DEvalTests.swift:43 simd_distance(r.d1, Self.d1) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: |d1| > 0.1"
+  },
+  {
+    "test_name": "Curve3D Evaluation v0.110::evalD2BSpline",
+    "test_file": "Tests/OCCTCurveTests/Curve3DEvalTests.swift",
+    "bridge_function": "OCCTCurve3DEvalD2",
+    "bridge_output": {
+      "type": "value",
+      "data": "D2 (0, -0.44230769230769207, 0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "D2=(9.7e-16, -0.44230769230769207, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "D2.y + 0.5",
+    "red": "Curve3DEvalTests.swift:51 simd_distance(r.d2, Self.d2) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: ended in #expect(true)"
+  },
+  {
+    "test_name": "Curve3D Evaluation v0.110::evalD3BSpline",
+    "test_file": "Tests/OCCTCurveTests/Curve3DEvalTests.swift",
+    "bridge_function": "OCCTCurve3DEvalD3",
+    "bridge_output": {
+      "type": "value",
+      "data": "D3 (-0.0213346229317402, 0.11200677039163265, 0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "D3=(-0.0213346229317402, 0.11200677039163265, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "D3.y + 0.5",
+    "red": "Curve3DEvalTests.swift:59 simd_distance(r.d3, Self.d3) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt",
+    "note": "Rewritten: ended in #expect(true)"
+  },
+  {
+    "test_name": "Curve3D Evaluation v0.110::evalD0Circle",
+    "test_file": "Tests/OCCTCurveTests/Curve3DEvalTests.swift",
+    "bridge_function": "OCCTCurve3DEvalD0",
+    "bridge_output": {
+      "type": "value",
+      "data": "(5,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "circle EvalD0(0) = (5,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "x + 0.5",
+    "red": "Curve3DEvalTests.swift:68 curve.evalD0(at: 0) == SIMD3(5, 0, 0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conversion-draw-eval/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Extras v0.109::reverseCurve",
+    "test_file": "Tests/OCCTCurveTests/Curve3DExtrasTests.swift",
+    "bridge_function": "OCCTCurve3DReverse",
+    "bridge_output": {
+      "type": "value",
+      "data": "(10,0,0) -> (0,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "segment after Reverse: (10,0,0) -> (0,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Reverse skipped",
+    "red": "Curve3DExtrasTests.swift:20 simd_distance(c.startPoint, SIMD3(10, 0, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extras-interp/transcript.txt",
+    "note": "Rewritten: discarded both points, could not fail. Fixture is now a segment so its start point is finite"
+  },
+  {
+    "test_name": "Curve3D Extras v0.109::copyCurve",
+    "test_file": "Tests/OCCTCurveTests/Curve3DExtrasTests.swift",
+    "bridge_function": "OCCTCurve3DCopy",
+    "bridge_output": {
+      "type": "value",
+      "data": "identical at u = -5, 0, 3, 7"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Curve::Copy"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "copy moved 0.5 in y",
+    "red": "Curve3DExtrasTests.swift:32 simd_distance(c.point(at: u), copy.point(at: u)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extras-interp/transcript.txt",
+    "note": "Rewritten: one sample inside `if let`"
+  },
+  {
+    "test_name": "Curve3D Extras v0.109::copiedCurveIndependent",
+    "test_file": "Tests/OCCTCurveTests/Curve3DExtrasTests.swift",
+    "bridge_function": "OCCTCurve3DCopy",
+    "bridge_output": {
+      "type": "value",
+      "data": "copy keeps (0,0,0) after the source reverses"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "copy taken before Reverse: (0,0,0) -> (10,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "copy moved 0.5 in y (and, separately, Reverse skipped)",
+    "red": "Curve3DExtrasTests.swift:43 copy.startPoint == c.startPoint",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extras-interp/transcript.txt",
+    "note": "Rewritten: checked only isClosed; now checks independence, which the title claims"
+  },
+  {
+    "test_name": "Curve3D extras v0.112::curveType",
+    "test_file": "Tests/OCCTCurveTests/Curve3DExtrasV112Tests.swift",
+    "bridge_function": "OCCTCurve3DCurveType",
+    "bridge_output": {
+      "type": "value",
+      "data": "0 and 1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAdaptor_Curve::GetType line 0, circle 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "type + 1",
+    "red": "Curve3DExtrasV112Tests.swift:19 line.curveType == 0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extras-interp/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D extras v0.112::nearestParameterOnLine",
+    "test_file": "Tests/OCCTCurveTests/Curve3DExtrasV112Tests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": "5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_ProjectPointOnCurve parameter 5, distance 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "parameter + 1",
+    "red": "Curve3DExtrasV112Tests.swift:32 abs(param - 5.0) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extras-interp/transcript.txt",
+    "note": "Rewritten: 0.1 of slack inside `if let`"
+  },
+  {
+    "test_name": "Curve3D.interpolate tangent-tolerance reachability (#400)::Bare 3-arg call matches an explicit default-tolerance call exactly",
+    "test_file": "Tests/OCCTCurveTests/Curve3DInterpolateTangentToleranceParityTests.swift",
+    "bridge_function": "OCCTCurve3DInterpolateWithTangents",
+    "bridge_output": {
+      "type": "value",
+      "data": "tangent directions (1,1,1) and (1,-1,-1), normalised"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "d1 start 0.962 (1,1,1), end 0.962 (1,-1,-1)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "end tangent loaded as the start tangent",
+    "red": "Curve3DInterpolateTangentToleranceParityTests.swift:53 simd_distance(t0, simd_normalize(Self.startTangent)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extras-interp/transcript.txt",
+    "note": "Strengthened: the comparison of two calls to one function cannot differ at runtime; tangent directions pinned"
+  },
+  {
+    "test_name": "Curve3D.interpolate tangent-tolerance reachability (#400)::tolerance: is reachable and actually governs the minimum inter-point distance",
+    "test_file": "Tests/OCCTCurveTests/Curve3DInterpolateTangentToleranceParityTests.swift",
+    "bridge_function": "OCCTCurve3DInterpolateWithTangents",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil at 1e-6, a curve at 1e-9"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "points 5e-7 apart: tolerance 1e-6 throws, 1e-9 done=1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "tolerance argument ignored (1e-6 always)",
+    "red": "Curve3DInterpolateTangentToleranceParityTests.swift:73 tighter != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-extras-interp/transcript.txt"
   }
 ]
