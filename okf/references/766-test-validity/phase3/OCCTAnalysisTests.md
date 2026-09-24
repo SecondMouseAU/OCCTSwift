@@ -268,6 +268,8 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **Extrema_ExtElC Line-Circle** | lineCircleDistance | Line-circle extrema (rewritten: count-only) | OCCTExtremaElCLinCirc reports sqrt(SquareDistance) and the line point as the circle point |
+| **Extrema_ExtElC Line-Circle** | lineCircleCoplanar | Coplanar line-circle extrema | OCCTExtremaElCLinCirc reports sqrt(SquareDistance) and the line point as the circle point |
 
 ---
 
