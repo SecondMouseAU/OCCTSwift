@@ -111,14 +111,18 @@ func makeContinuityBSplineSurface(interiorMultiplicityU multiplicity: Int32) -> 
 // them here is purely for discoverability: distinct names under one shared roof rather
 // than the same name reused four times. Each keeps its exact prior construction.
 
-/// A 4x4-pole rational BSpline surface obtained by converting a cylinder to BSpline form
-/// via `toBSpline()`. Used by `BSplineSurfaceManipulationTests` as a generic rational
-/// surface to poke at.
+/// A rational BSpline surface obtained by converting a cylinder, trimmed to height 10, to
+/// BSpline form via `toBSpline()` (6 x 2 poles, degree 2 x 1). Used by
+/// `BSplineSurfaceManipulationTests` as a generic rational surface to poke at.
+///
+/// #766: the cylinder must be trimmed first. `Surface.cylinder` is infinite in V and
+/// GeomConvert::SurfaceToBSplineSurface refuses an infinite surface, so the untrimmed version
+/// this replaced always returned nil.
 func makeCylinderDerivedBSplineSurface(radius: Double = 5) -> Surface? {
     guard let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: radius) else {
         return nil
     }
-    return cyl.toBSpline()
+    return cyl.trimmed(u1: 0, u2: 2 * Double.pi, v1: 0, v2: 10)?.toBSpline()
 }
 
 /// A 4x4 BSpline surface fit through a point grid spaced 3 units apart, `z = (u+v) % 3`.

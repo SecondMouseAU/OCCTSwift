@@ -1,0 +1,5 @@
+statvfs(/): total512Blocks=1942700360 totalKB=971350180 free512Blocks=232534584 freeKB=116267292
+OSD_Disk("/"): DiskSize=1942700360 (KB=971350180) DiskFree=232534584 (KB=116267292) Failed=0
+OSD_Disk(nonexistent): Failed=1
+ANSI [41 E9 42]: length=3 code units: U+0041 U+00E9 U+0042
+SJIS [82 A0]: length=1 code units: U+3042

@@ -30,6 +30,9 @@ struct SurfaceFreeformTests {
             let p11 = bez.point(atU: 1, v: 1)
             #expect(abs(p11.x - 10) < 1e-10)
             #expect(abs(p11.y - 10) < 1e-10)
+            // #766: both corners are fixed under a transposed pole grid; (0, 1) is not. The first
+            // row's last pole is (10, 0, 0).
+            #expect(simd_length(bez.point(atU: 0, v: 1) - SIMD3(10, 0, 0)) < 1e-12)
         }
     }
 
@@ -54,6 +57,8 @@ struct SurfaceFreeformTests {
             let p = bsp.poles
             #expect(p.count == 4)
             #expect(p[0].count == 4)
+            // #766: counts passed any 4 x 4 grid; the kernel's S(0.3, 0.7) on these poles.
+            #expect(simd_length(bsp.point(atU: 0.3, v: 0.7) - SIMD3(7.084, 2.916, 1.0269)) < 1e-12)
         }
     }
 
