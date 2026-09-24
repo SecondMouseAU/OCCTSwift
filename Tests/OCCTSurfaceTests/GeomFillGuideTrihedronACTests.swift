@@ -7,16 +7,21 @@ import simd
 struct GeomFillGuideTrihedronACTests {
     @Test("create with guide and path")
     func createAndSetPath() {
-        if let guide = Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)),
-            let guideTrimmed = guide.trimmed(from: 0, to: 10)
-        {
-            let triAC = GuideTrihedronAC.create(guideCurve: guideTrimmed)
-            if let path = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-                let pathTrimmed = path.trimmed(from: 0, to: 10)
-            {
-                triAC.setCurve(pathTrimmed)
-                #expect(Bool(true))
-            }
+        // #766: this ended in `#expect(Bool(true))` inside two `if let`s, so it could not fail.
+        // GeomFill_GuideTrihedronAC accepts the path (SetCurve true) and at 5 gives
+        // T (1, 0, 0), N (0, 1, 0) toward the guide, B (0, 0, 1), see Scripts/repro/766-geomfill-c/.
+        let guide = Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0))?.trimmed(from: 0, to: 10)
+        let path = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0))?.trimmed(from: 0, to: 10)
+        #expect(guide != nil && path != nil)
+        guard let guide, let path else { return }
+        let triAC = GuideTrihedronAC.create(guideCurve: guide)
+        #expect(triAC.setCurve(path))
+        let frame = triAC.evaluate(at: 5.0)
+        #expect(frame != nil)
+        if let frame {
+            #expect(simd_length(frame.tangent - SIMD3(1, 0, 0)) < 1e-9)
+            #expect(simd_length(frame.normal - SIMD3(0, 1, 0)) < 1e-9)
+            #expect(simd_length(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
         }
     }
 
@@ -30,8 +35,14 @@ struct GeomFillGuideTrihedronACTests {
                 let pathTrimmed = path.trimmed(from: 0, to: 10)
             {
                 triAC.setCurve(pathTrimmed)
-                if let frame = triAC.evaluate(at: 5.0) {
+                // #766: `|t.x| > 0.3` inside `if let` never read N or B; pinned to the kernel
+                // frame, see Scripts/repro/766-geomfill-c/.
+                let frame = triAC.evaluate(at: 5.0)
+                #expect(frame != nil)
+                if let frame {
                     #expect(abs(frame.tangent.x) > 0.3)
+                    #expect(simd_length(frame.normal - SIMD3(0, 1, 0)) < 1e-9)
+                    #expect(simd_length(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
                 }
             }
         }
