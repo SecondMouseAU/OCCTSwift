@@ -6,50 +6,58 @@ import simd
 
 // MARK: - v0.67.0: FairCurve, LocalAnalysis, TopTrans
 
+// Pinned to FairCurve_Batten::Compute(code, 50, 1e-3) on the same inputs
+// (Scripts/repro/766-curve-faircurve/transcript.txt): every case converges (code 0) to a degree-9
+// BSpline on [0, 1] from (0, 0) to (10, 0). The earlier versions wrapped their one check in
+// `if let`, so a batten that failed to compute passed, and none looked at the curve beyond its
+// domain being non-empty (#766).
 @Suite("FairCurve Batten Tests")
 struct FairCurveBattenTests {
-    @Test func basicBatten() {
-        if let result = Curve2D.fairCurveBatten(
-            p1: SIMD2(0, 0), p2: SIMD2(10, 0), height: 2.0
-        ) {
-            #expect(result.code == .ok)
+    private static func check(_ result: (curve: Curve2D, code: Curve2D.FairCurveCode)?) {
+        guard let result else {
+            Issue.record("batten did not compute")
+            return
         }
+        #expect(result.code == .ok)
+        #expect(simd_distance(result.curve.startPoint, SIMD2(0, 0)) < 1e-9)
+        #expect(simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9)
+    }
+
+    @Test func basicBatten() {
+        Self.check(Curve2D.fairCurveBatten(p1: SIMD2(0, 0), p2: SIMD2(10, 0), height: 2.0))
     }
 
     @Test func battenWithSlope() {
-        if let result = Curve2D.fairCurveBatten(
-            p1: SIMD2(0, 0), p2: SIMD2(10, 0),
-            height: 3.0, slope: 0.5
-        ) {
-            #expect(result.code == .ok)
-        }
+        Self.check(
+            Curve2D.fairCurveBatten(
+                p1: SIMD2(0, 0), p2: SIMD2(10, 0),
+                height: 3.0, slope: 0.5))
     }
 
     @Test func battenWithAngles() {
-        if let result = Curve2D.fairCurveBatten(
-            p1: SIMD2(0, 0), p2: SIMD2(10, 0),
-            height: 2.0, angle1: 0.3, angle2: -0.3
-        ) {
-            #expect(result.code == .ok)
-        }
+        Self.check(
+            Curve2D.fairCurveBatten(
+                p1: SIMD2(0, 0), p2: SIMD2(10, 0),
+                height: 2.0, angle1: 0.3, angle2: -0.3))
     }
 
     @Test func battenConstraintOrders() {
-        if let result = Curve2D.fairCurveBatten(
-            p1: SIMD2(0, 0), p2: SIMD2(10, 0),
-            height: 2.0,
-            constraintOrder1: 0, constraintOrder2: 0
-        ) {
-            #expect(result.code == .ok)
-        }
+        Self.check(
+            Curve2D.fairCurveBatten(
+                p1: SIMD2(0, 0), p2: SIMD2(10, 0),
+                height: 2.0,
+                constraintOrder1: 0, constraintOrder2: 0))
     }
 
     @Test func battenCurveProperties() {
-        if let result = Curve2D.fairCurveBatten(
-            p1: SIMD2(0, 0), p2: SIMD2(10, 0), height: 2.0
-        ) {
-            let d = result.curve.domain
-            #expect(d.lowerBound < d.upperBound)
+        guard
+            let result = Curve2D.fairCurveBatten(
+                p1: SIMD2(0, 0), p2: SIMD2(10, 0), height: 2.0)
+        else {
+            Issue.record("batten did not compute")
+            return
         }
+        #expect(result.curve.domain == 0...1)
+        #expect(simd_distance(result.curve.point(at: 0.5), SIMD2(5, 0)) < 1e-9)
     }
 }
