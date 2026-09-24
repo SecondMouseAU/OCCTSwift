@@ -133,13 +133,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true
+        "naming_inserted": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "inserted": true
+        "naming_inserted": true
       }
     },
     "comparison": {
@@ -147,7 +147,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: naming_inserted. Bridge: insertNaming returned true (OCCTDocumentInsertNaming returns !naming.IsNull()). Kernel: TNaming_Naming::Insert(label) returned a non-null attribute. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tnaming-select-resolve/"
   },
   {
     "test_name": "TNaming Naming Tests::namingIsDefined",
@@ -155,13 +156,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "defined": false
+        "naming_is_defined": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "defined": false
+        "naming_is_defined": false
       }
     },
     "comparison": {
@@ -169,7 +170,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: the value namingIsDefined reports, false. The values agree, the mechanisms do not, and the test's comment (\"not yet defined\") describes the wrong one. Bridge: OCCTDocumentNamingIsDefined looks the naming up with FindAttribute on the label it is given and returns false when it is not found. Kernel: TNaming_Naming::Insert(0:1:1) puts the attribute on the child label 0:1:1:1, so a FindAttribute on 0:1:1 finds nothing (false), while IsDefined() of the inserted attribute is also false. The bridge's false therefore comes from the lookup miss, not from IsDefined. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tnaming-select-resolve/"
   },
   {
     "test_name": "TNaming Scope Tests::validAndIsValid",
@@ -199,7 +201,7 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "valid": false
+        "valid_after_unvalid": false
       }
     },
     "kernel_output": {
@@ -213,6 +215,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: valid_after_unvalid. Bridge: after namingScopeValid then namingScopeUnvalid, namingScopeIsValid returned false. Kernel: TNaming_Scope Valid(v1) then Unvalid(v1), IsValid(v1) printed false.",
     "probe": "Scripts/repro/766-xcaf-tnaming/"
   },
   {
@@ -221,15 +224,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "count_at_least": 2,
-        "after_clear": 0
+        "count_at_least_2": true,
+        "count_after_clear": 0
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "count": 2,
-        "after_clear": 0
+        "count_at_least_2": true,
+        "count_after_clear": 0
       }
     },
     "comparison": {
@@ -237,6 +240,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: after two namingScopeValid calls namingScopeValidCount >= 2 (the test asserts a lower bound), and after namingScopeClear it is 0. Kernel: TNaming_Scope GetValid().Extent() printed 2 after two Valid calls, so at-least-2 is true, and 0 after ClearValid.",
     "probe": "Scripts/repro/766-xcaf-tnaming/"
   },
   {
@@ -245,13 +249,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true
+        "select_ok": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "select": true
+        "select_ok": true
       }
     },
     "comparison": {
@@ -259,7 +263,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: select_ok. Bridge: selectShape(rectangle face, context: box) returned true (OCCTDocumentNamingSelect returns TNaming_Selector::Select). The selection is the unrelated planar rectangle face from Wire.rectangle(10, 10), not a face of the box. Kernel: Select of that rectangle face within the box returned true. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tnaming-select-resolve/"
   },
   {
     "test_name": "TNaming, Select and Resolve::Resolve returns a shape",
@@ -267,17 +272,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "resolved": true,
-        "faces_at_least": 1
+        "select_ok": true,
+        "resolved_non_null": true,
+        "resolved_face_count_at_least_1": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "select": true,
-        "solve": false,
-        "resolved_type": "FACE (4)",
-        "faces": 1
+        "select_ok": true,
+        "resolved_non_null": true,
+        "resolved_face_count_at_least_1": true
       }
     },
     "comparison": {
@@ -285,7 +290,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantities on both sides, from the test's own flow (select a face of the box, then resolve). Bridge: selectShape true, resolveShape non-nil, and the resolved shape's face count >= 1 (the test asserts a lower bound; OCCTDocumentNamingResolve builds a NEW TNaming_Selector on the label and returns nullptr unless Solve succeeds). Kernel: Select true; a new selector's Solve was true, the named shape non-empty, and CurrentShape non-null. It has type COMPOUND with 6 faces, that is the whole box, not the single selected face, so the comparison is on the lower bound only. The shared transcript's Solve=false came from a different flow (one selector object, a command open) and is not this comparison. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tnaming-select-resolve/"
   },
   {
     "test_name": "TNaming, Select and Resolve::Selected evolution type",
@@ -293,13 +299,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "evolution": "selected"
+        "evolution": "SELECTED"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "evolution": 5
+        "evolution": "SELECTED"
       }
     },
     "comparison": {
@@ -307,6 +313,7 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: the evolution, by name. Bridge: namingEvolution returned .selected (Swift raw value 4, OCCTNamingSelected), which OCCTDocumentNamingGetEvolution maps by a switch from TNaming_SELECTED. Kernel: the named shape's Evolution() is TNaming_SELECTED, whose kernel ordinal is 5 (TNaming_REPLACE is 4), so the ordinals differ and only the names are compared. The selection was the unrelated rectangle face, as in the test. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tnaming-select-resolve/"
   }
 ]

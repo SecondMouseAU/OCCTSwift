@@ -108,21 +108,21 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
-| `insertNaming` | `OCCTDocumentInsertNaming` returns false | :15 Expectation failed: ok | passed | `OCCTDocumentInsertNaming` | PASS: inserted |
-| `namingIsDefined` | `OCCTDocumentNamingIsDefined` returns true | :25 Expectation failed: !doc.namingIsDefined(labelId: node.labelId) | passed | `OCCTDocumentNamingIsDefined` | PASS: false |
+| `insertNaming` | `OCCTDocumentInsertNaming` returns false | :15 Expectation failed: ok | passed | `OCCTDocumentInsertNaming` | PASS: a naming attribute is inserted on both sides |
+| `namingIsDefined` | `OCCTDocumentNamingIsDefined` returns true | :25 Expectation failed: !doc.namingIsDefined(labelId: node.labelId) | passed | `OCCTDocumentNamingIsDefined` | PASS: false on both sides, but the bridge's false is a lookup miss: Insert puts the naming on a child label (see source) |
 
 ### `TNamingScopeTests.swift`
 
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
 | `validAndIsValid` | `OCCTDocumentNamingScopeIsValid` returns false | :14 Expectation failed: doc.namingScopeIsValid(labelId: node.labelId) | passed | `OCCTDocumentNamingScopeIsValid` | PASS: true |
-| `unvalid` | `OCCTDocumentNamingScopeUnvalid` returns true without unvalidating | :23 Expectation failed: !doc.namingScopeIsValid(labelId: node.labelId) | passed | `OCCTDocumentNamingScopeUnvalid` | PASS: false after Unvalid |
-| `validCount` | `OCCTDocumentNamingScopeValidCount` answers 1 | :32 Expectation failed: doc.namingScopeValidCount >= 2; :34 Expectation failed: doc.namingScopeValidCount == 0 | passed | `OCCTDocumentNamingScopeValidCount` | PASS: 2, then 0 |
+| `unvalid` | `OCCTDocumentNamingScopeUnvalid` returns true without unvalidating | :23 Expectation failed: !doc.namingScopeIsValid(labelId: node.labelId) | passed | `OCCTDocumentNamingScopeUnvalid` | PASS: not valid after Unvalid on both sides |
+| `validCount` | `OCCTDocumentNamingScopeValidCount` answers 1 | :32 Expectation failed: doc.namingScopeValidCount >= 2; :34 Expectation failed: doc.namingScopeValidCount == 0 | passed | `OCCTDocumentNamingScopeValidCount` | PASS: at least 2 valid labels after two Valid calls and 0 after Clear, on both sides (kernel count 2) |
 
 ### `TNamingSelectResolveTests.swift`
 
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
-| `selectSubShape` | `OCCTDocumentNamingSelect` returns false | :22 Expectation failed: ok | passed | `OCCTDocumentNamingSelect` | PASS: `Select(face, box)` true |
-| `resolveShape` | `OCCTDocumentNamingResolve` returns null | :42 `resolved != nil`, :43 the face count (rewritten; the old test asserted `Bool(true)` only when something came back) | passed | `OCCTDocumentNamingResolve` | PASS: `Solve` reports false ("TNaming_Naming::Name: FAILED") yet the named shape holds the face |
-| `selectedEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :47 Expectation failed: evo == .selected | passed | `OCCTDocumentNamingGetEvolution` | PASS: SELECTED (5) |
+| `selectSubShape` | `OCCTDocumentNamingSelect` returns false | :22 Expectation failed: ok | passed | `OCCTDocumentNamingSelect` | PASS: Select(rectangle face, box) succeeds on both sides |
+| `resolveShape` | `OCCTDocumentNamingResolve` returns null | :42 `resolved != nil`, :43 the face count (rewritten; the old test asserted `Bool(true)` only when something came back) | passed | `OCCTDocumentNamingResolve` | PASS: select succeeds, resolve returns a shape holding at least 1 face, on both sides (kernel: a compound of 6 faces) |
+| `selectedEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :47 Expectation failed: evo == .selected | passed | `OCCTDocumentNamingGetEvolution` | PASS: evolution SELECTED on both sides (the bridge's code is 4, the kernel's ordinal is 5) |
