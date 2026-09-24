@@ -225,10 +225,6 @@
         "sinert_mass": [
           100.0,
           100.0
-        ],
-        "domain_bounded_sinert_mass": [
-          78.53981633974483,
-          78.53981633974483
         ]
       }
     },
@@ -252,7 +248,7 @@
           100.0,
           100.0
         ],
-        "domain_bounded_sinert_mass": [
+        "reference_only_domain_bounded_sinert_mass": [
           78.53981633974483,
           78.53981633974483
         ]
@@ -263,7 +259,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "note": "Compared keys: cap_count, centroids, sinert_mass. The bridge (OCCTBRepGPropSinert) calls BRepGProp_Sinert::Perform(BRepGProp_Face), which integrates the untrimmed surface patch, so it reports mass 100 for a disc cap of area 78.54; the bridge never returns 78.54. reference_only_domain_bounded_sinert_mass is the kernel's Perform(face, BRepGProp_Domain(face)) overload from transcript.txt, kept as a labelled reference for the overload the bridge does not call and deliberately absent from bridge_output."
   },
   {
     "test_name": "IntCurvesFace Intersection::Line-face intersection",

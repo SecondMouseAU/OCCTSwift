@@ -24,7 +24,6 @@
 #include <TopoDS.hxx>
 #include <cmath>
 #include <cstdio>
-#include <numbers>
 
 static void measure(const char* tag, const TopoDS_Shape& s)
 {
@@ -86,6 +85,6 @@ int main()
 {
   measure("box(2,3,5)", BRepPrimAPI_MakeBox(gp_Pnt(-1, -1.5, -2.5), 2, 3, 5).Shape());
   measure("cylinder(5,10)", BRepPrimAPI_MakeCylinder(5, 10).Shape());
-  printf("pi*25=%.17g\n", std::numbers::pi * 25);
+  printf("pi*25=%.17g\n", M_PI * 25);
   return 0;
 }
