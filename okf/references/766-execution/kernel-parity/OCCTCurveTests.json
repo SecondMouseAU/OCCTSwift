@@ -6738,5 +6738,209 @@
     "green": "passed",
     "probe": "Scripts/repro/766-curve-arc-length/transcript.txt",
     "note": "Strengthened: nested `if let` hid a nil"
+  },
+  {
+    "test_name": "v0.126.0, Curve3D Bezier completions::InsertPoleBefore increases pole count",
+    "test_file": "Tests/OCCTCurveTests/Curve3DBezierCompletionsTests.swift",
+    "bridge_function": "OCCTCurve3DBezierInsertPoleBefore",
+    "bridge_output": {
+      "type": "value",
+      "data": "3 poles, first (0.5,0.5,0.5)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "nbPoles 3, degree 2, pole1 (0.5,0.5,0.5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "InsertPoleBefore skipped",
+    "red": "Curve3DBezierCompletionsTests.swift:21 c.poleCount == 3",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-bspline/transcript.txt",
+    "note": "Rewritten: nested `if let`"
+  },
+  {
+    "test_name": "v0.126.0, Curve3D Bezier completions::Reverse swaps start and end",
+    "test_file": "Tests/OCCTCurveTests/Curve3DBezierCompletionsTests.swift",
+    "bridge_function": "OCCTCurve3DBezierReverse",
+    "bridge_output": {
+      "type": "value",
+      "data": "(10,20,30) -> (0,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "start (10,20,30), end (0,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Reverse skipped",
+    "red": "Curve3DBezierCompletionsTests.swift:32 c.bezierStartPoint == SIMD3(10, 20, 30)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-bspline/transcript.txt"
+  },
+  {
+    "test_name": "v0.126.0, Curve3D Bezier completions::SetPoleWithWeight on rational Bezier",
+    "test_file": "Tests/OCCTCurveTests/Curve3DBezierCompletionsTests.swift",
+    "bridge_function": "OCCTCurve3DBezierSetPoleWithWeight",
+    "bridge_output": {
+      "type": "value",
+      "data": "weights [1,2,1], C(0.5) = (5, 6.667, 0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "pole2 (5,10,0), weight2 2, rational, C(0.5)=(5, 6.666666666666667)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "SetPole(index, point, weight) skipped",
+    "red": "Curve3DBezierCompletionsTests.swift:47 c.bezierWeights == [1, 2, 1]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-bspline/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "Curve3D BSpline Tests::Create quadratic Bezier",
+    "test_file": "Tests/OCCTCurveTests/Curve3DBSplineTests.swift",
+    "bridge_function": "OCCTCurve3DGetDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": "degree 2, 3 poles"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "degree 2, NbPoles 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Degree() + 1",
+    "red": "Curve3DBSplineTests.swift:20 bez.degree == 2",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-bspline/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D BSpline Tests::Poles roundtrip",
+    "test_file": "Tests/OCCTCurveTests/Curve3DBSplineTests.swift",
+    "bridge_function": "OCCTCurve3DGetPoles",
+    "bridge_output": {
+      "type": "value",
+      "data": "the three input poles"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_BezierCurve keeps its poles"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Bezier poles shifted 1 in y",
+    "red": "Curve3DBSplineTests.swift:31 bez.poles == original",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-bspline/transcript.txt",
+    "note": "Fixtures were force-unwrapped"
+  },
+  {
+    "test_name": "Curve3D BSpline Tests::Interpolate through points",
+    "test_file": "Tests/OCCTCurveTests/Curve3DBSplineTests.swift",
+    "bridge_function": "OCCTCurve3DInterpolate",
+    "bridge_output": {
+      "type": "value",
+      "data": "passes each point at its chord-length knot"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "knots 0 5.9160797830996161 11.30124459023412 15.99166035005755"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "first input point moved 0.5 in x",
+    "red": "Curve3DBSplineTests.swift:47 simd_distance(c.point(at: k), p) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-bspline/transcript.txt",
+    "note": "Rewritten: end points only, to 0.01"
+  },
+  {
+    "test_name": "Curve3D BSpline Tests::Interpolate with tangents",
+    "test_file": "Tests/OCCTCurveTests/Curve3DBSplineTests.swift",
+    "bridge_function": "OCCTCurve3DInterpolateWithTangents",
+    "bridge_output": {
+      "type": "value",
+      "data": "tangent directions (1,1,1)/|.| and (1,-1,-1)/|.|"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "d1(start) = 0.962 (1,1,1), d1(end) = 0.962 (1,-1,-1)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "end tangent loaded as the start tangent",
+    "red": "Curve3DBSplineTests.swift:69 simd_distance(t0, simd_normalize(SIMD3(1, 1, 1))) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-bspline/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Curve3D BSpline Tests::Fit points to BSpline",
+    "test_file": "Tests/OCCTCurveTests/Curve3DBSplineTests.swift",
+    "bridge_function": "OCCTCurve3DFitPoints",
+    "bridge_output": {
+      "type": "value",
+      "data": "degree 6, 11 poles, exact end points"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "PointsToBSpline(3, 8, C2, 1e-3): degree 6, 11 poles, (5,0,0) -> (5,0,9.5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "tolerance x 1000",
+    "red": "Curve3DBSplineTests.swift:84 c.degree == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-bspline/transcript.txt",
+    "note": "Rewritten: start point to 0.5"
+  },
+  {
+    "test_name": "Curve3D BSpline Tests::Create BSpline with explicit knots",
+    "test_file": "Tests/OCCTCurveTests/Curve3DBSplineTests.swift",
+    "bridge_function": "OCCTCurve3DCreateBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "degree 3, the four poles"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_BSplineCurve(poles, [0,1], [4,4], 3)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Degree() + 1",
+    "red": "Curve3DBSplineTests.swift:102 b.degree == 3",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-bspline/transcript.txt"
   }
 ]
