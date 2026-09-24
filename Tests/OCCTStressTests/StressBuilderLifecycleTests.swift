@@ -927,12 +927,14 @@ struct StressWireAnalyzerLifecycleTests {
         guard let sectionWire = sectionWires.first,
             let analyzer = WireAnalyzer(wire: sectionWire, face: face)
         else { return }
-        _ = analyzer.perform()
-        _ = analyzer.edgeCount
-        _ = analyzer.minDistance3d
-        _ = analyzer.maxDistance3d
-        _ = analyzer.isLoaded
-        _ = analyzer.isReady
+        // Every value was read into `_` before. The z = 0 section wire has four edges; the
+        // analysis against face 0 performs, loads and is ready, with zero 3D gaps.
+        #expect(analyzer.perform())
+        #expect(analyzer.edgeCount == 4)
+        #expect(analyzer.minDistance3d == 0)
+        #expect(analyzer.maxDistance3d == 0)
+        #expect(analyzer.isLoaded)
+        #expect(analyzer.isReady)
     }
 
     @Test func checkMethods() {
@@ -943,11 +945,14 @@ struct StressWireAnalyzerLifecycleTests {
             let analyzer = WireAnalyzer(wire: wire, face: face)
         else { return }
         analyzer.perform()
-        _ = analyzer.checkOrder()
-        _ = analyzer.checkSelfIntersection()
-        _ = analyzer.checkClosed()
-        _ = analyzer.checkGap3d()
-        _ = analyzer.checkGap2d()
+        // A clean closed loop reports no order, self-intersection, closure or gap problem (all
+        // five were read into `_` before).
+        #expect(!analyzer.checkOrder())
+        #expect(!analyzer.checkSelfIntersection())
+        #expect(!analyzer.checkClosed())
+        #expect(!analyzer.checkGap3d())
+        #expect(!analyzer.checkGap2d())
+        #expect(analyzer.edgeCount == 4)
     }
 
     @Test func destroyWithoutPerform() {
@@ -964,13 +969,13 @@ struct StressWireAnalyzerLifecycleTests {
 @Suite("Stress: WireFixer Lifecycle")
 struct StressWireFixerLifecycleTests {
 
-    @Test func normalCycle() {
+    @Test func normalCycle() throws {
         let box = standardBox()
         let faces = box.subShapes(ofType: .face)
         let wires = box.subShapes(ofType: .wire)
-        guard let face = faces.first, let wireShape = wires.first,
-            let fixer = WireFixer(wire: wireShape, face: face)
-        else { return }
+        let face = try #require(faces.first)
+        let wireShape = try #require(wires.first)
+        let fixer = try #require(WireFixer(wire: wireShape, face: face))
         fixer.fixReorder()
         fixer.fixConnected()
         fixer.fixDegenerated()
@@ -979,9 +984,9 @@ struct StressWireFixerLifecycleTests {
         fixer.fixClosed()
         fixer.fixGaps3d()
         fixer.fixEdgeCurves()
-        if let result = fixer.wire {
-            #expect(result.isValid)
-        }
+        let result = try #require(fixer.wire)
+        #expect(result.isValid)
+        #expect(result.subShapeCount(ofType: .edge) == 4)
     }
 
     @Test func extendedFixMethods() {
@@ -996,7 +1001,9 @@ struct StressWireFixerLifecycleTests {
         fixer.fixNotchedEdges()
         fixer.fixTails()
         // Fixed wire may not pass isValid on complex shapes, just verify no crash
-        _ = fixer.wire
+        // Epic #766: the wire was read into `_`; the first face wire of the filleted box comes back
+        // with its four edges.
+        #expect(fixer.wire?.subShapeCount(ofType: .edge) == 4)
     }
 
     @Test func destroyWithoutGettingResult() {
@@ -1013,19 +1020,18 @@ struct StressWireFixerLifecycleTests {
 @Suite("Stress: FaceFixer Lifecycle")
 struct StressFaceFixerLifecycleTests {
 
-    @Test func normalCycle() {
+    @Test func normalCycle() throws {
         let box = standardBox()
         let faces = box.subShapes(ofType: .face)
-        guard let faceShape = faces.first,
-            let fixer = FaceFixer(face: faceShape)
-        else { return }
+        let faceShape = try #require(faces.first)
+        let fixer = try #require(FaceFixer(face: faceShape))
         fixer.fixOrientation()
         fixer.fixMissingSeam()
         fixer.fixSmallAreaWire()
         fixer.perform()
-        if let result = fixer.face {
-            #expect(result.isValid)
-        }
+        let result = try #require(fixer.face)
+        #expect(result.isValid)
+        #expect(abs((result.surfaceArea ?? 0) - 100) < 1e-9)
     }
 
     @Test func destroyWithoutPerform() {
@@ -1041,27 +1047,27 @@ struct StressFaceFixerLifecycleTests {
 @Suite("Stress: ShapeFixer Lifecycle")
 struct StressShapeFixerLifecycleTests {
 
-    @Test func normalCycle() {
+    @Test func normalCycle() throws {
         let box = standardBox()
         let fixer = ShapeFixer(shape: box)
         fixer.setPrecision(1e-6)
-        fixer.perform()
-        if let result = fixer.shape {
-            #expect(result.isValid)
-        }
+        // ShapeFix_Shape finds nothing to fix on a clean box: Perform reports false.
+        #expect(!fixer.perform())
+        let result = try #require(fixer.shape)
+        #expect(result.isValid)
     }
 
-    @Test func fixAlreadyGoodShape() {
+    @Test func fixAlreadyGoodShape() throws {
         let box = standardBox()
         let fixer = ShapeFixer(shape: box)
         fixer.perform()
-        if let result = fixer.shape {
-            #expect(result.isValid)
-            // Volume should match
-            if let origVol = box.volume, let fixedVol = result.volume {
-                #expect(abs(origVol - fixedVol) / origVol < 0.01)
-            }
+        let result = try #require(fixer.shape)
+        #expect(result.isValid)
+        // Volume should match
+        if let origVol = box.volume, let fixedVol = result.volume {
+            #expect(abs(origVol - fixedVol) / origVol < 0.01)
         }
+        #expect(abs((result.volume ?? 0) - 1000) < 1e-6)
     }
 
     @Test func destroyWithoutPerform() {

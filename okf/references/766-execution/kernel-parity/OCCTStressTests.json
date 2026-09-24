@@ -5504,5 +5504,291 @@
       "strengthened": false
     },
     "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: WireAnalyzer Lifecycle::normalCycle",
+    "bridge_function": "OCCTWireAnalyzerPerform, OCCTWireAnalyzerNbEdges, OCCTWireAnalyzerMinDistance3d",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: ShapeAnalysis_Wire status values (4 edges, 0 gaps) not re-derived in the probe",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "EARLY:OCCTWireAnalyzerNbEdges",
+      "env": "OCCT766=|EARLY:OCCTWireAnalyzerNbEdges|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:922 Expectation failed: analyzer.edgeCount == 4",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: WireAnalyzer Lifecycle::checkMethods",
+    "bridge_function": "OCCTWireAnalyzerCheckOrder, OCCTWireAnalyzerCheckClosed, OCCTWireAnalyzerNbEdges",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: ShapeAnalysis_Wire check flags (all false) not re-derived in the probe",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "EARLY:OCCTWireAnalyzerNbEdges",
+      "env": "OCCT766=|EARLY:OCCTWireAnalyzerNbEdges|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:944 Expectation failed: analyzer.edgeCount == 4",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: WireAnalyzer Lifecycle::destroyWithoutPerform",
+    "bridge_function": "OCCTWireAnalyzerRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: deallocation without a prior call; no kernel value, the test exists to catch a crash in Release",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTWireAnalyzerRelease",
+      "env": "OCCT766=|CRASH:OCCTWireAnalyzerRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: WireFixer Lifecycle::normalCycle",
+    "bridge_function": "OCCTWireFixerFix*, OCCTWireFixerWire",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: ShapeFix_Wire result (valid, 4 edges) not re-derived in the probe",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "EARLY:OCCTWireFixerWire",
+      "env": "OCCT766=|EARLY:OCCTWireFixerWire|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:976 Expectation failed: fixer.wire",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: WireFixer Lifecycle::extendedFixMethods",
+    "bridge_function": "OCCTWireFixerFixTails, OCCTWireFixerWire",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: ShapeFix_Wire result (4 edges) not re-derived in the probe",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "EARLY:OCCTWireFixerWire",
+      "env": "OCCT766=|EARLY:OCCTWireFixerWire|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:995 Expectation failed: fixer.wire?.subShapeCount(ofType: .edge) == 4",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: WireFixer Lifecycle::destroyWithoutGettingResult",
+    "bridge_function": "OCCTWireFixerRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: deallocation without a prior call; no kernel value, the test exists to catch a crash in Release",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTWireFixerRelease",
+      "env": "OCCT766=|CRASH:OCCTWireFixerRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: FaceFixer Lifecycle::normalCycle",
+    "bridge_function": "OCCTFaceFixerPerform, OCCTFaceFixerFace",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: ShapeFix_Face result (valid, area 100) not re-derived in the probe",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "EARLY:OCCTFaceFixerFace",
+      "env": "OCCT766=|EARLY:OCCTFaceFixerFace|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:1021 Expectation failed: fixer.face",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: FaceFixer Lifecycle::destroyWithoutPerform",
+    "bridge_function": "OCCTFaceFixerRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: deallocation without a prior call; no kernel value, the test exists to catch a crash in Release",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTFaceFixerRelease",
+      "env": "OCCT766=|CRASH:OCCTFaceFixerRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ShapeFixer Lifecycle::normalCycle",
+    "bridge_function": "OCCTShapeFixerPerform, OCCTShapeFixerShape",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): ShapeFix_Shape on the box: Perform false, valid"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "ShapeFix_Shape on the box: Perform false, valid",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTShapeFixerShape",
+      "env": "OCCT766=|EARLY:OCCTShapeFixerShape|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:1045 Expectation failed: fixer.shape",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ShapeFixer Lifecycle::fixAlreadyGoodShape",
+    "bridge_function": "OCCTShapeFixerShape",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): ShapeFix_Shape: volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "ShapeFix_Shape: volume 1000",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTShapeFixerShape",
+      "env": "OCCT766=|EARLY:OCCTShapeFixerShape|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:1053 Expectation failed: fixer.shape",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ShapeFixer Lifecycle::destroyWithoutPerform",
+    "bridge_function": "OCCTShapeFixerRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: deallocation without a prior call; no kernel value, the test exists to catch a crash in Release",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTShapeFixerRelease",
+      "env": "OCCT766=|CRASH:OCCTShapeFixerRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]

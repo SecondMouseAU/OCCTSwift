@@ -516,3 +516,15 @@ Appended by the #1974 execution run (2026-09-24). Every row was run, not planned
 | Stress: HatchBuilder Lifecycle | `buildEmpty` | `OCCTHatcherNbLines, OCCTHatcherRelease` | CRASH:OCCTHatcherRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
 | Stress: HatchBuilder Lifecycle | `normalCycle` | `OCCTHatcherAddXLine, OCCTHatcherNbLines` | EARLY:OCCTHatcherNbLines | RED exit 1: StressBuilderLifecycleTests.swift:352 Expectation failed: hatcher.nbLines == 4 | ✔ | N/A | yes |
 | Stress: HatchBuilder Lifecycle | `destroyWithoutQuery` | `OCCTHatcherRelease` | CRASH:OCCTHatcherRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
+## Epic #766 execution, measured: StressBuilderLifecycleTests: WireAnalyzer, WireFixer, FaceFixer, ShapeFixer
+| Stress: WireAnalyzer Lifecycle | `normalCycle` | `OCCTWireAnalyzerPerform, OCCTWireAnalyzerNbEdges, OCCTWireAnalyzerMinDistance3d` | EARLY:OCCTWireAnalyzerNbEdges | RED exit 1: StressBuilderLifecycleTests.swift:922 Expectation failed: analyzer.edgeCount == 4 | ✔ | N/A | yes |
+| Stress: WireAnalyzer Lifecycle | `checkMethods` | `OCCTWireAnalyzerCheckOrder, OCCTWireAnalyzerCheckClosed, OCCTWireAnalyzerNbEdges` | EARLY:OCCTWireAnalyzerNbEdges | RED exit 1: StressBuilderLifecycleTests.swift:944 Expectation failed: analyzer.edgeCount == 4 | ✔ | N/A | yes |
+| Stress: WireAnalyzer Lifecycle | `destroyWithoutPerform` | `OCCTWireAnalyzerRelease` | CRASH:OCCTWireAnalyzerRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
+| Stress: WireFixer Lifecycle | `normalCycle` | `OCCTWireFixerFix*, OCCTWireFixerWire` | EARLY:OCCTWireFixerWire | RED exit 1: StressBuilderLifecycleTests.swift:976 Expectation failed: fixer.wire | ✔ | N/A | yes |
+| Stress: WireFixer Lifecycle | `extendedFixMethods` | `OCCTWireFixerFixTails, OCCTWireFixerWire` | EARLY:OCCTWireFixerWire | RED exit 1: StressBuilderLifecycleTests.swift:995 Expectation failed: fixer.wire?.subShapeCount(ofType: .edge) == 4 | ✔ | N/A | yes |
+| Stress: WireFixer Lifecycle | `destroyWithoutGettingResult` | `OCCTWireFixerRelease` | CRASH:OCCTWireFixerRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
+| Stress: FaceFixer Lifecycle | `normalCycle` | `OCCTFaceFixerPerform, OCCTFaceFixerFace` | EARLY:OCCTFaceFixerFace | RED exit 1: StressBuilderLifecycleTests.swift:1021 Expectation failed: fixer.face | ✔ | N/A | yes |
+| Stress: FaceFixer Lifecycle | `destroyWithoutPerform` | `OCCTFaceFixerRelease` | CRASH:OCCTFaceFixerRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
+| Stress: ShapeFixer Lifecycle | `normalCycle` | `OCCTShapeFixerPerform, OCCTShapeFixerShape` | EARLY:OCCTShapeFixerShape | RED exit 1: StressBuilderLifecycleTests.swift:1045 Expectation failed: fixer.shape | ✔ | MATCH | yes |
+| Stress: ShapeFixer Lifecycle | `fixAlreadyGoodShape` | `OCCTShapeFixerShape` | EARLY:OCCTShapeFixerShape | RED exit 1: StressBuilderLifecycleTests.swift:1053 Expectation failed: fixer.shape | ✔ | MATCH | yes |
+| Stress: ShapeFixer Lifecycle | `destroyWithoutPerform` | `OCCTShapeFixerRelease` | CRASH:OCCTShapeFixerRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
