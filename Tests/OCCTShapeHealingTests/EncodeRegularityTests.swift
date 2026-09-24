@@ -6,22 +6,47 @@ import simd
 
 @Suite("Encode Regularity")
 struct EncodeRegularityTests {
-    @Test("Encode regularity on box")
-    func encodeRegularityBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let result = box.encodingRegularity()
-        #expect(result != nil)
-        if let r = result {
-            #expect(r.isValid)
-            #expect(abs(r.volume! - 1000.0) < 1.0)
+    /// The continuity code on every edge shared by exactly two faces, nil where none is encoded.
+    private func sharedEdgeCodes(_ shape: Shape) -> [Int?] {
+        let faces = shape.subShapes(ofType: .face)
+        var codes: [Int?] = []
+        for edge in shape.subShapes(ofType: .edge) {
+            let adjacent = shape.adjacentFaces(forEdge: edge)
+            guard adjacent.count == 2, let a = adjacent.first, let b = adjacent.last,
+                a >= 0, a < faces.count, b >= 0, b < faces.count
+            else { continue }
+            codes.append(
+                Shape.hasContinuity(edge: edge, face1: faces[a], face2: faces[b])
+                    ? Shape.continuity(edge: edge, face1: faces[a], face2: faces[b]) : nil)
         }
+        return codes
     }
 
+    // #766: the two tests below asserted non-nil and a volume, which a bridge that copied the
+    // shape and never called BRepLib::EncodeRegularity also satisfied. They now pin the codes
+    // the kernel writes (Scripts/repro/766-healing-divide-encode-fastsew/probe.mm): a box's 12
+    // right-angle edges all come back encoded C0.
+    @Test("Encode regularity on box")
+    func encodeRegularityBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        #expect(sharedEdgeCodes(box) == Array(repeating: nil, count: 12), "premise: nothing encoded yet")
+        let r = try #require(box.encodingRegularity())
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 1000.0) < 1e-9)
+        #expect(sharedEdgeCodes(r) == Array(repeating: Int(ContinuityClass.c0.rawValue), count: 12))
+    }
+
+    // BRepFilletAPI_MakeFillet already encodes its 48 tangent edges above C0 (kernel: 48/48
+    // before and after), so this pins that the encoded copy keeps them; it cannot tell an
+    // EncodeRegularity call from its absence on this fixture, only a failed result.
     @Test("Encode regularity on filleted box")
-    func encodeRegularityFilleted() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!.filleted(radius: 1)!
-        let result = box.encodingRegularity(toleranceDegrees: 1.0)
-        #expect(result != nil)
+    func encodeRegularityFilleted() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10)?.filleted(radius: 1))
+        let result = try #require(box.encodingRegularity(toleranceDegrees: 1.0))
+        #expect(result.faces().count == 26)
+        let codes = sharedEdgeCodes(result)
+        #expect(codes.count == 48)
+        #expect(codes.allSatisfy { $0 != nil && $0 != Int(ContinuityClass.c0.rawValue) })
     }
 
     // MARK: - #1545: default mirrors OCCT's own BRepLib::EncodeRegularity default (in radians)
