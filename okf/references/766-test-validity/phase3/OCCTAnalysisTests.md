@@ -268,6 +268,18 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **IntTools Tests** | computeVV | Vertex coincidence | OCCTIntToolsComputeVV |
+| **IntTools Tests** | computeVVDistant | Vertex coincidence | OCCTIntToolsComputeVV |
+| **IntTools Tests** | intermediatePoint | Intermediate parameter | OCCTIntToolsIntermediatePoint |
+| **IntTools Tests** | isDirsCoinside | Direction coincidence | OCCTIntToolsIsDirsCoinside |
+| **IntTools Tests** | computeIntRange | Intersection range | OCCTIntToolsComputeIntRange |
+| **Integration: Profile Contouring** | boxWithBossSection | Section wires at Z | OCCTShapeSectionWiresAtZ |
+| **Integration: Surface Curvature Analysis** | sphereCurvatureIsConstant | Surface curvature | OCCTSurfaceGetGaussianCurvature |
+| **Intf_Tool v0.112** | clipLineToBox | Line-box clipping | OCCTIntfToolLinBox |
+| **Intf_Tool v0.112** | segmentParameters | Line-box clipping | OCCTIntfToolBeginParam |
+| **Intf_Tool v0.112** | lineParallelToFace | Line-box clipping | OCCTIntfToolLinBox |
+| **Intf_Tool v0.112** | lineMissesBox | Line-box clipping | OCCTIntfToolLinBox |
+| **Intf_Tool v0.112** | lineThroughCenter | Line-box clipping | OCCTIntfToolLinBox |
 
 ---
 
@@ -475,6 +487,18 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| computeVV | OCCTIntToolsComputeVV | Vertex coincidence | invert the 0/-1 answer | ✅ | ✅ |  |
+| computeVVDistant | OCCTIntToolsComputeVV | Vertex coincidence | invert the 0/-1 answer | ✅ | ✅ |  |
+| intermediatePoint | OCCTIntToolsIntermediatePoint | Intermediate parameter | answer the plain midpoint | ✅ | ✅ | Rewritten: 0 < mid < 1 passed a midpoint |
+| isDirsCoinside | OCCTIntToolsIsDirsCoinside | Direction coincidence | negate the answer | ✅ | ✅ |  |
+| computeIntRange | OCCTIntToolsComputeIntRange | Intersection range | double the range | ✅ | ✅ | Rewritten: range > 0 passed any positive number |
+| boxWithBossSection | OCCTShapeSectionWiresAtZ | Section wires at Z | return no wires | ✅ | ✅ |  |
+| sphereCurvatureIsConstant | OCCTSurfaceGetGaussianCurvature / OCCTSurfaceGetMeanCurvature | Surface curvature | Gaussian curvature x 2 | ✅ | ✅ |  |
+| clipLineToBox | OCCTIntfToolLinBox | Line-box clipping | report 0 segments | ✅ | ✅ | Rewritten: nSeg >= 0 cannot fail |
+| segmentParameters | OCCTIntfToolLinBox / OCCTIntfToolBeginParam / OCCTIntfToolEndParam | Line-box clipping | BeginParam + 1; 0 segments | ✅ | ✅ | Rewritten: end > begin under if nSeg > 0 passed on 0 segments |
+| lineParallelToFace | OCCTIntfToolLinBox | Line-box clipping | report 0 segments | ✅ | ✅ | Rewritten: nSeg >= 0 cannot fail |
+| lineMissesBox | OCCTIntfToolLinBox | Line-box clipping | report 1 segment when there are none | ✅ | ✅ | Rewritten: nSeg >= 0 cannot fail |
+| lineThroughCenter | OCCTIntfToolLinBox / OCCTIntfToolBeginParam / OCCTIntfToolEndParam | Line-box clipping | BeginParam + 1; 0 segments | ✅ | ✅ | Rewritten: begin < end under if nSeg > 0 passed on 0 segments |
 
 ---
 
