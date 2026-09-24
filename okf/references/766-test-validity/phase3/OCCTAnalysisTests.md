@@ -14,8 +14,6 @@
 | **BRepGProp Face Tests** | Evaluate GProp normal on box face | BRepGProp_Face::Normal | normal = (0,0,0) after Normal() |
 | **BRepGProp Face Tests** | Evaluate GProp normal on cylinder face | BRepGProp_Face::Normal | normal = (0,0,0) after Normal() |
 | **BRepGProp Face Tests** | GProp normal magnitude is area element | BRepGProp_Face::Normal | normal *= u after Normal() |
-| **IntCurvesFace Intersection** | Line-face intersection | Curve-face intersection | Return no intersection points |
-| **IntCurvesFace Intersection** | Line parallel to a face does not intersect it | Curve-face intersection | Report a spurious point |
 | **ShapeRayIntersection Tests** | line intersection with box | Line-shape intersection | More() returns false (red at :33, :36); separately, CreateLine returns nullptr (red at :29) |
 | **ShapeRayIntersection Tests** | curve intersection with sphere | Curve-shape intersection | More() returns false (red at :57, :59); separately, CreateCurve returns nullptr (red at :53) |
 | **ShapeRayIntersection Tests** | hit face access | Ray-shape hit iteration | More() returns false (red at :86); separately, CreateLine returns nullptr (red at :83) |
@@ -25,6 +23,8 @@
 | **Point Cloud Analysis** | 3D dispersed points detected as space | GProp_PEquation classification | the space branch returns false |
 | **Point Cloud Analysis** | Empty points returns nil | Empty input rejection | drop the isEmpty guard in Shape.analyzePointCloud AND the pointCount < 1 / null-coords guard in OCCTAnalyzePointCloud |
 | **Point Cloud Analysis** | Single point detected as point | GProp_PEquation classification | skip the IsPoint/IsLinear/IsPlanar branches (all input reported as space) |
+| **IntCurvesFace Intersection** | Line-face intersection | Curve-face intersection | return 0 points |
+| **IntCurvesFace Intersection** | Line parallel to a face does not intersect it | Curve-face intersection | report one spurious point when NbPoints is 0 |
 | **ShapeAnalysis_Edge Tests** | ShapeAnalysis_Edge Tests | Edge analysis | Remove edge analysis |
 | **ShapeAnalysis_Wire Tests** | ShapeAnalysis_Wire Tests | Wire analysis | Remove wire analysis |
 | **ShapeAnalysis_ShapeTolerance** | ShapeAnalysis_ShapeTolerance | Shape tolerance | Remove tolerance |
@@ -294,8 +294,6 @@
 | Evaluate GProp normal on box face | OCCTFaceEvaluateNormalAtUV | BRepGProp_Face::Normal | normal = (0,0,0) after Normal() | ✅ | ✅ | Red: BRepGPropFaceTests.swift:43 `mag > 0.01`. Parity MATCH, `Scripts/repro/766-brepgprop-face/`. |
 | Evaluate GProp normal on cylinder face | OCCTFaceEvaluateNormalAtUV | BRepGProp_Face::Normal | normal = (0,0,0) after Normal() | ✅ | ✅ | Red: BRepGPropFaceTests.swift:68 `found`. Parity MATCH, `Scripts/repro/766-brepgprop-face/`. |
 | GProp normal magnitude is area element | OCCTFaceEvaluateNormalAtUV | BRepGProp_Face::Normal | normal *= u after Normal() | ✅ | ✅ | Red: BRepGPropFaceTests.swift:92 `abs(mag1 - mag2) < 0.001`. Parity MATCH, `Scripts/repro/766-brepgprop-face/`. |
-| Line-face intersection | OCCTLocOpeCSIntersectLine | Curve-face intersection | Return no intersection points | ✅ | ✅ |  |
-| Line parallel to a face does not intersect it | OCCTLocOpeCSIntersectLine | Curve-face intersection | Report a spurious point | ✅ | ✅ |  |
 | line intersection with box | OCCTCurveSurfaceInterCreateLine | Line-shape intersection | More() returns false (red at :33, :36); separately, CreateLine returns nullptr (red at :29) | ✅ | ✅ | Red: ShapeRayIntersectionTests.swift:33 `hits.count == 2`; :36 `zs == [-5, 5]`; :29 Issue.record (nil intersector). Parity MATCH, `Scripts/repro/766-shape-ray-intersection/`. Hardened: the old `if let inter` stayed green when CreateLine returned nullptr. Now unconditional and pinned to the probed hits. |
 | curve intersection with sphere | OCCTCurveSurfaceInterCreateCurve | Curve-shape intersection | More() returns false (red at :57, :59); separately, CreateCurve returns nullptr (red at :53) | ✅ | ✅ | Red: ShapeRayIntersectionTests.swift:57 `hits.count == 2`; :59 pole z values; :53 Issue.record (nil intersector). Parity MATCH, `Scripts/repro/766-shape-ray-intersection/`. Hardened: the old `if let line` / `if let inter` nesting stayed green when CreateCurve returned nullptr. |
 | hit face access | OCCTCurveSurfaceInterMore | Ray-shape hit iteration | More() returns false (red at :86); separately, CreateLine returns nullptr (red at :83) | ✅ | ✅ | Red: ShapeRayIntersectionTests.swift:86 `inter.hasMore`; :83 Issue.record (nil intersector). Parity MATCH, `Scripts/repro/766-shape-ray-intersection/`. Rewritten in #2199; unchanged here. Face area differs in the last bits only (1e-6 assertion). |
@@ -305,6 +303,8 @@
 | 3D dispersed points detected as space | OCCTAnalyzePointCloud | GProp_PEquation classification | the space branch returns false | ✅ | ✅ | Red: PointCloudAnalysisTests.swift:64 `result != nil` and :68 `Bool(false)` (Expected .space). Parity MATCH, `Scripts/repro/766-point-cloud-analysis/`. |
 | Empty points returns nil | OCCTAnalyzePointCloud | Empty input rejection | drop the isEmpty guard in Shape.analyzePointCloud AND the pointCount < 1 / null-coords guard in OCCTAnalyzePointCloud | ✅ | ✅ | Red: PointCloudAnalysisTests.swift:75 `result == nil`. Parity MATCH (see note), `Scripts/repro/766-point-cloud-analysis/`. Either guard alone keeps it green (the other catches it); with both removed the kernel classifies an empty array as space. Bridge nil vs unguarded kernel space is the intended difference, not a mismatch. |
 | Single point detected as point | OCCTAnalyzePointCloud | GProp_PEquation classification | skip the IsPoint/IsLinear/IsPlanar branches (all input reported as space) | ✅ | ✅ | Red: PointCloudAnalysisTests.swift:85 `Bool(false)` (Expected .point). Parity MATCH, `Scripts/repro/766-point-cloud-analysis/`. |
+| Line-face intersection | OCCTLocOpeCSIntersectLine | Curve-face intersection | return 0 points | ✅ | ✅ | Red: IntCurvesFaceTests.swift:34 `hits.count == 1`. Parity MATCH, `Scripts/repro/766-intcurvesface/`. Rewritten in #2199; unchanged here. |
+| Line parallel to a face does not intersect it | OCCTLocOpeCSIntersectLine | Curve-face intersection | report one spurious point when NbPoints is 0 | ✅ | ✅ | Red: IntCurvesFaceTests.swift:56 `hits.isEmpty`. Parity MATCH, `Scripts/repro/766-intcurvesface/`. Added in #2199 alongside #1715. |
 | ShapeAnalysis_Edge Tests | OCCTShapeAnalysisEdge | Edge analysis | Remove edge analysis | ✅ | ✅ |  |
 | ShapeAnalysis_Wire Tests | OCCTShapeAnalysisWire | Wire analysis | Remove wire analysis | ✅ | ✅ |  |
 | ShapeAnalysis_ShapeTolerance | OCCTShapeAnalysisShapeTolerance | Shape tolerance | Remove tolerance | ✅ | ✅ |  |

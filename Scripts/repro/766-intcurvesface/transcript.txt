@@ -1,0 +1,3 @@
+lineFaceIntersection: faces()[4] (z = -15 cap): done=1 nbPoints=1
+  [1] pnt=(0, 0, -15) parameter=35 uv=(5, 10)
+lineParallelToFaceMisses: faces()[0] (x = -5 plane): done=1 nbPoints=0

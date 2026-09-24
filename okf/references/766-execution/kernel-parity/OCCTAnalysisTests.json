@@ -316,7 +316,7 @@
     "test_name": "IntCurvesFace Intersection::Line-face intersection",
     "bridge_function": "OCCTLocOpeCSIntersectLine",
     "bridge_output": {
-      "type": "intersection_points",
+      "type": "cs_points",
       "data": {
         "count": 1,
         "point": {
@@ -328,7 +328,7 @@
       }
     },
     "kernel_output": {
-      "type": "intersection_points",
+      "type": "cs_points",
       "data": {
         "count": 1,
         "point": {
@@ -339,6 +339,7 @@
         "parameter": 35.0
       }
     },
+    "kernel_probe": "Scripts/repro/766-intcurvesface/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []
@@ -349,17 +350,18 @@
     "test_name": "IntCurvesFace Intersection::Line parallel to a face does not intersect it",
     "bridge_function": "OCCTLocOpeCSIntersectLine",
     "bridge_output": {
-      "type": "intersection_points",
+      "type": "cs_points",
       "data": {
         "count": 0
       }
     },
     "kernel_output": {
-      "type": "intersection_points",
+      "type": "cs_points",
       "data": {
         "count": 0
       }
     },
+    "kernel_probe": "Scripts/repro/766-intcurvesface/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []
