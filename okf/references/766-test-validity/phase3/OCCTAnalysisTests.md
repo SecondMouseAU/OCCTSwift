@@ -268,6 +268,11 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **Asymmetric Chamfer (Two Distances)** | Two-distance chamfer on box edge | Two-distance chamfer | dist2 honoured |
+| **Asymmetric Chamfer (Two Distances)** | Multiple edges with different asymmetric chamfers | Two-distance chamfer | dist2 honoured |
+| **BRepGProp Cinert Tests** | edge curve inertia | Curve inertia | Length |
+| **BRepGProp Vinert Tests** | face volume inertia | Face volume inertia | Volume |
+| **BRepGProp Vinert Tests** | face volume inertia with plane | Face volume inertia vs plane | Volume |
 
 ---
 
@@ -475,6 +480,11 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Two-distance chamfer on box edge | OCCTShapeChamferTwoDistances | Two-distance chamfer | dist2 := dist1 (CH_SYM) | ✅ | ✅ | Rewritten: pinned volume; validity alone passed a symmetric chamfer |
+| Multiple edges with different asymmetric chamfers | OCCTShapeChamferTwoDistances | Two-distance chamfer | dist2 := dist1 (CH_SYM) | ✅ | ✅ | Rewritten: asserted nothing (`_ = result`) |
+| edge curve inertia | OCCTBRepGPropCinert | Curve inertia | Mass() * 2 (CI_MASS) | ✅ | ✅ | Rewritten: `length > 0` passed a doubled length |
+| face volume inertia | OCCTBRepGPropVinert | Face volume inertia | Mass() + 1 (VI_MASS) | ✅ | ✅ | Rewritten: asserted nothing |
+| face volume inertia with plane | OCCTBRepGPropVinertPlane | Face volume inertia vs plane | Mass() + 1 (VIP_MASS) | ✅ | ✅ | Rewritten: asserted nothing. Kernel finding: plane overload reports 0 for every cube face and for a sphere vs z=-10 |
 
 ---
 
