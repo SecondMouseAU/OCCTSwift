@@ -240,7 +240,7 @@ int main()
     OSD_Disk       disk("/");
     struct statvfs v;
     statvfs("/", &v);
-    unsigned long long blocks = (unsigned long long)v.f_blocks * v.f_frsize / 512;
+    unsigned long long blocks = (unsigned long long)v.f_blocks * (v.f_frsize / 512);
     printf("DiskSize()/2 = %lld KB, statvfs f_blocks*(f_frsize/512)/2 = %llu KB\n",
            (long long)disk.DiskSize() / 2,
            blocks / 2);

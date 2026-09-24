@@ -961,16 +961,14 @@ struct OSDHostTests {
     }
 
     // #1987: this used to be `let _ = HostInfo.internetAddress`, with no assertion at all. The
-    // kernel returns an IP address (IPv4 dotted-quad or IPv6), so the result must parse as one.
+    // kernel returns a dotted-quad IPv4 address (the loopback address in one probe run, a LAN
+    // address in another), so the result must parse as one.
     @Test func internetAddress() {
         let address = HostInfo.internetAddress
         #expect(address != nil)
         guard let address else { return }
-        var parsed4 = in_addr()
-        var parsed6 = in6_addr()
-        let parsedAsIPv4 = inet_pton(AF_INET, address, &parsed4) == 1
-        let parsedAsIPv6 = inet_pton(AF_INET6, address, &parsed6) == 1
-        #expect(parsedAsIPv4 || parsedAsIPv6)
+        var parsed = in_addr()
+        #expect(inet_pton(AF_INET, address, &parsed) == 1)
     }
 }
 
@@ -1114,13 +1112,13 @@ struct OSDDirectoryIteratorTests {
     // OSD_DirectoryIterator reports "." and ".." alongside the real subdirectories, and bare
     // names rather than paths: the probe gives ".", "..", "a", "b" for this fixture.
     @Test func countDirectories() throws {
-        let root = try #require(makeIteratorFixture())
+        let root = try makeIteratorFixture()
         defer { try? FileManager.default.removeItem(atPath: root) }
         #expect(DirectoryIterator.count(path: root) == 4)
     }
 
     @Test func nameAtIndex() throws {
-        let root = try #require(makeIteratorFixture())
+        let root = try makeIteratorFixture()
         defer { try? FileManager.default.removeItem(atPath: root) }
         let names = (0..<4).compactMap { DirectoryIterator.name(path: root, index: $0) }
         #expect(Set(names) == [".", "..", "a", "b"])
@@ -1128,7 +1126,7 @@ struct OSDDirectoryIteratorTests {
     }
 
     @Test func listDirectories() throws {
-        let root = try #require(makeIteratorFixture())
+        let root = try makeIteratorFixture()
         defer { try? FileManager.default.removeItem(atPath: root) }
         let dirs = DirectoryIterator.list(path: root, maxCount: 50)
         #expect(dirs.sorted() == [".", "..", "a", "b"])
@@ -1139,14 +1137,14 @@ struct OSDDirectoryIteratorTests {
 struct OSDFileIteratorTests {
 
     @Test func countFiles() throws {
-        let root = try #require(makeIteratorFixture())
+        let root = try makeIteratorFixture()
         defer { try? FileManager.default.removeItem(atPath: root) }
         #expect(FileIterator.count(path: root) == 3)
         #expect(FileIterator.count(path: root, mask: "*.txt") == 2)
     }
 
     @Test func nameAtIndex() throws {
-        let root = try #require(makeIteratorFixture())
+        let root = try makeIteratorFixture()
         defer { try? FileManager.default.removeItem(atPath: root) }
         let names = (0..<3).compactMap { FileIterator.name(path: root, index: $0) }
         #expect(Set(names) == ["x.txt", "y.txt", "z.dat"])
@@ -1154,7 +1152,7 @@ struct OSDFileIteratorTests {
     }
 
     @Test func listFiles() throws {
-        let root = try #require(makeIteratorFixture())
+        let root = try makeIteratorFixture()
         defer { try? FileManager.default.removeItem(atPath: root) }
         let files = FileIterator.list(path: root, maxCount: 50)
         #expect(files.sorted() == ["x.txt", "y.txt", "z.dat"])
