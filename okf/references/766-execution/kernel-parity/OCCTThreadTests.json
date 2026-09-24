@@ -693,5 +693,197 @@
     },
     "status": "N/A",
     "note": "Deadlock/race exerciser with no asserted value; the single-call values are the two entries above."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::each piecewise-linear form builds a valid, smooth external thread",
+    "bridge_function": "none (Swift direct build: OCCTShapeCreateLoftAdvanced ruled=false + OCCTShapeSew) + OCCTShapeGetVolume + OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r6_h24": 2714.336052702,
+        "iso68": 2331.528851886,
+        "unified": 2331.528851886,
+        "whitworth": 2315.923353696,
+        "bspParallel": 2315.923353696,
+        "acme": 2400.878691005,
+        "trapezoidal": 2400.790171471,
+        "square": 2403.315552846,
+        "buttress": 2228.712459156
+      }
+    },
+    "kernel_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r6_h24": 2714.336052702,
+        "iso68": 2331.528851886,
+        "unified": 2331.528851886,
+        "whitworth": 2315.923353696,
+        "bspParallel": 2315.923353696,
+        "acme": 2400.878691005,
+        "trapezoidal": 2400.790171471,
+        "square": 2403.315552846,
+        "buttress": 2228.712459156
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs. All eight valid with 9 faces. Finding: with the shank meshed before threading every form shifts by +5.4636 mm^3 and gains 2 faces (bounds inflated by the mesh deflection)."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::rounded forms (knuckle) build a valid external thread via the faceted cut path",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced ruled=true (faceted screw-loft cutter) + OCCTShapeSubtractEx + OCCTShapeGetVolume + OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r6_h24": 2714.336052702,
+        "knuckle": 2364.205392678
+      }
+    },
+    "kernel_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r6_h24": 2714.336052702,
+        "knuckle": 2364.205392678
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::each form builds a valid internal thread (cut path)",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced (screw-loft cutter) + OCCTShapeSubtractEx + OCCTShapeGetVolume + OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "annulus_iso68": 6022.735014273,
+        "iso68": 5746.14675921,
+        "annulus_whitworth": 6118.705255017,
+        "whitworth": 5836.786997335,
+        "annulus_acme": 5981.592412435,
+        "acme": 5746.594286947,
+        "annulus_square": 5981.592412435,
+        "square": 5741.827370224,
+        "annulus_buttress": 6324.120556444,
+        "buttress": 5983.07015736,
+        "annulus_knuckle": 6031.355240068,
+        "knuckle": 5788.752239222
+      }
+    },
+    "kernel_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "annulus_iso68": 6022.735014273,
+        "iso68": 5746.14675921,
+        "annulus_whitworth": 6118.705255017,
+        "whitworth": 5836.786997335,
+        "annulus_acme": 5981.592412435,
+        "acme": 5746.594286947,
+        "annulus_square": 5981.592412435,
+        "square": 5741.827370224,
+        "annulus_buttress": 6324.120556444,
+        "buttress": 5983.07015736,
+        "annulus_knuckle": 6031.355240068,
+        "knuckle": 5788.752239222
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs. iso68 also builds OCCTShapeBuildThreadCutter's analytic candidate first; isSoundCut rejects it here."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::tapered pipe threads (NPT, BSPT) build a valid thread",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced ruled=true (faceted screw-loft cutter) + OCCTShapeSubtractEx + OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r8_h24": 4825.486315914,
+        "nptTapered": 4264.80994505,
+        "bsptTapered": 4239.639847674
+      }
+    },
+    "kernel_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r8_h24": 4825.486315914,
+        "nptTapered": 4264.80994505,
+        "bsptTapered": 4239.639847674
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::a custom cross-section threads a cylinder",
+    "bridge_function": "none (Swift direct build: OCCTShapeCreateLoftAdvanced ruled=false + OCCTShapeSew) + OCCTShapeGetVolume + OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r6_h20": 2261.946710585,
+        "custom": 1952.030286331
+      }
+    },
+    "kernel_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r6_h20": 2261.946710585,
+        "custom": 1952.030286331
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::ThreadProfile validation + JSON round-trip",
+    "bridge_function": "none (pure Swift: ThreadProfile.init?(vertices:), synthesized Codable)",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "Pure Swift in Sources/OCCTSwift/ThreadFeatures.swift; no OCCT call, so no kernel counterpart."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::form geometry: cutDepth + segment shape",
+    "bridge_function": "none (pure Swift: ThreadSpec.cutDepth / minorDiameter, ThreadProfile segments)",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "Pure Swift in Sources/OCCTSwift/ThreadFeatures.swift; no OCCT call, so no kernel counterpart."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::parser recognises the new designations",
+    "bridge_function": "none (pure Swift: ThreadSpec.parse)",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "Pure Swift in Sources/OCCTSwift/ThreadFeatures.swift; no OCCT call, so no kernel counterpart."
   }
 ]

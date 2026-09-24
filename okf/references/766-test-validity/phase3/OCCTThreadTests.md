@@ -8,6 +8,7 @@ copied from bridge to kernel. Sections are one per PR.
 ## Thread::Issue225/232/254 (PR #2321, files: Issue225ThreadedRodTests.swift, Issue232BoundsTests.swift, Issue254BuildModesTests.swift)
 ## OCCTThreadTests.swift (PR #2335, files: Tests/OCCTThreadTests/OCCTThreadTests.swift)
 ## Thread-safety suites (PR #2362, files: Issue298FilletThreadSafetyTests, Issue341MeshCafThreadSafetyTests, Issue359STEPThreadSafetyTests, Issue361SharedSingletonThreadSafetyTests, Issue367FuseMultiThreadSafetyTests, Issue1404TObjApplicationThreadSafetyTests)
+## ThreadFormsTests.swift (PR #2365, files: Tests/OCCTThreadTests/ThreadFormsTests.swift)
 
 Injections are in `Sources/OCCTSwift/ThreadFeatures.swift`. Rounds combined two or three injections only where their code paths are disjoint (stated per row); each test's red is attributed to the one injection on its path.
 Injections are in `Sources/OCCTSwift/ThreadFeatures.swift`, applied in four sets and reverted after
@@ -24,6 +25,13 @@ only concurrency trips it. TSan rows are `swift test --sanitize=thread` with the
 `Scripts/tsan-stress.sh swift` options (`halt_on_error=0:exitcode=66`, `Scripts/tsan.supp`), each
 test run alone so every report is attributable to it. That build instruments the bridge but not the
 prebuilt kernel, so a race entirely inside OCCT is invisible to it.
+Injections are in `Sources/OCCTSwift/ThreadFeatures.swift`, applied in two runs and reverted after
+each. Run 1 (B, F1, F2, H) turned exactly its 4 target tests red and left the other 4 green. Run 2
+(E, G) did the same for the other 4, so each test's red is isolated by disjointness. Every argument
+of the three parameterised tests failed individually. `profileValidationAndCodable` was
+**rewritten** first: its two invalid profiles had two vertices each, so the `count >= 3` guard
+rejected both, and the original test passed with F1 and F2 applied (measured). Green: all 8
+tests (21 cases) pass, 29.4 s.
 
 | Test (Suite::func) | Code under test | Injection | Red (failing line) | Green | Parity |
 |---|---|---|---|---|---|
@@ -57,7 +65,6 @@ prebuilt kernel, so a race entirely inside OCCT is invisible to it.
 | Issue1404TObjApplicationThreadSafetyTests::concurrentVerboseAccessSucceeds | same | `tobjApplicationMutex()` removed from all three entry points | No `#expect`. TSan: **1 warning**, `TObj_Application.hxx:77 SetVerbose` | TSan: 0 warnings, exit 0 | N/A: no asserted value |
 | Issue1404TObjApplicationThreadSafetyTests::concurrentCreateDocumentSucceeds | `OCCTTObjApplicationCreateDocument` | (a) lock removed: **stays green**, assertion and TSan (0 warnings). (b) `CreateNewDocument` result inverted | (b): `:104 created == 80` → 0 | pass | MATCH: `CreateNewDocument` true. Finding: the race it names cannot be observed through this API, see below |
 | Issue1404TObjApplicationThreadSafetyTests::concurrentMixedAccessSucceeds | `OCCTTObjApplicationCreateDocument` / `SetVerbose` / `IsVerbose` | (a) lock removed. (b) `createDocument` re-takes the non-recursive lock (calls `IsVerbose` while holding it) | (a) TSan: **1 warning**, `TObj_Application.hxx:77 SetVerbose`. (b) deadlock: killed after 120 s with no result | pass; TSan: 0 warnings, exit 0 | N/A: no asserted value |
-
 Round A+F ran 225 and 254 (A only reaches 225's profile, F only `.auto`); under A, `wormIsValidAndAnalytic` also went red (`:53 threadedRod returned nil`), which is not counted for it. Round C+D+E ran 225 and 232: `profilePredicate` and `wormIsValidAndAnalytic` stayed green, so D and E did not leak into 225. Green: all seven pass after `git checkout -- Sources/`.
 Under injection A the three original (pre-rewrite) threadedHole-based tests stayed **green**, and
 under C the original `leftHanded` stayed green: measured, confirming the audit.
@@ -80,3 +87,11 @@ TSan on the clean tree, each of the seven #361/#1404 tests alone: 0 warnings and
   never run. Its Red is TSan only.
 - **#367**: restoring `SetRunParallel(true)` leaves both the Swift test and the kernel probe
   clean, consistent with #369's verdict that the pool is safe.
+| ThreadFormsTests::externalForm (8 forms) | `threadedShaft` direct build | B: return the unthreaded input | `:41 v1 < v0`, all 8 arguments | pass | PASS (re-measure, 8 of 8) |
+| ThreadFormsTests::roundedExternalForm | `applyThreadCut` external, faceted | E: return the uncut blank | `:69 v1 < v0` | pass | PASS (re-measure) |
+| ThreadFormsTests::internalForm (6 forms) | `applyThreadCut` internal | E | `:99 vt < vb`, all 6 arguments | pass | PASS (re-measure, 6 of 6) |
+| ThreadFormsTests::taperedForm (2 forms) | `applyThreadCut` tapered | E | `:122 v1 < v0`, both arguments | pass | PASS (re-measure, 2 of 2) |
+| ThreadFormsTests::customProfile | `threadedShaft` direct build, custom profile | B | `:155 v1 < v0` | pass | PASS (re-measure) |
+| ThreadFormsTests::profileValidationAndCodable (rewritten) | `ThreadProfile.init?(vertices:)` | F1: span guard removed; F2: start-at-0 guard removed | `:166` (no-root profile accepted), `:171` (profile starting at 0.1 accepted) | pass | N/A (pure Swift) |
+| ThreadFormsTests::formGeometry | `ThreadSpec.cutDepth` | G: Whitworth 0.64·P | `:191 abs(… .whitworth … .cutDepth - 0.640327 * p) < 1e-6` | pass | N/A (pure Swift) |
+| ThreadFormsTests::parserForms | `parseTrapezoidal` | H: returns nil | `:214 ThreadSpec.parse("Tr40x7")?.form == .trapezoidal`, `:219` | pass | N/A (pure Swift) |
