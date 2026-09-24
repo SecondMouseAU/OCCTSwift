@@ -515,7 +515,7 @@
         "total_length": 50.0
       }
     },
-    "kernel_probe": "Scripts/repro/766-hatch/probe.mm",
+    "kernel_probe": "Scripts/repro/766-hatch-redo/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []
@@ -539,7 +539,7 @@
         "total_length": 67.27922061357854
       }
     },
-    "kernel_probe": "Scripts/repro/766-hatch/probe.mm",
+    "kernel_probe": "Scripts/repro/766-hatch-redo/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []
@@ -563,7 +563,7 @@
         "empty_boundary_with_island_segments_unguarded": 3
       }
     },
-    "kernel_probe": "Scripts/repro/766-hatch/probe.mm",
+    "kernel_probe": "Scripts/repro/766-hatch-redo/probe.mm",
     "comparison": {
       "equal": false,
       "differences": [
@@ -589,7 +589,7 @@
         "total_length": 45.0
       }
     },
-    "kernel_probe": "Scripts/repro/766-hatch/probe.mm",
+    "kernel_probe": "Scripts/repro/766-hatch-redo/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []
@@ -633,7 +633,7 @@
         ]
       }
     },
-    "kernel_probe": "Scripts/repro/766-hatch/probe.mm",
+    "kernel_probe": "Scripts/repro/766-hatch-redo/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []

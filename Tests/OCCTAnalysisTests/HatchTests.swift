@@ -37,7 +37,7 @@ struct HatchTests {
     /// It is rejected before the kernel is reached, by `HatchPattern.generate` and again by
     /// `OCCTHatchLines`. The first assertion alone could not fail: with both of those guards
     /// removed, an empty boundary still yields an empty perpendicular extent, so no hatch line
-    /// is ever added and the result is empty anyway (`Scripts/repro/766-hatch/`). The island
+    /// is ever added and the result is empty anyway (`Scripts/repro/766-hatch-redo/`). The island
     /// case is what makes a missing rejection observable: unguarded, the island sets the
     /// extent on its own and its edges trim the lines into three segments filling the hole.
     @Test("Empty boundary returns nothing")
