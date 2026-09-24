@@ -94,5 +94,545 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve2D BSpline Local Evaluation::LocalD0 matches global",
+    "bridge_function": "OCCTCurve2DBSplineLocalD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1.5,
+          0.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1.5,
+          0.5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "x + 1",
+      "red": "Curve2DBSplineLocalTests.swift:36:9: Expectation failed: dist < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-local-and-factories/",
+      "rewritten": "`guard let ... else { return }` returned early, green, when the span could not be located; now also pins P"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Local Evaluation::LocalD1 returns derivative",
+    "bridge_function": "OCCTCurve2DBSplineLocalD1",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1,
+          1
+        ],
+        "V1": [
+          0.707106781187,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1,
+          1
+        ],
+        "V1": [
+          0.707106781187,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "V1.x + 1",
+      "red": "Curve2DBSplineLocalTests.swift:46:9: Expectation failed: simd_distance(r.v1, SIMD2(0.707106781187, 0)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-local-and-factories/",
+      "rewritten": "`simd_length(r.v1) > 0` passes a wrong derivative; `guard let ... else { return }` returned early, green, when the span could not be located"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Local Evaluation::LocalD2 returns second derivative",
+    "bridge_function": "OCCTCurve2DBSplineLocalD2",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1.5,
+          1
+        ],
+        "V1": [
+          0.4472135955,
+          -1.0434983895
+        ],
+        "V2": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1.5,
+          1
+        ],
+        "V1": [
+          0.4472135955,
+          -1.0434983895
+        ],
+        "V2": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "V2.y + 1",
+      "red": "Curve2DBSplineLocalTests.swift:57:9: Expectation failed: simd_length(r.v2) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-local-and-factories/",
+      "rewritten": "the assertion was `> 0 || == 0`, true for every value"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Local Evaluation::LocalD3 and LocalDN",
+    "bridge_function": "OCCTCurve2DBSplineLocalD3 / OCCTCurve2DBSplineLocalDN",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "V2": [
+          0,
+          1.73333333333
+        ],
+        "V3": [
+          0,
+          1.2521980674
+        ],
+        "DN(1)": [
+          0.4472135955,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "V2": [
+          0,
+          1.73333333333
+        ],
+        "V3": [
+          0,
+          1.2521980674
+        ],
+        "DN(1)": [
+          0.4472135955,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "V3.y + 1, and DN evaluated at n + 1",
+      "red": "Curve2DBSplineLocalTests.swift:68:9: Expectation failed: simd_distance(d3.v3, SIMD2(0, 1.2521980674)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-local-and-factories/",
+      "rewritten": "LocalD3 was discarded (`let _ =`) and DN checked only `> 0`"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Local Evaluation::LocalValue matches global",
+    "bridge_function": "OCCTCurve2DBSplineLocalValue",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "evaluate at u + 0.1",
+      "red": "Curve2DBSplineLocalTests.swift:80:9: Expectation failed: dist < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-local-and-factories/",
+      "rewritten": "`guard let ... else { return }` returned early, green, when the span could not be located; now also pins P"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Tests::Create quadratic Bezier",
+    "bridge_function": "OCCTCurve2DGetPoleCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "degree": 2,
+        "poleCount": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "degree": 2,
+        "poleCount": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Bezier pole count + 1",
+      "red": "Curve2DBSplineTests.swift:16:13: Expectation failed: bez.poleCount == 3",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-local-and-factories/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Tests::Create cubic BSpline",
+    "bridge_function": "OCCTCurve2DCreateBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          0,
+          3
+        ],
+        "point(1.5)": [
+          5,
+          4.625
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          0,
+          3
+        ],
+        "point(1.5)": [
+          5,
+          4.625
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "double every knot",
+      "red": "Curve2DBSplineTests.swift:32:9: Expectation failed: abs(c.domain.upperBound - 3) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-local-and-factories/",
+      "rewritten": "`!= nil` only; now pins the domain and point(1.5)"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Tests::Interpolate through points",
+    "bridge_function": "OCCTCurve2DInterpolate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "point(5)": [
+          3,
+          4
+        ],
+        "end": [
+          10,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "point(5)": [
+          3,
+          4
+        ],
+        "end": [
+          10,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "drop the last of four points",
+      "red": "Curve2DBSplineTests.swift:50:13: Expectation failed: simd_distance(curve.endPoint, SIMD2(10, 5)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-local-and-factories/",
+      "rewritten": "start point only; now pins the second point and the end"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Tests::Interpolate with end tangents",
+    "bridge_function": "OCCTCurve2DInterpolateWithTangents",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "d1(start)": [
+          1.06066017178,
+          1.06066017178
+        ],
+        "d1(end)": [
+          1.06066017178,
+          -1.06066017178
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "d1(start)": [
+          1.06066017178,
+          1.06066017178
+        ],
+        "d1(end)": [
+          1.06066017178,
+          -1.06066017178
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip Load(startTan, endTan)",
+      "red": "Curve2DBSplineTests.swift:64:9: Expectation failed: simd_distance(c.d1(at: d.lowerBound).tangent, SIMD2(1.06066017178, 1.06066017178)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-local-and-factories/",
+      "rewritten": "`!= nil` only; now pins the end derivatives"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Tests::Fit points with tolerance",
+    "bridge_function": "OCCTCurve2DFitPoints",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "degree": 3,
+        "poles": 22,
+        "end": [
+          10,
+          -0.544021110889
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "degree": 3,
+        "poles": 22,
+        "end": [
+          10,
+          -0.544021110889
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "tolerance x 100",
+      "red": "Curve2DBSplineTests.swift:78:9: Expectation failed: c.degree == 3",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-local-and-factories/",
+      "rewritten": "`!= nil` only; now pins degree, poles and end"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Tests::Pole count query",
+    "bridge_function": "OCCTCurve2DGetPoleCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poleCount": 4,
+        "degree": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poleCount": 4,
+        "degree": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Bezier pole count + 1",
+      "red": "Curve2DBSplineTests.swift:86:9: Expectation failed: bez.poleCount == 4",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-local-and-factories/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Tests::Poles roundtrip",
+    "bridge_function": "OCCTCurve2DGetPoles",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            10,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            10,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "shift each Bezier pole x by 1",
+      "red": "Curve2DBSplineTests.swift:97:13: Expectation failed: abs(retrieved[i].x - original[i].x) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-local-and-factories/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Tests::Draw interpolated curve",
+    "bridge_function": "OCCTCurve2DDrawAdaptive",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 30,
+        "first": [
+          0,
+          0
+        ],
+        "last": [
+          10,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 30,
+        "first": [
+          0,
+          0
+        ],
+        "last": [
+          10,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "double the angular deflection",
+      "red": "Curve2DBSplineTests.swift:110:13: Expectation failed: points.count == 30",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-local-and-factories/",
+      "rewritten": "`count >= 3`; now pins 30 points and both ends"
+    }
   }
 ]
