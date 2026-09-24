@@ -1,0 +1,28 @@
+== InterpolationExpansion3DTests ==
+interpolateWithEndpointTangents: domain [0, 14.1421356237] periodic=0 closed=0
+  start (0, 0, 0) unit tangent (0.707106781187, 0.707106781187, 0)
+  end   (10, -7.07375019799e-16, 0) unit tangent (0.707106781187, -0.707106781187, 0)
+  (same points, no tangents loaded): domain [0, 14.1421356237] periodic=0 closed=0
+  start (0, 0, 0) unit tangent (0.4472135955, 0.894427191, 0)
+  end   (10, -1.0531432398e-15, 0) unit tangent (0.4472135955, -0.894427191, 0)
+interpolateWithAllTangents: domain [0, 14.1421356237] periodic=0 closed=0
+  start (0, 0, 0) unit tangent (0.707106781187, 0.707106781187, 0)
+  end   (10, -7.07375019799e-16, 0) unit tangent (0.707106781187, -0.707106781187, 0)
+interpolateWithParameters: domain [0, 1] periodic=0 closed=0
+  start (0, 0, 0) unit tangent (0.4472135955, 0.894427191, 0)
+  end   (10, 0, 0) unit tangent (0.4472135955, -0.894427191, 0)
+  point at 0.5 (5, 5, 0)
+interpolatePeriodic: domain [0, 40] periodic=1 closed=1
+  start (0, -1.11022302463e-16, 0) unit tangent (0.789352217376, -0.613940613515, 0)
+  end   (-1.7763568394e-15, -1.11022302463e-15, 0) unit tangent (0.789352217376, -0.613940613515, 0)
+== SketchBuildProfileTests ==
+closed 10x10 square polygon: IsDone=1 length=40
+the same polygon with the construction diagonal left in: length=54.1421356237
+== AngleHelperTests ==
+edges 1 and 2 (TopExp order): gp_Vec::Angle = 1.57079632679
+box face pairs by normal angle: 0:0  pi/2:12  pi:3  other:0
+gp_Vec(1,0,0).Angle(gp_Vec(2,0,0))  = 0
+gp_Vec(1,0,0).Angle(gp_Vec(-1,0,0)) = 3.1415926535897931
+gp_Vec(0,0,0).Angle(...) throws gp_VectorWithNullMagnitude:  
+gp_Dir(1,0,0).Angle(gp_Dir(0,1,0)) = 1.5707963267948966
+gp_Dir(0,0,1).Angle(gp_Dir(0,1,0)) = 1.5707963267948966
