@@ -5,6 +5,12 @@ import simd
 
 @Suite("Pipe Feature")
 struct PipeFeatureTests {
+
+    // #766: both tests ended in `_ = result`, so they asserted nothing and could not fail. With
+    // fuse: false, BRepFeat_MakePipe cuts the profile swept along the spine through the centred
+    // box: the kernel's valid results have volume 20^3 - pi * 2^2 * 20 and 30^3 - 2 * 2 * 30. See
+    // Scripts/repro/766-pipe-shell/.
+
     @Test("Pipe feature API is callable")
     func pipeFeatureCallable() {
         let box = Shape.box(width: 20, height: 20, depth: 20)!
@@ -16,7 +22,11 @@ struct PipeFeatureTests {
             profile: profile, sketchFaceIndex: 5,
             spine: spine, fuse: false
         )
-        _ = result
+        #expect(result != nil)
+        if let result {
+            #expect(result.isValid)
+            #expect(abs((result.volume ?? 0) - 7748.6725877128156) < 1e-6)
+        }
     }
 
     @Test("Pipe feature with different spine")
@@ -30,6 +40,10 @@ struct PipeFeatureTests {
             profile: profile, sketchFaceIndex: 5,
             spine: spine, fuse: false
         )
-        _ = result
+        #expect(result != nil)
+        if let result {
+            #expect(result.isValid)
+            #expect(abs((result.volume ?? 0) - 26880) < 1e-6)
+        }
     }
 }
