@@ -1,0 +1,13 @@
+before Perform: SewedShape null=1
+six box faces, 1e-6: null=0 type=3 faces=6 valid=1 free=0 contig=0 degen=0 multiple=0 deletedFaces=0
+five box faces, 1e-6: null=0 type=3 faces=5 valid=1 free=4 contig=0 degen=0 multiple=0 deletedFaces=0
+two coincident thin boxes, 1e-3: null=0 type=0 faces=12 valid=1 free=0 contig=0 degen=0 multiple=0 deletedFaces=0
+box faces 1 and 2, 1e-3: null=0 type=0 faces=2 valid=1 free=8 contig=0 degen=0 multiple=0 deletedFaces=0
+  IsModified(face1)=0 IsModified(face2)=0
+whole box, 1e-3: null=0 type=3 faces=6 valid=1 free=0 contig=0 degen=0 multiple=0 deletedFaces=0
+  IsDegenerated(box)=0 IsSectionBound(edge1)=0 WhichFace(edge1) null=1
+Load(box) + modes: null=0 type=3 faces=6 valid=1 free=12 contig=0 degen=0 multiple=0 deletedFaces=0
+whole box, 1e-6: null=0 type=3 faces=6 valid=1 free=0 contig=0 degen=0 multiple=0 deletedFaces=0
+rect10 + disc5: null=0 type=0 faces=2 valid=1 free=5 contig=0 degen=0 multiple=0 deletedFaces=0
+rect10 + disc5 + rect8: null=0 type=0 faces=3 valid=1 free=9 contig=0 degen=0 multiple=0 deletedFaces=0
+three faces on one edge, non-manifold: null=0 type=3 faces=3 valid=1 free=9 contig=0 degen=0 multiple=1 deletedFaces=0
