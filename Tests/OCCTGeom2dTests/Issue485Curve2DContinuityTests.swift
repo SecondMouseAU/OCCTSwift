@@ -43,35 +43,29 @@ struct Issue485Curve2DContinuityTests {
     }
 
     @Test("Knot multiplicity drives the measured class, at GeomAbs_Shape's own ordinals")
-    func knotMultiplicityDrivesMeasuredClass() {
-        if let c2 = Self.bspline(interiorMultiplicity: 1) {
-            #expect(c2.continuityClass == .c2)
-            #expect(c2.continuity == 4)  // the old encoding said 2
-        }
-        if let c1 = Self.bspline(interiorMultiplicity: 2) {
-            #expect(c1.continuityClass == .c1)
-            #expect(c1.continuity == 2)  // the old encoding said 1
-        }
-        if let c0 = Self.bspline(interiorMultiplicity: 3) {
-            #expect(c0.continuityClass == .c0)
-            #expect(c0.continuity == 0)
-        }
+    func knotMultiplicityDrivesMeasuredClass() throws {
+        // #1979: each fixture was `if let`, so a nil B-spline skipped its row. Now required.
+        let c2 = try #require(Self.bspline(interiorMultiplicity: 1))
+        #expect(c2.continuityClass == .c2)
+        #expect(c2.continuity == 4)  // the old encoding said 2
+        let c1 = try #require(Self.bspline(interiorMultiplicity: 2))
+        #expect(c1.continuityClass == .c1)
+        #expect(c1.continuity == 2)  // the old encoding said 1
+        let c0 = try #require(Self.bspline(interiorMultiplicity: 3))
+        #expect(c0.continuityClass == .c0)
+        #expect(c0.continuity == 0)
     }
 
     @Test("Analytic 2D curves report CN as ordinal 6, not 99")
-    func analyticCurvesReportCN() {
-        if let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)) {
-            #expect(segment.continuityClass == .cN)
-            #expect(segment.continuity == 6)
-        }
+    func analyticCurvesReportCN() throws {
+        let segment = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)))  // #1979: was `if let`
+        #expect(segment.continuityClass == .cN)
+        #expect(segment.continuity == 6)
     }
 
     @Test("A G1-only 2D curve is reachable and reports ordinal 1")
-    func g1CurveReportsOrdinalOne() {
-        guard let g1 = Self.offsetOfG1Basis() else {
-            Issue.record("could not build the G1 offset-curve fixture")
-            return
-        }
+    func g1CurveReportsOrdinalOne() throws {
+        let g1 = try #require(Self.offsetOfG1Basis())
         #expect(g1.continuityClass == .g1)
         #expect(g1.continuity == 1)  // the old encoding said -2
     }

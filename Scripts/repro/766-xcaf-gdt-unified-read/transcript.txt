@@ -1,0 +1,11 @@
+range 10..12: range=true plusMinus=false nvals=2 firstSlot=10 value=11 lower=10 upper=12 lowerTol=0 upperTol=0 class=false
+tolerance written onto the range: SetLowerTolValue=false SetUpperTolValue=false
+range after tolerance write: range=true plusMinus=false nvals=2 firstSlot=10 value=11 lower=10 upper=12 lowerTol=0 upperTol=0 class=false
+plus/minus 20 -0.3/+0.7: range=false plusMinus=true nvals=3 firstSlot=20 value=20 lower=0 upper=0 lowerTol=-0.3 upperTol=0.7 class=false
+simple thickness 3.5: range=false plusMinus=false nvals=1 firstSlot=3.5 value=3.5 lower=0 upper=0 lowerTol=0 upperTol=0 class=false
+H7 hole: isHole=true formVariance=11 grade=8
+H7 hole: range=false plusMinus=false nvals=1 firstSlot=20 value=20 lower=0 upper=0 lowerTol=0 upperTol=0 class=true
+range + js9 shaft: isHole=false formVariance=12 grade=10 range=true
+XCAFDimTolObjects_DimensionFormVariance cases=29
+XCAFDimTolObjects_DimensionGrade cases=20
+Size_Diameter ordinal=15 Perpendicularity-type tolerance ordinal is in the tolerance probe
