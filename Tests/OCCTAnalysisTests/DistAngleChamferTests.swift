@@ -17,28 +17,15 @@ struct DistAngleChamferTests {
 
     /// Chamfers `Shape.box(10, 10, 10)`'s edge 0 on face 0 with distance 1 and checks the
     /// result's validity, face count and volume against the closed form.
-    private func checkChamfer(angleDegrees: Double) {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+    private func checkChamfer(angleDegrees: Double) throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-            return
-        }
-        guard
-            let r = box.chamferedDistAngle([
-                (edgeIndex: 0, faceIndex: 0, distance: 1.0, angleDegrees: angleDegrees)
-            ])
-        else {
         let r = try #require(box.chamferedDistAngle([
             (edgeIndex: 0, faceIndex: 0, distance: 1.0, angleDegrees: angleDegrees)
         ]))
-            return
-        }
         #expect(r.isValid)
         #expect(r.faces().count == 7, "one chamfer face added to six, got \(r.faces().count)")
         let expected = 1000.0 - 0.5 * 1.0 * 1.0 * tan(angleDegrees * .pi / 180.0) * 10.0
-        guard let v = r.volume else {
-            Issue.record("a chamfered box has a volume")
         let v = try #require(r.volume)
-        }
         #expect(abs(v - expected) < 1e-9, "at \(angleDegrees) degrees expected \(expected), got \(v)")
     }
 
