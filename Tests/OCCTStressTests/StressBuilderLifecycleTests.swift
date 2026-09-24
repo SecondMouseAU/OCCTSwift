@@ -24,7 +24,6 @@ struct StressFilletBuilderLifecycleTests {
         let builder = try #require(FilletBuilder(shape: box))
         let result = builder.build()
         #expect(result == nil)
-        if let r = result { #expect(r.isValid) }
     }
 
     @Test func normalCycle() throws {
@@ -57,7 +56,7 @@ struct StressFilletBuilderLifecycleTests {
         let box = standardBox()
         let builder = try #require(FilletBuilder(shape: box))
         let edges = box.edges()
-        guard !edges.isEmpty else { return }
+        try #require(!edges.isEmpty)
         // Oversized radius should fail gracefully
         builder.addEdge(edges[0], radius: 100.0)
         let result = builder.build()
@@ -113,7 +112,6 @@ struct StressChamferBuilderLifecycleTests {
         let builder = try #require(ChamferBuilder(shape: box))
         let result = builder.build()
         #expect(result == nil)
-        if let r = result { #expect(r.isValid) }
     }
 
     @Test func normalCycleSymmetric() throws {

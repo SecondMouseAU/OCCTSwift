@@ -93,7 +93,7 @@
     "red_green": {
       "injection": "EARLY:OCCTFilletBuilderBuild",
       "env": "OCCT766=|EARLY:OCCTFilletBuilderBuild|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:36 Expectation failed: builder.build()",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:35 Expectation failed: builder.build()",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -145,7 +145,7 @@
     "red_green": {
       "injection": "OCCTFilletBuilderBuild: catch returns a wrapper of a null shape instead of nil",
       "env": "OCCT766=|FAKE:OCCTFilletBuilderBuild|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:66 Expectation failed: result == nil",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:65 Expectation failed: result == nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -171,7 +171,7 @@
     "red_green": {
       "injection": "EARLY:OCCTFilletBuilderBuild",
       "env": "OCCT766=|EARLY:OCCTFilletBuilderBuild|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:78 Expectation failed: builder.build()",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:77 Expectation failed: builder.build()",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -197,7 +197,7 @@
     "red_green": {
       "injection": "EARLY:OCCTFilletBuilderGetRadius",
       "env": "OCCT766=|EARLY:OCCTFilletBuilderGetRadius|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:96 Expectation failed: builder.radius(contour: 1) == 1",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:95 Expectation failed: builder.radius(contour: 1) == 1",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -223,7 +223,7 @@
     "red_green": {
       "injection": "OCCTChamferBuilderBuild: catch returns a wrapper of a null shape instead of nil",
       "env": "OCCT766=|FAKE:OCCTChamferBuilderBuild|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:115 Expectation failed: result == nil",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:114 Expectation failed: result == nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -249,7 +249,7 @@
     "red_green": {
       "injection": "EARLY:OCCTChamferBuilderBuild",
       "env": "OCCT766=|EARLY:OCCTChamferBuilderBuild|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:125 Expectation failed: builder.build()",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:123 Expectation failed: builder.build()",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -301,7 +301,7 @@
     "red_green": {
       "injection": "OCCTChamferBuilderBuild: catch returns a wrapper of a null shape instead of nil",
       "env": "OCCT766=|FAKE:OCCTChamferBuilderBuild|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:148 Expectation failed: result == nil",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:146 Expectation failed: result == nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -327,7 +327,7 @@
     "red_green": {
       "injection": "EARLY:OCCTChamferBuilderBuild",
       "env": "OCCT766=|EARLY:OCCTChamferBuilderBuild|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:159 Expectation failed: builder.build()",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:157 Expectation failed: builder.build()",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -353,7 +353,7 @@
     "red_green": {
       "injection": "EARLY:OCCTChamferBuilderIsSymmetric",
       "env": "OCCT766=|EARLY:OCCTChamferBuilderIsSymmetric|",
-      "red": "RED exit 1: StressBuilderLifecycleTests.swift:176 Expectation failed: builder.isSymmetric(contour: 1)",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:174 Expectation failed: builder.isSymmetric(contour: 1)",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
