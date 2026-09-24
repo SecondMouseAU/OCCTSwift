@@ -2912,5 +2912,187 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Selector Tests::Add and pick box at center",
+    "bridge_function": "OCCTSelectorPick",
+    "bridge_output": {
+      "hits": 0
+    },
+    "kernel_output": {
+      "NbPicked": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Selector Tests::Pick miss at far corner",
+    "bridge_function": "OCCTSelectorPick",
+    "bridge_output": {
+      "hits": 0
+    },
+    "kernel_output": {
+      "NbPicked": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Selector Tests::Multiple shapes return correct IDs",
+    "bridge_function": "OCCTSelectorAddShape",
+    "bridge_output": {
+      "added": [
+        true,
+        true
+      ],
+      "hitsLeft": 0,
+      "hitsRight": 0
+    },
+    "kernel_output": {
+      "NbPicked": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Selector Tests::Remove shape then pick returns miss",
+    "bridge_function": "OCCTSelectorRemoveShape",
+    "bridge_output": {
+      "removed": true,
+      "hits": 0
+    },
+    "kernel_output": {
+      "NbPicked": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Selector Tests::Rectangle pick covers geometry",
+    "bridge_function": "OCCTSelectorPickRect",
+    "bridge_output": {
+      "hits": 0
+    },
+    "kernel_output": {
+      "NbPicked (point route)": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Selector Tests::Clear all removes everything",
+    "bridge_function": "OCCTSelectorClear",
+    "bridge_output": {
+      "hits": 0
+    },
+    "kernel_output": {
+      "NbPicked": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 DrawingTolerance::Symmetric tolerance rendered inline on the nominal label",
+    "bridge_function": "formatTolerance / DrawingTolerance (Swift)",
+    "bridge_output": {
+      "contains": "±0.050",
+      "texts": 1
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingTolerance::Bilateral tolerance produces stacked upper + lower TEXT entries",
+    "bridge_function": "formatTolerance / DrawingTolerance (Swift)",
+    "bridge_output": {
+      "textsDelta": 2
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingTolerance::Unilateral tolerance stacks signed value against a 0",
+    "bridge_function": "formatTolerance / DrawingTolerance (Swift)",
+    "bridge_output": {
+      "texts": 3
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingTolerance::Fit class appended inline with space",
+    "bridge_function": "formatTolerance / DrawingTolerance (Swift)",
+    "bridge_output": {
+      "contains": " H7",
+      "texts": 1
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingTolerance::Limits tolerance stacks upper over lower",
+    "bridge_function": "formatTolerance / DrawingTolerance (Swift)",
+    "bridge_output": {
+      "texts": 3
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingTolerance::DrawingTolerance Codable round-trip",
+    "bridge_function": "formatTolerance / DrawingTolerance (Swift)",
+    "bridge_output": {
+      "roundTrip": "all six cases"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call"
+    },
+    "status": "N/A"
   }
 ]
