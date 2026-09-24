@@ -19,7 +19,7 @@ struct DistAngleChamferTests {
     /// result's validity, face count and volume against the closed form.
     private func checkChamfer(angleDegrees: Double) {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("Shape.box returned nil")
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
             return
         }
         guard
