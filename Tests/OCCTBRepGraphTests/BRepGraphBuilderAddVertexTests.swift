@@ -29,8 +29,8 @@ struct BRepGraphBuilderAddVertexTests {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let graph = try #require(BRepGraph(shape: box))
         let orig = graph.vertexCount
-        let v1 = graph.addVertex(x: 0, y: 0, z: 0, tolerance: 0.01)
-        let v2 = graph.addVertex(x: 1, y: 2, z: 3, tolerance: 0.02)
+        let v1 = try #require(graph.addVertex(x: 0, y: 0, z: 0, tolerance: 0.01))
+        let v2 = try #require(graph.addVertex(x: 1, y: 2, z: 3, tolerance: 0.02))
         #expect(v1 == 8)
         #expect(v2 == 9)
         #expect(graph.vertexCount == orig + 2)
