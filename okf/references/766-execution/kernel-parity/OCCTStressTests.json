@@ -145,7 +145,7 @@
     "red_green": {
       "injection": "OCCTShapeChamfer returns the input unchanged when not done or on a throw",
       "env": "OCCT766=|CHAMFERPASS|",
-      "red": "StressNullInvalidTests.swift:56 Expectation failed: chamfered == nil",
+      "red": "StressNullInvalidTests.swift:50 Expectation failed: chamfered == nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -171,7 +171,7 @@
     "red_green": {
       "injection": "runBooleanEx returns nil after a successful build",
       "env": "OCCT766=|BOOLNULL|",
-      "red": "StressNullInvalidTests.swift:61 Expectation failed: box.union(box)",
+      "red": "StressNullInvalidTests.swift:55 Expectation failed: box.union(box)",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -197,7 +197,7 @@
     "red_green": {
       "injection": "OCCTShapeGetVolume accepts a zero mass as a measured volume",
       "env": "OCCT766=|ZEROVOL|",
-      "red": "StressNullInvalidTests.swift:73 Expectation failed: r.volume == nil",
+      "red": "StressNullInvalidTests.swift:67 Expectation failed: r.volume == nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -223,7 +223,7 @@
     "red_green": {
       "injection": "OCCTShapeGetVolume accepts a zero mass as a measured volume",
       "env": "OCCT766=|ZEROVOL|",
-      "red": "StressNullInvalidTests.swift:82 Expectation failed: r.volume == nil",
+      "red": "StressNullInvalidTests.swift:76 Expectation failed: r.volume == nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -249,7 +249,7 @@
     "red_green": {
       "injection": "OCCTShapeCreateBox: catch returns a wrapper of a null shape instead of nil",
       "env": "OCCT766=|FAKE:OCCTShapeCreateBox|",
-      "red": "StressNullInvalidTests.swift:99 Expectation failed: box == nil",
+      "red": "StressNullInvalidTests.swift:93 Expectation failed: box == nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -275,7 +275,7 @@
     "red_green": {
       "injection": "OCCTShapeCreateCylinder returns nil",
       "env": "OCCT766=|NULL:OCCTShapeCreateCylinder|",
-      "red": "StressNullInvalidTests.swift:103 Expectation failed: Shape.cylinder(radius: 0, height: 0)",
+      "red": "StressNullInvalidTests.swift:97 Expectation failed: Shape.cylinder(radius: 0, height: 0)",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -301,7 +301,7 @@
     "red_green": {
       "injection": "OCCTShapeCreateSphere returns nil",
       "env": "OCCT766=|NULL:OCCTShapeCreateSphere|",
-      "red": "StressNullInvalidTests.swift:109 Expectation failed: Shape.sphere(radius: 0)",
+      "red": "StressNullInvalidTests.swift:103 Expectation failed: Shape.sphere(radius: 0)",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -327,7 +327,7 @@
     "red_green": {
       "injection": "OCCTShapeCreateCone: catch returns a wrapper of a null shape instead of nil",
       "env": "OCCT766=|FAKE:OCCTShapeCreateCone|",
-      "red": "StressNullInvalidTests.swift:116 Expectation failed: cone == nil",
+      "red": "StressNullInvalidTests.swift:110 Expectation failed: cone == nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -353,7 +353,7 @@
     "red_green": {
       "injection": "OCCTShapeCreateTorus returns nil",
       "env": "OCCT766=|NULL:OCCTShapeCreateTorus|",
-      "red": "StressNullInvalidTests.swift:120 Expectation failed: Shape.torus(majorRadius: 0, minorRadius: 0)",
+      "red": "StressNullInvalidTests.swift:114 Expectation failed: Shape.torus(majorRadius: 0, minorRadius: 0)",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -379,7 +379,7 @@
     "red_green": {
       "injection": "OCCTShapeCreateBox: catch returns a wrapper of a null shape instead of nil",
       "env": "OCCT766=|FAKE:OCCTShapeCreateBox|",
-      "red": "StressNullInvalidTests.swift:128 Expectation failed: box == nil",
+      "red": "StressNullInvalidTests.swift:122 Expectation failed: box == nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -405,7 +405,7 @@
     "red_green": {
       "injection": "OCCTShapeGetVolume reports Mass() × 1.5",
       "env": "OCCT766=|VOLSCALE|",
-      "red": "StressNullInvalidTests.swift:133 Expectation failed: abs((box.volume ?? 0) - 1e-9) < 1e-15",
+      "red": "StressNullInvalidTests.swift:127 Expectation failed: abs((box.volume ?? 0) - 1e-9) < 1e-15",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -431,7 +431,7 @@
     "red_green": {
       "injection": "OCCTWireBuilderIsDone always true",
       "env": "OCCT766=|TRUE:OCCTWireBuilderIsDone|",
-      "red": "StressNullInvalidTests.swift:154 Expectation failed: !builder.isDone",
+      "red": "StressNullInvalidTests.swift:148 Expectation failed: !builder.isDone",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -457,7 +457,7 @@
     "red_green": {
       "injection": "OCCTThruSectionsBuild: < 2 sections guard removed and built set without IsDone",
       "env": "OCCT766=|TSGUARD|",
-      "red": "StressNullInvalidTests.swift:165 Expectation failed: !ok",
+      "red": "StressNullInvalidTests.swift:159 Expectation failed: !ok",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -483,7 +483,7 @@
     "red_green": {
       "injection": "OCCTSewingResult returns a null sewn shape as non-nil",
       "env": "OCCT766=|FAKE:OCCTSewingResult|",
-      "red": "StressNullInvalidTests.swift:174 Expectation failed: sewing.result == nil",
+      "red": "StressNullInvalidTests.swift:168 Expectation failed: sewing.result == nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -509,7 +509,7 @@
     "red_green": {
       "injection": "OCCTSectionBuilderBuild returns an empty shape when not done",
       "env": "OCCT766=|FAKE:OCCTSectionBuilderBuild|",
-      "red": "StressNullInvalidTests.swift:180 Expectation failed: section.build() == nil",
+      "red": "StressNullInvalidTests.swift:174 Expectation failed: section.build() == nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
@@ -535,7 +535,7 @@
     "red_green": {
       "injection": "OCCTCellsBuilderCreate: empty-input and HasErrors guards removed",
       "env": "OCCT766=|SKIP:OCCTCellsBuilderCreate|",
-      "red": "StressNullInvalidTests.swift:189 Expectation failed: builder == nil",
+      "red": "StressNullInvalidTests.swift:183 Expectation failed: builder == nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": false
     },
@@ -561,7 +561,7 @@
     "red_green": {
       "injection": "OCCTWireCreateRectangle: Precision::Confusion() guard removed, catch returns an empty wire",
       "env": "OCCT766=|SKIP:OCCTWireCreateRectangle|FAKE:OCCTWireCreateRectangle|",
-      "red": "StressNullInvalidTests.swift:196 Expectation failed: wire == nil",
+      "red": "StressNullInvalidTests.swift:190 Expectation failed: wire == nil",
       "green": "passes with the injection off and Sources/ reverted",
       "strengthened": true
     },
