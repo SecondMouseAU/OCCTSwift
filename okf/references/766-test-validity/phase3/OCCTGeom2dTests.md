@@ -405,3 +405,18 @@ Probe: `Scripts/repro/766-geom2d-eval-involute-logspiral/`. Every row was run re
 | Geom2dEval — Logarithmic Spiral::logSpiralD0AtZero | `OCCTGeom2dEvalLogSpiralD0` | scale + 1 | ✅ | ✅ | MATCH |  |
 | Geom2dEval — Logarithmic Spiral::logSpiralGrows | `OCCTGeom2dEvalLogSpiralD0` | scale + 1 | ✅ | ✅ | MATCH | `r2 > r1` only |
 | Geom2dEval — Logarithmic Spiral::logSpiralD1 | `OCCTGeom2dEvalLogSpiralD1` | growth exponent + 0.1 | ✅ | ✅ | MATCH | `speed > 0` only |
+### #1979 executed: `Geom2dEvalSineWaveTests.swift`, `Geom2dHyperbolaTests.swift`, `Geom2dLineTests.swift`
+Probe: `Scripts/repro/766-geom2d-conic-props-sine-lprop/`. Every row was run red with the injection applied and green after it was reverted.
+| Geom2dEval — 2D Sine Wave::sineWave2DD0AtZero | `OCCTGeom2dEvalSineWaveD0` | phase + 0.5 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — 2D Sine Wave::sineWave2DD0Peak | `OCCTGeom2dEvalSineWaveD0` | phase + 0.5 | ✅ | ✅ | MATCH | y only; x = t now pinned too |
+| Geom2dEval — 2D Sine Wave::sineWave2DD1 | `OCCTGeom2dEvalSineWaveD1` | omega + 1 | ✅ | ✅ | MATCH |  |
+| Geom2d_Hyperbola Properties::hyperbola2DRadii | `OCCTCurve2DHyperbolaMajorRadius` | major radius + 1 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Geom2d_Hyperbola Properties::hyperbola2DEccentricity | `OCCTCurve2DHyperbolaEccentricity` | eccentricity + 0.01 | ✅ | ✅ | MATCH | `e > 1` inside `if let`; now sqrt(34)/5 |
+| Geom2d_Hyperbola Properties::hyperbola2DFocal | `OCCTCurve2DHyperbolaFocal` | focal + 0.01 | ✅ | ✅ | MATCH | `focal > 0` inside `if let`; now 2 sqrt(34) |
+| Geom2d_Hyperbola Properties::hyperbola2DFocus1 | `OCCTCurve2DHyperbolaFocus1` | focus x + 0.5 | ✅ | ✅ | MATCH | `x > 0` inside `if let`; now (sqrt 34, 0) |
+| Geom2d_Line Properties::line2DDirection | `OCCTCurve2DLineDirection` | direction components swapped | ✅ | ✅ | MATCH | `if let`; now `#require` and both components |
+| Geom2d_Line Properties::line2DLocation | `OCCTCurve2DLineLocation` | location x + 1 | ✅ | ✅ | MATCH | `if let`; now `#require` and both components |
+| Geom2d_Line Properties::line2DSetDirection | `OCCTCurve2DLineSetDirection` | SetDirection skipped | ✅ | ✅ | MATCH | `if let`; now `#require` and both components |
+| Geom2d_Line Properties::line2DSetLocation | `OCCTCurve2DLineSetLocation` | SetLocation skipped | ✅ | ✅ | MATCH | `if let`; now `#require` and both components |
+| Geom2d_Line Properties::line2DDistance | `OCCTCurve2DLineDistance` | distance + 1 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Geom2d_Line Properties::line2DLin2d | `OCCTCurve2DLineLin2d` | location x + 1 | ✅ | ✅ | MATCH | `if let`; now `#require` and location pinned |

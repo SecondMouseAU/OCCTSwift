@@ -8499,5 +8499,441 @@
       "probe": "Scripts/repro/766-geom2d-eval-involute-logspiral/",
       "rewritten": "`speed > 0` only"
     }
+  },
+  {
+    "test_name": "Geom2dEval — 2D Sine Wave::sineWave2DD0AtZero",
+    "bridge_function": "OCCTGeom2dEvalSineWaveD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "phase + 0.5",
+      "red": "Geom2dEvalSineWaveTests.swift:13:9: Expectation failed: abs(p.y) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Geom2dEval — 2D Sine Wave::sineWave2DD0Peak",
+    "bridge_function": "OCCTGeom2dEvalSineWaveD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0.785398163397,
+          1.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0.785398163397,
+          1.5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "phase + 0.5",
+      "red": "Geom2dEvalSineWaveTests.swift:20:9: Expectation failed: abs(p.y - 1.5) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "y only; x = t now pinned too"
+    }
+  },
+  {
+    "test_name": "Geom2dEval — 2D Sine Wave::sineWave2DD1",
+    "bridge_function": "OCCTGeom2dEvalSineWaveD1",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          0
+        ],
+        "D1": [
+          1,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          0
+        ],
+        "D1": [
+          1,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "omega + 1",
+      "red": "Geom2dEvalSineWaveTests.swift:27:9: Expectation failed: abs(r.d1.y - 3.0) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Geom2d_Hyperbola Properties::hyperbola2DRadii",
+    "bridge_function": "OCCTCurve2DHyperbolaMajorRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "a": 5,
+        "b": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "a": 5,
+        "b": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "major radius + 1",
+      "red": "Geom2dHyperbolaTests.swift:18:9: Expectation failed: abs(h.hyperbolaProperties.majorRadius - 5) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Geom2d_Hyperbola Properties::hyperbola2DEccentricity",
+    "bridge_function": "OCCTCurve2DHyperbolaEccentricity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "e": 1.16619037897
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "e": 1.16619037897
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "eccentricity + 0.01",
+      "red": "Geom2dHyperbolaTests.swift:24:9: Expectation failed: abs(h.hyperbolaProperties.eccentricity - 34.0.squareRoot() / 5) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`e > 1` inside `if let`; now sqrt(34)/5"
+    }
+  },
+  {
+    "test_name": "Geom2d_Hyperbola Properties::hyperbola2DFocal",
+    "bridge_function": "OCCTCurve2DHyperbolaFocal",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "focal": 11.6619037897
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "focal": 11.6619037897
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "focal + 0.01",
+      "red": "Geom2dHyperbolaTests.swift:29:9: Expectation failed: abs(h.hyperbolaProperties.focal - 2 * 34.0.squareRoot()) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`focal > 0` inside `if let`; now 2 sqrt(34)"
+    }
+  },
+  {
+    "test_name": "Geom2d_Hyperbola Properties::hyperbola2DFocus1",
+    "bridge_function": "OCCTCurve2DHyperbolaFocus1",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "focus1": [
+          5.83095189485,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "focus1": [
+          5.83095189485,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "focus x + 0.5",
+      "red": "Geom2dHyperbolaTests.swift:35:9: Expectation failed: simd_distance(f, SIMD2(34.0.squareRoot(), 0)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`x > 0` inside `if let`; now (sqrt 34, 0)"
+    }
+  },
+  {
+    "test_name": "Geom2d_Line Properties::line2DDirection",
+    "bridge_function": "OCCTCurve2DLineDirection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "dir": [
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "dir": [
+          1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "direction components swapped",
+      "red": "Geom2dLineTests.swift:17:9: Expectation failed: simd_distance(l.lineProperties.direction, SIMD2(1, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`if let`; now `#require` and both components"
+    }
+  },
+  {
+    "test_name": "Geom2d_Line Properties::line2DLocation",
+    "bridge_function": "OCCTCurve2DLineLocation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "loc": [
+          1,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "loc": [
+          1,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "location x + 1",
+      "red": "Geom2dLineTests.swift:22:9: Expectation failed: simd_distance(l.lineProperties.location, SIMD2(1, 2)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`if let`; now `#require` and both components"
+    }
+  },
+  {
+    "test_name": "Geom2d_Line Properties::line2DSetDirection",
+    "bridge_function": "OCCTCurve2DLineSetDirection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "dir": [
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "dir": [
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "SetDirection skipped",
+      "red": "Geom2dLineTests.swift:28:9: Expectation failed: simd_distance(l.lineProperties.direction, SIMD2(0, 1)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`if let`; now `#require` and both components"
+    }
+  },
+  {
+    "test_name": "Geom2d_Line Properties::line2DSetLocation",
+    "bridge_function": "OCCTCurve2DLineSetLocation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "loc": [
+          5,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "loc": [
+          5,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "SetLocation skipped",
+      "red": "Geom2dLineTests.swift:34:9: Expectation failed: simd_distance(l.lineProperties.location, SIMD2(5, 5)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`if let`; now `#require` and both components"
+    }
+  },
+  {
+    "test_name": "Geom2d_Line Properties::line2DDistance",
+    "bridge_function": "OCCTCurve2DLineDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distance": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "distance": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "distance + 1",
+      "red": "Geom2dLineTests.swift:40:9: Expectation failed: abs(dist - 5) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Geom2d_Line Properties::line2DLin2d",
+    "bridge_function": "OCCTCurve2DLineLin2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "location": [
+          1,
+          2
+        ],
+        "direction": [
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "location": [
+          1,
+          2
+        ],
+        "direction": [
+          1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "location x + 1",
+      "red": "Geom2dLineTests.swift:46:9: Expectation failed: simd_distance(gl.location, SIMD2(1, 2)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-conic-props-sine-lprop/",
+      "rewritten": "`if let`; now `#require` and location pinned"
+    }
   }
 ]
