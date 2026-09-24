@@ -5,7 +5,7 @@ import simd
 @testable import OCCTSwift
 
 // Every expected value is what Geom_BezierCurve reports after the same edit
-// (Scripts/repro/766-curve-bezier-curve3d/transcript.txt). The earlier versions wrapped each body
+// (Scripts/repro/766-curve-bezier-manipulation/transcript.txt). Earlier versions wrapped each body
 // in `if let`, and most checked only the Bool the bridge returns, which is `true` whether or not
 // the edit happened, so a bridge that skipped Segment, InsertPoleAfter or SetWeight passed (#766).
 @Suite("Bezier Curve Manipulation Tests")
