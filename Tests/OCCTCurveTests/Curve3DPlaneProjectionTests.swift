@@ -6,6 +6,9 @@ import simd
 
 @Suite("Curve3D Plane Projection Tests")
 struct Curve3DPlaneProjectionTests {
+    // Values are GeomProjLib::ProjectOnPlane's on the same curves
+    // (Scripts/repro/766-curve-projection-primitives/transcript.txt). Several of these checked one
+    // coordinate, or z alone, and the circle test allowed 0.1 of slack (#766).
 
     @Test("Project segment onto XY plane along Z direction")
     func projectSegmentOntoXYPlane() {
@@ -48,8 +51,9 @@ struct Curve3DPlaneProjectionTests {
             // Should still be a circle of radius 5 at z=0
             let pt = c.point(at: c.domain.lowerBound)
             #expect(abs(pt.z) < 1e-6)
-            let dist = sqrt(pt.x * pt.x + pt.y * pt.y)
-            #expect(abs(dist - 5.0) < 0.1)
+            #expect(simd_distance(pt, SIMD3(5, 0, 0)) < 1e-9)
+            let mid = c.point(at: (c.domain.lowerBound + c.domain.upperBound) / 2)
+            #expect(simd_distance(mid, SIMD3(-5, 0, 0)) < 1e-9)
         }
     }
 
@@ -70,8 +74,11 @@ struct Curve3DPlaneProjectionTests {
         #expect(projected != nil)
         if let c = projected {
             // All Y coordinates should be zero
+            // The half circle flattens onto the X axis: its midpoint lands on the origin.
             let mid = c.point(at: (c.domain.lowerBound + c.domain.upperBound) / 2.0)
-            #expect(abs(mid.y) < 1e-6)
+            #expect(simd_distance(mid, SIMD3(0, 0, 0)) < 1e-9)
+            #expect(simd_distance(c.point(at: c.domain.lowerBound), SIMD3(5, 0, 0)) < 1e-9)
+            #expect(simd_distance(c.point(at: c.domain.upperBound), SIMD3(-5, 0, 0)) < 1e-9)
         }
     }
 
@@ -93,9 +100,12 @@ struct Curve3DPlaneProjectionTests {
         if let c = projected {
             // All Z coordinates should be zero
             let pts = c.drawUniform(pointCount: 10)
+            #expect(pts.count == 10)
             for pt in pts {
                 #expect(abs(pt.z) < 1e-6)
             }
+            #expect(simd_distance(c.point(at: c.domain.lowerBound), SIMD3(0, 0, 0)) < 1e-9)
+            #expect(simd_distance(c.point(at: c.domain.upperBound), SIMD3(10, 8, 0)) < 1e-9)
         }
     }
 
@@ -113,8 +123,8 @@ struct Curve3DPlaneProjectionTests {
             // Start and end should correspond
             let start = c.point(at: c.domain.lowerBound)
             let end = c.point(at: c.domain.upperBound)
-            #expect(abs(start.x - 2.0) < 1e-6)
-            #expect(abs(end.x - 12.0) < 1e-6)
+            #expect(simd_distance(start, SIMD3(2, 3, 0)) < 1e-9)
+            #expect(simd_distance(end, SIMD3(12, 3, 0)) < 1e-9)
         }
     }
 
@@ -135,19 +145,28 @@ struct Curve3DPlaneProjectionTests {
             let start = c.point(at: c.domain.lowerBound)
             #expect(abs(start.z) < 1e-6)
             // The X shift should be -10 (projected from z=10 along (1,0,1) to z=0)
-            #expect(abs(start.x - (-10.0)) < 1e-3)
+            #expect(abs(start.x - (-10.0)) < 1e-9)
+            #expect(simd_distance(c.point(at: c.domain.upperBound), SIMD3(0, 0, 0)) < 1e-9)
         }
     }
 
     @Test("Project onto plane with near-parallel direction returns nil or valid curve")
     func projectNearParallelDirection() {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
-        // Direction nearly in the plane, this may fail gracefully
-        // Just ensure no crash
-        let _ = seg.projectedOnPlane(
-            origin: SIMD3(0, 0, 0),
-            normal: SIMD3(0, 0, 1),
-            direction: SIMD3(1, 0, 0.001)
-        )
+        // Direction nearly in the plane. The earlier version discarded the result, so it could
+        // not fail (#766). The segment already lies in the plane, so GeomProjLib::ProjectOnPlane
+        // returns it unchanged even along this grazing direction.
+        guard
+            let c = seg.projectedOnPlane(
+                origin: SIMD3(0, 0, 0),
+                normal: SIMD3(0, 0, 1),
+                direction: SIMD3(1, 0, 0.001)
+            )
+        else {
+            Issue.record("projection along a grazing direction returned nil")
+            return
+        }
+        #expect(simd_distance(c.point(at: c.domain.lowerBound), SIMD3(0, 0, 0)) < 1e-9)
+        #expect(simd_distance(c.point(at: c.domain.upperBound), SIMD3(10, 0, 0)) < 1e-9)
     }
 }
