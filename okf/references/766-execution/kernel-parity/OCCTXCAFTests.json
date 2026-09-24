@@ -254,7 +254,7 @@
       "data": {}
     },
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
