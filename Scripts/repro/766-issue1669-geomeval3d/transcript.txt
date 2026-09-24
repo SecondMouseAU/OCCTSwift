@@ -1,0 +1,13 @@
+helix(5, 2) D0(0)=(5, 0, 0) finite=1
+ellipsoid(3, 4, 5) D0(0, 0)=(3, 0, 0) finite=1
+sineWave(2, 3, 0) D0(0)=(0, 0, 0) finite=1
+helix(5, 2) D2(0) point=(5, 0, 0) finite=1
+helix(5, 2) D2(0) D1=(0, 5, 0.318309886184) D2=(-5, -0, 0)
+helix(NaN, 2) D0(0)=(nan, nan, nan) finite=0
+helix(5, 2) D0(NaN)=(nan, nan, nan) finite=0
+helix(inf, 2) D0(0)=(nan, nan, nan) finite=0
+sineWave(NaN, 3, 0) D0(0)=(nan, nan, nan) finite=0
+sineWave(inf, 3, 0) D0(0)=(nan, nan, nan) finite=0
+ellipsoid(NaN, 4, 5) D0(0, 0)=(nan, nan, nan) finite=0
+ellipsoid(3, 4, 5) D0(NaN, 0)=(nan, nan, nan) finite=0
+paraboloid(1) D0(inf, 0)=(nan, nan, nan) finite=0
