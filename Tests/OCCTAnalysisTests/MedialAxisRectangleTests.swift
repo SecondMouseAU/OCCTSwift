@@ -4,8 +4,10 @@ import simd
 
 @testable import OCCTSwift
 
-@Suite(
-    "Medial Axis, Rectangle", .disabled("MedialAxis causes segfault in OCCT, pre-existing issue"))
+// Counts, positions and distances are BRepMAT2d_BisectingLocus's on the same face; see
+// Scripts/repro/766-medial-axis/transcript.txt. The suite was disabled for a segfault that only
+// the circle fixture in MedialAxisVariousShapesTests reproduces.
+@Suite("Medial Axis, Rectangle")
 struct MedialAxisRectangleTests {
 
     @Test("Rectangle produces non-nil medial axis")
@@ -24,9 +26,10 @@ struct MedialAxisRectangleTests {
             Issue.record("Failed to compute medial axis")
             return
         }
-        #expect(ma.arcCount > 0)
-        #expect(ma.nodeCount > 0)
-        #expect(ma.basicElementCount > 0)
+        // Four corner bisectors meeting the central segment between (-3, 0) and (3, 0).
+        #expect(ma.arcCount == 5)
+        #expect(ma.nodeCount == 6)
+        #expect(ma.basicElementCount == 4)
     }
 
     @Test("Rectangle min thickness equals half the short side")
@@ -140,6 +143,8 @@ struct MedialAxisRectangleTests {
                 break
             }
         }
+        // Arc 5, the central segment, is 2 from the boundary along its whole length.
+        #expect(foundArc, "no arc has both endpoints off the boundary")
         // At minimum, verify the function doesn't crash
         let d = ma.distanceToBoundary(arcIndex: 1, parameter: 0.5)
         #expect(d >= 0, "Distance should be non-negative")
