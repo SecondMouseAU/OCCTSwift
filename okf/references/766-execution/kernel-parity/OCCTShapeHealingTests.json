@@ -1872,5 +1872,413 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue #490: one continuity vocabulary per operation (healing)::restrictionEntryPointsAgree",
+    "bridge_function": "OCCTShapeBSplineRestrictionAdvanced",
+    "bridge_output": {
+      "type": "restriction",
+      "data": "plain == advanced within 1e-9 at C0/C1/C2"
+    },
+    "kernel_output": {
+      "type": "restriction",
+      "data": {
+        "C0": [
+          785.393925208,
+          785.393925208
+        ],
+        "C1": [
+          785.418038185,
+          785.418038185
+        ],
+        "C2": [
+          785.245930155,
+          785.245930155
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #490: one continuity vocabulary per operation (healing)::restrictionRejectsC3",
+    "bridge_function": "OCCTShapeCustomBSplineRestriction",
+    "bridge_output": {
+      "type": "restriction",
+      "data": {
+        "C3": null
+      }
+    },
+    "kernel_output": {
+      "type": "restriction",
+      "data": {
+        "C3": "both entry points throw"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #490: one continuity vocabulary per operation (healing)::restrictionContinuityIsObservable",
+    "bridge_function": "OCCTShapeCustomBSplineRestriction",
+    "bridge_output": {
+      "type": "restriction",
+      "data": "C0 and C2 volumes differ"
+    },
+    "kernel_output": {
+      "type": "restriction",
+      "data": {
+        "C0": 785.393925208,
+        "C2": 785.245930155
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #490: one continuity vocabulary per operation (healing)::surfaceSplitEntryPointsAgree",
+    "bridge_function": "OCCTSurfaceSplitByContinuity / OCCTSplitSurfaceContinuity",
+    "bridge_output": {
+      "type": "restriction",
+      "data": "both entry points agree at 0...3"
+    },
+    "kernel_output": {
+      "type": "restriction",
+      "data": {
+        "C0": [
+          2,
+          2
+        ],
+        "C1": [
+          2,
+          2
+        ],
+        "C2": [
+          3,
+          2
+        ],
+        "C3": [
+          3,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #490: one continuity vocabulary per operation (healing)::surfaceSplitCriterionIsObservable",
+    "bridge_function": "OCCTSurfaceSplitByContinuity",
+    "bridge_output": {
+      "type": "restriction",
+      "data": {
+        "C1": 2,
+        "C2": 3
+      }
+    },
+    "kernel_output": {
+      "type": "restriction",
+      "data": {
+        "C1": 2,
+        "C2": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #490: one continuity vocabulary per operation (healing)::outOfRangeCriterionSaturates",
+    "bridge_function": "OCCTSurfaceSplitByContinuity",
+    "bridge_output": {
+      "type": "restriction",
+      "data": "criterion 99 >= C3 on both axes"
+    },
+    "kernel_output": {
+      "type": "restriction",
+      "data": {
+        "C3": [
+          3,
+          2
+        ],
+        "CN": [
+          3,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 570: healing approximations accepted on a zeroed error::convertedToBSplineDoesNotCollapse",
+    "bridge_function": "OCCTShapeConvertToBSpline",
+    "bridge_output": {
+      "type": "deviation",
+      "data": {
+        "uDegree": "> 1",
+        "uPoles": "> 2",
+        "deviation": "< 1e-5"
+      }
+    },
+    "kernel_output": {
+      "type": "deviation",
+      "data": {
+        "uDegree": 13,
+        "uPoles": 14,
+        "deviation": 1.21e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 570: healing approximations accepted on a zeroed error::withSurfacesAsBSplineDoesNotCollapse",
+    "bridge_function": "OCCTShapeCustomConvertToBSpline",
+    "bridge_output": {
+      "type": "deviation",
+      "data": {
+        "deviation": "< 1e-5"
+      }
+    },
+    "kernel_output": {
+      "type": "deviation",
+      "data": {
+        "deviation": 1.21e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 570: healing approximations accepted on a zeroed error::convertToBSplineAdvancedDoesNotCollapse",
+    "bridge_function": "OCCTShapeConvertToBSplineAdvanced",
+    "bridge_output": {
+      "type": "deviation",
+      "data": {
+        "deviation": "< 1e-5"
+      }
+    },
+    "kernel_output": {
+      "type": "deviation",
+      "data": {
+        "deviation": 1.21e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 570: healing approximations accepted on a zeroed error::bsplineRestrictionHonoursTolerance",
+    "bridge_function": "OCCTShapeBSplineRestriction",
+    "bridge_output": {
+      "type": "deviation",
+      "data": {
+        "deviation": "<= 0.01"
+      }
+    },
+    "kernel_output": {
+      "type": "deviation",
+      "data": {
+        "deviation": 0.0005065,
+        "at_tol_10": 1.655
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 570: healing approximations accepted on a zeroed error::bsplineRestrictionAtEachContinuity",
+    "bridge_function": "OCCTShapeCustomBSplineRestriction",
+    "bridge_output": {
+      "type": "deviation",
+      "data": {
+        "deviation": "<= 0.01 at C0/C1/C2"
+      }
+    },
+    "kernel_output": {
+      "type": "deviation",
+      "data": {
+        "deviation_C1": 0.0005065
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 570: healing approximations accepted on a zeroed error::bsplineRestrictionAdvancedHonoursTolerance",
+    "bridge_function": "OCCTShapeBSplineRestrictionAdvanced",
+    "bridge_output": {
+      "type": "deviation",
+      "data": {
+        "deviation": "<= 0.01"
+      }
+    },
+    "kernel_output": {
+      "type": "deviation",
+      "data": {
+        "deviation_C1": 0.0005065
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 570: healing approximations accepted on a zeroed error::trimmedOffsetSphereWasNeverAffected",
+    "bridge_function": "OCCTShapeConvertToBSpline",
+    "bridge_output": {
+      "type": "deviation",
+      "data": null
+    },
+    "kernel_output": {
+      "type": "deviation",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#655: freeBounds* unaffected by INTERNAL orientation::freeBoundsUnaffectedByInternalOrientation",
+    "bridge_function": "OCCTShapeFreeBoundsClosedCount / OCCTShapeFreeBoundsClosed / OCCTShapeFreeBounds",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "INTERNAL": {
+          "closed": 2,
+          "closedEdges": 8,
+          "open": 0
+        },
+        "FORWARD": {
+          "closed": 3
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "INTERNAL": {
+          "edges": 12,
+          "closedWires": 2,
+          "closedEdges": 8,
+          "openWires": 0
+        },
+        "FORWARD": {
+          "closedWires": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#655: freeBounds* unaffected by INTERNAL orientation::forwardLoopIsCounted",
+    "bridge_function": "OCCTShapeFreeBoundsClosedCount / OCCTShapeFreeBoundsClosed / OCCTShapeFreeBounds",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "INTERNAL": {
+          "closed": 2,
+          "closedEdges": 8,
+          "open": 0
+        },
+        "FORWARD": {
+          "closed": 3
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "INTERNAL": {
+          "edges": 12,
+          "closedWires": 2,
+          "closedEdges": 8,
+          "openWires": 0
+        },
+        "FORWARD": {
+          "closedWires": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#655: freeBounds* unaffected by INTERNAL orientation::sharedTopologyBranchMeasuredDirectly",
+    "bridge_function": "OCCTFreeBoundsPropsCounts",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": "closed/open as the four argument rows"
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "INTERNAL_tol0": [
+          2,
+          0
+        ],
+        "INTERNAL_tol-1": [
+          2,
+          0
+        ],
+        "FORWARD_tol0": [
+          2,
+          4
+        ],
+        "FORWARD_tol-1": [
+          2,
+          4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
