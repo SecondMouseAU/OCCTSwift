@@ -6,28 +6,35 @@ import simd
 
 @Suite("Contap Contour Analysis")
 struct ContapContourTests {
+    /// Values in this suite are `Contap_ContAna`'s on the pinned kernel
+    /// (`Scripts/repro/766-contap-contour/`). Each test requires a result: the old `if let` forms
+    /// passed when the bridge returned nil.
     @Test("Sphere contour with direction")
-    func sphereContourDir() {
-        let result = Shape.contourSphereDir(
-            center: SIMD3(0, 0, 0), radius: 10,
-            direction: SIMD3(0, 0, 1))
-        if let result = result {
-            #expect(result.count > 0)
-            #expect(result.type == .circle)
-            // Contour circle radius should be ~10 for Z-aligned view
-            #expect(abs(result.data[3] - 10.0) < 0.1)
-        }
+    func sphereContourDir() throws {
+        let result = try #require(
+            Shape.contourSphereDir(
+                center: SIMD3(0, 0, 0), radius: 10,
+                direction: SIMD3(0, 0, 1)))
+        #expect(result.count == 1)
+        #expect(result.type == .circle)
+        // A view along the axis sees the equator: centre at the origin, radius 10.
+        #expect(simd_length(SIMD3(result.data[0], result.data[1], result.data[2])) < 1e-12)
+        #expect(abs(result.data[3] - 10.0) < 1e-12)
     }
 
     @Test("Cylinder contour with direction")
-    func cylinderContourDir() {
-        let result = Shape.contourCylinderDir(
-            origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
-            radius: 5, direction: SIMD3(1, 0, 0))
-        if let result = result {
-            #expect(result.count > 0)
-            #expect(result.type == .line)
-        }
+    func cylinderContourDir() throws {
+        let result = try #require(
+            Shape.contourCylinderDir(
+                origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
+                radius: 5, direction: SIMD3(1, 0, 0)))
+        #expect(result.count == 2)
+        #expect(result.type == .line)
+        // The two rulings at y = +5 and y = -5, both along the axis.
+        let loc1 = SIMD3(result.data[0], result.data[1], result.data[2])
+        let loc2 = SIMD3(result.data[6], result.data[7], result.data[8])
+        #expect(simd_length(loc1 - SIMD3(0, 5, 0)) < 1e-12, "line 1 at \(loc1)")
+        #expect(simd_length(loc2 - SIMD3(0, -5, 0)) < 1e-12, "line 2 at \(loc2)")
     }
 
     /// #1416: `Contap_ContAna::Perform(gp_Cylinder, gp_Dir)` (`Contap_ContAna.cxx`) sets `nbSol`
@@ -82,13 +89,18 @@ struct ContapContourTests {
         #expect(simd_length(loc1 - loc2) > 1.0)
     }
 
+    /// From an eye at distance d = 100 a sphere of radius r = 10 shows a circle centred r^2/d = 1
+    /// along the view axis, of radius r * sqrt(1 - (r/d)^2) = 9.9498743710662.
     @Test("Sphere contour with eye point")
-    func sphereContourEye() {
-        let result = Shape.contourSphereEye(
-            center: SIMD3(0, 0, 0), radius: 10,
-            eye: SIMD3(100, 0, 0))
-        if let result = result {
-            #expect(result.count > 0)
-        }
+    func sphereContourEye() throws {
+        let result = try #require(
+            Shape.contourSphereEye(
+                center: SIMD3(0, 0, 0), radius: 10,
+                eye: SIMD3(100, 0, 0)))
+        #expect(result.count == 1)
+        #expect(result.type == .circle)
+        let centre = SIMD3(result.data[0], result.data[1], result.data[2])
+        #expect(simd_length(centre - SIMD3(1, 0, 0)) < 1e-12, "centre \(centre)")
+        #expect(abs(result.data[3] - 10 * (0.99).squareRoot()) < 1e-12, "radius \(result.data[3])")
     }
 }
