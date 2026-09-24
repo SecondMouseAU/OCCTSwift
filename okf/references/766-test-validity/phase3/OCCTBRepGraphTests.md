@@ -123,4 +123,4 @@ green once it was reverted. Probes and transcripts are under `Scripts/repro/766-
 | linkShellToSolid | OCCTBRepGraphBuilderAddShellToSolid | Builder link | returned ref index + 1 | ✅ :21 `refIdx == 1` | ✅ | Rewritten: `refIdx != nil` passed a wrong ref |
 | addEmptySolid | OCCTBRepGraphBuilderAddSolid | Builder add | return -1 (add fails) | ✅ :16 `#require(addSolid)` | ✅ | Rewritten: `if let sidx` passed a failing add |
 | addVertexToGraph | OCCTBRepGraphBuilderAddVertex | Builder add | return -1 (add fails) | ✅ :18 `#require(addVertex)` | ✅ | Rewritten: `if let vidx` passed a failing add |
-| addMultipleVertices | OCCTBRepGraphBuilderAddVertex | Builder add | return -1 (add fails) | ✅ :34 `v1 == 8`, :35 `v2 == 9` | ✅ | Original also red (`v1 != nil`); indices now pinned |
+| addMultipleVertices | OCCTBRepGraphBuilderAddVertex | Builder add | return -1 (add fails) | ✅ :32 `#require(addVertex)` | ✅ | Original also red (`v1 != nil`, now the `#require`); indices pinned: a returned index + 1 is red at :34 `v1 == 8` and :35 `v2 == 9` |
