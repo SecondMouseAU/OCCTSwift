@@ -302,6 +302,10 @@ struct AnalyticalConversionContractTests {
         #expect(result.gap < 1e-3)
         // The recognized circle carries its own parameterisation, not the input's.
         #expect(result.newLast - result.newFirst > 0)
+        // GeomConvert_CurveToAnaCurve's own answer for this range
+        // (Scripts/repro/766-curve-analytical-contract/transcript.txt).
+        #expect(abs(result.newFirst) < 1e-9)
+        #expect(abs(result.newLast - 3.0646505987751356) < 1e-9)
         let mid = (result.newFirst + result.newLast) / 2
         let onResult = result.curve.point(at: mid)
         #expect(abs((onResult.x * onResult.x + onResult.y * onResult.y).squareRoot() - 5) < 1e-6)

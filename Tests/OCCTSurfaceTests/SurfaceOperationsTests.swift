@@ -33,6 +33,7 @@ struct SurfaceOperationsTests {
             let p = offset.point(atU: 0, v: 0)
             let dist = simd_length(p)
             #expect(abs(dist - 7.0) < 1e-6)
+            #expect(simd_length(p - SIMD3(7, 0, 0)) < 1e-12)  // #766: Geom_OffsetSurface's own point
         }
     }
 
@@ -45,6 +46,8 @@ struct SurfaceOperationsTests {
             let p = shifted.point(atU: 0, v: 0)
             let pOrig = sphere.point(atU: 0, v: 0)
             #expect(abs(p.x - pOrig.x - 10.0) < 1e-10)
+            // #766: only x was checked, so a shift that also moved y or z passed.
+            #expect(simd_length(p - (pOrig + SIMD3(10, 0, 0))) < 1e-12)
         }
     }
 
@@ -57,6 +60,7 @@ struct SurfaceOperationsTests {
             let p = scaled.point(atU: 0, v: 0)
             let dist = simd_length(p)
             #expect(abs(dist - 10.0) < 1e-6)
+            #expect(simd_length(p - SIMD3(10, 0, 0)) < 1e-12)
         }
     }
 
@@ -73,6 +77,9 @@ struct SurfaceOperationsTests {
             // Mirrored should have z≈-7
             let pOrig = sphere.point(atU: 0, v: 0)
             #expect(abs(p.z + pOrig.z) < 1e-6)
+            // #766: only z was checked, so a mirror through a point (which also negates x and y)
+            // passed. The kernel's mirrored (0, 0) point is (2, 0, -5).
+            #expect(simd_length(p - SIMD3(2, 0, -5)) < 1e-12)
         }
     }
 

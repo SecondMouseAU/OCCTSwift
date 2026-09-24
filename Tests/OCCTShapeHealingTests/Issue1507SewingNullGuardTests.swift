@@ -42,6 +42,12 @@ struct Issue1507SewingNullGuardTests {
             sewing.add(face)
         }
         sewing.perform()
-        #expect(sewing.nbFreeEdges >= 0)
+        // #766: was `nbFreeEdges >= 0`, true of every Int. Kernel on the same six faces
+        // (Scripts/repro/766-healing-1505-1507-1634): a 6-face shell, 0 free, 0 multiple edges.
+        #expect(sewing.nbFreeEdges == 0)
+        #expect(sewing.multipleEdgeCount == 0)
+        let sewn = try #require(sewing.result)
+        #expect(sewn.shapeType == .shell)
+        #expect(sewn.faces().count == 6)
     }
 }
