@@ -1,7 +1,180 @@
 [
   {
+    "test_name": "Issue225, threadedRod from a custom profile::custom worm profile is smooth-rod-buildable",
+    "bridge_function": "none (pure Swift: ThreadProfile.segments / hasCrestFlat / supportsSmoothRodBuild)",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "hasCrestFlat": true,
+        "supportsSmoothRodBuild": true,
+        "flankCount": 2
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "Profile classification is pure Swift arithmetic on the vertex list; no OCCT call to compare against."
+  },
+  {
+    "test_name": "Issue225, threadedRod from a custom profile::threadedRod builds a valid, analytic worm with no boolean",
+    "bridge_function": "none directly; composed in Swift (Shape.threadedRodSolid) from OCCTWireCreateArcThroughPoints, OCCTWireInterpolate, OCCTWireJoin, OCCTShapeCreateLoftAdvanced; measured with OCCTShapeGetVolume, OCCTShapeGetSubShapeCount, OCCTShapeIsValidSolid, OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "volume": 825.274987894,
+        "faces": 7,
+        "validSolid": true,
+        "stockVolume": 1357.168026351
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "volume": 825.274987894,
+        "faces": 7,
+        "validSolid": true,
+        "stockVolume": 1357.168026351
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Probe rebuilds the full-solid loft (49 cam wires, ThruSections solid, ruled=false) from OCCT directly."
+  },
+  {
+    "test_name": "Issue225, threadedRod from a custom profile::pointed (no crest flat) custom profile is rejected, not silently bad",
+    "bridge_function": "none (pure Swift: supportsSmoothRodBuild guard in Shape.threadedRod)",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "supportsSmoothRodBuild": false,
+        "threadedRodIsNil": true
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "Rejected by a Swift guard before any OCCT call."
+  },
+  {
+    "test_name": "Issue #232, threaded solids are bounded exactly to length/depth::External boolean thread spans exactly [0, length]",
+    "bridge_function": "none directly; composed in Swift (Shape.threadedRodSolid) from OCCTWireCreateArcThroughPoints, OCCTWireInterpolate, OCCTWireJoin, OCCTShapeCreateLoftAdvanced; measured with OCCTShapeGetVolume, OCCTShapeGetSubShapeCount, OCCTShapeIsValidSolid, OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "volume": 5282.510509761,
+        "faces": 7,
+        "meshZMin": 0.0,
+        "meshZMax": 60.0
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "volume": 5282.510509761,
+        "faces": 7,
+        "meshZMin": 0.0,
+        "meshZMax": 60.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Trapezoidal 12x3, length 60, mesh deflection 0.1. Profile and cutDepth (1.5) as ThreadSpec reports them."
+  },
+  {
+    "test_name": "Issue #232, threaded solids are bounded exactly to length/depth::ISO-68 external boolean thread spans exactly [0, length]",
+    "bridge_function": "none directly; composed in Swift (Shape.threadedRodSolid) from OCCTWireCreateArcThroughPoints, OCCTWireInterpolate, OCCTWireJoin, OCCTShapeCreateLoftAdvanced; measured with OCCTShapeGetVolume, OCCTShapeGetSubShapeCount, OCCTShapeIsValidSolid, OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "volume": 1954.284526605,
+        "faces": 7,
+        "meshZMin": 0.0,
+        "meshZMax": 30.0
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "volume": 1954.284526605,
+        "faces": 7,
+        "meshZMin": 0.0,
+        "meshZMax": 30.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #232, threaded solids are bounded exactly to length/depth::Internal threaded hole stays within the block faces",
+    "bridge_function": "none directly; Shape.applyThreadCut composes OCCTShapeBuildThreadCutter (or the screw-loft fallback) and a boolean cut; measured with OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "volume": 98.798601515,
+        "faces": 55,
+        "meshZMin": 0.0,
+        "meshZMax": 8.399999619
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "volume": 98.798601515,
+        "faces": 55,
+        "meshZMin": 0.0,
+        "meshZMax": 8.399999619
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Measurement parity only: the Swift-built nut was written to BREP and re-measured with raw OCCT (BRepGProp, IndexedMap, BRepMesh 0.1). The cut itself is the bridge's own OCCTShapeBuildThreadCutter composition and is not re-derived in the probe."
+  },
+  {
+    "test_name": "Issue #254, single-start threads are smooth helices for every surviving build mode::`.auto` and `.direct` both yield the same smooth, low-face helix",
+    "bridge_function": "none directly; composed in Swift (Shape.threadedRodSolid) from OCCTWireCreateArcThroughPoints, OCCTWireInterpolate, OCCTWireJoin, OCCTShapeCreateLoftAdvanced; measured with OCCTShapeGetVolume, OCCTShapeGetSubShapeCount, OCCTShapeIsValidSolid, OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "facesDirect": 7,
+        "facesAuto": 7,
+        "volume": 1693.718374724
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "faces": 7,
+        "volume": 1693.718374724
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "ISO-68 10x1.5, length 26. The kernel has no build-mode notion; parity is on the direct build both modes take."
+  },
+  {
     "test_name": "v0.138 ThreadSpec parsing::Metric M5x0.8",
-    "bridge_function": "none (pure Swift: ThreadSpec.parse \u2192 parseMetric)",
+    "bridge_function": "none (pure Swift: ThreadSpec.parse → parseMetric)",
     "bridge_output": {
       "type": "scalar",
       "data": {
@@ -20,7 +193,7 @@
   },
   {
     "test_name": "v0.138 ThreadSpec parsing::Metric M6 uses coarse pitch",
-    "bridge_function": "none (pure Swift: ThreadSpec.parse \u2192 metricCoarsePitch)",
+    "bridge_function": "none (pure Swift: ThreadSpec.parse → metricCoarsePitch)",
     "bridge_output": {
       "type": "scalar",
       "data": {
@@ -37,7 +210,7 @@
   },
   {
     "test_name": "v0.138 ThreadSpec parsing::UNC 1/4-20 converts to metric",
-    "bridge_function": "none (pure Swift: ThreadSpec.parse \u2192 parseInchDesignation)",
+    "bridge_function": "none (pure Swift: ThreadSpec.parse → parseInchDesignation)",
     "bridge_output": {
       "type": "scalar",
       "data": {
