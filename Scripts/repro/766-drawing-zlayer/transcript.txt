@@ -1,0 +1,13 @@
+defaults: depthTest=1 depthWrite=1 clearDepth=1 immediate=0 raytracable=1 environmentTexture=1 renderInDepthPrepass=1
+depthTest: false->0 true->1
+depthWrite: 0
+clearDepth: 0
+polygonOffset: mode=1 (Aspect_POM_Fill=1) factor=1.5 units=2
+depthOffsetPositive: mode=1 factor=1 units=1
+depthOffsetNegative: mode=1 factor=1 units=-1
+immediate: 1
+raytracable: 0
+cullingDistance: 1000
+cullingSize: 5
+origin: (100, 200, 300)
+layer ids: BotOSD=-5 Default=0 Top=-2 Topmost=-3 TopOSD=-4
