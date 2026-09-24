@@ -268,6 +268,15 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **BRepBndLib** | shapeBoundingBox | Axis-aligned box | OCCTShapeBoundingBox returns false after measuring |
+| **BRepBndLib** | shapeBoundingBoxOptimal | Axis-aligned box | OCCTShapeBoundingBoxOptimal returns false after measuring |
+| **BRepBndLib** | shapeBoundingBoxOptimalWithTolerance | Shape-tolerance flag | OCCTShapeBoundingBoxOptimal drops useShapeTolerance (rewritten, #766) |
+| **BRepBndLib** | orientedBoundingBoxDetailed | Oriented box | OCCTShapeOrientedBoundingBox reports void |
+| **BRepBndLib** | orientedBoundingBoxDetailedOptimal | Oriented box | OCCTShapeOrientedBoundingBoxDetailed doubles xHSize (rewritten, #766) |
+| **BRepBndLib** | orientedBoundingBoxDetailedMatchesPacked | Packed/detailed parity | OCCTShapeOrientedBoundingBoxDetailed doubles xHSize |
+| **BRepBndLib** | boundingBoxSphere | Axis-aligned box | OCCTShapeBoundingBox returns false after measuring |
+| **BRepBndLib** | voidShapeReportsNoBoxFromAnyAccessor | Void signal | OCCTShapeBoundingBox ignores IsVoid and returns true |
+| **BRepBndLib** | pointVertexAtOriginBoundingBoxIsNotNil | Zero-size box | OCCTShapeBoundingBox/Optimal return false after measuring |
 
 ---
 
