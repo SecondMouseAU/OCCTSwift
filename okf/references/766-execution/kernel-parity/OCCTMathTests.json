@@ -228,7 +228,7 @@
     "bridge_function": "none (Swift guard MathDimension.tridiagonal before OCCTMathEigenValues)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: a Swift-side argument guard, no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "tridiagonal accepts count >= n - 1 (too-long arrays pass)", "failing_expectation": ":124 `MathSolver.eigenvalues(diagonal: [2, 2, 2], offDiagonal: [1, 1, 0]) == nil`"},
     "green": true
@@ -238,7 +238,7 @@
     "bridge_function": "none (pure Swift MathDimension.tridiagonal)",
     "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
     "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: pure Swift validator, no kernel counterpart"},
-    "comparison": {"equal": true, "differences": []},
+    "comparison": {"equal": null, "differences": []},
     "status": "N/A",
     "red": {"injection": "tridiagonal accepts count >= n - 1", "failing_expectation": ":141 `!MathDimension.tridiagonal(3, offDiagonal: 3)`"},
     "green": true
