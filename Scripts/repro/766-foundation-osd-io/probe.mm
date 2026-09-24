@@ -30,6 +30,8 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <filesystem>
+#include <fstream>
 
 static double wallNow()
 {
@@ -200,9 +202,13 @@ int main()
   printf("== OSD_DirectoryIterator / OSD_FileIterator on the fixture ==\n");
   {
     std::string root = "/tmp/occt_766_probe_iter";
-    system(("rm -rf " + root + " && mkdir -p " + root + "/a " + root + "/b && touch " + root
-            + "/x.txt " + root + "/y.txt " + root + "/z.dat")
-             .c_str());
+    // Use C++ filesystem instead of system() call
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root + "/a");
+    std::filesystem::create_directories(root + "/b");
+    std::ofstream(root + "/x.txt").close();
+    std::ofstream(root + "/y.txt").close();
+    std::ofstream(root + "/z.dat").close();
     OSD_Path                 rp(root.c_str());
     std::vector<std::string> dirs, files;
     for (OSD_DirectoryIterator it(rp, "*"); it.More(); it.Next())
@@ -226,7 +232,7 @@ int main()
     for (auto& s : files)
       printf(" \"%s\"", s.c_str());
     printf("\n");
-    system(("rm -rf " + root).c_str());
+    std::filesystem::remove_all(root);
   }
 
   printf("== OSD_Disk (OCCTDiskSize / DiskFree / IsValid / Name) ==\n");
@@ -234,7 +240,7 @@ int main()
     OSD_Disk       disk("/");
     struct statvfs v;
     statvfs("/", &v);
-    unsigned long long blocks = (unsigned long long)v.f_blocks * (v.f_frsize / 512);
+    unsigned long long blocks = (unsigned long long)v.f_blocks * v.f_frsize / 512;
     printf("DiskSize()/2 = %lld KB, statvfs f_blocks*(f_frsize/512)/2 = %llu KB\n",
            (long long)disk.DiskSize() / 2,
            blocks / 2);
