@@ -603,3 +603,15 @@ Probe: `Scripts/repro/766-geom2d-gcc-hatching/`. Every row was run red with the 
 | Curve2D Hatching Tests::Hatch a rectangular boundary | `OCCTCurve2DHatch` | spacing x 1.25 | ✅ | ✅ | MATCH | `count >= 1`; now pins the four interior lines |
 | Curve2D Hatching Tests::Hatch output is not silently truncated at half the buffer's real capacity (#1420) | `OCCTCurve2DHatch` | spacing x 1.25 | ✅ | ✅ | MATCH | strengthened: the (2048, 4096] bounds are kept and the exact kernel count 2999 is pinned |
 | Curve2D Hatching Tests::Hatch result is independent of boundary winding direction (#1496) | `OCCTCurve2DHatch` | always add boundary elements FORWARD (the #1496 defect) | ✅ | ✅ | MATCH | not rewritten: it already compares the clockwise hatch with the counter-clockwise one |
+### #1979 executed: `GccAnaBisectorTests.swift`, `GccAnaCirc2d2TanRadTests.swift`, `GccAnaCirc2dTanCenTests.swift`
+Probe: `Scripts/repro/766-geom2d-gccana-bisector-circ/`. Every row was run red with the injection applied and green after it was reverted.
+| GccAna Bisectors::Perpendicular bisector of two points | `OCCTGccAnaPnt2dBisec` | second point x + 2 | ✅ | ✅ | MATCH | either-axis direction to 0.01 inside `if let` |
+| GccAna Bisectors::Angle bisectors of two lines | `OCCTGccAnaLin2dBisec` | second line direction (1, 1) | ✅ | ✅ | MATCH | count only |
+| GccAna Bisectors::Bisector between line and point | `OCCTGccAnaLinPnt2dBisec` | point y + 1 | ✅ | ✅ | MATCH | type only |
+| GccAna Bisectors::Bisectors between two circles | `OCCTGccAnaCirc2dBisec` | second centre x + 1 | ✅ | ✅ | MATCH | `count >= 1` |
+| GccAna Bisectors::Bisectors between circle and line | `OCCTGccAnaCircLin2dBisec` | line y + 1 | ✅ | ✅ | MATCH | `count >= 1` |
+| GccAna Bisectors::Bisectors between circle and point | `OCCTGccAnaCircPnt2dBisec` | point x + 1 | ✅ | ✅ | MATCH | `count >= 1` |
+| GccAna Circ2d2TanRad Tests::circles through two points with radius | `OCCTGccAnaCirc2d2TanRadPntPnt` | second point x + 1 | ✅ | ✅ | MATCH | count and the input radius only; now pins the centres |
+| GccAna Circ2d2TanRad Tests::circles tangent to two perpendicular lines | `OCCTGccAnaCirc2d2TanRadLineLin` | radius + 1 | ✅ | ✅ | MATCH | count only; now pins the four centres |
+| GccAna Circ2dTanCen Tests::circle through point centered | `OCCTGccAnaCirc2dTanCenPntPnt` | centre x + 1 | ✅ | ✅ | MATCH | nested in `if let r` |
+| GccAna Circ2dTanCen Tests::circle tangent to line centered | `OCCTGccAnaCirc2dTanCenLinPnt` | centre x + 1 | ✅ | ✅ | MATCH | nested in `if let r` |
