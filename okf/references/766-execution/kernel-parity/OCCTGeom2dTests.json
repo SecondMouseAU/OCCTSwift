@@ -1898,5 +1898,456 @@
       "probe": "Scripts/repro/766-geom2d-aht-axisplacement/",
       "rewritten": "same early-return guard; now `#require`"
     }
+  },
+  {
+    "test_name": "ChFi2d_Builder Tests::add fillet at vertex",
+    "bridge_function": "OCCTChFi2dAddFillet",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 5,
+        "area": 99.1415926536
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 5,
+        "area": 99.1415926536
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "fillet radius x 1.5",
+      "red": "ChFi2dBuilderTests.swift:26:9: Expectation failed: abs(area - (96 + Double.pi)) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-chfi2d-compbezier/",
+      "rewritten": "`if let` on face and result, and `newEdges > origEdges`; now pins 5 edges and area 96 + pi"
+    }
+  },
+  {
+    "test_name": "ChFi2d_Builder Tests::add chamfer between edges",
+    "bridge_function": "OCCTChFi2dAddChamfer",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 5,
+        "area": 98
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 5,
+        "area": 98
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second distance x 1.5",
+      "red": "ChFi2dBuilderTests.swift:36:9: Expectation failed: abs(area - 98) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-chfi2d-compbezier/",
+      "rewritten": "same `if let` + count gap; now pins area 98"
+    }
+  },
+  {
+    "test_name": "ChFi2d_Builder Tests::add chamfer with angle",
+    "bridge_function": "OCCTChFi2dAddChamferAngle",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 5,
+        "area": 98
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 5,
+        "area": 98
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "angle x 1.2",
+      "red": "ChFi2dBuilderTests.swift:47:9: Expectation failed: abs(area - 98) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-chfi2d-compbezier/",
+      "rewritten": "same `if let` + count gap; now pins area 98"
+    }
+  },
+  {
+    "test_name": "ChFi2d_ChamferAPI Tests::chamfer between two linear edges",
+    "bridge_function": "OCCTChFi2dChamferEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "chamfer_length": 4.24264068712,
+        "edge1": 7,
+        "edge2": 7
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "chamfer_length": 4.24264068712,
+        "edge1": 7,
+        "edge2": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second distance x 1.5",
+      "red": "ChFi2dChamferAPITests.swift:19:9: Expectation failed: abs(chamfer.length - 3 * 2.0.squareRoot()) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-chfi2d-compbezier/",
+      "rewritten": "`isValid` inside `if let r`; now pins the chamfer and trimmed edge lengths"
+    }
+  },
+  {
+    "test_name": "ChFi2d FilletAlgo Tests::Iterative 2D fillet between two line edges",
+    "bridge_function": "OCCTChFi2dFilletAlgo",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "resultCount": 1,
+        "fillet_length": 3.14159265359,
+        "edge1": 8,
+        "edge2": 8
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "resultCount": 1,
+        "fillet_length": 3.14159265359,
+        "edge1": 8,
+        "edge2": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius x 1.5",
+      "red": "ChFi2dFilletAlgoTests.swift:21:9: Expectation failed: abs(fillet.length - Double.pi) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-chfi2d-compbezier/",
+      "rewritten": "`isValid` and `resultCount >= 1`; now pins one solution, fillet pi, edges 8 and 8"
+    }
+  },
+  {
+    "test_name": "ChFi2d_FilletAPI Tests::fillet between two edges",
+    "bridge_function": "OCCTChFi2dFilletEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "solutionCount": 1,
+        "fillet_length": 3.14159265359,
+        "edge1": 8,
+        "edge2": 8
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "solutionCount": 1,
+        "fillet_length": 3.14159265359,
+        "edge1": 8,
+        "edge2": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius x 1.5",
+      "red": "ChFi2dFilletAPITests.swift:23:9: Expectation failed: abs(fillet.length - Double.pi) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-chfi2d-compbezier/",
+      "rewritten": "`solutionCount >= 1` inside `if let r`; now pins the fillet and both trimmed edges"
+    }
+  },
+  {
+    "test_name": "ChFi2d_FilletAPI Tests::fillet plane origin off world origin stays connected to the input edges (#1459)",
+    "bridge_function": "OCCTChFi2dFilletEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "solutionCount": 1,
+        "fillet_length": 1.57079632679,
+        "edge2_kernel": "(0,0,10)-(0,1,10)"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "solutionCount": 1,
+        "fillet_length": 1.57079632679,
+        "edge2_kernel": "(0,0,10)-(0,1,10)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius x 1.5",
+      "red": "ChFi2dFilletAPITests.swift:56:9: Expectation failed: abs(fillet.length - Double.pi / 2) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-chfi2d-compbezier/",
+      "rewritten": "strengthened: `solutionCount >= 1` is now `== 1` and the fillet length (pi/2) is pinned"
+    }
+  },
+  {
+    "test_name": "Convert_CompBezierCurves2dToBSplineCurve2d Tests::singleQuadraticSegment2D",
+    "bridge_function": "OCCTConvertCompBezier2dToBSpline2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "degree": 2,
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            0
+          ]
+        ],
+        "knots": [
+          0,
+          1
+        ],
+        "mults": [
+          3,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "degree": 2,
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            0
+          ]
+        ],
+        "knots": [
+          0,
+          1
+        ],
+        "mults": [
+          3,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "shift every pole x by 0.5",
+      "red": "CompBezier2dToBSpline2dTests.swift:21:9: Expectation failed: zip(result.poles, seg).allSatisfy { simd_distance($0, $1) < 1e-12 }",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-chfi2d-compbezier/",
+      "rewritten": "`if let` and `poles.last!` inside `#expect`; now pins every pole, knot and multiplicity"
+    }
+  },
+  {
+    "test_name": "Convert_CompBezierCurves2dToBSplineCurve2d Tests::twoCubicSegments2D",
+    "bridge_function": "OCCTConvertCompBezier2dToBSpline2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "degree": 3,
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            4,
+            -1
+          ],
+          [
+            5,
+            -1
+          ],
+          [
+            6,
+            0
+          ]
+        ],
+        "knots": [
+          0,
+          0.5,
+          1
+        ],
+        "mults": [
+          4,
+          2,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "degree": 3,
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            4,
+            -1
+          ],
+          [
+            5,
+            -1
+          ],
+          [
+            6,
+            0
+          ]
+        ],
+        "knots": [
+          0,
+          0.5,
+          1
+        ],
+        "mults": [
+          4,
+          2,
+          4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "shift every pole x by 0.5",
+      "red": "CompBezier2dToBSpline2dTests.swift:41:9: Expectation failed: zip(result.poles, expected).allSatisfy { simd_distance($0, $1) < 1e-12 }",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-chfi2d-compbezier/",
+      "rewritten": "`poles.count >= 4` inside `if let`; now pins the six poles and the multiplicity-2 junction knot"
+    }
+  },
+  {
+    "test_name": "Convert_CompBezierCurves2dToBSplineCurve2d Tests::emptySegmentsReturnsNil2D",
+    "bridge_function": "OCCTConvertCompBezier2dToBSpline2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Swift wrapper returns an empty result instead of nil for no segments",
+      "red": "CompBezier2dToBSpline2dTests.swift:49:9: Expectation failed: result == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-chfi2d-compbezier/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Convert_CompBezierCurves2dToBSplineCurve2d Tests::manySegmentsExceedingCapacityReturnsNil2D",
+    "bridge_function": "OCCTConvertCompBezier2dToBSpline2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poles": 122,
+        "knots": 61
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "report success with the counts clamped to the 100-pole/50-knot buffers",
+      "red": "CompBezier2dToBSpline2dTests.swift:65:9: Expectation failed: result == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-chfi2d-compbezier/",
+      "rewritten": ""
+    }
   }
 ]
