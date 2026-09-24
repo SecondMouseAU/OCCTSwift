@@ -268,6 +268,10 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **GProp Cylinder/Cone Tests** | cylinderSurfaceArea | Analytic surface GProps | OCCTGPropCylinderSurface integrates a half revolution |
+| **GProp Cylinder/Cone Tests** | cylinderVolume | Analytic volume GProps | OCCTGPropCylinderVolume integrates a half revolution |
+| **GProp Cylinder/Cone Tests** | coneSurfaceArea | Analytic surface GProps | OCCTGPropConeSurface integrates a half revolution (value pinned, #766) |
+| **GProp Cylinder/Cone Tests** | coneVolume | Analytic volume GProps | OCCTGPropConeVolume integrates a half revolution (value pinned, #766) |
 
 ---
 

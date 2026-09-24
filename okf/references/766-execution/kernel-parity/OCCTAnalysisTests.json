@@ -5835,5 +5835,89 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "GProp Cylinder/Cone Tests::cylinderSurfaceArea",
+    "bridge_function": "OCCTGPropCylinderSurface",
+    "bridge_output": {
+      "type": "mass",
+      "data": {
+        "value": 314.1592653589793
+      }
+    },
+    "kernel_output": {
+      "type": "mass",
+      "data": {
+        "value": 314.1592653589793
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GProp Cylinder/Cone Tests::cylinderVolume",
+    "bridge_function": "OCCTGPropCylinderVolume",
+    "bridge_output": {
+      "type": "mass",
+      "data": {
+        "value": 785.3981633974482
+      }
+    },
+    "kernel_output": {
+      "type": "mass",
+      "data": {
+        "value": 785.3981633974482
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GProp Cylinder/Cone Tests::coneSurfaceArea",
+    "bridge_function": "OCCTGPropConeSurface",
+    "bridge_output": {
+      "type": "mass",
+      "data": {
+        "value": 408.1048569526991
+      }
+    },
+    "kernel_output": {
+      "type": "mass",
+      "data": {
+        "value": 408.1048569526991
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GProp Cylinder/Cone Tests::coneVolume",
+    "bridge_function": "OCCTGPropConeVolume",
+    "bridge_output": {
+      "type": "mass",
+      "data": {
+        "value": 2040.524284763495
+      }
+    },
+    "kernel_output": {
+      "type": "mass",
+      "data": {
+        "value": 2040.524284763495
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

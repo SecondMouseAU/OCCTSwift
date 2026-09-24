@@ -1,0 +1,6 @@
+cylinderSurfaceArea(r=5, h=10): 314.15926535897933  (2*pi*5*10 = 314.15926535897933)
+cylinderVolume(r=5, h=10): 785.39816339744823  (pi*25*10 = 785.39816339744834)
+coneSurfaceArea(semiAngle=pi/6, refRadius=5, height=10): 408.10485695269909
+  closed form, v as slant length: 2*pi*(R*L + L^2*sin(a)/2) = 471.23889803846896
+coneVolume(semiAngle=pi/6, refRadius=5, height=10): 2040.524284763495
+  closed form, frustum of axial height L*cos(a): pi*h/3*(R^2+R*R2+R2^2) = 1587.0744437049404
