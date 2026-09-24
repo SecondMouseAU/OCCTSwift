@@ -1,0 +1,2 @@
+noParametersPolygonParameterIsSafe: hasParameters=0 nbNodes=3
+withParametersPolygonReturnsStoredValue: hasParameters=1 parameters=[0, 0.5, 1]

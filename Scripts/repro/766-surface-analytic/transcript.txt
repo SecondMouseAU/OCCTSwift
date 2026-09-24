@@ -1,0 +1,20 @@
+planeEvaluation: uMin=-2e+100
+  plane S(0,0)=(0, 0, 0)
+  plane S(3,4)=(3, 4, 0)
+planeNormal: N=(0, 0, 1)
+sphereProperties: IsUPeriodic=1 UPeriod=6.2831853071795862
+closureFlags: plane 0/0 cyl 1/0 sphere 1/0 torus 1/1
+sphereEvaluation:
+  sphere S(0,0)=(5, 0, 0)
+cylinderCreation: IsUPeriodic=1
+  cylinder S(0,0)=(3, 0, 0)
+coneCreation:
+  cone S(0,0)=(5, 0, 0)
+  cone S(0,10)=(10, 0, 8.6602540378443873)
+torusCreation: periodic 1/1
+  torus S(0,0)=(13, 0, 0)
+  sphere IsCurvatureDefined=1
+sphereGaussian/MeanCurvature: K=0.040000000000000008 H=-0.20000000000000001
+planeGaussianCurvature: defined=1 K=0
+  cylinder IsCurvatureDefined=1
+cylinderPrincipalCurvatures: kMin=-0.25 kMax=0 dirMin=(-0.479426,0.877583,0) dirMax=(0,0,1)

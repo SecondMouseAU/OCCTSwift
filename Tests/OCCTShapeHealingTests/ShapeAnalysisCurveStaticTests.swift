@@ -4,49 +4,45 @@ import simd
 
 @testable import OCCTSwift
 
+// #766: expected values are the kernel's own answers to the same calls, from
+// Scripts/repro/766-healing-shapeanalysis/probe.mm (transcript.txt beside it).
+// Before #766 every test here sat inside `if let`, silently green if the curve failed to build,
+// and `lineIsPlanar` discarded its answer.
 @Suite("ShapeAnalysis_Curve Static Method Tests")
 struct ShapeAnalysisCurveStaticTests {
-
-    @Test func isClosedWithPrecision() {
-        // A circle should be closed
-        if let circle = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
-            #expect(circle.isClosedWithPrecision(1e-6))
-        }
+    private func circle() throws -> Curve3D {
+        try #require(Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+    }
+    private func line() throws -> Curve3D {
+        try #require(Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)))
     }
 
-    @Test func lineIsNotClosed() {
-        if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
-            #expect(!line.isClosedWithPrecision(1e-6))
-        }
+    @Test func isClosedWithPrecision() throws {
+        #expect(try circle().isClosedWithPrecision(1e-6))
     }
 
-    @Test func isPeriodicSA() {
-        if let circle = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
-            #expect(circle.isPeriodicSA)
-        }
+    @Test func lineIsNotClosed() throws {
+        #expect(!(try line().isClosedWithPrecision(1e-6)))
     }
 
-    @Test func lineIsNotPeriodic() {
-        if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
-            #expect(!line.isPeriodicSA)
-        }
+    @Test func isPeriodicSA() throws {
+        #expect(try circle().isPeriodicSA)
     }
 
-    @Test func circleIsPlanar() {
-        if let circle = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
-            if let normal = circle.planeNormal(tolerance: 1e-6) {
-                // Circle in XY plane should have normal along Z
-                #expect(abs(normal.z) > 0.9)
-            }
-        }
+    @Test func lineIsNotPeriodic() throws {
+        #expect(!(try line().isPeriodicSA))
     }
 
-    @Test func lineIsPlanar() {
-        // A line is planar (any direction perpendicular to it is a valid normal)
-        if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
-            // Lines are degenerate for IsPlanar, any plane contains them
-            // The result may be nil or a normal; just check it doesn't crash
-            _ = line.planeNormal(tolerance: 1e-6)
-        }
+    @Test func circleIsPlanar() throws {
+        // Kernel: planar, normal (0, 0, 1).
+        let normal = try #require(try circle().planeNormal(tolerance: 1e-6))
+        #expect(simd_distance(normal, SIMD3(0, 0, 1)) < 1e-12)
+    }
+
+    @Test func lineIsPlanar() throws {
+        // A line lies in every plane containing it; the kernel reports planar with normal
+        // (0, 0, 1) for this one.
+        let normal = try #require(try line().planeNormal(tolerance: 1e-6))
+        #expect(simd_distance(normal, SIMD3(0, 0, 1)) < 1e-12)
     }
 }

@@ -1,0 +1,9 @@
+stlBinaryDeflection:
+  deflection=1 write=1 size=15384 triangles=306
+  deflection=0.050000000000000003 write=1 size=100284 triangles=2004
+  fine > coarse: 1
+stlDefaultUnchanged:
+  deflection=0.10000000000000001 write=1 size=48884 triangles=976
+coherentTriangulationDeflection:
+  deflection=0.20000000000000001 firstFace nbNodes=273 nbTriangles=516 coherent NTriangles=516
+  deflection=0.10000000000000001 firstFace nbNodes=506 nbTriangles=976 coherent NTriangles=976
