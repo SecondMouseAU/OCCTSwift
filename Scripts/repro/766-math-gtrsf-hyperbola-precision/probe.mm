@@ -19,7 +19,6 @@
 #include <TopExp_Explorer.hxx>
 #include <gp_GTrsf.hxx>
 #include <cmath>
-#include <numbers>
 #include <cstdio>
 
 static TopoDS_Shape box(double w, double h, double d)
@@ -106,7 +105,7 @@ int main()
     TopoDS_Shape r = cut.Shape();
     printf("mixedScaleLargeBoxSmallHole: done=%d valid=%d faces=%d volume=%.17g expected=%.17g\n",
            cut.IsDone() ? 1 : 0, BRepCheck_Analyzer(r).IsValid() ? 1 : 0, nfaces(r), vol(r),
-           1e9 - std::numbers::pi * 0.01 * 0.01 * 1000.0);
+           1e9 - M_PI * 0.01 * 0.01 * 1000.0);
   }
   return 0;
 }
