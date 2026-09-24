@@ -5383,5 +5383,38 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtPElS Point-Plane::pointToPlane",
+    "bridge_function": "OCCTExtremaExtPElSPlane",
+    "bridge_output": {
+      "type": "point_surface_extrema",
+      "data": {
+        "count": 1,
+        "square_distance": 100.0,
+        "point2": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point_surface_extrema",
+      "data": {
+        "count": 1,
+        "square_distance": 100.0,
+        "point2": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
