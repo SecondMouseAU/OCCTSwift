@@ -109,3 +109,86 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-arcs-axes (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **GC_MakeArcOfHyperbola** | Arc of hyperbola between parameters | `OCCTCurve3DArcOfHyperbola` | major and minor radius swapped into gp_Hypr | red | green | PASS |
+| **GC_MakeArcOfParabola** | Arc of parabola between parameters | `OCCTCurve3DArcOfParabola` | focal distance doubled (original test green; vertex offset +1 in x also turned the original red) | red | green | PASS |
+| **Axis1Placement Tests** | create and read | `OCCTAxis1PlacementLocation` | location x + 1 | red | green | PASS |
+| **Axis1Placement Tests** | reverse | `OCCTAxis1PlacementReverse` | Reverse() skipped | red | green | PASS |
+| **Axis1Placement Tests** | reversed copy | `OCCTAxis1PlacementReversed` | returns an unreversed copy | red | green | PASS |
+| **Axis1Placement Tests** | setDirection and setLocation | `OCCTAxis1PlacementSetDirection / OCCTAxis1PlacementSetLocation` | SetDirection skipped; SetLocation skipped (each red on its own line) | red | green | PASS |
+| **Axis2Placement Tests** | create and read directions | `OCCTAxis2PlacementYDirection` | Y direction y negated | red | green | PASS |
+| **Axis2Placement Tests** | location | `OCCTAxis2PlacementLocation` | location x + 1 | red | green | PASS |
+| **Axis2Placement Tests** | setDirection | `OCCTAxis2PlacementSetDirection` | SetDirection skipped | red | green | PASS |
+| **Axis2Placement Tests** | setXDirection | `OCCTAxis2PlacementSetXDirection` | SetXDirection skipped | red | green | PASS |
+### 766-math-roots-cones-coordsys (#1983, measured)
+| **BracketedRoot** | findRoot | `OCCTMathBracketedRoot` | returns bound1 instead of Root() | red | green | PASS |
+| **BracketedRoot** | findSinRoot | `OCCTMathBracketedRoot` | returns bound1 instead of Root() | red | green | PASS |
+| **BracketMinimum** | bracketQuadratic | `OCCTMathBracketMinimum` | fa and fb written to each other | red | green | PASS |
+| **GC_MakeConicalSurface** | Conical surface from axis and angle | `OCCTSurfaceConicalFromAxis` | semi-angle doubled | red | green | PASS |
+| **GC_MakeConicalSurface** | Conical surface from points and radii | `OCCTSurfaceConicalFromPointsRadii` | r1 and r2 swapped | red | green | PASS |
+| **Coordinate System Tests** | zUpDirection | `OCCTCoordSystemUpDirection` | XDirection() returned instead of Direction() | red | green | PASS |
+| **Coordinate System Tests** | yUpDirection | `OCCTCoordSystemUpDirection` | XDirection() returned instead of Direction() | red | green | PASS |
+| **Coordinate System Tests** | convertWithScaling | `OCCTCoordSystemConvert` | SetInputLengthUnit skipped | red | green | PASS |
+| **Coordinate System Tests** | convertZupToYup | `OCCTCoordSystemConvert` | SetOutputCoordinateSystem skipped | red | green | PASS |
+### 766-math-coordinate-system-3d (#1983, measured)
+| **CoordinateSystem3D** | defaultXYZ | `OCCTAx3Create` | Y direction y negated | red | green | PASS |
+| **CoordinateSystem3D** | fromNormal | `OCCTAx3CreateFromNormal` | isDirect inverted | red | green | PASS |
+| **CoordinateSystem3D** | angle | `OCCTAx3Angle` | a1.Angle(a1) instead of a1.Angle(a2) | red | green | PASS |
+| **CoordinateSystem3D** | isCoplanar | `OCCTAx3IsCoplanar` | second origin built as (x, z, y) | red | green | PASS |
+| **CoordinateSystem3D** | mirrorPoint | `OCCTAx3MirrorPoint` | origin x read from the unmirrored axis | red | green | PASS |
+| **CoordinateSystem3D** | rotate | `OCCTAx3Rotate` | angle negated | red | green | PASS |
+| **CoordinateSystem3D** | translate | `OCCTAx3Translate` | vector x and y swapped | red | green | PASS |
+| **CoordinateSystem3D** | createWithParallelDirectionAndXDirectionSignalsFailure | `OCCTAx3Create` | catch falls back to a default (1,0,0)/(0,1,0) frame instead of zeros | red | green | PASS |
+| **CoordinateSystem3D** | createFromNormalWithZeroDirectionSignalsFailure | `OCCTAx3CreateFromNormal` | catch falls back to a default (1,0,0)/(0,1,0) frame instead of zeros | red | green | PASS |
+| **CoordinateSystem3D** | mirrorPointWithDegenerateSourceFallsBackToUnmoved | `OCCTAx3MirrorPoint` | catch no longer writes the input point back (pre-#1443 empty catch) | red | green | PASS |
+| **CoordinateSystem3D** | rotateWithZeroAxisDirectionFallsBackToUnmoved | `OCCTAx3Rotate` | catch no longer writes the input point back (pre-#1443 empty catch) | red | green | PASS |
+| **CoordinateSystem3D** | translateWithDegenerateSourceFallsBackToUnmoved | `OCCTAx3Translate` | catch no longer writes the input point back (pre-#1443 empty catch) | red | green | PASS |
+### 766-math-curve-transform-cylinder (#1983, measured)
+| **Curve3D Transform** | Translate BSpline curve | `OCCTCurve3DTransform` | translation vector x and y swapped | red | green | PASS |
+| **Curve3D Transform** | Rotate curve | `OCCTCurve3DTransform` | rotation angle negated | red | green | PASS |
+| **Curve3D Transform** | Scale curve | `OCCTCurve3DTransform` | scale factor inverted | red | green | PASS |
+| **Curve3D Transform** | Mirror curve through point | `OCCTCurve3DTransform` | identity transform instead of the mirror | red | green | PASS |
+| **Curve3D Transform** | Mirror curve through axis | `OCCTCurve3DTransform` | point mirror through the axis origin instead of the axis mirror | red | green | PASS |
+| **Curve3D Transform** | Mirror curve through plane | `OCCTCurve3DTransform` | point mirror through the plane origin instead of the plane mirror | red | green | PASS |
+| **GC_MakeCylindricalSurface** | Cylindrical surface from axis and radius | `OCCTSurfaceCylindricalFromAxis` | radius doubled | red | green | PASS |
+| **GC_MakeCylindricalSurface** | Cylindrical surface from 3 points | `OCCTSurfaceCylindricalFromPoints` | point1 and point3 swapped | red | green | PASS |
+### 766-math-drawing-eigen-solvers (#1983, measured)
+| **v0.144 Drawing transform + bounds** | Drawing.bounds returns finite box for a projected box | `OCCTDrawingCreate (bounds() is Swift over its edge polylines)` | Swift: bounds reads (y, x) instead of (x, y) | red | green | PASS |
+| **v0.144 Drawing transform + bounds** | transformed(translate:scale:) returns non-nil wrapper | `N/A (pure Swift: Drawing.transformed stores translate/scale)` | Swift: transformed() drops the scale | red | green | N/A |
+| **v0.144 Drawing transform + bounds** | DXFWriter.collectFromDrawing accepts TransformedDrawing | `OCCTDrawingCreate (DXF writer is Swift)` | Swift: collectFromDrawing(TransformedDrawing) drops the translation | red | green | PASS |
+| **EigenValues** | tridiagonal | `OCCTMathEigenValues` | off-diagonals placed in slots 1..n-1 (the pre-#1643 convention) | red | green | PASS |
+| **EigenValues** | withVectors | `OCCTMathEigenValuesAndVectors` | off-diagonals placed in slots 1..n-1 (the pre-#1643 convention) | red | green | PASS |
+| **GC_MakeEllipse, 3 Points** | Create ellipse through three points | `OCCTCurve3DMakeEllipseThreePoints` | S2 built as (x, z, y) | red | green | PASS |
+| **FRPR Minimizer** | minimizeQuadratic | `OCCTMathFRPR` | returns the start point instead of Location() | red | green | PASS |
+| **FunctionAllRoots** | sinRoots | `OCCTMathFunctionRoots` | every root + 0.05 (despite the suite name, `findAllRoots(in:)` resolves to the overload that calls OCCTMathFunctionRoots; injections in OCCTMathFunctionAllRoots left it green) | red | green | PASS |
+| **GaussLeastSquare** | overdetermined | `OCCTMathGaussLeastSquare` | matrix read column-major | red | green | PASS |
+### 766-math-elclib-elslib (#1983, measured)
+| **ElCLib Tests** | valueOnLine | `OCCTElCLibValueOnLine` | u negated | red | green | PASS |
+| **ElCLib Tests** | valueOnCircle | `OCCTElCLibValueOnCircle` | x and y outputs swapped | red | green | PASS |
+| **ElCLib Tests** | valueOnEllipse | `OCCTElCLibValueOnEllipse` | x from the minor radius | red | green | PASS |
+| **ElCLib Tests** | d1OnCircle | `OCCTElCLibD1OnCircle` | tangent reversed | red | green | PASS |
+| **ElCLib Tests** | parameterOnLine | `OCCTElCLibParameterOnLine` | line direction negated | red | green | PASS |
+| **ElCLib Tests** | inPeriod | `OCCTElCLibInPeriod` | returns uFirst | red | green | PASS |
+| **ElSLib Tests** | valueOnPlane | `OCCTElSLibValueOnPlane` | u and v swapped | red | green | PASS |
+| **ElSLib Tests** | valueOnSphere | `OCCTElSLibValueOnSphere` | radius doubled | red | green | PASS |
+| **ElSLib Tests** | valueOnCylinder | `OCCTElSLibValueOnCylinder` | u and v swapped | red | green | PASS |
+| **ElSLib Tests** | valueOnTorus | `OCCTElSLibValueOnTorus` | major and minor radius swapped | red | green | PASS |
+| **ElSLib Tests** | parametersOnSphere | `OCCTElSLibParametersOnSphere` | point x and y swapped | red | green | PASS |
+### 766-math-gce-make (#1983, measured)
+| **gce_MakeCirc Tests** | circleThrough3Points | `OCCTGceMakeCircFrom3Points` | p2 built as (y, x, z), which equals p1: gce refuses, bridge returns nil | red | green | PASS |
+| **gce_MakeCirc Tests** | circleFromCenterNormal | `OCCTGceMakeCircFromCenterNormal` | radius halved | red | green | PASS |
+| **gce_MakeCone Tests** | coneFrom2PointsRadii | `OCCTSurfaceConicalFromPointsRadii` | r1 and r2 swapped | red | green | PASS |
+| **gce_MakeCone Tests** | parityWithConicalSurface | `OCCTSurfaceConicalFromPointsRadii (both routes)` | Swift: coneFrom2PointsRadii forwards the radii swapped | red | green | PASS |
+| **gce_MakeCylinder Tests** | cylinderFrom3Points | `OCCTSurfaceCylindricalFromPoints` | p1 and p3 swapped | red | green | PASS |
+| **gce_MakeCylinder Tests** | parityWithCylindricalSurface | `OCCTSurfaceCylindricalFromPoints (both routes)` | Swift: cylinderFrom3Points forwards p1 and p3 swapped | red | green | PASS |
+| **gce_MakeDir Tests** | directionFrom2Points | `OCCTGceMakeDir` | points passed in reverse order | red | green | PASS |
+| **gce_MakeElips Tests** | ellipseFromCenterNormal | `OCCTGceMakeElips` | radii swapped: gce refuses, bridge returns nil | red | green | PASS |
+| **gce_MakeHypr Tests** | hyperbolaFromCenterNormal | `OCCTGceMakeHypr` | radii swapped | red | green | PASS |
+| **gce_MakeLin Tests** | lineFrom2Points | `OCCTGceMakeLinFrom2Points` | points passed in reverse order | red | green | PASS |
+| **gce_MakeParab Tests** | parabolaFromCenterNormal | `OCCTGceMakeParab` | focal doubled | red | green | PASS |
+| **gce_MakePln Tests** | planeFromEquation | `OCCTGceMakePlnFromEquation` | d negated | red | green | PASS |
+| **gce_MakePln Tests** | planeFrom3Points | `OCCTSurfacePlaneFromPoints` | p2 and p3 swapped | red | green | PASS |
