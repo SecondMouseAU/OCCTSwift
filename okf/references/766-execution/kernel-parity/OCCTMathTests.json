@@ -5885,5 +5885,1061 @@
       "failing_expectation": ":17 `abs(sorted[0] - 1.0) < 1e-10`"
     },
     "green": true
+  },
+  {
+    "test_name": "GC_MakeMirror::Mirror box about point",
+    "bridge_function": "OCCTShapeMirrorAboutPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "min (34.9999999, -5.0000001, -5.0000001), max (45.0000001, 5.0000001, 5.0000001)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min (34.9999999, -5.0000001, -5.0000001), max (45.0000001, 5.0000001, 5.0000001)",
+      "source": "Scripts/repro/766-math-shape-transforms/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "mirror centre replaced by the origin",
+      "failing_expectation": ":19 `abs(bb.min.x - 35) < 0.5`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeMirror::Mirror box about axis",
+    "bridge_function": "OCCTShapeMirrorAboutAxis",
+    "bridge_output": {
+      "type": "observed",
+      "data": "box at (1,2,3) size 10 mirrored about Z: min (-11.0000001, -12.0000001, 2.9999999), max (-0.9999999, -1.9999999, 13.0000001); original centred box maps to itself (-5..5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "box at (1,2,3) size 10 mirrored about Z: min (-11.0000001, -12.0000001, 2.9999999), max (-0.9999999, -1.9999999, 13.0000001); original centred box maps to itself (-5..5)",
+      "source": "Scripts/repro/766-math-shape-transforms/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "axis direction components reversed, (dz, dy, dx): mirrors about X instead of Z",
+      "failing_expectation": "original: **green**; rewritten: :38 `abs(bb.min.x + 11) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeScale::Scale box about origin",
+    "bridge_function": "OCCTShapeScaleAboutPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "size (20.0000004, 20.0000004, 20.0000004)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "size (20.0000004, 20.0000004, 20.0000004)",
+      "source": "Scripts/repro/766-math-shape-transforms/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "factor inverted (1 / factor)",
+      "failing_expectation": ":17 `abs(size.x - 20) < 0.5`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeScale::Scale with factor 0.5",
+    "bridge_function": "OCCTShapeScaleAboutPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "size (10.0000002, 10.0000002, 10.0000002)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "size (10.0000002, 10.0000002, 10.0000002)",
+      "source": "Scripts/repro/766-math-shape-transforms/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "factor inverted (1 / factor)",
+      "failing_expectation": ":31 `abs(size.x - 10) < 0.5`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeTranslation::Translate box from point to point",
+    "bridge_function": "OCCTShapeTranslateByPoints",
+    "bridge_output": {
+      "type": "observed",
+      "data": "min (14.9999999, -5.0000001, -5.0000001), max (25.0000001, 5.0000001, 5.0000001)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min (14.9999999, -5.0000001, -5.0000001), max (25.0000001, 5.0000001, 5.0000001)",
+      "source": "Scripts/repro/766-math-shape-transforms/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "from and to points swapped",
+      "failing_expectation": ":18 `abs(bb.min.x - 15) < 0.5`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Surface Transform::Translate surface",
+    "bridge_function": "OCCTSurfaceTransform",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(1,1) = (11, 1, 5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(1,1) = (11, 1, 5)",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "translation dz dropped (dx, dy, 0)",
+      "failing_expectation": "original: **green**; rewritten: :20 `simd_distance(p, SIMD3<Double>(11, 1, 5)) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Surface Transform::Rotate surface",
+    "bridge_function": "OCCTSurfaceTransform",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(1,1) = (1, 0.70710678118654757, 0.70710678118654746)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(1,1) = (1, 0.70710678118654757, 0.70710678118654746)",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "rotation angle negated",
+      "failing_expectation": "original: **green**; rewritten: :36 `simd_distance(p, SIMD3<Double>(1, 0.70710678118654757, 0.70710678118654746)) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Surface Transform::Scale surface",
+    "bridge_function": "OCCTSurfaceTransform",
+    "bridge_output": {
+      "type": "observed",
+      "data": "plane z=5 scaled x2 about origin: P(1,1) = (1, 1, 10); the original plane z=0 maps to itself, P(1,1) = (1, 1, 0) before and after",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "plane z=5 scaled x2 about origin: P(1,1) = (1, 1, 10); the original plane z=0 maps to itself, P(1,1) = (1, 1, 0) before and after",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "scale factor inverted (1 / factor)",
+      "failing_expectation": "original: **green**; rewritten: :52 `simd_distance(p, SIMD3<Double>(1, 1, 10)) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Surface Transform::Mirror surface through point",
+    "bridge_function": "OCCTSurfaceTransform",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(1,1) = (-1, -1, -5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(1,1) = (-1, -1, -5)",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "point mirror built as a plane mirror (normal Z) through the point",
+      "failing_expectation": "original: **green**; rewritten: :65 `simd_distance(p, SIMD3<Double>(-1, -1, -5)) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Surface Transform::Mirror surface through axis",
+    "bridge_function": "OCCTSurfaceTransform",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(1,1) = (1, -1, -5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(1,1) = (1, -1, -5)",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "axis mirror built as a plane mirror (gp_Ax2 for gp_Ax1)",
+      "failing_expectation": "original: **green**; rewritten: :78 `simd_distance(p, SIMD3<Double>(1, -1, -5)) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Surface Transform::Mirror surface through plane",
+    "bridge_function": "OCCTSurfaceTransform",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(1,1) = (1, 1, -5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(1,1) = (1, 1, -5)",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "plane mirror built as an axis mirror (gp_Ax1 for gp_Ax2)",
+      "failing_expectation": "original: **green**; rewritten: :91 `simd_distance(p, SIMD3<Double>(1, 1, -5)) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Surface Transform::Transform BezierSurface values",
+    "bridge_function": "OCCTSurfaceTransform (surface from OCCTSurfaceBezierFill2)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(0.5,0.5) (5, 5, 1.5) -> (5, 5, 101.5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(0.5,0.5) (5, 5, 1.5) -> (5, 5, 101.5)",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "translation dz dropped",
+      "failing_expectation": ":84 `abs(after.z - before.z - 100) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "TransformedCurve, Curve with Translation::translateCircle",
+    "bridge_function": "OCCTGeomAdaptorTransformedCurveCreate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "domain [0, 2pi], start (15, 0, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "domain [0, 2pi], start (15, 0, 0)",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "tx and ty swapped",
+      "failing_expectation": "original: red; rewritten: :23 `abs(pt.x - 15.0) < 0.1`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gce Transform Factory 3D Tests::pointMirror",
+    "bridge_function": "OCCTMakeMirrorPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1,2,3) -> (-1, -2, -3)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1,2,3) -> (-1, -2, -3)",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "point mirror built as an axis mirror (Z) through the point",
+      "failing_expectation": ":17 `abs(p.z + 3) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gce Transform Factory 3D Tests::planeMirror",
+    "bridge_function": "OCCTMakeMirrorPlane",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1,2,3) -> (1, 2, -3)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1,2,3) -> (1, 2, -3)",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "plane mirror built as an axis mirror about the normal",
+      "failing_expectation": ":23 `abs(p.x - 1) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gce Transform Factory 3D Tests::rotation90",
+    "bridge_function": "OCCTMakeRotation",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1,0,0) -> (1.1e-16, 1, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1,0,0) -> (1.1e-16, 1, 0)",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "angle negated",
+      "failing_expectation": ":31 `abs(p.y - 1) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gce Transform Factory 3D Tests::scaleBy2",
+    "bridge_function": "OCCTMakeScaleTransform",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1,2,3) -> (2, 4, 6)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1,2,3) -> (2, 4, 6)",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "factor inverted",
+      "failing_expectation": ":37 `abs(p.x - 2) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gce Transform Factory 3D Tests::translationVector",
+    "bridge_function": "OCCTMakeTranslationVec",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1,2,3) -> (11, 22, 33)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1,2,3) -> (11, 22, 33)",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "vector x and y swapped",
+      "failing_expectation": ":45 `abs(p.x - 11) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gce Transform Factory 3D Tests::translationPoints",
+    "bridge_function": "OCCTMakeTranslationPoints",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1,1,1) -> (6, 6, 6)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1,1,1) -> (6, 6, 6)",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "from and to swapped",
+      "failing_expectation": ":52 `abs(p.x - 6) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gce Transform Factory 3D Tests::axisMirror",
+    "bridge_function": "OCCTMakeMirrorAxis",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1,2,3) -> (-1, -2, 3)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1,2,3) -> (-1, -2, 3)",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "axis mirror built as a plane mirror with the axis as normal",
+      "failing_expectation": ":58 `abs(p.x + 1) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "math_TrigonometricFunctionRoots::sinZero",
+    "bridge_function": "OCCTTrigRoots",
+    "bridge_output": {
+      "type": "observed",
+      "data": "2 roots [0, 3.1415926535897931]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "2 roots [0, 3.1415926535897931]",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "last root dropped (NbSolutions() - 1)",
+      "failing_expectation": "original: red; rewritten: :13 `roots.count == 2`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "math_TrigonometricFunctionRoots::cosHalf",
+    "bridge_function": "OCCTTrigRoots",
+    "bridge_output": {
+      "type": "observed",
+      "data": "2 roots [1.0471975511965976, 5.2359877559829888]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "2 roots [1.0471975511965976, 5.2359877559829888]",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "last root dropped",
+      "failing_expectation": "original: **green**; rewritten: :21 `roots.count == 2`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "math_TrigonometricFunctionRoots::infiniteRoots",
+    "bridge_function": "OCCTTrigRootsInfinite",
+    "bridge_output": {
+      "type": "observed",
+      "data": "done 1, InfiniteRoots 1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "done 1, InfiniteRoots 1",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "InfiniteRoots() negated",
+      "failing_expectation": ":24 `inf`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeTrimmedCone::Trimmed cone from endpoints and radii",
+    "bridge_function": "OCCTSurfaceTrimmedCone",
+    "bridge_output": {
+      "type": "observed",
+      "data": "domain u [0, 2pi] v [0, 10.440306508910549]; P(0, vMin) (5, 0, 0), P(0, vMax) (2, 0, 10)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "domain u [0, 2pi] v [0, 10.440306508910549]; P(0, vMin) (5, 0, 0), P(0, vMax) (2, 0, 10)",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "r1 and r2 swapped",
+      "failing_expectation": "original: **green**; rewritten: :23 `simd_distance(surf.point(atU: 0, v: d.vMin), SIMD3<Double>(5, 0, 0)) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeTrimmedCylinder::Trimmed cylinder from axis, radius, height",
+    "bridge_function": "OCCTSurfaceTrimmedCylinder",
+    "bridge_output": {
+      "type": "observed",
+      "data": "domain u [0, 2pi] v [0, 8]; P(0,0) (4, 0, 0), P(0,8) (4, 0, 8)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "domain u [0, 2pi] v [0, 8]; P(0,0) (4, 0, 0), P(0,8) (4, 0, 8)",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "radius and height swapped",
+      "failing_expectation": "original: **green**; rewritten: :19 `abs(d.vMax - 8) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Trsf_Extras::transformFromMatrix",
+    "bridge_function": "OCCTShapeTransformFromMatrix",
+    "bridge_output": {
+      "type": "observed",
+      "data": "min (4.4999999, 9.4999999, 14.4999999), max (5.5000001, 10.5000001, 15.5000001)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min (4.4999999, 9.4999999, 14.4999999), max (5.5000001, 10.5000001, 15.5000001)",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "translation column (a14, a24, a34) dropped",
+      "failing_expectation": ":25 `bb.min.x > 4.0`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Trsf_Extras::transformIsNegative",
+    "bridge_function": "OCCTShapeTransformIsNegative",
+    "bridge_output": {
+      "type": "observed",
+      "data": "location identity = 1, IsNegative reported 0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "location identity = 1, IsNegative reported 0",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "identity-location branch reports true",
+      "failing_expectation": ":37 `b.isTransformNegative == false`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Trsf_Extras::mirrorTransformProducesResult",
+    "bridge_function": "OCCTShapeTransformFromMatrix",
+    "bridge_output": {
+      "type": "observed",
+      "data": "min (-15.0000001, -1e-7, -1e-7), max (-4.9999999, 10.0000001, 10.0000001)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min (-15.0000001, -1e-7, -1e-7), max (-4.9999999, 10.0000001, 10.0000001)",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "a11 read from a22 (identity instead of the X mirror)",
+      "failing_expectation": ":58 `bb.max.x < -4.0`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Trsf_Extras::displacement",
+    "bridge_function": "OCCTTrsfDisplacement",
+    "bridge_output": {
+      "type": "observed",
+      "data": "[1 0 0 10, 0 1 0 0, 0 0 1 0]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "[1 0 0 10, 0 1 0 0, 0 0 1 0]",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "from and to frames swapped",
+      "failing_expectation": ":70 `abs(m.values[3] - 10.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Trsf_Extras::transformation",
+    "bridge_function": "OCCTTrsfTransformation",
+    "bridge_output": {
+      "type": "observed",
+      "data": "[1 0 0 -5, 0 1 0 -5, 0 0 1 -5]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "[1 0 0 -5, 0 1 0 -5, 0 0 1 -5]",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "SetDisplacement used instead of SetTransformation",
+      "failing_expectation": "original: **green**; rewritten: :82 `zip(m.values, want).allSatisfy { abs($0 - $1) < 1e-12 }`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Trsf_Extras::invalidMatrixSize",
+    "bridge_function": "none (pure Swift: the deprecated transformed(byMatrix: [Double]) overload in Shape+Math.swift refuses before any bridge call)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: N/A: element-count validation happens in Swift; no kernel call is made"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "Swift injection: a short array padded with the identity instead of refused",
+      "failing_expectation": ":89 `result == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gp_Trsf_Extras::transformFromMatrixInterleavedLayoutTranslatesAsDocumented",
+    "bridge_function": "OCCTShapeTransformFromMatrix",
+    "bridge_output": {
+      "type": "observed",
+      "data": "min (4.9999999, 9.9999999, 14.9999999), max (15.0000001, 20.0000001, 25.0000001)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min (4.9999999, 9.9999999, 14.9999999), max (15.0000001, 20.0000001, 25.0000001)",
+      "source": "Scripts/repro/766-math-trimmed-trsf-extras/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "translation column dropped",
+      "failing_expectation": ":110 `abs(bb.min.x - 5.0) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "BRepTools_TrsfModification::apply translation via modifier",
+    "bridge_function": "OCCTShapeTrsfModification",
+    "bridge_output": {
+      "type": "observed",
+      "data": "volume 6000; min (94.9999999, 189.9999999, 284.9999999), max (105.0000001, 210.0000001, 315.0000001)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume 6000; min (94.9999999, 189.9999999, 284.9999999), max (105.0000001, 210.0000001, 315.0000001)",
+      "source": "Scripts/repro/766-math-trsfmod-uzawa-vector2d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "translation column (a14, a24, a34) dropped",
+      "failing_expectation": "original: **green**; rewritten: :38 `simd_distance(bb.min, SIMD3<Double>(95, 190, 285)) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "BRepTools_TrsfModification::apply rotation via modifier",
+    "bridge_function": "OCCTShapeTrsfModification",
+    "bridge_output": {
+      "type": "observed",
+      "data": "10x20x30 at (1,0,0): min (-20.0000001, 0.9999999, -1e-7), max (1e-7, 11.0000001, 30.0000001); the original centred cube maps to itself",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "10x20x30 at (1,0,0): min (-20.0000001, 0.9999999, -1e-7), max (1e-7, 11.0000001, 30.0000001); the original centred cube maps to itself",
+      "source": "Scripts/repro/766-math-trsfmod-uzawa-vector2d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "a12 and a21 swapped (rotation by -90 deg)",
+      "failing_expectation": "original: **green**; rewritten: :68 `simd_distance(bb.min, SIMD3<Double>(-20, 1, 0)) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Uzawa::constrainedOptimization",
+    "bridge_function": "OCCTMathUzawa",
+    "bridge_output": {
+      "type": "observed",
+      "data": "done, x = (0.5, 0.5), 1 iteration",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "done, x = (0.5, 0.5), 1 iteration",
+      "source": "Scripts/repro/766-math-trsfmod-uzawa-vector2d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "constraint right-hand side negated",
+      "failing_expectation": ":17 `abs(r.result[0] - 0.5) < 0.1`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Vector2DMath::modulus",
+    "bridge_function": "OCCTXYModulus",
+    "bridge_output": {
+      "type": "observed",
+      "data": "5",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "5",
+      "source": "Scripts/repro/766-math-trsfmod-uzawa-vector2d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "SquareModulus() returned",
+      "failing_expectation": ":10 `abs(Vector2DMath.modulus(SIMD2(3, 4)) - 5.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Vector2DMath::cross",
+    "bridge_function": "OCCTXYCrossed",
+    "bridge_output": {
+      "type": "observed",
+      "data": "1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1",
+      "source": "Scripts/repro/766-math-trsfmod-uzawa-vector2d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "operands reversed",
+      "failing_expectation": ":14 `abs(Vector2DMath.cross(SIMD2(1, 0), SIMD2(0, 1)) - 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Vector2DMath::dot",
+    "bridge_function": "OCCTXYDot",
+    "bridge_output": {
+      "type": "observed",
+      "data": "11",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "11",
+      "source": "Scripts/repro/766-math-trsfmod-uzawa-vector2d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "y term dropped",
+      "failing_expectation": ":18 `abs(Vector2DMath.dot(SIMD2(1, 2), SIMD2(3, 4)) - 11.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Vector2DMath::normalize",
+    "bridge_function": "OCCTXYNormalize",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(0.59999999999999998, 0.80000000000000004), modulus 1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(0.59999999999999998, 0.80000000000000004), modulus 1",
+      "source": "Scripts/repro/766-math-trsfmod-uzawa-vector2d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "normalized x and y swapped",
+      "failing_expectation": "original: **green**; rewritten: :28 `abs(n.x - 0.6) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Vector3DMath::modulus",
+    "bridge_function": "OCCTXYZModulus",
+    "bridge_output": {
+      "type": "observed",
+      "data": "3",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "3",
+      "source": "Scripts/repro/766-math-vector3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "SquareModulus() returned",
+      "failing_expectation": ":10 `abs(Vector3DMath.modulus(SIMD3(1, 2, 2)) - 3.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Vector3DMath::cross",
+    "bridge_function": "OCCTXYZCrossed",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(0, 0, 1)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(0, 0, 1)",
+      "source": "Scripts/repro/766-math-vector3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "operands reversed",
+      "failing_expectation": ":15 `abs(c.z - 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Vector3DMath::dot",
+    "bridge_function": "OCCTXYZDot",
+    "bridge_output": {
+      "type": "observed",
+      "data": "32",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "32",
+      "source": "Scripts/repro/766-math-vector3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "z term dropped",
+      "failing_expectation": ":19 `abs(Vector3DMath.dot(SIMD3(1, 2, 3), SIMD3(4, 5, 6)) - 32.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Vector3DMath::dotCross",
+    "bridge_function": "OCCTXYZDotCross",
+    "bridge_output": {
+      "type": "observed",
+      "data": "1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1",
+      "source": "Scripts/repro/766-math-vector3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "b and c swapped in the triple product",
+      "failing_expectation": ":23 `abs(Vector3DMath.dotCross(SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(0, 0, 1)) - 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Vector3DMath::normalize",
+    "bridge_function": "OCCTXYZNormalize",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(0.33333333333333331, 0.66666666666666663, 0.66666666666666663), modulus 0.99999999999999989",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(0.33333333333333331, 0.66666666666666663, 0.66666666666666663), modulus 0.99999999999999989",
+      "source": "Scripts/repro/766-math-vector3d/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "normalized x and y swapped",
+      "failing_expectation": "original: **green**; rewritten: :35 `abs(n.x - 1.0 / 3.0) < 1e-12`"
+    },
+    "green": true
   }
 ]
