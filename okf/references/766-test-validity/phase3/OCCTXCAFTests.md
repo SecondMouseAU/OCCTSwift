@@ -232,3 +232,14 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `pointArrayOfTheWrongLengthStillReads` | the #1030 guard without its length-3 check | :214 Expectation failed: doc.datum(at: index)?.name == "Datum1030" | passed | `OCCTDocumentGetDatumInfo` | PASS: reads with a length-2 point array |
 | `rescaleGeometryStillSucceeds` | `OCCTDocumentEditorRescaleGeometry` returns false | :231 Expectation failed: doc.rescaleGeometry(labelId: main.labelId, scaleFactor: 2.0, forceIfNotRoot: true) | passed | `OCCTDocumentEditorRescaleGeometry` | PASS: `XCAFDoc_Editor::RescaleGeometry` true |
 | `plainDatumStillReads` | a datum guard that refuses any datum whose point child label exists (a child-existence test) | :247 Expectation failed: datum?.name == "Datum1030"; :248 Expectation failed: doc.setDatumPosition(at: index, 2) | passed | `OCCTDocumentGetDatumInfo` | PASS: every datum has child 17 (so a child-existence guard refuses all); no array, so it reads |
+### `DocumentUndoRedoTests.swift`
+| `undoLimit` | `OCCTDocumentGetUndoLimit` returns 0 | :15 Expectation failed: doc.undoLimit == 10 | passed | `OCCTDocumentGetUndoLimit` | PASS: 10 = 10 |
+| `availableUndos` | `OCCTDocumentGetAvailableUndos` returns 0 | :30 Expectation failed: doc.availableUndos == 1 | passed | `OCCTDocumentGetAvailableUndos` | PASS: 0/0, then 1 |
+| `undoRestores` | `OCCTDocumentUndo` returns true without undoing | :58 Expectation failed: doc.availableUndos == 1; :59 Expectation failed: doc.availableRedos == 1 | passed | `OCCTDocumentUndo` | PASS: 2, then undo gives 1/1 |
+| `redoAfterUndo` | `OCCTDocumentRedo` returns true without redoing | :82 Expectation failed: doc.availableUndos == 2; :83 Expectation failed: doc.availableRedos == 0 | passed | `OCCTDocumentRedo` | PASS: redo gives 2/0 |
+| `undoNothing` | `OCCTDocumentUndo` returns true without undoing | :91 Expectation failed: !result | passed | `OCCTDocumentUndo` | PASS: false = false |
+| `multipleUndoRedo` | `OCCTDocumentRedo` returns true without redoing | :115 Expectation failed: doc.availableUndos == 2; :116 Expectation failed: doc.availableRedos == 1 | passed | `OCCTDocumentRedo` | PASS: 3; 0/3; 2/1 |
+| `abortNoUndo` | `OCCTDocumentAbortTransaction` commits instead | :132 Expectation failed: doc.availableUndos == 1 | passed | `OCCTDocumentAbortTransaction` | PASS: 1 = 1 |
+### `DriverTableTests.swift`
+| `tableExists` | `OCCTDriverTableExists` returns false | :13 Expectation failed: DriverTable.exists | passed | `OCCTDriverTableExists` | PASS: `Get()` never null |
+| `initAndClear` | `OCCTDriverTableClear` calls `abort()` | process crash (the test has no expectation; a crash is the only failure it can report) | passed | `OCCTDriverTableClear` | PASS: both calls return; see the note on this test |
