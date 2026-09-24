@@ -21,10 +21,13 @@ struct SurfaceFillingTests {
             parameters: FillingParameters(continuity: .g0)
         )
 
-        // The operation may or may not succeed depending on OCCT's
-        // internal handling - we're testing the API interface works
+        // #766: this was `if let surface { #expect(surface.isValid) }`, so a nil fill passed.
+        // BRepOffsetAPI_MakeFilling builds the flat 10 x 10 square here, valid, area 100
+        // (Scripts/repro/766-surface-fill-freeform-grid/).
+        #expect(surface != nil)
         if let surface = surface {
             #expect(surface.isValid)
+            #expect(abs((surface.surfaceArea ?? 0) - 100) < 1e-9)
         }
     }
 
@@ -52,9 +55,11 @@ struct SurfaceFillingTests {
 
         let surface = Shape.fill(boundaries: [boundary], parameters: params)
 
-        // Test API works - actual success depends on OCCT
+        // #766: likewise a nil fill passed; the kernel builds it, area 100.
+        #expect(surface != nil)
         if let surface = surface {
             #expect(surface.isValid)
+            #expect(abs((surface.surfaceArea ?? 0) - 100) < 1e-9)
         }
     }
 
