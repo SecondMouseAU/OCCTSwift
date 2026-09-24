@@ -1,0 +1,9 @@
+naturalBounds: nFaces=6 face[0] u=[0, 30] v=[-20, 0]
+evaluateBoxFace: uv=(15, -10) point=(-5, 0, 0) normal=(-1, -0, 0) |normal|=1
+evaluateCylinderFace: nFaces=3
+  cyl face[0] u=[0,6.28319] v=[0,10]: uv=(3.1415926535897931, 5) point=(-5, 6.1232339957367663e-16, 5) normal=(-5, 6.1232339957367663e-16, 0) |normal|=5
+  cyl face[1] u=[-5,5] v=[-5,5]: uv=(0, 0) point=(0, 0, 10) normal=(0, 0, 1) |normal|=1
+  cyl face[2] u=[-5,5] v=[-5,5]: uv=(0, 0) point=(0, 0, 0) normal=(-0, -0, -1) |normal|=1
+normalMagnitudeIsAreaElement: face[0] u=[0, 10] v=[-10, 0]
+  eval1: uv=(0.10000000000000001, -9.9000000000000004) point=(-5, 4.9000000000000004, -4.9000000000000004) normal=(-1, -0, 0) |normal|=1
+  eval2: uv=(9.9000000000000004, -0.10000000000000001) point=(-5, -4.9000000000000004, 4.9000000000000004) normal=(-1, -0, 0) |normal|=1
