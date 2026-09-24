@@ -125,12 +125,69 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 
 **Total**: 545 tests
 
-### #1979 executed: `ChFi2dBuilderTests.swift`, `ChFi2dChamferAPITests.swift`, `ChFi2dFilletAlgoTests.swift`, `ChFi2dFilletAPITests.swift`, `CompBezier2dToBSpline2dTests.swift`
+### #1979 executed: `Curve2DInteriorTangentTests.swift`, `Curve2DInterpolatePeriodicParityTests.swift`
 
-Probe: `Scripts/repro/766-geom2d-chfi2d-compbezier/`. Every row was run red with the injection applied and green after it was reverted.
+Probe: `Scripts/repro/766-geom2d-interpolate-tangents-periodic/`. Every row was run red with the injection applied and green after it was reverted.
 
 | Test | Bridge function | Injection | Red | Green | Parity | Notes |
 |---|---|---|---|---|---|---|
+| Curve2D Interior Tangent Interpolation Tests::Interpolate with no tangent constraints matches basic interpolate | `OCCTCurve2DInterpolateWithInteriorTangents` | drop the last point | ✅ | ✅ | MATCH | start points to 0.01 inside `if let`; now the domain and mid point to 1e-9 |
+| Curve2D Interior Tangent Interpolation Tests::Tangent constraint at start and end | `OCCTCurve2DInterpolateWithInteriorTangents` | skip Load(tangents, flags) | ✅ | ✅ | MATCH | tangent `abs(y) < 0.1` inside two `if let`s; now exact and the pole count |
+| Curve2D Interior Tangent Interpolation Tests::Tangent constraint at interior point | `OCCTCurve2DInterpolateWithInteriorTangents` | skip Load(tangents, flags) | ✅ | ✅ | MATCH | `poleCount != nil`; now the horizontal tangent at the constrained point |
+| Curve2D Interior Tangent Interpolation Tests::Closed curve with interior tangent constraint | `OCCTCurve2DInterpolateWithInteriorTangents` | skip Load(tangents, flags) | ✅ | ✅ | MATCH | "may or may not succeed" inside `if let`; the kernel succeeds, now required |
+| Curve2D Interior Tangent Interpolation Tests::Minimum 2-point interpolation with tangent constraints | `OCCTCurve2DInterpolateWithInteriorTangents` | skip Load(tangents, flags) | ✅ | ✅ | MATCH | `!= nil`; now pins poles and a point |
+| Curve2D periodic interpolation delegates (#412)::Default tolerance: the two entry points produce the same curve | `OCCTCurve2DInterpolate` | ignore closed | ✅ | ✅ | MATCH | agreement only; now pins the domain and point(20) |
+| Curve2D periodic interpolation delegates (#412)::A non-default tolerance is now reachable through interpolatePeriodic | `OCCTCurve2DInterpolate` | pin the tolerance to 1e-6 | ✅ | ✅ | MATCH | tolerance-insensitive input; now adds a case the tolerance decides |
+| Curve2D periodic interpolation delegates (#412)::A 2-point periodic interpolation is accepted by both entry points | `OCCTCurve2DInterpolate` | ignore closed | ✅ | ✅ | MATCH | flags inside `if let`; now required, with the domain |
+| Curve2D periodic interpolation delegates (#412)::Both entry points reject a single point | `OCCTCurve2DInterpolate` | fabricate a second point for a one-point input | ✅ | ✅ | MATCH |  |
+### #1979 executed: `BatchCurve2DTests.swift`, `BisectorBisecAnaTests.swift`, `BisectorIntersectionTests.swift`
+Probe: `Scripts/repro/766-geom2d-batch-bisector/`. Every row was run red with the injection applied and green after it was reverted.
+| Batch Curve2D Evaluation::Evaluate grid on circle | `OCCTCurve2DEvaluateGrid` | swap x and y in each evaluated point | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Evaluate grid D1 on circle | `OCCTCurve2DEvaluateGridD1` | swap the D1 components | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Empty parameters returns empty | `OCCTCurve2DEvaluateGrid` | Swift wrapper returns one zero point for an empty parameter list instead of [] | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Grid evaluation matches individual evaluation | `OCCTCurve2DEvaluateGrid` | swap x and y in each evaluated point | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Grid D1 matches individual D1 | `OCCTCurve2DEvaluateGridD1` | swap the D1 components | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Segment batch evaluation | `OCCTCurve2DEvaluateGrid` | swap x and y in each evaluated point | ✅ | ✅ | MATCH |  |
+| Bisector_BisecAna::Bisector between two lines | `OCCTBisectorBisecAnaCurveCurve` | return the second input line instead of the bisector | ✅ | ✅ | MATCH | asserted only `bisector != nil` inside `if let`; now pins two points of the returned line |
+| Bisector_BisecAna::Bisector between two points | `OCCTBisectorBisecAnaPointPoint` | move the second point 2 along x | ✅ | ✅ | MATCH | asserted only `bisector != nil`; now pins x = 5 at two parameters |
+| Bisector Intersection Tests::perpendicular bisectors of right angle | `OCCTBisectorInterPointPoint` | move B 2 along x | ✅ | ✅ | MATCH | `let _ = results`, no assertion; now uses the pair order whose half-lines meet and pins (5, 5) |
+| Bisector Intersection Tests::collinear point bisectors | `OCCTBisectorInterPointPoint` | swap C and D, turning the second half-line to +x | ✅ | ✅ | MATCH | `let _ = results`, no assertion; now pins the empty result of the diverging half-lines |
+### #1979 executed: `BSplineCurve2DCompletionsV121Tests.swift`, `BSplineCurve2dKnotSplitTests.swift`
+Probe: `Scripts/repro/766-geom2d-bspline-completions/`. Every row was run red with the injection applied and green after it was reverted.
+| BSplineCurve 2D Completions v121::SetNotPeriodic on 2D curve | `OCCTCurve2DBSplineSetNotPeriodic` | skip SetNotPeriodic() | ✅ | ✅ | MATCH | the helper curve was already non-periodic and only the returned Bool was checked |
+| BSplineCurve 2D Completions v121::IncreaseMultiplicity 2D | `OCCTCurve2DBSplineIncreaseMultiplicity` | pass mult - 1 | ✅ | ✅ | MATCH | only the returned Bools, inside `if let` |
+| BSplineCurve 2D Completions v121::Reverse 2D | `OCCTCurve2DBSplineReverse` | skip Reverse() | ✅ | ✅ | MATCH | only the returned Bool, inside `if let` |
+| BSplineCurve 2D Completions v121::SetKnots 2D | `OCCTCurve2DBSplineSetKnots` | skip SetKnots() | ✅ | ✅ | MATCH | only the returned Bool, inside `if let` |
+| BSplineCurve 2D Completions v121::MovePointAndTangent 2D | `OCCTCurve2DBSplineMovePointAndTangent` | report success regardless of errorStatus | ✅ | ✅ | MATCH | nested in `if let curve`; now also pins that the failed edit left the curve unchanged |
+| BSplineCurve 2D Completions v121::MovePointAndTangent 2D with unordered independent conditions | `OCCTCurve2DBSplineMovePointAndTangent` | pass the starting condition as the ending one | ✅ | ✅ | MATCH | only the returned Bool, inside `if let`; now pins the moved point |
+| BSplineCurve 2D Completions v121::IncrementMultiplicity 2D | `OCCTCurve2DBSplineIncrementMultiplicity` | increment only index1 | ✅ | ✅ | MATCH | only the returned Bools, inside `if let` |
+| BSplineCurve 2D Completions v121::SetOrigin 2D fails on non-periodic | `OCCTCurve2DBSplineSetOrigin` | return true without calling SetOrigin | ✅ | ✅ | MATCH | nested in `if let curve`, so a nil curve passed |
+| BSplineCurve2d KnotSplitting Tests::knotSplits | `OCCTCurve2DSplitAtDiscontinuities` | split at continuity 3 whatever is asked | ✅ | ✅ | MATCH | `(indices?.count ?? 0) >= 0` is true for every result including nil |
+### #1979 executed: `BSplineCurve2DManipulationTests.swift`
+Probe: `Scripts/repro/766-geom2d-bspline-manipulation/`. Every row was run red with the injection applied and green after it was reverted.
+| BSpline Curve 2D Manipulation Tests::knotCount | `OCCTCurve2DBSplineKnotCount` | NbKnots() + 1 | ✅ | ✅ | MATCH | `nk > 0`, nested in `if let bsp`, so a nil curve passed |
+| BSpline Curve 2D Manipulation Tests::poleCount | `OCCTCurve2DBSplinePoleCount` | NbPoles() + 1 | ✅ | ✅ | MATCH | `np >= 4`, nested in `if let bsp`, so a nil curve passed |
+| BSpline Curve 2D Manipulation Tests::degree | `OCCTCurve2DBSplineDegree` | Degree() + 1 | ✅ | ✅ | MATCH | `deg >= 1`, nested in `if let bsp`, so a nil curve passed |
+| BSpline Curve 2D Manipulation Tests::isRational | `OCCTCurve2DBSplineIsRational` | negate IsRational() | ✅ | ✅ | MATCH | `let _ = bsp.bspline.isRational`, no assertion |
+| BSpline Curve 2D Manipulation Tests::setPole | `OCCTCurve2DBSplineSetPole` | store y + 1 | ✅ | ✅ | MATCH | the pole read-back was nested in `if let bsp`, so a nil curve passed; now also pins the moved midpoint |
+| BSpline Curve 2D Manipulation Tests::resolution | `OCCTCurve2DBSplineResolution` | double the resolution | ✅ | ✅ | MATCH | `res > 0`, nested in `if let bsp`, so a nil curve passed |
+| BSpline Curve 2D Manipulation Tests::insertKnot | `OCCTCurve2DBSplineInsertKnot` | return true without inserting | ✅ | ✅ | MATCH | only the returned Bool, nested in `if let bsp`, so a nil curve passed |
+| BSpline Curve 2D Manipulation Tests::segment | `OCCTCurve2DBSplineSegment` | return true without segmenting | ✅ | ✅ | MATCH | only the returned Bool, nested in `if let bsp`, so a nil curve passed |
+| BSpline Curve 2D Manipulation Tests::increaseDegree | `OCCTCurve2DBSplineIncreaseDegree` | return true without raising the degree | ✅ | ✅ | MATCH | nested in `if let bsp`, so a nil curve passed; now also pins the multiplicities and pole count |
+| BSpline Curve 2D Manipulation Tests::setWeight | `OCCTCurve2DBSplineSetWeight` | return true without setting the weight | ✅ | ✅ | MATCH | `let _ = setWeight(...)`, no assertion |
+| BSpline Curve 2D Manipulation Tests::removeKnot | `OCCTCurve2DBSplineRemoveKnot` | return true without removing | ✅ | ✅ | MATCH | `let _ = removeKnot(...)`, no assertion |
+### #1979 executed: `AHTBezierCurve2DTests.swift`, `AnaFilletTests.swift`, `ApproxArcsSegmentsTests.swift`, `ApproxCurve2DTests.swift`, `AxisPlacement2DTests.swift`
+Probe: `Scripts/repro/766-geom2d-aht-axisplacement/`. Every row was run red with the injection applied and green after it was reverted.
+| Geom2dEval AHTBezier 2D Curve::createAndEval | `OCCTGeom2dEvalAHTBezierCurveCreate` | reverse the pole order before constructing Geom2dEval_AHTBezierCurve | ✅ | ✅ | MATCH | asserted only `domain.lowerBound >= 0` and `upperBound > 0`, which a curve built from the wrong poles satisfies; now pins the domain and point(0.5) |
+| ChFi2d_AnaFilletAlgo::Analytical fillet between two edges in XY plane | `OCCTChFi2dAnaFillet` | fillet radius x 1.5 | ✅ | ✅ | MATCH | asserted only isValid on the three edges, which a fillet of any radius satisfies; now pins the fillet length (pi) and trimmed edge 1 (8) |
+| Geom2dConvert_ApproxArcsSegments::approximate circle as arcs | `OCCTGeom2dConvertApproxArcsSegments` | report one curve fewer than GetResult() holds | ✅ | ✅ | MATCH | the only assertion (`count >= 1`) sat inside `if let`; now requires exactly the 2 arcs from (5,0) to (-5,0) |
+| Geom2dConvert_ApproxArcsSegments::approximate line | `OCCTGeom2dConvertApproxArcsSegments` | report one curve fewer than GetResult() holds | ✅ | ✅ | MATCH | same `if let` + `count >= 1` gap; now requires the single (0,0)-(10,0) segment |
+| Approx Curve2D Tests::Approximate 2D circle as BSpline | `OCCTApproxCurve2d` | approximate only the first half of the requested range | ✅ | ✅ | MATCH | `upperBound > lowerBound` inside `if let` passed an approximation of any sub-range; now pins [0, 2pi] and the point at pi/3 |
+| AxisPlacement2D::createAxis | `OCCTAxisPlacement2DCreate` | swap the direction components | ✅ | ✅ | MATCH |  |
+| AxisPlacement2D::reversed | `OCCTAxisPlacement2DReversed` | skip Reverse() on the copy | ✅ | ✅ | MATCH | `guard ... else { return }` passed green when construction or reversal returned nil; now `#require` |
+| AxisPlacement2D::angle | `OCCTAxisPlacement2DAngle` | halve the angle | ✅ | ✅ | MATCH | same early-return guard; now `#require` |
+### #1979 executed: `ChFi2dBuilderTests.swift`, `ChFi2dChamferAPITests.swift`, `ChFi2dFilletAlgoTests.swift`, `ChFi2dFilletAPITests.swift`, `CompBezier2dToBSpline2dTests.swift`
+Probe: `Scripts/repro/766-geom2d-chfi2d-compbezier/`. Every row was run red with the injection applied and green after it was reverted.
 | ChFi2d_Builder Tests::add fillet at vertex | `OCCTChFi2dAddFillet` | fillet radius x 1.5 | ✅ | ✅ | MATCH | `if let` on face and result, and `newEdges > origEdges`; now pins 5 edges and area 96 + pi |
 | ChFi2d_Builder Tests::add chamfer between edges | `OCCTChFi2dAddChamfer` | second distance x 1.5 | ✅ | ✅ | MATCH | same `if let` + count gap; now pins area 98 |
 | ChFi2d_Builder Tests::add chamfer with angle | `OCCTChFi2dAddChamferAngle` | angle x 1.2 | ✅ | ✅ | MATCH | same `if let` + count gap; now pins area 98 |

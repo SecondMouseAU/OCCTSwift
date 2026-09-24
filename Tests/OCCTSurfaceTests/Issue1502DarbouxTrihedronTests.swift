@@ -35,6 +35,11 @@ struct Issue1502DarbouxTrihedronTests {
         #expect(abs(simd_dot(frame.tangent, frame.normal)) < 1e-6)
         #expect(abs(simd_dot(frame.tangent, frame.binormal)) < 1e-6)
         #expect(abs(abs(frame.binormal.z) - 1.0) < 1e-6)
+        // #766 parity: GeomFill_Darboux::D0 at 0.1 on the same curve-on-surface, see
+        // Scripts/repro/766-issue1433-1502-1515/. Unit length and orthogonality alone pass a
+        // frame turned the wrong way round the circle.
+        #expect(simd_length(frame.tangent - SIMD3(-0.0998334166, 0.995004165, 0)) < 1e-9)
+        #expect(simd_length(frame.normal - SIMD3(-0.995004165, -0.0998334166, 0)) < 1e-9)
     }
 
     @Test func darbouxOnMultipleParameters() throws {
