@@ -10639,5 +10639,445 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::Default parameters on a curved boundary return a surface instead of crashing",
+    "bridge_function": "OCCTShapeFill",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 7.51122
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 7.51122
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt tangent (.g1 rim, wall support)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::Tangent fill against a support shape is not flat",
+    "bridge_function": "OCCTShapeFillWithSupport",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "flat z extent": 2e-07,
+        "tangent z extent": 7.51122
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "flat z extent": 2e-07,
+        "tangent z extent": 7.51122
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt flat (.g0 rim); tangent"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::Explicit per-edge constraint with a support face is tangent",
+    "bridge_function": "OCCTShapeFillConstraints",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 7.51122
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 7.51122
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt tangent"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::Curvature continuity is accepted and differs from tangency",
+    "bridge_function": "OCCTShapeFillWithSupport",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "curvature z extent": 11.9016,
+        "tangent z extent": 7.51122
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "curvature z extent": 11.9016,
+        "tangent z extent": 7.51122
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt curvature (.g2 -> GeomAbs_C1)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::maxDegree caps the degree of the resulting surface (#431)",
+    "bridge_function": "OCCTShapeFillWithSupport",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          3,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          3,
+          3
+        ]
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt tangent, maxDegree 3 (degree 3x3; 7x6 uncapped)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::A boundary edge absent from the support shape falls back rather than failing",
+    "bridge_function": "OCCTShapeFillWithSupport",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 7.51122
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 7.51122
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt tangent (the pcurve-derived wall)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::A free-standing boundary with an unrelated support still degrades instead of failing (#1503)",
+    "bridge_function": "OCCTShapeFillWithSupport",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 2e-07
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 2e-07
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt free-standing square degraded to C0; at G1 face-less Add throws"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::Free-standing constraint edges degrade instead of failing the whole build (#1503)",
+    "bridge_function": "OCCTShapeFillConstraints",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 2e-07
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 2e-07
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt free-standing square"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::An internal constraint pulls the surface without bounding it",
+    "bridge_function": "OCCTShapeFillConstraints",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "boundary-only z extent": 2e-07,
+        "with interior z extent": 36.6944
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "boundary-only z extent": 2e-07,
+        "with interior z extent": 36.6944
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt rim + interior line (not bound)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::Free-standing boundary degrades to position-only continuity instead of failing (#1503)",
+    "bridge_function": "OCCTShapeFill",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 2e-07
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 2e-07
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt free-standing square"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::Constraints fill rejects an empty constraint list",
+    "bridge_function": "OCCTShapeFillConstraints",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt (no kernel call is reached)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::A nominated support face that cannot serve is a failure, not a substitution",
+    "bridge_function": "OCCTShapeFillConstraints",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "substituted": null,
+        "derived z extent": 7.51122
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "substituted": null,
+        "derived z extent": 7.51122
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt tangent"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::FillingSurface honours maxDegree instead of retargeting the iteration count (#431)",
+    "bridge_function": "OCCTFillingAddEdge",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          3,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          3,
+          3
+        ]
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt tangent, maxDegree 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::FillingSurface survives a curved boundary above positional continuity (#432)",
+    "bridge_function": "OCCTFillingAddEdge",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 7.51122
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 7.51122
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt tangent"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::FillingSurface maps .g1 to tangency and .g2 to curvature, not the reverse (#433)",
+    "bridge_function": "OCCTFillingAddEdgeWithSupport",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "curvature z extent": 11.9016,
+        "tangent z extent": 7.51122
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "curvature z extent": 11.9016,
+        "tangent z extent": 7.51122
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt curvature; tangent"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::add(edge:support:continuity:) rejects a support face that cannot serve (#434)",
+    "bridge_function": "OCCTFillingAddEdgeWithSupport",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "add": false
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "add": false
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt (refusal is the bridge's: no pcurve of the rim on the stranger sphere)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::add(edge:support:continuity:) defaults to .g1, not .g0, so its default call validates support (#434 review)",
+    "bridge_function": "OCCTFillingAddEdgeWithSupport",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 7.51122
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "z extent": 7.51122
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt tangent"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::A refused add poisons build(), matching Shape.fill(constraints:) (#482)",
+    "bridge_function": "OCCTFillingBuild",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "poisoned build": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "poisoned build": null
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt (wrapper state; no kernel counterpart)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Filling Continuity And Support Faces (#430)::Refusals accumulate and stay sticky across later successful adds (#482)",
+    "bridge_function": "OCCTFillingBuild",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "refusedConstraintCount": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "refusedConstraintCount": 2
+      },
+      "source": "Scripts/repro/766-filling-support-face/transcript.txt (wrapper state; no kernel counterpart)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
   }
 ]
