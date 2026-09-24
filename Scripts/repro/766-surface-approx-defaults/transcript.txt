@@ -1,0 +1,11 @@
+sphere tol 1e-3 deg 8 (default): degree 8x8 poles 15x9
+sphere tol 1e-2 deg 10 (pre-#406 default): degree 10x8 poles 11x9
+sphere tol 1e-2 deg 8: degree 7x8 poles 13x9
+torus: degree 7x7 poles 23x23
+trimmedCylinder: degree 8x5 poles 15x6
+trimmedCone: degree 8x5 poles 15x6
+offset approx: degree 8x8 poles 165x21
+  max deviation from the offset surface on the 5x5 grid = 0.026897065170123618
+base approx (the gross regression the test names): degree 7x7 poles 8x8
+  max deviation from the offset surface on the 5x5 grid = 0.30000000000052851
+torusSurfaceAxis: location=(1,2,3) direction=(0,0,1)
