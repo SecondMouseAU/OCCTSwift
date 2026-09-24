@@ -1,0 +1,10 @@
+projectLineOntoPlane: domain=[0, 10] start=(0, 0) end=(10, 0)
+projectCircleOntoCylinder: domain=[-2e+100, 2e+100] start=(-2e+100, 3) end=(2e+100, 3)
+  Geom2d_Line, value at 1 = (1, 3)
+projectCurve3DOntoPlane: mid=(5, 3.4999999999999996, 0)
+projectPointOntoPlane: distance=7 u=5 v=3
+projectPointOntoSphere: distance=5 u=0 v=0
+projectPointOntoCylinder: distance=3 u=0 v=5
+projectSegmentOntoPlaneLength: domain=[0, 5] start=(0, 0) end=(4, 3)
+compositeProjectionBasic: NbCurves=1
+  segment 1: domain=[0, 10] start=(0, 0) end=(10, 0)

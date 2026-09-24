@@ -22,7 +22,11 @@ struct BSplineApproxInterpContractTests {
 
     /// Samples a fitted curve densely enough that two fits differing at all disagree here.
     private static func fitSignature(_ solver: BSplineApproxInterp) -> [SIMD3<Double>]? {
-        guard solver.isDone, let curve = solver.curve else { return nil }
+        guard solver.isDone, let curve = solver.curve else {
+            // A fit that did not run leaves every comparison below unevaluated (#766).
+            Issue.record("BSplineApproxInterp fit did not complete")
+            return nil
+        }
         let d = curve.domain
         return (0...32).map { i in
             curve.point(at: d.lowerBound + (d.upperBound - d.lowerBound) * Double(i) / 32.0)
@@ -42,7 +46,10 @@ struct BSplineApproxInterpContractTests {
         let pts = Self.helix()
         guard let loose = BSplineApproxInterp(points: pts, nbControlPoints: 10),
             let tight = BSplineApproxInterp(points: pts, nbControlPoints: 10)
-        else { return }
+        else {
+            Issue.record("BSplineApproxInterp not created")
+            return
+        }
         loose.setConvergenceTolerance(1e-1)
         tight.setConvergenceTolerance(1e-8)
         loose.perform()
@@ -59,7 +66,10 @@ struct BSplineApproxInterpContractTests {
         let pts = Self.helix()
         guard let plain = BSplineApproxInterp(points: pts, nbControlPoints: 10),
             let tuned = BSplineApproxInterp(points: pts, nbControlPoints: 10)
-        else { return }
+        else {
+            Issue.record("BSplineApproxInterp not created")
+            return
+        }
         tuned.setParametrizationAlpha(1.0)  // chord-length, vs the 0.5 centripetal default
         tuned.setMinPivot(1e-3)
         tuned.setClosedTolerance(1.0)
@@ -76,7 +86,10 @@ struct BSplineApproxInterpContractTests {
         let pts = Self.helix()
         guard let plain = BSplineApproxInterp(points: pts, nbControlPoints: 10),
             let constrained = BSplineApproxInterp(points: pts, nbControlPoints: 10)
-        else { return }
+        else {
+            Issue.record("BSplineApproxInterp not created")
+            return
+        }
         constrained.interpolatePoint(0)
         constrained.interpolatePoint(pts.count - 1)
         constrained.interpolatePoint(pts.count / 2, withKink: true)
@@ -93,7 +106,10 @@ struct BSplineApproxInterpContractTests {
         guard let plain = BSplineApproxInterp(points: pts, nbControlPoints: 10),
             let fewIter = BSplineApproxInterp(points: pts, nbControlPoints: 10),
             let manyIter = BSplineApproxInterp(points: pts, nbControlPoints: 10)
-        else { return }
+        else {
+            Issue.record("BSplineApproxInterp not created")
+            return
+        }
         plain.perform()
         fewIter.performOptimal(maxIterations: 1)
         manyIter.performOptimal(maxIterations: 10_000)
@@ -112,16 +128,18 @@ struct BSplineApproxInterpContractTests {
             let many = BSplineApproxInterp(
                 points: pts, nbControlPoints: 40,
                 continuousIfClosed: true)
-        else { return }
+        else {
+            Issue.record("BSplineApproxInterp not created")
+            return
+        }
         few.perform()
         many.perform()
         if let a = Self.fitSignature(few), let b = Self.fitSignature(many) {
             #expect(Self.maxDeviation(a, b) == 0.0)
         }
         // The approximator picks its own pole count, so the two requests land on the same curve.
-        if let a = few.curve?.poleCount, let b = many.curve?.poleCount {
-            #expect(a == b)
-        }
+        #expect(few.curve?.poleCount != nil)
+        #expect(few.curve?.poleCount == many.curve?.poleCount)
     }
 
     @Test("setConvergenceTolerance and setProjectionTolerance drive one shared tolerance")
@@ -132,7 +150,10 @@ struct BSplineApproxInterpContractTests {
         guard let convergenceOnly = BSplineApproxInterp(points: pts, nbControlPoints: 10),
             let thenLoosened = BSplineApproxInterp(points: pts, nbControlPoints: 10),
             let tightenedByProjection = BSplineApproxInterp(points: pts, nbControlPoints: 10)
-        else { return }
+        else {
+            Issue.record("BSplineApproxInterp not created")
+            return
+        }
         convergenceOnly.setConvergenceTolerance(1e-8)
         thenLoosened.setConvergenceTolerance(1e-8)
         thenLoosened.setProjectionTolerance(1e-1)
@@ -154,11 +175,17 @@ struct BSplineApproxInterpContractTests {
     @Test("maxError is the worst back-projection distance from an input point to the fit")
     func maxErrorIsBackProjectionDistance() {
         let pts = Self.helix()
-        guard let solver = BSplineApproxInterp(points: pts, nbControlPoints: 10) else { return }
+        guard let solver = BSplineApproxInterp(points: pts, nbControlPoints: 10) else {
+            Issue.record("BSplineApproxInterp not created")
+            return
+        }
         #expect(solver.maxError == -1.0)  // not run yet
         solver.setConvergenceTolerance(1e-6)
         solver.perform()
-        guard solver.isDone, let curve = solver.curve else { return }
+        guard solver.isDone, let curve = solver.curve else {
+            Issue.record("BSplineApproxInterp fit did not complete")
+            return
+        }
         let d = curve.domain
         // Recompute the same quantity by dense sampling. Sampling can only over-estimate the true
         // projection distance, and by at most half the widest chord between adjacent samples, so
@@ -174,6 +201,11 @@ struct BSplineApproxInterpContractTests {
             max(acc, samples.reduce(Double.infinity) { min($0, simd_distance($1, p)) })
         }
         #expect(solver.maxError >= 0)
+        // The sampled bound below is loose (a half-chord is ~1e-3 here), so it cannot see a
+        // maxError off by 1e-6: that injection left it green (#766). Pin the value the same
+        // GeomAPI_PointsToBSpline fit and GeomAPI_ProjectPointOnCurve give
+        // (Scripts/repro/766-curve-approxinterp-contract/transcript.txt).
+        #expect(abs(solver.maxError - 5.3473650477313526e-07) < 1e-12)
         #expect(worst >= solver.maxError - 1e-9)
         #expect(worst - solver.maxError <= halfChord + 1e-9)
     }
