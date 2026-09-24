@@ -18,9 +18,10 @@ struct XDEEditorTests {
             if let compound = compound {
                 let labelId = doc.addShape(compound, makeAssembly: false)
                 #expect(labelId >= 0)
-                // editorExpand may or may not succeed depending on shape structure
-                _ = doc.editorExpand(labelId: labelId, recursively: false)
-                #expect(Bool(true))  // no crash = success
+                // The result was discarded and `#expect(Bool(true))` could not fail (#766).
+                // XCAFDoc_Editor::Expand turns the two-body compound into a two-component assembly.
+                #expect(doc.editorExpand(labelId: labelId, recursively: false))
+                #expect(doc.componentCount(assemblyLabelId: labelId) == 2)
             }
         }
     }
@@ -34,9 +35,9 @@ struct XDEEditorTests {
         let box = Shape.box(width: 10, height: 20, depth: 30)
         if let box = box {
             let labelId = doc.addShape(box)
-            // Rescale may return false for non-root labels, but shouldn't crash
-            _ = doc.rescaleGeometry(labelId: labelId, scaleFactor: 2.0, forceIfNotRoot: true)
-            #expect(Bool(true))  // no crash = success
+            // The result was discarded and `#expect(Bool(true))` could not fail (#766). With
+            // forceIfNotRoot the kernel rescales the free shape's label and reports it.
+            #expect(doc.rescaleGeometry(labelId: labelId, scaleFactor: 2.0, forceIfNotRoot: true))
         }
     }
 }
