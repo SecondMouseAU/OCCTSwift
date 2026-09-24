@@ -1,0 +1,11 @@
+noRemovedNodes: faces=6 removed=0
+box products=0 occurrences=0 rootProducts=0 triangulations=0 polygons3d=0
+box refs: shell=1 face=6 wire=6 coedge(defs)=24 vertex=24 solid=0 child=0 occurrence=0 faces=6 wires=6
+faceRef0: childKind=2 childIndex=0 orientation=1 removed=0; shellRef0 removed=0
+faceRef orientations: 1 0 1 0 1 0
+meshed box: triangulations=6 polygons3d=0
+linked product: index=0 products=1 roots=1 isPart=1 isAssembly=0 components=1 shapeRoot=(kind 0, 0) occurrences=1
+sphere products=0 occurrences=0
+sphere linked product: products=1 isPart=1 components=1
+box sameDomain(0): 0
+fused boxes: faces=10 sameDomain: 0[ ] 1[ 5 ] 2[ 6 ] 3[ 7 ] 4[ 8 ] 5[ 1 ] 6[ 2 ] 7[ 3 ] 8[ 4 ] 9[ ]

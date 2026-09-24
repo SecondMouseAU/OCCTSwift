@@ -14,16 +14,16 @@ struct CompBezierToBSplineTests {
         let seg: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 2, 0), SIMD3(3, 0, 0),
         ]
-        if let result = CompBezierConverter.toBSpline(segments: [seg]) {
-            #expect(result.degree == 3)
-            #expect(result.poles.count == 4)
-            #expect(result.knots.count >= 2)
-            // First pole should match first control point
-            #expect(abs(result.poles[0].x) < 1e-10)
-            #expect(abs(result.poles[0].y) < 1e-10)
-            // Last pole should match last control point
-            #expect(abs(result.poles.last!.x - 3.0) < 1e-10)
+        guard let result = CompBezierConverter.toBSpline(segments: [seg]) else {
+            Issue.record("single cubic segment did not convert")
+            return
         }
+        // Convert_CompBezierCurvesToBSplineCurve keeps a lone cubic as is: its own four poles,
+        // knots [0, 1] at multiplicity 4 (Scripts/repro/766-curve-circle-compbezier/transcript.txt).
+        #expect(result.degree == 3)
+        #expect(result.poles == seg)
+        #expect(result.knots == [0, 1])
+        #expect(result.multiplicities == [4, 4])
     }
 
     @Test func twoCubicSegments3D() {
@@ -34,12 +34,20 @@ struct CompBezierToBSplineTests {
         let seg2: [SIMD3<Double>] = [
             SIMD3(3, 0, 0), SIMD3(4, -1, 0), SIMD3(5, -1, 0), SIMD3(6, 0, 0),
         ]
-        if let result = CompBezierConverter.toBSpline(segments: [seg1, seg2]) {
-            #expect(result.degree == 3)
-            // Two cubic segments joined → at least 4 poles
-            #expect(result.poles.count >= 4)
-            #expect(result.knots.count >= 2)
+        guard let result = CompBezierConverter.toBSpline(segments: [seg1, seg2]) else {
+            Issue.record("two cubic segments did not convert")
+            return
         }
+        // The shared junction pole is merged: 6 poles, knots [0, 0.5, 1] with multiplicities
+        // [4, 2, 4]. The earlier `poles.count >= 4` passed a result that dropped a segment (#766).
+        #expect(result.degree == 3)
+        #expect(
+            result.poles == [
+                SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 1, 0),
+                SIMD3(4, -1, 0), SIMD3(5, -1, 0), SIMD3(6, 0, 0),
+            ])
+        #expect(result.knots == [0, 0.5, 1])
+        #expect(result.multiplicities == [4, 2, 4])
     }
 
     @Test func emptySegmentsReturnsNil() {

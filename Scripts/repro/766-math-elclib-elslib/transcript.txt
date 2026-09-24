@@ -1,0 +1,14 @@
+valueOnLine (5, 0, 0)
+valueOnCircle u=0 (10, 0, 0)
+valueOnCircle u=pi/2 (6.12323399574e-16, 10, 0)
+valueOnEllipse (20, 0, 0)
+d1OnCircle point (10, 0, 0)
+d1OnCircle tangent (-0, 10, 0)
+parameterOnLine 7
+inPeriod 0.716814692820414 (7 - 2pi = 0.716814692820414)
+valueOnPlane (3, 4, 0)
+valueOnSphere (10, 0, 0)
+valueOnCylinder (5, 0, 10)
+valueOnTorus (0,0) (25, 0, 0)
+valueOnTorus (0,pi/2) (20, 0, 5)
+parametersOnSphere u=0 v=0
