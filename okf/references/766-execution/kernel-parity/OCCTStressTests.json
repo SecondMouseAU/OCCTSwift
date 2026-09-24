@@ -6518,5 +6518,317 @@
       "strengthened": true
     },
     "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: FilletBuilder Lifecycle::buildEmpty",
+    "bridge_function": "OCCTFilletBuilderBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeFillet with no edges: Build throws \"no suitable edges\" -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeFillet with no edges: Build throws \"no suitable edges\" -> nil",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTFilletBuilderBuild: catch returns a wrapper of a null shape instead of nil",
+      "env": "OCCT766=|FAKE:OCCTFilletBuilderBuild|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:26 Expectation failed: result == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: FilletBuilder Lifecycle::normalCycle",
+    "bridge_function": "OCCTFilletBuilderAddEdge, OCCTFilletBuilderBuild, OCCTFilletBuilderNbContours",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): one r=1 contour: volume 997.8539816, 1 contour"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "one r=1 contour: volume 997.8539816, 1 contour",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTFilletBuilderBuild",
+      "env": "OCCT766=|EARLY:OCCTFilletBuilderBuild|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:35 Expectation failed: builder.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: FilletBuilder Lifecycle::destroyWithoutBuild",
+    "bridge_function": "OCCTFilletBuilderRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: deallocation without a prior call; no kernel value, the test exists to catch a crash in Release",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTFilletBuilderRelease",
+      "env": "OCCT766=|CRASH:OCCTFilletBuilderRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: FilletBuilder Lifecycle::invalidInput",
+    "bridge_function": "OCCTFilletBuilderBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): r=100: IsDone=0 -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "r=100: IsDone=0 -> nil",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTFilletBuilderBuild: catch returns a wrapper of a null shape instead of nil",
+      "env": "OCCT766=|FAKE:OCCTFilletBuilderBuild|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:65 Expectation failed: result == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: FilletBuilder Lifecycle::doubleBuild",
+    "bridge_function": "OCCTFilletBuilderBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): first Build 997.8539816, second Build on the same builder 1000 (kernel behaviour)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "first Build 997.8539816, second Build on the same builder 1000 (kernel behaviour)",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTFilletBuilderBuild",
+      "env": "OCCT766=|EARLY:OCCTFilletBuilderBuild|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:77 Expectation failed: builder.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: FilletBuilder Lifecycle::queryContourDetails",
+    "bridge_function": "OCCTFilletBuilderGetRadius, OCCTFilletBuilderGetLength, OCCTFilletBuilderIsConstant",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): 2 contours: r=1 and r=2, length 10 each, constant"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "2 contours: r=1 and r=2, length 10 each, constant",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTFilletBuilderGetRadius",
+      "env": "OCCT766=|EARLY:OCCTFilletBuilderGetRadius|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:95 Expectation failed: builder.radius(contour: 1) == 1",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ChamferBuilder Lifecycle::buildEmpty",
+    "bridge_function": "OCCTChamferBuilderBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeChamfer with no edges: Build throws -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeChamfer with no edges: Build throws -> nil",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTChamferBuilderBuild: catch returns a wrapper of a null shape instead of nil",
+      "env": "OCCT766=|FAKE:OCCTChamferBuilderBuild|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:114 Expectation failed: result == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ChamferBuilder Lifecycle::normalCycleSymmetric",
+    "bridge_function": "OCCTChamferBuilderAddEdge, OCCTChamferBuilderBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): d=1 on one edge: volume 995"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "d=1 on one edge: volume 995",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTChamferBuilderBuild",
+      "env": "OCCT766=|EARLY:OCCTChamferBuilderBuild|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:123 Expectation failed: builder.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ChamferBuilder Lifecycle::destroyWithoutBuild",
+    "bridge_function": "OCCTChamferBuilderRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: deallocation without a prior call; no kernel value, the test exists to catch a crash in Release",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTChamferBuilderRelease",
+      "env": "OCCT766=|CRASH:OCCTChamferBuilderRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ChamferBuilder Lifecycle::invalidInput",
+    "bridge_function": "OCCTChamferBuilderBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): d=100: IsDone=0 -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "d=100: IsDone=0 -> nil",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTChamferBuilderBuild: catch returns a wrapper of a null shape instead of nil",
+      "env": "OCCT766=|FAKE:OCCTChamferBuilderBuild|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:146 Expectation failed: result == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ChamferBuilder Lifecycle::doubleBuild",
+    "bridge_function": "OCCTChamferBuilderBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): first Build 995, second Build 1000 (kernel behaviour)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "first Build 995, second Build 1000 (kernel behaviour)",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTChamferBuilderBuild",
+      "env": "OCCT766=|EARLY:OCCTChamferBuilderBuild|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:157 Expectation failed: builder.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: ChamferBuilder Lifecycle::queryContourDetails",
+    "bridge_function": "OCCTChamferBuilderIsSymmetric, OCCTChamferBuilderIsDistAngle, OCCTChamferBuilderIsTwoDists",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): 1 contour, symmetric, not dist-angle, not two-distances"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1 contour, symmetric, not dist-angle, not two-distances",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTChamferBuilderIsSymmetric",
+      "env": "OCCT766=|EARLY:OCCTChamferBuilderIsSymmetric|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:174 Expectation failed: builder.isSymmetric(contour: 1)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]
