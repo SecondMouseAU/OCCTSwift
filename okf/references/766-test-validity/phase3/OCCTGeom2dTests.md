@@ -140,3 +140,15 @@ Probe: `Scripts/repro/766-geom2d-interpolate-tangents-periodic/`. Every row was 
 | Curve2D periodic interpolation delegates (#412)::A non-default tolerance is now reachable through interpolatePeriodic | `OCCTCurve2DInterpolate` | pin the tolerance to 1e-6 | ✅ | ✅ | MATCH | tolerance-insensitive input; now adds a case the tolerance decides |
 | Curve2D periodic interpolation delegates (#412)::A 2-point periodic interpolation is accepted by both entry points | `OCCTCurve2DInterpolate` | ignore closed | ✅ | ✅ | MATCH | flags inside `if let`; now required, with the domain |
 | Curve2D periodic interpolation delegates (#412)::Both entry points reject a single point | `OCCTCurve2DInterpolate` | fabricate a second point for a one-point input | ✅ | ✅ | MATCH |  |
+### #1979 executed: `BatchCurve2DTests.swift`, `BisectorBisecAnaTests.swift`, `BisectorIntersectionTests.swift`
+Probe: `Scripts/repro/766-geom2d-batch-bisector/`. Every row was run red with the injection applied and green after it was reverted.
+| Batch Curve2D Evaluation::Evaluate grid on circle | `OCCTCurve2DEvaluateGrid` | swap x and y in each evaluated point | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Evaluate grid D1 on circle | `OCCTCurve2DEvaluateGridD1` | swap the D1 components | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Empty parameters returns empty | `OCCTCurve2DEvaluateGrid` | Swift wrapper returns one zero point for an empty parameter list instead of [] | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Grid evaluation matches individual evaluation | `OCCTCurve2DEvaluateGrid` | swap x and y in each evaluated point | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Grid D1 matches individual D1 | `OCCTCurve2DEvaluateGridD1` | swap the D1 components | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Segment batch evaluation | `OCCTCurve2DEvaluateGrid` | swap x and y in each evaluated point | ✅ | ✅ | MATCH |  |
+| Bisector_BisecAna::Bisector between two lines | `OCCTBisectorBisecAnaCurveCurve` | return the second input line instead of the bisector | ✅ | ✅ | MATCH | asserted only `bisector != nil` inside `if let`; now pins two points of the returned line |
+| Bisector_BisecAna::Bisector between two points | `OCCTBisectorBisecAnaPointPoint` | move the second point 2 along x | ✅ | ✅ | MATCH | asserted only `bisector != nil`; now pins x = 5 at two parameters |
+| Bisector Intersection Tests::perpendicular bisectors of right angle | `OCCTBisectorInterPointPoint` | move B 2 along x | ✅ | ✅ | MATCH | `let _ = results`, no assertion; now uses the pair order whose half-lines meet and pins (5, 5) |
+| Bisector Intersection Tests::collinear point bisectors | `OCCTBisectorInterPointPoint` | swap C and D, turning the second half-line to +x | ✅ | ✅ | MATCH | `let _ = results`, no assertion; now pins the empty result of the diverging half-lines |
