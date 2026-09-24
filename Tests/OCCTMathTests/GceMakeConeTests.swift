@@ -11,7 +11,10 @@ struct GceMakeConeTests {
             Surface.coneFrom2PointsRadii(
                 p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10),
                 radius1: 5.0, radius2: 2.0))
-        #expect(cone.handle != nil)
+        // A non-nil handle held for any cone, including one with the radii swapped. Kernel values
+        // from Scripts/repro/766-math-gce-make/transcript.txt.
+        #expect(abs(cone.coneProperties.semiAngle - -0.291456794477867) < 1e-12)
+        #expect(abs(cone.coneProperties.refRadius - 5) < 1e-12)
     }
 
     // #420: coneFrom2PointsRadii and conicalSurface(point1:point2:r1:r2:) now
