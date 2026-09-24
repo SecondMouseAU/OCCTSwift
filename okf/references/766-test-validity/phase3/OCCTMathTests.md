@@ -366,3 +366,9 @@
 | **MathIntegRc4** | kronrodAdaptive | `OCCTMathIntegKronrodAdaptive` | upper bound * 0.99 (integral drops by about 4.9e-4) | red | green | PASS |
 | **MathIntegRc4** | tanhSinh | `OCCTMathIntegTanhSinh` | upper bound * 0.99 (integral drops by about 4.9e-4) | red | green | PASS |
 | **MathJacobi Tests** | eigenvalues | `OCCTMathJacobiEigenvalues` | math_Jacobi::Value(i) + 0.5 | red | green | PASS |
+### 766-math-shape-transforms (#1983, measured)
+| **GC_MakeMirror** | Mirror box about point | `OCCTShapeMirrorAboutPoint` | mirror centre replaced by the origin | red | green | PASS |
+| **GC_MakeMirror** | Mirror box about axis | `OCCTShapeMirrorAboutAxis` | axis direction components reversed, (dz, dy, dx): mirrors about X instead of Z | red | green | PASS |
+| **GC_MakeScale** | Scale box about origin | `OCCTShapeScaleAboutPoint` | factor inverted (1 / factor) | red | green | PASS |
+| **GC_MakeScale** | Scale with factor 0.5 | `OCCTShapeScaleAboutPoint` | factor inverted (1 / factor) | red | green | PASS |
+| **GC_MakeTranslation** | Translate box from point to point | `OCCTShapeTranslateByPoints` | from and to points swapped | red | green | PASS |

@@ -5885,5 +5885,125 @@
       "failing_expectation": ":17 `abs(sorted[0] - 1.0) < 1e-10`"
     },
     "green": true
+  },
+  {
+    "test_name": "GC_MakeMirror::Mirror box about point",
+    "bridge_function": "OCCTShapeMirrorAboutPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "min (34.9999999, -5.0000001, -5.0000001), max (45.0000001, 5.0000001, 5.0000001)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min (34.9999999, -5.0000001, -5.0000001), max (45.0000001, 5.0000001, 5.0000001)",
+      "source": "Scripts/repro/766-math-shape-transforms/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "mirror centre replaced by the origin",
+      "failing_expectation": ":19 `abs(bb.min.x - 35) < 0.5`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeMirror::Mirror box about axis",
+    "bridge_function": "OCCTShapeMirrorAboutAxis",
+    "bridge_output": {
+      "type": "observed",
+      "data": "box at (1,2,3) size 10 mirrored about Z: min (-11.0000001, -12.0000001, 2.9999999), max (-0.9999999, -1.9999999, 13.0000001); original centred box maps to itself (-5..5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "box at (1,2,3) size 10 mirrored about Z: min (-11.0000001, -12.0000001, 2.9999999), max (-0.9999999, -1.9999999, 13.0000001); original centred box maps to itself (-5..5)",
+      "source": "Scripts/repro/766-math-shape-transforms/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "axis direction components reversed, (dz, dy, dx): mirrors about X instead of Z",
+      "failing_expectation": "original: **green**; rewritten: :38 `abs(bb.min.x + 11) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeScale::Scale box about origin",
+    "bridge_function": "OCCTShapeScaleAboutPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "size (20.0000004, 20.0000004, 20.0000004)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "size (20.0000004, 20.0000004, 20.0000004)",
+      "source": "Scripts/repro/766-math-shape-transforms/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "factor inverted (1 / factor)",
+      "failing_expectation": ":17 `abs(size.x - 20) < 0.5`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeScale::Scale with factor 0.5",
+    "bridge_function": "OCCTShapeScaleAboutPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "size (10.0000002, 10.0000002, 10.0000002)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "size (10.0000002, 10.0000002, 10.0000002)",
+      "source": "Scripts/repro/766-math-shape-transforms/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "factor inverted (1 / factor)",
+      "failing_expectation": ":31 `abs(size.x - 10) < 0.5`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeTranslation::Translate box from point to point",
+    "bridge_function": "OCCTShapeTranslateByPoints",
+    "bridge_output": {
+      "type": "observed",
+      "data": "min (14.9999999, -5.0000001, -5.0000001), max (25.0000001, 5.0000001, 5.0000001)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min (14.9999999, -5.0000001, -5.0000001), max (25.0000001, 5.0000001, 5.0000001)",
+      "source": "Scripts/repro/766-math-shape-transforms/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "from and to points swapped",
+      "failing_expectation": ":18 `abs(bb.min.x - 15) < 0.5`"
+    },
+    "green": true
   }
 ]
