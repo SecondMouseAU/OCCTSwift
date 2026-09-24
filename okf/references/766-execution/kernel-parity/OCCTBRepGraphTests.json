@@ -1747,5 +1747,417 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionPlane resolution::absolutePlane",
+    "bridge_function": "none (pure Swift: ConstructionPlane.absolute)",
+    "bridge_output": {
+      "type": "placement",
+      "data": {
+        "origin": [
+          1,
+          2,
+          3
+        ],
+        "zAxis": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "placement",
+      "data": {
+        "reason": "pure Swift; the input is returned as given"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionPlane resolution::offsetFromFace",
+    "bridge_function": "OCCTFaceGetNormalAtUV",
+    "bridge_output": {
+      "type": "placement",
+      "data": {
+        "origin": [
+          -10,
+          0,
+          0
+        ],
+        "zAxis": [
+          -1,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "placement",
+      "data": {
+        "origin": [
+          -10,
+          0,
+          0
+        ],
+        "zAxis": [
+          -1,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionPlane resolution::byThreePoints",
+    "bridge_function": "OCCTShapeVertexPoint",
+    "bridge_output": {
+      "type": "placement",
+      "data": {
+        "origin": [
+          -5,
+          -5,
+          -5
+        ],
+        "zAxis": [
+          -1,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "placement",
+      "data": {
+        "origin": [
+          -5,
+          -5,
+          -5
+        ],
+        "zAxis": [
+          -1,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionPlane resolution::collinearPointsDegenerate",
+    "bridge_function": "OCCTShapeVertexPoint",
+    "bridge_output": {
+      "type": "result",
+      "data": "degenerate"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift degeneracy check on a zero cross product"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionPlane resolution::normalToEdge",
+    "bridge_function": "OCCTEdgeGetTangent3D",
+    "bridge_output": {
+      "type": "placement",
+      "data": {
+        "origin": [
+          -5,
+          -5,
+          0
+        ],
+        "zAxis": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "placement",
+      "data": {
+        "origin": [
+          -5,
+          -5,
+          0
+        ],
+        "zAxis": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionPlane resolution::tangentToFaceCylinderLocalNormal",
+    "bridge_function": "OCCTFaceGetNormalAtUV",
+    "bridge_output": {
+      "type": "placement",
+      "data": {
+        "origin_x": 5,
+        "zAxis": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "placement",
+      "data": {
+        "vertex1": [
+          5,
+          0,
+          0
+        ],
+        "normal_at_vertex1": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionPlane resolution::tangentToFaceConeApexFallsBackToNormal",
+    "bridge_function": "OCCTFaceGetNormalAtUV",
+    "bridge_output": {
+      "type": "result",
+      "data": "origin at apex, UV-midpoint normal"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift fallback rule at a normal singularity"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionPlane resolution::tangentToFaceProjectionItselfFailsFallsBackToOnFaceOrigin",
+    "bridge_function": "OCCTFaceProjectPoint",
+    "bridge_output": {
+      "type": "result",
+      "data": "UV-midpoint origin"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift fallback rule when OCCTFaceProjectPoint fails"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionPlane resolution::tangentToFaceOriginIsOnFaceNotRawPoint",
+    "bridge_function": "OCCTFaceProjectPoint",
+    "bridge_output": {
+      "type": "result",
+      "data": "origin on face 0's plane"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift use of the projected point"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "perpendicularBasis unification: ConstructionEntity (#881)::placementInitMatchesGpAx2",
+    "bridge_function": "none (pure Swift: perpendicularBasis(to:))",
+    "bridge_output": {
+      "type": "basis",
+      "data": {
+        "x": [
+          0.0,
+          0.9777876596251666,
+          -0.20959793101254465
+        ],
+        "y": [
+          -0.987868702146798,
+          0.03254876181607849,
+          0.1518420410263285
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "basis",
+      "data": {
+        "x": [
+          0.0,
+          0.9777876596251667,
+          -0.2095979310125447
+        ],
+        "y": [
+          -0.9878687021467979,
+          0.03254876181607849,
+          0.1518420410263285
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "perpendicularBasis unification: ConstructionEntity (#881)::throughAxisMatchesCanonicalBasis",
+    "bridge_function": "OCCTEdgeGetPointAtParam",
+    "bridge_output": {
+      "type": "direction",
+      "data": [
+        -0.987868702146798,
+        0.03254876181607849,
+        0.1518420410263285
+      ]
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": [
+        -0.9878687021467979,
+        0.03254876181607849,
+        0.1518420410263285
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "perpendicularBasis unification: ConstructionEntity (#881)::placementInitMatchesGpAx2ForAxisAlignedNormals",
+    "bridge_function": "none (pure Swift: perpendicularBasis(to:))",
+    "bridge_output": {
+      "type": "basis_table",
+      "data": "six fixtures as listed in the test"
+    },
+    "kernel_output": {
+      "type": "basis_table",
+      "data": {
+        "+X": {
+          "x": [
+            0,
+            0,
+            1
+          ],
+          "y": [
+            0,
+            -1,
+            0
+          ]
+        },
+        "-X": {
+          "x": [
+            0,
+            0,
+            -1
+          ],
+          "y": [
+            0,
+            -1,
+            0
+          ]
+        },
+        "+Y": {
+          "x": [
+            0,
+            0,
+            1
+          ],
+          "y": [
+            1,
+            0,
+            0
+          ]
+        },
+        "-Y": {
+          "x": [
+            0,
+            0,
+            -1
+          ],
+          "y": [
+            1,
+            0,
+            0
+          ]
+        },
+        "+Z": {
+          "x": [
+            1,
+            0,
+            0
+          ],
+          "y": [
+            0,
+            1,
+            0
+          ]
+        },
+        "-Z": {
+          "x": [
+            -1,
+            0,
+            0
+          ],
+          "y": [
+            0,
+            1,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

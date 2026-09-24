@@ -38,6 +38,18 @@
 | **BRepGraph Shell Queries** | shellSolids | Shell parents | solid index + 1 |
 | **BRepGraph Solid Extended** | solidCompoundCount | Solid parents | compound count + 1 |
 | **BRepGraph Solid Queries** | solidCompSolidCount | Solid parents | comp-solid count + 1 |
+| **v0.142 ConstructionPlane resolution** | absolutePlane | Absolute plane | normal negated |
+| **v0.142 ConstructionPlane resolution** | offsetFromFace | Offset plane | offset distance dropped |
+| **v0.142 ConstructionPlane resolution** | byThreePoints | Plane through points | cross product operands swapped |
+| **v0.142 ConstructionPlane resolution** | collinearPointsDegenerate | Plane through points | degeneracy check removed |
+| **v0.142 ConstructionPlane resolution** | normalToEdge | Plane normal to edge | tangent negated |
+| **v0.142 ConstructionPlane resolution** | tangentToFaceCylinderLocalNormal | Plane tangent to face | projection ignored, UV midpoint used |
+| **v0.142 ConstructionPlane resolution** | tangentToFaceConeApexFallsBackToNormal | Plane tangent to face | apex fallback point replaced by UV midpoint |
+| **v0.142 ConstructionPlane resolution** | tangentToFaceProjectionItselfFailsFallsBackToOnFaceOrigin | Plane tangent to face | raw point returned when projection fails |
+| **v0.142 ConstructionPlane resolution** | tangentToFaceOriginIsOnFaceNotRawPoint | Plane tangent to face | raw point returned |
+| **perpendicularBasis unification: ConstructionEntity (#881)** | placementInitMatchesGpAx2 | Canonical basis | cross operands swapped |
+| **perpendicularBasis unification: ConstructionEntity (#881)** | throughAxisMatchesCanonicalBasis | Canonical basis | right vector negated |
+| **perpendicularBasis unification: ConstructionEntity (#881)** | placementInitMatchesGpAx2ForAxisAlignedNormals | Canonical basis | cross operands swapped |
 
 ---
 
@@ -73,6 +85,18 @@
 | shellSolids | OCCTBRepGraphShellSolidIndices | Shell parents | outIndices[i] = Index + 1 | ✅ | ✅ |  |
 | solidCompoundCount | OCCTBRepGraphSolidCompoundCount | Solid parents | return n + 1 | ✅ | ✅ |  |
 | solidCompSolidCount | OCCTBRepGraphSolidCompSolidCount | Solid parents | return n + 1 | ✅ | ✅ |  |
+| absolutePlane | none (pure Swift: ConstructionPlane.absolute) | Absolute plane | Placement(origin:, normal: -normal) | ✅ | ✅ |  |
+| offsetFromFace | OCCTFaceGetNormalAtUV | Offset plane | origin + 0 * distance * normal | ✅ | ✅ | Rewritten: unit length passed a plane never offset; now pins origin and normal |
+| byThreePoints | OCCTShapeVertexPoint | Plane through points | simd_cross(pC - pA, pB - pA) | ✅ | ✅ | Rewritten: unit length passed a reversed normal |
+| collinearPointsDegenerate | OCCTShapeVertexPoint | Plane through points | byThreePoints passes magnitude 1.0 | ✅ | ✅ |  |
+| normalToEdge | OCCTEdgeGetTangent3D | Plane normal to edge | Placement(origin: point, normal: -tangent) | ✅ | ✅ | Rewritten: unit length passed a reversed tangent |
+| tangentToFaceCylinderLocalNormal | OCCTFaceGetNormalAtUV | Plane tangent to face | projectedNormal returns face.uvMidpointSample() | ✅ | ✅ |  |
+| tangentToFaceConeApexFallsBackToNormal | OCCTFaceGetNormalAtUV | Plane tangent to face | normal-nil branch returns (uvMidpointPoint, fallback) | ✅ | ✅ |  |
+| tangentToFaceProjectionItselfFailsFallsBackToOnFaceOrigin | OCCTFaceProjectPoint | Plane tangent to face | projection-failed branch returns (point, fallbackNormal) | ✅ | ✅ |  |
+| tangentToFaceOriginIsOnFaceNotRawPoint | OCCTFaceProjectPoint | Plane tangent to face | projectedNormal returns (point, normal) | ✅ | ✅ |  |
+| placementInitMatchesGpAx2 | none (pure Swift: perpendicularBasis(to:)) | Canonical basis | up = cross(right, v) (R1); right negated (R2) | ✅ | ✅ | Kernel gp_Ax2 agrees to 1e-15 |
+| throughAxisMatchesCanonicalBasis | OCCTEdgeGetPointAtParam | Canonical basis | right = -normalize(raw) | ✅ | ✅ |  |
+| placementInitMatchesGpAx2ForAxisAlignedNormals | none (pure Swift: perpendicularBasis(to:)) | Canonical basis | up = cross(right, v) | ✅ | ✅ | All six cases red under injection; fixtures match gp_Ax2 |
 
 ---
 
