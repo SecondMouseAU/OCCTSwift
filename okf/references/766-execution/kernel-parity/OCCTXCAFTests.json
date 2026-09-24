@@ -155,14 +155,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "main": 1,
-        "child": 2
+        "main_depth": 1,
+        "child_depth": 2
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "main": 1
+        "main_depth": 1,
+        "child_depth": 2
       }
     },
     "comparison": {
@@ -170,7 +171,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantities on both sides: main_depth and child_depth. Bridge: the test observed main.depth == 1 and, for a label created under Main, child.depth == 2 (OCCTDocumentLabelDepth). Kernel: TDF_Label::Depth() of Main is 1 and of a child of Main is 2. Kernel values are from the supplementary probe, which runs the test's own scenario through the TDF_Label call the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tdf-label-property/"
   },
   {
     "test_name": "TDF Label Properties::Label isNull",
@@ -178,13 +180,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "null": false
+        "main_is_null": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "entry": "0:1"
+        "main_is_null": false
       }
     },
     "comparison": {
@@ -192,7 +194,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantity on both sides: main_is_null. Bridge: main.isNull was false (OCCTDocumentLabelIsNull). Kernel: TDF_Label::IsNull() of Main() printed false. Kernel values are from the supplementary probe, which runs the test's own scenario through the TDF_Label call the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tdf-label-property/"
   },
   {
     "test_name": "TDF Label Properties::Label isRoot",
@@ -230,7 +233,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "entry": "0:1"
+        "father_is_main": true
       }
     },
     "comparison": {
@@ -238,7 +241,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantity on both sides: father_is_main. Bridge: child.father?.labelId == main.labelId was true (OCCTDocumentLabelFather registers the father label; equal ids mean the same TDF_Label). Kernel: child.Father().IsEqual(Main()) is true (father entry 0:1). Kernel values are from the supplementary probe, which runs the test's own scenario through the TDF_Label call the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tdf-label-property/"
   },
   {
     "test_name": "TDF Label Properties::Label root",
@@ -252,7 +256,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "root": true
+        "root_is_root": true
       }
     },
     "comparison": {
@@ -260,7 +264,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantity on both sides: root_is_root. Bridge: child.root?.isRoot was true (OCCTDocumentLabelRoot, then OCCTDocumentLabelIsRoot). Kernel: child.Root().IsRoot() is true. Kernel values are from the supplementary probe, which runs the test's own scenario through the TDF_Label call the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tdf-label-property/"
   },
   {
     "test_name": "TDF Label Properties::Label hasAttribute and attributeCount",
@@ -268,17 +273,19 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "fresh": false,
-        "fresh_count": 0,
-        "after_name": true,
-        "count_at_least": 1
+        "fresh_has_attribute": false,
+        "fresh_attribute_count": 0,
+        "after_name_has_attribute": true,
+        "after_name_attribute_count_at_least_1": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "fresh_count": 0,
-        "after_name_count": 2
+        "fresh_has_attribute": false,
+        "fresh_attribute_count": 0,
+        "after_name_has_attribute": true,
+        "after_name_attribute_count_at_least_1": true
       }
     },
     "comparison": {
@@ -286,7 +293,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantities on both sides. Bridge: label.hasAttribute false and attributeCount == 0 on a fresh label; after setName, hasAttribute true and attributeCount >= 1 (the test asserts a lower bound, so the boolean at-least-1 is compared). Kernel: TDF_Label::HasAttribute() false and NbAttributes() 0 when fresh; after TDataStd_Name::Set, true and NbAttributes() 1, so at-least-1 is true. Kernel values are from the supplementary probe, which runs the test's own scenario through the TDF_Label call the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tdf-label-property/"
   },
   {
     "test_name": "TDF Label Properties::Label hasChild and childCount",
@@ -318,18 +326,19 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "found": true,
-        "missing": null,
-        "created": true,
-        "children": 2
+        "existing_child_found": true,
+        "missing_child_found": false,
+        "created_child_found": true,
+        "child_count_after_create": 2
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "found": true,
-        "missing_null": true,
-        "children_after_create": 3
+        "existing_child_found": true,
+        "missing_child_found": false,
+        "created_child_found": true,
+        "child_count_after_create": 2
       }
     },
     "comparison": {
@@ -337,7 +346,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantities on both sides. Bridge: findChild(tag: child.tag) non-nil, findChild(tag: 999, create: false) nil, findChild(tag: 999, create: true) non-nil, and childCount == 2 (OCCTDocumentLabelFindChild returns -1 for a null child). Kernel: FindChild(existing tag, false) is the existing child, FindChild(999, false) is null, FindChild(999, true) is not null, and NbChildren() is 2. Kernel values are from the supplementary probe, which runs the test's own scenario through the TDF_Label call the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tdf-label-property/"
   },
   {
     "test_name": "TDF Label Properties::Label forgetAllAttributes",
@@ -391,13 +401,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "beyond_cap": true
+        "children_created": 1029,
+        "descendants_reported": 1029
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "walk_counts_every_level": true
+        "children_created": 1029,
+        "descendants_reported": 1029
       }
     },
     "comparison": {
@@ -405,6 +417,7 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantities on both sides. Bridge: after creating 1024 + 5 children the test observed parent.descendants(allLevels: false).count == 1029 (OCCTDocumentGetDescendantLabels reports the true count even past its 1024-entry buffer, #1563). Kernel: TDF_ChildIterator over the direct children walks all 1029. Kernel values are from the supplementary probe, which runs the test's own scenario through the TDF_Label call the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tdf-label-property/"
   }
 ]
