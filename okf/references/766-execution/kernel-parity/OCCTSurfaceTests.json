@@ -5838,5 +5838,377 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Continuity vocabulary (#398)::Geometric orders keep their plate-order raw values",
+    "bridge_function": "(Swift) SurfaceContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "g0": 0,
+        "g1": 1,
+        "g2": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "g0": 0,
+        "g1": 1,
+        "g2": 2
+      },
+      "source": "the plate order GeomPlate_PointConstraint/CurveConstraint read, see Scripts/repro/766-issue398-403-437-480/transcript.txt 437 lines"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Continuity vocabulary (#398)::Parametric orders keep their GeomAbs_C0...C3 raw values",
+    "bridge_function": "(Swift) ParametricContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "c0..c3": [
+          0,
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "c0..c3": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "source": "the integer continuity GeomConvert_BSplineSurfaceKnotSplitting takes, see Scripts/repro/766-issue398-403-437-480/transcript.txt 480 lines"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Continuity vocabulary (#398)::The two vocabularies are distinct types, not aliases of each other",
+    "bridge_function": "(Swift) SurfaceContinuity / ParametricContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "type identity, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Continuity vocabulary (#398)::The result vocabulary still mirrors the real GeomAbs_Shape ordinals",
+    "bridge_function": "(Swift) ContinuityClass",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "C0": 0,
+        "G1": 1,
+        "C1": 2,
+        "G2": 3,
+        "C2": 4,
+        "C3": 5,
+        "CN": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "C0": 0,
+        "G1": 1,
+        "C1": 2,
+        "G2": 3,
+        "C2": 4,
+        "C3": 5,
+        "CN": 6
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 398 GeomAbs_Shape: C0=0 G1=1 C1=2 G2=3 C2=4 C3=5 CN=6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Continuity vocabulary (#398)::Plate point constraints reject curvature and tangent orders",
+    "bridge_function": "OCCTShapePlatePointsAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "g2": null,
+        "g0": "surface",
+        "g1": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "g2": null,
+        "g0": "surface",
+        "g1": null
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 437 GeomPlate_PointConstraint(point, 2): threw; (point, 1): accepted"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Continuity vocabulary (#398)::A single curvature point poisons an otherwise valid order list",
+    "bridge_function": "OCCTShapePlatePointsAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 437 GeomPlate_PointConstraint(point, 2): threw"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface knot splitting parameters (#403)::Param array lengths match their own counts",
+    "bridge_function": "OCCTSurfaceKnotSplitting",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "uSplits": 2,
+        "vSplits": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "uSplits": 2,
+        "vSplits": 2
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 403 C0 splits"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface knot splitting parameters (#403)::Params are ascending and bracketed by the surface's own U/V domain",
+    "bridge_function": "OCCTSurfaceKnotSplitting",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "u": [
+          0,
+          6.28318530718
+        ],
+        "v": [
+          0,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "u": [
+          0,
+          6.28318530718
+        ],
+        "v": [
+          0,
+          10
+        ]
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 403"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface knot splitting parameters (#403)::Non-BSpline surface returns empty params, not a crash",
+    "bridge_function": "OCCTSurfaceKnotSplitting",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "counts": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "counts": [
+          0,
+          0
+        ]
+      },
+      "source": "the refusal is the bridge DownCast to Geom_BSplineSurface; no kernel call is made for a plane"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Surface knot-splitting continuity range (#480)::A bicubic surface with simple interior knots reports interior splits only at .c3",
+    "bridge_function": "OCCTSurfaceKnotSplitting",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "c0-c2": [
+          0,
+          5
+        ],
+        "c3": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "c0-c2": [
+          0,
+          5
+        ],
+        "c3": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 480 bicubic"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface knot-splitting continuity range (#480)::The .c1 default reports a real kink, which is why it stays the default",
+    "bridge_function": "OCCTSurfaceKnotSplitting",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "c1": [
+          0,
+          2,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "c1": [
+          0,
+          2,
+          5
+        ]
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 480 bump at knot 2 x3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface knot-splitting continuity range (#480)::Each direction is asked independently",
+    "bridge_function": "OCCTSurfaceKnotSplitting",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "u(c3)": 6,
+        "v(c1)": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "u(c3)": 6,
+        "v(c1)": 2
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 480 bicubic mixed"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface knot-splitting continuity range (#480)::On a degree-5 surface .c3 is the strictest question this vocabulary can ask",
+    "bridge_function": "OCCTSurfaceKnotSplitting",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "c0-c3": [
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "c0-c3": [
+          0,
+          5
+        ]
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 480 degree 5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
