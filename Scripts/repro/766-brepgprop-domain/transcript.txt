@@ -1,0 +1,6 @@
+faceEdgeCount: face 0 domain edges=4
+faceEdgeCount: face 1 domain edges=4
+faceEdgeCount: face 2 domain edges=4
+faceEdgeCount: face 3 domain edges=4
+faceEdgeCount: face 4 domain edges=4
+faceEdgeCount: face 5 domain edges=4

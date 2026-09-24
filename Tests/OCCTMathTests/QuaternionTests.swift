@@ -39,6 +39,10 @@ struct QuaternionTests {
         let q = Quaternion.fromAxisAngle(axis: SIMD3(0, 0, 1), angle: .pi / 2)
         let m = q.matrix
         #expect(m.count == 9)
+        // 90 deg about Z, row-major. Probed (Scripts/repro/766-math-quaternion): the diagonal
+        // X/Y terms are 2.2e-16, not exactly zero.
+        let want: [Double] = [0, -1, 0, 1, 0, 0, 0, 0, 1]
+        #expect(zip(m, want).allSatisfy { abs($0 - $1) < 1e-12 })
     }
 
     @Test func multiply() {

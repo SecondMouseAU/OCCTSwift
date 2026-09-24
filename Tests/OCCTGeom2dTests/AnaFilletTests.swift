@@ -20,11 +20,16 @@ struct AnaFilletTests {
             planeNormal: SIMD3(0, 0, 1),
             radius: 2.0
         )
-        #expect(result != nil)
-        if let r = result {
-            #expect(r.fillet.isValid)
-            #expect(r.edge1.isValid)
-            #expect(r.edge2.isValid)
-        }
+        // #1979: isValid alone passed a fillet of any radius. The fillet is the quarter circle of
+        // radius 2 centred at (2, 2), so its length is pi, and edge1 is trimmed back to
+        // (2, 0)-(10, 0). Values from ChFi2d_AnaFilletAlgo, Scripts/repro/766-geom2d-aht-axisplacement/.
+        let r = try #require(result)
+        #expect(r.fillet.isValid)
+        #expect(r.edge1.isValid)
+        #expect(r.edge2.isValid)
+        let fillet = try #require(Edge(r.fillet))
+        #expect(abs(fillet.length - Double.pi) < 1e-9)
+        let trimmed1 = try #require(Edge(r.edge1))
+        #expect(abs(trimmed1.length - 8.0) < 1e-9)
     }
 }
