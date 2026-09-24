@@ -184,14 +184,8 @@
         "groove_degrees_all_axes": -1.8685017585032249,
         "groove_fraction_all_axes": 0.5555555555555556,
         "blank_volume": 1130.9733552923256,
-        "threaded_volume": [
-          1003.1466921110966,
-          1003.1466921110967
-        ],
-        "removed_volume": [
-          127.82666318122892,
-          127.82666318122881
-        ]
+        "threaded_volume": 1003.1466921110966,
+        "removed_volume": 127.82666318122892
       }
     },
     "kernel_output": {
