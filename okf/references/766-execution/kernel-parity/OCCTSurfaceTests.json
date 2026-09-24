@@ -14083,5 +14083,377 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval TBezier 3D Curve::createAndEval",
+    "bridge_function": "OCCTGeomEvalTBezierCurveCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "domain": [
+          0,
+          3.141592653589793
+        ],
+        "start": [
+          2,
+          0,
+          0
+        ],
+        "end": [
+          -2,
+          0,
+          0
+        ],
+        "mid": [
+          1,
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "domain": [
+          0,
+          3.141592653589793
+        ],
+        "start": [
+          2,
+          0,
+          0
+        ],
+        "end": [
+          -2,
+          0,
+          0
+        ],
+        "mid": [
+          1,
+          1,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt createAndEval"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval TBezier 3D Curve::rationalTBezier",
+    "bridge_function": "OCCTGeomEvalTBezierCurveCreateRational",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "mid": [
+          0.6666666666666666,
+          0.6666666666666666,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "mid": [
+          0.6666666666666666,
+          0.6666666666666666,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt rationalTBezier"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval TBezier 3D Curve::rejectsEvenPoleCount",
+    "bridge_function": "OCCTGeomEvalTBezierCurveCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt rejectsEvenPoleCount: kernel threw \"number of poles must be odd and >= 3\""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval TBezier Surface::createSurface",
+    "bridge_function": "OCCTGeomEvalTBezierSurfaceCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3pi,0.7pi)": [
+          2.4236412486698917,
+          -0.8785562767951539,
+          0.5061610958661189
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3pi,0.7pi)": [
+          2.4236412486698917,
+          -0.8785562767951539,
+          0.5061610958661189
+        ]
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt createSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval TBezier Surface::rejectsEvenCounts",
+    "bridge_function": "OCCTGeomEvalTBezierSurfaceCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt rejectsEvenCounts: kernel threw \"U pole count must be odd and >= 3\""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "TopTrans SurfaceTransition Tests::forwardCrossing",
+    "bridge_function": "OCCTTopTransSurfaceTransition",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "before": "OUT",
+        "after": "IN"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "before": "OUT",
+        "after": "IN"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt forwardCrossing"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "TopTrans SurfaceTransition Tests::reversedCrossing",
+    "bridge_function": "OCCTTopTransSurfaceTransition",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "before": "IN",
+        "after": "OUT"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "before": "IN",
+        "after": "OUT"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt reversedCrossing"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "TopTrans SurfaceTransition Tests::withCurvature",
+    "bridge_function": "OCCTTopTransSurfaceTransitionCurvature",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "before": "OUT",
+        "after": "IN"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "before": "OUT",
+        "after": "IN"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt withCurvature"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "TopTrans SurfaceTransition Tests::stateEnumValues",
+    "bridge_function": "Shape.TopologicalState (Swift enum, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "IN": 0,
+        "OUT": 1,
+        "ON": 2,
+        "UNKNOWN": 3
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "IN": 0,
+        "OUT": 1,
+        "ON": 2,
+        "UNKNOWN": 3
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt stateEnumValues: TopAbs_State values match"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Curve/Surface Type Names::lineTypeName",
+    "bridge_function": "OCCTCurve3DTypeName",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_Line"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_Line"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt typeNames"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Curve/Surface Type Names::bsplineTypeName",
+    "bridge_function": "OCCTCurve3DTypeName",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_BSplineCurve"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_BSplineCurve"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt typeNames"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Curve/Surface Type Names::line2dTypeName",
+    "bridge_function": "OCCTCurve2DTypeName",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom2d_Line"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom2d_Line"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt typeNames"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Curve/Surface Type Names::sphereTypeName",
+    "bridge_function": "OCCTSurfaceTypeName",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_SphericalSurface"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_SphericalSurface"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt typeNames"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Curve/Surface Type Names::planeTypeName",
+    "bridge_function": "OCCTSurfaceTypeName",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_Plane"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_Plane"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt typeNames"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
