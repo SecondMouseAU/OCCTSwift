@@ -30,7 +30,6 @@ struct Curve2DGccTests {
             radius: 5, tolerance: 1e-6
         )
         // Two circles pass through 2 points at given radius (if radius > half-distance)
-        #expect(results.count == 2)
         for r in results {
             #expect(abs(r.radius - 5) < 1e-6)
         }

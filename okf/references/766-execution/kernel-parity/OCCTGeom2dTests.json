@@ -175,7 +175,7 @@
     "status": "PASS",
     "evidence": {
       "injection": "centre y x 0.5",
-      "red": "Curve2DGccTests.swift:41:9: Expectation failed: abs(ys[0] + 4) < 1e-9",
+      "red": "Curve2DGccTests.swift:40:9: Expectation failed: abs(ys[0] + 4) < 1e-9",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-gcc-hatching/",
       "rewritten": "radius only; now pins both centres"
@@ -205,7 +205,7 @@
     "status": "PASS",
     "evidence": {
       "injection": "radius + 0.5",
-      "red": "Curve2DGccTests.swift:56:9: Expectation failed: abs(results[0].radius - 3) < 1e-9",
+      "red": "Curve2DGccTests.swift:55:9: Expectation failed: abs(results[0].radius - 3) < 1e-9",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-gcc-hatching/",
       "rewritten": "`count >= 1` inside `if let first`; now one solution, radius to 1e-9"
@@ -249,7 +249,7 @@
     "status": "PASS",
     "evidence": {
       "injection": "drop the qualifier (unqualified)",
-      "red": "Curve2DGccTests.swift:70:13: Expectation failed: results.count == 1",
+      "red": "Curve2DGccTests.swift:69:13: Expectation failed: results.count == 1",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-gcc-hatching/",
       "rewritten": "`count >= 1`; now pins the single outside tangent"
@@ -297,7 +297,7 @@
     "status": "PASS",
     "evidence": {
       "injection": "point x + 1",
-      "red": "Curve2DGccTests.swift:86:9: Expectation failed: abs(xs[0]) < 1e-9",
+      "red": "Curve2DGccTests.swift:85:9: Expectation failed: abs(xs[0]) < 1e-9",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-gcc-hatching/",
       "rewritten": "`count >= 1`; now pins both centres"
@@ -398,7 +398,7 @@
       "red": "Curve2DHatchingTests.swift:118:9: Expectation failed: cwSegments.count == ccwSegments.count",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-gcc-hatching/",
-      "rewritten": ""
+      "rewritten": "not rewritten: the test already compares the clockwise hatch with the counter-clockwise one, and that comparison is what fails under the injection"
     }
   }
 ]

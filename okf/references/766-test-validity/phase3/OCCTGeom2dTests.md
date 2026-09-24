@@ -138,4 +138,4 @@ Probe: `Scripts/repro/766-geom2d-gcc-hatching/`. Every row was run red with the 
 | Curve2D Gcc Tests::Circles tangent to curve and point with radius | `OCCTGccCircle2dTanPtRad` | point x + 1 | ✅ | ✅ | MATCH | `count >= 1`; now pins both centres |
 | Curve2D Hatching Tests::Hatch a rectangular boundary | `OCCTCurve2DHatch` | spacing x 1.25 | ✅ | ✅ | MATCH | `count >= 1`; now pins the four interior lines |
 | Curve2D Hatching Tests::Hatch output is not silently truncated at half the buffer's real capacity (#1420) | `OCCTCurve2DHatch` | spacing x 1.25 | ✅ | ✅ | MATCH | strengthened: the (2048, 4096] bounds are kept and the exact kernel count 2999 is pinned |
-| Curve2D Hatching Tests::Hatch result is independent of boundary winding direction (#1496) | `OCCTCurve2DHatch` | always add boundary elements FORWARD (the #1496 defect) | ✅ | ✅ | MATCH |  |
+| Curve2D Hatching Tests::Hatch result is independent of boundary winding direction (#1496) | `OCCTCurve2DHatch` | always add boundary elements FORWARD (the #1496 defect) | ✅ | ✅ | MATCH | not rewritten: it already compares the clockwise hatch with the counter-clockwise one |
