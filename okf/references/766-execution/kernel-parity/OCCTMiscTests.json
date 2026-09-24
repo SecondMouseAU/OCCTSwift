@@ -222,5 +222,98 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue972 2D-to-3D lifting::lift maps a 2D point through the placement's own basis",
+    "test_file": "Tests/OCCTMiscTests/Issue972LiftingTests.swift",
+    "bridge_function": "Placement.lift (Swift)",
+    "bridge_output": {
+      "type": "point",
+      "data": [
+        5,
+        7,
+        3
+      ]
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "via": "gp_Ax3((1,2,3), Z, X) -> world, (4,5,0)",
+        "value": [
+          5,
+          7,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue972 2D-to-3D lifting::lift respects a rotated basis",
+    "test_file": "Tests/OCCTMiscTests/Issue972LiftingTests.swift",
+    "bridge_function": "Placement.lift (Swift)",
+    "bridge_output": {
+      "type": "point",
+      "data": [
+        0.7071067811865476,
+        0.7071067811865476,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "via": "gp_Ax3(origin, Z, (s2,s2,0)) -> world, (1,0,0)",
+        "value": [
+          0.7071067811865476,
+          0.7071067811865476,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue972 2D-to-3D lifting::Flange.normal and Flange.placement.zAxis agree for a non-unit normal",
+    "test_file": "Tests/OCCTMiscTests/Issue972LiftingTests.swift",
+    "bridge_function": "SheetMetal.Flange.init (Swift)",
+    "bridge_output": {
+      "type": "vector",
+      "data": {
+        "normal": [
+          0,
+          0,
+          1
+        ],
+        "placementZ": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "vector",
+      "data": {
+        "gp_Dir(0,0,7)": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
