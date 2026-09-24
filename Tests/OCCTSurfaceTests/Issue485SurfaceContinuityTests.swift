@@ -82,39 +82,30 @@ struct Issue485SurfaceContinuityTests {
     // MARK: - Measured surfaces
 
     @Test("Knot multiplicity drives the measured class, at GeomAbs_Shape's own ordinals")
-    func knotMultiplicityDrivesMeasuredClass() {
-        // #766: each fixture was behind `if let`, so a nil surface skipped its checks.
-        #expect(makeContinuityBSplineSurface(interiorMultiplicityU: 1) != nil)
-        #expect(makeContinuityBSplineSurface(interiorMultiplicityU: 2) != nil)
-        #expect(makeContinuityBSplineSurface(interiorMultiplicityU: 3) != nil)
-        if let c2 = makeContinuityBSplineSurface(interiorMultiplicityU: 1) {
-            #expect(c2.continuityClass == .c2)
-            #expect(c2.continuity == 4)  // the old encoding said 2
-        }
-        if let c1 = makeContinuityBSplineSurface(interiorMultiplicityU: 2) {
-            #expect(c1.continuityClass == .c1)
-            #expect(c1.continuity == 2)  // the old encoding said 1
-        }
-        if let c0 = makeContinuityBSplineSurface(interiorMultiplicityU: 3) {
-            #expect(c0.continuityClass == .c0)
-            #expect(c0.continuity == 0)
-        }
+    func knotMultiplicityDrivesMeasuredClass() throws {
+        // #766: each fixture was behind `if let`, so a nil surface skipped its checks; each is
+        // now required to exist, built once.
+        let c2 = try #require(makeContinuityBSplineSurface(interiorMultiplicityU: 1))
+        let c1 = try #require(makeContinuityBSplineSurface(interiorMultiplicityU: 2))
+        let c0 = try #require(makeContinuityBSplineSurface(interiorMultiplicityU: 3))
+        #expect(c2.continuityClass == .c2)
+        #expect(c2.continuity == 4)  // the old encoding said 2
+        #expect(c1.continuityClass == .c1)
+        #expect(c1.continuity == 2)  // the old encoding said 1
+        #expect(c0.continuityClass == .c0)
+        #expect(c0.continuity == 0)
     }
 
     @Test("Analytic surfaces report CN as ordinal 6, not 99")
-    func analyticSurfacesReportCN() {
+    func analyticSurfacesReportCN() throws {
         // #766: made unconditional, see knotMultiplicityDrivesMeasuredClass.
-        #expect(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) != nil)
-        #expect(Surface.sphere(center: .zero, radius: 5) != nil)
-        if let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) {
-            #expect(plane.continuityClass == .cN)
-            #expect(plane.continuity == 6)
-            #expect(plane.continuityClass.satisfies(.c3))
-        }
-        if let sphere = Surface.sphere(center: .zero, radius: 5) {
-            #expect(sphere.continuityClass == .cN)
-            #expect(sphere.continuity == 6)
-        }
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
+        #expect(plane.continuityClass == .cN)
+        #expect(plane.continuity == 6)
+        #expect(plane.continuityClass.satisfies(.c3))
+        #expect(sphere.continuityClass == .cN)
+        #expect(sphere.continuity == 6)
     }
 
     // Originally compared `continuity` against `surfaceContinuityOrder`, silencing the
