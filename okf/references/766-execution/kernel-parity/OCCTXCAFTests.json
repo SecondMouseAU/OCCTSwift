@@ -5104,5 +5104,185 @@
     },
     "status": "PASS",
     "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XDE ShapeTool Queries::AddShape and GetShapeCount",
+    "bridge_function": "OCCTDocumentGetShapeCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_positive": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "shapes": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE ShapeTool Queries::GetFreeShapeCount",
+    "bridge_function": "OCCTDocumentGetFreeShapeCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_positive": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "free": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE ShapeTool Queries::FindShape and SearchShape",
+    "bridge_function": "OCCTDocumentFindShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "found": true,
+        "searched": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "find": true,
+        "search": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE ShapeTool Queries::NewShape and RemoveShape",
+    "bridge_function": "OCCTDocumentRemoveShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "removed": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "removed": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE ShapeTool Queries::IsTopLevel, IsComponent, IsCompound on node",
+    "bridge_function": "OCCTDocumentIsTopLevel",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "top": true,
+        "component": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "top": true,
+        "component": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "TDocStd_XLink Tests::setXLink",
+    "bridge_function": "OCCTDocumentXLinkSet",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "set": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "TDocStd_XLink Tests::documentEntry",
+    "bridge_function": "OCCTDocumentXLinkGetDocumentEntry",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "entry": "/doc/path"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "entry": "/doc/path"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "TDocStd_XLink Tests::labelEntry",
+    "bridge_function": "OCCTDocumentXLinkGetLabelEntry",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "entry": "0:1:2"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "entry": "0:1:2"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
   }
 ]
