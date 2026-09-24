@@ -13,6 +13,11 @@ GraphNode: children=1 fathers=1 IsFather=true IsChild=false after UnSet children
 Location: (10, 20, 30)
 Material: name=Steel desc=Carbon steel density=7850
 NotesTool: fresh notes=0 after comment=1 after balloon + bindata=3 bindata size=4 orphans=3 DeleteAllNotes=3 after=0
+NoteBalloon::Set non-null=true
+NoteComment::Set non-null=true text="This is a comment" user="TestUser"
+createBalloon on a fresh document: note non-null=true NbNotes=1
+createBinData on a fresh document: note non-null=true NbNotes=1
+orphanNotes: one unattached comment, NbOrphanNotes=1 (>= 0: true)
 ShapeMapTool: extent=33 IsSubShape(face)=true
 NoteObject: fresh HasPlane=false HasPoint=false HasPointText=false after set: plane.x=1 point.x=10 presentation=true after Reset HasPlane=false HasPoint=false
 View: Central=2 Parallel=1 NoCamera=0 dir.x=1 up.z=1 window=800x600 front=true(1) back=true(1000) after UnsetFront=false name=TopView
