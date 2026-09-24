@@ -268,6 +268,9 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **IntTools_EdgeEdge Tests** | Intersecting edges produce vertex common part | Edge-edge intersection | fillCommonPart inverts vertex/edge type |
+| **IntTools_EdgeEdge Tests** | Overlapping collinear edges produce edge common part | Edge-edge overlap | fillCommonPart inverts vertex/edge type (range pinned, #766) |
+| **IntTools_EdgeEdge Tests** | Non-intersecting edges return empty array | Edge-edge no hit | OCCTIntToolsEdgeEdge reports failure |
 
 ---
 

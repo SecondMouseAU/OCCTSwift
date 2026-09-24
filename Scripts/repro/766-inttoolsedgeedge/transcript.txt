@@ -1,0 +1,6 @@
+edgeEdgeVertex: IsDone=1 NbCommonParts=1
+  part 1: type=VERTEX range1=(0.99999985000000002, 1.00000015) midpoint=(0, 0, 0)
+    VertexParameter1=1 VertexParameter2=1
+edgeEdgeOverlap: IsDone=1 NbCommonParts=1
+  part 1: type=EDGE range1=(1, 2) midpoint=(0, 0, 0)
+edgeEdgeNoIntersection: IsDone=1 NbCommonParts=0
