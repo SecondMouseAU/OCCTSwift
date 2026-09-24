@@ -7606,5 +7606,250 @@
     },
     "status": "PASS",
     "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "DocumentExplorer Extension Tests::explorerDepth",
+    "bridge_function": "OCCTDocumentExplorerDepth",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "depth_non_negative": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "depth_non_negative": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: depth_non_negative. Bridge: with explorerNodeCount > 0 for a box added with the default makeAssembly, the test observed explorerDepth(at: 0) >= 0 (OCCTDocumentExplorerDepth returns XCAFPrs_DocumentExplorer::CurrentDepth for the node at that flat index, and 0 when no node is reached). Kernel: the leaf-only explorer over the same document reached node 0, and CurrentDepth there is 0, so depth is non-negative. Kernel values are from the probe named in the record, which makes the same calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-document-explorer-extension/"
+  },
+  {
+    "test_name": "DocumentExplorer Extension Tests::explorerIsAssembly",
+    "bridge_function": "OCCTDocumentExplorerIsAssembly",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "is_assembly": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "is_assembly": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-explorer-extension/"
+  },
+  {
+    "test_name": "DocumentExplorer Extension Tests::explorerIsAssemblyNeverTrueEvenForARealAssembly",
+    "bridge_function": "OCCTDocumentExplorerIsAssembly",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "assembly_node_is_assembly": true,
+        "leaf_count_positive": true,
+        "any_leaf_is_assembly": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "assembly_node_is_assembly": true,
+        "leaf_count_positive": true,
+        "any_leaf_is_assembly": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: after one component was added and updateAssemblies ran, the test observed assemblyNode.isAssembly true (OCCTDocumentIsAssembly, XCAFDoc_ShapeTool::IsAssembly of the assembly label), explorerNodeCount > 0, and explorerIsAssembly(at: i) false for every i (OCCTDocumentExplorerIsAssembly passes the explorer node's Label to XCAFDoc_ShapeTool::IsAssembly). Kernel: XCAFDoc_ShapeTool::IsAssembly of the assembly label is true, the leaf-only explorer holds 1 leaf, and IsAssembly of that leaf's node.Label (the label the bridge passes; node.RefLabel gives the same false) is false. Kernel values are from the probe named in the record, which makes the same calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-document-explorer-extension/"
+  },
+  {
+    "test_name": "DocumentExplorer Extension Tests::explorerLocation",
+    "bridge_function": "OCCTDocumentExplorerLocation",
+    "bridge_output": {
+      "type": "matrix12",
+      "data": {
+        "m": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "matrix12",
+      "data": {
+        "m": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-explorer-extension/"
+  },
+  {
+    "test_name": "DocumentExplorer Extension Tests::explorerLocationOutOfRangeIndexIsATrueIdentity",
+    "bridge_function": "OCCTDocumentExplorerLocation",
+    "bridge_output": {
+      "type": "n/a",
+      "data": {
+        "observed": "explorerLocation(at: count + 100) returns the identity [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]"
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": {
+        "reason": "the kernel has no node at that index: the leaf-only explorer walk reached no node at index 101 (one leaf exists), so there is no kernel location to compare"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "No kernel counterpart. The identity the test checks is the bridge's pre-filled fallback in OCCTDocumentExplorerLocation, returned when the walk finds no node at the index; XCAFPrs_DocumentExplorer has no node, and so no location, at index count + 100. The probe confirms the walk: one leaf, and no node reached at index 101. Its last line, the pre-#1480 formula evaluated as plain arithmetic (1.0 at slots 0, 5, 6, 11), is not a kernel output and is no longer carried in kernel_output.",
+    "probe": "Scripts/repro/766-xcaf-document-explorer-extension/"
+  },
+  {
+    "test_name": "Document Layers::Document has XCAF built-in layers",
+    "bridge_function": "OCCTDocumentGetLayerCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "layer_count_positive": true,
+        "names_non_empty": true
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "layer_count_positive": false,
+        "names_non_empty": false
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "layer_count_positive: the bridge side is true, the kernel's layer table gives false. The bridge calls XCAFDoc_LayerTool::Set(Main), which attaches a layer tool to the main label 0:1 and lists that label's three children as layers (Shapes at 0:1:1, Colors at 0:1:2, VisMaterials at 0:1:10), where the document's own layer table, XCAFDoc_DocumentTool::LayerTool(Main) on LayersLabel() 0:1:3, holds 0 layers on a fresh document.",
+        "names_non_empty: true on the bridge side, false in the kernel's layer table, for the same reason: the three names are the XCAF tool labels, not layers.",
+        "This is a defect, not a design choice: the test asserts it (a fresh document has layers). Tracked as #2413; the fix is in Sources/ and is not part of this PR."
+      ]
+    },
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides: whether the fresh document reports any layer and any layer name. Bridge: the test observed layerCount > 0 and layerNames non-empty (OCCTDocumentGetLayerCount / OCCTDocumentGetLayerName read XCAFDoc_LayerTool::Set(Main)). Kernel: the document's layer table, XCAFDoc_DocumentTool::LayerTool(Main) at 0:1:3, has 0 layer labels on a fresh document, so both are false; the same probe shows the bridge's own call returning 3 labels (Shapes, Colors, VisMaterials). The values differ because of #2413, so this is recorded as a divergence and not as a pass. Kernel values are from the probe named in the record, which makes the same calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-document-layer/"
+  },
+  {
+    "test_name": "Document Layers::Layer name out of range returns nil",
+    "bridge_function": "OCCTDocumentGetLayerName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name_at_999_found": false,
+        "name_at_minus_1_found": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name_at_999_found": false,
+        "name_at_minus_1_found": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether a layer name exists at index 999 and at index -1. Bridge: layerName(at: 999) and layerName(at: -1) were both nil (OCCTDocumentGetLayerName returns -1 for an index outside 0..<labels.Length()). Kernel: on the sequence the bridge reads (XCAFDoc_LayerTool::Set(Main), 3 labels), Value(1000) and Value(0), the 1-based positions for those indices, both raise Standard_OutOfRange, so no name can be read at either. The result does not depend on #2413: any label count below 1000 gives the same. Kernel values are from the probe named in the record, which makes the same calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-document-layer/"
+  },
+  {
+    "test_name": "Document Materials::Empty document has no materials",
+    "bridge_function": "OCCTDocumentGetMaterialCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "material_count": 0,
+        "materials_empty": true
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "material_count": 0,
+        "materials_empty": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: material_count and materials_empty. Bridge: the test observed materialCount == 0 and materials.isEmpty on a fresh document (OCCTDocumentGetMaterialCount reads XCAFDoc_MaterialTool::Set(Main)). Kernel: GetMaterialLabels of that tool returned 0 labels, and so did the document's material table, XCAFDoc_DocumentTool::MaterialTool(Main); unlike the layer count (#2413), no tool label is miscounted as a material. Kernel values are from the probe named in the record, which makes the same calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-document-material/"
+  },
+  {
+    "test_name": "Document Materials::Material info out of range returns nil",
+    "bridge_function": "OCCTDocumentGetMaterialInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "info_at_0_found": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "info_at_0_found": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether material info exists at index 0. Bridge: materialInfo(at: 0) was nil on a fresh document (OCCTDocumentGetMaterialInfo returns false for an index outside 0..<labels.Length()). Kernel: GetMaterialLabels returned 0 labels, and Value(1), the 1-based position for index 0, raises Standard_OutOfRange, so no material can be read. Kernel values are from the probe named in the record, which makes the same calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-document-material/"
   }
 ]
