@@ -26,7 +26,7 @@ struct ExtremaExtPElCElipsTests {
             #expect(abs(sorted[1].squareDistance - 225) < 1e-9)
             #expect(simd_length(sorted[1].point2 - SIMD3(-5, 0, 0)) < 1e-9)
             // point1 is the query point on every result.
-            #expect(simd_length(sorted[0].point1 - SIMD3(10, 0, 0)) < 1e-12)
+            #expect(simd_length(sorted[1].point1 - SIMD3(10, 0, 0)) < 1e-12)
         }
     }
 }
