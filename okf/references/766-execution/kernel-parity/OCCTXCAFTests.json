@@ -1513,5 +1513,268 @@
     },
     "status": "PASS",
     "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::A tolerance's value type, material requirement and zone modifier round-trip",
+    "bridge_function": "OCCTDocumentGetGeomToleranceInfo",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "fresh": "all none",
+        "written": {
+          "valueType": "diameter",
+          "material": "m",
+          "zone": "projected",
+          "zoneValue": 15.0,
+          "maxValue": 0.25
+        },
+        "value": 0.1,
+        "type": "position"
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "fresh": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "written": {
+          "typeOfValue": 1,
+          "material": 1,
+          "zone": 1,
+          "zoneValue": 15,
+          "maxValue": 0.25
+        },
+        "value": 0.1,
+        "type": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::A zero zone value and a zero max value read back as nil, not as a measured zero",
+    "bridge_function": "OCCTDocumentGetGeomToleranceInfo",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "zoneValue": null,
+        "maxValue": null,
+        "zone": "projected"
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "zone": 1,
+        "zoneValue": 0,
+        "maxValue": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::A tolerance modifier sequence round-trips in order, and clears",
+    "bridge_function": "OCCTDocumentGetGeomToleranceModifier",
+    "bridge_output": {
+      "type": "modifiers",
+      "data": {
+        "in_order": true
+      }
+    },
+    "kernel_output": {
+      "type": "modifiers",
+      "data": {
+        "read": [
+          3,
+          15,
+          13
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::A datum position round-trips, and reads nil when it has no place in a frame",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "position",
+      "data": {
+        "fresh": null,
+        "after_2": 2,
+        "after_0": null
+      }
+    },
+    "kernel_output": {
+      "type": "position",
+      "data": {
+        "fresh": 0,
+        "after_2": 2,
+        "after_0": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::A datum modifier sequence round-trips in order, and the valued modifier is separate",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "datum",
+      "data": {
+        "modifiers": [
+          "basic",
+          "contactingFeature"
+        ],
+        "withValue": "projected",
+        "value": 12.5,
+        "cleared": null
+      }
+    },
+    "kernel_output": {
+      "type": "datum",
+      "data": {
+        "modifiers": [
+          2,
+          3
+        ],
+        "withValue": 3,
+        "value": 12.5,
+        "cleared": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::A datum target's length and width follow the target type, not the write",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "target",
+      "data": {
+        "rectangle": [
+          30,
+          18
+        ],
+        "line": [
+          30,
+          null
+        ],
+        "point": [
+          null,
+          null
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "target",
+      "data": {
+        "stored_for_every_type": {
+          "length": 30,
+          "width": 18
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::A degenerate datum target placement axis is refused",
+    "bridge_function": "OCCTDocumentSetDatumTargetPlacement",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "refused": true,
+        "length": null
+      }
+    },
+    "kernel_output": {
+      "type": "exception",
+      "data": {
+        "gp_Dir_zero": "throws: input vector has zero norm"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::Two tolerances and two datums on one document keep their own accessor values",
+    "bridge_function": "OCCTDocumentSetDatumTarget",
+    "bridge_output": {
+      "type": "entries",
+      "data": {
+        "separate": true
+      }
+    },
+    "kernel_output": {
+      "type": "objects",
+      "data": {
+        "separate_objects_keep_separate_values": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::Out-of-range tolerance and datum indices are refused",
+    "bridge_function": "OCCTDocumentSetGeomToleranceTypeOfValue",
+    "bridge_output": {
+      "type": "refused",
+      "data": {
+        "tolerance_index": 5,
+        "datum_index": 0
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "fresh_document_datum_labels": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
   }
 ]
