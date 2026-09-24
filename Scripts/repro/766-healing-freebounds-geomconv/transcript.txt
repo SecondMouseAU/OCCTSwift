@@ -1,0 +1,9 @@
+box (tol 1e-06): closedWires=0 closedEdges=0 openWires=0
+sphere r5 (tol 1e-06): closedWires=0 closedEdges=0 openWires=0
+two adjacent 10x10 faces (tol 1e-06): closedWires=1 closedEdges=6 openWires=0
+ShapeFix_FreeBounds(lone face): shapeFaces=1 closedWires=0 openWires=0
+two disjoint 1x1 faces (tol 0.01): closedWires=2 closedEdges=8 openWires=0
+cylinder: valid=1 faces=3 volume=785.398163397 surfaces: plane=2 cylinder=1
+ConvertToBSpline(cyl, T,T,T,F): valid=1 faces=3 volume=785.398163397 surfaces: plane=2 cylinder=1
+ConvertToBSpline(cyl, T,T,T,T): valid=1 faces=3 volume=785.398163397 surfaces: cylinder=1 bspline=2
+ConvertToRevolution(cyl): valid=1 faces=3 volume=785.398163397 surfaces: plane=2 revolution=1
