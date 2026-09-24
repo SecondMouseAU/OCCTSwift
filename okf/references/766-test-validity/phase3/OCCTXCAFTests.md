@@ -122,7 +122,7 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
-| `setAndGet` | `OCCTDocumentSetNoteBalloon` returns false | :11 Expectation failed: label.setNoteBalloon(userName: "User", timeStamp: "2026-03-14", comment: "Balloon text") | passed | `OCCTDocumentSetNoteBalloon` | PASS: created |
+| `setAndGet` | `OCCTDocumentSetNoteBalloon` returns false | :11 Expectation failed: label.setNoteBalloon(userName: "User", timeStamp: "2026-03-14", comment: "Balloon text") | passed | `OCCTDocumentSetNoteBalloon` | PASS: Set non-null |
 
 ### `XCAFDocNoteBinDataTests.swift`
 
@@ -134,17 +134,17 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
-| `setAndGet` | `OCCTDocumentGetNoteCommentText` returns null | :15 Expectation failed: label.noteCommentText == "This is a comment" | passed | `OCCTDocumentGetNoteCommentText` | PASS: created |
+| `setAndGet` | `OCCTDocumentGetNoteCommentText` returns null | :15 Expectation failed: label.noteCommentText == "This is a comment" | passed | `OCCTDocumentGetNoteCommentText` | PASS: Set non-null, text and user match |
 
 ### `XCAFDocNotesToolTests.swift`
 
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
 | `createAndCountNotes` | `OCCTDocumentNotesToolNbNotes` answers 0 | :15 Expectation failed: doc.notesToolNoteCount == 1 | passed | `OCCTDocumentNotesToolNbNotes` | PASS: 0, 1 |
-| `createBalloon` | `OCCTDocumentNotesToolCreateBalloon` answers -1 | :24 Expectation failed: note != nil; :25 Expectation failed: doc.notesToolNoteCount == 1 | passed | `OCCTDocumentNotesToolCreateBalloon` | PASS: created |
-| `createBinData` | `OCCTDocumentNotesToolCreateBinData` answers -1 | :37 Expectation failed: note != nil; :38 Expectation failed: doc.notesToolNoteCount == 1 | passed | `OCCTDocumentNotesToolCreateBinData` | PASS: created |
+| `createBalloon` | `OCCTDocumentNotesToolCreateBalloon` answers -1 | :24 Expectation failed: note != nil; :25 Expectation failed: doc.notesToolNoteCount == 1 | passed | `OCCTDocumentNotesToolCreateBalloon` | PASS: note non-null, 1 note |
+| `createBinData` | `OCCTDocumentNotesToolCreateBinData` answers -1 | :37 Expectation failed: note != nil; :38 Expectation failed: doc.notesToolNoteCount == 1 | passed | `OCCTDocumentNotesToolCreateBinData` | PASS: note non-null, 1 note |
 | `deleteAllNotes` | `OCCTDocumentNotesToolDeleteAllNotes` answers 0 | :51 Expectation failed: deleted == 3; :52 Expectation failed: doc.notesToolNoteCount == 0 | passed | `OCCTDocumentNotesToolDeleteAllNotes` | PASS: 3, 3, 0 |
-| `orphanNotes` | `OCCTDocumentNotesToolNbOrphanNotes` answers -1 | :60 Expectation failed: doc.notesToolOrphanNoteCount >= 0 | passed | `OCCTDocumentNotesToolNbOrphanNotes` | PASS: 3 unattached notes |
+| `orphanNotes` | `OCCTDocumentNotesToolNbOrphanNotes` answers -1 | :60 Expectation failed: doc.notesToolOrphanNoteCount >= 0 | passed | `OCCTDocumentNotesToolNbOrphanNotes` | PASS: >= 0 (kernel: 1 orphan for one comment) |
 
 ### `XCAFDocShapeMapToolTests.swift`
 

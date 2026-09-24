@@ -235,7 +235,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "created": true
+        "ok": true
       }
     },
     "comparison": {
@@ -243,6 +243,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: ok, the note attribute was set. Bridge: OCCTDocumentSetNoteBalloon returns !XCAFDoc_NoteBalloon::Set(label, user, timeStamp, comment).IsNull(); the test observed true. Kernel: XCAFDoc_NoteBalloon::Set with the test's arguments printed non-null=true (transcript.txt, the NoteBalloon::Set line).",
     "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
   },
   {
@@ -273,6 +274,7 @@
     "bridge_output": {
       "type": "value",
       "data": {
+        "ok": true,
         "text": "This is a comment",
         "user": "TestUser"
       }
@@ -280,7 +282,9 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "created": true
+        "ok": true,
+        "text": "This is a comment",
+        "user": "TestUser"
       }
     },
     "comparison": {
@@ -288,6 +292,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: ok, text and user of the note. Bridge: OCCTDocumentSetNoteComment returns !XCAFDoc_NoteComment::Set(...).IsNull() and OCCTDocumentGetNoteCommentText / OCCTDocumentGetNoteUserName read Comment() and UserName() back; the test observed true, \"This is a comment\" and \"TestUser\". Kernel: XCAFDoc_NoteComment::Set with the test's arguments printed non-null=true, then Comment() and UserName() through FindAttribute (transcript.txt, the NoteComment::Set line).",
     "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
   },
   {
@@ -327,7 +332,8 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "created": true
+        "note": true,
+        "count": 1
       }
     },
     "comparison": {
@@ -335,6 +341,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: note (the creation returned a note) and count (NbNotes after it, on a fresh document). Bridge: OCCTDocumentNotesToolCreateBalloon returns the registered note label or -1 and Document.notesToolCreateBalloon maps -1 to nil; the test observed a non-nil note and notesToolNoteCount == 1. Kernel: XCAFDoc_NotesTool::CreateBalloon on a fresh document printed note non-null=true NbNotes=1.",
     "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
   },
   {
@@ -350,8 +357,8 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "created": true,
-        "size": 4
+        "note": true,
+        "count": 1
       }
     },
     "comparison": {
@@ -359,6 +366,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: note (the creation returned a note) and count (NbNotes after it, on a fresh document). Bridge: OCCTDocumentNotesToolCreateBinData returns the registered note label or -1 and Document.notesToolCreateBinData maps -1 to nil; the test observed a non-nil note and notesToolNoteCount == 1. Kernel: XCAFDoc_NotesTool::CreateBinData with the test's 4 bytes on a fresh document printed note non-null=true NbNotes=1. The test does not read the data size, so it is not compared (the kernel size, 4, is on the XCAFDoc_NoteBinData Tests::setAndGet record).",
     "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
   },
   {
@@ -399,7 +407,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "orphans": 3
+        "nonnegative": true
       }
     },
     "comparison": {
@@ -407,6 +415,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: nonnegative, whether the orphan-note count is >= 0. Bridge: the test creates one unattached comment and asserts notesToolOrphanNoteCount >= 0; that bound is all it observes, so the bridge's raw count is not compared. Kernel: XCAFDoc_NotesTool::NbOrphanNotes() printed 1 for one unattached comment on a fresh document, so >= 0 is true.",
     "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
   },
   {
