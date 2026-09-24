@@ -33,7 +33,7 @@ struct Curve2DParameterAtLengthTests {
 
     @Test("Parameter at zero length returns start parameter")
     func parameterAtZeroLength() throws {
-        let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+        let seg = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)))
         let param = try #require(seg.parameterAtLength(0))
         #expect(abs(param) < 1e-12)
         let pt = seg.point(at: param)
@@ -43,7 +43,7 @@ struct Curve2DParameterAtLengthTests {
 
     @Test("Parameter at full length of a segment")
     func parameterAtFullSegmentLength() throws {
-        let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+        let seg = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)))
         let totalLen = try #require(seg.length)
         let param = try #require(seg.parameterAtLength(totalLen))
         let pt = seg.point(at: param)
@@ -54,7 +54,7 @@ struct Curve2DParameterAtLengthTests {
     @Test("Parameter at length from non-start parameter")
     func parameterAtLengthFromMidpoint() throws {
         // 20-unit horizontal segment; measure 5 units starting from parameter at x=5
-        let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(20, 0))!
+        let seg = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(20, 0)))
         let midParam = seg.domain.lowerBound + (seg.domain.upperBound - seg.domain.lowerBound) / 2
         let param = try #require(seg.parameterAtLength(5, from: midParam))
         let pt = seg.point(at: param)
@@ -62,8 +62,8 @@ struct Curve2DParameterAtLengthTests {
     }
 
     @Test("parameterAtLength returns nil on failure")
-    func parameterAtLengthFailure() {
-        let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+    func parameterAtLengthFailure() throws {
+        let seg = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)))
         // A trimmed line is not a failure case past its end: GCPnts_AbscissaPoint extrapolates
         // along the basis line and returns u = 1000, and so does the bridge. What does fail is
         // a non-finite length, which reports nil rather than a parameter.
@@ -74,7 +74,7 @@ struct Curve2DParameterAtLengthTests {
     @Test("Trim curve to exact arc length using parameterAtLength")
     func trimToArcLength() throws {
         // Create a 20-unit segment, trim to exactly 7 units from start
-        let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(20, 0))!
+        let seg = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(20, 0)))
         let first = seg.domain.lowerBound
         let endParam = try #require(seg.parameterAtLength(7, from: first))
         let trimmed = try #require(seg.trimmed(from: first, to: endParam))
