@@ -1,0 +1,13 @@
+datum name of 1 chars reads back 1 chars
+datum name of 63 chars reads back 63 chars
+datum name of 64 chars reads back 64 chars
+datum name of 65 chars reads back 65 chars
+datum name of 100 chars reads back 100 chars
+datum name of 200 chars reads back 200 chars
+tolerance (nan, 0.5): SetLower=true SetUpper=true read back (nan, 0.5); bridge readback check equal=false
+tolerance (-0.3, nan): SetLower=true SetUpper=true read back (-0.3, nan); bridge readback check equal=false
+tolerance (nan, nan): SetLower=true SetUpper=true read back (nan, nan); bridge readback check equal=false
+tolerance (-0.3, 0.7): plusMinus=true lowerTol=-0.3 upperTol=0.7 value=20
+zone Projected, 15: zone=1 value=15
+zone set to None without clearing the value: value still 15 (the bridge writes 0 with None)
+datum modifier None with 15: modifier=0 value=15 (bridge reports nothing under None)

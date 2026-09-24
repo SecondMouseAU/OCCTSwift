@@ -1,0 +1,16 @@
+primitive: evolution=0 (PRIMITIVE=0) IsEmpty=false current same as box=true stored same=true version=0
+primitive history entries=1 hasOld=false hasNew=true
+fresh label NamedShape=false
+SetVersion(42) -> 42
+HasLabel(box)=true FindLabel IsEqual l1=true ValidUntil=1
+modify: evolution=2 (MODIFY=2) OriginalShape same as box=true
+delete: evolution=3 (DELETE=3)
+generated(box -> sphere): evolution=1 (GENERATED=1) entries=1 hasOld=true hasNew=true
+trace: forward from box=2 (includes source=false) backward from sphere=1 (includes itself=false) unrelated=0
+SameShapeIterator(box) labels=3
+CopyShape: non-null=true IsSame(box)=false
+Translator: IsDone=true copy IsSame(box)=false
+ %%% WARNING: TNaming_Naming::Name:  FAILED
+Selector: Select(face, box)=true Solve=false resolved null=false type=4 faces=1 evolution=5 (SELECTED=5)
+Naming::Insert non-null=true IsDefined=false
+Scope: Valid(v1) IsValid=true count=2 Unvalid(v1) IsValid=false after ClearValid count=0
