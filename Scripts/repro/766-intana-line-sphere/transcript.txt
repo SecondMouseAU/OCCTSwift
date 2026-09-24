@@ -1,0 +1,4 @@
+lineThroughSphere: IsDone=1 IsParallel=0 NbPoints=2
+  [1] point=(5, 0, 0) paramOnConic=15
+  [2] point=(-5, 0, 0) paramOnConic=5
+lineMissesSphere: IsDone=1 IsParallel=0 NbPoints=0
