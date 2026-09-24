@@ -1634,5 +1634,419 @@
     "red": "BSplineCurve3DLocalDTests.swift:80 Self.near(dn1, d1result.d1)",
     "green": "passed",
     "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::StartPoint and EndPoint",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierStartPoint",
+    "bridge_output": {
+      "type": "points",
+      "data": "(0,0,0), (2,0,0)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "StartPoint (0,0,0), EndPoint (2,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "StartPoint and EndPoint swapped",
+    "red": "BezierCurve3DCompletionTests.swift:24 simd_distance(c.bezierStartPoint, SIMD3(0, 0, 0)) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt",
+    "note": "Rewritten: `if let` body, x only"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::GetPoles bulk",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierGetPoles",
+    "bridge_output": {
+      "type": "points",
+      "data": "(0,0,0) (1,2,0) (2,0,0)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "(0,0,0) (1,2,0) (2,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "each pole's Y written into X",
+    "red": "BezierCurve3DCompletionTests.swift:32 p == Self.open",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt",
+    "note": "Rewritten: `if let` body, x only"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::GetWeights returns nil for non-rational",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierGetWeights",
+    "bridge_output": {
+      "type": "weights",
+      "data": null
+    },
+    "kernel_output": {
+      "type": "weights",
+      "data": "Geom_BezierCurve::Weights() is nullptr for the non-rational curve"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "report all-1.0 weights for a non-rational curve",
+    "red": "BezierCurve3DCompletionTests.swift:39 c.bezierWeights == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt",
+    "note": "Rewritten: accepted nil or all-1.0, and `if let` hid a nil curve"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::GetWeights returns values for rational",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierGetWeights",
+    "bridge_output": {
+      "type": "weights",
+      "data": [
+        1,
+        2,
+        1
+      ]
+    },
+    "kernel_output": {
+      "type": "weights",
+      "data": [
+        1,
+        2,
+        1
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Weights() treated as null",
+    "red": "BezierCurve3DCompletionTests.swift:48 c.bezierWeights == [1.0, 2.0, 1.0]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::IsClosed for open curve",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierIsClosed",
+    "bridge_output": {
+      "type": "bool",
+      "data": false
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsClosed() negated",
+    "red": "BezierCurve3DCompletionTests.swift:54 !c.bezierIsClosed",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::IsClosed for closed curve",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierIsClosed",
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsClosed() negated",
+    "red": "BezierCurve3DCompletionTests.swift:67 c.bezierIsClosed",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::IsPeriodic always false for Bezier",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierIsPeriodic",
+    "bridge_output": {
+      "type": "bool",
+      "data": false
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsPeriodic() negated",
+    "red": "BezierCurve3DCompletionTests.swift:73 !c.bezierIsPeriodic",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::Continuity is CN for Bezier",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierContinuity",
+    "bridge_output": {
+      "type": "int",
+      "data": 6
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 6
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Continuity() - 1",
+    "red": "BezierCurve3DCompletionTests.swift:79 c.bezierContinuity == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve 3D Completions::IsCN always true for Bezier",
+    "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
+    "bridge_function": "OCCTCurve3DBezierIsCN",
+    "bridge_output": {
+      "type": "bool",
+      "data": "true for 0, 1, 10"
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": "IsCN(0)=1 IsCN(1)=1 IsCN(10)=1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsCN() negated",
+    "red": "BezierCurve3DCompletionTests.swift:85 c.bezierIsCN(0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::degreeAndPoleCount",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierDegree",
+    "bridge_output": {
+      "type": "int",
+      "data": "degree 3, 4 poles"
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": "degree 3, NbPoles 4"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Degree() + 1",
+    "red": "BezierCurveManipulationTests.swift:29 bez.bezier.degree == 3",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::isRational",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierIsRational",
+    "bridge_output": {
+      "type": "bool",
+      "data": false
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsRational() negated",
+    "red": "BezierCurveManipulationTests.swift:35 !bez.bezier.isRational",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::getPole",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierGetPole",
+    "bridge_output": {
+      "type": "points",
+      "data": "(0,0,0) (3,5,0) (7,5,0) (10,0,0)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "(0,0,0) (3,5,0) (7,5,0) (10,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "index + 1 read",
+    "red": "BezierCurveManipulationTests.swift:41 Self.near(bez.bezier.pole(at: i + 1), p)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt",
+    "note": "Strengthened: all four poles, not pole 1 alone"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::setPole",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierSetPole",
+    "bridge_output": {
+      "type": "points",
+      "data": "(0,0,0) (3,8,0) (7,5,0)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "(0,0,0) (3,8,0) (7,5,0) (10,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "SetPole skipped",
+    "red": "BezierCurveManipulationTests.swift:48 Self.near(bez.bezier.pole(at: 2), SIMD3(3, 8, 0))",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::segment",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierSegment",
+    "bridge_output": {
+      "type": "points",
+      "data": "(2.40625,2.8125,0) (4.09375,4.0625,0) (5.90625,4.0625,0) (7.59375,2.8125,0)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "(2.40625,2.8125,0) (4.09375,4.0625,0) (5.90625,4.0625,0) (7.59375,2.8125,0); S(0.5)=(5,3.75)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Segment skipped",
+    "red": "BezierCurveManipulationTests.swift:58 Self.near(bez.bezier.pole(at: 1), SIMD3(2.40625, 2.8125, 0))",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::increaseDegree",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierIncreaseDegree",
+    "bridge_output": {
+      "type": "curve",
+      "data": "degree 5, 6 poles, pole 2 (1.8,3,0), C(0.3)=(2.916,3.15,0)"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": "degree 5, 6 poles, pole 2 (1.8,3,0), C(0.3)=(2.9160000000000008, 3.1499999999999999)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Increase skipped",
+    "red": "BezierCurveManipulationTests.swift:68 bez.bezier.degree == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::insertPoleAfter",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierInsertPoleAfter",
+    "bridge_output": {
+      "type": "curve",
+      "data": "5 poles, degree 4, pole 3 (5,6,0)"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": "degree 4, 5 poles: (0,0,0) (3,5,0) (5,6,0) (7,5,0) (10,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "InsertPoleAfter skipped",
+    "red": "BezierCurveManipulationTests.swift:78 bez.bezier.poleCount == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::removePole",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierRemovePole",
+    "bridge_output": {
+      "type": "curve",
+      "data": "4 poles, pole 3 (7,5,0)"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": "degree 3, 4 poles: (0,0,0) (3,5,0) (7,5,0) (10,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "RemovePole skipped",
+    "red": "BezierCurveManipulationTests.swift:91 bez.bezier.poleCount == 4",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Curve Manipulation Tests::setWeight",
+    "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
+    "bridge_function": "OCCTCurve3DBezierSetWeight",
+    "bridge_output": {
+      "type": "weights",
+      "data": [
+        1,
+        2,
+        1,
+        1
+      ]
+    },
+    "kernel_output": {
+      "type": "weights",
+      "data": "rational, weights 1 2 1 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "SetWeight skipped",
+    "red": "BezierCurveManipulationTests.swift:98 bez.bezier.isRational",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
   }
 ]

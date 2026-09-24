@@ -5790,5 +5790,733 @@
       "strengthened": false
     },
     "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Math Utilities::polynomialSolverQuadratic",
+    "bridge_function": "OCCTMathPolyQuadratic",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): math_DirectPolynomialRoots: 2, 1"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "math_DirectPolynomialRoots: 2, 1",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTMathPolyQuadratic",
+      "env": "OCCT766=|EARLY:OCCTMathPolyQuadratic|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:619 Expectation failed: sorted.count == 2",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Math Utilities::polynomialSolverCubic",
+    "bridge_function": "OCCTMathPolyCubic",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): math_DirectPolynomialRoots: 1, -1, 0"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "math_DirectPolynomialRoots: 1, -1, 0",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTMathPolyCubic",
+      "env": "OCCT766=|EARLY:OCCTMathPolyCubic|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:630 Expectation failed: (roots ?? []).sorted() == [-1, 0, 1]",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Math Utilities::gaussIntegration",
+    "bridge_function": "OCCTMathIntegGauss",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): ∫₀¹ x² = 1/3 (0.33333333333333337 observed)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "∫₀¹ x² = 1/3 (0.33333333333333337 observed)",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTMathIntegGauss",
+      "env": "OCCT766=|EARLY:OCCTMathIntegGauss|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:635 Expectation failed: result != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Math Utilities::planeGeometry",
+    "bridge_function": "OCCTPlaneDistanceToPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): gp_Pln::Distance = 5"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "gp_Pln::Distance = 5",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTPlaneDistanceToPoint",
+      "env": "OCCT766=|EARLY:OCCTPlaneDistanceToPoint|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:642 Expectation failed: abs(dist - 5.0) < 0.001",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Math Utilities::lineGeometry",
+    "bridge_function": "OCCTLineDistanceToPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): gp_Lin::Distance = 3"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "gp_Lin::Distance = 3",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTLineDistanceToPoint",
+      "env": "OCCT766=|EARLY:OCCTLineDistanceToPoint|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:648 Expectation failed: abs(dist - 3.0) < 0.001",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Math Utilities::vectorCrossMagnitude",
+    "bridge_function": "OCCTVecCrossMagnitude",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): gp_Vec::CrossMagnitude = 1"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "gp_Vec::CrossMagnitude = 1",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTVecCrossMagnitude",
+      "env": "OCCT766=|EARLY:OCCTVecCrossMagnitude|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:653 Expectation failed: abs(mag - 1.0) < 0.001",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Math Utilities::dirIsOpposite",
+    "bridge_function": "OCCTDirIsOpposite",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): gp_Dir::IsOpposite true for x, -x"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "gp_Dir::IsOpposite true for x, -x",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTDirIsOpposite",
+      "env": "OCCT766=|EARLY:OCCTDirIsOpposite|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:657 Expectation failed: Shape.dirIsOpposite(SIMD3(1, 0, 0), SIMD3(-1, 0, 0))",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Math Utilities::dirIsNormal",
+    "bridge_function": "OCCTDirIsNormal",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): gp_Dir::IsNormal true for x, y"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "gp_Dir::IsNormal true for x, y",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTDirIsNormal",
+      "env": "OCCT766=|EARLY:OCCTDirIsNormal|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:662 Expectation failed: Shape.dirIsNormal(SIMD3(1, 0, 0), SIMD3(0, 1, 0))",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Mesh API::meshGeneration",
+    "bridge_function": "OCCTShapeCreateMesh, OCCTMeshGetVertexCount, OCCTMeshGetTriangleCount",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepMesh(0.5): 24 nodes, 12 triangles"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepMesh(0.5): 24 nodes, 12 triangles",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTMeshGetTriangleCount",
+      "env": "OCCT766=|EARLY:OCCTMeshGetTriangleCount|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:677 Expectation failed: m.triangleCount > 0",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Mesh API::meshVertices",
+    "bridge_function": "OCCTMeshGetVertices",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): sphere mesh 168 vertices"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "sphere mesh 168 vertices",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTMeshGetVertices",
+      "env": "OCCT766=|EARLY:OCCTMeshGetVertices|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:690 Expectation failed: abs(rad - 5) < 1e-4",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Mesh API::meshNormals",
+    "bridge_function": "OCCTMeshGetNormals",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): cylinder mesh 106 vertices with normals"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "cylinder mesh 106 vertices with normals",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTMeshGetNormals",
+      "env": "OCCT766=|EARLY:OCCTMeshGetNormals|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:703 Expectation failed: abs(len - 1) < 1e-5",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Mesh API::meshTriangles",
+    "bridge_function": "OCCTMeshGetTriangleCount",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): torus mesh 1352 triangles"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "torus mesh 1352 triangles",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTMeshGetTriangleCount",
+      "env": "OCCT766=|EARLY:OCCTMeshGetTriangleCount|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:709 Expectation failed: m.triangleCount > 0",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Mesh API::meshOnAllShapes",
+    "bridge_function": "OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): every standard fixture meshes"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "every standard fixture meshes",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateMesh returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeCreateMesh|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:716 Expectation failed: m != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Feature Recognition::aagOnBox",
+    "bridge_function": "OCCTShapeGetOrientedFaces",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): 6 faces"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "6 faces",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTShapeGetOrientedFaces",
+      "env": "OCCT766=|EARLY:OCCTShapeGetOrientedFaces|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:729 Expectation failed: aag.nodes.count == 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Feature Recognition::aagOnFilletedBox",
+    "bridge_function": "OCCTShapeGetOrientedFaces",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): 26 faces"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "26 faces",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTShapeGetOrientedFaces",
+      "env": "OCCT766=|EARLY:OCCTShapeGetOrientedFaces|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:735 Expectation failed: aag.nodes.count > 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Feature Recognition::aagOnDrilledPlate",
+    "bridge_function": "OCCTShapeGetOrientedFaces",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): 7 faces"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "7 faces",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTShapeGetOrientedFaces",
+      "env": "OCCT766=|EARLY:OCCTShapeGetOrientedFaces|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:743 Expectation failed: aag.nodes.count > 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Shape Features::fillet",
+    "bridge_function": "OCCTShapeFillet",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): volume 975.5870139"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume 975.5870139",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFillet returns nil",
+      "env": "OCCT766=|FILLETNULL|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:101 Expectation failed: standardBox().filleted(radius: 1.0)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Shape Features::chamfer",
+    "bridge_function": "OCCTShapeChamfer",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): volume 945.3333333"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume 945.3333333",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeChamfer returns nil",
+      "env": "OCCT766=|CHAMFERNULL|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:107 Expectation failed: standardBox().chamfered(distance: 1.0)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Shape Features::shell",
+    "bridge_function": "OCCTShapeShell",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeThickSolidBySimple(-1) IsDone=0 -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeThickSolidBySimple(-1) IsDone=0 -> nil",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeShell returns the input unchanged when not done or on a throw",
+      "env": "OCCT766=|SHELLPASS|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:115 Expectation failed: r == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Shape Features::drill",
+    "bridge_function": "OCCTShapeDrillHole",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): volume 874.3362939 (1000 - 40π)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume 874.3362939 (1000 - 40π)",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeDrillHole returns nil",
+      "env": "OCCT766=|DRILLNULL|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:119 Expectation failed: standardBox().drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 2, depth: 0)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Shape Features::offset",
+    "bridge_function": "OCCTShapeOffset",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeOffsetShape::PerformBySimple(1): volume 1200"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeOffsetShape::PerformBySimple(1): volume 1200",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTShapeOffset",
+      "env": "OCCT766=|EARLY:OCCTShapeOffset|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:128 Expectation failed: standardBox().offset(by: 1.0)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Shape Features::linearPattern",
+    "bridge_function": "OCCTShapeLinearPattern",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): compound of 3 translated boxes, volume 3000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "compound of 3 translated boxes, volume 3000",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTShapeLinearPattern",
+      "env": "OCCT766=|EARLY:OCCTShapeLinearPattern|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:135 Expectation failed: standardBox().linearPattern(direction: SIMD3(15, 0, 0), spacing: 15, count: 3)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Shape Features::circularPattern",
+    "bridge_function": "OCCTShapeCircularPattern",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): compound of 4 rotated copies, volume 4000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "compound of 4 rotated copies, volume 4000",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTShapeCircularPattern",
+      "env": "OCCT766=|EARLY:OCCTShapeCircularPattern|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:144 Expectation failed: standardBox().circularPattern(axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 4)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Shape Features::sectionWires",
+    "bridge_function": "OCCTShapeSectionWiresAtZ",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepAlgoAPI_Section at z=0: 4 edges, length 40"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepAlgoAPI_Section at z=0: 4 edges, length 40",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTShapeSectionWiresAtZ",
+      "env": "OCCT766=|EARLY:OCCTShapeSectionWiresAtZ|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:153 Expectation failed: !wires.isEmpty",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Shape Transforms::translate",
+    "bridge_function": "OCCTShapeTranslate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): min corner (4.9999999, 14.9999999, 24.9999999)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min corner (4.9999999, 14.9999999, 24.9999999)",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeTranslate moves by dx + 1",
+      "env": "OCCT766=|WRONG:OCCTShapeTranslate|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:172 Expectation failed: abs(b.min.x - 5) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Shape Transforms::rotate",
+    "bridge_function": "OCCTShapeRotate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): max.x 7.07106791"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "max.x 7.07106791",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeRotate turns by angle + 0.1",
+      "env": "OCCT766=|WRONG:OCCTShapeRotate|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:182 Expectation failed: abs(b.max.x - 5 * 2.0.squareRoot()) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Shape Transforms::scale",
+    "bridge_function": "OCCTShapeScale",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): volume 8000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume 8000",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeScale scales by factor × 1.1",
+      "env": "OCCT766=|WRONG:OCCTShapeScale|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:188 Expectation failed: abs((r.volume ?? 0) - 8000) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Shape Transforms::mirror",
+    "bridge_function": "OCCTShapeMirror",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume 1000",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTShapeMirror",
+      "env": "OCCT766=|EARLY:OCCTShapeMirror|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:192 Expectation failed: standardBox().mirrored(planeNormal: SIMD3(1, 0, 0))",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]
