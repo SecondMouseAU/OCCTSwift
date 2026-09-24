@@ -28,7 +28,14 @@ struct Vector3DMathTests {
     @Test func normalize() {
         let n = Vector3DMath.normalize(SIMD3(1, 2, 2))
         #expect(n != nil)
-        if let n = n { #expect(abs(Vector3DMath.modulus(n) - 1.0) < 1e-10) }
+        if let n = n {
+            #expect(abs(Vector3DMath.modulus(n) - 1.0) < 1e-10)
+            // Probed (Scripts/repro/766-math-vector3d): (1/3, 2/3, 2/3). A unit vector pointing
+            // the wrong way also has modulus 1.
+            #expect(abs(n.x - 1.0 / 3.0) < 1e-12)
+            #expect(abs(n.y - 2.0 / 3.0) < 1e-12)
+            #expect(abs(n.z - 2.0 / 3.0) < 1e-12)
+        }
     }
 }
 
