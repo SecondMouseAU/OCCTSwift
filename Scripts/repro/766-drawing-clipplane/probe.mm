@@ -40,7 +40,7 @@ int main()
 {
   Handle(Graphic3d_ClipPlane) z5 = new Graphic3d_ClipPlane(Graphic3d_Vec4d(0, 0, 1, -5));
   eq("equationRoundtrip", z5->GetEquation());
-  eq("createFromNormal", (new Graphic3d_ClipPlane(Graphic3d_Vec4d(1, 0, 0, -3)))->GetEquation());
+  eq("createFromNormal", Handle(Graphic3d_ClipPlane)(new Graphic3d_ClipPlane(Graphic3d_Vec4d(1, 0, 0, -3)))->GetEquation());
   Handle(Graphic3d_ClipPlane) s = new Graphic3d_ClipPlane(Graphic3d_Vec4d(1, 0, 0, 0));
   s->SetEquation(Graphic3d_Vec4d(0, 1, 0, -2));
   eq("setEquation", s->GetEquation());
