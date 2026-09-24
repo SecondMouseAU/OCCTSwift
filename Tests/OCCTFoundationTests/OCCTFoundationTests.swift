@@ -715,7 +715,7 @@ struct MessengerTests {
             Issue.record("Messenger() returned nil")
             return
         }
-        let path = NSTemporaryDirectory() + "test_v85_msg.txt"
+        let path = NSTemporaryDirectory() + "test_766_addfile_\(UUID().uuidString).txt"
         let ok = msg.addFilePrinter(path: path, gravity: .info)
         #expect(ok)
         #expect(msg.printerCount == 2)
