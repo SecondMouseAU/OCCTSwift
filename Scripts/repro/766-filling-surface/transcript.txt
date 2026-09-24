@@ -1,0 +1,8 @@
+edge[0]: (-5,-5,-5)-(-5,-5,5)
+edge[1]: (-5,-5,5)-(-5,5,5)
+edge[2]: (-5,5,-5)-(-5,5,5)
+edge[3]: (-5,-5,-5)-(-5,5,-5)
+basicFilling / g0Error / g1g2Errors: IsDone=1 area=100.00000000000001 G0Error=1.3322676295501878e-15 G1Error=0 G2Error=0 dist((5,5,3))=10
+fillingWithPoint: IsDone=1 area=1038.9910066176521 G0Error=0.00010162211044146778 G1Error=0 G2Error=0 dist((5,5,3))=10
+freeEdgeConstraint: IsDone=1 area=124.99804710385433 G0Error=2.808666774861361e-15 G1Error=0 G2Error=0 dist((5,5,3))=10
+notDoneBeforeBuild: IsDone=0
