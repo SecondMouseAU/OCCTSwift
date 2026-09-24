@@ -4620,5 +4620,447 @@
       "strengthened": true
     },
     "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Surface API::plane",
+    "bridge_function": "OCCTSurfacePlaneFromPointNormal",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom_Plane"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom_Plane",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTSurfacePlaneFromPointNormal",
+      "env": "OCCT766=|EARLY:OCCTSurfacePlaneFromPointNormal|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:500 Expectation failed: s != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Surface API::cylinder",
+    "bridge_function": "OCCTSurfaceCreateCylinder",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom_CylindricalSurface"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom_CylindricalSurface",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTSurfaceCreateCylinder",
+      "env": "OCCT766=|EARLY:OCCTSurfaceCreateCylinder|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:505 Expectation failed: s != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Surface API::sphere",
+    "bridge_function": "OCCTSurfaceCreateSphere",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom_SphericalSurface"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom_SphericalSurface",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTSurfaceCreateSphere",
+      "env": "OCCT766=|EARLY:OCCTSurfaceCreateSphere|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:510 Expectation failed: s != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Surface API::cone",
+    "bridge_function": "OCCTSurfaceCreateCone",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom_ConicalSurface"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom_ConicalSurface",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTSurfaceCreateCone",
+      "env": "OCCT766=|EARLY:OCCTSurfaceCreateCone|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:515 Expectation failed: s != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Surface API::torus",
+    "bridge_function": "OCCTSurfaceCreateTorus",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom_ToroidalSurface"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom_ToroidalSurface",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTSurfaceCreateTorus",
+      "env": "OCCT766=|EARLY:OCCTSurfaceCreateTorus|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:520 Expectation failed: s != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Surface API::bezier",
+    "bridge_function": "OCCTSurfaceGetDomain",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom_BezierSurface bounds u [0,1] v [0,1]"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom_BezierSurface bounds u [0,1] v [0,1]",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTSurfaceGetDomain",
+      "env": "OCCT766=|EARLY:OCCTSurfaceGetDomain|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:526 Expectation failed: dom.uMax > dom.uMin",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Surface API::pointEval",
+    "bridge_function": "OCCTSurfaceGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Value(0.5, 0.5) = (7.5, 7.5, 1.125)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Value(0.5, 0.5) = (7.5, 7.5, 1.125)",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OFFSET:OCCTSurfaceGetPoint",
+      "env": "OCCT766=|OFFSET:OCCTSurfaceGetPoint|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:535 Expectation failed: abs(pt.x - 7.5) < 1e-12",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Surface API::gaussianCurvature",
+    "bridge_function": "OCCTSurfaceGetGaussianCurvature",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): GeomLProp_SLProps on the r=10 sphere: K = 0.0099999999999999985"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "GeomLProp_SLProps on the r=10 sphere: K = 0.0099999999999999985",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSurfaceGetGaussianCurvature + 0.01",
+      "env": "OCCT766=|OFFSET:OCCTSurfaceGetGaussianCurvature|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:543 Expectation failed: abs(k - 0.01) < 0.001",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Surface API::meanCurvature",
+    "bridge_function": "OCCTSurfaceGetMeanCurvature",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): GeomLProp_SLProps on the r=10 sphere: H = -0.099999999999999992"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "GeomLProp_SLProps on the r=10 sphere: H = -0.099999999999999992",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OFFSET:OCCTSurfaceGetMeanCurvature",
+      "env": "OCCT766=|OFFSET:OCCTSurfaceGetMeanCurvature|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:550 Expectation failed: abs(abs(h) - 0.1) < 0.001",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Surface API::continuity",
+    "bridge_function": "OCCTSurfaceIsCNu, OCCTSurfaceIsCNv",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom_Plane IsCNu/IsCNv(2) true"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom_Plane IsCNu/IsCNv(2) true",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTSurfaceIsCNu",
+      "env": "OCCT766=|EARLY:OCCTSurfaceIsCNu|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:556 Expectation failed: s.isCNu(2)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Document API::create",
+    "bridge_function": "OCCTDocumentCreate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: XCAFApp_Application::NewDocument, no geometric value",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "OCCTDocumentCreate returns nil",
+      "env": "OCCT766=|NULL:OCCTDocumentCreate|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:569 Expectation failed: doc != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Document API::addShape",
+    "bridge_function": "OCCTDocumentAddShape",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: XCAFDoc_ShapeTool label bookkeeping",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "EARLY:OCCTDocumentAddShape",
+      "env": "OCCT766=|EARLY:OCCTDocumentAddShape|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:577 Expectation failed: label >= 0",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Document API::shapeCount",
+    "bridge_function": "OCCTDocumentGetShapeCount",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: XCAFDoc_ShapeTool label count, 1 by construction",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "OCCTDocumentGetShapeCount - 1",
+      "env": "OCCT766=|OFFBYONE:OCCTDocumentGetShapeCount|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:582 Expectation failed: doc.shapeCount >= 1",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Document API::colorToolAdd",
+    "bridge_function": "OCCTDocumentColorToolAddColor, OCCTDocumentColorToolGetColorCount",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: XCAFDoc_ColorTool label count, 1 by construction",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "EARLY:OCCTDocumentColorToolAddColor",
+      "env": "OCCT766=|EARLY:OCCTDocumentColorToolAddColor|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:590 Expectation failed: doc.colorToolColorCount == 1",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Document API::colorToolFind",
+    "bridge_function": "OCCTDocumentColorToolAddColor, OCCTDocumentColorToolFindColor",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: XCAFDoc_ColorTool finds the label it added",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "EARLY:OCCTDocumentColorToolFindColor",
+      "env": "OCCT766=|EARLY:OCCTDocumentColorToolFindColor|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:602 Expectation failed: found == added",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Document API::shapeToolQueries",
+    "bridge_function": "OCCTDocumentShapeToolIsFree, OCCTDocumentShapeToolIsSimpleShape, OCCTDocumentShapeToolIsComponent",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: XCAFDoc_ShapeTool flags for a top-level box",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "EARLY:OCCTDocumentShapeToolIsFree",
+      "env": "OCCT766=|EARLY:OCCTDocumentShapeToolIsFree|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:610 Expectation failed: doc.shapeToolIsFree(labelId: label)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Document API::stepExport",
+    "bridge_function": "OCCTDocumentWriteSTEPWithModes",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: export success (STEPCAFControl_Writer); the old test discarded it",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "EARLY:OCCTDocumentWriteSTEPWithModes",
+      "env": "OCCT766=|EARLY:OCCTDocumentWriteSTEPWithModes|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:623 Expectation failed: doc.writeSTEP(to: url)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]
