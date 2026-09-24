@@ -22,6 +22,15 @@
 | **Transient/Persistent Tests** | Transient/Persistent Tests | Transient/persistent | Remove transient/persistent |
 | **History/Mapping Tests** | History/Mapping Tests | History/mapping | Remove history/mapping |
 | **Naming/Label Tests** | Naming/Label Tests | Naming/label | Remove naming/label |
+| **BinTools Shape I/O Tests** | writeAndReadBinaryData | BinTools stream round trip | OCCTBinToolsWriteShape |
+| **BinTools Shape I/O Tests** | writeAndReadBinaryFile | BinTools file round trip | OCCTBinToolsWriteShapeToFile |
+| **BinTools Shape I/O Tests** | sphereRoundtrip | BinTools stream round trip | OCCTBinToolsWriteShape |
+| **v0.115.0 - BRepAdaptor Exposure** | edgeDomain | Edge adaptor domain | OCCTEdgeAdaptorDomain |
+| **v0.115.0 - BRepAdaptor Exposure** | edgeValue | Edge adaptor point | OCCTEdgeAdaptorValue |
+| **v0.115.0 - BRepAdaptor Exposure** | edgeCurveType | Edge adaptor curve type | OCCTEdgeAdaptorCurveType |
+| **v0.115.0 - BRepAdaptor Exposure** | faceBounds | Face adaptor bounds | OCCTFaceAdaptorBounds |
+| **v0.115.0 - BRepAdaptor Exposure** | faceValue | Face adaptor point | OCCTFaceAdaptorValue |
+| **v0.115.0 - BRepAdaptor Exposure** | faceSurfaceType | Face adaptor surface type | OCCTFaceAdaptorSurfaceType |
 
 ---
 
@@ -41,6 +50,15 @@
 | Transient/Persistent Tests | OCCTTransientPersistent | Transient/persistent | Remove transient/persistent | ✅ | ✅ |  |
 | History/Mapping Tests | OCCTHistoryMapping | History/mapping | Remove history/mapping | ✅ | ✅ |  |
 | Naming/Label Tests | OCCTNamingLabel | Naming/label | Remove naming/label | ✅ | ✅ |  |
+| writeAndReadBinaryData | OCCTBinToolsWriteShape | BinTools stream round trip | writer serialises TopoDS_Shape() instead of the input | ✅ | ✅ | Rewritten: went red only because a null stream is under 10 bytes |
+| writeAndReadBinaryFile | OCCTBinToolsWriteShapeToFile | BinTools file round trip | file writer serialises TopoDS_Shape() | ✅ | ✅ | Rewritten: checks sat inside if-let, green under the injection |
+| sphereRoundtrip | OCCTBinToolsWriteShape | BinTools stream round trip | writer serialises TopoDS_Shape() instead of the input | ✅ | ✅ | Rewritten: checks sat inside if-let, green under the injection |
+| edgeDomain | OCCTEdgeAdaptorDomain | Edge adaptor domain | last = first + 1 | ✅ | ✅ | Rewritten: upper > lower passed a [0, 1] domain |
+| edgeValue | OCCTEdgeAdaptorValue | Edge adaptor point | x + 1 | ✅ | ✅ | Rewritten: asserted |p| >= 0 |
+| edgeCurveType | OCCTEdgeAdaptorCurveType | Edge adaptor curve type | GetType() + 1 | ✅ | ✅ |  |
+| faceBounds | OCCTFaceAdaptorBounds | Face adaptor bounds | uMax = FirstUParameter() | ✅ | ✅ | Rewritten: accepted either direction non-empty |
+| faceValue | OCCTFaceAdaptorValue | Face adaptor point | x + 1 | ✅ | ✅ | Rewritten: asserted |p| >= 0 |
+| faceSurfaceType | OCCTFaceAdaptorSurfaceType | Face adaptor surface type | GetType() + 1 | ✅ | ✅ |  |
 
 ---
 
