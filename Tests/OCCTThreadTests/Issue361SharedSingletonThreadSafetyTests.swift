@@ -63,40 +63,64 @@ struct Issue361SharedSingletonThreadSafetyTests {
             "clearing document A must not clear document B's scope")
     }
 
-    @Test("Concurrent naming-scope access across independent documents doesn't crash or deadlock")
+    @Test("Concurrent naming-scope access across independent documents stays per-document")
     func concurrentNamingScopeAccessSucceeds() async throws {
+        // This test used to assert only that Document.create() never failed, so it passed with
+        // every document sharing one unlocked TNaming_Scope (the pre-#363 design): measured under
+        // #1990 with that injection applied, it stayed green. Each task now holds a mark in its
+        // own document for its whole lifetime and checks, on every iteration, that its document's
+        // scope counts only its own marks. With a shared scope, any other task's held mark shows
+        // up in this document's count.
         struct Outcome: Sendable {
             var failures = 0
+            var foreignMarks = 0
         }
 
         let agg = await withTaskGroup(of: Outcome.self) { group -> Outcome in
             for _ in 0..<8 {
                 group.addTask {
                     var o = Outcome()
+                    guard let doc = Document.create(),
+                        let anchor = Shape.box(width: 5, height: 5, depth: 5)
+                    else {
+                        o.failures += 1
+                        return o
+                    }
+                    let anchorLabel = doc.addShape(anchor, makeAssembly: false)
+                    doc.namingScopeValid(labelId: anchorLabel)
                     for _ in 0..<20 {
-                        guard let doc = Document.create() else {
+                        guard let box = Shape.box(width: 5, height: 5, depth: 5) else {
                             o.failures += 1
                             continue
                         }
-                        let box = Shape.box(width: 5, height: 5, depth: 5)!
                         let labelId = doc.addShape(box, makeAssembly: false)
-
                         doc.namingScopeValid(labelId: labelId)
-                        _ = doc.namingScopeIsValid(labelId: labelId)
-                        doc.namingScopeValidChildren(labelId: labelId)
-                        _ = doc.namingScopeValidCount
+                        if doc.namingScopeValidCount != 2 { o.foreignMarks += 1 }
                         doc.namingScopeUnvalid(labelId: labelId)
-                        doc.namingScopeClear()
+                        if doc.namingScopeValidCount != 1
+                            || !doc.namingScopeIsValid(labelId: anchorLabel)
+                        {
+                            o.foreignMarks += 1
+                        }
                     }
+                    doc.namingScopeClear()
+                    if doc.namingScopeValidCount != 0 { o.foreignMarks += 1 }
                     return o
                 }
             }
             var total = Outcome()
-            for await o in group { total.failures += o.failures }
+            for await o in group {
+                total.failures += o.failures
+                total.foreignMarks += o.foreignMarks
+            }
             return total
         }
 
-        #expect(agg.failures == 0, "concurrent document creation failed (expected 0 of 160)")
+        #expect(agg.failures == 0, "concurrent document creation failed (expected 0 of 8)")
+        #expect(
+            agg.foreignMarks == 0,
+            "a document's naming scope counted another document's marks (expected 0 of 328 checks)"
+        )
     }
 
     @Test("Concurrent font-database init + queries don't crash or deadlock")

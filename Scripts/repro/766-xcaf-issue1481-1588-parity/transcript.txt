@@ -1,0 +1,5 @@
+#1481 one shape, single-shape overload: dimension labels=1 refs=1
+#1481 one shape with a tolerance (-0.1, 0.1), single-shape overload: dimension labels=1 refs=1
+#1481 two shapes, one dimension each, single-shape overload: dimension labels=2 refs(shape1)=1 refs(shape2)=1
+#1481 (defect, for contrast) one shape, sequence overload: refs=2
+#1588 GetInstance null=false IsVerbose after SetVerbose(true)=true after SetVerbose(false)=false CreateNewDocument(BinOcaf)=true document null=false second GetInstance is the same instance=true
