@@ -1,0 +1,57 @@
+# Scripts/repro/766-thread-forms/probe.mm, run 2026-09-24 against the pinned v4.0.0-kernel.1
+# OCCT.xcframework (macos-arm64). Part B's BREP files were exported by a temporary diagnostic test
+# (not committed) making the tests' own calls with the tests' own inputs; no stock was meshed
+# before it was threaded, as in the tests.
+#
+# Swift-side values from that diagnostic (Shape.volume / Shape.isValid / face count / meshed max
+# radius), for comparison with the probe:
+#   ext_iso68 2331.528851886 valid 9f maxR 6.000005   ext_unified 2331.528851886 valid 9f
+#   ext_whitworth 2315.923353696 valid 9f            ext_bspParallel 2315.923353696 valid 9f
+#   ext_acme 2400.878691005 valid 9f                 ext_trapezoidal 2400.790171471 valid 9f
+#   ext_square 2403.315552846 valid 9f maxR 6.000006 ext_buttress 2228.712459156 valid 9f
+#   ext_knuckle 2364.205392678 valid 515f maxR 6.000000
+#   int_iso68 5746.146759210  int_whitworth 5836.786997335  int_acme 5746.594286947
+#   int_square 5741.827370224 int_buttress 5983.070157360   int_knuckle 5788.752239222 (all 16f)
+#   annulus_ iso68 6022.735014273 whitworth 6118.705255017 acme/square 5981.592412435
+#            buttress 6324.120556444 knuckle 6031.355240068
+#   taper_nptTapered 4264.809945050 570f  taper_bsptTapered 4239.639847674 569f
+#   custom 1952.030286331 valid 9f        shank6 2714.336052702 shank8 4825.486315914
+#   shank6h20 2261.946710585
+# Every value matches the probe below to the printed 9 decimals.
+#
+# An earlier diagnostic run meshed shank6 (and shank6h20) BEFORE threading it, and every direct-build
+# result then came out different: ext_iso68 2336.992422669 with 11 faces instead of 2331.528851886
+# with 9, the same +5.4636 mm^3 shift for all eight piecewise-linear forms, custom 1957.495389786.
+# The cut-path results (knuckle external, all internal, both tapered) did not move. Same finding as
+# Scripts/repro/766-thread-occtthreadtests/: the direct build reads the rod's axial extent from
+# Shape.bounds, which a prior mesh inflates by the deflection.
+
+== Part A: stock volumes in pure OCCT ==
+shank6     r6 h24 vol=2714.336052702
+shank8     r8 h24 vol=4825.486315914
+shank6h20  r6 h20 vol=2261.946710585
+annulus_iso68        minor=9.834936491 vol=6022.735014273 valid=1 faces=4
+annulus_whitworth    minor=9.438692000 vol=6118.705255017 valid=1 faces=4
+annulus_acme         minor=10.000000000 vol=5981.592412435 valid=1 faces=4
+annulus_square       minor=10.000000000 vol=5981.592412435 valid=1 faces=4
+annulus_buttress     minor=8.528920000 vol=6324.120556444 valid=1 faces=4
+annulus_knuckle      minor=9.800000000 vol=6031.355240068 valid=1 faces=4
+== Part B: kernel re-measure of the shapes the Swift run exported ==
+ext_iso68              vol=2331.528851886 valid=1 faces=9
+ext_unified            vol=2331.528851886 valid=1 faces=9
+ext_whitworth          vol=2315.923353696 valid=1 faces=9
+ext_bspParallel        vol=2315.923353696 valid=1 faces=9
+ext_acme               vol=2400.878691005 valid=1 faces=9
+ext_trapezoidal        vol=2400.790171471 valid=1 faces=9
+ext_square             vol=2403.315552846 valid=1 faces=9
+ext_buttress           vol=2228.712459156 valid=1 faces=9
+ext_knuckle            vol=2364.205392678 valid=1 faces=515
+int_iso68              vol=5746.146759210 valid=1 faces=16
+int_whitworth          vol=5836.786997335 valid=1 faces=16
+int_acme               vol=5746.594286947 valid=1 faces=16
+int_square             vol=5741.827370224 valid=1 faces=16
+int_buttress           vol=5983.070157360 valid=1 faces=16
+int_knuckle            vol=5788.752239222 valid=1 faces=16
+taper_nptTapered       vol=4264.809945050 valid=1 faces=570
+taper_bsptTapered      vol=4239.639847674 valid=1 faces=569
+custom                 vol=1952.030286331 valid=1 faces=9
