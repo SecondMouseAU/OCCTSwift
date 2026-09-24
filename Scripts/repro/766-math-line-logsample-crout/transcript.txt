@@ -1,0 +1,10 @@
+distanceToPointOnLine: 0
+distanceToPointOffLine: 3
+distanceBetweenParallelLines: 4
+distanceBetweenIntersectingLines: 0
+containsPointTrue: 1
+containsPointFalse: 0
+logarithmicSampling: 1 6.2842590296848586 15.75364725297846 39.491911552175686 100
+singleSample: 1
+symmetricSolve: done=1 x=1.25 1.5
+determinant (Crout): 8
