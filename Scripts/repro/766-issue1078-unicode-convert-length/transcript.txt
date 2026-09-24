@@ -1,0 +1,4 @@
+ANSI long (5000 x U+6F22): utf8Bytes=15000 extLength=5000 convertedLength=5000
+  first 8 converted bytes: 20 20 20 20 20 20 20 20
+ANSI "hello": convertedLength=5
+  converted=[hello]
