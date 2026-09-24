@@ -37,6 +37,12 @@ struct MathMatrixTests {
         m.setValue(row: 2, col: 1, value: 3)
         m.setValue(row: 2, col: 2, value: 4)
         #expect(m.invert())
+        // A true return alone passes a matrix left untouched. math_Matrix::Invert gives
+        // [[-2, 1], [1.5, -0.5]], Scripts/repro/766-math-matrix-polyroots.
+        #expect(abs(m.value(row: 1, col: 1) - (-2.0)) < 1e-12)
+        #expect(abs(m.value(row: 1, col: 2) - 1.0) < 1e-12)
+        #expect(abs(m.value(row: 2, col: 1) - 1.5) < 1e-12)
+        #expect(abs(m.value(row: 2, col: 2) - (-0.5)) < 1e-12)
     }
 }
 
