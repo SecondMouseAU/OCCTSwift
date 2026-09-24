@@ -17,7 +17,7 @@ struct GCMakeTrimmedConeTests {
                 r1: 5, r2: 2))
         let d = s.domain
         #expect(abs(d.vMin) < 1e-12)
-        #expect(abs(d.vMax - 109.0.squareRoot()) < 1e-9)
+        #expect(abs(d.vMax - 10.4403065089) < 1e-9)
         #expect(simd_length(s.point(atU: d.uMin, v: d.vMin) - SIMD3(5, 0, 0)) < 1e-9)
         #expect(simd_length(s.point(atU: d.uMin, v: d.vMax) - SIMD3(2, 0, 10)) < 1e-9)
     }
