@@ -1,0 +1,22 @@
+boxFaceFreeBounds (faces[0]): tol=1e-07 total=0 closed=0 open=0
+  after a second Perform(): closed=0
+single box face, tol 1e-3: tol=0.001 total=0 closed=0 open=0
+  after a second Perform(): closed=0
+single box face, tol 0: tol=0 total=1 closed=1 open=0
+  closed[0] area=100.00000000000013 perimeter=39.999999999999936 ratio=0 width=0 notches=0 wireNull=0
+  after a second Perform(): closed=2
+shellWithHoleFreeBounds (faces[0..4]): tol=0.001 total=1 closed=1 open=0
+  closed[0] area=100.00000000000013 perimeter=39.999999999999936 ratio=0 width=0 notches=0 wireNull=0
+  after a second Perform(): closed=2
+performIsIdempotent / accessorsRunTheAnalysisOnDemand / indexOutOfRange / squareBoundReportsNoRatioOrWidth (twoRects 10x10): tol=0.01 total=2 closed=2 open=0
+  closed[0] area=100.00000000000003 perimeter=39.999999999999936 ratio=0 width=0 notches=0 wireNull=0
+  closed[1] area=100.00000000000003 perimeter=39.999999999999936 ratio=0 width=0 notches=0 wireNull=0
+  after a second Perform(): closed=4
+ratioAndWidthAreAnAspectRatio (twoRects 20x10): tol=0.01 total=2 closed=2 open=0
+  closed[0] area=200.00000000000006 perimeter=59.999999999999901 ratio=1.9999999999999787 width=10.000000000000055 notches=0 wireNull=0
+  closed[1] area=200.00000000000006 perimeter=59.999999999999901 ratio=1.9999999999999787 width=10.000000000000055 notches=0 wireNull=0
+  after a second Perform(): closed=4
+notchesAreCounted: tol=0.01 total=2 closed=2 open=0
+  closed[0] area=99.550000000000054 perimeter=57.900277775634429 ratio=6.2592267313099068 width=3.9880472065918298 notches=1 wireNull=0
+  closed[1] area=100.00000000000003 perimeter=39.999999999999936 ratio=0 width=0 notches=0 wireNull=0
+  after a second Perform(): closed=4

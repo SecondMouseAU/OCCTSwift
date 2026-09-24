@@ -268,6 +268,14 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **v0.114.0 - FreeBoundsProperties** | boxFaceFreeBounds | Free bounds | Lone face, both branches |
+| **v0.114.0 - FreeBoundsProperties** | shellWithHoleFreeBounds | Free bounds | Open box outline |
+| **v0.114.0 - FreeBoundsProperties** | performIsIdempotent | Free bounds | Perform latch |
+| **v0.114.0 - FreeBoundsProperties** | accessorsRunTheAnalysisOnDemand | Free bounds | On-demand analysis |
+| **v0.114.0 - FreeBoundsProperties** | indexOutOfRange | Free bounds | Index range check |
+| **v0.114.0 - FreeBoundsProperties** | ratioAndWidthAreAnAspectRatio | Free bounds | Ratio and width |
+| **v0.114.0 - FreeBoundsProperties** | squareBoundReportsNoRatioOrWidth | Free bounds | Square bound ratio 0 |
+| **v0.114.0 - FreeBoundsProperties** | notchesAreCounted | Free bounds | Notch count |
 
 ---
 
@@ -475,6 +483,14 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| boxFaceFreeBounds | OCCTFreeBoundsPropsCounts | Free bounds | NbClosedFreeBounds + 1 (red :22); info fields + 1 (red :30) | ✅ | ✅ | Rewritten: closed >= 0 && open >= 0 behind three ifs could not fail |
+| shellWithHoleFreeBounds | OCCTFreeBoundsPropsCounts | Free bounds | NbClosedFreeBounds + 1 (red :46); info + 1; wire returns nil (red :50) | ✅ | ✅ | Rewritten: total >= 0 and perimeter >= 0 behind nested ifs could not fail |
+| performIsIdempotent | OCCTFreeBoundsPropsPerform | Free bounds | Never set the performed latch (red :74) | ✅ | ✅ |  |
+| accessorsRunTheAnalysisOnDemand | OCCTFreeBoundsPropsCounts | Free bounds | Counts do not run the analysis on demand (red :87) | ✅ | ✅ |  |
+| indexOutOfRange | OCCTFreeBoundsPropsInfo | Free bounds | Clamp an out-of-range closed index to the last bound (red :100) | ✅ | ✅ |  |
+| ratioAndWidthAreAnAspectRatio | OCCTFreeBoundsPropsInfo | Free bounds | Every info field + 1 (red :120) | ✅ | ✅ |  |
+| squareBoundReportsNoRatioOrWidth | OCCTFreeBoundsPropsInfo | Free bounds | Every info field + 1 (red :139) | ✅ | ✅ |  |
+| notchesAreCounted | OCCTFreeBoundsPropsInfo | Free bounds | Every info field + 1 (red :164) | ✅ | ✅ |  |
 
 ---
 
