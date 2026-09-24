@@ -42,13 +42,13 @@ static TopoDS_Shape connect(const TopoDS_Shape& s)
   std::vector<TopoDS_Shape> out;
   for (TopExp_Explorer se(s, TopAbs_SHELL); se.More(); se.Next())
   {
-    ShapeFix_FaceConnect     c;
+    Handle(ShapeFix_FaceConnect) c = new ShapeFix_FaceConnect();
     std::vector<TopoDS_Face> faces;
     for (TopExp_Explorer fe(se.Current(), TopAbs_FACE); fe.More(); fe.Next())
       faces.push_back(TopoDS::Face(fe.Current()));
     for (size_t i = 0; i + 1 < faces.size(); i++)
-      c.Add(faces[i], faces[i + 1]);
-    out.push_back(c.Build(TopoDS::Shell(se.Current()), 1e-4, 1e-4));
+      c->Add(faces[i], faces[i + 1]);
+    out.push_back(c->Build(TopoDS::Shell(se.Current()), 1e-4, 1e-4));
   }
   if (out.size() == 1)
     return out[0];
@@ -68,17 +68,17 @@ int main()
   TopoDS_Shape body  = BRepAlgoAPI_Fuse(lower, upper).Shape();
   printf("stacked cylinders: faces=%d volume=%.9f\n", unique(body, TopAbs_FACE), vol(body));
   BRepBuilderAPI_Copy          copier(body);
-  ShapeUpgrade_UnifySameDomain u(copier.Shape(), true, true, true);
-  u.Build();
+  Handle(ShapeUpgrade_UnifySameDomain) u = new ShapeUpgrade_UnifySameDomain(copier.Shape(), true, true, true);
+  u->Build();
   printf("unify on a copy: result faces=%d volume=%.9f; input faces after=%d volume=%.9f\n",
-         unique(u.Shape(), TopAbs_FACE), vol(u.Shape()), unique(body, TopAbs_FACE), vol(body));
+         unique(u->Shape(), TopAbs_FACE), vol(u->Shape()), unique(body, TopAbs_FACE), vol(body));
   TopoDS_Shape                 box = BRepPrimAPI_MakeBox(gp_Pnt(-5, -5, -5), 10, 10, 10).Shape();
   BRepBuilderAPI_Copy          bc(box);
-  ShapeUpgrade_UnifySameDomain ub(bc.Shape(), true, true, true);
-  ub.Build();
+  Handle(ShapeUpgrade_UnifySameDomain) ub = new ShapeUpgrade_UnifySameDomain(bc.Shape(), true, true, true);
+  ub->Build();
   TopTools_IndexedMapOfShape in, outm;
   TopExp::MapShapes(box, TopAbs_FACE, in);
-  TopExp::MapShapes(ub.Shape(), TopAbs_FACE, outm);
+  TopExp::MapShapes(ub->Shape(), TopAbs_FACE, outm);
   int shared = 0;
   for (int i = 1; i <= in.Extent(); i++)
     if (outm.Contains(in(i)))
@@ -111,7 +111,7 @@ int main()
     for (TopExp_Explorer fe(s, TopAbs_FACE); fe.More(); fe.Next(), n++)
     {
       Handle(ShapeFix_Face) f = new ShapeFix_Face(TopoDS::Face(fe.Current()));
-      f->SetContext(new ShapeBuild_ReShape);
+      f->SetContext(new ShapeBuild_ReShape());
       f->SetPrecision(1e-6);
       f->FixWireMode() = f->FixOrientationMode() = f->FixAddNaturalBoundMode() = f->FixMissingSeamMode() =
         f->FixSmallAreaWireMode()                  = 1;
