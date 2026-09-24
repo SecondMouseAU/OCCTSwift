@@ -1,0 +1,6 @@
+lineSegmentLength: length=10 center=(5, 0, 0)
+circularArcLength: arcLength=3.1415926535897931 center=(3.8981718325193755e-17, 0.63661977236758138, 0)
+pointSetCentroid: mass=4 centroid=(5, 5, 0)
+sphereSurfaceArea: area=314.15926535897933 (4*pi*25=314.15926535897933)
+sphereVolume: volume=523.59877559829886 (4/3*pi*125=523.59877559829886)
+weightedCentroidLengthMismatchIsRejected: N/A (rejected in Swift before the bridge)
