@@ -27,9 +27,9 @@ struct Geom2dEvalArchimedeanSpiralTests {
             Geom2dEval.archimedeanSpiralD1(initialRadius: 1.0, growthRate: 0.5, u: 0.0))
         // At t=0 with a=1, b=0.5: point = (1, 0)
         #expect(abs(r.point.x - 1.0) < 1e-10)
-        // d1: check it returns non-zero derivative
-        let speed = sqrt(r.d1.x * r.d1.x + r.d1.y * r.d1.y)
-        #expect(speed > 0)
+        // #1979: `speed > 0` passed any derivative. D1 at u = 0 is (b, a) = (0.5, 1)
+        // (Geom2dEval_ArchimedeanSpiralCurve; Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/).
+        #expect(simd_distance(r.d1, SIMD2(0.5, 1)) < 1e-12)
     }
 
     @Test func spiralWithInitialRadius() throws {
