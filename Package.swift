@@ -422,16 +422,14 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
                 // real bridge file catches an OCCT raise on wasm with this setting and loses the
                 // catch without the flags.
                 //
-                // WHERE THIS MOVES. #2048 (PR #2206) takes .unsafeFlags out of the WASI path
-                // entirely, because SwiftPM refuses them for a dependency resolved by version. Its
-                // replacement is the consumer-side toolset that Scripts/make-wasi-toolset.py
-                // writes, and this setting belongs in that file's cxxCompiler.extraCLIOptions, not
-                // here. Measured equivalent, and measured BETTER: under the deprecated
-                // `--build-system native`, a cxxSettings -x c++ also reaches .c sources in the same
-                // target, while the toolset's does not. This target has no .c sources today, so
-                // nothing is broken by it standing here until #2206 lands. Do not resolve that
-                // merge by deleting this line alone.
-                .unsafeFlags(["-x", "c++"]),
+                // WHERE IT LIVES NOW. #2256 had to leave this as a `.unsafeFlags` here while
+                // #2048 was open. It is now in the consumer-side toolset that
+                // `Scripts/make-wasi-toolset.py` writes, as cxxCompiler.extraCLIOptions, because
+                // .unsafeFlags is the exact thing this path must not carry: SwiftPM refuses them
+                // for a dependency resolved by version, which is how #1689's consumer consumes
+                // this package. The toolset placement is also measured BETTER: under the
+                // deprecated `--build-system native` a cxxSettings `-x c++` reaches .c sources in
+                // the same target, while the toolset's does not.
                 // Use WASI-built OCCT headers
                 .headerSearchPath("../../Libraries/occt-headers-wasm"),
                 // The threading shim, for a bridge source that includes it by name under an

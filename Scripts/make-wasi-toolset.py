@@ -96,7 +96,24 @@ def build_toolset(wasi_sdk: Path, occt_lib_dir: Path, shim: Path | None,
                   eh_flags: list[str]) -> dict:
     """Assemble the toolset document."""
     cxx_common = list(eh_flags) + SJLJ_FLAGS
-    cxx = list(cxx_common)
+    # -x c++ compiles Sources/OCCTBridge/src/*.mm as C++ rather than Objective-C++. #2256 measured
+    # why: clang gives ANY Objective-C++ TU the Objective-C++ personality
+    # (__gnustep_objcxx_personality_v0) whether or not Objective-C is present, LLVM's wasm EH
+    # lowering runs only on the wasm C++ personality, so the function is skipped and an Itanium
+    # invoke/landingpad reaches WebAssembly ISel, which cannot select it. Building those files
+    # without the EH flags instead is #2171's silent failure: they compile clean and every
+    # outermost catch (...) stops firing with no diagnostic.
+    #
+    # The bridge contains no Objective-C: zero @interface, @implementation, @autoreleasepool, @try,
+    # NSString, NSObject, NSArray across all 74 .mm files, and the one framework #import is already
+    # WASI-guarded. So this costs nothing that could otherwise have worked; Objective-C cannot
+    # target this triple at all (-fobjc-runtime=macosx is a backend fatal error).
+    #
+    # It lives HERE and not in Package.swift's cxxSettings, which is where #2256 (PR #2281) had to
+    # leave it while this PR was open. Two reasons: cxxSettings would need .unsafeFlags, which is
+    # the exact thing this PR exists to remove; and under the deprecated `--build-system native` a
+    # cxxSettings -x c++ also reaches .c sources in the same target, while the toolset's does not.
+    cxx = list(cxx_common) + ["-x", "c++"]
     if shim is not None:
         cxx += ["-include", str(shim)]
     # The C compiler gets the SAME set, not just the SjLj pair. `-wasm-use-legacy-eh=false` is an
@@ -139,9 +156,25 @@ def self_test() -> int:
         if flag not in cxx:
             failures.append(f"cxxCompiler is missing the pinned flag {flag}")
 
+    # -x c++ must reach the C++ compiler and must NOT reach the C compiler. Losing it puts the
+    # bridge's .mm files back through the Objective-C++ personality, which crashes this clang in
+    # code generation (#2256); gaining it on the C side would compile a genuine .c source as C++,
+    # which is the one thing the toolset placement buys over Package.swift's cxxSettings under the
+    # deprecated `--build-system native`. Neither is visible in the pin, so neither loop above
+    # covers it.
+    def has_x_cxx(opts: list[str]) -> bool:
+        return any(opts[i] == "-x" and opts[i + 1] == "c++" for i in range(len(opts) - 1))
+
+    if not has_x_cxx(cxx):
+        failures.append("cxxCompiler is missing -x c++, so the bridge's .mm files would go "
+                        "through the Objective-C++ personality and crash clang (#2256)")
+
     # The sjlj pair is separate from the exception flags, and without it the link fails outright
     # on an undefined `setjmp` (measured, run.sh case 6), so it is never a silent loss.
     c_opts = doc["cCompiler"]["extraCLIOptions"]
+    if has_x_cxx(c_opts):
+        failures.append("cCompiler must NOT carry -x c++: it would compile a genuine .c source "
+                        "as C++, which is exactly what the toolset placement avoids")
     if "-wasm-enable-sjlj" not in cxx or "-wasm-enable-sjlj" not in c_opts:
         failures.append("-wasm-enable-sjlj must reach both the C and the C++ compiler")
 
