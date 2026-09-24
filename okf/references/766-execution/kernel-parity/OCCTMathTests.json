@@ -6941,5 +6941,677 @@
       "failing_expectation": "original: **green**; rewritten: :35 `abs(n.x - 1.0 / 3.0) < 1e-12`"
     },
     "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathGauss.determinant rejects a non-positive n and a matrix shorter than n*n",
+    "bridge_function": "OCCTMathGaussDeterminant (guarded in MathGauss.determinant)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "control [[2,1],[1,3]]: math_Gauss IsDone=1 Determinant=5",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "control [[2,1],[1,3]]: math_Gauss IsDone=1 Determinant=5",
+      "source": "Scripts/repro/766-math-issue640-dimension-bounds/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":95 `MathGauss.determinant(matrix: [1.0], n: -1) == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathGauss.determinant distinguishes an invalid dimension from a genuinely singular matrix",
+    "bridge_function": "OCCTMathGaussDeterminant",
+    "bridge_output": {
+      "type": "observed",
+      "data": "singular [[1,2],[2,4]]: math_Gauss IsDone=0 (no determinant computed)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "singular [[1,2],[2,4]]: math_Gauss IsDone=0 (no determinant computed)",
+      "source": "Scripts/repro/766-math-issue640-dimension-bounds/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":120 `MathGauss.determinant(matrix: [1.0], n: -1) == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathCrout.determinant rejects a non-positive n and a matrix shorter than n*n",
+    "bridge_function": "OCCTMathCroutDeterminant (guarded in MathCrout.determinant)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "control [[4,2],[2,3]]: math_Crout IsDone=1 Determinant=8",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "control [[4,2],[2,3]]: math_Crout IsDone=1 Determinant=8",
+      "source": "Scripts/repro/766-math-issue640-dimension-bounds/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":127 `MathCrout.determinant(matrix: [1.0], n: -1) == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathCrout.determinant distinguishes an invalid dimension from a genuinely singular matrix",
+    "bridge_function": "OCCTMathCroutDeterminant",
+    "bridge_output": {
+      "type": "observed",
+      "data": "singular [[1,2],[2,4]]: math_Crout IsDone=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "singular [[1,2],[2,4]]: math_Crout IsDone=0",
+      "source": "Scripts/repro/766-math-issue640-dimension-bounds/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":142 `MathCrout.determinant(matrix: [1.0], n: -1) == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSVD.solve rejects a consistent-but-non-positive dimension",
+    "bridge_function": "none reached for the rejected cases (MathSVD.solve guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":152 `MathSVD.solve(matrix: [], rows: 0, cols: -1, rhs: []) == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathJacobi.eigenvalues rejects a consistent-but-negative n",
+    "bridge_function": "none reached (MathJacobi.eigenvalues guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":165 `MathJacobi.eigenvalues(matrix: [1.0], n: -1) == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathHouseholder.solve rejects a consistent-but-non-positive dimension",
+    "bridge_function": "none reached (MathHouseholder.solve guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":175 `MathHouseholder.solve(matrix: [], rows: 0, cols: -1, rhs: []) == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.solveSystem rejects non-positive dimensions and a mismatched startPoint",
+    "bridge_function": "none reached (MathSolver.solveSystem guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":186 `MathSolver.solveSystem(`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.solveSystem/.solveSystemNewton reject a values/jacobian closure that returns the wrong length",
+    "bridge_function": "OCCTMathFunctionSetRoot / Newton callbacks (Swift closure-length checks)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":218 `MathSolver.solveSystem(`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.minimize rejects a non-positive variables and a mismatched startPoint",
+    "bridge_function": "none reached (MathSolver.minimize guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":242 `MathSolver.minimize(variables: -1, startPoint: [], function: { _ in (0, []) }) == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.minimize/.minimizeNewton/.minimizeFRPR reject a function closure whose gradient/hessian is the wrong length",
+    "bridge_function": "Swift callback length checks before OCCTMathBFGS / Newton / FRPR",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":265 `MathSolver.minimize(`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.minimizePowell rejects a non-positive variables and a mismatched startPoint",
+    "bridge_function": "none reached (guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":294 `MathSolver.minimizePowell(variables: -1, startPoint: [], function: { _ in 0 }) == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.particleSwarm rejects a non-positive variables and mismatched bounds",
+    "bridge_function": "none reached (guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":303 `MathSolver.particleSwarm(`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.globalMinimize rejects a non-positive variables and mismatched bounds",
+    "bridge_function": "none reached (guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":315 `MathSolver.globalMinimize(variables: -1, lower: [], upper: [], function: { _ in 0 }) == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.solveSystemNewton rejects non-positive dimensions and a mismatched startPoint",
+    "bridge_function": "none reached (guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":327 `MathSolver.solveSystemNewton(`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.minimizeNewton rejects a non-positive n and a mismatched startPoint",
+    "bridge_function": "none reached (guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":341 `MathSolver.minimizeNewton(`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.leastSquares rejects a non-positive dimension and reads no further out of bounds",
+    "bridge_function": "none reached (guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":355 `MathSolver.leastSquares(matrix: [], rows: 0, cols: -1, rhs: []) == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.uzawa rejects non-positive dimensions and mismatched constraint arrays",
+    "bridge_function": "none reached (guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":372 `MathSolver.uzawa(`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.eigenvalues/eigenvaluesAndVectors reject an off-diagonal of the wrong length",
+    "bridge_function": "none reached (MathDimension.tridiagonal guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":404 `MathSolver.eigenvalues(diagonal: longDiagonal, offDiagonal: [1.0]) == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.gaussMultipleIntegration/.gaussSetIntegration reject mismatched arrays",
+    "bridge_function": "none reached (guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":417 `MathSolver.gaussMultipleIntegration(`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.gaussSetIntegration rejects more than one variable instead of silently integrating only the first",
+    "bridge_function": "none reached (lower.count == 1 guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":458 `MathSolver.gaussSetIntegration(`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::MathSolver.gaussSetIntegration rejects a function closure that returns the wrong length",
+    "bridge_function": "Swift callback length check before OCCTMathGaussSetIntegration",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":483 `MathSolver.gaussSetIntegration(`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::findAllRoots(samples:) routes through Sampling instead of trapping past Int32",
+    "bridge_function": "none reached (Sampling.requested guard)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":494 `MathSolver.findAllRoots(in: 0...10, samples: pastInt32) { x in (x - 5, 1) }.count == 0`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640: math dimension arguments reject negative and mismatched input::findAllRoots(samples:) accepts the documented minimum of 1, not Sampling's own default floor of 2",
+    "bridge_function": "OCCTMathFunctionAllRoots (reached only via the Swift path)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: Swift-side argument guard (MathDimension / Sampling) returning nil before any kernel call; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "P2_640_FAKE: the Swift entry point returns a plausible non-nil result without validating (the pre-#640 'SUCCEEDS w/ garbage' outcome, reproduced without the out-of-bounds read)",
+      "failing_expectation": ":533 `calls1 > 0`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640 review finding 9: MathDimension is the one shared validator::valid requires positivity and every given length to match exactly",
+    "bridge_function": "none (pure Swift MathDimension.valid)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: pure Swift validator"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "MathDimension.valid drops its n > 0 check",
+      "failing_expectation": ":568 `!MathDimension.valid(0, matches: 0)`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640 review finding 9: MathDimension is the one shared validator::consistent checks length agreement only, no positivity",
+    "bridge_function": "none (pure Swift MathDimension.consistent)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: pure Swift validator"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "MathDimension.consistent always true",
+      "failing_expectation": ":576 `!MathDimension.consistent(0, matches: 1)`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640 review finding 9: MathDimension is the one shared validator::validSquare checks n > 0, n * n == count, and does not overflow",
+    "bridge_function": "none (pure Swift MathDimension.validSquare)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: pure Swift validator"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "MathDimension.validSquare drops its n > 0 check",
+      "failing_expectation": ":585 `!MathDimension.validSquare(0, count: 0)`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Issue #640 review finding 9: MathDimension is the one shared validator::validRectangle checks rows > 0, cols > 0, rows * cols == count, and does not overflow",
+    "bridge_function": "none (pure Swift MathDimension.validRectangle)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: pure Swift validator"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "MathDimension.validRectangle drops its positivity check",
+      "failing_expectation": ":594 `!MathDimension.validRectangle(rows: 0, cols: -1, count: 0)`"
+    },
+    "green": true
   }
 ]
