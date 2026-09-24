@@ -108,6 +108,11 @@ struct EdgeCurvePropertiesTests {
                 // Tangent should be unit length
                 let len = sqrt(t.x * t.x + t.y * t.y + t.z * t.z)
                 #expect(abs(len - 1.0) < 1e-6)
+                // ...and point along the edge, from its start vertex to its end vertex. Unit length
+                // alone accepted any unit vector, including the reversed tangent (#1823).
+                let ends = edge.endpoints
+                let chord = simd_normalize(ends.end - ends.start)
+                #expect(simd_length(t - chord) < 1e-9)
             }
         }
     }
@@ -138,6 +143,14 @@ struct EdgeCurvePropertiesTests {
             if let n = n {
                 let len = sqrt(n.x * n.x + n.y * n.y + n.z * n.z)
                 #expect(abs(len - 1.0) < 1e-6)
+                // The title's claim: the normal points from the curve point toward the circle's
+                // centre on the Z axis. Unit length alone accepted the outward normal (#1824).
+                let p = edge.point(at: mid)
+                #expect(p != nil)
+                if let p = p {
+                    let inward = simd_normalize(SIMD3(0, 0, p.z) - p)
+                    #expect(simd_length(n - inward) < 1e-9)
+                }
             }
         }
     }
