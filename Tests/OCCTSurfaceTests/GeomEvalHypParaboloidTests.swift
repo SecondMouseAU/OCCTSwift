@@ -1,4 +1,5 @@
 import Testing
+import simd
 
 @testable import OCCTSwift
 
@@ -22,5 +23,9 @@ struct GeomEvalHypParaboloidTests {
     @Test func hypParaboloidSurfaceCreate() {
         let surf = Surface.hyperbolicParaboloid(a: 2.0, b: 3.0)
         #expect(surf != nil)
+        // #766: pinned to the GeomEval evaluator's own value on the same inputs, see Scripts/repro/766-geomeval-approx/; `!= nil` passed a surface built from the wrong parameters.
+        if let surf {
+            #expect(simd_length(surf.point(atU: 1, v: 2) - SIMD3(1, 2, -0.19444444444444442)) < 1e-12)
+        }
     }
 }

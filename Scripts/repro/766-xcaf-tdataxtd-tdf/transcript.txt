@@ -1,0 +1,21 @@
+Constraint: type=5 (PARALLEL=5) IsPlanar=false IsDimension=false Verified=true
+Point/Axis/Plane Set: true true true
+Geometry: POINT=1 PLANE=6 CYLINDER=7
+PatternStd: signature=1; fresh label has one=false
+Placement: set=true fresh=false
+Position: (1, 2, 3)
+Presentation: color=12 transparency=0.5 width=2 mode=1 displayed=true after Unset has=false
+Shape attribute: stored non-null=true
+Sphere r10 meshed at 1.0: merged nodes=168 triangles=306
+AttributeIterator: 3 attributes; empty label 0
+ChildIDIterator(Integer): 2
+CopyLabel: IsDone=true dest name=Original
+Reference: points to target=true
+XLinkTool::Copy: IsDone=true target integer=77; CopyWithLink: IsDone=true target integer=88
+Main: entry=0:1 tag=1 depth=1 IsRoot=false Root IsRoot=true
+fresh label: Constraint=false Position=false Shape=false Reference=false ChildIDIterator(Integer)=0
+ComparisonTool::IsSelfContained(label with an integer)=true
+Name: MyPart -> Renamed
+label: fresh NbAttributes=0 HasChild=false NbChildren=0; after Name + 2 children NbAttributes=2 NbChildren=2 FindChild(1)=true FindChild(99,false) null=true FindChild(3,true) -> NbChildren=3 after ForgetAllAttributes HasAttribute=false
+descendants: direct=2 all=4
+Poly_Triangulation deflection of the sphere mesh > 0: true
