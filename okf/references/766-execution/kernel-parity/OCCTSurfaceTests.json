@@ -423,5 +423,429 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Bezier Surface Completions::UIso and VIso return curves",
+    "bridge_function": "OCCTSurfaceBezierUIso",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "UIso(0.5)(0.3)": [
+          1,
+          0.6,
+          0.5
+        ],
+        "VIso(0.5)(0.3)": [
+          0.6,
+          1,
+          0.42
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "UIso(0.5)(0.3)": [
+          1,
+          0.6,
+          0.5
+        ],
+        "VIso(0.5)(0.3)": [
+          0.6,
+          1,
+          0.42
+        ]
+      },
+      "source": "Scripts/repro/766-bezier-surface-queries/transcript.txt isoCurves"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bezier Surface Completions::IsUClosed and IsVClosed",
+    "bridge_function": "OCCTSurfaceBezierIsUClosed",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "open": [
+          false,
+          false
+        ],
+        "rowClosed": [
+          true,
+          false
+        ],
+        "colClosed": [
+          false,
+          true
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "open": [
+          false,
+          false
+        ],
+        "rowClosed": [
+          true,
+          false
+        ],
+        "colClosed": [
+          false,
+          true
+        ]
+      },
+      "source": "Scripts/repro/766-bezier-surface-queries/transcript.txt closedQueries"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bezier Surface Completions::IsUPeriodic and IsVPeriodic always false",
+    "bridge_function": "OCCTSurfaceBezierIsUPeriodic",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "periodic": [
+          false,
+          false
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "periodic": [
+          false,
+          false
+        ]
+      },
+      "source": "Scripts/repro/766-bezier-surface-queries/transcript.txt periodicQueries"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bezier Surface Completions::Continuity is CN",
+    "bridge_function": "OCCTSurfaceBezierContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "continuity": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "continuity": 6
+      },
+      "source": "Scripts/repro/766-bezier-surface-queries/transcript.txt continuity"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bezier Surface Completions::IsCNu and IsCNv always true",
+    "bridge_function": "OCCTSurfaceBezierIsCNu",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "IsCNu(0)": true,
+        "IsCNu(10)": true,
+        "IsCNv(0)": true,
+        "IsCNv(10)": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "IsCNu(0)": true,
+        "IsCNu(10)": true,
+        "IsCNv(0)": true,
+        "IsCNv(10)": true
+      },
+      "source": "Scripts/repro/766-bezier-surface-queries/transcript.txt isCN"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bezier Surface Completions::GetPoles bulk",
+    "bridge_function": "OCCTSurfaceBezierGetPoles",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "poles": "(0,0,0)(0,1,0)(1,0,1)(1,1,1)"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "poles": "(0,0,0)(0,1,0)(1,0,1)(1,1,1)"
+      },
+      "source": "Scripts/repro/766-bezier-surface-queries/transcript.txt poles"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bezier Surface Completions::GetWeights for non-rational returns nil",
+    "bridge_function": "OCCTSurfaceBezierGetWeights",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "weights": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "weights": null
+      },
+      "source": "Scripts/repro/766-bezier-surface-queries/transcript.txt weightsNonRational: Weights()=null"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bezier Surface Completions::Bounds returns [0,1]x[0,1]",
+    "bridge_function": "OCCTSurfaceBezierBounds",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          0,
+          1,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-bezier-surface-queries/transcript.txt bounds"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bezier Surface Fill::Fill 4 bezier curves into surface",
+    "bridge_function": "OCCTSurfaceBezierFill4",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          0,
+          0,
+          0
+        ],
+        "S(0.5,0)": [
+          5,
+          0.5,
+          0
+        ],
+        "S(0.3,0.6)": [
+          2.808,
+          6.42,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          0,
+          0,
+          0
+        ],
+        "S(0.5,0)": [
+          5,
+          0.5,
+          0
+        ],
+        "S(0.3,0.6)": [
+          2.808,
+          6.42,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-bezier-surface-queries/transcript.txt fill4Curves stretch"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bezier Surface Fill::Fill 2 bezier curves into surface",
+    "bridge_function": "OCCTSurfaceBezierFill2",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,0)": [
+          5,
+          1,
+          0
+        ],
+        "S(0.5,1)": [
+          5,
+          9,
+          0
+        ],
+        "S(0.3,0.6)": [
+          3,
+          5.832,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,0)": [
+          5,
+          1,
+          0
+        ],
+        "S(0.5,1)": [
+          5,
+          9,
+          0
+        ],
+        "S(0.3,0.6)": [
+          3,
+          5.832,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-bezier-surface-queries/transcript.txt fill2Curves stretch"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bezier Surface Fill::Fill with different styles",
+    "bridge_function": "OCCTSurfaceBezierFill2",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "stretch S(0.3,0.6)": [
+          3,
+          5.832,
+          0
+        ],
+        "coons S(0.3,0.6)": [
+          3,
+          5.832,
+          0
+        ],
+        "curved": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "stretch S(0.3,0.6)": [
+          3,
+          5.832,
+          0
+        ],
+        "coons S(0.3,0.6)": [
+          3,
+          5.832,
+          0
+        ],
+        "curved": null
+      },
+      "source": "Scripts/repro/766-bezier-surface-queries/transcript.txt fill2Curves: stretch and coons identical, curved threw \"Courbes non jointives\""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bezier Surface Fill::Non-bezier curves return nil",
+    "bridge_function": "OCCTSurfaceBezierFill2",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-bezier-surface-queries/transcript.txt nonBezierFails: a segment is Geom_TrimmedCurve, DownCast to Geom_BezierCurve is null"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bezier Surface Resolution v0.120.0::resolution",
+    "bridge_function": "OCCTSurfaceBezierMaxDegree",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "maxDegree": 25
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "maxDegree": 25
+      },
+      "source": "Scripts/repro/766-bezier-surface-queries/transcript.txt resolution"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
