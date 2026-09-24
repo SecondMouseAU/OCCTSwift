@@ -1,0 +1,22 @@
+== Message_Msg (OCCTMessageMsgGet / HasMsg / FileLoad / FileLoadDefault) ==
+Message_Msg("test.key").Get() = "Unknown message invoked with the keyword test.key"
+HasMsg("nonexistent.key.12345") = 0
+HasMsg("ShapeFix.FixSmallSolid.MSG0") before ShapeExtend::Init = 0
+HasMsg("ShapeFix.FixSmallSolid.MSG0") after ShapeExtend::Init = 1
+Message_Msg("ShapeFix.FixSmallSolid.MSG0").Get() = "Small solid removed"
+LoadFile("/tmp/nonexistent_msg_file_12345.txt") = 0
+== OSD_SharedLibrary (OCCTSharedLibCreate / Name / Open / Close) ==
+Name() = "libc.dylib"
+DlOpen(OSD_RTLD_LAZY) libc.dylib = 1
+DlOpen(OSD_RTLD_LAZY) nonexistent_lib_12345.dylib = 0
+== Named colour count (OCCTNamedColorCount) ==
+Quantity_NOC_WHITE + 1 = 509
+Quantity_Color::StringName(Quantity_NOC_WHITE) = WHITE
+== UnitsMethods (OCCTUnitsGetLengthFactor / GetLengthUnitScale / DumpLengthUnit) ==
+GetLengthFactorValue(6) = 1000
+GetLengthUnitScale(Meter, Millimeter) = 1000
+GetLengthUnitScale(Millimeter, Meter) = 0.001
+DumpLengthUnit(Millimeter) = "mm"
+== XCAFDoc_ColorTool (OCCTDocumentColorToolAddColor / GetAllColors) ==
+new document GetColors count = 0
+after AddColor red, green: GetColors count = 2, [1]==red 1, [2]==green 1
