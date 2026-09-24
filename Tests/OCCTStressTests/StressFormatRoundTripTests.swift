@@ -154,46 +154,65 @@ struct StressRoundTripSTLTests {
 @Suite("Stress: Round-Trip OBJ")
 struct StressRoundTripOBJTests {
 
-    private func roundTrip(_ shape: Shape, name: String) throws {
+    private func roundTrip(_ shape: Shape, name: String, expectedSize: SIMD3<Double>) throws {
         let url = tempURL("obj")
         defer { cleanupTemp(url) }
         try Exporter.writeOBJ(shape: shape, to: url)
         // OBJ is mesh-based, reimported shape is a triangulation, not B-rep
         // Just verify export + reimport completes without crash
         let reimported = try Shape.loadOBJ(from: url)
-        _ = reimported  // may not be "valid" in B-rep sense
+        // Epic #766: the reimported shape was discarded, so only a throw could fail this.
+        // RWObj_CafReader returns the whole mesh as one triangulated face, and its triangulated
+        // bounds are the exported mesh's (Scripts/repro/766-stress-format-round-trip/).
+        #expect(reimported.subShapeCount(ofType: .face) == 1, "OBJ face count for \(name)")
+        let b = try #require(reimported.bounds)
+        let size = b.max - b.min
+        #expect(abs(size.x - expectedSize.x) < 1e-4, "OBJ X size for \(name)")
+        #expect(abs(size.y - expectedSize.y) < 1e-4, "OBJ Y size for \(name)")
+        #expect(abs(size.z - expectedSize.z) < 1e-4, "OBJ Z size for \(name)")
     }
 
-    @Test func box() throws { try roundTrip(standardBox(), name: "box") }
-    @Test func cylinder() throws { try roundTrip(standardCylinder(), name: "cylinder") }
-    @Test func sphere() throws { try roundTrip(standardSphere(), name: "sphere") }
-    @Test func filletedBoxShape() throws { try roundTrip(filletedBox(), name: "filletedBox") }
+    @Test func box() throws {
+        try roundTrip(standardBox(), name: "box", expectedSize: SIMD3(10, 10, 10))
+    }
+    @Test func cylinder() throws {
+        try roundTrip(standardCylinder(), name: "cylinder", expectedSize: SIMD3(10, 9.92709, 10))
+    }
+    @Test func sphere() throws {
+        try roundTrip(standardSphere(), name: "sphere", expectedSize: SIMD3(9.91697, 9.97669, 10))
+    }
+    @Test func filletedBoxShape() throws {
+        try roundTrip(filletedBox(), name: "filletedBox", expectedSize: SIMD3(10, 10, 10))
+    }
 }
 
 // MARK: - IGES Round-Trip
 
-@Suite(
-    "Stress: Round-Trip IGES",
-    .disabled("IGES export/import segfaults on certain shapes, OCCT kernel bug"))
+// Epic #766: this suite was `.disabled("IGES export/import segfaults on certain shapes, OCCT kernel
+// bug")`, so none of its five tests ran. Against the pinned OCCT 8.0.1 kernel it does not segfault:
+// it was re-enabled and run 20 times in a row clean, and the IGES round trip of the same five
+// fixtures runs clean in Scripts/repro/766-stress-format-round-trip/probe.mm. The old body only
+// checked `isValid` plus a volume that IGES never yields (it imports faces, not solids), so it now
+// pins what IGESControl_Reader::OneShape gives back instead: every face, and no solid.
+@Suite("Stress: Round-Trip IGES")
 struct StressRoundTripIGESTests {
 
-    private func roundTrip(_ shape: Shape, name: String) throws {
-        let origVol = shape.volume ?? 0
+    private func roundTrip(_ shape: Shape, name: String, faces: Int) throws {
         let url = tempURL("iges")
         defer { cleanupTemp(url) }
         try Exporter.writeIGES(shape: shape, to: url)
         let reimported = try Shape.loadIGES(from: url)
         #expect(reimported.isValid, "IGES round-trip failed for \(name)")
-        if origVol > 0, let rVol = reimported.volume {
-            #expect(abs(rVol - origVol) / origVol < 0.02, "IGES volume mismatch for \(name)")
-        }
+        #expect(reimported.subShapeCount(ofType: .face) == faces, "IGES face count for \(name)")
+        #expect(reimported.solidCount == 0, "IGES imports faces, not solids (\(name))")
+        #expect(reimported.volume == nil, "unsewn faces enclose no volume (\(name))")
     }
 
-    @Test func box() throws { try roundTrip(standardBox(), name: "box") }
-    @Test func cylinder() throws { try roundTrip(standardCylinder(), name: "cylinder") }
-    @Test func sphere() throws { try roundTrip(standardSphere(), name: "sphere") }
-    @Test func cone() throws { try roundTrip(standardCone(), name: "cone") }
-    @Test func torus() throws { try roundTrip(standardTorus(), name: "torus") }
+    @Test func box() throws { try roundTrip(standardBox(), name: "box", faces: 6) }
+    @Test func cylinder() throws { try roundTrip(standardCylinder(), name: "cylinder", faces: 3) }
+    @Test func sphere() throws { try roundTrip(standardSphere(), name: "sphere", faces: 1) }
+    @Test func cone() throws { try roundTrip(standardCone(), name: "cone", faces: 3) }
+    @Test func torus() throws { try roundTrip(standardTorus(), name: "torus", faces: 1) }
 }
 
 // MARK: - Cross-Format Consistency

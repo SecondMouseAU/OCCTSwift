@@ -39,8 +39,10 @@ struct MathSolverBFGSTests {
                 return (value: val, gradient: [gx, gy])
             }
         ) {
-            #expect(abs(result.point[0] - 1.0) < 0.1)
-            #expect(abs(result.point[1] - 1.0) < 0.1)
+            // math_BFGS reaches (1, 1) to machine precision here (probe); 0.1 passed a
+            // location off by 0.09.
+            #expect(abs(result.point[0] - 1.0) < 1e-4)
+            #expect(abs(result.point[1] - 1.0) < 1e-4)
         }
     }
 }
