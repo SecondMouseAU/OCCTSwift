@@ -1,0 +1,19 @@
+box edges:
+  edge  0 wires=[ 0 2 ] coedges=[ 0 9 ] findCoEdge(firstFace)=0 (face 0)
+  edge  1 wires=[ 0 4 ] coedges=[ 1 16 ] findCoEdge(firstFace)=1 (face 0)
+  edge  2 wires=[ 0 3 ] coedges=[ 2 13 ] findCoEdge(firstFace)=2 (face 0)
+  edge  3 wires=[ 0 5 ] coedges=[ 3 20 ] findCoEdge(firstFace)=3 (face 0)
+  edge  4 wires=[ 1 2 ] coedges=[ 4 11 ] findCoEdge(firstFace)=4 (face 1)
+  edge  5 wires=[ 1 4 ] coedges=[ 5 18 ] findCoEdge(firstFace)=5 (face 1)
+  edge  6 wires=[ 1 3 ] coedges=[ 6 15 ] findCoEdge(firstFace)=6 (face 1)
+  edge  7 wires=[ 1 5 ] coedges=[ 7 22 ] findCoEdge(firstFace)=7 (face 1)
+  edge  8 wires=[ 2 4 ] coedges=[ 8 17 ] findCoEdge(firstFace)=8 (face 2)
+  edge  9 wires=[ 2 5 ] coedges=[ 10 21 ] findCoEdge(firstFace)=10 (face 2)
+  edge 10 wires=[ 3 4 ] coedges=[ 12 19 ] findCoEdge(firstFace)=12 (face 3)
+  edge 11 wires=[ 3 5 ] coedges=[ 14 23 ] findCoEdge(firstFace)=14 (face 3)
+childExplorer: product=0 roots=1 root0=(kind 10, index 0) faces=6 edges=24 vertices=48
+parentExplorer face0: 2
+faces: [0 wires=1 vrefs=0 tol=9.9999999999999995e-08 surf=1 natural=0 tri=0] [1 wires=1 vrefs=0 tol=9.9999999999999995e-08 surf=1 natural=0 tri=0] [2 wires=1 vrefs=0 tol=9.9999999999999995e-08 surf=1 natural=0 tri=0] [3 wires=1 vrefs=0 tol=9.9999999999999995e-08 surf=1 natural=0 tri=0] [4 wires=1 vrefs=0 tol=9.9999999999999995e-08 surf=1 natural=0 tri=0] [5 wires=1 vrefs=0 tol=9.9999999999999995e-08 surf=1 natural=0 tri=0]
+faceAddVertex(face 0, vertex 0): uid=1 vrefs face0=1 face1=0
+meshed box: tri face0=1
+sphere face0: wires=1 natural=0
