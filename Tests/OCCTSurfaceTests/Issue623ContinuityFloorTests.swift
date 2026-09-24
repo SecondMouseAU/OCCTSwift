@@ -194,28 +194,27 @@ struct Issue623ContinuityFloorTests {
     // MARK: - Real measured geometry
 
     @Test("The floor gate holds on geometry OCCT actually measured")
-    func floorGateOnMeasuredGeometry() {
+    func floorGateOnMeasuredGeometry() throws {
         // The matrix above is pure vocabulary; this walks the real `Geom_Surface::Continuity()`
         // path the gate is used on.
-        if let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) {
-            #expect(plane.continuityClass == .cN)
-            #expect(plane.continuityClass.satisfies(.c0))
-            #expect(plane.continuityClass.satisfies(.c3))
-        }
+        // #766: both fixtures sat behind `if let`; each is now required to exist, built once.
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
+        #expect(plane.continuityClass == .cN)
+        #expect(plane.continuityClass.satisfies(.c0))
+        #expect(plane.continuityClass.satisfies(.c3))
         // A cubic BSpline surface whose interior U knot repeats to full degree measures C0, the
         // weakest class OCCT reports, and must still clear the positional floor.
         let poles: [[SIMD3<Double>]] = (1...7).map { i in
             (1...4).map { j in SIMD3<Double>(Double(i), Double(j), Double((i + j) % 2)) }
         }
-        if let c0 = Surface.bspline(
-            poles: poles,
-            knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, 3, 4],
-            knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
-            degreeU: 3, degreeV: 3)
-        {
-            #expect(c0.continuityClass == .c0)
-            #expect(c0.continuityClass.satisfies(.c0))
-            #expect(!c0.continuityClass.satisfies(.c1))
-        }
+        let c0 = try #require(
+            Surface.bspline(
+                poles: poles,
+                knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, 3, 4],
+                knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
+                degreeU: 3, degreeV: 3))
+        #expect(c0.continuityClass == .c0)
+        #expect(c0.continuityClass.satisfies(.c0))
+        #expect(!c0.continuityClass.satisfies(.c1))
     }
 }
