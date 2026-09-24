@@ -1,0 +1,5 @@
+undo limit 0: OpenCommand -> HasOpenCommand=false Transaction=0
+undo limit 10: Transaction before=0 after OpenCommand=1 second OpenCommand throws=true Transaction=1 after CommitCommand=0 undos=1
+committed delta: attribute deltas=2 begin=0 end=1 name=""
+after SetName("add part"): name="add part"
+after AbortCommand: HasOpenCommand=false undos still=1
