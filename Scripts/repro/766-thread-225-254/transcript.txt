@@ -1,0 +1,9 @@
+# ./probe <232 nut .brep, written from the Swift result via Shape.toBREPString()> 1.5 0 0.183 0.317 0.683 0.817 1
+# (trapezoidal 12x3: cutDepth and profile axials as ThreadSpec reports them). OCCT V8_0_1, v4.0.0-kernel.1 asset.
+225 worm: type=2 volume=825.274987894 faces(map)=7 faces(explorer)=7 valid=1 mesh(0.10) zmin=0.000000000 zmax=12.000000000
+225 stock volume pi*36*12=1357.168026351
+iso68 10x1.5 cutDepth=0.81189881604791125
+232 iso: type=2 volume=1954.284526605 faces(map)=7 faces(explorer)=7 valid=1 mesh(0.10) zmin=0.000000000 zmax=30.000000000
+254 direct: type=2 volume=1693.718374724 faces(map)=7 faces(explorer)=7 valid=1 mesh(0.10) zmin=0.000000000 zmax=26.000000000
+232 trap: type=2 volume=5282.510509761 faces(map)=7 faces(explorer)=7 valid=1 mesh(0.10) zmin=0.000000000 zmax=60.000000000
+232 nut (BREP from Swift): type=0 volume=98.798601515 faces(map)=55 faces(explorer)=55 valid=1 mesh(0.10) zmin=0.000000000 zmax=8.399999619
