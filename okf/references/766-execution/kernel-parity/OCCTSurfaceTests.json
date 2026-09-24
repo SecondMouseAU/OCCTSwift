@@ -6382,5 +6382,307 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Pipe Feature::Pipe feature API is callable",
+    "bridge_function": "OCCTShapePipeFeatureFromProfile",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 7748.672587712816,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 7748.672587712816,
+        "valid": true
+      },
+      "source": "Scripts/repro/766-pipe-shell/transcript.txt pipeFeatureCallable"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Pipe Feature::Pipe feature with different spine",
+    "bridge_function": "OCCTShapePipeFeatureFromProfile",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 26880,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 26880,
+        "valid": true
+      },
+      "source": "Scripts/repro/766-pipe-shell/transcript.txt pipeFeatureCurvedSpine"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PipeShell Closed Geometry Fix::circularSpineCircularProfile",
+    "bridge_function": "OCCTPipeShellBuild",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 2664.793188294127,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 2664.793188294127,
+        "valid": true
+      },
+      "source": "Scripts/repro/766-pipe-shell/transcript.txt circularSpineCircularProfile"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PipeShell Closed Geometry Fix::highLevelPipeShellClosed",
+    "bridge_function": "OCCTShapeCreatePipeSweep",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 789.5683520871488,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 789.5683520871488,
+        "valid": true
+      },
+      "source": "Scripts/repro/766-pipe-shell/transcript.txt highLevelPipeShellClosed (BRepOffsetAPI_MakePipe)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.123.0, PipeShell extensions::GetStatus",
+    "bridge_function": "OCCTPipeShellGetStatus",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "status": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "status": 0
+      },
+      "source": "Scripts/repro/766-pipe-shell/transcript.txt getStatus"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.123.0, PipeShell extensions::Simulate sections",
+    "bridge_function": "OCCTPipeShellSimulate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "sections": 5
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "sections": 5
+      },
+      "source": "Scripts/repro/766-pipe-shell/transcript.txt simulate"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepFill_PipeShell Extension Tests::pipeShellMaxDegreeAndSegments",
+    "bridge_function": "OCCTPipeShellIsReady",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "isReady": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "isReady": true
+      },
+      "source": "Scripts/repro/766-pipe-shell/transcript.txt pipeShellMaxDegreeAndSegments"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepFill_PipeShell Extension Tests::pipeShellErrorAndShapes",
+    "bridge_function": "OCCTPipeShellErrorOnSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "errorOnSurface": 0,
+        "first": "shape",
+        "last": "shape",
+        "area": 254.09525268599498
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "errorOnSurface": 0,
+        "first": "shape",
+        "last": "shape",
+        "area": 254.09525268599498
+      },
+      "source": "Scripts/repro/766-pipe-shell/transcript.txt pipeShellErrorAndShapes"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepFill_PipeShell Tests::basicPipeShell",
+    "bridge_function": "OCCTPipeShellBuild",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 206.14333993362635
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 206.14333993362635
+      },
+      "source": "Scripts/repro/766-pipe-shell/transcript.txt basicPipeShell"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepFill_PipeShell Tests::pipeShellIsReady",
+    "bridge_function": "OCCTPipeShellIsReady",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "isReady before Add": false
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "isReady before Add": false
+      },
+      "source": "Scripts/repro/766-pipe-shell/transcript.txt pipeShellIsReady"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Pipe Shell Transition Mode::Pipe with transformed transition",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 31.415926535897935,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 31.415926535897935,
+        "valid": true
+      },
+      "source": "Scripts/repro/766-pipe-shell/transcript.txt pipeTransformed (profile normal X); with the original XY profile the kernel returns a volume-0 solid"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Pipe Shell Transition Mode::Pipe with right corner transition",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 251.32741228691418
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 251.32741228691418
+      },
+      "source": "Scripts/repro/766-pipe-shell/transcript.txt pipeRightCorner"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Pipe Shell Transition Mode::Pipe with round corner transition",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 249.03832602994237
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 249.03832602994237
+      },
+      "source": "Scripts/repro/766-pipe-shell/transcript.txt pipeRoundCorner"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
