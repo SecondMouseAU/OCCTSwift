@@ -105,6 +105,19 @@ struct Issue1017NLPlateResolutionOrderTests {
         #expect(lowZ.isFinite)
         #expect(highZ.isFinite)
         #expect(abs(lowZ - highZ) > 1.0)
+        // #766 parity: NLPlate_NLPlate::Evaluate at uv (0, 0) after Solve2(2, 1), refit as the
+        // bridge refits it, see Scripts/repro/766-nlplate-order-base/.
+        #expect(abs(lowZ - 5.87499997964) < 0.1)
+        // #766 finding: at order 8 the plate itself meets the (0, 0, 5) constraint (Evaluate gives
+        // z = 4.9999998), but it grows to |z| = 1764 at the edges of the padded [-15, 15] working
+        // domain, and the 20x20 refit in occtNLPlateFitSolved then misses the constraint: the
+        // returned surface is at (1.25, -10.07, -16.93) there, reproduced exactly by the probe's
+        // copy of the same fit. The `> 1.0` above passes because of that miss, not because order
+        // 8 answers differently at the constraint. Recorded as a known issue so this goes red
+        // when the fit is fixed and the line can become a plain expectation.
+        withKnownIssue("order 8 refit misses its own G0 constraint (#766 finding)") {
+            #expect(abs(highZ - 4.99999979268) < 0.1)
+        }
     }
 
     // An accepted order must actually deform. Before the fix an out-of-range order returned the
