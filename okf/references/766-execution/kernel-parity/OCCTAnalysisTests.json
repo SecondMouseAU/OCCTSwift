@@ -399,6 +399,18 @@
     "status": "PASS"
   },
   {
+    "test_name": "Geom_SphericalSurface Properties::sphereRadius",
+    "bridge_function": "OCCTSurfaceSphereRadius",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "radius": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "radius": 5.0
     "test_name": "Curve3D Local Properties Tests::Curvature of circle is 1/r",
     "bridge_function": "OCCTCurve3DGetCurvature",
     "bridge_output": {
@@ -588,6 +600,32 @@
     "status": "PASS"
   },
   {
+    "test_name": "BRepGProp_VinertGK::volume integration on box face",
+    "bridge_function": "OCCTBRepGPropVinertGK",
+    "bridge_output": {
+      "type": "volume_integral",
+      "data": {
+        "mass": 166.66666666666663,
+        "errorReached": 4.547473508864642e-16,
+        "center": [
+          -3.75,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "volume_integral",
+      "data": {
+        "mass": 166.66666666666663,
+        "errorReached": 4.547473508864642e-16,
+        "center": [
+          -3.75,
+          0,
+          0
+        ]
+      }
+    },
     "test_name": "Measurement Tests::Volume of box",
     "bridge_function": "OCCTShapeGetVolume",
     "bridge_output": {
@@ -4557,6 +4595,18 @@
     "status": "PASS"
   },
   {
+    "test_name": "Geom_SphericalSurface Properties::sphereSetRadius",
+    "bridge_function": "OCCTSurfaceSphereSetRadius",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "radius_after_set_10": 10.0
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "radius_after_set_10": 10.0
     "test_name": "Extrema_ExtPS Tests::pointOnSurfaceParams",
     "bridge_function": "OCCTExtremaExtPSPoint",
     "bridge_output": {
@@ -4615,6 +4665,18 @@
     "status": "PASS"
   },
   {
+    "test_name": "Geom_SphericalSurface Properties::sphereArea",
+    "bridge_function": "OCCTSurfaceSphereArea",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "area": 314.1592653589793
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "area": 314.1592653589793
     "test_name": "Self-Intersection Tests::Sphere has no self-intersection",
     "bridge_function": "OCCTShapeSelfIntersection",
     "bridge_output": {
@@ -4764,6 +4826,12 @@
     "status": "PASS"
   },
   {
+    "test_name": "Geom_SphericalSurface Properties::sphereVolume",
+    "bridge_function": "OCCTSurfaceSphereVolume",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "volume": 523.5987755982989
     "test_name": "Geom_CylindricalSurface Properties::cylinderRadius",
     "bridge_function": "OCCTSurfaceCylinderRadius",
     "bridge_output": {
@@ -4775,6 +4843,7 @@
     "kernel_output": {
       "type": "scalar",
       "data": {
+        "volume": 523.5987755982989
         "radius": 5.0
       }
     },
@@ -4784,6 +4853,25 @@
     },
     "status": "PASS"
   },
+  {
+    "test_name": "Geom_SphericalSurface Properties::sphereCenter",
+    "bridge_function": "OCCTSurfaceSphereCenter",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": 1.0,
+        "y": 2.0,
+        "z": 3.0
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": 1.0,
+        "y": 2.0,
+        "z": 3.0
+      }
+    },
   {
     "test_name": "Geom_CylindricalSurface Properties::cylinderSetRadius",
     "bridge_function": "OCCTSurfaceCylinderSetRadius",
@@ -4806,6 +4894,32 @@
     "status": "PASS"
   },
   {
+    "test_name": "Geom_SphericalSurface Properties::sphereUIso",
+    "bridge_function": "OCCTSurfaceSphereUIso",
+    "bridge_output": {
+      "type": "iso_curve",
+      "data": {
+        "first": 4.71238898038469,
+        "last": 7.853981633974483,
+        "start": [
+          0.0,
+          0.0,
+          -5.0
+        ],
+        "mid": [
+          5.0,
+          0.0,
+          0.0
+        ],
+        "end": [
+          0.0,
+          0.0,
+          5.0
+          ],
+}
+},
+},
+{
     "test_name": "Geom_CylindricalSurface Properties::cylinderAxis",
     "bridge_function": "OCCTSurfaceCylinderAxis",
     "bridge_output": {
@@ -4824,6 +4938,24 @@
       }
     },
     "kernel_output": {
+      "type": "iso_curve",
+      "data": {
+        "first": 4.71238898038469,
+        "last": 7.853981633974483,
+        "start": [
+          0.0,
+          0.0,
+          -5.0
+        ],
+        "mid": [
+          5.0,
+          0.0,
+          0.0
+        ],
+        "end": [
+          0.0,
+          0.0,
+          5.0
       "type": "axis",
       "data": {
         "position": [
@@ -4845,6 +4977,40 @@
     "status": "PASS"
   },
   {
+    "test_name": "Geom_SphericalSurface Properties::sphereVIso",
+    "bridge_function": "OCCTSurfaceSphereVIso",
+    "bridge_output": {
+      "type": "iso_curve",
+      "data": {
+        "first": 0.0,
+        "last": 6.283185307179586,
+        "start": [
+          5.0,
+          0.0,
+          0.0
+        ],
+        "mid": [
+          -5.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "iso_curve",
+      "data": {
+        "first": 0.0,
+        "last": 6.283185307179586,
+        "start": [
+          5.0,
+          0.0,
+          0.0
+        ],
+        "mid": [
+          -5.0,
+          0.0,
+          0.0
+        ]
     "test_name": "Geom_CylindricalSurface Properties::cylinderUIso",
     "bridge_function": "OCCTSurfaceCylinderUIso",
     "bridge_output": {
@@ -4954,6 +5120,20 @@
     "status": "PASS"
   },
   {
+    "test_name": "BRepGProp_VinertGK::error bounds",
+    "bridge_function": "OCCTBRepGPropVinertGK",
+    "bridge_output": {
+      "type": "volume_integral",
+      "data": {
+        "mass": 20.83333333333333,
+        "errorReached": 4.547473508864642e-16
+      }
+    },
+    "kernel_output": {
+      "type": "volume_integral",
+      "data": {
+        "mass": 20.83333333333333,
+        "errorReached": 4.547473508864642e-16
     "test_name": "BRepExtrema ExtPF Tests::Point-face distance",
     "bridge_function": "OCCTBRepExtremaExtPF",
     "bridge_output": {
@@ -5023,6 +5203,42 @@
     "status": "PASS"
   },
   {
+    "test_name": "Geom_SphericalSurface Properties::sphereSphere",
+    "bridge_function": "OCCTSurfaceSphereSphere",
+    "bridge_output": {
+      "type": "sphere",
+      "data": {
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "radius": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "sphere",
+      "data": {
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "radius": 5.0
+    "test_name": "BRepGProp_VinertGK::vinertGK reports a nonzero error on a curved face, consistent with the true deviation",
+    "bridge_function": "OCCTBRepGPropVinertGK",
+    "bridge_output": {
+      "type": "volume_integral",
+      "data": {
+        "mass": 4188.790219839933,
+        "errorReached": 0.0008086135038665399
+      }
+    },
+    "kernel_output": {
+      "type": "volume_integral",
+      "data": {
+        "mass": 4188.790219839933,
+        "errorReached": 0.0008086135038665399
     "test_name": "Hatch Patterns::Triangle boundary",
     "bridge_function": "OCCTHatchLines",
     "bridge_output": {
@@ -5070,6 +5286,26 @@
     "status": "PASS"
   },
   {
+    "test_name": "BRepGProp_VinertGK::vinertGK's errorReached grows, and stays finite, as mass is driven toward zero",
+    "bridge_function": "OCCTBRepGPropVinertGK",
+    "bridge_output": {
+      "type": "volume_integral",
+      "data": {
+        "farMass": 261.79938779914886,
+        "farError": 2.5693227506791556e-15,
+        "rootY": 7.85398163397448,
+        "nearMass": 5.835999059517825e-14,
+        "nearError": 4.2281776446698254e-06
+      }
+    },
+    "kernel_output": {
+      "type": "volume_integral",
+      "data": {
+        "farMass": 261.79938779914886,
+        "farError": 2.5693227506791556e-15,
+        "rootY": 7.85398163397448,
+        "nearMass": 5.835999059517825e-14,
+        "nearError": 4.2281776446698254e-06
     "test_name": "Hatch Patterns::An island polygon cuts a hole in the hatch fill",
     "bridge_function": "OCCTHatchLines",
     "bridge_output": {

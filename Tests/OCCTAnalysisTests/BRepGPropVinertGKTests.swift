@@ -7,28 +7,34 @@ import simd
 
 @Suite("BRepGProp_VinertGK")
 struct BRepGPropVinertGKTests {
+    /// The volume from the origin to a box face is the pyramid on that face.
+    ///
+    /// #1759: this asserted `#expect(Bool(true))` and could not fail. `Shape.box` is centred on the
+    /// origin and its first face is x = -5, so the volume integrated from the origin to it is the
+    /// pyramid on that 10 x 10 face with apex at the origin: 100 * 5 / 3, centroid three quarters
+    /// of the way from apex to base. BRepGProp_VinertGK reports exactly that
+    /// (`Scripts/repro/766-brepgprop-vinertgk/`).
     @Test("volume integration on box face")
-    func volumeIntegration() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let faces = box.subShapes(ofType: .face)
-            if let face = faces.first {
-                let r = face.vinertGK()
-                // Just verify it completes without crash
-                #expect(Bool(true))
-                let _ = r.mass
-            }
-        }
+    func volumeIntegration() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let face = try #require(box.subShapes(ofType: .face).first)
+        let r = face.vinertGK()
+        #expect(abs(r.mass - 500.0 / 3.0) < 1e-9, "got \(r.mass)")
+        let center = try #require(r.center)
+        #expect(simd_distance(center, SIMD3(-3.75, 0, 0)) < 1e-9, "got \(center)")
     }
 
+    /// The integration error on a planar face is never negative.
+    ///
+    /// #1760: the box and face are required rather than unwrapped with `if let`, which passed
+    /// silently when either was missing. The kernel reports 4.5e-16 here, a genuine residual
+    /// rather than an exact 0 (`Scripts/repro/766-brepgprop-vinertgk/`).
     @Test("error bounds")
-    func errorBounds() {
-        if let box = Shape.box(width: 5, height: 5, depth: 5) {
-            let faces = box.subShapes(ofType: .face)
-            if let face = faces.first {
-                let r = face.vinertGK(tolerance: 0.001)
-                #expect(r.errorReached >= 0)
-            }
-        }
+    func errorBounds() throws {
+        let box = try #require(Shape.box(width: 5, height: 5, depth: 5))
+        let face = try #require(box.subShapes(ofType: .face).first)
+        let r = face.vinertGK(tolerance: 0.001)
+        #expect(r.errorReached >= 0)
     }
 
     /// #732: `errorReached` was hardcoded to `0.0` on every call, which reads as "this integration
