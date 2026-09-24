@@ -4008,5 +4008,435 @@
     "red": "Curve3DInterpolateTangentToleranceParityTests.swift:73 tighter != nil",
     "green": "passed",
     "probe": "Scripts/repro/766-curve-extras-interp/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Plane Projection Tests::Project segment onto XY plane along Z direction",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPlaneProjectionTests.swift",
+    "bridge_function": "OCCTCurve3DProjectOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0) -> (10,7,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomProjLib::ProjectOnPlane: (0,0,0) -> (10, 6.9999999999999991, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "result moved 0.5 in x (and, separately, plane moved 1 in z)",
+    "red": "Curve3DPlaneProjectionTests.swift:30 abs(start.x - 0.0) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Plane Projection Tests::Project circle onto XY plane preserves shape",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPlaneProjectionTests.swift",
+    "bridge_function": "OCCTCurve3DProjectOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": "circle r=5 at z=0, start (5,0,0), mid (-5,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Circle, start (5,0,0), mid (-5, 6.1e-16, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "result moved 0.5 in x",
+    "red": "Curve3DPlaneProjectionTests.swift:54 simd_distance(pt, SIMD3(5, 0, 0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt",
+    "note": "Rewritten: radius to 0.1"
+  },
+  {
+    "test_name": "Curve3D Plane Projection Tests::Project arc onto tilted plane",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPlaneProjectionTests.swift",
+    "bridge_function": "OCCTCurve3DProjectOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": "(5,0,0) -> (0,0,0) -> (-5,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "projected onto y=0: start (5,0,0), mid (0,0,0), end (-5,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "result moved 0.5 in x",
+    "red": "Curve3DPlaneProjectionTests.swift:79 simd_distance(mid, SIMD3(0, 0, 0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt",
+    "note": "Rewritten: checked only the midpoint's y"
+  },
+  {
+    "test_name": "Curve3D Plane Projection Tests::Project BSpline onto plane",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPlaneProjectionTests.swift",
+    "bridge_function": "OCCTCurve3DProjectOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0) -> (10,8,0), every sample at z=0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_BSplineCurve, start (0,0,0), end (10,8,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "plane moved 1 in z (and, separately, result moved in x)",
+    "red": "Curve3DPlaneProjectionTests.swift:105 abs(pt.z) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt",
+    "note": "Strengthened: end points and sample count"
+  },
+  {
+    "test_name": "Curve3D Plane Projection Tests::Projected curve preserves parametric consistency",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPlaneProjectionTests.swift",
+    "bridge_function": "OCCTCurve3DProjectOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": "(2,3,0) -> (12,3,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "start (2,3,0), end (12,3,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "result moved 0.5 in x",
+    "red": "Curve3DPlaneProjectionTests.swift:126 simd_distance(start, SIMD3(2, 3, 0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt",
+    "note": "Strengthened: whole points"
+  },
+  {
+    "test_name": "Curve3D Plane Projection Tests::Project segment along oblique direction",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPlaneProjectionTests.swift",
+    "bridge_function": "OCCTCurve3DProjectOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": "(-10,0,0) -> (0,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "along (1,0,1): start (-10,0,0), end (0,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "projection direction replaced by the plane normal",
+    "red": "Curve3DPlaneProjectionTests.swift:148 abs(start.x - (-10.0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt",
+    "note": "Strengthened: tolerance 1e-3 to 1e-9, end point added"
+  },
+  {
+    "test_name": "Curve3D Plane Projection Tests::Project onto plane with near-parallel direction returns nil or valid curve",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPlaneProjectionTests.swift",
+    "bridge_function": "OCCTCurve3DProjectOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0) -> (10,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "along (1,0,0.001): the in-plane segment unchanged"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "result moved 0.5 in x",
+    "red": "Curve3DPlaneProjectionTests.swift:169 simd_distance(c.point(at: c.domain.lowerBound), SIMD3(0, 0, 0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt",
+    "note": "Rewritten: discarded the result, could not fail"
+  },
+  {
+    "test_name": "Curve3D Primitive Tests::Create segment and verify endpoints",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift",
+    "bridge_function": "OCCTCurve3DCreateSegment",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0) -> (10,5,3)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeSegment, domain [0, 11.575836902790225]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "end point moved 0.5 in z",
+    "red": "Curve3DPrimitiveTests.swift:28 abs(end.z - 3) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Primitive Tests::Degenerate segment returns nil",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift",
+    "bridge_function": "OCCTCurve3DCreateSegment",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: GC_MakeSegment on two coincident points ended the probe with SIGSEGV; the bridge's distance check is what returns nil"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "coincident end nudged 1 in x instead of rejected",
+    "red": "Curve3DPrimitiveTests.swift:35 seg == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt",
+    "note": "Finding: the bridge's pre-check guards a kernel crash"
+  },
+  {
+    "test_name": "Curve3D Primitive Tests::Create circle and verify closed/periodic",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift",
+    "bridge_function": "OCCTCurve3DIsClosed",
+    "bridge_output": {
+      "type": "value",
+      "data": "closed, periodic, period 2 pi"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "closed=1 periodic=1 period=6.2831853071795862"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsClosed negated (and, separately, IsPeriodic negated, Period + 1)",
+    "red": "Curve3DPrimitiveTests.swift:43 circle.isClosed",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt",
+    "note": "Strengthened: period pinned, was != nil"
+  },
+  {
+    "test_name": "Curve3D Primitive Tests::Circle zero radius returns nil",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift",
+    "bridge_function": "OCCTCurve3DCreateCircle",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected by the bridge's own radius check before OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "radius check skipped (radius clamped to 1e-7)",
+    "red": "Curve3DPrimitiveTests.swift:52 circle == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Primitive Tests::Circle point at 0 and pi/2",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift",
+    "bridge_function": "OCCTCurve3DGetPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "(5,0,0) and (0,5,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "value(0)=(5,0) value(pi/2)=(3.1e-16, 5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "value moved 0.5 in y",
+    "red": "Curve3DPrimitiveTests.swift:61 abs(p0.y) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Primitive Tests::Arc through three points",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift",
+    "bridge_function": "OCCTCurve3DCreateArcOfCircle",
+    "bridge_output": {
+      "type": "value",
+      "data": "(5,0,0) -> (-5,0,0), open"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfCircle: (5,0,0) -> (-5,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "start point moved 0.1 in x",
+    "red": "Curve3DPrimitiveTests.swift:75 simd_distance(arc.startPoint, SIMD3(5, 0, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt",
+    "note": "Strengthened: start x to 0.01 before"
+  },
+  {
+    "test_name": "Curve3D Primitive Tests::Create ellipse",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift",
+    "bridge_function": "OCCTCurve3DCreateEllipse",
+    "bridge_output": {
+      "type": "value",
+      "data": "closed, periodic, period 2 pi, point(0) = (10,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "closed=1 periodic=1 period=6.2831853071795862"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsClosed negated (and IsPeriodic, Period, point)",
+    "red": "Curve3DPrimitiveTests.swift:87 e.isClosed",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt",
+    "note": "Strengthened: shape pinned"
+  },
+  {
+    "test_name": "Curve3D Primitive Tests::Invalid ellipse returns nil",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift",
+    "bridge_function": "OCCTCurve3DCreateEllipse",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected by the bridge's radii check before OCCT"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "inverted radii swapped into order instead of rejected",
+    "red": "Curve3DPrimitiveTests.swift:100 e == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Primitive Tests::Create line and verify infinite domain",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift",
+    "bridge_function": "OCCTCurve3DGetDomain",
+    "bridge_output": {
+      "type": "value",
+      "data": "[-2e100, 2e100]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Line domain [-2e+100, 2e+100]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "infinite last parameter reported as 1e10",
+    "red": "Curve3DPrimitiveTests.swift:111 d.upperBound == 2e100",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt",
+    "note": "Rewritten: span > 1e10 passed a finite 1e10 bound"
+  },
+  {
+    "test_name": "Curve3D Primitive Tests::Evaluate segment midpoint",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift",
+    "bridge_function": "OCCTCurve3DGetPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "(5,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "segment midpoint (5,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "value moved 0.5 in y",
+    "red": "Curve3DPrimitiveTests.swift:122 abs(p.y) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D Primitive Tests::D1 returns non-zero tangent",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift",
+    "bridge_function": "OCCTCurve3DD1",
+    "bridge_output": {
+      "type": "value",
+      "data": "unit (10,5,3)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "D1(first) = (0.86386842558136012, 0.43193421279068006, 0.25916052767440806)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "D1.y + 1",
+    "red": "Curve3DPrimitiveTests.swift:130 simd_distance(result.tangent, simd_normalize(SIMD3(10, 5, 3))) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt",
+    "note": "Rewritten: any non-zero tangent passed"
+  },
+  {
+    "test_name": "Curve3D Primitive Tests::D2 second derivative of a circle points from the curve back to its own center",
+    "test_file": "Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift",
+    "bridge_function": "OCCTCurve3DD2",
+    "bridge_output": {
+      "type": "value",
+      "data": "d2 = -P"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "D2(0): P (5,0,0), V2 (-5,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "D2 reversed",
+    "red": "Curve3DPrimitiveTests.swift:143 abs(result.d2.x - (-result.point.x)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-projection-primitives/transcript.txt"
   }
 ]
