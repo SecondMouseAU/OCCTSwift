@@ -1,0 +1,6 @@
+pointToCircle point=(10,0,0): IsDone=1 NbExt=2
+  ext 1: SquareDistance=25 point=(5, 0, 0) param=0
+  ext 2: SquareDistance=225 point=(-5, 6.1232339957367663e-16, 0) param=3.1415926535897931
+pointOnCircle point=(5,0,0): IsDone=1 NbExt=2
+  ext 1: SquareDistance=0 point=(5, 0, 0) param=0
+  ext 2: SquareDistance=100 point=(-5, 6.1232339957367663e-16, 0) param=3.1415926535897931

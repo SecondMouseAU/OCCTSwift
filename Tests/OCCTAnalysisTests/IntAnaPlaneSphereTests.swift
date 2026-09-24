@@ -7,12 +7,24 @@ import simd
 @Suite("IntAna PlaneSphere Tests")
 struct IntAnaPlaneSphereTests {
 
+    // #766: this asserted `count >= 1`, which a wrong result type, a wrong radius or a
+    // fabricated centre all pass. A plane through the centre of a radius-5 sphere cuts its great
+    // circle: one `IntAna_Circle` solution of radius 5 about the origin, axis +Z, probed in
+    // Scripts/repro/766-intanaplanesphere.
     @Test func planeSphereIntersection() {
         let r = IntAna.planeSphere(
             planeOrigin: SIMD3(0, 0, 0), planeNormal: SIMD3(0, 0, 1),
             sphereCenter: SIMD3(0, 0, 0), sphereAxis: SIMD3(0, 0, 1),
             radius: 5.0)
-        #expect(r.count >= 1)
+        #expect(r.count == 1)
+        #expect(r.resultType == .circle)
+        if let circle = r.circles.first {
+            #expect(simd_length(circle.center) < 1e-12)
+            #expect(simd_distance(circle.axis, SIMD3(0, 0, 1)) < 1e-12)
+            #expect(abs(circle.radius - 5) < 1e-12)
+        } else {
+            Issue.record("no circle reported")
+        }
     }
 
     // #1495: `IntAna_QuadQuadGeo::Point()` silently returns `(0, 0, 0)` for the ordinary secant

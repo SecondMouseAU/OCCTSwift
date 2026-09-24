@@ -1,74 +1,226 @@
 [
   {
-    "test_name": "Issue 622: result buffer capacities clamp rather than trap",
-    "bridge_function": "OCCTShapeProject",
-    "bridge_output": {"type": "int", "data": 5},
-    "kernel_output": {"type": "int", "data": 5},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "One GROUPED 12-double reader, shared by all three call sites (#1009)::Shape.transformed(matrix:) moves the shape by the GROUPED translation",
+    "test_file": "Tests/OCCTMiscTests/Issue1009Matrix12GroupedTests.swift",
+    "bridge_function": "OCCTShapeTransformed",
+    "bridge_output": {
+      "type": "bbox_shift",
+      "data": {
+        "min": [
+          5,
+          6,
+          7
+        ],
+        "max": [
+          5,
+          6,
+          7
+        ],
+        "tolerance": 1e-09
+      }
+    },
+    "kernel_output": {
+      "type": "bbox",
+      "data": {
+        "before": {
+          "min": [
+            -5.0000001,
+            -5.0000001,
+            -5.0000001
+          ],
+          "max": [
+            5.0000001,
+            5.0000001,
+            5.0000001
+          ]
+        },
+        "after": {
+          "min": [
+            -1e-07,
+            0.9999999,
+            1.9999999
+          ],
+          "max": [
+            10.0000001,
+            11.0000001,
+            12.0000001
+          ]
+        },
+        "shift": [
+          5,
+          6,
+          7
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: Shape.allDistanceSolutions clamps maxSolutions",
-    "bridge_function": "OCCTShapeAllDistanceSolutions",
-    "bridge_output": {"type": "int", "data": 10},
-    "kernel_output": {"type": "int", "data": 10},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "One GROUPED 12-double reader, shared by all three call sites (#1009)::A GROUPED matrix agrees with the same transform written INTERLEAVED",
+    "test_file": "Tests/OCCTMiscTests/Issue1009Matrix12GroupedTests.swift",
+    "bridge_function": "OCCTShapeTransformed / OCCTShapeTransformFromMatrix",
+    "bridge_output": {
+      "type": "bbox_agreement",
+      "data": {
+        "groupedEqualsInterleaved": true,
+        "tolerance": 1e-09,
+        "minXMovedOffPureTranslation": true
+      }
+    },
+    "kernel_output": {
+      "type": "bbox",
+      "data": {
+        "grouped": {
+          "min": [
+            -1.83012711892,
+            -0.830127118922,
+            1.9999999
+          ],
+          "max": [
+            11.8301271189,
+            12.8301271189,
+            12.0000001
+          ]
+        },
+        "interleaved": {
+          "min": [
+            -1.83012711892,
+            -0.830127118922,
+            1.9999999
+          ],
+          "max": [
+            11.8301271189,
+            12.8301271189,
+            12.0000001
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: Shape.selfIntersectionPairs clamps maxPairs",
-    "bridge_function": "OCCTShapeSelfIntersectionPairs",
-    "bridge_output": {"type": "int", "data": 3},
-    "kernel_output": {"type": "int", "data": 3},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "One GROUPED 12-double reader, shared by all three call sites (#1009)::Curve3D.parametricTransformation reads the rotation from the GROUPED slots",
+    "test_file": "Tests/OCCTMiscTests/Issue1009Matrix12GroupedTests.swift",
+    "bridge_function": "OCCTCurve3DParametricTransformation",
+    "bridge_output": {
+      "type": "scalars",
+      "data": {
+        "scale2": 2,
+        "translate567": 1,
+        "wireShift": [
+          5,
+          6,
+          7
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "scalars",
+      "data": {
+        "scale2": 2,
+        "translate567": 1,
+        "wireShift": [
+          5,
+          6,
+          7
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: KDTree search capacities clamp rather than trap",
-    "bridge_function": "OCCTKDTreeSearch",
-    "bridge_output": {"type": "int", "data": 100},
-    "kernel_output": {"type": "int", "data": 100},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "One GROUPED 12-double reader, shared by all three call sites (#1009)::Document.addComponent(matrix:) places the component at the GROUPED translation",
+    "test_file": "Tests/OCCTMiscTests/Issue1009Matrix12GroupedTests.swift",
+    "bridge_function": "OCCTDocumentAddComponentMatrix",
+    "bridge_output": {
+      "type": "bbox_shift",
+      "data": {
+        "min": [
+          5,
+          6,
+          7
+        ],
+        "tolerance": 1e-09
+      }
+    },
+    "kernel_output": {
+      "type": "bbox",
+      "data": {
+        "note": "TopoDS_Shape::Moved(TopLoc_Location(grouped translate567)), the placement an XCAF component carries",
+        "after": {
+          "min": [
+            -1e-07,
+            0.9999999,
+            1.9999999
+          ],
+          "max": [
+            10.0000001,
+            11.0000001,
+            12.0000001
+          ]
+        },
+        "shift": [
+          5,
+          6,
+          7
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: Selector.pick overloads clamp maxResults",
-    "bridge_function": "OCCTSelectorPick",
-    "bridge_output": {"type": "int", "data": 20},
-    "kernel_output": {"type": "int", "data": 20},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "Issue 622: HatchPattern.generate clamps maxSegments",
-    "bridge_function": "OCCTHatchPatternGenerate",
-    "bridge_output": {"type": "int", "data": 50},
-    "kernel_output": {"type": "int", "data": 50},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "Issue 622: UnicodeUtils.convertFromUnicode clamps buffer",
-    "bridge_function": "OCCTUnicodeConvert",
-    "bridge_output": {"type": "string", "data": "test"},
-    "kernel_output": {"type": "string", "data": "test"},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "Issue 622: directory and file listing clamp maxCount",
-    "bridge_function": "OCCTDirectoryListing",
-    "bridge_output": {"type": "int", "data": 1000},
-    "kernel_output": {"type": "int", "data": 1000},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "Issue 622: LogSample.sample fills its buffer exactly",
-    "bridge_function": "OCCTLogSample",
-    "bridge_output": {"type": "int", "data": 1000},
-    "kernel_output": {"type": "int", "data": 1000},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "One GROUPED 12-double reader, shared by all three call sites (#1009)::Document.addComponent(matrix:) accepts a reflection and actually reflects",
+    "test_file": "Tests/OCCTMiscTests/Issue1009Matrix12GroupedTests.swift",
+    "bridge_function": "OCCTDocumentAddComponentMatrix",
+    "bridge_output": {
+      "type": "bbox_x",
+      "data": {
+        "componentId>=0": true,
+        "minX": -11,
+        "maxX": -1,
+        "tolerance": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "bbox",
+      "data": {
+        "SetValues_accepted": true,
+        "IsNegative": true,
+        "ScaleFactor": -1,
+        "after": {
+          "min": [
+            -11.0000001,
+            -1e-07,
+            -1e-07
+          ],
+          "max": [
+            -0.9999999,
+            10.0000001,
+            10.0000001
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   }
 ]
