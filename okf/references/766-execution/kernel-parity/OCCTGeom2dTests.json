@@ -10385,5 +10385,331 @@
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": "asserted nothing (`_ = hits`) on a fixture whose C and D coincide in Double at 1e149; new fixture pinned to (0, 5)"
     }
+  },
+  {
+    "test_name": "Issue #1646, 2D evaluator contract::Every D0 evaluator refuses the argument its OCCT constructor rejects",
+    "bridge_function": "OCCTGeom2dEval*D0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil x7"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "constructors": "all seven throw Standard_ConstructionError"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Swift wrapper ignores the bridge's bool (the pre-#1646 void contract)",
+      "red": "Issue1646EvaluatorContractTests.swift:33:9: Expectation failed: Geom2dEval.sineWaveD0(amplitude: 0, omega: 1, phase: 0, u: 0.5) == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-evaluator-contract/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue #1646, 2D evaluator contract::Every D1 evaluator refuses the argument its OCCT constructor rejects",
+    "bridge_function": "OCCTGeom2dEval*D1",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil x4"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": "nil x4"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Swift wrapper ignores the bridge's bool",
+      "red": "Issue1646EvaluatorContractTests.swift:46:9: Expectation failed: Geom2dEval.sineWaveD1(amplitude: 0, omega: 1, phase: 0, u: 0.5) == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-evaluator-contract/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue #1646, 2D evaluator contract::The same evaluators answer the accepted argument beside each rejected one",
+    "bridge_function": "OCCTGeom2dEval*D0/D1",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "sine": [
+          0.5,
+          0.479425538604
+        ],
+        "involute": [
+          1.11729533119,
+          0.040634257659
+        ],
+        "archimedean": [
+          0.921461689985,
+          0.503396815534
+        ],
+        "log": [
+          0.969878725612,
+          0.529847162648
+        ],
+        "sineD1": [
+          1,
+          0.87758256189
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "sine": [
+          0.5,
+          0.479425538604
+        ],
+        "involute": [
+          1.11729533119,
+          0.040634257659
+        ],
+        "archimedean": [
+          0.921461689985,
+          0.503396815534
+        ],
+        "log": [
+          0.969878725612,
+          0.529847162648
+        ],
+        "sineD1": [
+          1,
+          0.87758256189
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "D0 writer adds 1e-3 to x",
+      "red": "Issue1646EvaluatorContractTests.swift:59:9: Expectation failed: simd_distance(sine, SIMD2(0.5, 0.479425538604)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-evaluator-contract/",
+      "rewritten": "`isFinite` only; now all five pinned"
+    }
+  },
+  {
+    "test_name": "Issue #1646, 2D evaluator contract::A legitimate evaluation at the origin is a value, not a refusal",
+    "bridge_function": "OCCTGeom2dEvalSineWaveD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "D0 writer refuses an exact (0, 0)",
+      "red": "Issue1646EvaluatorContractTests.swift:79:21: Expectation failed: Geom2dEval.sineWaveD0(amplitude: 1, omega: 1, phase: 0, u: 0)",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-evaluator-contract/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue #1646, 2D evaluator contract::A NaN argument is refused, not answered with a NaN point",
+    "bridge_function": "occtEval2dWriteD0/D1",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil x7"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "EvalD0": "(nan, nan) / (nan, inf)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "finite-output check skipped",
+      "red": "Issue1646EvaluatorContractTests.swift:89:9: Expectation failed: Geom2dEval.sineWaveD0(amplitude: .nan, omega: 1, phase: 0, u: 0.5) == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-evaluator-contract/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue #1646, 2D evaluator contract::A NaN parameter is refused, and EvalD0 never raises on one",
+    "bridge_function": "occtEval2dWriteD0/D1",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil x3"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "EvalD0": "(nan, nan)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "finite-output check skipped",
+      "red": "Issue1646EvaluatorContractTests.swift:101:9: Expectation failed: Geom2dEval.sineWaveD0(amplitude: 1, omega: 1, phase: 0, u: .nan) == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-evaluator-contract/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue #1646, 2D evaluator contract::A finite argument whose evaluation overflows is refused",
+    "bridge_function": "OCCTGeom2dEvalLogSpiralD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "u=1000": "nil",
+        "u=1": [
+          1.46869393992,
+          2.28735528718
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "EvalD0(1000)": "(nan, nan)",
+        "EvalD0(1)": [
+          1.46869393992,
+          2.28735528718
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "finite-output check skipped",
+      "red": "Issue1646EvaluatorContractTests.swift:113:9: Expectation failed: Geom2dEval.logarithmicSpiralD0(scale: 1, growthExponent: 1, u: 1000) == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-evaluator-contract/",
+      "rewritten": "neighbour was `isFinite`; now pinned"
+    }
+  },
+  {
+    "test_name": "Issue #1646, 2D evaluator contract::The placement overloads refuse a bad radius, direction, or non-finite argument",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteD0/D1WithPlacement",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil x7"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": "nil x7"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Swift wrapper ignores the bridge's bool",
+      "red": "Issue1646EvaluatorContractTests.swift:122:9: Expectation failed: Geom2dEval.circleInvoluteD0(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-evaluator-contract/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue #1646, 2D evaluator contract::The placement overloads answer a well-formed call",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteD0/D1WithPlacement",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "D0(0)": [
+          12,
+          20
+        ],
+        "D1(1) P": [
+          12.7635465814,
+          20.6023373579
+        ],
+        "D1(1) D1": [
+          1.08060461174,
+          1.68294196962
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "D0(0)": [
+          12,
+          20
+        ],
+        "D1(1) P": [
+          12.7635465814,
+          20.6023373579
+        ],
+        "D1(1) D1": [
+          1.08060461174,
+          1.68294196962
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "D0 writer adds 1e-3 to x",
+      "red": "Issue1646EvaluatorContractTests.swift:156:9: Expectation failed: abs(p.x - 12.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-evaluator-contract/",
+      "rewritten": "D1 row was `isFinite` on one component each; now both pinned"
+    }
   }
 ]
