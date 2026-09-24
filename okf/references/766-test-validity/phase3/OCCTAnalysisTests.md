@@ -10,7 +10,10 @@
 
 | Suite | Test | Defect Category | Injection Target |
 |-------|------|-----------------|------------------|
-| **BRepGProp Face Tests** | BRepGProp Face Tests | Face properties | Remove face props |
+| **BRepGProp Face Tests** | Natural bounds of box face | BRepGProp_Face::Bounds | swap uMin/uMax after Bounds() |
+| **BRepGProp Face Tests** | Evaluate GProp normal on box face | BRepGProp_Face::Normal | normal = (0,0,0) after Normal() |
+| **BRepGProp Face Tests** | Evaluate GProp normal on cylinder face | BRepGProp_Face::Normal | normal = (0,0,0) after Normal() |
+| **BRepGProp Face Tests** | GProp normal magnitude is area element | BRepGProp_Face::Normal | normal *= u after Normal() |
 | **IntCurvesFace Intersection** | Line-face intersection | Curve-face intersection | Return no intersection points |
 | **IntCurvesFace Intersection** | Line parallel to a face does not intersect it | Curve-face intersection | Report a spurious point |
 | **ShapeRayIntersection Tests** | hit face access | Ray-shape hit iteration | More() returns false |
@@ -277,7 +280,10 @@
 
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
-| BRepGProp Face Tests | OCCTBRepGPropFace | Face properties | Remove face props | ✅ | ✅ |  |
+| Natural bounds of box face | OCCTFaceGetNaturalBounds | BRepGProp_Face::Bounds | swap uMin/uMax after Bounds() | ✅ | ✅ | Red: BRepGPropFaceTests.swift:19 `bounds.uMax > bounds.uMin`. Parity MATCH, `Scripts/repro/766-brepgprop-face/`. |
+| Evaluate GProp normal on box face | OCCTFaceEvaluateNormalAtUV | BRepGProp_Face::Normal | normal = (0,0,0) after Normal() | ✅ | ✅ | Red: BRepGPropFaceTests.swift:43 `mag > 0.01`. Parity MATCH, `Scripts/repro/766-brepgprop-face/`. |
+| Evaluate GProp normal on cylinder face | OCCTFaceEvaluateNormalAtUV | BRepGProp_Face::Normal | normal = (0,0,0) after Normal() | ✅ | ✅ | Red: BRepGPropFaceTests.swift:68 `found`. Parity MATCH, `Scripts/repro/766-brepgprop-face/`. |
+| GProp normal magnitude is area element | OCCTFaceEvaluateNormalAtUV | BRepGProp_Face::Normal | normal *= u after Normal() | ✅ | ✅ | Red: BRepGPropFaceTests.swift:92 `abs(mag1 - mag2) < 0.001`. Parity MATCH, `Scripts/repro/766-brepgprop-face/`. |
 | Line-face intersection | OCCTLocOpeCSIntersectLine | Curve-face intersection | Return no intersection points | ✅ | ✅ |  |
 | Line parallel to a face does not intersect it | OCCTLocOpeCSIntersectLine | Curve-face intersection | Report a spurious point | ✅ | ✅ |  |
 | hit face access | OCCTCurveSurfaceInterMore | Ray-shape hit iteration | More() returns false | ✅ | ✅ |  |
@@ -476,7 +482,10 @@ For each test, run ground-truth C++ comparison:
 
 | Test | Red→Green Done | Parity Done | PR Ready |
 |------|----------------|-------------|----------|
-| BRepGProp Face Tests | ✅ | ✅ | ✅ |
+| Natural bounds of box face | ✅ | ✅ | ✅ |
+| Evaluate GProp normal on box face | ✅ | ✅ | ✅ |
+| Evaluate GProp normal on cylinder face | ✅ | ✅ | ✅ |
+| GProp normal magnitude is area element | ✅ | ✅ | ✅ |
 | Line-face intersection | ✅ | ✅ | ✅ |
 | Line parallel to a face does not intersect it | ✅ | ✅ | ✅ |
 | hit face access | ✅ | ✅ | ✅ |

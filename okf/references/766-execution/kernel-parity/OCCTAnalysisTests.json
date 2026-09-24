@@ -5255,5 +5255,133 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Face Tests::Natural bounds of box face",
+    "bridge_function": "OCCTFaceGetNaturalBounds",
+    "bridge_output": {
+      "type": "uv_bounds",
+      "data": {
+        "u": [
+          0.0,
+          30.0
+        ],
+        "v": [
+          -20.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "uv_bounds",
+      "data": {
+        "u": [
+          0.0,
+          30.0
+        ],
+        "v": [
+          -20.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-brepgprop-face/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Face Tests::Evaluate GProp normal on box face",
+    "bridge_function": "OCCTFaceEvaluateNormalAtUV",
+    "bridge_output": {
+      "type": "gprop_normal",
+      "data": {
+        "point": [
+          -5.0,
+          0.0,
+          0.0
+        ],
+        "normal": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "magnitude": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "gprop_normal",
+      "data": {
+        "point": [
+          -5.0,
+          0.0,
+          0.0
+        ],
+        "normal": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "magnitude": 1.0
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-brepgprop-face/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Face Tests::Evaluate GProp normal on cylinder face",
+    "bridge_function": "OCCTFaceEvaluateNormalAtUV",
+    "bridge_output": {
+      "type": "gprop_normal_magnitudes",
+      "data": {
+        "lateral": 5.0,
+        "top_cap": 1.0,
+        "bottom_cap": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "gprop_normal_magnitudes",
+      "data": {
+        "lateral": 5.0,
+        "top_cap": 1.0,
+        "bottom_cap": 1.0
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-brepgprop-face/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Face Tests::GProp normal magnitude is area element",
+    "bridge_function": "OCCTFaceEvaluateNormalAtUV",
+    "bridge_output": {
+      "type": "gprop_normal_magnitudes",
+      "data": {
+        "at_min_corner": 1.0,
+        "at_max_corner": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "gprop_normal_magnitudes",
+      "data": {
+        "at_min_corner": 1.0,
+        "at_max_corner": 1.0
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-brepgprop-face/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
