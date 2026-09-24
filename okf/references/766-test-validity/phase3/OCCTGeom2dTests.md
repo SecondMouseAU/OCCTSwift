@@ -649,3 +649,14 @@ Probe: `Scripts/repro/766-geom2d-gccana-bisector-circ/`. Every row was run red w
 | Curve2D measured continuity encoding after the retirement (#619)::An analytic 2D curve reports CN as ordinal 6, the old encoding's 99 is unreachable | `OCCTCurve2DGetContinuity` | pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99) | ✅ | ✅ | MATCH |  |
 | Curve2D measured continuity encoding after the retirement (#619)::A C1 pcurve reports C1 as ordinal 2, not 1 | `OCCTCurve2DGetContinuity` | pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99) | ✅ | ✅ | MATCH |  |
 | Curve2D measured continuity encoding after the retirement (#619)::A raw threshold of 2 now admits a merely-C1 pcurve; satisfies(.c2) still refuses it | `OCCTCurve2DGetContinuity` | pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99) | ✅ | ✅ | MATCH |  |
+### #1979 executed: `Curve2DConvertToLineTests.swift`, `Curve2DEvalTests.swift`, `Curve2DExtrasTests.swift`, `Curve2DExtrasV112Tests.swift`
+Probe: `Scripts/repro/766-geom2d-eval-extras/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D ConvertToLine Tests::Convert linear BSpline to line | `OCCTCurve2DConvertToLine` | newLast + 1 | ✅ | ✅ | MATCH | `result != nil` inside `if let`; now pins the range, deviation and end point |
+| Curve2D Evaluation v0.110::evalD0Circle | `OCCTCurve2DEvalD0` | x + 1 | ✅ | ✅ | MATCH | nested in `if let curve` |
+| Curve2D Evaluation v0.110::evalD1Circle | `OCCTCurve2DEvalD1` | D1.y + 1 | ✅ | ✅ | MATCH | nested in `if let curve` |
+| Curve2D Evaluation v0.110::evalD2Circle | `OCCTCurve2DEvalD2` | D2.x + 1 | ✅ | ✅ | MATCH | nested in `if let curve` |
+| Curve2D Extras v0.109::reverseCurve2D | `OCCTCurve2DReverse` | return true without reversing | ✅ | ✅ | MATCH | only the returned Bool; now pins the reversed point |
+| Curve2D Extras v0.109::copyCurve2D | `OCCTCurve2DCopy` | translate the copy by (1, 0) | ✅ | ✅ | MATCH | nested in `if let` |
+| Curve2D Extras v0.109::copiedCurve2DIndependent | `OCCTCurve2DCopy` | return a wrapper sharing the original geometry | ✅ | ✅ | MATCH | `copy.isClosed` passed a shared "copy"; now reverses the original and checks the copy is untouched |
+| Curve2D extras v0.112::curveType | `OCCTCurve2DCurveType` | GetType() + 1 | ✅ | ✅ | MATCH | nested in `if let` |
+| Curve2D extras v0.112::nearestParameterOnLine | `OCCTCurve2DNearestParameter` | parameter + 0.05 (inside the old 0.1 tolerance) | ✅ | ✅ | MATCH | 0.1 slack passed a parameter off by 0.05; now 1e-9 |

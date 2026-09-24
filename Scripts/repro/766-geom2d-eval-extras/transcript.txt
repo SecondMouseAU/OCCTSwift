@@ -1,0 +1,7 @@
+ConvertToLine2d: interpolant domain=[0, 10] line=Geom2d_Line newFirst=0 newLast=10 deviation=0
+  line location=(0, 0) direction=(1, 0) value(newLast)=(10, 0)
+circle r5 D2(0): P=(5, 0) D1=(-0, 5) D2=(-5, -0)
+line after Reverse: value(1)=(-1, 0)
+circle copy then reverse original: orig value(pi/2)=(3.06161699787e-16, -5) copy value(pi/2)=(3.06161699787e-16, 5) copy closed=1
+Geom2dAdaptor type line=0 circle=1
+nearest parameter of (5,0) on x-axis line: 5
