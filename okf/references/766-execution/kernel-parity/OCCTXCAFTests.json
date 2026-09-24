@@ -133,7 +133,7 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "signature": "linear"
+        "signature": 1
       }
     },
     "kernel_output": {
@@ -147,6 +147,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the signature ordinal. Bridge: the test set PatternSignature.linear (raw value 1) and patternGetSignature returned .linear; OCCTDocumentPatternGetSignature returns the int32 that Swift maps back through PatternSignature(rawValue:), so the ordinal is 1. Kernel: TDataXtd_PatternStd Signature(1) read back as 1.",
     "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
   },
   {
@@ -177,13 +178,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "v": false
+        "has_pattern": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "fresh": false
+        "has_pattern": false
       }
     },
     "comparison": {
@@ -191,6 +192,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: has_pattern. Bridge: doc.hasPattern(labelId:) on a fresh label returned false. Kernel: a fresh label has no TDataXtd_PatternStd attribute (IsAttribute(GetPatternID()) false).",
     "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
   },
   {
@@ -221,13 +223,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "v": false
+        "has_placement": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "fresh": false
+        "has_placement": false
       }
     },
     "comparison": {
@@ -235,6 +237,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: has_placement. Bridge: doc.hasPlacement(labelId:) on a fresh label returned false. Kernel: a fresh label has no TDataXtd_Placement attribute (IsAttribute false).",
     "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
   },
   {
@@ -273,14 +276,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "has": false,
-        "p": null
+        "has_position": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "fresh_has_position": false
+        "has_position": false
       }
     },
     "comparison": {
@@ -288,6 +290,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: has_position. Bridge: label.hasPositionAttribute was false and positionAttribute() was nil (OCCTDocumentHasPositionAttr returns TDataXtd_Position::Get's result). Kernel: a fresh label has no TDataXtd_Position attribute (IsAttribute false).",
     "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
   },
   {
@@ -349,7 +352,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "width": 2,
+        "width": 2.0,
         "mode": 1
       }
     },
@@ -358,6 +361,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: width (a double) and mode. Bridge: the test observed presentationGetWidth within 1e-6 of 2.0 and mode == 1. Kernel: TDataXtd_Presentation Width() printed 2 (%g) after SetWidth(2.0), and Mode() printed 1; both sides are recorded as the double 2.0.",
     "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
   },
   {
