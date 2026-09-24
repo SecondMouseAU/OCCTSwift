@@ -52,7 +52,19 @@ struct HatchTests {
             direction: SIMD2(1, 0),
             spacing: 1.0
         )
-        #expect(segments.count > 0)
+        // `count > 0` accepted untrimmed lines. Hatch_Hatcher's answer, measured by
+        // Scripts/repro/766-hatch/probe.mm: one segment on each of y = 1...9 (y = 0 and y = 10
+        // pass through a vertex and carry none), each running from the left side x = y/2 to
+        // the right side x = 10 - y/2 of the triangle (#1702).
+        #expect(segments.count == 9)
+        for (i, seg) in segments.enumerated() {
+            let y = Double(i + 1)
+            let lo = min(seg.start.x, seg.end.x)
+            let hi = max(seg.start.x, seg.end.x)
+            #expect(abs(seg.start.y - y) < 1e-9 && abs(seg.end.y - y) < 1e-9)
+            #expect(abs(lo - y / 2) < 1e-9)
+            #expect(abs(hi - (10 - y / 2)) < 1e-9)
+        }
     }
 
     // MARK: - #1172: islands (holes) via Hatch_Hatcher::Trim
@@ -87,5 +99,17 @@ struct HatchTests {
             // interior (x in 7...13).
             #expect(hi <= 7.0 + 1e-6 || lo >= 13.0 - 1e-6)
         }
+        // The half-spans must also reach the outer boundary: the check above accepted
+        // zero-length segments. Hatch_Hatcher's answer, measured by
+        // Scripts/repro/766-hatch/probe.mm, is exactly [0, 7] and [13, 20] (#1703).
+        let spans = atY10.map { (min($0.start.x, $0.end.x), max($0.start.x, $0.end.x)) }
+            .sorted { $0.0 < $1.0 }
+        if spans.count == 2 {
+            #expect(abs(spans[0].0 - 0) < 1e-9 && abs(spans[0].1 - 7) < 1e-9)
+            #expect(abs(spans[1].0 - 13) < 1e-9 && abs(spans[1].1 - 20) < 1e-9)
+        }
+        // The whole fill: 11 lines at y = 0, 2, ..., 20; y = 0 carries nothing, y = 8, 10, 12
+        // cross the island and split in two, the rest span the full width.
+        #expect(segments.count == 13)
     }
 }
