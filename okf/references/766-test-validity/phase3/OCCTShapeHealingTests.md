@@ -327,3 +327,43 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: BSplineRestrictionAdvanced, ConvertToBSplineAdvanced, Curve* (10 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-curve-custom/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `restrictBox` | BSplineRestrictionAdvancedTests.swift | `OCCTShapeBSplineRestrictionAdvanced` | BSPRESTRADV: treat the modifier as not done | BSplineRestrictionAdvancedTests.swift:16 `#require(Shape.bsplineRestrictionAdvanced(...))` | pass | PASS |
+| `convertCylinder` | ConvertToBSplineAdvancedTests.swift | `OCCTShapeConvertToBSplineAdvanced` | CONVBSPADV: planeMode forced true | ConvertToBSplineAdvancedTests.swift:26 `kinds.filter { $0 == .plane }.count == 2` | pass | PASS |
+| `convertToPeriodic` | CurveConvertToPeriodicTests.swift | `OCCTCurve3DConvertToPeriodic` | PERIODIC: return the input curve unconverted | CurveConvertToPeriodicTests.swift:24 `periodic.isPeriodic` | pass | PASS |
+| `projectOntoLine` | CurveProjectTests.swift | `OCCTCurve3DProjectPoint` | PROJECT: report the squared distance | CurveProjectTests.swift:15 `abs(proj.distance - 3.0) < 1e-9` | pass | PASS |
+| `projectOntoCircle` | CurveProjectTests.swift | `OCCTCurve3DProjectPoint` | PROJECT: report the squared distance | CurveProjectTests.swift:25 `abs(proj.distance - 5.0) < 1e-9` | pass | PASS |
+| `sampleCircle` | CurveSamplePointsTests.swift | `OCCTCurve3DGetSamplePoints3D` | SAMPLES: drop the last point (off by one) | CurveSamplePointsTests.swift:17 `points.count == 360` | pass | PASS |
+| `sampleLine` | CurveSamplePointsTests.swift | `OCCTCurve3DGetSamplePoints3D` | SAMPLES: drop the last point (off by one) | CurveSamplePointsTests.swift:31 `points == [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]` | pass | PASS |
+| `splitCurve` | CurveSplitTests.swift | `OCCTCurve3DSplitAt` | SPLIT: hand the two pieces back swapped | CurveSplitTests.swift:24 `abs(result.first.domain.lowerBound - dom.lowerBound) < 1e-9` | pass | PASS |
+| `validateInBounds` | CurveValidateRangeTests.swift | `OCCTCurve3DValidateRange` | VALIDRANGE: ignore the kernel, echo the inputs with wasAdjusted false | CurveValidateRangeTests.swift:20 `result.wasAdjusted` | pass | PASS: wasAdjusted is ValidateRange's 'OK or corrected' flag, true for an untouched range |
+| `validateOutOfBounds` | CurveValidateRangeTests.swift | `OCCTCurve3DValidateRange` | VALIDRANGE: ignore the kernel, echo the inputs with wasAdjusted false | CurveValidateRangeTests.swift:28 `abs(result.first) < 1e-12` | pass | PASS |
+## #766 measured: DivideByNumber, EncodeRegularity, FastSewing (11 tests)
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-divide-encode-fastsew/transcript.txt`.
+| `divideBox` | DivideByNumberTests.swift | `OCCTShapeDivideByNumber` | DIVNUM: leave MaxArea() at its default (the pre-#1491 defect) | DivideByNumberTests.swift:24 `result?.faces().count == 24` | pass | PASS |
+| `divideOnePart` | DivideByNumberTests.swift | `OCCTShapeDivideByNumber` | DIVNUM1: bypass the Swift parts>1 guard and return the input when Perform() is false | DivideByNumberTests.swift:34 `result == nil` | pass | PASS: kernel Perform false at (1,1); Swift guard refuses first |
+| `divideCylinder` | DivideByNumberTests.swift | `OCCTShapeDivideByNumber` | DIVNUM: leave MaxArea() at its default | DivideByNumberTests.swift:45 `result?.faces().count == 6` | pass | PASS |
+| `encodeRegularityBox` | EncodeRegularityTests.swift | `OCCTShapeEncodeRegularity` | ENCODE: copy the shape and skip BRepLib::EncodeRegularity | EncodeRegularityTests.swift:36 `sharedEdgeCodes(r) == [c0 x 12]` | pass | PASS |
+| `encodeRegularityFilleted` | EncodeRegularityTests.swift | `OCCTShapeEncodeRegularity` | ENCNULL: return nullptr (ENCODE alone leaves it green: the fillet already encoded every edge) | EncodeRegularityTests.swift:45 `#require(box.encodingRegularity(toleranceDegrees: 1.0))` | pass | PASS |
+| `fixtureStartsUnencoded` | EncodeRegularityTests.swift | `OCCTMakeShell` | SHELLENC: OCCTMakeShell encodes regularity on the shell it builds | EncodeRegularityTests.swift:152 `!Shape.hasContinuity(edge:face1:face2:)` | pass | PASS |
+| `defaultToleranceMarksNearTangentEdgeRegular` | EncodeRegularityTests.swift | `OCCTShapeEncodeRegularity` | ENCODE: skip BRepLib::EncodeRegularity | EncodeRegularityTests.swift:170 `Shape.hasContinuity(edge:face1:face2:)` | pass | PASS |
+| `oldBuggyDefaultStillDoesNotMarkRegular` | EncodeRegularityTests.swift | `OCCTShapeEncodeRegularity` | ENCUNITS: pass the degree value to BRepLib as radians | EncodeRegularityTests.swift:190 `continuity == ContinuityClass.c0.rawValue` | pass | PASS |
+| `fastSewValid` | FastSewingTests.swift | `OCCTShapeFastSewn` | FASTSEWNULL: return nullptr | FastSewingTests.swift:21 `sewn != nil` | pass | PASS |
+| `fastSewTolerance` | FastSewingTests.swift | `OCCTShapeFastSewn` | FASTSEWNULL: return nullptr | FastSewingTests.swift:42 `#require(sphere.fastSewn(tolerance: 0.01))` | pass | PASS |
+| `fastSewBoxReturnsNil` | FastSewingTests.swift | `OCCTShapeFastSewn` | FASTSEWPASS: hand back the input when GetResult() is null (the #1475 shape) | FastSewingTests.swift:61 `sewn == nil` | pass | PASS |
+## #766 measured: FreeBoundsTests, GeometryConversionTests (8 tests)
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-freebounds-geomconv/transcript.txt`.
+| `closedSolidNoFreeBounds` | FreeBoundsTests.swift | `OCCTShapeFreeBounds` | FBEMPTYOK: return the empty compound instead of nil when nothing is free | FreeBoundsTests.swift:14 `result == nil` | pass | PASS |
+| `compoundFacesHasFreeBounds` | FreeBoundsTests.swift | `OCCTShapeFreeBounds` | FBSWAP: closed and open counts written to each other's out-param | FreeBoundsTests.swift:29 `result.closedCount == 1` | pass | PASS |
+| `freeBoundsSphere` | FreeBoundsTests.swift | `OCCTShapeFreeBounds` | FBEMPTYOK | FreeBoundsTests.swift:39 `result == nil` | pass | PASS |
+| `fixFreeBoundsCallable` | FreeBoundsTests.swift | `OCCTShapeFixFreeBounds` | FIXFBWIRES: return the closed-wire compound instead of GetShape() (the #1636 defect) | FreeBoundsTests.swift:49 `repair.shape.subShapes(ofType: .face).count == 1` | pass | PASS |
+| `issue310DisjointFacesFreeBounds` | FreeBoundsTests.swift | `OCCTShapeFreeBoundsClosedCount` | FBOPENCLOSED: count GetOpenWires() in the closed-count function | FreeBoundsTests.swift:72 `freeBoundsClosedCount(tolerance: 0.01) == 2` | pass | PASS |
+| `cylinderToBSpline` | GeometryConversionTests.swift | `OCCTShapeCustomConvertToBSpline` | CUSTBSPFLAG: pass !plane | GeometryConversionTests.swift:31 `kinds(result) == [.plane: 2, .cylinder: 1]` | pass | PASS |
+| `toRevolution` | GeometryConversionTests.swift | `OCCTShapeCustomConvertToRevolution` | CUSTREV: return the input unconverted | GeometryConversionTests.swift:40 `kinds(result) == [.plane: 2, .surfaceOfRevolution: 1]` | pass | PASS |
+| `bsplinePreservesVolume` | GeometryConversionTests.swift | `OCCTShapeCustomConvertToBSpline` | CUSTBSPFLAG: pass !plane | GeometryConversionTests.swift:50 `kinds(result) == [.cylinder: 1, .bsplineSurface: 2]` | pass | PASS |
