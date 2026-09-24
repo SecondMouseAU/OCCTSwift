@@ -1776,5 +1776,270 @@
     },
     "status": "PASS",
     "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T setters reject values that name no enumerator (#1037)::A dimension modifier outside the enum is refused, and the sequence stays untouched",
+    "bridge_function": "OCCTDocumentSetDimensionModifiers",
+    "bridge_output": {
+      "type": "modifiers",
+      "data": {
+        "kept": [
+          2,
+          19
+        ],
+        "refused": [
+          24,
+          9999,
+          -1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "last": 23,
+        "ordinals": {
+          "StatisticalTolerance": 2,
+          "AnyCrossSection": 19
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "GD&T setters reject values that name no enumerator (#1037)::A class of tolerance outside the enum is refused rather than reported as present",
+    "bridge_function": "OCCTDocumentSetDimensionClassOfTolerance",
+    "bridge_output": {
+      "type": "class",
+      "data": {
+        "refused": [
+          [
+            29,
+            7
+          ],
+          [
+            9999,
+            7
+          ],
+          [
+            -1,
+            7
+          ],
+          [
+            11,
+            20
+          ],
+          [
+            11,
+            -1
+          ]
+        ],
+        "accepted": {
+          "formVariance": "h",
+          "grade": "it6"
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "formVariance_last": 28,
+        "grade_last": 19,
+        "H": 11,
+        "IT6": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "GD&T setters reject values that name no enumerator (#1037)::A geometric tolerance modifier outside the enum is refused",
+    "bridge_function": "OCCTDocumentSetGeomToleranceModifiers",
+    "bridge_output": {
+      "type": "modifiers",
+      "data": {
+        "kept": 2,
+        "refused": [
+          17,
+          9999,
+          -1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "last": 16
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "GD&T setters reject values that name no enumerator (#1037)::A datum modifier outside the enum is refused",
+    "bridge_function": "OCCTDocumentSetDatumModifiers",
+    "bridge_output": {
+      "type": "modifiers",
+      "data": {
+        "kept": [
+          2,
+          3
+        ],
+        "refused": [
+          22,
+          9999,
+          -1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "last": 21,
+        "ordinals": {
+          "Basic": 2,
+          "ContactingFeature": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "GD&T setters reject values that name no enumerator (#1037)::Clearing a sequence with count 0 still works, so the guard did not break the empty case",
+    "bridge_function": "OCCTDocumentSetDatumModifiers",
+    "bridge_output": {
+      "type": "modifiers",
+      "data": {
+        "cleared": true
+      }
+    },
+    "kernel_output": {
+      "type": "modifiers",
+      "data": {
+        "after_empty_sequence": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "Datum target placement states its precondition (#1038)::A datum that is not a target refuses the placement instead of reporting success",
+    "bridge_function": "OCCTDocumentSetDatumTargetPlacement",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "refused": true,
+        "target": null
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "fresh_is_target": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "Datum target placement states its precondition (#1038)::An area target refuses the placement, because OCCT stores a shape there instead",
+    "bridge_function": "OCCTDocumentSetDatumTargetPlacement",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "refused": true,
+        "type": "area",
+        "length": null,
+        "width": null
+      }
+    },
+    "kernel_output": {
+      "type": "ordinal",
+      "data": {
+        "area": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "Datum target placement states its precondition (#1038)::A rectangle target in the documented order still stores length and width",
+    "bridge_function": "OCCTDocumentSetDatumTargetPlacement",
+    "bridge_output": {
+      "type": "target",
+      "data": {
+        "type": "rectangle",
+        "number": 1,
+        "length": 30,
+        "width": 18
+      }
+    },
+    "kernel_output": {
+      "type": "target",
+      "data": {
+        "type": 2,
+        "number": 1,
+        "length": 30,
+        "width": 18
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "Datum target placement states its precondition (#1038)::Clearing the target mark makes a later placement refuse again",
+    "bridge_function": "OCCTDocumentSetDatumTargetPlacement",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "refused_after_clear": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "is_target_after_clear": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
   }
 ]
