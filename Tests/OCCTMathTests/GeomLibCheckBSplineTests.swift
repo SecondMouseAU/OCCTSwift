@@ -50,15 +50,29 @@ struct GeomLibCheckBSplineTests {
         #expect(result.fixLast == true)
     }
 
+    // #766: this test used to call fixBSplineTangents(fixFirst: false, fixLast: false) on the
+    // ordinary curve and assert nothing. It now fixes the reversed-first fixture and pins what
+    // GeomLib_CheckBSplineCurve::FixedTangent does to it: the folded pole 2 moves from (0, 0, 0)
+    // to (3, 0, 0) and the re-checked curve no longer needs a fix
+    // (Scripts/repro/766-math-geomlib-checkbspline/transcript.txt).
     @Test("fix 3D BSpline tangents")
-    func fix3D() {
-        if let bsp = Curve3D.bspline(
-            poles: [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 0), SIMD3(4, 0, 0)],
-            knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3)
-        {
-            let fixed = bsp.fixBSplineTangents(fixFirst: false, fixLast: false)
-            let _ = fixed
+    func fix3D() throws {
+        let bsp = try #require(
+            Curve3D.bspline(
+                poles: [SIMD3(2, 0, 0), SIMD3(0, 0, 0), SIMD3(4, 0, 0), SIMD3(8, 0, 0)],
+                knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3))
+        let fixed = try #require(bsp.fixBSplineTangents(fixFirst: true, fixLast: false))
+        let poles = try #require(fixed.poles)
+        #expect(poles.count == 4)
+        if poles.count == 4 {
+            #expect(simd_length(poles[0] - SIMD3(2, 0, 0)) < 1e-9)
+            #expect(simd_length(poles[1] - SIMD3(3, 0, 0)) < 1e-9)
+            #expect(simd_length(poles[2] - SIMD3(4, 0, 0)) < 1e-9)
+            #expect(simd_length(poles[3] - SIMD3(8, 0, 0)) < 1e-9)
         }
+        let recheck = try #require(fixed.checkBSplineTangents())
+        #expect(recheck.fixFirst == false)
+        #expect(recheck.fixLast == false)
     }
 
     @Test("check 2D BSpline tangents: ordinary curve returns a real result, not nil")
@@ -94,14 +108,24 @@ struct GeomLibCheckBSplineTests {
         #expect(result.fixLast == true)
     }
 
+    // #766: same strengthening as fix3D, on GeomLib_Check2dBSplineCurve.
     @Test("fix 2D BSpline tangents")
-    func fix2D() {
-        if let bsp = Curve2D.bspline(
-            poles: [SIMD2(0, 0), SIMD2(1, 2), SIMD2(3, 1), SIMD2(4, 0)],
-            knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3)
-        {
-            let fixed = bsp.fixBSplineTangents(fixFirst: false, fixLast: false)
-            let _ = fixed
+    func fix2D() throws {
+        let bsp = try #require(
+            Curve2D.bspline(
+                poles: [SIMD2(2, 0), SIMD2(0, 0), SIMD2(4, 0), SIMD2(8, 0)],
+                knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3))
+        let fixed = try #require(bsp.fixBSplineTangents(fixFirst: true, fixLast: false))
+        let poles = try #require(fixed.poles)
+        #expect(poles.count == 4)
+        if poles.count == 4 {
+            #expect(simd_length(poles[0] - SIMD2(2, 0)) < 1e-9)
+            #expect(simd_length(poles[1] - SIMD2(3, 0)) < 1e-9)
+            #expect(simd_length(poles[2] - SIMD2(4, 0)) < 1e-9)
+            #expect(simd_length(poles[3] - SIMD2(8, 0)) < 1e-9)
         }
+        let recheck = try #require(fixed.checkBSplineTangents())
+        #expect(recheck.fixFirst == false)
+        #expect(recheck.fixLast == false)
     }
 }

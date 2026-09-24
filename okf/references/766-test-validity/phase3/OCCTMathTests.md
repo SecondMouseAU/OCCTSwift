@@ -416,3 +416,12 @@
 | **Vector3DMath** | dot | `OCCTXYZDot` | z term dropped | red | green | PASS |
 | **Vector3DMath** | dotCross | `OCCTXYZDotCross` | b and c swapped in the triple product | red | green | PASS |
 | **Vector3DMath** | normalize | `OCCTXYZNormalize` | normalized x and y swapped | red | green | PASS |
+### 766-math-geomlib-checkbspline (#1983, measured)
+| **GeomLib CheckBSpline Tests** | check 3D BSpline tangents: ordinary curve returns a real result, not nil | `OCCTGeomLibCheckBSpline3D` | reinstate the #1457 IsDone() gate (IsDone is false on this branch, so nil) | red | green | PASS |
+| **GeomLib CheckBSpline Tests** | check 3D BSpline tangents: reversed-first control polygon is detected | `OCCTGeomLibCheckBSpline3D` | swap the first/last flags (also red under the IsDone gate) | red | green | PASS |
+| **GeomLib CheckBSpline Tests** | check 3D BSpline tangents: reversed-last control polygon is detected | `OCCTGeomLibCheckBSpline3D` | swap the first/last flags | red | green | PASS |
+| **GeomLib CheckBSpline Tests** | fix 3D BSpline tangents | `OCCTGeomLibFixBSpline3D` | call FixedTangent(false, false) regardless of the flags passed | red | green | PASS |
+| **GeomLib CheckBSpline Tests** | check 2D BSpline tangents: ordinary curve returns a real result, not nil | `OCCTGeomLibCheckBSpline2D` | reinstate the #1457 IsDone() gate | red | green | PASS |
+| **GeomLib CheckBSpline Tests** | check 2D BSpline tangents: reversed-first control polygon is detected | `OCCTGeomLibCheckBSpline2D` | swap the first/last flags | red | green | PASS |
+| **GeomLib CheckBSpline Tests** | check 2D BSpline tangents: reversed-last control polygon is detected | `OCCTGeomLibCheckBSpline2D` | swap the first/last flags | red | green | PASS |
+| **GeomLib CheckBSpline Tests** | fix 2D BSpline tangents | `OCCTGeomLibFixBSpline2D` | call FixedTangent(false, false) regardless of the flags passed | red | green | PASS |

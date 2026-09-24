@@ -6941,5 +6941,197 @@
       "failing_expectation": "original: **green**; rewritten: :35 `abs(n.x - 1.0 / 3.0) < 1e-12`"
     },
     "green": true
+  },
+  {
+    "test_name": "GeomLib CheckBSpline Tests::check 3D BSpline tangents: ordinary curve returns a real result, not nil",
+    "bridge_function": "OCCTGeomLibCheckBSpline3D",
+    "bridge_output": {
+      "type": "observed",
+      "data": "fixFirst=0 fixLast=0 isDone=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fixFirst=0 fixLast=0 isDone=0",
+      "source": "Scripts/repro/766-math-geomlib-checkbspline/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "reinstate the #1457 IsDone() gate (IsDone is false on this branch, so nil)",
+      "failing_expectation": ":23 `bsp.checkBSplineTangents()`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomLib CheckBSpline Tests::check 3D BSpline tangents: reversed-first control polygon is detected",
+    "bridge_function": "OCCTGeomLibCheckBSpline3D",
+    "bridge_output": {
+      "type": "observed",
+      "data": "fixFirst=1 fixLast=0 isDone=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fixFirst=1 fixLast=0 isDone=0",
+      "source": "Scripts/repro/766-math-geomlib-checkbspline/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "swap the first/last flags (also red under the IsDone gate)",
+      "failing_expectation": ":37 `result.fixFirst == true`; :36 `bsp.checkBSplineTangents()`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomLib CheckBSpline Tests::check 3D BSpline tangents: reversed-last control polygon is detected",
+    "bridge_function": "OCCTGeomLibCheckBSpline3D",
+    "bridge_output": {
+      "type": "observed",
+      "data": "fixFirst=0 fixLast=1 isDone=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fixFirst=0 fixLast=1 isDone=0",
+      "source": "Scripts/repro/766-math-geomlib-checkbspline/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "swap the first/last flags",
+      "failing_expectation": ":49 `result.fixFirst == false`; :48 `bsp.checkBSplineTangents()`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomLib CheckBSpline Tests::fix 3D BSpline tangents",
+    "bridge_function": "OCCTGeomLibFixBSpline3D",
+    "bridge_output": {
+      "type": "observed",
+      "data": "FixedTangent(revF,true,false) poles (2,0,0) (3,0,0) (4,0,0) (8,0,0); recheck fixFirst=0 fixLast=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "FixedTangent(revF,true,false) poles (2,0,0) (3,0,0) (4,0,0) (8,0,0); recheck fixFirst=0 fixLast=0",
+      "source": "Scripts/repro/766-math-geomlib-checkbspline/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "call FixedTangent(false, false) regardless of the flags passed",
+      "failing_expectation": "original: **green**; rewritten: :64 `bsp.fixBSplineTangents(fixFirst: true, fixLast: false)`; the poles[2] pin :70 `simd_length(poles[2] - SIMD3(4, 0, 0)) < 1e-9` is red under a separate injection (fixed curve pole 3 moved to (4.5, 0, 0)), where every other pole assertion stays green"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomLib CheckBSpline Tests::check 2D BSpline tangents: ordinary curve returns a real result, not nil",
+    "bridge_function": "OCCTGeomLibCheckBSpline2D",
+    "bridge_output": {
+      "type": "observed",
+      "data": "fixFirst=0 fixLast=0 isDone=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fixFirst=0 fixLast=0 isDone=0",
+      "source": "Scripts/repro/766-math-geomlib-checkbspline/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "reinstate the #1457 IsDone() gate",
+      "failing_expectation": ":84 `bsp.checkBSplineTangents()`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomLib CheckBSpline Tests::check 2D BSpline tangents: reversed-first control polygon is detected",
+    "bridge_function": "OCCTGeomLibCheckBSpline2D",
+    "bridge_output": {
+      "type": "observed",
+      "data": "fixFirst=1 fixLast=0 isDone=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fixFirst=1 fixLast=0 isDone=0",
+      "source": "Scripts/repro/766-math-geomlib-checkbspline/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "swap the first/last flags",
+      "failing_expectation": ":96 `result.fixFirst == true`; :95 `bsp.checkBSplineTangents()`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomLib CheckBSpline Tests::check 2D BSpline tangents: reversed-last control polygon is detected",
+    "bridge_function": "OCCTGeomLibCheckBSpline2D",
+    "bridge_output": {
+      "type": "observed",
+      "data": "fixFirst=0 fixLast=1 isDone=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fixFirst=0 fixLast=1 isDone=0",
+      "source": "Scripts/repro/766-math-geomlib-checkbspline/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "swap the first/last flags",
+      "failing_expectation": ":107 `result.fixFirst == false`; :106 `bsp.checkBSplineTangents()`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomLib CheckBSpline Tests::fix 2D BSpline tangents",
+    "bridge_function": "OCCTGeomLibFixBSpline2D",
+    "bridge_output": {
+      "type": "observed",
+      "data": "FixedTangent(revF,true,false) poles (2,0) (3,0) (4,0) (8,0); recheck fixFirst=0 fixLast=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "FixedTangent(revF,true,false) poles (2,0) (3,0) (4,0) (8,0); recheck fixFirst=0 fixLast=0",
+      "source": "Scripts/repro/766-math-geomlib-checkbspline/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "call FixedTangent(false, false) regardless of the flags passed",
+      "failing_expectation": "original: **green**; rewritten: :118 `bsp.fixBSplineTangents(fixFirst: true, fixLast: false)`; the poles[2] pin :124 `simd_length(poles[2] - SIMD2(4, 0)) < 1e-9` is red under a separate injection (fixed curve pole 3 moved to (4.5, 0)), where every other pole assertion stays green"
+    },
+    "green": true
   }
 ]
