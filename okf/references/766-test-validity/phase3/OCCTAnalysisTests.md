@@ -266,6 +266,8 @@
 | **IntAna PlaneSphere Tests** | planeSphereIntersection | Plane-sphere circle | OCCTIntAnaPlaneSphere doubles the circle radius (values pinned, #766) |
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistance | Parallel-axis crash guard | OCCTExtremaElCSLinCylinder parallel guard removed: SIGSEGV (rewritten, #766) |
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
+| **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 
 ---
 
