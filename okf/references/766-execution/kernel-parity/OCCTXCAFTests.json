@@ -2,130 +2,7610 @@
   {
     "test_name": "XCAF Color Tests",
     "bridge_function": "OCCTXCAFColor",
-    "bridge_output": {"type": "color", "data": {}},
-    "kernel_output": {"type": "color", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "color",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "color",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Layer Tests",
     "bridge_function": "OCCTXCAFLayer",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Assembly Tests",
     "bridge_function": "OCCTXCAFAssembly",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Document Save",
     "bridge_function": "OCCTDocumentSaveOCAF",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Document Load",
     "bridge_function": "OCCTDocumentLoadOCAF",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Material Tests",
     "bridge_function": "OCCTXCAFMaterial",
-    "bridge_output": {"type": "color", "data": {}},
-    "kernel_output": {"type": "color", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "color",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "color",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Shape Addition/Removal",
     "bridge_function": "OCCTXCAFShapeAddRemove",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF GDT Tests",
     "bridge_function": "OCCTXCAFGDT",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Validation Tests",
     "bridge_function": "OCCTXCAFValidation",
-    "bridge_output": {"type": "bool", "data": true},
-    "kernel_output": {"type": "bool", "data": true},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Style Tests",
     "bridge_function": "OCCTXCAFStyle",
-    "bridge_output": {"type": "color", "data": {}},
-    "kernel_output": {"type": "color", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "color",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "color",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Area/Volume Tests",
     "bridge_function": "OCCTXCAFAreaVolume",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Location/Transformation",
     "bridge_function": "OCCTXCAFLocationTransform",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Bounding Box Tests",
     "bridge_function": "OCCTXCAFBoundingBox",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Document Creation",
     "bridge_function": "OCCTXCAFDocumentCreation",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Mesh Tests",
     "bridge_function": "OCCTXCAFMesh",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "XCAF Note/Annotation Tests",
     "bridge_function": "OCCTXCAFNoteAnnotation",
-    "bridge_output": {"type": "string", "data": ""},
-    "kernel_output": {"type": "string", "data": ""},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "string",
+      "data": ""
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": ""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
+  },
+  {
+    "test_name": "AssemblyNode public labelId + Document.node(at:) round-trip::AssemblyNode.labelId is public and round-trips via Document.node(at:)",
+    "bridge_function": "OCCTDocumentLabelIsNull",
+    "bridge_output": {
+      "type": "label",
+      "data": {
+        "free_shapes": 1,
+        "recovered_label_id_equals_original": true,
+        "name_equal": true
+      }
+    },
+    "kernel_output": {
+      "type": "label",
+      "data": {
+        "free_shapes": 1,
+        "root_entry": "0:1:1:1",
+        "root_is_null": false,
+        "refetched_root_is_equal": true,
+        "name": "Open CASCADE STEP translator 8.0 1"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-assembly-node-identity/"
+  },
+  {
+    "test_name": "AssemblyNode public labelId + Document.node(at:) round-trip::Document.node(at:) returns nil for a nonexistent labelId",
+    "bridge_function": "OCCTDocumentLabelIsNull",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "label_is_null_for_int64_max": true
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "fresh_doc_free_shapes": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-assembly-node-identity/"
+  },
+  {
+    "test_name": "AssemblyNode public labelId + Document.node(at:) round-trip::Document.node(at:) resolves root labelIds without a prior rootNodes walk (issue #95)",
+    "bridge_function": "OCCTDocumentGetRootLabelId",
+    "bridge_output": {
+      "type": "label",
+      "data": {
+        "node_at_0_labelId": 0
+      }
+    },
+    "kernel_output": {
+      "type": "label",
+      "data": {
+        "free_shapes": 1,
+        "root_entry": "0:1:1:1"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-assembly-node-identity/"
+  },
+  {
+    "test_name": "ChildNodeIterator Tests::noTreeNode",
+    "bridge_function": "OCCTChildNodeIteratorCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "has_tree_node": false,
+        "count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-child-node-iterator/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ColorTool completions::AddColor and FindColor",
+    "bridge_function": "OCCTDocumentColorToolFindColor",
+    "bridge_output": {
+      "type": "label",
+      "data": {
+        "found_equals_added": true
+      }
+    },
+    "kernel_output": {
+      "type": "label",
+      "data": {
+        "added_null": false,
+        "found_is_equal_added": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-color-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ColorTool completions::GetColorCount increases after AddColor",
+    "bridge_function": "OCCTDocumentColorToolGetColorCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "after_minus_before": 1
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "before": 0,
+        "after": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-color-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ColorTool completions::RemoveColor removes a color",
+    "bridge_function": "OCCTDocumentColorToolRemoveColor",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "before_minus_after": 1
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "before": 1,
+        "after": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-color-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ColorTool completions::Visibility defaults to true",
+    "bridge_function": "OCCTDocumentColorToolIsVisible",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "default": true,
+        "after_false": false,
+        "after_true": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "default": true,
+        "after_false": false,
+        "after_true": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-color-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ColorTool completions::ColorByLayer defaults to false",
+    "bridge_function": "OCCTDocumentColorToolIsColorByLayer",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "default": false,
+        "after_true": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "default": false,
+        "after_true": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-color-tool-completions/"
+  },
+  {
+    "test_name": "Document Color/Material Setter Tests::Set and get label color",
+    "bridge_function": "OCCTDocumentSetLabelColor",
+    "bridge_output": {
+      "type": "color",
+      "data": {
+        "rgb": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "tolerance": 0.01
+      }
+    },
+    "kernel_output": {
+      "type": "color",
+      "data": {
+        "rgb": [
+          1.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-color-material/"
+  },
+  {
+    "test_name": "Document Color/Material Setter Tests::Color attribute (XCAFDoc_Color) round-trips a non-trivial RGB triple (#1508)",
+    "bridge_function": "OCCTDocumentGetColorAttr",
+    "bridge_output": {
+      "type": "color",
+      "data": {
+        "rgb": [
+          0.5,
+          0.25,
+          0.75
+        ],
+        "tolerance": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "color",
+      "data": {
+        "rgb": [
+          0.5,
+          0.25,
+          0.75
+        ],
+        "srgb_defect_readback": [
+          0.214041,
+          0.050876,
+          0.522522
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-color-material/"
+  },
+  {
+    "test_name": "Document Color/Material Setter Tests::RGBA color attribute (XCAFDoc_Color) round-trips a non-trivial RGBA quadruple (#1508)",
+    "bridge_function": "OCCTDocumentGetColorRGBAAttr",
+    "bridge_output": {
+      "type": "color",
+      "data": {
+        "rgba": [
+          0.5,
+          0.25,
+          0.75,
+          0.4
+        ],
+        "tolerance": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "color",
+      "data": {
+        "rgba": [
+          0.5,
+          0.25,
+          0.75,
+          0.4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-color-material/"
+  },
+  {
+    "test_name": "Document Color/Material Setter Tests::Set and get label material",
+    "bridge_function": "OCCTDocumentGetLabelMaterial",
+    "bridge_output": {
+      "type": "material",
+      "data": {
+        "metallic": 0.9,
+        "roughness": 0.3,
+        "tolerance": 0.01
+      }
+    },
+    "kernel_output": {
+      "type": "material",
+      "data": {
+        "metallic": 0.9,
+        "roughness": 0.3,
+        "has_pbr": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-color-material/"
+  },
+  {
+    "test_name": "XCAFPrs_DocumentExplorer Tests::exploreDocumentWithShape",
+    "bridge_function": "OCCTDocumentExplorerCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "leaf_nodes": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-explorer/"
+  },
+  {
+    "test_name": "XCAFPrs_DocumentExplorer Tests::explorerShapeAtIndex",
+    "bridge_function": "OCCTDocumentExplorerShape",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "non_null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-explorer/"
+  },
+  {
+    "test_name": "XCAFPrs_DocumentExplorer Tests::explorerPathId",
+    "bridge_function": "OCCTDocumentExplorerPathId",
+    "bridge_output": {
+      "type": "string",
+      "data": {
+        "non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": {
+        "path_id": "0:1:1:1."
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-explorer/"
+  },
+  {
+    "test_name": "XCAFPrs_DocumentExplorer Tests::findShapeFromPathId",
+    "bridge_function": "OCCTDocumentExplorerFindShape",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "non_null": true,
+        "shape_type": "TopAbs_SOLID (2)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-explorer/"
+  },
+  {
+    "test_name": "BRepGraph Attributes::attachAndReadMixedAttributes",
+    "bridge_function": "OCCTBRepGraphCreate",
+    "bridge_output": {
+      "type": "attributes",
+      "data": {
+        "annotated_nodes": 3
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": {
+        "reason": "the attribute store is pure Swift; no kernel counterpart"
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
+  },
+  {
+    "test_name": "BRepGraph Attributes::clearingLastAttributeDropsNode",
+    "bridge_function": "OCCTBRepGraphCreate",
+    "bridge_output": {
+      "type": "attributes",
+      "data": {
+        "after_clear_all": 0
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": {
+        "reason": "pure Swift store"
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
+  },
+  {
+    "test_name": "BRepGraph Attributes::snapshotJSONRoundTrip",
+    "bridge_function": "OCCTBRepGraphCreate",
+    "bridge_output": {
+      "type": "graph",
+      "data": {
+        "faces": 6,
+        "vertices": 8
+      }
+    },
+    "kernel_output": {
+      "type": "graph",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
+  },
+  {
+    "test_name": "BRepGraph Attributes::encodingIsDeterministic",
+    "bridge_function": "OCCTBRepGraphCreate",
+    "bridge_output": {
+      "type": "json",
+      "data": {
+        "bytes": "6 face entries sorted by index, keys sorted"
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": {
+        "reason": "Codable output is pure Swift"
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
+  },
+  {
+    "test_name": "BRepGraph Attributes::nodeIndexingDeterministicAcrossRebuild",
+    "bridge_function": "OCCTBRepGraphVertexPoint",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "max_distance_lt": 1e-09
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "max_vertex_distance": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
+  },
+  {
+    "test_name": "BRepGraph Attributes::futureFormatVersionRejected",
+    "bridge_function": "OCCTBRepGraphCreate",
+    "bridge_output": {
+      "type": "error",
+      "data": {
+        "thrown": "unsupportedFormatVersion"
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": {
+        "reason": "the version check is pure Swift"
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
+  },
+  {
+    "test_name": "BRepGraph Attributes::invalidBREPThrows",
+    "bridge_function": "OCCTShapeFromBREPString",
+    "bridge_output": {
+      "type": "error",
+      "data": {
+        "thrown": "invalidBREP"
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "read_is_null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
+  },
+  {
+    "test_name": "TDataStd_Expression Tests::setExpression",
+    "bridge_function": "OCCTDocumentExpressionSet",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "set_is_null": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-driver-table-expression/"
+  },
+  {
+    "test_name": "TDataStd_Expression Tests::setAndGetString",
+    "bridge_function": "OCCTDocumentExpressionGetString",
+    "bridge_output": {
+      "type": "string",
+      "data": {
+        "s": "x^2 + y^2"
+      }
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": {
+        "s": "x^2 + y^2"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-driver-table-expression/"
+  },
+  {
+    "test_name": "TDataStd_Expression Tests::getName",
+    "bridge_function": "OCCTDocumentExpressionGetName",
+    "bridge_output": {
+      "type": "string",
+      "data": {
+        "non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": {
+        "name": "a + b"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-driver-table-expression/"
+  },
+  {
+    "test_name": "v0.140 Document GD&T write path::setDimensionBounds refuses a plus/minus dimension instead of corrupting it",
+    "bridge_function": "OCCTDocumentSetDimensionBounds",
+    "bridge_output": {
+      "type": "dimension",
+      "data": {
+        "returned": false,
+        "bounds": "plusMinus(-0.3, 0.7)",
+        "value": 20.0
+      }
+    },
+    "kernel_output": {
+      "type": "dimension",
+      "data": {
+        "before": [
+          20,
+          -0.3,
+          0.7
+        ],
+        "after_unguarded_write": {
+          "value": 10,
+          "lowerTol": 12,
+          "upperTol": 0.7,
+          "plusMinus": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-gdt/"
+  },
+  {
+    "test_name": "v0.140 Document GD&T write path::setDimensionBounds still converts a simple dimension to a range",
+    "bridge_function": "OCCTDocumentSetDimensionBounds",
+    "bridge_output": {
+      "type": "dimension",
+      "data": {
+        "returned": true,
+        "bounds": "range(10, 12)"
+      }
+    },
+    "kernel_output": {
+      "type": "dimension",
+      "data": {
+        "range": true,
+        "lower": 10,
+        "upper": 12,
+        "value": 11
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-gdt/"
+  },
+  {
+    "test_name": "v0.140 Document GD&T write path::Create dimension on a box shape and read it back",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "dimension",
+      "data": {
+        "index": 0,
+        "count": 1,
+        "type": "sizeRadius",
+        "value": 25.0,
+        "lowerTol": -0.1,
+        "upperTol": 0.1
+      }
+    },
+    "kernel_output": {
+      "type": "dimension",
+      "data": {
+        "labels": 1,
+        "type_ordinal": 17,
+        "value": 25,
+        "lowerTol": -0.1,
+        "upperTol": 0.1,
+        "plusMinus": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-gdt/"
+  },
+  {
+    "test_name": "v0.140 Document GD&T write path::Create geometric tolerance (flatness) on a shape",
+    "bridge_function": "OCCTDocumentGetGeomToleranceInfo",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "index": 0,
+        "type": "flatness",
+        "value": 0.01
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "value": 0.01
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "v0.140 Document GD&T write path::Create datum A",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "datum",
+      "data": {
+        "index": 0,
+        "name": "A"
+      }
+    },
+    "kernel_output": {
+      "type": "datum",
+      "data": {
+        "name": "A"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-gdt/"
+  },
+  {
+    "test_name": "v0.140 Document GD&T write path::Full authoring: box + 3 dimensions + 2 tolerances + 2 datums",
+    "bridge_function": "OCCTDocumentGetDatumCount",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "datums": 2,
+        "names": [
+          "A",
+          "B"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "datum_labels_after_two": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-gdt/"
+  },
+  {
+    "test_name": "v0.140 Document GD&T write path::DimensionType enum covers all 32 cases",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "cases": 32
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "cases": 32,
+        "last": "XCAFDimTolObjects_DimensionType_DimensionPresentation"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-gdt/"
+  },
+  {
+    "test_name": "v0.140 Document GD&T write path::GeomToleranceType enum covers all 16 cases",
+    "bridge_function": "OCCTDocumentGetGeomToleranceInfo",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "cases": 16
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "cases": 16,
+        "last": "XCAFDimTolObjects_GeomToleranceType_TotalRunout"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-gdt/"
+  },
+  {
+    "test_name": "GD&T dimension accessors (#1004)::A qualifier written on a dimension reads back, and an unqualified one reads .none",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "qualifier",
+      "data": {
+        "fresh": "none",
+        "after_max": "max",
+        "after_none": "none"
+      }
+    },
+    "kernel_output": {
+      "type": "qualifier",
+      "data": {
+        "fresh": 0,
+        "after_max": 2,
+        "after_none": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
+  },
+  {
+    "test_name": "GD&T dimension accessors (#1004)::An angular qualifier round-trips independently of the dimension qualifier",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "qualifier",
+      "data": {
+        "qualifier": "min",
+        "angular": "large"
+      }
+    },
+    "kernel_output": {
+      "type": "qualifier",
+      "data": {
+        "qualifier": 1,
+        "angular": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
+  },
+  {
+    "test_name": "GD&T dimension accessors (#1004)::Decimal places read back as written, and as nil when never written",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "places",
+      "data": {
+        "fresh": null,
+        "p23": [
+          2,
+          3
+        ],
+        "p04": [
+          0,
+          4
+        ],
+        "p00": null
+      }
+    },
+    "kernel_output": {
+      "type": "places",
+      "data": {
+        "fresh": [
+          0,
+          0
+        ],
+        "p23": [
+          2,
+          3
+        ],
+        "p04": [
+          0,
+          4
+        ],
+        "p00": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
+  },
+  {
+    "test_name": "GD&T dimension accessors (#1004)::A modifier sequence round-trips in order, and clears",
+    "bridge_function": "OCCTDocumentGetDimensionModifier",
+    "bridge_output": {
+      "type": "modifiers",
+      "data": {
+        "read": [
+          "anyCrossSection",
+          "square",
+          "statisticalTolerance"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "modifiers",
+      "data": {
+        "read": [
+          19,
+          1,
+          2
+        ],
+        "cleared": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
+  },
+  {
+    "test_name": "GD&T dimension accessors (#1004)::The dimension type classifiers agree with OCCT for a location, a size and neither",
+    "bridge_function": "OCCTDimensionTypeIsDimensionalLocation",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "linear": [
+          true,
+          false
+        ],
+        "diameter": [
+          false,
+          true
+        ],
+        "common": [
+          false,
+          false
+        ],
+        "both_count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "linear": [
+          true,
+          false
+        ],
+        "diameter": [
+          false,
+          true
+        ],
+        "common": [
+          false,
+          false
+        ],
+        "both_count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
+  },
+  {
+    "test_name": "GD&T dimension accessors (#1004)::Two dimensions on one document keep their own accessor values",
+    "bridge_function": "OCCTDocumentSetDimensionDecimalPlaces",
+    "bridge_output": {
+      "type": "dims",
+      "data": {
+        "a": {
+          "qualifier": "max",
+          "modifiers": [
+            "square"
+          ],
+          "places": null
+        },
+        "b": {
+          "qualifier": "none",
+          "places": [
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "objects",
+      "data": {
+        "separate_objects_keep_separate_values": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
+  },
+  {
+    "test_name": "GD&T dimension accessors (#1004)::Out-of-range indices are refused by both the accessors and the mutators",
+    "bridge_function": "OCCTDocumentSetDimensionQualifier",
+    "bridge_output": {
+      "type": "refused",
+      "data": {
+        "index": 5,
+        "labels": 1
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "dimension_labels": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-gdt/"
+  },
+  {
+    "test_name": "GD&T Document Tests::Empty document has zero dimensions",
+    "bridge_function": "OCCTDocumentGetDimensionCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "dimensions": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
+  },
+  {
+    "test_name": "GD&T Document Tests::Empty document has zero geometric tolerances",
+    "bridge_function": "OCCTDocumentGetGeomToleranceCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "tolerances": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
+  },
+  {
+    "test_name": "GD&T Document Tests::Empty document has zero datums",
+    "bridge_function": "OCCTDocumentGetDatumCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "datum_labels_fresh": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T Document Tests::Dimension at invalid index returns nil",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "dimension",
+      "data": {
+        "at": [
+          0,
+          -1,
+          999
+        ],
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "dimensions": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
+  },
+  {
+    "test_name": "GD&T Document Tests::Geom tolerance at invalid index returns nil",
+    "bridge_function": "OCCTDocumentGetGeomToleranceInfo",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "at": [
+          0,
+          -1
+        ],
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "tolerances": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
+  },
+  {
+    "test_name": "GD&T Document Tests::Datum at invalid index returns nil",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "datum",
+      "data": {
+        "at": [
+          0,
+          -1
+        ],
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "datum_labels_fresh": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::A tolerance's value type, material requirement and zone modifier round-trip",
+    "bridge_function": "OCCTDocumentGetGeomToleranceInfo",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "fresh": "all none",
+        "written": {
+          "valueType": "diameter",
+          "material": "m",
+          "zone": "projected",
+          "zoneValue": 15.0,
+          "maxValue": 0.25
+        },
+        "value": 0.1,
+        "type": "position"
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "fresh": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "written": {
+          "typeOfValue": 1,
+          "material": 1,
+          "zone": 1,
+          "zoneValue": 15,
+          "maxValue": 0.25
+        },
+        "value": 0.1,
+        "type": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::A zero zone value and a zero max value read back as nil, not as a measured zero",
+    "bridge_function": "OCCTDocumentGetGeomToleranceInfo",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "zoneValue": null,
+        "maxValue": null,
+        "zone": "projected"
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "zone": 1,
+        "zoneValue": 0,
+        "maxValue": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::A tolerance modifier sequence round-trips in order, and clears",
+    "bridge_function": "OCCTDocumentGetGeomToleranceModifier",
+    "bridge_output": {
+      "type": "modifiers",
+      "data": {
+        "in_order": true
+      }
+    },
+    "kernel_output": {
+      "type": "modifiers",
+      "data": {
+        "read": [
+          3,
+          15,
+          13
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::A datum position round-trips, and reads nil when it has no place in a frame",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "position",
+      "data": {
+        "fresh": null,
+        "after_2": 2,
+        "after_0": null
+      }
+    },
+    "kernel_output": {
+      "type": "position",
+      "data": {
+        "fresh": 0,
+        "after_2": 2,
+        "after_0": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::A datum modifier sequence round-trips in order, and the valued modifier is separate",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "datum",
+      "data": {
+        "modifiers": [
+          "basic",
+          "contactingFeature"
+        ],
+        "withValue": "projected",
+        "value": 12.5,
+        "cleared": null
+      }
+    },
+    "kernel_output": {
+      "type": "datum",
+      "data": {
+        "modifiers": [
+          2,
+          3
+        ],
+        "withValue": 3,
+        "value": 12.5,
+        "cleared": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::A datum target's length and width follow the target type, not the write",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "target",
+      "data": {
+        "rectangle": [
+          30,
+          18
+        ],
+        "line": [
+          30,
+          null
+        ],
+        "point": [
+          null,
+          null
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "target",
+      "data": {
+        "stored_for_every_type": {
+          "length": 30,
+          "width": 18
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::A degenerate datum target placement axis is refused",
+    "bridge_function": "OCCTDocumentSetDatumTargetPlacement",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "refused": true,
+        "length": null
+      }
+    },
+    "kernel_output": {
+      "type": "exception",
+      "data": {
+        "gp_Dir_zero": "throws: input vector has zero norm"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::Two tolerances and two datums on one document keep their own accessor values",
+    "bridge_function": "OCCTDocumentSetDatumTarget",
+    "bridge_output": {
+      "type": "entries",
+      "data": {
+        "separate": true
+      }
+    },
+    "kernel_output": {
+      "type": "objects",
+      "data": {
+        "separate_objects_keep_separate_values": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::Out-of-range tolerance and datum indices are refused",
+    "bridge_function": "OCCTDocumentSetGeomToleranceTypeOfValue",
+    "bridge_output": {
+      "type": "refused",
+      "data": {
+        "tolerance_index": 5,
+        "datum_index": 0
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "fresh_document_datum_labels": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+  },
+  {
+    "test_name": "GD&T setters reject values that name no enumerator (#1037)::A dimension modifier outside the enum is refused, and the sequence stays untouched",
+    "bridge_function": "OCCTDocumentSetDimensionModifiers",
+    "bridge_output": {
+      "type": "modifiers",
+      "data": {
+        "kept": [
+          2,
+          19
+        ],
+        "refused": [
+          24,
+          9999,
+          -1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "last": 23,
+        "ordinals": {
+          "StatisticalTolerance": 2,
+          "AnyCrossSection": 19
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "GD&T setters reject values that name no enumerator (#1037)::A class of tolerance outside the enum is refused rather than reported as present",
+    "bridge_function": "OCCTDocumentSetDimensionClassOfTolerance",
+    "bridge_output": {
+      "type": "class",
+      "data": {
+        "refused": [
+          [
+            29,
+            7
+          ],
+          [
+            9999,
+            7
+          ],
+          [
+            -1,
+            7
+          ],
+          [
+            11,
+            20
+          ],
+          [
+            11,
+            -1
+          ]
+        ],
+        "accepted": {
+          "formVariance": "h",
+          "grade": "it6"
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "formVariance_last": 28,
+        "grade_last": 19,
+        "H": 11,
+        "IT6": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "GD&T setters reject values that name no enumerator (#1037)::A geometric tolerance modifier outside the enum is refused",
+    "bridge_function": "OCCTDocumentSetGeomToleranceModifiers",
+    "bridge_output": {
+      "type": "modifiers",
+      "data": {
+        "kept": 2,
+        "refused": [
+          17,
+          9999,
+          -1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "last": 16
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "GD&T setters reject values that name no enumerator (#1037)::A datum modifier outside the enum is refused",
+    "bridge_function": "OCCTDocumentSetDatumModifiers",
+    "bridge_output": {
+      "type": "modifiers",
+      "data": {
+        "kept": [
+          2,
+          3
+        ],
+        "refused": [
+          22,
+          9999,
+          -1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "last": 21,
+        "ordinals": {
+          "Basic": 2,
+          "ContactingFeature": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "GD&T setters reject values that name no enumerator (#1037)::Clearing a sequence with count 0 still works, so the guard did not break the empty case",
+    "bridge_function": "OCCTDocumentSetDatumModifiers",
+    "bridge_output": {
+      "type": "modifiers",
+      "data": {
+        "cleared": true
+      }
+    },
+    "kernel_output": {
+      "type": "modifiers",
+      "data": {
+        "after_empty_sequence": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "Datum target placement states its precondition (#1038)::A datum that is not a target refuses the placement instead of reporting success",
+    "bridge_function": "OCCTDocumentSetDatumTargetPlacement",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "refused": true,
+        "target": null
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "fresh_is_target": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "Datum target placement states its precondition (#1038)::An area target refuses the placement, because OCCT stores a shape there instead",
+    "bridge_function": "OCCTDocumentSetDatumTargetPlacement",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "refused": true,
+        "type": "area",
+        "length": null,
+        "width": null
+      }
+    },
+    "kernel_output": {
+      "type": "ordinal",
+      "data": {
+        "area": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "Datum target placement states its precondition (#1038)::A rectangle target in the documented order still stores length and width",
+    "bridge_function": "OCCTDocumentSetDatumTargetPlacement",
+    "bridge_output": {
+      "type": "target",
+      "data": {
+        "type": "rectangle",
+        "number": 1,
+        "length": 30,
+        "width": 18
+      }
+    },
+    "kernel_output": {
+      "type": "target",
+      "data": {
+        "type": 2,
+        "number": 1,
+        "length": 30,
+        "width": 18
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "Datum target placement states its precondition (#1038)::Clearing the target mark makes a later placement refuse again",
+    "bridge_function": "OCCTDocumentSetDatumTargetPlacement",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "refused_after_clear": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "is_target_after_clear": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+  },
+  {
+    "test_name": "Datum identifiers round-trip at any length (#1055)::A 100-character datum name reads back whole",
+    "bridge_function": "OCCTDocumentGetDatumName",
+    "bridge_output": {
+      "type": "name",
+      "data": {
+        "length": 100
+      }
+    },
+    "kernel_output": {
+      "type": "name",
+      "data": {
+        "length": 100
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "Datum identifiers round-trip at any length (#1055)::Names either side of the old 63-byte bound both round-trip",
+    "bridge_function": "OCCTDocumentGetDatumName",
+    "bridge_output": {
+      "type": "name",
+      "data": {
+        "lengths": [
+          63,
+          64,
+          65
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "name",
+      "data": {
+        "lengths": [
+          63,
+          64,
+          65
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "Datum identifiers round-trip at any length (#1055)::A short buffer yields a prefix and the length the whole name needs",
+    "bridge_function": "OCCTDocumentGetDatumName",
+    "bridge_output": {
+      "type": "name",
+      "data": {
+        "reported": 100,
+        "prefix": "AAAAAAA"
+      }
+    },
+    "kernel_output": {
+      "type": "name",
+      "data": {
+        "length": 100
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "Datum identifiers round-trip at any length (#1055)::A null buffer asks for the length alone",
+    "bridge_function": "OCCTDocumentGetDatumName",
+    "bridge_output": {
+      "type": "name",
+      "data": {
+        "reported": 100,
+        "next_index": -1
+      }
+    },
+    "kernel_output": {
+      "type": "name",
+      "data": {
+        "length": 100
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "Datum identifiers round-trip at any length (#1055)::A negative length, or a null buffer with a positive one, is refused",
+    "bridge_function": "OCCTDocumentGetDatumName",
+    "bridge_output": {
+      "type": "int",
+      "data": {
+        "negative_len": -1,
+        "null_buffer_positive_len": -1
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": {
+        "reason": "argument validation is bridge-only"
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "Datum identifiers round-trip at any length (#1055)::datums reports whole names for every datum it enumerates",
+    "bridge_function": "OCCTDocumentGetDatumName",
+    "bridge_output": {
+      "type": "names",
+      "data": {
+        "lengths": [
+          1,
+          100,
+          200
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "names",
+      "data": {
+        "lengths": [
+          1,
+          100,
+          200
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "Layer names round-trip at any length (#1078)::A 300-character layer name reads back whole",
+    "bridge_function": "OCCTDocumentGetLayerName",
+    "bridge_output": {
+      "type": "names",
+      "data": {
+        "lengths": [
+          6,
+          6,
+          12
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "names",
+      "data": {
+        "tool_on_main": [
+          "Shapes",
+          "Colors",
+          "VisMaterials"
+        ],
+        "real_layer_table": []
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "the three names are XCAF tool labels, not layers (#2413); the test never writes its 300-character name"
+      ]
+    },
+    "status": "MISMATCH",
+    "probe": "Scripts/repro/766-xcaf-issue1078-layer-name-length/"
+  },
+  {
+    "test_name": "Layer names round-trip at any length (#1078)::A null buffer asks for the length alone",
+    "bridge_function": "OCCTDocumentGetLayerName",
+    "bridge_output": {
+      "type": "int",
+      "data": {
+        "lengths_ok": true,
+        "at_count": -1,
+        "at_minus_1": -1
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "tool_on_main": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1078-layer-name-length/"
+  },
+  {
+    "test_name": "Layer names round-trip at any length (#1078)::A short buffer yields a prefix and the length the whole name needs",
+    "bridge_function": "OCCTDocumentGetLayerName",
+    "bridge_output": {
+      "type": "name",
+      "data": {
+        "reported": 12,
+        "prefix_len": 7
+      }
+    },
+    "kernel_output": {
+      "type": "name",
+      "data": {
+        "VisMaterials_length": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1078-layer-name-length/"
+  },
+  {
+    "test_name": "Layer names round-trip at any length (#1078)::A negative length, or a null buffer with a positive one, is refused",
+    "bridge_function": "OCCTDocumentGetLayerName",
+    "bridge_output": {
+      "type": "int",
+      "data": {
+        "negative_len": -1,
+        "null_buffer_positive_len": -1
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": {
+        "reason": "argument validation is bridge-only"
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-issue1078-layer-name-length/"
+  },
+  {
+    "test_name": "Document Modified Labels::Set and check modified",
+    "bridge_function": "OCCTDocumentIsLabelModified",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "modified": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "contains": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "Document Modified Labels::Clear modified",
+    "bridge_function": "OCCTDocumentClearModified",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "before": true,
+        "after_clear": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "before": true,
+        "after_purge": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "Document Tests::Create empty document",
+    "bridge_function": "OCCTDocumentGetRootCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "root_nodes": 0
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "free_shapes": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document/"
+  },
+  {
+    "test_name": "Document Tests::Document.lengthUnit reads back the unit a round-tripped STEP document carries",
+    "bridge_function": "OCCTDocumentGetLengthUnit",
+    "bridge_output": {
+      "type": "unit",
+      "data": {
+        "present": true,
+        "scale_positive": true,
+        "name_non_empty": true
+      }
+    },
+    "kernel_output": {
+      "type": "unit",
+      "data": {
+        "present": true,
+        "scale": 0.001,
+        "name": "mm"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document/"
+  },
+  {
+    "test_name": "Document Tests::Document.lengthUnit is nil for a document with no length unit attribute",
+    "bridge_function": "OCCTDocumentGetLengthUnit",
+    "bridge_output": {
+      "type": "unit",
+      "data": {
+        "present": false
+      }
+    },
+    "kernel_output": {
+      "type": "unit",
+      "data": {
+        "present": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document/"
+  },
+  {
+    "test_name": "Document Transactions::Open and commit transaction",
+    "bridge_function": "OCCTDocumentHasOpenTransaction",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "initial": false,
+        "after_open": true,
+        "commit": true,
+        "after_commit": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "initial": false,
+        "after_open": true,
+        "commit": true,
+        "after_commit": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "Document Transactions::Open and abort transaction",
+    "bridge_function": "OCCTDocumentAbortTransaction",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "after_abort_open": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "after_abort_open": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "Document Transactions::Has open transaction",
+    "bridge_function": "OCCTDocumentCommitTransaction",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "initial": false,
+        "after_open": true,
+        "after_commit": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "initial": false,
+        "after_open": true,
+        "after_commit": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "TDF_IDFilter Tests::createFilter",
+    "bridge_function": "OCCTIDFilterIgnoreAll",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "ignoreAll": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "ignoreAll": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-idfilter/"
+  },
+  {
+    "test_name": "TDF_IDFilter Tests::keepMode",
+    "bridge_function": "OCCTIDFilterIgnoreAll",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "ignoreAll": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "ignoreAll": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-idfilter/"
+  },
+  {
+    "test_name": "TDF_IDFilter Tests::keepGUID",
+    "bridge_function": "OCCTIDFilterIsKept",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "kept": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "kept": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-idfilter/"
+  },
+  {
+    "test_name": "TDF_IDFilter Tests::ignoreGUID",
+    "bridge_function": "OCCTIDFilterIsIgnored",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "ignored": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "ignored": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-idfilter/"
+  },
+  {
+    "test_name": "TDF_IDFilter Tests::toggleIgnoreAll",
+    "bridge_function": "OCCTIDFilterSetIgnoreAll",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "ignoreAll": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "ignoreAll": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-idfilter/"
+  },
+  {
+    "test_name": "Datum lookup reads the point-without-plane shape, guard retired (#1030)::The crashing shape is authorable through the public label API",
+    "bridge_function": "OCCTDocumentGetRealArrayValue",
+    "bridge_output": {
+      "type": "labels",
+      "data": {
+        "point_child": true,
+        "point_bounds_before": null,
+        "point_values": [
+          7,
+          7
+        ],
+        "plane_child": true,
+        "plane_bounds": null
+      }
+    },
+    "kernel_output": {
+      "type": "labels",
+      "data": {
+        "child17": true,
+        "child14": true,
+        "point_array_before": false,
+        "point_bounds": [
+          1,
+          3
+        ],
+        "values": [
+          7,
+          7
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+  },
+  {
+    "test_name": "Datum lookup reads the point-without-plane shape, guard retired (#1030)::A datum with a point and no plane location is read, where the guard refused it",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "datum",
+      "data": {
+        "name": "Datum1030",
+        "count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "datum",
+      "data": {
+        "get_object_null": false,
+        "name": "Datum1030",
+        "labels": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+  },
+  {
+    "test_name": "Datum lookup reads the point-without-plane shape, guard retired (#1030)::A write path succeeds, where the shared lookup used to refuse it first",
+    "bridge_function": "OCCTDocumentSetDatumPosition",
+    "bridge_output": {
+      "type": "datum",
+      "data": {
+        "writes_succeed": true,
+        "position": 2
+      }
+    },
+    "kernel_output": {
+      "type": "datum",
+      "data": {
+        "get_object_null": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+  },
+  {
+    "test_name": "Datum lookup reads the point-without-plane shape, guard retired (#1030)::A plane location array too short for the point's own index is read, not refused",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "datum",
+      "data": {
+        "name": "Datum1030"
+      }
+    },
+    "kernel_output": {
+      "type": "datum",
+      "data": {
+        "get_object_null": false,
+        "name": "Datum1030"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+  },
+  {
+    "test_name": "Datum lookup reads the point-without-plane shape, guard retired (#1030)::A datum with both a point and a plane location still reads",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "datum",
+      "data": {
+        "name": "Datum1030",
+        "count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "datum",
+      "data": {
+        "get_object_null": false,
+        "name": "Datum1030"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+  },
+  {
+    "test_name": "Datum lookup reads the point-without-plane shape, guard retired (#1030)::A point array of the wrong length is not the kernel's point block, so it still reads",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "datum",
+      "data": {
+        "name": "Datum1030"
+      }
+    },
+    "kernel_output": {
+      "type": "datum",
+      "data": {
+        "get_object_null": false,
+        "name": "Datum1030"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+  },
+  {
+    "test_name": "Datum lookup reads the point-without-plane shape, guard retired (#1030)::Rescaling a document whose datums are all readable still succeeds",
+    "bridge_function": "OCCTDocumentEditorRescaleGeometry",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "rescaled": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "rescale": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+  },
+  {
+    "test_name": "Datum lookup reads the point-without-plane shape, guard retired (#1030)::A datum with no point child is untouched by the guard",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "datum",
+      "data": {
+        "name": "Datum1030",
+        "position": 2
+      }
+    },
+    "kernel_output": {
+      "type": "datum",
+      "data": {
+        "child17_exists": true,
+        "point_array": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+  },
+  {
+    "test_name": "Document Undo/Redo::Set and get undo limit",
+    "bridge_function": "OCCTDocumentGetUndoLimit",
+    "bridge_output": {
+      "type": "int",
+      "data": {
+        "limit": 10
+      }
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": {
+        "limit": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "Document Undo/Redo::Available undos after commit",
+    "bridge_function": "OCCTDocumentGetAvailableUndos",
+    "bridge_output": {
+      "type": "int",
+      "data": {
+        "before_undos": 0,
+        "before_redos": 0,
+        "after_commit_undos": 1
+      }
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": {
+        "before_undos": 0,
+        "before_redos": 0,
+        "after_commit_undos": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "Document Undo/Redo::Undo restores state",
+    "bridge_function": "OCCTDocumentUndo",
+    "bridge_output": {
+      "type": "int",
+      "data": {
+        "undos_after_2_commits": 2,
+        "undo_ok": true,
+        "undos": 1,
+        "redos": 1
+      }
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": {
+        "undos_after_2_commits": 2,
+        "undo_ok": true,
+        "undos": 1,
+        "redos": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "Document Undo/Redo::Redo after undo",
+    "bridge_function": "OCCTDocumentRedo",
+    "bridge_output": {
+      "type": "int",
+      "data": {
+        "redo_ok": true,
+        "undos": 2,
+        "redos": 0
+      }
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": {
+        "redo_ok": true,
+        "undos": 2,
+        "redos": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "Document Undo/Redo::Undo with nothing returns false",
+    "bridge_function": "OCCTDocumentUndo",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "undo": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "undo": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "Document Undo/Redo::Multiple undos and redos",
+    "bridge_function": "OCCTDocumentRedo",
+    "bridge_output": {
+      "type": "int",
+      "data": {
+        "undos_3": 3,
+        "after_3_undo": [
+          0,
+          3
+        ],
+        "after_2_redo": [
+          2,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": {
+        "undos_3": 3,
+        "after_3_undo": [
+          0,
+          3
+        ],
+        "after_2_redo": [
+          2,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "Document Undo/Redo::Abort does not create undo",
+    "bridge_function": "OCCTDocumentAbortTransaction",
+    "bridge_output": {
+      "type": "int",
+      "data": {
+        "undos": 1
+      }
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": {
+        "undos": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "TPrsStd_DriverTable Tests::tableExists",
+    "bridge_function": "OCCTDriverTableExists",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "exists": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "get_is_null": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-driver-table-expression/"
+  },
+  {
+    "test_name": "TPrsStd_DriverTable Tests::initAndClear",
+    "bridge_function": "OCCTDriverTableClear",
+    "bridge_output": {
+      "type": "void",
+      "data": {
+        "returned": true
+      }
+    },
+    "kernel_output": {
+      "type": "void",
+      "data": {
+        "returned": true,
+        "get_null_after": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-driver-table-expression/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::namedTransactionNamesTheCommittedDelta",
+    "bridge_function": "OCCTDocumentCommitWithDelta",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": "add part",
+        "attribute_deltas_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name_after_SetName": "add part",
+        "attribute_deltas": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::aPendingNameDoesNotReachTheNextTransaction",
+    "bridge_function": "OCCTDocumentCommitWithDelta",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": ""
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_delta_name": ""
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::anUnnamedOpenSupersedesAPendingName",
+    "bridge_function": "OCCTDocumentOpenTransaction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": ""
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_delta_name": "",
+        "second_open_throws": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::aRefusedNamedOpenLeavesTheRunningNameAlone",
+    "bridge_function": "OCCTDocumentOpenNamedTransaction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "first": 1,
+        "second": 0,
+        "name": "first"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "second_open_throws": true,
+        "transaction": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::abortDiscardsThePendingName",
+    "bridge_function": "OCCTDocumentAbortTransaction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": ""
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "after_abort_open": false,
+        "undos": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::commitWithDeltaReturnsADeltaAndKeepsTheUndoLimit",
+    "bridge_function": "OCCTDocumentCommitWithDelta",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "delta": true,
+        "undo_limit": 10,
+        "undos": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "undos": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::transactionNumberTracksTheOpenTransaction",
+    "bridge_function": "OCCTDocumentGetTransactionNumber",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "open": 1,
+        "after": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "open": 1,
+        "after": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::repeatedOpensDoNotStack",
+    "bridge_function": "OCCTDocumentGetTransactionNumber",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "after_two_opens": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "second_open_throws": true,
+        "transaction": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::withoutAnUndoLimitNothingOpens",
+    "bridge_function": "OCCTDocumentOpenTransaction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "transaction": 0,
+        "open": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "undo_limit_0_open": false,
+        "transaction": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "Transaction naming and numbering (#970)::openNamedTransactionReportsTheNumberItOpened",
+    "bridge_function": "OCCTDocumentOpenNamedTransaction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "without_limit": 0,
+        "with_limit": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "undo_limit_0": 0,
+        "undo_limit_10": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::A tolerance the document will not take refuses the whole call",
+    "bridge_function": "OCCTDocumentCreateDimensionWithTolerance",
+    "bridge_output": {
+      "type": "create",
+      "data": {
+        "index": null,
+        "dimensions": 0
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "set_accepts_nan": true,
+        "readback_equal": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::A storable tolerance pair still creates the dimension and applies both bounds",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "dimension",
+      "data": {
+        "lowerTol": -0.3,
+        "upperTol": 0.7,
+        "value": 20.0
+      }
+    },
+    "kernel_output": {
+      "type": "dimension",
+      "data": {
+        "plusMinus": true,
+        "lowerTol": -0.3,
+        "upperTol": 0.7,
+        "value": 20
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::Omitting both bounds still creates a simple dimension",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "dimension",
+      "data": {
+        "bounds": "simple"
+      }
+    },
+    "kernel_output": {
+      "type": "dimension",
+      "data": {
+        "nvals": 1,
+        "range": false,
+        "plusMinus": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::The standalone setter refuses the same pair, and leaves the dimension alone",
+    "bridge_function": "OCCTDocumentSetDimensionTolerance",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "refused": true,
+        "bounds": "simple"
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "readback_equal": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::A value passed with .none is not stored",
+    "bridge_function": "OCCTDocumentSetGeomToleranceZoneModifier",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "zone": "none",
+        "value": null
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "none_keeps_old_value": 15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::Clearing a modifier clears its value, whether or not one is passed with the clear",
+    "bridge_function": "OCCTDocumentSetGeomToleranceZoneModifier",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "after_clear": null
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "none_keeps_old_value": 15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::A real zone modifier still stores its value",
+    "bridge_function": "OCCTDocumentSetGeomToleranceZoneModifier",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "zone": "projected",
+        "value": 15.0
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "zone": 1,
+        "value": 15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::The datum sibling reports nothing for a cleared modifier",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "datum",
+      "data": {
+        "modifierWithValue": null
+      }
+    },
+    "kernel_output": {
+      "type": "datum",
+      "data": {
+        "modifier": 0,
+        "value": 15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "Datum lands on the real DocumentTool 0:1:4 table, not Main() itself (#1435)::A created datum is a real child of Main().FindChild(4), the DimTolTool label",
+    "bridge_function": "OCCTDocumentCreateDatum",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "index": 0,
+        "table_children": 1,
+        "datum_count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tool_label": "0:1:4",
+        "children_after_one": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1435-datum-table/"
+  },
+  {
+    "test_name": "Datum lands on the real DocumentTool 0:1:4 table, not Main() itself (#1435)::doc.datumCount agrees with a direct count of Main().FindChild(4)'s children",
+    "bridge_function": "OCCTDocumentGetDatumCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "table_children": 3,
+        "datum_count": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "children_after_three": 3,
+        "datum_labels": 3,
+        "set_on_main_creates_0_1_4": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1435-datum-table/"
+  },
+  {
+    "test_name": "TDataXtd Shape Attribute::Set and get shape attribute on label",
+    "bridge_function": "OCCTDocumentHasShapeAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has": true,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "stored_non_null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Shape Attribute::Label without shape attribute",
+    "bridge_function": "OCCTDocumentHasShapeAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has": false,
+        "shape": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_has_named_shape": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Triangulation Attribute::Set triangulation from meshed shape",
+    "bridge_function": "OCCTDocumentTriangulationNbNodes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nodes_positive": true,
+        "triangles_positive": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "sphere_nodes": 168,
+        "sphere_triangles": 306
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Triangulation Attribute::Triangulation deflection",
+    "bridge_function": "OCCTDocumentTriangulationDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "positive": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "mesh_deflection_positive": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF AttributeIterator Tests::attributeCount",
+    "bridge_function": "OCCTDocumentAttributeCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "at_least": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF AttributeIterator Tests::emptyLabel",
+    "bridge_function": "OCCTDocumentAttributeCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "at_least": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF AttributeIterator Tests::dataSetIsEmpty",
+    "bridge_function": "OCCTDocumentDataSetIsEmpty",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "empty": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "attributes": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF ChildIDIterator Tests::countByGUID",
+    "bridge_function": "OCCTDocumentChildIDCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF ChildIDIterator Tests::emptyResult",
+    "bridge_function": "OCCTDocumentChildIDCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF ComparisonTool Tests::isSelfContained",
+    "bridge_function": "OCCTDocumentIsSelfContained",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF CopyLabel::Copy label with name",
+    "bridge_function": "OCCTDocumentCopyLabel",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true,
+        "name": "Original"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "name": "Original"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF CopyLabel::Copy label with children",
+    "bridge_function": "OCCTDocumentCopyLabel",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true,
+        "dest_has_child": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Name Set/Get::Set and get label name",
+    "bridge_function": "OCCTDocumentGetLabelName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": "MyPart"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name": "MyPart"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Name Set/Get::Rename label",
+    "bridge_function": "OCCTDocumentSetLabelName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": "Renamed"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name": "Renamed"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Reference::Set and get reference",
+    "bridge_function": "OCCTDocumentLabelGetReference",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "points_to_target": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "points_to_target": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Reference::No reference on fresh label",
+    "bridge_function": "OCCTDocumentLabelGetReference",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ref": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_has_reference": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Transaction Named Tests::openNamedTransaction",
+    "bridge_function": "OCCTDocumentOpenNamedTransaction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "number_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "transaction": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "TDF Transaction Named Tests::transactionNumber",
+    "bridge_function": "OCCTDocumentGetTransactionNumber",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "during": 1,
+        "after": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "open": 1,
+        "after": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "TDF Transaction Named Tests::commitWithDelta",
+    "bridge_function": "OCCTDocumentCommitWithDelta",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "delta": true,
+        "attribute_deltas_at_least": 1,
+        "end_ge_begin": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "attribute_deltas": 2,
+        "begin": 0,
+        "end": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "TDF Transaction Named Tests::deltaName",
+    "bridge_function": "OCCTDeltaSetName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": "MyDelta"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name_after_SetName": "add part"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "TDocStd XLinkTool Tests::xlinkCopy",
+    "bridge_function": "OCCTDocumentXLinkCopy",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true,
+        "integer": 77
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "integer": 77
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDocStd XLinkTool Tests::xlinkCopyWithLink",
+    "bridge_function": "OCCTDocumentXLinkCopyWithLink",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true,
+        "integer": 88
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "integer": 88
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::a box stores all six faces, not one",
+    "bridge_function": "OCCTDocumentTriangulationNbNodes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nodes": 24,
+        "triangles": 12
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 6,
+        "nodes": 24,
+        "triangles": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::a two-body compound stores both bodies",
+    "bridge_function": "OCCTDocumentTriangulationNbNodes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nodes": 48,
+        "triangles": 24
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 12,
+        "nodes": 48,
+        "triangles": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::deflection still controls mesh density on a curved shape",
+    "bridge_function": "OCCTDocumentTriangulationDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "fine_more_triangles": true,
+        "fine_smaller_deflection": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "coarse_triangles": 306,
+        "fine_triangles": 516,
+        "coarse_deflection": 0.62736,
+        "fine_deflection": 0.238182
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::a planar shape reports its faces' own deflection",
+    "bridge_function": "OCCTDocumentTriangulationDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonnegative": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "box_deflection": 3.14018e-16
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::a located shape stores nodes in the shape's frame, not the face's",
+    "bridge_function": "OCCTDocumentTriangulationNode",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nodes": 24,
+        "in_frame": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "nodes": 24,
+        "nodeX": [
+          95,
+          105
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::a mirrored shape stores every face, in frame",
+    "bridge_function": "OCCTDocumentTriangulationNbNodes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nodes": 24,
+        "triangles": 12,
+        "x_negative": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "nodes": 24,
+        "triangles": 12,
+        "nodeX": [
+          -20,
+          -10
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::triangulationNode rejects out-of-range and attribute-less labels",
+    "bridge_function": "OCCTDocumentTriangulationNode",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "one_based": true,
+        "count": 24
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "nodes": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::a glTF-imported mesh carries its node normals through the merge",
+    "bridge_function": "OCCTDocumentTriangulationNormal",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "unit_normals": true,
+        "brep_normals": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "brep_mesh_normals": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "Issue 443: triangulation attribute stores the whole shape::a shape with no face stores nothing",
+    "bridge_function": "OCCTDocumentSetTriangulationFromShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": false,
+        "nodes": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 0,
+        "nodes": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+  },
+  {
+    "test_name": "XCAFPrs_Style Tests::emptyStyle",
+    "bridge_function": "OCCTXCAFPrsStyleCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "empty": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "empty": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFPrs_Style Tests::surfaceColor",
+    "bridge_function": "OCCTXCAFPrsStyleCreateWithSurfColor",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "empty": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "empty": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFPrs_Style Tests::visibility",
+    "bridge_function": "OCCTXCAFPrsStyleIsEqual",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "invisible_ne_visible": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "visible_vs_invisible_equal": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFPrs_Style Tests::equality",
+    "bridge_function": "OCCTXCAFPrsStyleIsEqual",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "equal": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "equal": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFPrs_Style Tests::curveColorOnly",
+    "bridge_function": "OCCTXCAFPrsStyleCreateWithCurvColor",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "empty": false,
+        "same": true,
+        "different": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "empty": false,
+        "same": true,
+        "different": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_VisMaterialCommon Tests::defaultValues",
+    "bridge_function": "OCCTVisMaterialCommonDefault",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "defined": true,
+        "diffuse_r": 0.8
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "defined": true,
+        "diffuse_r": 0.8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_VisMaterialCommon Tests::setProperties",
+    "bridge_function": "OCCTVisMaterialCommonIsEqual",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "shininess_differs_unequal": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "equal_05_vs_06": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_VisMaterialCommon Tests::equality",
+    "bridge_function": "OCCTVisMaterialCommonIsEqual",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "equal": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "equal": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_VisMaterialCommon Tests::Common-material roughness fallback uses OCCT's [0,1] Shininess scale (#1508)",
+    "bridge_function": "OCCTDocumentGetLabelMaterial",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "roughness": 0.7
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_VisMaterialPBR Tests::defaultValues",
+    "bridge_function": "OCCTVisMaterialPBRDefault",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "defined": true,
+        "metallic": 1.0,
+        "roughness": 1.0,
+        "refraction": 1.5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "defined": true,
+        "metallic": 1,
+        "roughness": 1,
+        "refraction": 1.5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_VisMaterialPBR Tests::setProperties",
+    "bridge_function": "OCCTVisMaterialPBRIsEqual",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "roughness_differs_unequal": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "equal_05_vs_06": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_VisMaterialPBR Tests::equality",
+    "bridge_function": "OCCTVisMaterialPBRIsEqual",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "equal": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAF full-matrix component placement (#174)::Full 4x4 places components (rotation + reflection) under an assembly",
+    "bridge_function": "OCCTDocumentAddComponentMatrix",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "rigid": true,
+        "reflection": true,
+        "components": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "rotation_added": true,
+        "reflection_added": true,
+        "components": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_AssemblyGraph Tests::createFromDocument",
+    "bridge_function": "OCCTAssemblyGraphNbNodes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonnegative": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "nodes": 5,
+        "links": 4,
+        "roots": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_AssemblyGraph Tests::nodeTypeMatchesRealOCCTCategories",
+    "bridge_function": "OCCTAssemblyGraphGetNodeType",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nodes": 5,
+        "roots": 1,
+        "types": [
+          "assemblyRoot",
+          "occurrence",
+          "subassembly",
+          "occurrence",
+          "part"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "nodes": 5,
+        "roots": 1,
+        "types": [
+          1,
+          3,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_AssemblyItemId Tests::createFromString",
+    "bridge_function": "OCCTAssemblyItemIdPathCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "valid": true,
+        "path": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "null": false,
+        "path": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_AssemblyItemId Tests::emptyIsNull",
+    "bridge_function": "OCCTAssemblyItemIdIsValid",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "valid": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_AssemblyItemId Tests::equality",
+    "bridge_function": "OCCTAssemblyItemIdIsEqual",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "equal": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "equal": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_AssemblyItemId Tests::inequality",
+    "bridge_function": "OCCTAssemblyItemIdIsEqual",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "equal": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "equal": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc AssemblyItemRef Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetAssemblyItemRef",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "path": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "path": "0:1:1:1"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc AssemblyItemRef Tests::subshapeIndex",
+    "bridge_function": "OCCTDocumentAssemblyItemRefHasExtra",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "extra": true,
+        "index": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "extra": true,
+        "index": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc AssemblyItemRef Tests::clearExtra",
+    "bridge_function": "OCCTDocumentAssemblyItemRefClearExtra",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "extra": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "extra": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc AssemblyItemRef Tests::isOrphan",
+    "bridge_function": "OCCTDocumentAssemblyItemRefIsOrphan",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "orphan": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "orphan_for_existing_path": false
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFNoteObjects_NoteObject Tests::create",
+    "bridge_function": "OCCTNoteObjectCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "obj": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "created": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFNoteObjects_NoteObject Tests::initiallyEmpty",
+    "bridge_function": "OCCTNoteObjectHasPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "plane": false,
+        "point": false,
+        "text": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "plane": false,
+        "point": false,
+        "text": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFNoteObjects_NoteObject Tests::setPlane",
+    "bridge_function": "OCCTNoteObjectGetPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has": true,
+        "x": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "x": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFNoteObjects_NoteObject Tests::setPoint",
+    "bridge_function": "OCCTNoteObjectHasPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has": true,
+        "x": 10
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "x": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFNoteObjects_NoteObject Tests::setPresentation",
+    "bridge_function": "OCCTNoteObjectGetPresentation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "presentation": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "presentation": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFNoteObjects_NoteObject Tests::reset",
+    "bridge_function": "OCCTNoteObjectReset",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "plane": false,
+        "point": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "plane": false,
+        "point": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFView_Object Tests::create",
+    "bridge_function": "OCCTViewObjectCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "view": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "created": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFView_Object Tests::projectionType",
+    "bridge_function": "OCCTViewObjectGetType",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "types": [
+          "central",
+          "parallel",
+          "noCamera"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "Central": 2,
+        "Parallel": 1,
+        "NoCamera": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFView_Object Tests::all three real XCAFView_ProjectionType raw values decode correctly, including NoCamera",
+    "bridge_function": "OCCTViewObjectGetType",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "raw_round_trip": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "Central": 2,
+        "Parallel": 1,
+        "NoCamera": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFView_Object Tests::viewDirection",
+    "bridge_function": "OCCTViewObjectGetViewDirection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "x": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "x": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFView_Object Tests::upDirection",
+    "bridge_function": "OCCTViewObjectGetUpDirection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "z": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "z": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFView_Object Tests::windowSize",
+    "bridge_function": "OCCTViewObjectGetWindowHSize",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "h": 800,
+        "v": 600
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "h": 800,
+        "v": 600
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFView_Object Tests::clippingPlanes",
+    "bridge_function": "OCCTViewObjectHasFrontPlaneClipping",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "front": 1.0,
+        "back": 1000.0,
+        "after_unset": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "front": 1,
+        "back": 1000,
+        "after_unset": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFView_Object Tests::name",
+    "bridge_function": "OCCTViewObjectGetName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": "TopView"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name": "TopView"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XDE ShapeTool Queries::AddShape and GetShapeCount",
+    "bridge_function": "OCCTDocumentGetShapeCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_positive": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "shapes": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE ShapeTool Queries::GetFreeShapeCount",
+    "bridge_function": "OCCTDocumentGetFreeShapeCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_positive": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "free": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE ShapeTool Queries::FindShape and SearchShape",
+    "bridge_function": "OCCTDocumentFindShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "found": true,
+        "searched": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "find": true,
+        "search": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE ShapeTool Queries::NewShape and RemoveShape",
+    "bridge_function": "OCCTDocumentRemoveShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "removed": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "removed": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE ShapeTool Queries::IsTopLevel, IsComponent, IsCompound on node",
+    "bridge_function": "OCCTDocumentIsTopLevel",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "top": true,
+        "component": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "top": true,
+        "component": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "TDocStd_XLink Tests::setXLink",
+    "bridge_function": "OCCTDocumentXLinkSet",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "set": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "TDocStd_XLink Tests::documentEntry",
+    "bridge_function": "OCCTDocumentXLinkGetDocumentEntry",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "entry": "/doc/path"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "entry": "/doc/path"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "TDocStd_XLink Tests::labelEntry",
+    "bridge_function": "OCCTDocumentXLinkGetLabelEntry",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "entry": "0:1:2"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "entry": "0:1:2"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "TDataXtd Constraint Tests::setAndGetType",
+    "bridge_function": "OCCTDocumentConstraintGetType",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "type": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "type": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the TDataXtd_ConstraintEnum ordinal. Bridge: Document.constraintGetType returns ConstraintType(rawValue: OCCTDocumentConstraintGetType(...)); the test observed the result equal to .parallel, whose raw value is 5 (the enum is declared from radius = 0, so parallel is the sixth case). Kernel: TDataXtd_Constraint::GetType() after SetType(TDataXtd_PARALLEL) printed type=5 (PARALLEL=5).",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Constraint Tests::isPlanarAndDimension",
+    "bridge_function": "OCCTDocumentConstraintIsPlanar",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "planar": false,
+        "dimension": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "planar": false,
+        "dimension": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Constraint Tests::verifiedFlag",
+    "bridge_function": "OCCTDocumentConstraintGetVerified",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Constraint Tests::noConstraint",
+    "bridge_function": "OCCTDocumentConstraintGetType",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "type": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_has_constraint": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Point/Axis/Plane Attributes::Set point attribute",
+    "bridge_function": "OCCTDocumentSetPointAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "set_non_null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Point/Axis/Plane Attributes::Set axis attribute",
+    "bridge_function": "OCCTDocumentSetAxisAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "set_non_null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Point/Axis/Plane Attributes::Set plane attribute",
+    "bridge_function": "OCCTDocumentSetPlaneAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "set_non_null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Geometry Attribute::Set and get geometry type",
+    "bridge_function": "OCCTDocumentGetGeometryType",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "types": [
+          "point",
+          "plane",
+          "cylinder"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "POINT": 1,
+        "PLANE": 6,
+        "CYLINDER": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Geometry Attribute::All geometry type values",
+    "bridge_function": "OCCTDocumentGetGeometryType",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "every_type_round_trips": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "SetType_GetType_roundtrip": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Create text label",
+    "bridge_function": "OCCTTextLabelGetInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "text": "Hello"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Text label position",
+    "bridge_function": "OCCTTextLabelGetInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "p": [
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Update text label text",
+    "bridge_function": "OCCTTextLabelSetText",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "text": "Updated"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Update text label position",
+    "bridge_function": "OCCTTextLabelSetPosition",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "p": [
+          5,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Text label default height matches OCCT's own default (#1417)",
+    "bridge_function": "OCCTTextLabelGetInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "height": 16.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "Prs3d_TextAspect_default_height": 16
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Text label height round-trips through setHeight (#1417)",
+    "bridge_function": "OCCTTextLabelSetHeight",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "height": 30.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "height_after_set": 30
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Create point cloud",
+    "bridge_function": "OCCTPointCloudGetCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Point cloud bounds",
+    "bridge_function": "OCCTPointCloudGetBounds",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "x": [
+          -1,
+          4
+        ],
+        "y": [
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "x": [
+          -1,
+          4
+        ],
+        "y": [
+          0,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Point cloud retrieval",
+    "bridge_function": "OCCTPointCloudGetPoints",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Colored point cloud",
+    "bridge_function": "OCCTPointCloudGetColors",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "Text Label and Point Cloud::Empty point cloud returns nil",
+    "bridge_function": "OCCTPointCloudCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "cloud": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction DriverTable Tests::hasDriverUnknown",
+    "bridge_function": "OCCTFunctionDriverTableHasDriver",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction DriverTable Tests::clear",
+    "bridge_function": "OCCTFunctionDriverTableClear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "returned": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction Function Attribute::Create function attribute",
+    "bridge_function": "OCCTDocumentFunctionIsFailed",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "failed": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "failed": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction Function Attribute::Function failure mode",
+    "bridge_function": "OCCTDocumentFunctionGetFailure",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "failed": true,
+        "failure": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "failed": true,
+        "failure": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction GraphNode::Create graph node and set status",
+    "bridge_function": "OCCTDocumentGraphNodeGetStatus",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "statuses": [
+          "notExecuted",
+          "succeeded"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "NotExecuted": 1,
+        "Succeeded": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction GraphNode::Graph node dependencies",
+    "bridge_function": "OCCTDocumentGraphNodeAddNext",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "add_next": true,
+        "add_previous": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "add_next": true,
+        "add_previous": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction GraphNode::All execution statuses",
+    "bridge_function": "OCCTDocumentGraphNodeGetStatus",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "every_status_round_trips": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "SetStatus_GetStatus": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction IFunction Tests::newFunction",
+    "bridge_function": "OCCTDocumentNewFunction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction IFunction Tests::deleteFunction",
+    "bridge_function": "OCCTDocumentDeleteFunction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction IFunction Tests::functionExecStatus",
+    "bridge_function": "OCCTDocumentFunctionSetExecStatus",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "statuses": [
+          "wrongDefinition",
+          "succeeded"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction IFunction Tests::noFunction",
+    "bridge_function": "OCCTDocumentFunctionGetExecStatus",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "status": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TObj_Application Tests::getInstance",
+    "bridge_function": "OCCTTObjApplicationGetInstance",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "null": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TObj_Application Tests::verboseFlag",
+    "bridge_function": "OCCTTObjApplicationIsVerbose",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "true_then_false": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "verbose_after_true": true,
+        "after_false": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "TObj_Application Tests::createDocument",
+    "bridge_function": "OCCTTObjApplicationCreateDocument",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "document": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "new_document": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "UAttribute Tests::setAndHas",
+    "bridge_function": "OCCTUAttributeHas",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "UAttribute Tests::differentGUID",
+    "bridge_function": "OCCTUAttributeHas",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "g1": true,
+        "g2": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "g1": true,
+        "g2": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "UAttribute Tests::getID",
+    "bridge_function": "OCCTUAttributeGetID",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "id_contains": "abcdef01"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TDataStd_Variable Tests::setVariable",
+    "bridge_function": "OCCTDocumentVariableSet",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "set": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TDataStd_Variable Tests::setAndGetName",
+    "bridge_function": "OCCTDocumentVariableGetName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": "velocity"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name": "velocity"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TDataStd_Variable Tests::setAndGetValue",
+    "bridge_function": "OCCTDocumentVariableGetValue",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "valued": true,
+        "value": 42.5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "valued": true,
+        "value": 42.5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TDataStd_Variable Tests::unitString",
+    "bridge_function": "OCCTDocumentVariableGetUnit",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "unit": "m/s"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unit": "m/s"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TDataStd_Variable Tests::constantFlag",
+    "bridge_function": "OCCTDocumentVariableIsConstant",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "true_then_false": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "true_then_false": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TDataStd_Variable Tests::assignAndDesassignExpression",
+    "bridge_function": "OCCTDocumentVariableIsAssigned",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "true_then_false": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "true_then_false": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TNaming, Basic Record and Retrieve::Create label on document",
+    "bridge_function": "OCCTDocumentCreateLabel",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "label": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "new_child": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Basic Record and Retrieve::Create child label under parent",
+    "bridge_function": "OCCTDocumentCreateLabel",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "child": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "new_child": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Basic Record and Retrieve::Record primitive shape",
+    "bridge_function": "OCCTDocumentNamingRecord",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "evolution": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Basic Record and Retrieve::Current shape after primitive",
+    "bridge_function": "OCCTDocumentNamingGetCurrentShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "current": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "current_same_as_box": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Basic Record and Retrieve::Stored shape matches recorded",
+    "bridge_function": "OCCTDocumentNamingGetShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "stored": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "stored_same_as_box": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Basic Record and Retrieve::Evolution type is primitive",
+    "bridge_function": "OCCTDocumentNamingGetEvolution",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "evolution": "primitive"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "evolution": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Basic Record and Retrieve::No evolution on empty label",
+    "bridge_function": "OCCTDocumentNamingGetEvolution",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "evolution": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_has_named_shape": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Basic Record and Retrieve::History count after primitive",
+    "bridge_function": "OCCTDocumentNamingHistoryCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 1,
+        "old": false,
+        "new": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "entries": 1,
+        "old": false,
+        "new": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Basic Record and Retrieve::New shape from history entry",
+    "bridge_function": "OCCTDocumentNamingGetNewShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "new": true,
+        "old": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "new": true,
+        "old": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the primitive history entry carries a new shape (new) and an old shape (old). Bridge: Document.newShape(on:at:) and Document.oldShape(on:at:) return nil when the entry has no such shape; the test observed newShape != nil (new true) and oldShape == nil (old false). Kernel: TNaming_Iterator over the primitive NamedShape printed hasNew=true hasOld=false (!NewShape().IsNull(), !OldShape().IsNull()).",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Basic Record and Retrieve::Modify evolution updates current shape",
+    "bridge_function": "OCCTDocumentNamingGetEvolution",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "evolution": "modify",
+        "current": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "evolution": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Basic Record and Retrieve::Delete evolution records correctly",
+    "bridge_function": "OCCTDocumentNamingGetEvolution",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "evolution": "delete"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "evolution": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Basic Record and Retrieve::Generated evolution with old and new shapes",
+    "bridge_function": "OCCTDocumentNamingGetEvolution",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "evolution": "generated",
+        "count": 1,
+        "old": true,
+        "new": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "evolution": 1,
+        "entries": 1,
+        "old": true,
+        "new": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Basic Record and Retrieve::History accumulates multiple entries",
+    "bridge_function": "OCCTDocumentNamingHistoryCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "entries_after_modify": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming CopyShape::Deep copy a box shape",
+    "bridge_function": "OCCTShapeDeepCopy",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "valid": true,
+        "distinct": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "non_null": true,
+        "is_same": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming CopyShape::Deep copy a sphere shape",
+    "bridge_function": "OCCTShapeDeepCopy",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "non_null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Extensions Tests::namingIsEmpty",
+    "bridge_function": "OCCTNamingIsEmpty",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "empty": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_has_named_shape": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Extensions Tests::namingIsEmptyAfterRecord",
+    "bridge_function": "OCCTNamingIsEmpty",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "empty": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "empty": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Extensions Tests::namingVersion",
+    "bridge_function": "OCCTNamingGetVersion",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "after": 42
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "after": 42
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Extensions Tests::namingOriginalShape",
+    "bridge_function": "OCCTNamingOriginalShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "original": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "primitive_has_old": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Extensions Tests::namingOriginalShapeFromModify",
+    "bridge_function": "OCCTNamingOriginalShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "original": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "original_same_as_box": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Extensions Tests::namingHasLabel",
+    "bridge_function": "OCCTNamingHasLabel",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "has": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Extensions Tests::namingFindLabel",
+    "bridge_function": "OCCTNamingFindLabel",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "found": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "found_is_record_label": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Extensions Tests::namingValidUntil",
+    "bridge_function": "OCCTNamingValidUntil",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonnegative": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "valid_until": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Extensions Tests::sameShapeCount",
+    "bridge_function": "OCCTNamingSameShapeCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_at_least": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "labels": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Extensions Tests::sameShapeLabels",
+    "bridge_function": "OCCTNamingSameShapeLabels",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_at_least": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "labels": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Forward and Backward Tracing::Trace forward finds generated shape",
+    "bridge_function": "OCCTDocumentNamingTraceForward",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "forward": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Forward and Backward Tracing::Trace backward finds source shape",
+    "bridge_function": "OCCTDocumentNamingTraceBackward",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "backward": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Forward and Backward Tracing::Multiple generations from same source",
+    "bridge_function": "OCCTDocumentNamingTraceForward",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_at_least": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "forward": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Forward and Backward Tracing::Empty trace for unrelated shape",
+    "bridge_function": "OCCTDocumentNamingTraceForward",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "empty": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unrelated_in_table": false,
+        "forward": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Forward and Backward Tracing::Trace through modification chain",
+    "bridge_function": "OCCTDocumentNamingTraceForward",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "forward": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Forward and Backward Tracing::Forward trace does not find source shape",
+    "bridge_function": "OCCTDocumentNamingTraceForward",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "excludes_source": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "includes_source": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Forward and Backward Tracing::Backward trace does not find generated shape",
+    "bridge_function": "OCCTDocumentNamingTraceBackward",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "excludes_generated": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "includes_itself": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Translator Tests::translatorCopy",
+    "bridge_function": "OCCTShapeTranslatorCopy",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "copy": true,
+        "distinct": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "is_same": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "XCAFDoc AssemblyIterator Tests::iterateAssembly",
+    "bridge_function": "OCCTDocumentAssemblyItemCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "items": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc AssemblyIterator Tests::smallAssemblyCountIsComplete",
+    "bridge_function": "OCCTDocumentAssemblyItemCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_at_least": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "items": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_ClippingPlaneTool Tests::addAndGet",
+    "bridge_function": "OCCTDocumentClipPlaneToolIsClipPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "is_clip": true,
+        "origin_z": 5,
+        "normal_z": 1,
+        "capping": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "is_clip": true,
+        "origin_z": 5,
+        "normal_z": 1,
+        "capping": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_ClippingPlaneTool Tests::remove",
+    "bridge_function": "OCCTDocumentClipPlaneToolRemove",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "removed": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "removed": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Color Tests::setAndGetRGB",
+    "bridge_function": "OCCTDocumentGetColorAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "rgb": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "rgb": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Color Tests::setAndGetRGBA",
+    "bridge_function": "OCCTDocumentGetColorAlphaAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "alpha": 0.8
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "alpha": 0.8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Color Tests::namedColor",
+    "bridge_function": "OCCTDocumentGetColorNOCAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "noc_nonnegative": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "noc": 407
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc DimTol Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetDimTolKind",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "kind": 1,
+        "name": "Flatness",
+        "description": "Surface flatness tolerance",
+        "values": [
+          0.01,
+          0.05
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "kind": 1,
+        "name": "Flatness",
+        "description": "Surface flatness tolerance",
+        "values": [
+          0.01,
+          0.05
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc DimTol Tests::noDimTol",
+    "bridge_function": "OCCTDocumentGetDimTolKind",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "kind": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_GraphNode Tests::setAndRelate",
+    "bridge_function": "OCCTDocumentGraphNodeNbChildren",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "children": 1,
+        "fathers": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "children": 1,
+        "fathers": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_GraphNode Tests::unsetRelationship",
+    "bridge_function": "OCCTDocumentGraphNodeNbFathers",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "children": 0,
+        "fathers": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "children": 0,
+        "fathers": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_GraphNode Tests::isFatherIsChild",
+    "bridge_function": "OCCTDocumentGraphNodeIsFather",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "some_relation": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "is_father": true,
+        "is_child": false,
+        "children": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Location Tests::setAndGetLocation",
+    "bridge_function": "OCCTDocumentGetLocationTranslation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "translation": [
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "translation": [
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Location Tests::noLocation",
+    "bridge_function": "OCCTDocumentHasLocation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Material Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetMaterialAttrName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": "Steel",
+        "description": "Carbon steel",
+        "density": 7850.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name": "Steel",
+        "description": "Carbon steel",
+        "density": 7850
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Material Tests::noMaterial",
+    "bridge_function": "OCCTDocumentHasMaterialAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NoteBalloon Tests::setAndGet",
+    "bridge_function": "OCCTDocumentSetNoteBalloon",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: ok, the note attribute was set. Bridge: OCCTDocumentSetNoteBalloon returns !XCAFDoc_NoteBalloon::Set(label, user, timeStamp, comment).IsNull(); the test observed true. Kernel: XCAFDoc_NoteBalloon::Set with the test's arguments printed non-null=true (transcript.txt, the NoteBalloon::Set line).",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NoteBinData Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetNoteBinDataSize",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "size": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "size": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NoteComment Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetNoteCommentText",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true,
+        "text": "This is a comment",
+        "user": "TestUser"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "ok": true,
+        "text": "This is a comment",
+        "user": "TestUser"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: ok, text and user of the note. Bridge: OCCTDocumentSetNoteComment returns !XCAFDoc_NoteComment::Set(...).IsNull() and OCCTDocumentGetNoteCommentText / OCCTDocumentGetNoteUserName read Comment() and UserName() back; the test observed true, \"This is a comment\" and \"TestUser\". Kernel: XCAFDoc_NoteComment::Set with the test's arguments printed non-null=true, then Comment() and UserName() through FindAttribute (transcript.txt, the NoteComment::Set line).",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::createAndCountNotes",
+    "bridge_function": "OCCTDocumentNotesToolNbNotes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "after": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "after": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::createBalloon",
+    "bridge_function": "OCCTDocumentNotesToolCreateBalloon",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "note": true,
+        "count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "note": true,
+        "count": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: note (the creation returned a note) and count (NbNotes after it, on a fresh document). Bridge: OCCTDocumentNotesToolCreateBalloon returns the registered note label or -1 and Document.notesToolCreateBalloon maps -1 to nil; the test observed a non-nil note and notesToolNoteCount == 1. Kernel: XCAFDoc_NotesTool::CreateBalloon on a fresh document printed note non-null=true NbNotes=1.",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::createBinData",
+    "bridge_function": "OCCTDocumentNotesToolCreateBinData",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "note": true,
+        "count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "note": true,
+        "count": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: note (the creation returned a note) and count (NbNotes after it, on a fresh document). Bridge: OCCTDocumentNotesToolCreateBinData returns the registered note label or -1 and Document.notesToolCreateBinData maps -1 to nil; the test observed a non-nil note and notesToolNoteCount == 1. Kernel: XCAFDoc_NotesTool::CreateBinData with the test's 4 bytes on a fresh document printed note non-null=true NbNotes=1. The test does not read the data size, so it is not compared (the kernel size, 4, is on the XCAFDoc_NoteBinData Tests::setAndGet record).",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::deleteAllNotes",
+    "bridge_function": "OCCTDocumentNotesToolDeleteAllNotes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 3,
+        "deleted": 3,
+        "after": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 3,
+        "deleted": 3,
+        "after": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::orphanNotes",
+    "bridge_function": "OCCTDocumentNotesToolNbOrphanNotes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonnegative": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "nonnegative": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: nonnegative, whether the orphan-note count is >= 0. Bridge: the test creates one unattached comment and asserts notesToolOrphanNoteCount >= 0; that bound is all it observes, so the bridge's raw count is not compared. Kernel: XCAFDoc_NotesTool::NbOrphanNotes() printed 1 for one unattached comment on a fresh document, so >= 0 is true.",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_ShapeMapTool Tests::setShapeAndQuery",
+    "bridge_function": "OCCTDocumentShapeMapToolIsSubShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "sub": true,
+        "extent_positive": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "sub": true,
+        "extent": 33
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
   },
   {
     "test_name": "DocumentExplorer Extension Tests::explorerDepth",
