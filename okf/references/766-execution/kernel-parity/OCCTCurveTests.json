@@ -6942,5 +6942,280 @@
     "red": "Curve3DBSplineTests.swift:102 b.degree == 3",
     "green": "passed",
     "probe": "Scripts/repro/766-curve-bezier-bspline/transcript.txt"
+  },
+  {
+    "test_name": "GeomConvert CompCurveToBSpline Tests::Join two line segments",
+    "test_file": "Tests/OCCTCurveTests/CurveJoinTests.swift",
+    "bridge_function": "OCCTCurve3DJoinCurves",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0) -> (2,1,0), domain length 1 + sqrt 2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "domain [0, 2.4142135623730949]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "last curve not added (and, separately, result moved 0.5 in y)",
+    "red": "CurveJoinTests.swift:20 simd_distance(joined.point(at: dom.upperBound), end) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-join-length-split/transcript.txt",
+    "note": "Rewritten: `if let` and 0.01 of slack"
+  },
+  {
+    "test_name": "GeomConvert CompCurveToBSpline Tests::Join three segments",
+    "test_file": "Tests/OCCTCurveTests/CurveJoinTests.swift",
+    "bridge_function": "OCCTCurve3DJoinCurves",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0) -> (3,1,1), domain length 1 + 2 sqrt 2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "domain [0, 3.8284271247461898]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "last curve not added (and, separately, result moved 0.5 in y)",
+    "red": "CurveJoinTests.swift:20 simd_distance(joined.point(at: dom.upperBound), end) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-join-length-split/transcript.txt",
+    "note": "Rewritten: `if let` and 0.01 of slack. The first rewrite pinned the domain at 2 + sqrt 2 and failed green; the probe's 3.828 = 1 + 2 sqrt 2 is right"
+  },
+  {
+    "test_name": "GeomConvert CompCurveToBSpline Tests::Join single curve",
+    "test_file": "Tests/OCCTCurveTests/CurveJoinTests.swift",
+    "bridge_function": "OCCTCurve3DJoinCurves",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0) -> (5,0,0), domain [0, 5]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "domain [0, 5]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "result moved 0.5 in y",
+    "red": "CurveJoinTests.swift:19 simd_distance(joined.point(at: dom.lowerBound), start) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-join-length-split/transcript.txt",
+    "note": "Rewritten: `if let` and 0.01 of slack"
+  },
+  {
+    "test_name": "v0.115.0 - Curve Length and Closest::curve3DArcLength",
+    "test_file": "Tests/OCCTCurveTests/CurveLengthTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "10"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length = 10"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "length x 1.0001",
+    "red": "CurveLengthTests.swift:25 abs(curve.arcLength(from: domain.lowerBound, to: domain.upperBound) - 10) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-join-length-split/transcript.txt",
+    "note": "Rewritten: len > 0"
+  },
+  {
+    "test_name": "v0.115.0 - Curve Length and Closest::curve3DClosestParameter",
+    "test_file": "Tests/OCCTCurveTests/CurveLengthTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": "5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_ProjectPointOnCurve parameter 5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "parameter + 1",
+    "red": "CurveLengthTests.swift:37 abs(param - 5.0) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-join-length-split/transcript.txt",
+    "note": "Rewritten: 0.1 of slack inside `if let`"
+  },
+  {
+    "test_name": "v0.115.0 - Curve Length and Closest::curve2DArcLength",
+    "test_file": "Tests/OCCTCurveTests/CurveLengthTests.swift",
+    "bridge_function": "OCCTCurve2DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "14.355489462097665"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "2D length 14.355489462097665"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "length x 1.0001 (and, separately, end tangent loaded as start)",
+    "red": "CurveLengthTests.swift:53 abs(len - 14.355489462097665) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-join-length-split/transcript.txt",
+    "note": "Rewritten: len > 0"
+  },
+  {
+    "test_name": "Curve Planarity Check::Circle is planar",
+    "test_file": "Tests/OCCTCurveTests/CurvePlanarityTests.swift",
+    "bridge_function": "OCCTCurve3DIsPlanar",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,1)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "ShapeAnalysis_Curve::IsPlanar = 1, normal (0,0,1)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "normal components rotated",
+    "red": "CurvePlanarityTests.swift:23 simd_distance(normal, SIMD3(0, 0, 1)) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-join-length-split/transcript.txt",
+    "note": "Rewritten: force-unwrap inside #expect"
+  },
+  {
+    "test_name": "Curve Planarity Check::Line is planar",
+    "test_file": "Tests/OCCTCurveTests/CurvePlanarityTests.swift",
+    "bridge_function": "OCCTCurve3DIsPlanar",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,1)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "IsPlanar = 1, normal (0,0,1)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "normal components rotated",
+    "red": "CurvePlanarityTests.swift:37 simd_distance(normal, SIMD3(0, 0, 1)) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-join-length-split/transcript.txt",
+    "note": "Rewritten: discarded its result, could not fail"
+  },
+  {
+    "test_name": "v0.115.0 - Curve Split and Concatenate::splitAtContinuity3D",
+    "test_file": "Tests/OCCTCurveTests/CurveSplitConcatTests.swift",
+    "bridge_function": "OCCTCurve3DSplitAtContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "1 piece ending at (10,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "C0BSplineToArrayOfC1BSplineCurve: 1 piece"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "no pieces returned",
+    "red": "CurveSplitConcatTests.swift:19 segs.count == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-join-length-split/transcript.txt",
+    "note": "Rewritten: count >= 1 inside `if let`"
+  },
+  {
+    "test_name": "v0.115.0 - Curve Split and Concatenate::concatenateCurvesG1",
+    "test_file": "Tests/OCCTCurveTests/CurveSplitConcatTests.swift",
+    "bridge_function": "OCCTCurve3DConcatenateG1",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0) -> (20,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Add = 1, (0,0,0) -> (20,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "result moved 0.5 in z",
+    "red": "CurveSplitConcatTests.swift:34 simd_distance(joined.startPoint, SIMD3(0, 0, 0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-join-length-split/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "v0.115.0 - Curve Split and Concatenate::concatenateG1RejectsDisconnectedCurve",
+    "test_file": "Tests/OCCTCurveTests/CurveSplitConcatTests.swift",
+    "bridge_function": "OCCTCurve3DConcatenateG1",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Add fails across the 4-unit gap"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Add() failure ignored",
+    "red": "CurveSplitConcatTests.swift:46 joined == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-join-length-split/transcript.txt"
+  },
+  {
+    "test_name": "v0.115.0 - Curve Split and Concatenate::splitCurve2DAtContinuity",
+    "test_file": "Tests/OCCTCurveTests/CurveSplitConcatTests.swift",
+    "bridge_function": "OCCTCurve2DSplitAtContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom2dConvert::C0BSplineToArrayOfC1BSplineCurve: 1 piece"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "no pieces returned",
+    "red": "CurveSplitConcatTests.swift:56 segs.count == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-join-length-split/transcript.txt",
+    "note": "Rewritten: count >= 1 inside `if let`"
   }
 ]
