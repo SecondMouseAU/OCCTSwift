@@ -2,7 +2,6 @@
 // ExtremaPointCurve.pointToCircle reaches OCCTExtremaExtPElCCirc, which builds
 // gp_Circ(gp_Ax2(centre, normal), r) and runs Extrema_ExtPElC(p, c, tol, 0, 2*pi).
 #include <Extrema_ExtPElC.hxx>
-#include <Extrema_POnCurv.hxx>
 #include <cmath>
 #include <cstdio>
 #include <gp_Ax2.hxx>
