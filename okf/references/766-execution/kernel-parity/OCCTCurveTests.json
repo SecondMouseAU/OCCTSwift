@@ -2,306 +2,786 @@
   {
     "test_name": "A whole ellipse measures its own circumference not 0.3 to 1.7 percent more",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A parabola over a wide range measures its arc not 3 percent less",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A hyperbola over a wide range measures its arc",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A whipping cubic Bezier",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "The closed forms stay exact",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Accurate sub-ranges sum to whole",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A wound range winds correctly",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A fraction of the length matches",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A negative abscissa measures correctly",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A 2D ellipse measures correctly",
     "bridge_function": "OCCTCurve2DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "An elliptical edge measures correctly",
     "bridge_function": "OCCTShapeEdgeArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A wire containing elliptical edges",
     "bridge_function": "OCCTWireArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "An EdgeCurve measures correctly",
     "bridge_function": "OCCTEdgeCurveArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "parameterAtLength walks correctly",
     "bridge_function": "OCCTCurve3DParameterAtLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Two unbounded parallel lines extrema is empty not a crash",
     "bridge_function": "OCCTExtremaExtCC",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Two bounded parallel segments with overlapping ranges extrema is empty",
     "bridge_function": "OCCTExtremaExtCC",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "minDistance keeps reporting true offset for parallel pairs",
     "bridge_function": "OCCTCurve3DMinDistance",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "mirrorAxisZeroDirection",
     "bridge_function": "OCCTMakeMirrorAxis",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "mirrorPlaneZeroNormal",
     "bridge_function": "OCCTMakeMirrorPlane",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "geomDirectionZeroVector",
     "bridge_function": "OCCTGeomDirectionCreate",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A genuine zero-width interval reports exactly 0.0 not a failure sentinel",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "A genuinely failing computation is distinguishable from real zero-length",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "length of a multi-span interpolated BSpline matches reference",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "length from to over a sub-range matches reference",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "all five arc-length spellings agree with same reference",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BSpline Curve 3D Manipulation Tests",
     "bridge_function": "OCCTBSplineCurve3DManipulate",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Analytical conversion contract",
     "bridge_function": "OCCTGeomConvertCurveToAnaCurve",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "The nearest point is on the curve not on its basis",
     "bridge_function": "OCCTCurve3DNearestPoint",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Curve3D Primitive Tests",
     "bridge_function": "OCCTCurve3DPrimitive",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Curve3D Operations Tests",
     "bridge_function": "OCCTCurve3DOperations",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "An out-of-domain range measures the curve not its extrapolation",
     "bridge_function": "OCCTCurve3DArcLengthRange",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Bezier Curve Manipulation Tests",
     "bridge_function": "OCCTBezierCurve3DManipulate",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Non-finite arc-length bounds report failure",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Helix Curves",
     "bridge_function": "OCCTHelixCurve3D",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Bezier Curve 3D Completions",
     "bridge_function": "OCCTBezierCurve3DComplete",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Curve3D arc-length accuracy on multi-span curves",
     "bridge_function": "OCCTCurve3DArcLength",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "BSplineCurve 3D Completions",
     "bridge_function": "OCCTBSplineCurve3DComplete",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Law Function Tests",
     "bridge_function": "OCCTLawFunctionEvaluate",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
+  },
+  {
+    "test_name": "Adaptor3d IsoCurve::U-iso points on cylinder face",
+    "test_file": "Tests/OCCTCurveTests/Adaptor3dIsoCurveTests.swift",
+    "bridge_function": "OCCTAdaptor3dIsoCurveEval",
+    "bridge_output": {
+      "type": "points",
+      "data": "(10, 0, z), z = -1e6, -5e5, 0, 5e5, 1e6 (within 1e-6)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "(10, 0, z), z = -1e6, -5e5, 0, 5e5, 1e6; raw iso range [-2e100, 2e100] clamped to 1e6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "U and V iso type swapped",
+    "red": "Adaptor3dIsoCurveTests.swift:35 abs(p.z - zk) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: picked any face, checked only the count"
+  },
+  {
+    "test_name": "Adaptor3d IsoCurve::V-iso points on cylinder face",
+    "test_file": "Tests/OCCTCurveTests/Adaptor3dIsoCurveTests.swift",
+    "bridge_function": "OCCTAdaptor3dIsoCurveEval",
+    "bridge_output": {
+      "type": "points",
+      "data": "(10cos u, 10sin u, 10), u = 2 pi i / 9, i = 0..9 (within 1e-9)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "(10cos u, 10sin u, 10), u = 2 pi i / 9; e.g. pt[1] = (7.6604444311897799, 6.4278760968653925, 10)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "U and V iso type swapped",
+    "red": "Adaptor3dIsoCurveTests.swift:50 abs(p.x - 10 * cos(u)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: picked any face, checked only the count"
+  },
+  {
+    "test_name": "Adaptor3d IsoCurve::U-iso curve edge from face",
+    "test_file": "Tests/OCCTCurveTests/Adaptor3dIsoCurveTests.swift",
+    "bridge_function": "OCCTAdaptor3dIsoCurveEdge",
+    "bridge_output": {
+      "type": "edge",
+      "data": "line, length 10, (10,0,0) -> (10,0,10)"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": "type 0 (line), range [0, 10], length 10, (10,0,0) -> (10,0,10)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "U and V iso type swapped",
+    "red": "Adaptor3dIsoCurveTests.swift:65 edge.edgeAdaptorCurveType == 0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: checked only shapeType == .edge"
+  },
+  {
+    "test_name": "Adaptor3d IsoCurve::V-iso curve edge from face",
+    "test_file": "Tests/OCCTCurveTests/Adaptor3dIsoCurveTests.swift",
+    "bridge_function": "OCCTAdaptor3dIsoCurveEdge",
+    "bridge_output": {
+      "type": "edge",
+      "data": "circle arc, length 10 pi, (10,0,10) -> (-10,0,10)"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": "type 1 (circle), range [0, pi], length 31.415926535897931, (10,0,10) -> (-10,1.2e-15,10)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "U and V iso type swapped",
+    "red": "Adaptor3dIsoCurveTests.swift:84 edge.edgeAdaptorCurveType == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: checked only shapeType == .edge"
+  },
+  {
+    "test_name": "Approx CurvilinearParameter::Arc-length reparameterize circle edge",
+    "test_file": "Tests/OCCTCurveTests/ApproxCurvilinearParameterTests.swift",
+    "bridge_function": "OCCTApproxCurvilinearParameter",
+    "bridge_output": {
+      "type": "edge",
+      "data": "BSpline, range [0, 1], length 20 pi within 1e-3, half-parameter length = half length within 1e-6"
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": "BSpline degree 7, 14 poles, range [0, 1], length 62.831818308373776, length to u=0.5 31.415909154186899, MaxError3d 1.886e-4"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input edge instead of Approx_CurvilinearParameter's curve",
+    "red": "ApproxCurvilinearParameterTests.swift:27 result.edgeAdaptorCurveType == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: checked only isValid"
+  },
+  {
+    "test_name": "Approx SameParameter Tests::same parameter on line/plane",
+    "test_file": "Tests/OCCTCurveTests/ApproxSameParameterTests.swift",
+    "bridge_function": "OCCTApproxSameParameter",
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": "IsDone 1, IsSameParameter 1 (TolReached 1.48e50 on these unbounded lines, not asserted)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsSameParameter() negated",
+    "red": "ApproxSameParameterTests.swift:25 r.isSameParameter",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "note": "Rewritten: `if let` let a nil result pass unchecked"
   },
   {
     "test_name": "Analytical conversion contract (#492)::Curve result does not alias the input curve",
