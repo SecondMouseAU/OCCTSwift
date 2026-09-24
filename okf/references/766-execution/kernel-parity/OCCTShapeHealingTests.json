@@ -6167,5 +6167,475 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Sewing Builder Tests::createSewing",
+    "bridge_function": "OCCTSewing*",
+    "bridge_output": {
+      "type": "sewing",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "beforePerform": {
+          "SewedShape": null
+        },
+        "sixBoxFaces1e-6": {
+          "type": "SHELL",
+          "faces": 6,
+          "valid": true,
+          "free": 0
+        },
+        "fiveBoxFaces1e-6": {
+          "type": "SHELL",
+          "faces": 5,
+          "valid": true,
+          "free": 4
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sewing Builder Tests::sewBoxFaces",
+    "bridge_function": "OCCTSewing*",
+    "bridge_output": {
+      "type": "sewing",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "beforePerform": {
+          "SewedShape": null
+        },
+        "sixBoxFaces1e-6": {
+          "type": "SHELL",
+          "faces": 6,
+          "valid": true,
+          "free": 0
+        },
+        "fiveBoxFaces1e-6": {
+          "type": "SHELL",
+          "faces": 5,
+          "valid": true,
+          "free": 4
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sewing Builder Tests::sewingStatistics",
+    "bridge_function": "OCCTSewing*",
+    "bridge_output": {
+      "type": "sewing",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "beforePerform": {
+          "SewedShape": null
+        },
+        "sixBoxFaces1e-6": {
+          "type": "SHELL",
+          "faces": 6,
+          "valid": true,
+          "free": 0
+        },
+        "fiveBoxFaces1e-6": {
+          "type": "SHELL",
+          "faces": 5,
+          "valid": true,
+          "free": 4
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, Sewing Extended::sewingDeletedFacesAndQueries",
+    "bridge_function": "OCCTSewing*",
+    "bridge_output": {
+      "type": "sewing",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "twoThinBoxes1e-3": {
+          "type": "COMPOUND",
+          "faces": 12,
+          "deletedFaces": 0
+        },
+        "faces1and2": {
+          "faces": 2,
+          "free": 8,
+          "IsModified": [
+            false,
+            false
+          ]
+        },
+        "wholeBox1e-3": {
+          "type": "SHELL",
+          "faces": 6,
+          "IsDegenerated": false,
+          "IsSectionBound(edge1)": false,
+          "WhichFace(edge1)": null
+        },
+        "Load+modes": {
+          "type": "SHELL",
+          "faces": 6,
+          "free": 12
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, Sewing Extended::sewingIsModified",
+    "bridge_function": "OCCTSewing*",
+    "bridge_output": {
+      "type": "sewing",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "twoThinBoxes1e-3": {
+          "type": "COMPOUND",
+          "faces": 12,
+          "deletedFaces": 0
+        },
+        "faces1and2": {
+          "faces": 2,
+          "free": 8,
+          "IsModified": [
+            false,
+            false
+          ]
+        },
+        "wholeBox1e-3": {
+          "type": "SHELL",
+          "faces": 6,
+          "IsDegenerated": false,
+          "IsSectionBound(edge1)": false,
+          "WhichFace(edge1)": null
+        },
+        "Load+modes": {
+          "type": "SHELL",
+          "faces": 6,
+          "free": 12
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, Sewing Extended::sewingIsDegenerated",
+    "bridge_function": "OCCTSewing*",
+    "bridge_output": {
+      "type": "sewing",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "twoThinBoxes1e-3": {
+          "type": "COMPOUND",
+          "faces": 12,
+          "deletedFaces": 0
+        },
+        "faces1and2": {
+          "faces": 2,
+          "free": 8,
+          "IsModified": [
+            false,
+            false
+          ]
+        },
+        "wholeBox1e-3": {
+          "type": "SHELL",
+          "faces": 6,
+          "IsDegenerated": false,
+          "IsSectionBound(edge1)": false,
+          "WhichFace(edge1)": null
+        },
+        "Load+modes": {
+          "type": "SHELL",
+          "faces": 6,
+          "free": 12
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, Sewing Extended::sewingLoadAndModes",
+    "bridge_function": "OCCTSewing*",
+    "bridge_output": {
+      "type": "sewing",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "twoThinBoxes1e-3": {
+          "type": "COMPOUND",
+          "faces": 12,
+          "deletedFaces": 0
+        },
+        "faces1and2": {
+          "faces": 2,
+          "free": 8,
+          "IsModified": [
+            false,
+            false
+          ]
+        },
+        "wholeBox1e-3": {
+          "type": "SHELL",
+          "faces": 6,
+          "IsDegenerated": false,
+          "IsSectionBound(edge1)": false,
+          "WhichFace(edge1)": null
+        },
+        "Load+modes": {
+          "type": "SHELL",
+          "faces": 6,
+          "free": 12
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, Sewing Extended::sewingSectionBoundAndWhichFace",
+    "bridge_function": "OCCTSewing*",
+    "bridge_output": {
+      "type": "sewing",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "twoThinBoxes1e-3": {
+          "type": "COMPOUND",
+          "faces": 12,
+          "deletedFaces": 0
+        },
+        "faces1and2": {
+          "faces": 2,
+          "free": 8,
+          "IsModified": [
+            false,
+            false
+          ]
+        },
+        "wholeBox1e-3": {
+          "type": "SHELL",
+          "faces": 6,
+          "IsDegenerated": false,
+          "IsSectionBound(edge1)": false,
+          "WhichFace(edge1)": null
+        },
+        "Load+modes": {
+          "type": "SHELL",
+          "faces": 6,
+          "free": 12
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sewing_Extras::multipleEdgeCount",
+    "bridge_function": "OCCTSewingNbMultipleEdges / OCCTSewingMultipleEdge",
+    "bridge_output": {
+      "type": "sewing",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "threeFacesOnOneEdge": {
+          "multiple": 1,
+          "faces": 3,
+          "free": 9
+        },
+        "wholeBox1e-6": {
+          "multiple": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sewing_Extras::noMultipleEdgesForBox",
+    "bridge_function": "OCCTSewingNbMultipleEdges / OCCTSewingMultipleEdge",
+    "bridge_output": {
+      "type": "sewing",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "threeFacesOnOneEdge": {
+          "multiple": 1,
+          "faces": 3,
+          "free": 9
+        },
+        "wholeBox1e-6": {
+          "multiple": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sewing_Extras::multipleEdgeAtInvalidIndex",
+    "bridge_function": "OCCTSewingNbMultipleEdges / OCCTSewingMultipleEdge",
+    "bridge_output": {
+      "type": "sewing",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "threeFacesOnOneEdge": {
+          "multiple": 1,
+          "faces": 3,
+          "free": 9
+        },
+        "wholeBox1e-6": {
+          "multiple": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sewing Tests::sewTwoShapes",
+    "bridge_function": "OCCTShapeSew / OCCTShapeSewMultiple",
+    "bridge_output": {
+      "type": "sewing",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "rect10+disc5": {
+          "faces": 2,
+          "free": 5
+        },
+        "rect10+disc5+rect8": {
+          "faces": 3,
+          "free": 9
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sewing Tests::sewMultipleFaces",
+    "bridge_function": "OCCTShapeSew / OCCTShapeSewMultiple",
+    "bridge_output": {
+      "type": "sewing",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "rect10+disc5": {
+          "faces": 2,
+          "free": 5
+        },
+        "rect10+disc5+rect8": {
+          "faces": 3,
+          "free": 9
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sewing Tests::instanceMethodSewn",
+    "bridge_function": "OCCTShapeSew / OCCTShapeSewMultiple",
+    "bridge_output": {
+      "type": "sewing",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "sewing",
+      "data": {
+        "rect10+disc5": {
+          "faces": 2,
+          "free": 5
+        },
+        "rect10+disc5+rect8": {
+          "faces": 3,
+          "free": 9
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
