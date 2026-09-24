@@ -268,6 +268,10 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **Canonical Recognition** | Recognizes a cylindrical face | Canonical recognition | ClearStatus between checks |
+| **Canonical Recognition** | Recognizes a conical face | Canonical recognition | ClearStatus between checks |
+| **Canonical Recognition** | Recognizes a spherical face | Canonical recognition | ClearStatus between checks |
+| **Canonical Recognition** | Recognizes a straight-line edge | Canonical recognition | ClearStatus between checks |
 
 ---
 
@@ -475,6 +479,10 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Recognizes a cylindrical face | OCCTShapeRecognizeCanonical | Canonical recognition | skip every ClearStatus() (CR_NOCLEAR) | ✅ | ✅ |  |
+| Recognizes a conical face | OCCTShapeRecognizeCanonical | Canonical recognition | skip every ClearStatus() (CR_NOCLEAR) | ✅ | ✅ |  |
+| Recognizes a spherical face | OCCTShapeRecognizeCanonical | Canonical recognition | skip every ClearStatus() (CR_NOCLEAR) | ✅ | ✅ |  |
+| Recognizes a straight-line edge | OCCTShapeRecognizeCanonical | Canonical recognition | skip every ClearStatus() (CR_NOCLEAR) | ✅ | ✅ |  |
 
 ---
 
