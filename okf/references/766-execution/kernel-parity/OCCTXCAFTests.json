@@ -3267,5 +3267,245 @@
     },
     "status": "PASS",
     "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::A tolerance the document will not take refuses the whole call",
+    "bridge_function": "OCCTDocumentCreateDimensionWithTolerance",
+    "bridge_output": {
+      "type": "create",
+      "data": {
+        "index": null,
+        "dimensions": 0
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "set_accepts_nan": true,
+        "readback_equal": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::A storable tolerance pair still creates the dimension and applies both bounds",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "dimension",
+      "data": {
+        "lowerTol": -0.3,
+        "upperTol": 0.7,
+        "value": 20.0
+      }
+    },
+    "kernel_output": {
+      "type": "dimension",
+      "data": {
+        "plusMinus": true,
+        "lowerTol": -0.3,
+        "upperTol": 0.7,
+        "value": 20
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::Omitting both bounds still creates a simple dimension",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "dimension",
+      "data": {
+        "bounds": "simple"
+      }
+    },
+    "kernel_output": {
+      "type": "dimension",
+      "data": {
+        "nvals": 1,
+        "range": false,
+        "plusMinus": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::The standalone setter refuses the same pair, and leaves the dimension alone",
+    "bridge_function": "OCCTDocumentSetDimensionTolerance",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "refused": true,
+        "bounds": "simple"
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "readback_equal": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::A value passed with .none is not stored",
+    "bridge_function": "OCCTDocumentSetGeomToleranceZoneModifier",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "zone": "none",
+        "value": null
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "none_keeps_old_value": 15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::Clearing a modifier clears its value, whether or not one is passed with the clear",
+    "bridge_function": "OCCTDocumentSetGeomToleranceZoneModifier",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "after_clear": null
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "none_keeps_old_value": 15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::A real zone modifier still stores its value",
+    "bridge_function": "OCCTDocumentSetGeomToleranceZoneModifier",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "zone": "projected",
+        "value": 15.0
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "zone": 1,
+        "value": 15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "GD&T write paths answer for what the document took (#1056)::The datum sibling reports nothing for a cleared modifier",
+    "bridge_function": "OCCTDocumentGetDatumInfo",
+    "bridge_output": {
+      "type": "datum",
+      "data": {
+        "modifierWithValue": null
+      }
+    },
+    "kernel_output": {
+      "type": "datum",
+      "data": {
+        "modifier": 0,
+        "value": 15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+  },
+  {
+    "test_name": "Datum lands on the real DocumentTool 0:1:4 table, not Main() itself (#1435)::A created datum is a real child of Main().FindChild(4), the DimTolTool label",
+    "bridge_function": "OCCTDocumentCreateDatum",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "index": 0,
+        "table_children": 1,
+        "datum_count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tool_label": "0:1:4",
+        "children_after_one": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1435-datum-table/"
+  },
+  {
+    "test_name": "Datum lands on the real DocumentTool 0:1:4 table, not Main() itself (#1435)::doc.datumCount agrees with a direct count of Main().FindChild(4)'s children",
+    "bridge_function": "OCCTDocumentGetDatumCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "table_children": 3,
+        "datum_count": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "children_after_three": 3,
+        "datum_labels": 3,
+        "set_on_main_creates_0_1_4": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1435-datum-table/"
   }
 ]
