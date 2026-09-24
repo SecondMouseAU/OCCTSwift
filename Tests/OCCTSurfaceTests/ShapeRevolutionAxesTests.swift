@@ -34,7 +34,8 @@ struct ShapeRevolutionAxesTests {
             return
         }
         let axes = torus.revolutionAxes()
-        #expect(axes.count >= 1)
+        // #766: was `>= 1`, which passed an undeduplicated list; the title says one axis.
+        #expect(axes.count == 1)
         #expect(axes.contains { $0.kind == .torus })
     }
 
