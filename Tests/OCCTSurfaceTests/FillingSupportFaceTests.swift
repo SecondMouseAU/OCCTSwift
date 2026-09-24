@@ -16,6 +16,12 @@ import simd
 @Suite("Filling Continuity And Support Faces (#430)")
 struct FillingSupportFaceTests {
 
+    // #766: every `size!.z` inside `#expect` is now `(size?.z ?? .nan)`, which fails the comparison
+    // instead of trapping. The geometric thresholds are the kernel's: a flat cap spans 0 in z, the
+    // tangent cap 7.5, the curvature cap 11.9, the maxDegree-3 cap is 3 x 3, and the interior-pull
+    // fill 36.7, from the same BRepOffsetAPI_MakeFilling calls in
+    // Scripts/repro/766-filling-support-face/.
+
     /// Truncated sphere: an open circular rim whose only adjacent face is the curved wall.
     /// The rim sits at z = 10·sin(50°) ≈ 7.66; a flat cap spans no z at all, a tangent cap
     /// leaves the rim along the sphere and so must.
@@ -49,6 +55,12 @@ struct FillingSupportFaceTests {
         let capped = Shape.fill(boundaries: [rim])
 
         #expect(capped != nil)
+        // #766: and it is really tangent, not a degraded flat disc: with no support shape the rim's
+        // own pcurve supplies the wall, and the kernel's tangent cap rises 7.5 above the rim plane
+        // (Scripts/repro/766-filling-support-face/).
+        if let capped {
+            #expect((capped.size?.z ?? .nan) > 0.5)
+        }
     }
 
     @Test("Tangent fill against a support shape is not flat")
@@ -67,7 +79,7 @@ struct FillingSupportFaceTests {
 
         if let flat = flat {
             // A positional fill of a planar rim is a flat disc: no z extent.
-            #expect(flat.size!.z < 1e-6)
+            #expect((flat.size?.z ?? .nan) < 1e-6)
         } else {
             Issue.record("Positional fill of the rim should succeed")
         }
@@ -75,7 +87,7 @@ struct FillingSupportFaceTests {
         if let tangent = tangent {
             #expect(tangent.isValid)
             // Tangency to the spherical wall forces the cap off the rim plane.
-            #expect(tangent.size!.z > 0.5)
+            #expect((tangent.size?.z ?? .nan) > 0.5)
         } else {
             Issue.record("Tangent fill with a support shape should succeed")
         }
@@ -98,7 +110,7 @@ struct FillingSupportFaceTests {
 
         if let capped = capped {
             #expect(capped.isValid)
-            #expect(capped.size!.z > 0.5)
+            #expect((capped.size?.z ?? .nan) > 0.5)
         } else {
             Issue.record("Explicit constraint fill with a support face should succeed")
         }
@@ -129,7 +141,7 @@ struct FillingSupportFaceTests {
         // Non-nil alone would also pass if .g2 silently behaved as .g1, which is the other way
         // this mapping can break. Matching the sphere's curvature as well as its tangent pushes
         // the cap measurably further than tangency alone does.
-        #expect(curvature.size!.z > tangent.size!.z + 0.5)
+        #expect((curvature.size?.z ?? .nan) > (tangent.size?.z ?? .nan) + 0.5)
     }
 
     @Test("maxDegree caps the degree of the resulting surface (#431)")
@@ -175,7 +187,7 @@ struct FillingSupportFaceTests {
 
         if let capped = capped {
             #expect(capped.isValid)
-            #expect(capped.size!.z > 0.5)
+            #expect((capped.size?.z ?? .nan) > 0.5)
         } else {
             Issue.record("Fill should fall back per edge, not fail outright")
         }
@@ -207,7 +219,7 @@ struct FillingSupportFaceTests {
         if let tangent = tangent {
             #expect(tangent.isValid)
             // Degraded to position-only continuity: a flat quad across the planar rectangle.
-            #expect(tangent.size!.z < 1e-6)
+            #expect((tangent.size?.z ?? .nan) < 1e-6)
         } else {
             Issue.record(
                 "A free-standing boundary should degrade to position-only continuity, not fail outright"
@@ -236,7 +248,7 @@ struct FillingSupportFaceTests {
 
         if let capped = capped {
             #expect(capped.isValid)
-            #expect(capped.size!.z < 1e-6)  // degraded to position-only: a flat quad
+            #expect((capped.size?.z ?? .nan) < 1e-6)  // degraded to position-only: a flat quad
         } else {
             Issue.record(
                 "Free-standing constraint edges should degrade to position-only continuity, not fail the whole build"
@@ -275,8 +287,8 @@ struct FillingSupportFaceTests {
             return
         }
 
-        #expect(boundaryOnly.size!.z < 1e-6)  // flat disc across the rim
-        #expect(withInterior.size!.z > 0.5)  // pulled up to the interior edge
+        #expect((boundaryOnly.size?.z ?? .nan) < 1e-6)  // flat disc across the rim
+        #expect((withInterior.size?.z ?? .nan) > 0.5)  // pulled up to the interior edge
     }
 
     @Test("Free-standing boundary degrades to position-only continuity instead of failing (#1503)")
@@ -305,8 +317,8 @@ struct FillingSupportFaceTests {
             return
         }
         #expect(tangent.isValid)
-        #expect(tangent.size!.z < 1e-6)  // degraded to position-only: flat, matching .g0
-        #expect(positional.size!.z < 1e-6)
+        #expect((tangent.size?.z ?? .nan) < 1e-6)  // degraded to position-only: flat, matching .g0
+        #expect((positional.size?.z ?? .nan) < 1e-6)
     }
 
     @Test("Constraints fill rejects an empty constraint list")
@@ -348,7 +360,7 @@ struct FillingSupportFaceTests {
             FillConstraint(edge: rim, continuity: .g1)
         ])
         if let derived = derived {
-            #expect(derived.size!.z > 0.5)
+            #expect((derived.size?.z ?? .nan) > 0.5)
         } else {
             Issue.record("Deriving a support face from the edge should still succeed")
         }
@@ -391,6 +403,10 @@ struct FillingSupportFaceTests {
 
         let face = filling.build()
         #expect(face != nil)
+        // #766: surviving is not enough; the .g1 fill must also leave the rim plane (kernel: 7.5).
+        if let face {
+            #expect((face.size?.z ?? .nan) > 0.5)
+        }
     }
 
     @Test("FillingSurface maps .g1 to tangency and .g2 to curvature, not the reverse (#433)")
@@ -423,10 +439,10 @@ struct FillingSupportFaceTests {
             return
         }
 
-        #expect(tangentFace.size!.z > 0.5)
+        #expect((tangentFace.size?.z ?? .nan) > 0.5)
         // Non-nil alone would also pass if .g2 silently behaved as .g1. Matching curvature as
         // well as tangency pushes the cap measurably further than tangency alone.
-        #expect(curvatureFace.size!.z > tangentFace.size!.z + 0.5)
+        #expect((curvatureFace.size?.z ?? .nan) > (tangentFace.size?.z ?? .nan) + 0.5)
     }
 
     @Test("add(edge:support:continuity:) rejects a support face that cannot serve (#434)")
@@ -484,7 +500,7 @@ struct FillingSupportFaceTests {
             Issue.record("Default-continuity fill with a real support face should succeed")
             return
         }
-        #expect(face.size!.z > 0.5)  // tangent to the sphere, not a flat disc
+        #expect((face.size?.z ?? .nan) > 0.5)  // tangent to the sphere, not a flat disc
 
         // ...and an unrelated support face is rejected with no continuity argument either.
         let rejecting = FillingSurface()
