@@ -9,59 +9,86 @@ struct SurfaceTransformTests {
 
     @Test("Translate surface")
     func translateSurface() {
-        let surf = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
-        if let s = surf {
-            let ok = s.translate(dx: 10, dy: 0, dz: 5)
-            #expect(ok)
+        guard let s = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else {
+            Issue.record("plane setup nil")
+            return
         }
+        let ok = s.translate(dx: 10, dy: 0, dz: 5)
+        #expect(ok)
+        // Probed (Scripts/repro/766-math-surface-transform): P(1, 1) moves from (1, 1, 0) to (11, 1, 5).
+        let p = s.point(atU: 1, v: 1)
+        #expect(simd_distance(p, SIMD3<Double>(11, 1, 5)) < 1e-12)
     }
 
     @Test("Rotate surface")
     func rotateSurface() {
-        let surf = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
-        if let s = surf {
-            let ok = s.rotate(
-                axisOrigin: SIMD3(0, 0, 0),
-                axisDirection: SIMD3(1, 0, 0),
-                angle: .pi / 4)
-            #expect(ok)
+        guard let s = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else {
+            Issue.record("plane setup nil")
+            return
         }
+        let ok = s.rotate(
+            axisOrigin: SIMD3(0, 0, 0),
+            axisDirection: SIMD3(1, 0, 0),
+            angle: .pi / 4)
+        #expect(ok)
+        // Probed (Scripts/repro/766-math-surface-transform): P(1, 1) turns from (1, 1, 0) to (1, cos 45, sin 45).
+        let p = s.point(atU: 1, v: 1)
+        #expect(simd_distance(p, SIMD3<Double>(1, 0.70710678118654757, 0.70710678118654746)) < 1e-12)
     }
 
     @Test("Scale surface")
     func scaleSurface() {
-        let surf = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
-        if let s = surf {
-            let ok = s.scale(center: SIMD3(0, 0, 0), factor: 2)
-            #expect(ok)
+        guard let s = Surface.plane(origin: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1)) else {
+            Issue.record("plane setup nil")
+            return
         }
+        let ok = s.scale(center: SIMD3(0, 0, 0), factor: 2)
+        #expect(ok)
+        // A plane through the scale centre maps onto itself with the same parametrization, so the
+        // plane is lifted to z = 5 for the scale to show. Probed (Scripts/repro/766-math-surface-transform):
+        // P(1, 1) goes from (1, 1, 5) to (1, 1, 10): Geom_Plane keeps unit axes and only
+        // its location scales.
+        let p = s.point(atU: 1, v: 1)
+        #expect(simd_distance(p, SIMD3<Double>(1, 1, 10)) < 1e-12)
     }
 
     @Test("Mirror surface through point")
     func mirrorPointSurface() {
-        let surf = Surface.plane(origin: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1))
-        if let s = surf {
-            let ok = s.mirrorPoint(SIMD3(0, 0, 0))
-            #expect(ok)
+        guard let s = Surface.plane(origin: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1)) else {
+            Issue.record("plane setup nil")
+            return
         }
+        let ok = s.mirrorPoint(SIMD3(0, 0, 0))
+        #expect(ok)
+        // Probed (Scripts/repro/766-math-surface-transform): P(1, 1) = (1, 1, 5) goes to (-1, -1, -5).
+        let p = s.point(atU: 1, v: 1)
+        #expect(simd_distance(p, SIMD3<Double>(-1, -1, -5)) < 1e-12)
     }
 
     @Test("Mirror surface through axis")
     func mirrorAxisSurface() {
-        let surf = Surface.plane(origin: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1))
-        if let s = surf {
-            let ok = s.mirrorAxis(origin: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0))
-            #expect(ok)
+        guard let s = Surface.plane(origin: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1)) else {
+            Issue.record("plane setup nil")
+            return
         }
+        let ok = s.mirrorAxis(origin: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0))
+        #expect(ok)
+        // Probed (Scripts/repro/766-math-surface-transform): P(1, 1) = (1, 1, 5) goes to (1, -1, -5).
+        let p = s.point(atU: 1, v: 1)
+        #expect(simd_distance(p, SIMD3<Double>(1, -1, -5)) < 1e-12)
     }
 
     @Test("Mirror surface through plane")
     func mirrorPlaneSurface() {
-        let surf = Surface.plane(origin: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1))
-        if let s = surf {
-            let ok = s.mirrorPlane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
-            #expect(ok)
+        guard let s = Surface.plane(origin: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1)) else {
+            Issue.record("plane setup nil")
+            return
         }
+        let ok = s.mirrorPlane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+        #expect(ok)
+        // Probed (Scripts/repro/766-math-surface-transform): P(1, 1) = (1, 1, 5) goes to (1, 1, -5).
+        let p = s.point(atU: 1, v: 1)
+        #expect(simd_distance(p, SIMD3<Double>(1, 1, -5)) < 1e-12)
     }
 
     @Test("Transform BezierSurface values")
