@@ -1,0 +1,6 @@
+default tol3D 1e-3: degree=8 poles=9
+tol3D 1e-1: degree=4 poles=5; tol3D 1e-8: degree=3 poles=26
+fitToleranceIsObservable: maxDeviation(1e-1 fit, 1e-8 fit) over 33 samples = 0.15018794079369741
+tuning setters, interpolatePoint, performOptimal, nbControlPoints are not passed to the fit, so each pair of fits is the same call: maxDeviation(default, default) = 0
+toleranceSettersShareOneValue: convergence 1e-8 then projection 1e-1 -> min = 1e-8; convergence 1e-1 then projection 1e-8 -> 1e-8: maxDeviation = 0
+maxErrorIsBackProjectionDistance: tol3D 1e-6, degree=8 poles=15, max projection distance = 5.3473650477313526e-07

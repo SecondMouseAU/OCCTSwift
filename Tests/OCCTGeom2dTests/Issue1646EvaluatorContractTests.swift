@@ -52,18 +52,21 @@ struct Issue1646EvaluatorContractTests {
 
     @Test("The same evaluators answer the accepted argument beside each rejected one")
     func acceptedArgumentsAnswer() throws {
+        // #1979: each answer was checked only for being finite, which any wrong point is. Now
+        // pinned to the Geom2dEval_* curve's own EvalD0/EvalD1 on the same arguments
+        // (Scripts/repro/766-geom2d-evaluator-contract/).
         let sine = try #require(Geom2dEval.sineWaveD0(amplitude: 1, omega: 1, phase: 0, u: 0.5))
-        #expect(sine.x.isFinite && sine.y.isFinite)
+        #expect(simd_distance(sine, SIMD2(0.5, 0.479425538604)) < 1e-9)
         let involute = try #require(Geom2dEval.circleInvoluteD0(radius: 1, u: 0.5))
-        #expect(involute.x.isFinite && involute.y.isFinite)
+        #expect(simd_distance(involute, SIMD2(1.11729533119, 0.040634257659)) < 1e-9)
         let spiral = try #require(
             Geom2dEval.archimedeanSpiralD0(initialRadius: 1, growthRate: 0.1, u: 0.5))
-        #expect(spiral.x.isFinite && spiral.y.isFinite)
+        #expect(simd_distance(spiral, SIMD2(0.921461689985, 0.503396815534)) < 1e-9)
         let log = try #require(
             Geom2dEval.logarithmicSpiralD0(scale: 1, growthExponent: 0.2, u: 0.5))
-        #expect(log.x.isFinite && log.y.isFinite)
+        #expect(simd_distance(log, SIMD2(0.969878725612, 0.529847162648)) < 1e-9)
         let sineD1 = try #require(Geom2dEval.sineWaveD1(amplitude: 1, omega: 1, phase: 0, u: 0.5))
-        #expect(sineD1.d1.x.isFinite && sineD1.d1.y.isFinite)
+        #expect(simd_distance(sineD1.d1, SIMD2(1, 0.87758256189)) < 1e-9)
     }
 
     // MARK: The origin is an answer, not a refusal
@@ -109,7 +112,7 @@ struct Issue1646EvaluatorContractTests {
     func overflowRefused() throws {
         #expect(Geom2dEval.logarithmicSpiralD0(scale: 1, growthExponent: 1, u: 1000) == nil)
         let near = try #require(Geom2dEval.logarithmicSpiralD0(scale: 1, growthExponent: 1, u: 1))
-        #expect(near.x.isFinite && near.y.isFinite)
+        #expect(simd_distance(near, SIMD2(1.46869393992, 2.28735528718)) < 1e-9)  // #1979: was isFinite
     }
 
     // MARK: The two placement overloads
@@ -155,6 +158,8 @@ struct Issue1646EvaluatorContractTests {
         let r = try #require(
             Geom2dEval.circleInvoluteD1(
                 origin: SIMD2(10, 20), direction: SIMD2(1, 0), radius: 2.0, u: 1.0))
-        #expect(r.point.x.isFinite && r.d1.x.isFinite)
+        // #1979: was `isFinite` on one component of each; now both pinned to the kernel.
+        #expect(simd_distance(r.point, SIMD2(12.7635465814, 20.6023373579)) < 1e-9)
+        #expect(simd_distance(r.d1, SIMD2(1.08060461174, 1.68294196962)) < 1e-9)
     }
 }
