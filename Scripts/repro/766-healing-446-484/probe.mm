@@ -42,13 +42,13 @@ static TopoDS_Shape connect(const TopoDS_Shape& s)
   std::vector<TopoDS_Shape> out;
   for (TopExp_Explorer se(s, TopAbs_SHELL); se.More(); se.Next())
   {
-    Handle(ShapeFix_FaceConnect) c = new ShapeFix_FaceConnect();
+    ShapeFix_FaceConnect     c;
     std::vector<TopoDS_Face> faces;
     for (TopExp_Explorer fe(se.Current(), TopAbs_FACE); fe.More(); fe.Next())
       faces.push_back(TopoDS::Face(fe.Current()));
     for (size_t i = 0; i + 1 < faces.size(); i++)
-      c->Add(faces[i], faces[i + 1]);
-    out.push_back(c->Build(TopoDS::Shell(se.Current()), 1e-4, 1e-4));
+      c.Add(faces[i], faces[i + 1]);
+    out.push_back(c.Build(TopoDS::Shell(se.Current()), 1e-4, 1e-4));
   }
   if (out.size() == 1)
     return out[0];
@@ -84,7 +84,7 @@ int main()
     if (outm.Contains(in(i)))
       shared++;
   printf("unify box on a copy: faces=%d sharedWithInput=%d isSame=%d\n", outm.Extent(), shared,
-         (int)ub.Shape().IsSame(box));
+         (int)ub->Shape().IsSame(box));
 
   // #484 connectedFaces
   printf("box connect: faces=%d\n", unique(connect(box), TopAbs_FACE));
