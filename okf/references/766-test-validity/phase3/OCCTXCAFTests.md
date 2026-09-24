@@ -108,23 +108,23 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
-| `logbookBasic` | `OCCTDocumentLogbookIsModified` returns false | :23 Expectation failed: logLabel.logbookIsModified(target1) | passed | `OCCTDocumentLogbookIsModified` | PASS: true / false |
+| `logbookBasic` | `OCCTDocumentLogbookIsModified` returns false | :23 Expectation failed: logLabel.logbookIsModified(target1) | passed | `OCCTDocumentLogbookIsModified` | PASS: logbook set, empty when fresh, not empty after SetTouched(t1), t1 modified and t2 not, on both sides |
 | `logbookImpactedAndClear` | `OCCTDocumentLogbookClear` returns true without clearing | :36 Expectation failed: logLabel.logbookIsEmpty | passed | `OCCTDocumentLogbookClear` | PASS: empty |
 
 ### `TFunctionScopeTests.swift`
 
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
-| `setFunctionScope` | `OCCTDocumentSetFunctionScope` returns false | :14 Expectation failed: ok | passed | `OCCTDocumentSetFunctionScope` | PASS: set |
+| `setFunctionScope` | `OCCTDocumentSetFunctionScope` returns false | :14 Expectation failed: ok | passed | `OCCTDocumentSetFunctionScope` | PASS: the scope attribute is set on the root on both sides |
 | `addAndHasFunction` | `OCCTDocumentFunctionScopeHas` returns false | :24 Expectation failed: doc.functionScopeHas(labelId: node.labelId) | passed | `OCCTDocumentFunctionScopeHas` | PASS: true |
 | `removeFunction` | `OCCTDocumentFunctionScopeRemove` returns true without removing | :36 Expectation failed: !doc.functionScopeHas(labelId: node.labelId) | passed | `OCCTDocumentFunctionScopeRemove` | PASS: removed |
 | `removeAllFunctions` | `OCCTDocumentFunctionScopeRemoveAll` returns true without removing | :49 Expectation failed: doc.functionScopeCount == 0 | passed | `OCCTDocumentFunctionScopeRemoveAll` | PASS: 2 then 0 |
-| `freeID` | `OCCTDocumentFunctionScopeGetFreeID` answers 0 | :58 Expectation failed: freeId >= 1; :62 Expectation failed: freeId2 > freeId | passed | `OCCTDocumentFunctionScopeGetFreeID` | PASS: IDs from 1 up |
+| `freeID` | `OCCTDocumentFunctionScopeGetFreeID` answers 0 | :58 Expectation failed: freeId >= 1; :62 Expectation failed: freeId2 > freeId | passed | `OCCTDocumentFunctionScopeGetFreeID` | PASS: fresh free ID at least 1 and larger after one function is added, on both sides (kernel 1 then 2) |
 
 ### `TickTests.swift`
 
 | Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
 |---|---|---|---|---|---|
 | `setAndHas` | `OCCTDocumentSetTick` returns true without setting | :14 Expectation failed: doc.hasTick(tag: 500) | passed | `OCCTDocumentSetTick` | PASS: false, true |
-| `remove` | `OCCTDocumentRemoveTick` returns true without removing | :21 Expectation failed: !doc.hasTick(tag: 501) | passed | `OCCTDocumentRemoveTick` | PASS: gone |
-| `removeNonExistent` | `OCCTDocumentRemoveTick` returns true without removing | :26 Expectation failed: !doc.removeTick(tag: 502) | passed | `OCCTDocumentRemoveTick` | PASS: nothing to remove |
+| `remove` | `OCCTDocumentRemoveTick` returns true without removing | :21 Expectation failed: !doc.hasTick(tag: 501) | passed | `OCCTDocumentRemoveTick` | PASS: the tick is present before removal and absent after, on both sides |
+| `removeNonExistent` | `OCCTDocumentRemoveTick` returns true without removing | :26 Expectation failed: !doc.removeTick(tag: 502) | passed | `OCCTDocumentRemoveTick` | PASS: no tick on tag 502, so removal finds nothing, on both sides |

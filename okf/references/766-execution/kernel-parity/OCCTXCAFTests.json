@@ -133,17 +133,21 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "fresh_empty": true,
-        "touched_t1": true,
-        "t2": false
+        "set_logbook": true,
+        "fresh_is_empty": true,
+        "empty_after_touch": false,
+        "t1_modified": true,
+        "t2_modified": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "fresh_empty": true,
-        "modified_t1": true,
-        "modified_t2": false
+        "set_logbook": true,
+        "fresh_is_empty": true,
+        "empty_after_touch": false,
+        "t1_modified": true,
+        "t2_modified": false
       }
     },
     "comparison": {
@@ -151,7 +155,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "source": "Same quantities on both sides. Bridge: setLogbook true, logbookIsEmpty true when fresh, then after logbookSetTouched(target1) logbookIsEmpty false, logbookIsModified(target1) true and logbookIsModified(target2) false. Kernel: TFunction_Logbook::Set returned a non-null logbook (found on the root, where the bridge looks for it), IsEmpty() true when fresh, then after SetTouched(t1) IsEmpty() false, IsModified(t1) true, IsModified(t2) false. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tfunction-parity/"
   },
   {
     "test_name": "TFunction Logbook::Logbook impacted and clear",
@@ -181,13 +186,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true
+        "scope_set": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "set": true
+        "scope_set": true
       }
     },
     "comparison": {
@@ -195,7 +200,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "source": "Same quantity on both sides: scope_set. Bridge: setFunctionScope returned true (OCCTDocumentSetFunctionScope returns !scope.IsNull()). Kernel: TFunction_Scope::Set(Data->Root()) returned a non-null scope. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tfunction-parity/"
   },
   {
     "test_name": "TFunction Scope Tests::addAndHasFunction",
@@ -275,14 +281,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "first_at_least": 1,
-        "increasing": true
+        "fresh_free_id_at_least_1": true,
+        "free_id_increases_after_add": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "free_id_after_two_adds": 3
+        "fresh_free_id_at_least_1": true,
+        "free_id_increases_after_add": true
       }
     },
     "comparison": {
@@ -290,7 +297,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "source": "Same quantities on both sides. Bridge: functionScopeFreeID >= 1 on a fresh scope, and after functionScopeAdd on one label functionScopeFreeID is greater than before. Kernel: TFunction_Scope::GetFreeID() printed 1 on a fresh scope and 2 after AddFunction, so at-least-1 and increased are both true. The previous kernel value, 3, was read after two adds and a RemoveAllFunctions and is not the test's scenario. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tfunction-parity/"
   },
   {
     "test_name": "TDataStd_Tick Tests::setAndHas",
@@ -322,13 +330,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "after": false
+        "present_before_remove": true,
+        "present_after_remove": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "after_forget": false
+        "present_before_remove": true,
+        "present_after_remove": false
       }
     },
     "comparison": {
@@ -336,7 +346,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "source": "Same quantities on both sides, from the test's scenario (tag 501). Bridge: removeTick returned true, which OCCTDocumentRemoveTick does only when the tick was found (so present_before_remove is true), and hasTick then returned false. Kernel: FindAttribute(TDataStd_Tick) found it before ForgetAttribute and not after. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tfunction-parity/"
   },
   {
     "test_name": "TDataStd_Tick Tests::removeNonExistent",
@@ -344,13 +355,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "removed": false
+        "present_before_remove": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "present": false
+        "present_before_remove": false
       }
     },
     "comparison": {
@@ -358,6 +369,7 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "source": "Same quantity on both sides: present_before_remove for tag 502. Bridge: removeTick(502) returned false, which OCCTDocumentRemoveTick does exactly when no TDataStd_Tick is found on the label. Kernel: FindAttribute(TDataStd_Tick) on tag 502 is false. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tfunction-parity/"
   }
 ]

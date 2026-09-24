@@ -55,6 +55,7 @@ static const char* tf(bool b) { return b ? "true" : "false"; }
 #include <TObj_Application.hxx>
 #include <Prs3d_TextAspect.hxx>
 #include <Graphic3d_ArrayOfPoints.hxx>
+#include <Bnd_Box.hxx>
 #include <Standard_GUID.hxx>
 
 // TextLabelAndPointCloudTests, TFunction* tests, TickTests, TObjApplicationTests, UAttributeTests,
