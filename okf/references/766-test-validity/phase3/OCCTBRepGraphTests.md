@@ -243,3 +243,24 @@ green once it was reverted. Probes and transcripts are under `Scripts/repro/766-
 | edgeHasCurve | OCCTBRepGraphEdgeHasCurve | Edge curve presence | always true | ✅ sphere list mismatch | ✅ | Strengthened: box-only loop passed a constant true |
 | edgeMaxContinuity | OCCTBRepGraphEdgeMaxContinuity | Stubbed query | constant 0 -> 1 | ✅ `edgeMaxContinuity(0) == 0` | ✅ | Pins the documented stub; `cont >= 0` held for every Int32. Finding: the API reports an uncomputed value |
 | edgeNotClosedOnFace | OCCTBRepGraphEdgeIsClosedOnFace | Seam on face | IsSeamOnFace always false | ✅ `sg.isEdgeClosedOnFace(edgeIndex: 1, faceIndex: 0)` | ✅ | Strengthened: box-only check passed a constant false |
+## Measured: Edge Queries and Edge Sampling (#1986)
+| **BRepGraph Edge Queries** | edgeFaceCount | Edge face count | NbFaces + 1 |
+| **BRepGraph Edge Queries** | edgeFaces | Edge faces | face index + 1 |
+| **BRepGraph Edge Queries** | noBoundaryEdges | Boundary edge | always false |
+| **BRepGraph Edge Queries** | allManifoldEdges | Manifold edge | always true |
+| **BRepGraph Edge Queries** | edgeAdjacency | Edge adjacency | edge not excluded from its own adjacency |
+| **BRepGraph Edge Sampling** | sampleBoxEdge | Edge sampling | step = range / count |
+| **BRepGraph Edge Sampling** | sampleSinglePoint | Edge sampling | single sample taken at mid-range (separate run) |
+| **BRepGraph Edge Sampling** | sampleEdgeWithoutCurve | Sampling guard | Swift ignores bridge result count |
+| **BRepGraph Edge Sampling** | sampleZeroCount | Sampling guard | zero count returns one point |
+| **BRepGraph Edge Sampling** | sampleSphereEdge | Edge sampling | step = range / count; result count ignored |
+| edgeFaceCount | OCCTBRepGraphEdgeNbFaces | Edge face count | NbFaces + 1 | ✅ `faceCount(of: 0) == 2` | ✅ | Original also red; #require only |
+| edgeFaces | OCCTBRepGraphEdgeFaceIndices | Edge faces | face index + 1 | ✅ `faces(of: 0) == [0, 2]` | ✅ | Strengthened: `count == 2` passed wrong indices (original red only through the NbFaces count) |
+| noBoundaryEdges | OCCTBRepGraphEdgeIsBoundary | Boundary edge | always false | ✅ `face.isBoundaryEdge(i)` x4 | ✅ | Strengthened: closed box alone passed a constant false; lifted face added |
+| allManifoldEdges | OCCTBRepGraphEdgeIsManifold | Manifold edge | always true | ✅ `!face.isManifoldEdge(i)` x4 | ✅ | Strengthened: closed box alone passed a constant true |
+| edgeAdjacency | OCCTBRepGraphEdgeAdjacentIndices | Edge adjacency | edge not excluded from its own adjacency | ✅ `adjacentEdges(of: 0) == [1, 3, 8, 9]` | ✅ | Rewritten: `count > 0` stayed green |
+| sampleBoxEdge | OCCTBRepGraphSampleEdgeCurve | Edge sampling | step = range / count | ✅ `points[9] == (-5, -5, 5)`, spacing | ✅ | Rewritten: `dist(first, last) > 0.001` passed a sampler stopping short |
+| sampleSinglePoint | OCCTBRepGraphSampleEdgeCurve | Edge sampling | single sample taken at mid-range (separate run) | ✅ :30 `points == [(-5, -5, -5)]` | ✅ | Strengthened: count alone checked; point pinned |
+| sampleEdgeWithoutCurve | OCCTBRepGraphSampleEdgeCurve | Sampling guard | Swift ignores bridge result count | ✅ `points.isEmpty` | ✅ | Original also red |
+| sampleZeroCount | OCCTBRepGraphSampleEdgeCurve | Sampling guard | zero count returns one point | ✅ `points.isEmpty` | ✅ | Original also red |
+| sampleSphereEdge | OCCTBRepGraphSampleEdgeCurve | Edge sampling | step = range / count; result count ignored | ✅ pole edges not empty, `points[19].z == 5` | ✅ | Strengthened: radius check alone passed a sampler stopping short |
