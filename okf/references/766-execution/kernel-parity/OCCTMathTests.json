@@ -224,7 +224,7 @@
     "status": "PASS",
     "red": {"injection": "negate the Z of Plan().Location(); also origin X + 1, normal negated, X direction negated", "failing_expectation": ":23 `simd_length(result.origin - SIMD3(1, 2, 3)) < 1e-9` (origin Z and origin X); :24 `simd_length(result.normal - SIMD3(0, 0, 1)) < 1e-9`; :25 `simd_length(result.xDirection - SIMD3(1, 0, 0)) < 1e-9`"},
     "red_nil_return": {"injection": "OCCTGeomLibPlanarSurfacePlane returns false, and separately Surface.plane is nil", "failing_expectation": ":22 `try #require(plane.planarPlane())`; :21 `try #require(Surface.plane(...))`"},
-    "original_if_let_form": "green under both nil injections (result and setup nested in if let); normal was only bounded by abs(z) > 0.99, so a negated normal also passed",
+    "original_if_let_form": "green under both nil injections (result and setup nested in if let); it asserted only origin Z and abs(normal.z) > 0.99, so by inspection (not run) a negated normal, shifted origin X or wrong X direction passed it",
     "green": true
   },
   {
