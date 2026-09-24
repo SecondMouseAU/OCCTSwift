@@ -1,0 +1,13 @@
+562 sphere BSpline: NbUKnots=4 NbVKnots=3
+562 C0: U indices=1(0) 4(6.28319) V indices=1(-1.5708) 3(1.5708) 
+562 C1: U indices=1(0) 2(2.0944) 3(4.18879) 4(6.28319) V indices=1(-1.5708) 2(0) 3(1.5708) 
+562 C2: U indices=1(0) 2(2.0944) 3(4.18879) 4(6.28319) V indices=1(-1.5708) 2(0) 3(1.5708) 
+562 C3: U indices=1(0) 2(2.0944) 3(4.18879) 4(6.28319) V indices=1(-1.5708) 2(0) 3(1.5708) 
+571 plate tol 0.1 Nbmax 20: poles=9x9 worst point deviation=0.0724
+571 plate tol 0.1 Nbmax 1: poles=9x9 worst point deviation=0.0724
+571 plate tol 0.01 Nbmax 20: poles=16x16 worst point deviation=0.00321
+571 plate tol 0.01 Nbmax 1: poles=9x9 worst point deviation=0.0724
+571 plate tol 0.0005 Nbmax 20: poles=30x30 worst point deviation=0.000242
+571 plate tol 0.0005 Nbmax 1: poles=9x9 worst point deviation=0.0724
+619/623 continuity: mult1=4 mult2=2 mult3(7 poles)=0
+619 Bezier 3x3 Continuity()=6

@@ -1,0 +1,4 @@
+remove: Remove(10)=true Contains(10)=false Extent=1
+clearAndEmpty: IsEmpty before Clear=false IsEmpty after Clear=true Extent after Clear=0
+getValues: Extent=3 values sorted: 7 42 99
+noInteger: fresh child label has a TDataStd_Integer=false

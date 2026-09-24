@@ -1,0 +1,19 @@
+Circ2d3Tan (0,0) (10,0) (5,5) solutions=1
+  centre=(5, 0) radius=5
+Circ2d2TanRad (0,0) (6,0) r5 solutions=2
+  centre=(3, 4) radius=5
+  centre=(3, -4) radius=5
+Circ2dTanCen x-axis centre (5,3) solutions=1
+  centre=(5, 3) radius=3
+Lin2d2Tan circle r5 outside, point (10,0): solutions=1
+  location=(2.5, 4.33012701892) direction=(0.866025403784, -0.5) tangency=(2.5, 4.33012701892)
+Circ2d2TanRad x-axis + point (5,5) r5 solutions=2
+  centre=(10, 5) radius=5
+  centre=(0, 5) radius=5
+Hatch 10x10 CCW spacing 2:
+  segment (0, 2)-(10, 2)
+  segment (0, 4)-(10, 4)
+  segment (0, 6)-(10, 6)
+  segment (0, 8)-(10, 8)
+  total=4
+Hatch 10x3000 spacing 1: total=2999

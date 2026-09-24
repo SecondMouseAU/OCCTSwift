@@ -154,29 +154,35 @@ struct SurfaceTransformFamilyParityTests {
 
         let translateCopy = translateBase.translated(by: SIMD3(3, -2, 1.5))
         #expect(translateBase.translate(dx: 3, dy: -2, dz: 1.5))
+        #expect(translateCopy != nil)  // #766: a nil copy skipped the comparison
         if let c = translateCopy { assertMatch(translateBase, c) }
 
         let rotateCopy = rotateBase.rotated(
             axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
             angle: .pi / 3)
         #expect(rotateBase.rotate(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), angle: .pi / 3))
+        #expect(rotateCopy != nil)  // #766: a nil copy skipped the comparison
         if let c = rotateCopy { assertMatch(rotateBase, c) }
 
         let scaleCopy = scaleBase.scaled(center: .zero, factor: 2.5)
         #expect(scaleBase.scale(center: .zero, factor: 2.5))
+        #expect(scaleCopy != nil)  // #766: a nil copy skipped the comparison
         if let c = scaleCopy { assertMatch(scaleBase, c) }
 
         let mirrorPointCopy = mirrorPointBase.mirrored(acrossPoint: SIMD3(1, 1, 1))
         #expect(mirrorPointBase.mirrorPoint(SIMD3(1, 1, 1)))
+        #expect(mirrorPointCopy != nil)  // #766: a nil copy skipped the comparison
         if let c = mirrorPointCopy { assertMatch(mirrorPointBase, c) }
 
         let mirrorAxisCopy = mirrorAxisBase.mirrored(acrossAxis: .zero, direction: SIMD3(1, 0, 0))
         #expect(mirrorAxisBase.mirrorAxis(origin: .zero, direction: SIMD3(1, 0, 0)))
+        #expect(mirrorAxisCopy != nil)  // #766: a nil copy skipped the comparison
         if let c = mirrorAxisCopy { assertMatch(mirrorAxisBase, c) }
 
         let mirrorPlaneCopy = mirrorPlaneBase.mirrored(
             planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1))
         #expect(mirrorPlaneBase.mirrorPlane(origin: .zero, normal: SIMD3(0, 0, 1)))
+        #expect(mirrorPlaneCopy != nil)  // #766: a nil copy skipped the comparison
         if let c = mirrorPlaneCopy { assertMatch(mirrorPlaneBase, c) }
     }
 }

@@ -2,225 +2,477 @@
   {
     "test_name": "Display Drawer",
     "bridge_function": "OCCTDrawingDrawer",
-    "bridge_output": {"type": "bool", "data": true},
-    "kernel_output": {"type": "bool", "data": true},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Point Projection Tests",
     "bridge_function": "OCCTPointProjection",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "perpendicularBasis unification: Drawing projection",
     "bridge_function": "OCCTPerpendicularBasis",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "v0.144 ISO drawing style constants",
     "bridge_function": "OCCTDrawingStyle",
-    "bridge_output": {"type": "string", "data": ""},
-    "kernel_output": {"type": "string", "data": ""},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "string",
+      "data": ""
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": ""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "v0.137 Drawing dimensions",
     "bridge_function": "OCCTDrawingDimensions",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Perspective eye anchor and the regime beyond it (#1036)",
     "bridge_function": "OCCTPerspectiveEyeAnchor",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "v0.148 Drawing.append(_:) unified dispatcher",
     "bridge_function": "OCCTDrawingAppend",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "HLR ReflectLines Tests",
     "bridge_function": "OCCTHLRReflectLines",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Normal Projection",
     "bridge_function": "OCCTNormalProjection",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "v0.163 EditorView ProductOps assembly building",
     "bridge_function": "OCCTEditorViewProductOps",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "#1183 Drawing transform sites share one formula",
     "bridge_function": "OCCTDrawingTransform",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "v0.147 Drawing.addAutoCentermarks",
     "bridge_function": "OCCTDrawingAutoCentermarks",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "#1173: arrowhead/triangle-pointer shared geometry",
     "bridge_function": "OCCTArrowheadTriangle",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "v0.137 Drawing auto-centrelines (#64 ↔ #65)",
     "bridge_function": "OCCTDrawingAutoCentrelines",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Radius Dimension",
     "bridge_function": "OCCTDrawingRadiusDimension",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "emitAngular sweep matches Angular.value for reflex ray pairs (#1169)",
     "bridge_function": "OCCTEmitAngular",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Length Dimension",
     "bridge_function": "OCCTLengthDimension",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Drawing Tests",
     "bridge_function": "OCCTDrawingTests",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Drawing.addRadialDimension/addDiameterDimension route through Circular correctly",
     "bridge_function": "OCCTDrawingRadialDiameter",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "#1185 DrawingDimension.Radial/.Diameter share Circular",
     "bridge_function": "OCCTDrawingRadialDiameterShare",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "v0.149 DrawingTolerance",
     "bridge_function": "OCCTDrawingTolerance",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Y-only feature (dx == 0) draws only the Y leader/tick/text, isolated from the X block",
     "bridge_function": "OCCTDrawingYOnly",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "v0.149 DrawingDimension.ordinate",
     "bridge_function": "OCCTDrawingOrdinate",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 0.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Selector Tests",
     "bridge_function": "OCCTSelectorTests",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Polygon-Based HLR",
     "bridge_function": "OCCTPolygonHLR",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Fast projection has hidden edges",
     "bridge_function": "OCCTFastProjectionHiddenEdges",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Fast vs exact projection both succeed",
     "bridge_function": "OCCTFastExactProjection",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
     "test_name": "Custom deflection affects result",
     "bridge_function": "OCCTCustomDeflection",
-    "bridge_output": {"type": "shape", "data": {}},
-    "kernel_output": {"type": "shape", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
@@ -402,6 +654,2827 @@
     },
     "kernel_output": {
       "circlesBelowMinRadius": 2
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 Drawing.addAutoDimensions::Box front view produces two linear dimensions",
+    "bridge_function": "OCCTShapeGetBounds (Shape.bounds) + perpendicularBasis",
+    "bridge_output": {
+      "linear": [
+        3.0000002,
+        10.0000002
+      ]
+    },
+    "kernel_output": {
+      "projectedWidth": 3.0000001999999997,
+      "projectedHeight": 10.000000199999999
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 Drawing.addAutoDimensions::Cylinder top view produces diameter + linear extents",
+    "bridge_function": "OCCTDrawingCreate + testCircleVisibility",
+    "bridge_output": {
+      "diameters": 2,
+      "linear": 2,
+      "extent": [
+        10.0000002,
+        10.0000002
+      ]
+    },
+    "kernel_output": {
+      "circlesFacing": 2,
+      "projectedWidth": 10.0000002,
+      "projectedHeight": 10.0000002
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 Drawing.addAutoDimensions::Cylinder side view skips edge-on circles",
+    "bridge_function": "OCCTDrawingCreate + testCircleVisibility",
+    "bridge_output": {
+      "diameters": 0
+    },
+    "kernel_output": {
+      "circlesEdgeOn": 2
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 Drawing.addAutoDimensions::minRadius filters small circles",
+    "bridge_function": "OCCTDrawingCreate + testCircleVisibility",
+    "bridge_output": {
+      "diameters": 0
+    },
+    "kernel_output": {
+      "circlesBelowMinRadius": 2
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.150 DrawingAnnotation.balloon::Balloon with leader emits circle + text + leader line",
+    "bridge_function": "emitBalloon (Swift, DrawingDispatch.swift)",
+    "bridge_output": {
+      "circlesDelta": 1,
+      "textsDelta": 1,
+      "linesDelta": 1
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: DXF entity counts, the HLR baseline cancels"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.150 DrawingAnnotation.balloon::Balloon without leader emits circle + text only",
+    "bridge_function": "emitBalloon (Swift, DrawingDispatch.swift)",
+    "bridge_output": {
+      "circlesDelta": 1,
+      "textsDelta": 1,
+      "linesDelta": 0
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: DXF entity counts, the HLR baseline cancels"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.150 DrawingAnnotation.balloon::Drawing.addBalloon adds a .balloon annotation",
+    "bridge_function": "Drawing.addBalloon (Swift)",
+    "bridge_output": {
+      "balloonCount": 1
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift annotation store"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.150 DrawingAnnotation.balloon::Balloon transforms translate centre, scale radius, and translate leader",
+    "bridge_function": "DrawingAnnotation.transformed (Swift)",
+    "bridge_output": {
+      "centre": [
+        120,
+        220
+      ],
+      "radius": 10,
+      "leaderTo": [
+        140,
+        240
+      ]
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift 2D transform"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Camera Tests::Default state valid",
+    "bridge_function": "OCCTCameraGetEye",
+    "bridge_output": {
+      "eye": [
+        0,
+        0,
+        -1500
+      ],
+      "up": [
+        0,
+        1,
+        0
+      ]
+    },
+    "kernel_output": {
+      "eye": [
+        0,
+        0,
+        -1500
+      ],
+      "up": [
+        0,
+        1,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Camera Tests::Projection matrix non-identity",
+    "bridge_function": "OCCTCameraGetProjectionMatrix",
+    "bridge_output": {
+      "m00": 0.0013333333,
+      "m11": 0.002,
+      "m22": -0.00033333345,
+      "m23": -3.3333345e-07
+    },
+    "kernel_output": {
+      "m00": 0.00133333332,
+      "m11": 0.00200000009,
+      "m22": -0.000333333446,
+      "m23": -3.33333446e-07
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Camera Tests::View matrix changes with eye/center",
+    "bridge_function": "OCCTCameraGetViewMatrix",
+    "bridge_output": {
+      "m00": [
+        1.0,
+        0.0
+      ],
+      "m22": [
+        1.0,
+        0.0
+      ]
+    },
+    "kernel_output": {
+      "m00": [
+        1,
+        0
+      ],
+      "m22": [
+        1,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Camera Tests::Project/Unproject roundtrip",
+    "bridge_function": "OCCTCameraProject / OCCTCameraUnproject",
+    "bridge_output": {
+      "screen": [
+        0.01,
+        0.006,
+        0.09909909909909909
+      ],
+      "world": [
+        5.0,
+        3.0,
+        0.0
+      ]
+    },
+    "kernel_output": {
+      "screen": [
+        0.01,
+        0.006,
+        0.09909909909909909
+      ],
+      "world": [
+        5,
+        3,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Camera Tests::Orthographic mode produces different matrices",
+    "bridge_function": "OCCTCameraSetProjectionType",
+    "bridge_output": {
+      "perspM00": 2.4142134,
+      "orthoM00": 0.002
+    },
+    "kernel_output": {
+      "perspM00": 2.41421342,
+      "orthoM00": 0.00200000009
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Camera Tests::Fit bounding box adjusts camera",
+    "bridge_function": "OCCTCameraFitBBox",
+    "bridge_output": {
+      "center": [
+        25,
+        25,
+        0
+      ],
+      "mid": [
+        0,
+        0
+      ],
+      "cornerNDC": 1.0
+    },
+    "kernel_output": {
+      "center": [
+        25,
+        25,
+        0
+      ],
+      "mid": [
+        0,
+        0
+      ],
+      "maxCornerNDC": 1
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.146 Cosmetic thread annotations::Side view produces two parallel centrelines",
+    "bridge_function": "DrawingAnnotation.cosmeticThreadSideView",
+    "bridge_output": {
+      "count": 2
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: DrawingAnnotation factories and the DXF/PDF/SVG writers, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Cosmetic thread annotations::End view returns three .arc DrawingAnnotation cases (ISO 6410 3/4 broken arc)",
+    "bridge_function": "DrawingAnnotation.cosmeticThreadEndView",
+    "bridge_output": {
+      "count": 3,
+      "totalSweep": "7pi/4"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: DrawingAnnotation factories and the DXF/PDF/SVG writers, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Cosmetic thread annotations::Drawing.addCosmeticThreadEndView adds 3 arc annotations directly to the drawing",
+    "bridge_function": "Drawing.addCosmeticThreadEndView",
+    "bridge_output": {
+      "annotations": 3
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: DrawingAnnotation factories and the DXF/PDF/SVG writers, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Cosmetic thread annotations::#1179: a Drawing's cosmetic thread end view reaches DXF, PDF and SVG alike",
+    "bridge_function": "Drawing.addCosmeticThreadEndView",
+    "bridge_output": {
+      "arcs": [
+        3,
+        3,
+        3
+      ]
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: DrawingAnnotation factories and the DXF/PDF/SVG writers, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Cosmetic thread annotations::#1179: cosmetic thread end view arcs extend Drawing.bounds()",
+    "bridge_function": "Drawing.addCosmeticThreadEndView",
+    "bridge_output": {
+      "boundsExtended": true
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: DrawingAnnotation factories and the DXF/PDF/SVG writers, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Cosmetic thread annotations::Drawing.addCosmeticThreadSide with callout adds 3 annotations",
+    "bridge_function": "Drawing.addCosmeticThreadSide",
+    "bridge_output": {
+      "count": 3
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: DrawingAnnotation factories and the DXF/PDF/SVG writers, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Cosmetic thread annotations::DXFWriter.addCosmeticThreadEndView emits three arcs",
+    "bridge_function": "DXFWriter.addCosmeticThreadEndView",
+    "bridge_output": {
+      "arcs": 3
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: DrawingAnnotation factories and the DXF/PDF/SVG writers, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Cylindrical Projection::Project wire onto box",
+    "bridge_function": "OCCTShapeProjectWire",
+    "bridge_output": {
+      "edges": 4,
+      "bbox": [
+        [
+          1.9999999,
+          1.9999999,
+          -2.5000001
+        ],
+        [
+          5.000000100000002,
+          5.0000001,
+          2.5000001
+        ]
+      ]
+    },
+    "kernel_output": {
+      "edges": 4,
+      "bbox": [
+        [
+          1.9999999,
+          1.9999999,
+          -2.5000001
+        ],
+        [
+          5.0000001,
+          5.0000001,
+          2.5000001
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Cylindrical Projection::Project edge onto sphere",
+    "bridge_function": "OCCTShapeProjectWire",
+    "bridge_output": {
+      "edges": 4,
+      "bbox": [
+        [
+          -3.000000100000004,
+          -1.0000000141002006e-07,
+          -10.000000100000001
+        ],
+        [
+          3.000000099999892,
+          1.0000000067523198e-07,
+          10.000000100000001
+        ]
+      ]
+    },
+    "kernel_output": {
+      "edges": 4,
+      "bbox": [
+        [
+          -3.0000001,
+          -1.00000001e-07,
+          -10.0000001
+        ],
+        [
+          3.0000001,
+          1.00000001e-07,
+          10.0000001
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Diameter Dimension::Diameter of circle is twice radius",
+    "bridge_function": "OCCTDimensionCreateDiameterFromShape",
+    "bridge_output": {
+      "value": 16.0
+    },
+    "kernel_output": {
+      "value": 16,
+      "isValid": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Diameter Dimension::Diameter geometry has circle info",
+    "bridge_function": "OCCTDimensionGetGeometry",
+    "bridge_output": {
+      "circleRadius": 5.0,
+      "endpointDistance": 10.0
+    },
+    "kernel_output": {
+      "circleRadius": 5,
+      "endpointDistance": 10
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Diameter Dimension::Custom value on diameter",
+    "bridge_function": "OCCTDimensionSetCustomValue",
+    "bridge_output": {
+      "value": 99.0
+    },
+    "kernel_output": {
+      "value": 99
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Default values",
+    "bridge_function": "OCCTDrawerCreate",
+    "bridge_output": {
+      "autoTriangulation": true,
+      "wireDraw": true,
+      "faceBoundaryDraw": false,
+      "deflectionType": "relative",
+      "discretisation": 30
+    },
+    "kernel_output": {
+      "autoTriangulation": true,
+      "wireDraw": true,
+      "faceBoundaryDraw": false,
+      "deflectionType": "relative",
+      "discretisation": 30
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Deviation coefficient roundtrip",
+    "bridge_function": "OCCTDrawerSetDeviationCoefficient",
+    "bridge_output": {
+      "value": 0.005
+    },
+    "kernel_output": {
+      "value": 0.005
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Deviation angle roundtrip",
+    "bridge_function": "OCCTDrawerSetDeviationAngle",
+    "bridge_output": {
+      "value": 0.17453292519943295
+    },
+    "kernel_output": {
+      "value": 0.17453292519943295
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Maximal chordial deviation roundtrip",
+    "bridge_function": "OCCTDrawerSetMaximalChordialDeviation",
+    "bridge_output": {
+      "value": 0.05
+    },
+    "kernel_output": {
+      "value": 0.05
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Deflection type toggle",
+    "bridge_function": "OCCTDrawerSetTypeOfDeflection",
+    "bridge_output": {
+      "absolute": true,
+      "relative": true
+    },
+    "kernel_output": {
+      "absolute": true,
+      "relative": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Auto-triangulation toggle",
+    "bridge_function": "OCCTDrawerSetAutoTriangulation",
+    "bridge_output": {
+      "value": false
+    },
+    "kernel_output": {
+      "value": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Iso on triangulation toggle",
+    "bridge_function": "OCCTDrawerSetIsoOnTriangulation",
+    "bridge_output": {
+      "value": true
+    },
+    "kernel_output": {
+      "value": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Discretisation roundtrip",
+    "bridge_function": "OCCTDrawerSetDiscretisation",
+    "bridge_output": {
+      "value": 50
+    },
+    "kernel_output": {
+      "value": 50
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Face boundary draw toggle",
+    "bridge_function": "OCCTDrawerSetFaceBoundaryDraw",
+    "bridge_output": {
+      "value": true
+    },
+    "kernel_output": {
+      "value": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Wire draw toggle",
+    "bridge_function": "OCCTDrawerSetWireDraw",
+    "bridge_output": {
+      "value": false
+    },
+    "kernel_output": {
+      "value": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher::append single annotation",
+    "bridge_function": "Drawing.append(_: DrawingAnnotation)",
+    "bridge_output": {
+      "annotations": 1
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the drawing's annotation and dimension stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher::append factory output installs every annotation case",
+    "bridge_function": "Drawing.append(contentsOf: [DrawingAnnotation])",
+    "bridge_output": {
+      "annotations": "anns.count"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the drawing's annotation and dimension stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher::append GD&T feature control frame output",
+    "bridge_function": "Drawing.append(contentsOf: [DrawingAnnotation])",
+    "bridge_output": {
+      "annotations": "anns.count"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the drawing's annotation and dimension stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher::append pre-built hatch survives round-trip (no consumer switch)",
+    "bridge_function": "Drawing.append(_: DrawingAnnotation)",
+    "bridge_output": {
+      "first": "hatch"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the drawing's annotation and dimension stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher::append pre-built cutting-plane line survives round-trip",
+    "bridge_function": "Drawing.append(_: DrawingAnnotation)",
+    "bridge_output": {
+      "first": "cuttingPlaneLine"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the drawing's annotation and dimension stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher::append a pre-built dimension",
+    "bridge_function": "Drawing.append(_: DrawingDimension)",
+    "bridge_output": {
+      "dimensions": 1
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the drawing's annotation and dimension stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher::append dimensions batch",
+    "bridge_function": "Drawing.append(contentsOf: [DrawingDimension])",
+    "bridge_output": {
+      "dimensions": 3
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the drawing's annotation and dimension stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.137 Drawing auto-centrelines (#64 ↔ #65)::Cylinder top view produces no centreline (axis collapses to point)",
+    "bridge_function": "OCCTShapeRevolutionAxes",
+    "bridge_output": {
+      "axes": [
+        {
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "added": 0,
+      "skipped": 1
+    },
+    "kernel_output": {
+      "cylinderAxis": {
+        "origin": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          0,
+          0,
+          1
+        ]
+      },
+      "projectedDown+Z": [
+        0,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Drawing auto-centrelines (#64 ↔ #65)::Cylinder side view draws one centreline along axis",
+    "bridge_function": "OCCTShapeRevolutionAxes",
+    "bridge_output": {
+      "added": 1,
+      "from": [
+        -55.0,
+        0.0
+      ],
+      "to": [
+        55.0,
+        0.0
+      ]
+    },
+    "kernel_output": {
+      "projectedDown+Y": [
+        1,
+        0
+      ],
+      "gp_Ax2X": [
+        0,
+        0,
+        1
+      ],
+      "clippedWithOvershoot": [
+        [
+          -55,
+          0
+        ],
+        [
+          55,
+          0
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Drawing auto-centrelines (#64 ↔ #65)::Box produces no centrelines (no revolution axes)",
+    "bridge_function": "OCCTShapeRevolutionAxes",
+    "bridge_output": {
+      "axes": 0,
+      "added": 0,
+      "skipped": 0
+    },
+    "kernel_output": {
+      "revolutionFaces": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Drawing dimensions::Add linear dimension stores measurable value",
+    "bridge_function": "DrawingDimension.Linear.value",
+    "bridge_output": {
+      "value": 100,
+      "offset": 15
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D dimension values and the drawing's stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.137 Drawing dimensions::Radial / diameter relate correctly",
+    "bridge_function": "DrawingDimension.value",
+    "bridge_output": {
+      "radial": 10,
+      "diameter": 20
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D dimension values and the drawing's stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.137 Drawing dimensions::Angular dimension computes angle between rays",
+    "bridge_function": "DrawingDimension.Angular.value",
+    "bridge_output": {
+      "value": "pi/2"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D dimension values and the drawing's stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.137 Drawing dimensions::Annotations separate from dimensions",
+    "bridge_function": "Drawing.addTextLabel",
+    "bridge_output": {
+      "annotations": 3,
+      "dimensions": 0
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D dimension values and the drawing's stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.137 Drawing dimensions::clearAnnotations empties both collections",
+    "bridge_function": "DrawingAnnotationStore.clear",
+    "bridge_output": {
+      "dimensions": 0,
+      "annotations": 0
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D dimension values and the drawing's stores, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.144 ISO drawing style constants::DrawingLineWidth values match ISO 128-20 tiers",
+    "bridge_function": "DrawingLineWidth.thin",
+    "bridge_output": {
+      "thin": 0.25,
+      "thick": 0.5,
+      "cases": 9
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ISO style constants and lookup tables, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.144 ISO drawing style constants::DrawingTextHeight.snap picks nearest ISO 3098 tier",
+    "bridge_function": "DrawingTextHeight.snap",
+    "bridge_output": {
+      "3.8": "h35",
+      "4.3": "h50",
+      "8": "h70"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ISO style constants and lookup tables, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.144 ISO drawing style constants::DrawingTextHeight.recommended varies by paper",
+    "bridge_function": "DrawingTextHeight.recommended",
+    "bridge_output": {
+      "A0": "h50",
+      "A4": "h35"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ISO style constants and lookup tables, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.144 ISO drawing style constants::DrawingScale factor and label",
+    "bridge_function": "DrawingScale.factor",
+    "bridge_output": {
+      "reduction(2)": 0.5
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ISO style constants and lookup tables, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.144 ISO drawing style constants::strokeWidthMM returns ISO 128-20 line widths",
+    "bridge_function": "strokeWidthMM(for:)",
+    "bridge_output": {
+      "HATCH": 0.18
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ISO style constants and lookup tables, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.144 ISO drawing style constants::ArrowStyle length scales with line width",
+    "bridge_function": "DrawingArrowStyle.length(forLineWidth:)",
+    "bridge_output": {
+      "w025": 1.5
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ISO style constants and lookup tables, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.144 ISO drawing style constants::DrawingScale preferred includes ISO series",
+    "bridge_function": "DrawingScale.preferred",
+    "bridge_output": {
+      "contains": [
+        "1:1",
+        "1:10",
+        "2:1",
+        "1:100"
+      ]
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ISO style constants and lookup tables, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.161 EditorView Add/Remove + Ref setters::Add operations on a fresh box graph do not crash",
+    "bridge_function": "OCCTBRepGraphEdgeAddInternalVertex",
+    "bridge_output": {
+      "edgeInternalVertex": 1,
+      "faceVertex": 2,
+      "shellAdd": null,
+      "solidAdd": null,
+      "compoundAdd": null,
+      "compSolidAdd": null
+    },
+    "kernel_output": {
+      "edgeInternalVertexUid": 1,
+      "faceVertexUid": 2,
+      "compoundAppendValid": false,
+      "compSolidAppendValid": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.161 EditorView Add/Remove + Ref setters::Remove operations on invalid ref ids return false without crashing",
+    "bridge_function": "OCCTBRepGraphEdgeRemoveVertex",
+    "bridge_output": {
+      "all": false
+    },
+    "kernel_output": {
+      "edgeRemoveVertex": false,
+      "edgeReplaceVertexValid": false,
+      "wireRemoveCoEdge": false,
+      "removeAttachment": false,
+      "faceRemoveWire": false,
+      "shellRemoveFace": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.161 EditorView Add/Remove + Ref setters::Edge / face / coedge ref setters operate on existing entities",
+    "bridge_function": "OCCTBRepGraphSetCoEdgeEdgeDefId",
+    "bridge_output": {
+      "coedge0Edge": 5,
+      "coedge0Face": 3
+    },
+    "kernel_output": {
+      "before": [
+        0,
+        0
+      ],
+      "afterSetChildEdgeId5SetFaceId3": [
+        5,
+        3
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.163 EditorView ProductOps assembly building::Create empty product and link to topology",
+    "bridge_function": "OCCTBRepGraphCreateEmptyProduct",
+    "bridge_output": {
+      "parent": 0,
+      "child": 1,
+      "occurrence": 1,
+      "occurrenceRef": 1
+    },
+    "kernel_output": {
+      "parent": 0,
+      "child": 1,
+      "occurrence": 1,
+      "occurrenceRef": 1
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.163 EditorView ProductOps assembly building::Remove ops on bogus ids return false",
+    "bridge_function": "OCCTBRepGraphProductRemoveOccurrence",
+    "bridge_output": {
+      "removeOccurrence": false
+    },
+    "kernel_output": {
+      "removeOccurrence": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.163 EditorView ProductOps assembly building::Occurrence ref local location round-trip",
+    "bridge_function": "OCCTBRepGraphGetOccurrenceRefLocalLocation",
+    "bridge_output": {
+      "translation": [
+        5.0,
+        6.0,
+        7.0
+      ]
+    },
+    "kernel_output": {
+      "translation": [
+        5,
+        6,
+        7
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.163 EditorView ProductOps assembly building::Child ref local location round-trip",
+    "bridge_function": "OCCTBRepGraphSetChildRefLocalLocation",
+    "bridge_output": {
+      "first": [
+        1,
+        2,
+        3
+      ],
+      "second": [
+        -4,
+        -5,
+        -6
+      ]
+    },
+    "kernel_output": {
+      "first": [
+        1,
+        2,
+        3
+      ],
+      "second": [
+        -4,
+        -5,
+        -6
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.163 EditorView ProductOps assembly building::Occurrence ref local location setter overwrites the placement linkProducts wrote",
+    "bridge_function": "OCCTBRepGraphSetOccurrenceRefLocalLocation",
+    "bridge_output": {
+      "translation": [
+        11,
+        12,
+        13
+      ]
+    },
+    "kernel_output": {
+      "afterLink": [
+        5,
+        6,
+        7
+      ],
+      "afterSet": [
+        11,
+        12,
+        13
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.159 EditorView field setters::Vertex point and tolerance set then read back",
+    "bridge_function": "OCCTBRepGraphSetVertexPoint",
+    "bridge_output": {
+      "point": [
+        1.5,
+        2.5,
+        3.5
+      ],
+      "tolerance": 0.0001
+    },
+    "kernel_output": {
+      "point": [
+        1.5,
+        2.5,
+        3.5
+      ],
+      "tolerance": 0.0001
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.159 EditorView field setters::Edge tolerance, range, and flags set then read back",
+    "bridge_function": "OCCTBRepGraphSetEdgeTolerance",
+    "bridge_output": {
+      "tolerance": 0.001,
+      "range": [
+        0.25,
+        7.5
+      ],
+      "closed": false
+    },
+    "kernel_output": {
+      "tolerance": 0.001,
+      "range": [
+        0.25,
+        7.5
+      ],
+      "closed": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.159 EditorView field setters::Face tolerance set then read back",
+    "bridge_function": "OCCTBRepGraphSetFaceTolerance",
+    "bridge_output": {
+      "tolerance": 0.005
+    },
+    "kernel_output": {
+      "tolerance": 0.005
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.159 EditorView field setters::CoEdge/Wire/Shell setters do not crash on valid ids",
+    "bridge_function": "OCCTBRepGraphWireIsClosed",
+    "bridge_output": {
+      "wire0Closed": true,
+      "shell0Closed": true
+    },
+    "kernel_output": {
+      "wire0Closed": true,
+      "shell0Closed": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.164 RepOps non-guard setters & cache entry inspection::Cached face mesh inspection on a fresh graph",
+    "bridge_function": "OCCTBRepGraphCachedFaceMeshIsPresent",
+    "bridge_output": {
+      "present": false,
+      "count": 0,
+      "active": -1,
+      "repId": null
+    },
+    "kernel_output": {
+      "faceCacheHas": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.164 RepOps non-guard setters & cache entry inspection::Cached face mesh state after appendCachedTriangulation",
+    "bridge_function": "OCCTBRepGraphMeshAppendCachedTriangulation",
+    "bridge_output": {
+      "present": true,
+      "count": 1,
+      "active": 0,
+      "repId": 0
+    },
+    "kernel_output": {
+      "faceCacheHasAfterSetCachedTriangulation": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.164 RepOps non-guard setters & cache entry inspection::Cached edge / coedge mesh accessors return absent on fresh graph",
+    "bridge_function": "OCCTBRepGraphCachedEdgeMeshIsPresent",
+    "bridge_output": {
+      "edge": false,
+      "coedge": false,
+      "onTriCount": 0
+    },
+    "kernel_output": {
+      "edgeCacheHas": false,
+      "coedgeCacheHas": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "HLR ReflectLines Tests::reflect lines on sphere",
+    "bridge_function": "OCCTHLRReflectLines",
+    "bridge_output": {
+      "edges": 1,
+      "bbox": [
+        [
+          -10.0000001,
+          -10.0000001,
+          -1e-07
+        ],
+        [
+          10.0000001,
+          10.0000001,
+          1e-07
+        ]
+      ]
+    },
+    "kernel_output": {
+      "edges": 1,
+      "bbox": [
+        [
+          -10.0000001,
+          -10.0000001,
+          -1e-07
+        ],
+        [
+          10.0000001,
+          10.0000001,
+          1e-07
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "HLR ReflectLines Tests::reflect lines filtered by edge type",
+    "bridge_function": "OCCTHLRReflectLinesFiltered",
+    "bridge_output": {
+      "edges": 1,
+      "bbox": [
+        [
+          -10.0000001,
+          -10.0000001,
+          -1e-07
+        ],
+        [
+          10.0000001,
+          10.0000001,
+          1e-07
+        ]
+      ]
+    },
+    "kernel_output": {
+      "edges": 1,
+      "bbox": [
+        [
+          -10.0000001,
+          -10.0000001,
+          -1e-07
+        ],
+        [
+          10.0000001,
+          10.0000001,
+          1e-07
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Perspective eye anchor and the regime beyond it (#1036)::A shape wholly beyond the eye is refused, not drawn mirrored",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "drawing": null
+    },
+    "kernel_output": {
+      "reach": 1010,
+      "focus": 50,
+      "guard": "refuse"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Perspective eye anchor and the regime beyond it (#1036)::An eye plane cutting the shape is refused, not drawn half mirrored",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "drawing": null
+    },
+    "kernel_output": {
+      "reach": 10.0000001,
+      "focus": 5.5,
+      "guard": "refuse"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Perspective eye anchor and the regime beyond it (#1036)::An eye exactly on a face is refused rather than divided by zero",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "drawing": null
+    },
+    "kernel_output": {
+      "reach": 10.0000001,
+      "focus": 10,
+      "guard": "refuse"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Perspective eye anchor and the regime beyond it (#1036)::The eye is anchored at the world origin, so the scale follows the shape's position",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "near": [
+        -6.2500001,
+        6.2500001
+      ],
+      "far": [
+        -131.25000010000008,
+        131.25000010000008
+      ]
+    },
+    "kernel_output": {
+      "near": [
+        -6.2500001,
+        6.2500001
+      ],
+      "far": [
+        -131.2500001,
+        131.2500001
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Perspective eye anchor and the regime beyond it (#1036)::A shape behind the picture plane still projects, shrunken and the right way round",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "x": [
+        0.9433961264150944,
+        1.4285715285714287
+      ]
+    },
+    "kernel_output": {
+      "x": [
+        0.943396126415,
+        1.42857152857
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Perspective eye anchor and the regime beyond it (#1036)::A focal distance just clear of the shape is accepted, however extreme the scale",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "x": [
+        19.9999999,
+        30030.00000010102
+      ]
+    },
+    "kernel_output": {
+      "x": [
+        19.9999999,
+        30030.0000001
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawing.ProjectionType is Hashable (#1059)::A ProjectionType keys a dictionary",
+    "bridge_function": "Drawing.ProjectionType (Swift)",
+    "bridge_output": {
+      "hashable": true
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the enum's Hashable/Equatable conformance, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Drawing.ProjectionType is Hashable (#1059)::A set collapses equal cases and keeps distinct ones",
+    "bridge_function": "Drawing.ProjectionType (Swift)",
+    "bridge_output": {
+      "hashable": true
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the enum's Hashable/Equatable conformance, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Drawing.ProjectionType is Hashable (#1059)::Equal values hash equal, which Hashable requires and Equatable alone cannot give",
+    "bridge_function": "Drawing.ProjectionType (Swift)",
+    "bridge_output": {
+      "hashable": true
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the enum's Hashable/Equatable conformance, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Length Dimension::Point-to-point distance",
+    "bridge_function": "OCCTDimensionCreateLengthFromPoints",
+    "bridge_output": {
+      "value": 10
+    },
+    "kernel_output": {
+      "value": 10,
+      "isValid": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Length Dimension::Diagonal distance",
+    "bridge_function": "OCCTDimensionCreateLengthFromPoints",
+    "bridge_output": {
+      "value": 5
+    },
+    "kernel_output": {
+      "value": 5
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Length Dimension::3D distance",
+    "bridge_function": "OCCTDimensionCreateLengthFromPoints",
+    "bridge_output": {
+      "value": 5
+    },
+    "kernel_output": {
+      "value": 5
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Length Dimension::Edge length measurement",
+    "bridge_function": "OCCTDimensionCreateLengthFromEdge",
+    "bridge_output": {
+      "value": 7
+    },
+    "kernel_output": {
+      "value": 7,
+      "isValid": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Length Dimension::Face-to-face distance equals box dimension",
+    "bridge_function": "OCCTDimensionCreateLengthFromFaces",
+    "bridge_output": {
+      "value": 10
+    },
+    "kernel_output": {
+      "value": 10,
+      "isValid": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Length Dimension::Geometry contains valid first and second points",
+    "bridge_function": "OCCTDimensionGetGeometry",
+    "bridge_output": {
+      "first": [
+        0,
+        0,
+        0
+      ],
+      "second": [
+        5,
+        0,
+        0
+      ],
+      "isValid": true
+    },
+    "kernel_output": {
+      "first": [
+        0,
+        0,
+        0
+      ],
+      "second": [
+        5,
+        0,
+        0
+      ],
+      "isValid": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Length Dimension::Custom value overrides measured",
+    "bridge_function": "OCCTDimensionSetCustomValue",
+    "bridge_output": {
+      "before": 10,
+      "after": 42
+    },
+    "kernel_output": {
+      "before": 10,
+      "after": 42
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Normal Projection::Project line onto sphere near surface",
+    "bridge_function": "OCCTShapeNormalProjection",
+    "bridge_output": {
+      "edges": 2,
+      "bbox": [
+        [
+          9.70142485,
+          -2.4253564,
+          -1.46871406e-07
+        ],
+        [
+          10.0000001,
+          2.4253564,
+          1.46871406e-07
+        ]
+      ],
+      "within": 1e-06
+    },
+    "kernel_output": {
+      "edges": 2,
+      "bbox": [
+        [
+          9.70142485,
+          -2.4253564,
+          -1.46871406e-07
+        ],
+        [
+          10.0000001,
+          2.4253564,
+          1.46871406e-07
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Normal Projection::Project line outside sphere",
+    "bridge_function": "OCCTShapeNormalProjection",
+    "bridge_output": {
+      "edges": 2,
+      "bbox": [
+        [
+          9.48683264,
+          -3.162278,
+          -3.40436912e-07
+        ],
+        [
+          10.0000003,
+          3.162278,
+          3.40436912e-07
+        ]
+      ],
+      "within": 1e-06
+    },
+    "kernel_output": {
+      "edges": 2,
+      "bbox": [
+        [
+          9.48683264,
+          -3.162278,
+          -3.40436912e-07
+        ],
+        [
+          10.0000003,
+          3.162278,
+          3.40436912e-07
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 DrawingDimension.ordinate::3-feature ordinate emits origin cross + X + Y extensions per feature",
+    "bridge_function": "emitOrdinate",
+    "bridge_output": {
+      "lines": 12,
+      "texts": 5
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingDimension.ordinate::Empty features list emits only the origin cross",
+    "bridge_function": "emitOrdinate",
+    "bridge_output": {
+      "lines": 2,
+      "texts": 0
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingDimension.ordinate::Ordinate applies tolerance to every feature label",
+    "bridge_function": "emitOrdinateAxisFeature",
+    "bridge_output": {
+      "contains": "±0.020"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingDimension.ordinate::Ordinate transforms translate origin and every feature position",
+    "bridge_function": "DrawingDimension.transformed",
+    "bridge_output": {
+      "origin": [
+        100,
+        200
+      ],
+      "feature": [
+        120,
+        210
+      ]
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingDimension.ordinate::Ordinate Codable round-trip",
+    "bridge_function": "DrawingDimension.Ordinate (Codable)",
+    "bridge_output": {
+      "roundTripEqual": true
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingDimension.ordinate::Y-only feature (dx == 0) draws only the Y leader/tick/text, isolated from the X block",
+    "bridge_function": "emitOrdinate",
+    "bridge_output": {
+      "lines": 4,
+      "texts": 1
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingDimension.ordinate::Feature exactly at the origin draws neither axis block",
+    "bridge_function": "emitOrdinate",
+    "bridge_output": {
+      "lines": 2,
+      "texts": 0
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingDimension.ordinate::X and Y axis blocks draw exact, independently-verified geometry",
+    "bridge_function": "emitOrdinateAxisFeature",
+    "bridge_output": {
+      "ticks": [
+        [
+          [
+            130,
+            48
+          ],
+          [
+            130,
+            52
+          ]
+        ],
+        [
+          [
+            98,
+            70
+          ],
+          [
+            102,
+            70
+          ]
+        ]
+      ]
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: ordinate-dimension emission, transform and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Point Projection Tests::Project point onto box face",
+    "bridge_function": "OCCTFaceProjectPoint",
+    "bridge_output": {
+      "point": [
+        0,
+        0,
+        5
+      ],
+      "distance": 10
+    },
+    "kernel_output": {
+      "nearest": [
+        0,
+        0,
+        5
+      ],
+      "distance": 10
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Point Projection Tests::Project point onto sphere face with UV",
+    "bridge_function": "OCCTFaceProjectPoint",
+    "bridge_output": {
+      "point": [
+        5,
+        0,
+        0
+      ],
+      "distance": 5
+    },
+    "kernel_output": {
+      "nearest": [
+        5,
+        0,
+        0
+      ],
+      "distance": 5
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Point Projection Tests::All projections returns results",
+    "bridge_function": "OCCTFaceProjectPointAll",
+    "bridge_output": {
+      "count": 1,
+      "distance": 10
+    },
+    "kernel_output": {
+      "nbPoints": 1,
+      "distance": 10
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Point Projection Tests::Project point onto straight edge",
+    "bridge_function": "OCCTEdgeProjectPoint",
+    "bridge_output": {
+      "distance": 1.4142135623730951
+    },
+    "kernel_output": {
+      "distance": 1.4142135623730951
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Point Projection Tests::Project point onto circular edge",
+    "bridge_function": "OCCTEdgeProjectPoint",
+    "bridge_output": {
+      "distance": 3
+    },
+    "kernel_output": {
+      "distance": 3
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Polygon-Based HLR::Fast top view of box produces edges",
+    "bridge_function": "OCCTDrawingCreatePoly",
+    "bridge_output": {
+      "visible": 4,
+      "extent": [
+        [
+          -5.0000001,
+          -5.0000001
+        ],
+        [
+          5.0000001,
+          5.0000001
+        ]
+      ]
+    },
+    "kernel_output": {
+      "visible": 4,
+      "extent": [
+        [
+          -5.0000001,
+          -5.0000001
+        ],
+        [
+          5.0000001,
+          5.0000001
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Polygon-Based HLR::Fast isometric view of box",
+    "bridge_function": "OCCTDrawingCreatePoly",
+    "bridge_output": {
+      "visible": 9,
+      "hidden": 3,
+      "extent": [
+        [
+          -8.838834864831846,
+          -9.185586635436922
+        ],
+        [
+          8.838834864831846,
+          9.185586635436922
+        ]
+      ]
+    },
+    "kernel_output": {
+      "visible": 9,
+      "hidden": 3,
+      "extent": [
+        [
+          -8.83883486,
+          -9.18558664
+        ],
+        [
+          8.83883486,
+          9.18558664
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Polygon-Based HLR::Fast projection of cylinder",
+    "bridge_function": "OCCTDrawingCreatePoly",
+    "bridge_output": {
+      "visible": 76,
+      "outline": 4,
+      "extent": [
+        [
+          -1e-07,
+          -5.000000099706646
+        ],
+        [
+          10.0000001,
+          5.000000099706646
+        ]
+      ]
+    },
+    "kernel_output": {
+      "visible": 76,
+      "outline": 4,
+      "extent": [
+        [
+          -1e-07,
+          -5.0000001
+        ],
+        [
+          10.0000001,
+          5.0000001
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Polygon-Based HLR::Fast projection has hidden edges",
+    "bridge_function": "OCCTDrawingCreatePoly",
+    "bridge_output": {
+      "visible": 10,
+      "hidden": 14
+    },
+    "kernel_output": {
+      "visible": 10,
+      "hidden": 14
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Polygon-Based HLR::Fast vs exact projection both succeed",
+    "bridge_function": "OCCTDrawingCreatePoly",
+    "bridge_output": {
+      "exactVisible": 1,
+      "fastVisible": 197
+    },
+    "kernel_output": {
+      "exactVisible": 1,
+      "fastVisible": 197
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Polygon-Based HLR::Custom deflection affects result",
+    "bridge_function": "OCCTDrawingCreatePoly",
+    "bridge_output": {
+      "coarseVisible": 35,
+      "fineVisible": 631
+    },
+    "kernel_output": {
+      "coarseVisible": 35,
+      "fineVisible": 631
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Selector Tests::Add and pick box at center",
+    "bridge_function": "OCCTSelectorPick",
+    "bridge_output": {
+      "hits": 0
+    },
+    "kernel_output": {
+      "NbPicked": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Selector Tests::Pick miss at far corner",
+    "bridge_function": "OCCTSelectorPick",
+    "bridge_output": {
+      "hits": 0
+    },
+    "kernel_output": {
+      "NbPicked": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Selector Tests::Multiple shapes return correct IDs",
+    "bridge_function": "OCCTSelectorAddShape",
+    "bridge_output": {
+      "added": [
+        true,
+        true
+      ],
+      "hitsLeft": 0,
+      "hitsRight": 0
+    },
+    "kernel_output": {
+      "NbPicked": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Selector Tests::Remove shape then pick returns miss",
+    "bridge_function": "OCCTSelectorRemoveShape",
+    "bridge_output": {
+      "removed": true,
+      "hits": 0
+    },
+    "kernel_output": {
+      "NbPicked": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Selector Tests::Rectangle pick covers geometry",
+    "bridge_function": "OCCTSelectorPickRect",
+    "bridge_output": {
+      "hits": 0
+    },
+    "kernel_output": {
+      "NbPicked (point route)": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Selector Tests::Clear all removes everything",
+    "bridge_function": "OCCTSelectorClear",
+    "bridge_output": {
+      "hits": 0
+    },
+    "kernel_output": {
+      "NbPicked": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 DrawingTolerance::Symmetric tolerance rendered inline on the nominal label",
+    "bridge_function": "formatTolerance / DrawingTolerance (Swift)",
+    "bridge_output": {
+      "contains": "±0.050",
+      "texts": 1
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingTolerance::Bilateral tolerance produces stacked upper + lower TEXT entries",
+    "bridge_function": "formatTolerance / DrawingTolerance (Swift)",
+    "bridge_output": {
+      "textsDelta": 2
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingTolerance::Unilateral tolerance stacks signed value against a 0",
+    "bridge_function": "formatTolerance / DrawingTolerance (Swift)",
+    "bridge_output": {
+      "texts": 3
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingTolerance::Fit class appended inline with space",
+    "bridge_function": "formatTolerance / DrawingTolerance (Swift)",
+    "bridge_output": {
+      "contains": " H7",
+      "texts": 1
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingTolerance::Limits tolerance stacks upper over lower",
+    "bridge_function": "formatTolerance / DrawingTolerance (Swift)",
+    "bridge_output": {
+      "texts": 3
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.149 DrawingTolerance::DrawingTolerance Codable round-trip",
+    "bridge_function": "formatTolerance / DrawingTolerance (Swift)",
+    "bridge_output": {
+      "roundTrip": "all six cases"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: tolerance formatting, DXF emission and Codable, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Z-Layer Settings::Default values",
+    "bridge_function": "OCCTZLayerSettingsCreate",
+    "bridge_output": {
+      "depthTest": true,
+      "depthWrite": true,
+      "clearDepth": true,
+      "immediate": false,
+      "raytracable": true,
+      "environmentTexture": true,
+      "renderInDepthPrepass": true
+    },
+    "kernel_output": {
+      "depthTest": true,
+      "depthWrite": true,
+      "clearDepth": true,
+      "immediate": false,
+      "raytracable": true,
+      "environmentTexture": true,
+      "renderInDepthPrepass": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Depth test toggle",
+    "bridge_function": "OCCTZLayerSettingsSetDepthTest",
+    "bridge_output": {
+      "afterFalse": false,
+      "afterTrue": true
+    },
+    "kernel_output": {
+      "afterFalse": false,
+      "afterTrue": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Depth write toggle",
+    "bridge_function": "OCCTZLayerSettingsSetDepthWrite",
+    "bridge_output": {
+      "value": false
+    },
+    "kernel_output": {
+      "value": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Clear depth toggle",
+    "bridge_function": "OCCTZLayerSettingsSetClearDepth",
+    "bridge_output": {
+      "value": false
+    },
+    "kernel_output": {
+      "value": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Polygon offset roundtrip",
+    "bridge_function": "OCCTZLayerSettingsSetPolygonOffset",
+    "bridge_output": {
+      "mode": "fill",
+      "factor": 1.5,
+      "units": 2.0
+    },
+    "kernel_output": {
+      "mode": 1,
+      "factor": 1.5,
+      "units": 2
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Depth offset positive convenience",
+    "bridge_function": "OCCTZLayerSettingsSetDepthOffsetPositive",
+    "bridge_output": {
+      "mode": "fill",
+      "factor": 1,
+      "units": 1
+    },
+    "kernel_output": {
+      "mode": 1,
+      "factor": 1,
+      "units": 1
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Depth offset negative convenience",
+    "bridge_function": "OCCTZLayerSettingsSetDepthOffsetNegative",
+    "bridge_output": {
+      "mode": "fill",
+      "factor": 1,
+      "units": -1
+    },
+    "kernel_output": {
+      "mode": 1,
+      "factor": 1,
+      "units": -1
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Immediate mode toggle",
+    "bridge_function": "OCCTZLayerSettingsSetImmediate",
+    "bridge_output": {
+      "value": true
+    },
+    "kernel_output": {
+      "value": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Raytracable toggle",
+    "bridge_function": "OCCTZLayerSettingsSetRaytracable",
+    "bridge_output": {
+      "value": false
+    },
+    "kernel_output": {
+      "value": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Culling distance",
+    "bridge_function": "OCCTZLayerSettingsSetCullingDistance",
+    "bridge_output": {
+      "value": 1000.0
+    },
+    "kernel_output": {
+      "value": 1000.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Culling size",
+    "bridge_function": "OCCTZLayerSettingsSetCullingSize",
+    "bridge_output": {
+      "value": 5.0
+    },
+    "kernel_output": {
+      "value": 5.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Origin roundtrip",
+    "bridge_function": "OCCTZLayerSettingsSetOrigin",
+    "bridge_output": {
+      "origin": [
+        100,
+        200,
+        300
+      ]
+    },
+    "kernel_output": {
+      "origin": [
+        100,
+        200,
+        300
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Z-Layer Settings::Predefined layer IDs",
+    "bridge_function": "ZLayerSettings layer-id constants (Swift) vs Graphic3d_ZLayerId",
+    "bridge_output": {
+      "bottomOSD": -5,
+      "default": 0,
+      "top": -2,
+      "topmost": -3,
+      "topOSD": -4
+    },
+    "kernel_output": {
+      "BotOSD": -5,
+      "Default": 0,
+      "Top": -2,
+      "Topmost": -3,
+      "TopOSD": -4
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#1185 DrawingDimension.Radial/.Diameter share Circular::DrawingDimension.value: .radial reports radius, .diameter reports 2*radius",
+    "bridge_function": "DrawingDimension.value",
+    "bridge_output": {
+      "radial": 7,
+      "diameter": 14
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1185 DrawingDimension.Radial/.Diameter share Circular::DrawingDimension.id/.label read through for both .radial and .diameter",
+    "bridge_function": "DrawingDimension.id",
+    "bridge_output": {
+      "id": [
+        "rid",
+        "did"
+      ]
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1185 DrawingDimension.Radial/.Diameter share Circular::DrawingDimension.transformed applies scale*p+translate for .diameter",
+    "bridge_function": "DrawingDimension.Circular.transformed",
+    "bridge_output": {
+      "centre": [
+        21,
+        21
+      ],
+      "radius": 8
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1185 DrawingDimension.Radial/.Diameter share Circular::DrawingDimension.keyPoints for .radial and .diameter (previously untested)",
+    "bridge_function": "DrawingDimension.Circular.keyPoints",
+    "bridge_output": {
+      "keyPoints": [
+        [
+          10,
+          20
+        ],
+        [
+          15,
+          20
+        ],
+        [
+          5,
+          20
+        ]
+      ]
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1185 DrawingDimension.Radial/.Diameter share Circular::Drawing.addRadialDimension/addDiameterDimension route through Circular correctly",
+    "bridge_function": "Drawing.addDiameterDimension",
+    "bridge_output": {
+      "diameterValue": 12
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: the 2D DrawingDimension.Circular payload, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Radius Dimension::Radius of circle wire",
+    "bridge_function": "OCCTDimensionCreateRadiusFromShape",
+    "bridge_output": {
+      "value": 7
+    },
+    "kernel_output": {
+      "value": 7,
+      "isValid": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Radius Dimension::Radius geometry has circle center",
+    "bridge_function": "OCCTDimensionGetGeometry",
+    "bridge_output": {
+      "circleRadius": 5,
+      "centre": [
+        0,
+        0,
+        0
+      ],
+      "isValid": true
+    },
+    "kernel_output": {
+      "circleRadius": 5,
+      "centre": [
+        0,
+        0,
+        0
+      ],
+      "isValid": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Radius Dimension::Nil for non-circular shape",
+    "bridge_function": "OCCTDimensionIsValid",
+    "bridge_output": {
+      "isValid": false
+    },
+    "kernel_output": {
+      "isValid": false,
+      "value": 0
     },
     "comparison": {
       "equal": true,

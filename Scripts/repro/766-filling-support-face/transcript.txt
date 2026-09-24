@@ -1,0 +1,8 @@
+rim: z=7.66044443
+flat (.g0 rim): z extent (Bnd_Box, with its enlargement)=2e-07 degree=5x5
+tangent (.g1 rim, wall support): z extent (Bnd_Box, with its enlargement)=7.51122 degree=7x6
+curvature (.g2 -> GeomAbs_C1, wall support): z extent (Bnd_Box, with its enlargement)=11.9016 degree=8x8
+tangent, maxDegree 3: z extent (Bnd_Box, with its enlargement)=8.55437 degree=3x3
+rim + interior line (not bound): z extent (Bnd_Box, with its enlargement)=36.6944 degree=8x8
+free-standing square, degraded to C0: z extent (Bnd_Box, with its enlargement)=2e-07 degree=3x3
+free-standing square at G1 face-less (the pre-#1503 path): threw Add

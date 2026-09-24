@@ -3,17 +3,50 @@
     "test_name": "ShapeRayIntersection Tests::line intersection with box",
     "bridge_function": "OCCTCurveSurfaceInterCreateLine",
     "bridge_output": {
-      "type": "intersection_count",
+      "type": "ray_hits",
       "data": {
-        "count": 2
+        "count": 2,
+        "hits": [
+          [
+            5.0,
+            5.0,
+            -5.0
+          ],
+          [
+            5.0,
+            5.0,
+            5.0
+          ]
+        ],
+        "w": [
+          5.0,
+          15.0
+        ]
       }
     },
     "kernel_output": {
-      "type": "intersection_count",
+      "type": "ray_hits",
       "data": {
-        "count": 2
+        "count": 2,
+        "hits": [
+          [
+            5.0,
+            5.0,
+            -5.0
+          ],
+          [
+            5.0,
+            5.0,
+            5.0
+          ]
+        ],
+        "w": [
+          5.0,
+          15.0
+        ]
       }
     },
+    "kernel_probe": "Scripts/repro/766-shape-ray-intersection/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []
@@ -24,17 +57,50 @@
     "test_name": "ShapeRayIntersection Tests::curve intersection with sphere",
     "bridge_function": "OCCTCurveSurfaceInterCreateCurve",
     "bridge_output": {
-      "type": "intersection_count",
+      "type": "ray_hits",
       "data": {
-        "count": 2
+        "count": 2,
+        "hits": [
+          [
+            0.0,
+            0.0,
+            5.0
+          ],
+          [
+            0.0,
+            0.0,
+            -5.0
+          ]
+        ],
+        "w": [
+          15.0,
+          5.0
+        ]
       }
     },
     "kernel_output": {
-      "type": "intersection_count",
+      "type": "ray_hits",
       "data": {
-        "count": 2
+        "count": 2,
+        "hits": [
+          [
+            0.0,
+            0.0,
+            5.0
+          ],
+          [
+            0.0,
+            0.0,
+            -5.0
+          ]
+        ],
+        "w": [
+          15.0,
+          5.0
+        ]
       }
     },
+    "kernel_probe": "Scripts/repro/766-shape-ray-intersection/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []
@@ -49,12 +115,17 @@
       "data": {}
     },
     "kernel_output": {
-      "type": "null",
-      "data": {}
+      "type": "space",
+      "data": {
+        "unguarded_kernel_path": true
+      }
     },
+    "kernel_probe": "Scripts/repro/766-point-cloud-analysis/probe.mm",
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "bridge returns nil by design before the kernel is reached; the unguarded kernel call reports space"
+      ]
     },
     "status": "PASS"
   },
@@ -69,6 +140,7 @@
       "type": "space",
       "data": {}
     },
+    "kernel_probe": "Scripts/repro/766-point-cloud-analysis/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []
@@ -81,19 +153,24 @@
     "bridge_output": {
       "type": "point",
       "data": {
-        "x": 5.0,
-        "y": 5.0,
-        "z": 5.0
+        "point": [
+          5.0,
+          5.0,
+          5.0
+        ]
       }
     },
     "kernel_output": {
       "type": "point",
       "data": {
-        "x": 5.0,
-        "y": 5.0,
-        "z": 5.0
+        "point": [
+          5.0,
+          5.0,
+          5.0
+        ]
       }
     },
+    "kernel_probe": "Scripts/repro/766-point-cloud-analysis/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []
@@ -106,33 +183,34 @@
     "bridge_output": {
       "type": "linear",
       "data": {
-        "origin": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "direction": {
-          "x": 1.0,
-          "y": 0.0,
-          "z": 0.0
-        }
+        "origin": [
+          5.0,
+          0.0,
+          0.0
+        ],
+        "direction": [
+          1.0,
+          0.0,
+          0.0
+        ]
       }
     },
     "kernel_output": {
       "type": "linear",
       "data": {
-        "origin": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "direction": {
-          "x": 1.0,
-          "y": 0.0,
-          "z": 0.0
-        }
+        "origin": [
+          5.0,
+          0.0,
+          0.0
+        ],
+        "direction": [
+          1.0,
+          0.0,
+          0.0
+        ]
       }
     },
+    "kernel_probe": "Scripts/repro/766-point-cloud-analysis/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []
@@ -145,33 +223,34 @@
     "bridge_output": {
       "type": "planar",
       "data": {
-        "origin": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "normal": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 1.0
-        }
+        "origin": [
+          5.0,
+          5.0,
+          0.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ]
       }
     },
     "kernel_output": {
       "type": "planar",
       "data": {
-        "origin": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "normal": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 1.0
-        }
+        "origin": [
+          5.0,
+          5.0,
+          0.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ]
       }
     },
+    "kernel_probe": "Scripts/repro/766-point-cloud-analysis/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []
@@ -184,19 +263,24 @@
     "bridge_output": {
       "type": "point",
       "data": {
-        "x": 3.0,
-        "y": 4.0,
-        "z": 5.0
+        "point": [
+          3.0,
+          4.0,
+          5.0
+        ]
       }
     },
     "kernel_output": {
       "type": "point",
       "data": {
-        "x": 3.0,
-        "y": 4.0,
-        "z": 5.0
+        "point": [
+          3.0,
+          4.0,
+          5.0
+        ]
       }
     },
+    "kernel_probe": "Scripts/repro/766-point-cloud-analysis/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []
@@ -288,21 +372,26 @@
     "bridge_output": {
       "type": "first_hit",
       "data": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": -5.0,
+        "point": [
+          0.0,
+          0.0,
+          -5.0
+        ],
         "face_area": 100.0
       }
     },
     "kernel_output": {
       "type": "first_hit",
       "data": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": -5.0,
-        "face_area": 100.0
+        "point": [
+          0.0,
+          0.0,
+          -5.0
+        ],
+        "face_area": 99.99999999999999
       }
     },
+    "kernel_probe": "Scripts/repro/766-shape-ray-intersection/probe.mm",
     "comparison": {
       "equal": true,
       "differences": []
@@ -5249,6 +5338,732 @@
             20.0
           ]
         ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_SelfIntersection Pair Tests::noSelfIntersectionOnBox",
+    "bridge_function": "OCCTShapeSelfIntersectionPairs",
+    "bridge_output": {
+      "type": "pairs",
+      "data": {
+        "box": [],
+        "overlapping_compound_nonempty": true
+      }
+    },
+    "kernel_output": {
+      "type": "pairs",
+      "data": {
+        "box": [],
+        "overlapping_compound_nonempty": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_SelfIntersection Pair Tests::selfIntersectionReturnsArray",
+    "bridge_function": "OCCTShapeSelfIntersectionPairs",
+    "bridge_output": {
+      "type": "pairs",
+      "data": {
+        "sphere": [],
+        "overlapping_compound": [
+          [
+            1,
+            8
+          ],
+          [
+            1,
+            10
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            3,
+            10
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            8
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "pairs",
+      "data": {
+        "sphere": [],
+        "overlapping_compound": [
+          [
+            1,
+            8
+          ],
+          [
+            1,
+            10
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            3,
+            10
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            8
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Extrema Tests::Sphere surfaces distance",
+    "bridge_function": "OCCTSurfaceExtrema",
+    "bridge_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 12.000000001961356,
+        "p1": {
+          "x": 2.9999999999068514,
+          "y": -2.3353891282520862e-05,
+          "z": -3.6726259132488495e-06
+        },
+        "p2": {
+          "x": 15.000000001171706,
+          "y": 0.00010113057010444278,
+          "z": -3.8596245878837996e-05
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 12.000000001961356,
+        "p1": {
+          "x": 2.9999999999068514,
+          "y": -2.3353891282520862e-05,
+          "z": -3.6726259132488495e-06
+        },
+        "p2": {
+          "x": 15.000000001171706,
+          "y": 0.00010113057010444278,
+          "z": -3.8596245878837996e-05
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Extrema Tests::Extrema returns nearest points and UV",
+    "bridge_function": "OCCTSurfaceExtrema",
+    "bridge_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 20.000000002303583,
+        "p1": {
+          "x": 3.999999999899847,
+          "y": -2.15998579181621e-05,
+          "z": -1.8294040907514106e-05
+        },
+        "p2": {
+          "x": 24.000000001610637,
+          "y": 0.0001282943928125367,
+          "z": -5.3555754393281796e-05
+        },
+        "uv1": [
+          6.283179907215106,
+          -4.57351022689447e-06
+        ],
+        "uv2": [
+          3.1415712711909887,
+          -8.92595906566549e-06
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 20.000000002303583,
+        "p1": {
+          "x": 3.999999999899847,
+          "y": -2.15998579181621e-05,
+          "z": -1.8294040907514106e-05
+        },
+        "p2": {
+          "x": 24.000000001610637,
+          "y": 0.0001282943928125367,
+          "z": -5.3555754393281796e-05
+        },
+        "uv1": [
+          6.283179907215106,
+          -4.57351022689447e-06
+        ],
+        "uv2": [
+          3.1415712711909887,
+          -8.92595906566549e-06
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Extrema Tests::Cylinder and sphere distance",
+    "bridge_function": "OCCTSurfaceExtrema",
+    "bridge_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 12.0,
+        "p1": {
+          "x": 5.0,
+          "y": 4.596695327168491e-08,
+          "z": 1.8503663659890507e-09
+        },
+        "p2": {
+          "x": 17.0,
+          "y": 2.076669806219026e-08,
+          "z": 1.3759166247828372e-08
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "surface_extrema",
+      "data": {
+        "distance": 12.0,
+        "p1": {
+          "x": 5.0,
+          "y": 4.596695327168491e-08,
+          "z": 1.8503663659890507e-09
+        },
+        "p2": {
+          "x": 17.0,
+          "y": 2.076669806219026e-08,
+          "z": 1.3759166247828372e-08
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Face Tests::Natural bounds of box face",
+    "bridge_function": "OCCTFaceGetNaturalBounds",
+    "bridge_output": {
+      "type": "uv_bounds",
+      "data": {
+        "u": [
+          0.0,
+          30.0
+        ],
+        "v": [
+          -20.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "uv_bounds",
+      "data": {
+        "u": [
+          0.0,
+          30.0
+        ],
+        "v": [
+          -20.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-brepgprop-face/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Face Tests::Evaluate GProp normal on box face",
+    "bridge_function": "OCCTFaceEvaluateNormalAtUV",
+    "bridge_output": {
+      "type": "gprop_normal",
+      "data": {
+        "point": [
+          -5.0,
+          0.0,
+          0.0
+        ],
+        "normal": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "magnitude": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "gprop_normal",
+      "data": {
+        "point": [
+          -5.0,
+          0.0,
+          0.0
+        ],
+        "normal": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "magnitude": 1.0
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-brepgprop-face/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Face Tests::Evaluate GProp normal on cylinder face",
+    "bridge_function": "OCCTFaceEvaluateNormalAtUV",
+    "bridge_output": {
+      "type": "gprop_normal_magnitudes",
+      "data": {
+        "lateral": 5.0,
+        "top_cap": 1.0,
+        "bottom_cap": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "gprop_normal_magnitudes",
+      "data": {
+        "lateral": 5.0,
+        "top_cap": 1.0,
+        "bottom_cap": 1.0
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-brepgprop-face/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Face Tests::GProp normal magnitude is area element",
+    "bridge_function": "OCCTFaceEvaluateNormalAtUV",
+    "bridge_output": {
+      "type": "gprop_normal_magnitudes",
+      "data": {
+        "at_min_corner": 1.0,
+        "at_max_corner": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "gprop_normal_magnitudes",
+      "data": {
+        "at_min_corner": 1.0,
+        "at_max_corner": 1.0
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-brepgprop-face/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtPElS Point-Plane::pointToPlane",
+    "bridge_function": "OCCTExtremaExtPElSPlane",
+    "bridge_output": {
+      "type": "point_surface_extrema",
+      "data": {
+        "count": 1,
+        "square_distance": 100.0,
+        "point2": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point_surface_extrema",
+      "data": {
+        "count": 1,
+        "square_distance": 100.0,
+        "point2": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Builder Tests::createHatcher",
+    "bridge_function": "OCCTHatcherCreate",
+    "bridge_output": {
+      "type": "handle",
+      "data": {
+        "non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "handle",
+      "data": {
+        "constructed": true,
+        "tolerance": 1e-06
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Builder Tests::addLinesAndCount",
+    "bridge_function": "OCCTHatcherAddXLine",
+    "bridge_output": {
+      "type": "line_count",
+      "data": {
+        "nb_lines": 3
+      }
+    },
+    "kernel_output": {
+      "type": "line_count",
+      "data": {
+        "nb_lines": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Builder Tests::addYLines",
+    "bridge_function": "OCCTHatcherAddYLine",
+    "bridge_output": {
+      "type": "line_count",
+      "data": {
+        "nb_lines": 2
+      }
+    },
+    "kernel_output": {
+      "type": "line_count",
+      "data": {
+        "nb_lines": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Builder Tests::trimAndIntervals",
+    "bridge_function": "OCCTHatcherNbIntervals",
+    "bridge_output": {
+      "type": "interval_counts",
+      "data": {
+        "untrimmed": [
+          0,
+          0,
+          0
+        ],
+        "closed_square": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "interval_counts",
+      "data": {
+        "untrimmed": [
+          0,
+          0,
+          0
+        ],
+        "closed_square": [
+          1,
+          1,
+          1
+        ],
+        "single_diagonal_segment": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "IntAna PlaneSphere Tests::planeSphereIntersection",
+    "bridge_function": "OCCTIntAnaPlaneSphere",
+    "bridge_output": {
+      "type": "quad_quad",
+      "data": {
+        "solution_count": 1,
+        "result_type": "circle",
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "radius": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "quad_quad",
+      "data": {
+        "solution_count": 1,
+        "result_type": "circle",
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "radius": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtElCS Line-Cylinder::lineCylinderDistance",
+    "bridge_function": "OCCTExtremaElCSLinCylinder",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 0,
+        "note": "parallel-axis guard returns 0 before the kernel is called"
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "is_done": true,
+        "is_parallel": true,
+        "NbExt": "SIGSEGV (signal 11) in a child process"
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "intended: the bridge refuses the parallel case because Extrema_ExtElCS::NbExt() still crashes on it on the pinned kernel; the test asserts the refusal"
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtElCS Line-Cylinder::lineCylinderDistancePerpendicular",
+    "bridge_function": "OCCTExtremaElCSLinCylinder",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "extrema": [
+          {
+            "square_distance": 225.0,
+            "on_line": [
+              20.0,
+              0.0,
+              0.0
+            ],
+            "on_cylinder": [
+              5.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "square_distance": 625.0,
+            "on_line": [
+              20.0,
+              0.0,
+              0.0
+            ],
+            "on_cylinder": [
+              -5.0,
+              6.123233995736766e-16,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "extrema": [
+          {
+            "square_distance": 225.0,
+            "on_line": [
+              20.0,
+              0.0,
+              0.0
+            ],
+            "on_cylinder": [
+              5.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "square_distance": 625.0,
+            "on_line": [
+              20.0,
+              0.0,
+              0.0
+            ],
+            "on_cylinder": [
+              -5.0,
+              6.123233995736766e-16,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_ExtPC Tests::Point to edge distance on box",
+    "bridge_function": "OCCTBRepExtremaExtPC",
+    "bridge_output": {
+      "type": "per_edge_distance",
+      "data": {
+        "edge_count": 12,
+        "all_valid": true,
+        "all_in_0_30": true,
+        "min_distance": 10
+      }
+    },
+    "kernel_output": {
+      "type": "per_edge_distance",
+      "data": {
+        "edge_count": 12,
+        "distances": [
+          17.320508075688775,
+          14.142135623730951,
+          14.142135623730951,
+          22.360679774997898,
+          14.142135623730951,
+          10,
+          10,
+          20,
+          22.360679774997898,
+          14.142135623730951,
+          20,
+          10
+        ],
+        "min_distance": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_ExtPC Tests::Point to wire edge, known distance",
+    "bridge_function": "OCCTBRepExtremaExtPC",
+    "bridge_output": {
+      "type": "nearest_point",
+      "data": {
+        "distance": 3,
+        "parameter": 5,
+        "point": [
+          5,
+          0,
+          0
+        ],
+        "solution_count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "nearest_point",
+      "data": {
+        "distance": 3,
+        "parameter": 5,
+        "point": [
+          5,
+          0,
+          0
+        ],
+        "BRepExtrema_ExtPC_NbExt": 1
       }
     },
     "comparison": {
