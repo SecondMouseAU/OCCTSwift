@@ -1,0 +1,4 @@
+offsetArc (+1): done=1 valid=1 volume=1698.43657 input=1000
+offsetInward (-1): done=1 valid=1 volume=512 input=1000
+offsetIntersection (+1): done=1 valid=1 volume=1728 input=1000
+offsetCylinder (+1): done=1 valid=1 volume=1341.5898 input=785.3981634
