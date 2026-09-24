@@ -6197,5 +6197,245 @@
       "failing_expectation": "original: red; rewritten: :23 `abs(pt.x - 15.0) < 0.1`"
     },
     "green": true
+  },
+  {
+    "test_name": "gce Transform Factory 3D Tests::pointMirror",
+    "bridge_function": "OCCTMakeMirrorPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1,2,3) -> (-1, -2, -3)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1,2,3) -> (-1, -2, -3)",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "point mirror built as an axis mirror (Z) through the point",
+      "failing_expectation": ":17 `abs(p.z + 3) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gce Transform Factory 3D Tests::planeMirror",
+    "bridge_function": "OCCTMakeMirrorPlane",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1,2,3) -> (1, 2, -3)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1,2,3) -> (1, 2, -3)",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "plane mirror built as an axis mirror about the normal",
+      "failing_expectation": ":23 `abs(p.x - 1) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gce Transform Factory 3D Tests::rotation90",
+    "bridge_function": "OCCTMakeRotation",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1,0,0) -> (1.1e-16, 1, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1,0,0) -> (1.1e-16, 1, 0)",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "angle negated",
+      "failing_expectation": ":31 `abs(p.y - 1) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gce Transform Factory 3D Tests::scaleBy2",
+    "bridge_function": "OCCTMakeScaleTransform",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1,2,3) -> (2, 4, 6)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1,2,3) -> (2, 4, 6)",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "factor inverted",
+      "failing_expectation": ":37 `abs(p.x - 2) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gce Transform Factory 3D Tests::translationVector",
+    "bridge_function": "OCCTMakeTranslationVec",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1,2,3) -> (11, 22, 33)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1,2,3) -> (11, 22, 33)",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "vector x and y swapped",
+      "failing_expectation": ":45 `abs(p.x - 11) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gce Transform Factory 3D Tests::translationPoints",
+    "bridge_function": "OCCTMakeTranslationPoints",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1,1,1) -> (6, 6, 6)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1,1,1) -> (6, 6, 6)",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "from and to swapped",
+      "failing_expectation": ":52 `abs(p.x - 6) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "gce Transform Factory 3D Tests::axisMirror",
+    "bridge_function": "OCCTMakeMirrorAxis",
+    "bridge_output": {
+      "type": "observed",
+      "data": "(1,2,3) -> (-1, -2, 3)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "(1,2,3) -> (-1, -2, 3)",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "axis mirror built as a plane mirror with the axis as normal",
+      "failing_expectation": ":58 `abs(p.x + 1) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "math_TrigonometricFunctionRoots::sinZero",
+    "bridge_function": "OCCTTrigRoots",
+    "bridge_output": {
+      "type": "observed",
+      "data": "2 roots [0, 3.1415926535897931]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "2 roots [0, 3.1415926535897931]",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "last root dropped (NbSolutions() - 1)",
+      "failing_expectation": "original: red; rewritten: :13 `roots.count == 2`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "math_TrigonometricFunctionRoots::cosHalf",
+    "bridge_function": "OCCTTrigRoots",
+    "bridge_output": {
+      "type": "observed",
+      "data": "2 roots [1.0471975511965976, 5.2359877559829888]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "2 roots [1.0471975511965976, 5.2359877559829888]",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "last root dropped",
+      "failing_expectation": "original: **green**; rewritten: :21 `roots.count == 2`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "math_TrigonometricFunctionRoots::infiniteRoots",
+    "bridge_function": "OCCTTrigRootsInfinite",
+    "bridge_output": {
+      "type": "observed",
+      "data": "done 1, InfiniteRoots 1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "done 1, InfiniteRoots 1",
+      "source": "Scripts/repro/766-math-transform-factory-trig/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "InfiniteRoots() negated",
+      "failing_expectation": ":24 `inf`"
+    },
+    "green": true
   }
 ]
