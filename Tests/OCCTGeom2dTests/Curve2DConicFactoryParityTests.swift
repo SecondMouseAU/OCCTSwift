@@ -92,14 +92,17 @@ struct Curve2DConicFactoryParityTests {
     }
 
     @Test("Valid ellipse radii still build the identical curve in both families")
-    func validEllipseProducesMatchingGeometry() {
+    func validEllipseProducesMatchingGeometry() throws {
         let direct = Curve2D.ellipse(center: Self.center, majorRadius: 8, minorRadius: 4)
         let gce = Curve2D.ellipseFromCenterDir(
             center: Self.center, direction: Self.xDir,
             majorRadius: 8, minorRadius: 4)
-        #expect(direct != nil)
-        #expect(gce != nil)
-        guard let a = direct, let b = gce else { return }
+        let a = try #require(direct)
+        let b = try #require(gce)
+        // #1979: agreement alone passed two factories wrong the same way. Pinned to the ellipse
+        // gce_MakeElips2d gives (Scripts/repro/766-geom2d-conic-factory-parity/).
+        #expect(simd_distance(b.point(at: 0), SIMD2(11, -4)) < 1e-9)
+        #expect(simd_distance(b.point(at: .pi / 2), SIMD2(3, 0)) < 1e-9)
 
         #expect(a.isClosed == b.isClosed)
         #expect(a.isPeriodic == b.isPeriodic)
@@ -112,14 +115,15 @@ struct Curve2DConicFactoryParityTests {
     }
 
     @Test("Valid hyperbola radii still build the identical curve in both families")
-    func validHyperbolaProducesMatchingGeometry() {
+    func validHyperbolaProducesMatchingGeometry() throws {
         let direct = Curve2D.hyperbola(center: Self.center, majorRadius: 6, minorRadius: 3)
         let gce = Curve2D.hyperbolaFromCenterDir(
             center: Self.center, direction: Self.xDir,
             majorRadius: 6, minorRadius: 3)
-        #expect(direct != nil)
-        #expect(gce != nil)
-        guard let a = direct, let b = gce else { return }
+        let a = try #require(direct)
+        let b = try #require(gce)
+        // #1979: pinned to the vertex gce_MakeHypr2d gives, so a shared error cannot pass.
+        #expect(simd_distance(b.point(at: 0), SIMD2(9, -4)) < 1e-9)
 
         for t in stride(from: -1.0, through: 1.0, by: 0.25) {
             let pa = a.point(at: t)
@@ -130,7 +134,7 @@ struct Curve2DConicFactoryParityTests {
     }
 
     @Test("Valid focal length still builds the identical parabola in both families")
-    func validParabolaProducesMatchingGeometry() {
+    func validParabolaProducesMatchingGeometry() throws {
         // The two factories locate the curve from different points: parabolaFromCenterDir takes
         // the vertex (gce_MakeParab2d's MirrorAxis location), parabola takes the focus and steps
         // back along the axis to reach it. Same curve once the focus is placed accordingly.
@@ -139,9 +143,10 @@ struct Curve2DConicFactoryParityTests {
         let focus = vertex + Self.xDir * focal
         let direct = Curve2D.parabola(focus: focus, direction: Self.xDir, focalLength: focal)
         let gce = Curve2D.parabolaFromCenterDir(center: vertex, direction: Self.xDir, focal: focal)
-        #expect(direct != nil)
-        #expect(gce != nil)
-        guard let a = direct, let b = gce else { return }
+        let a = try #require(direct)
+        let b = try #require(gce)
+        // #1979: pinned to the point gce_MakeParab2d gives at u = 2: (3 + 4 / 12, -4 + 2).
+        #expect(simd_distance(b.point(at: 2), SIMD2(3 + 1.0 / 3.0, -2)) < 1e-9)
 
         for t in stride(from: -2.0, through: 2.0, by: 0.5) {
             let pa = a.point(at: t)

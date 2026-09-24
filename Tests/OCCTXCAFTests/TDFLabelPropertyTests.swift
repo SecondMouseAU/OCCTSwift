@@ -52,9 +52,13 @@ struct TDFLabelPropertyTests {
     func labelFather() {
         let doc = Document.create()!
         let child = doc.createLabel()!
-        if let main = doc.mainLabel, let father = child.father {
-            #expect(father.labelId == main.labelId, "Child's father should be main label")
+        // Unconditional: with `father` inside the `if let`, a lookup that found no father
+        // passed (#766).
+        guard let main = doc.mainLabel else {
+            Issue.record("mainLabel nil")
+            return
         }
+        #expect(child.father?.labelId == main.labelId, "Child's father should be main label")
     }
 
     @Test("Label root")

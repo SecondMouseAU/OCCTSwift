@@ -6,5 +6,405 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Offset by Join::offsetArc",
+    "bridge_function": "OCCTShapeOffsetByJoin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isValid": true,
+        "volume": "> 1000"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "valid": 1,
+        "volume": 1698.43657
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Offset by Join::offsetInward",
+    "bridge_function": "OCCTShapeOffsetByJoin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isValid": true,
+        "volume": "< 1000"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "valid": 1,
+        "volume": 512
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Offset by Join::offsetIntersection",
+    "bridge_function": "OCCTShapeOffsetByJoin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil",
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "valid": 1,
+        "volume": 1728
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Offset by Join::offsetCylinder",
+    "bridge_function": "OCCTShapeOffsetByJoin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "valid": 1,
+        "volume": 1341.5898
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Offset Wire/Face::offsetWire",
+    "bridge_function": "OCCTOffsetWireOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "wireLength": 52.56637061
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Offset Wire/Face::offsetWireIntersection",
+    "bridge_function": "OCCTOffsetWireOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "wireLength": 48
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Offset Wire/Face::offsetFace",
+    "bridge_function": "OCCTBRepOffsetOffsetFace",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "null": 0,
+        "area": 400,
+        "centreZ": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Multi-Edge Blend Tests::blendMultipleEdges",
+    "bridge_function": "OCCTShapeBlendEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil",
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "valid": 1,
+        "faces": 9,
+        "volume": 7969.6283
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Multi-Edge Blend Tests::blendSingleEdge",
+    "bridge_function": "OCCTShapeBlendEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil",
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "valid": 1,
+        "faces": 7,
+        "volume": 997.8539816
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Multi-Edge Blend Tests::blendEmptyArray",
+    "bridge_function": "OCCTShapeBlendEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "kernelCall": "none"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Multi-Tool Boolean Fuse::fuseThreeBoxes",
+    "bridge_function": "OCCTShapeFuseMulti",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "volume": "1000 < v < 3000"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "type": "COMPOUND",
+        "solids": 6,
+        "volume": 2000
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Multi-Tool Boolean Fuse::fuseFourSpheres",
+    "bridge_function": "OCCTShapeFuseMulti",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "volume": "> 0"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "type": "COMPOUND",
+        "solids": 13,
+        "volume": 1269.522908
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Multi-Tool Boolean Fuse::fuseTooFew",
+    "bridge_function": "OCCTShapeFuseMulti",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "kernelCall": "none: Swift refuses a single operand"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Multi-Tool Boolean Fuse::fuseNonOverlapping",
+    "bridge_function": "OCCTShapeFuseMulti",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "volume": "within 1 of 250"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "type": "COMPOUND",
+        "solids": 2,
+        "volume": 250
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Multi-Offset Wire::multipleInwardOffsets",
+    "bridge_function": "OCCTWireMultiOffset",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "wires": ">= 3",
+        "lengths": "strictly decreasing"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "wires": 3,
+        "lengths": [
+          72,
+          64,
+          56
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Multi-Offset Wire::outwardOffset",
+    "bridge_function": "OCCTWireMultiOffset",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "wires": ">= 2"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "wires": 2,
+        "lengths": [
+          46.28318531,
+          52.56637061
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Multi-Offset Wire::emptyOffsets",
+    "bridge_function": "OCCTWireMultiOffset",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "wires": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "kernelCall": "none",
+        "singleZeroOffset": {
+          "wires": 1,
+          "length": 40
+        }
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
   }
 ]
