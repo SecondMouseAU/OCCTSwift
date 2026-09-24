@@ -130,3 +130,13 @@ Rows below were run: the injection turned the test red at the line named, the te
 | Diameter Dimension | Diameter of circle is twice radius | `OCCTDimensionCreateDiameterFromShape` | `GetValue() + 0.1` (red as written, `:16`); ctor `return nullptr` passes the old `if let`, rewritten to `guard` | rewritten, ctor nil: `:19` `Issue.record` | ✔ | PASS |
 | Diameter Dimension | Diameter geometry has circle info | `OCCTDimensionGetGeometry` | diameter case `opposite = centre` (red as written, `:29`); ctor nil passes the old `if let`, rewritten; `circleRadius > 0` pinned to 5 | rewritten, ctor nil: `:31` `Issue.record` | ✔ | PASS |
 | Diameter Dimension | Custom value on diameter | `OCCTDimensionSetCustomValue` | `GetValue() + 0.1` (red as written, `:41`); ctor nil passes the old `guard ... else { return }`, rewritten | rewritten, ctor nil: `:47` `Issue.record` | ✔ | PASS |
+| Display Drawer | Default values | `OCCTDrawerCreate` | ctor also calls `SetDiscretisation(31)` | `:19` `drawer.discretisation == 30` | ✔ | PASS |
+| Display Drawer | Deviation coefficient roundtrip | `OCCTDrawerSetDeviationCoefficient` | setter no-op | `:26` | ✔ | PASS |
+| Display Drawer | Deviation angle roundtrip | `OCCTDrawerSetDeviationAngle` | setter no-op | `:34` | ✔ | PASS |
+| Display Drawer | Maximal chordial deviation roundtrip | `OCCTDrawerSetMaximalChordialDeviation` | setter no-op | `:41` | ✔ | PASS |
+| Display Drawer | Deflection type toggle | `OCCTDrawerSetTypeOfDeflection` | setter no-op | `:48` `drawer.deflectionType == .absolute` | ✔ | PASS |
+| Display Drawer | Auto-triangulation toggle | `OCCTDrawerSetAutoTriangulation` | setter no-op | `:57` | ✔ | PASS |
+| Display Drawer | Iso on triangulation toggle | `OCCTDrawerSetIsoOnTriangulation` | setter no-op | `:64` | ✔ | PASS |
+| Display Drawer | Discretisation roundtrip | `OCCTDrawerSetDiscretisation` | setter no-op | `:71` | ✔ | PASS |
+| Display Drawer | Face boundary draw toggle | `OCCTDrawerSetFaceBoundaryDraw` | setter no-op | `:78` | ✔ | PASS |
+| Display Drawer | Wire draw toggle | `OCCTDrawerSetWireDraw` | setter no-op | `:85` | ✔ | PASS |
