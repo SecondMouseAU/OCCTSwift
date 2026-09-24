@@ -18,12 +18,16 @@ struct EdgePropertyTests {
         #expect(!edge.isCircle)
     }
 
+    /// A cylinder has three edges: the top and bottom circles and the straight seam
+    /// (`Scripts/repro/766-edge-distance-elc/`). "Some edge is a circle" also passed a predicate
+    /// that answered true for the seam line, so each edge's answer is checked.
     @Test("Edge isCircle for cylinder edge")
     func edgeIsCircle() {
         let cyl = Shape.cylinder(radius: 5, height: 10)!
         let edges = cyl.edges()
-        // Cylinder has circular edges at top and bottom
-        let hasCircle = edges.contains { $0.isCircle }
-        #expect(hasCircle)
+        #expect(edges.count == 3)
+        #expect(edges.filter { $0.isCircle }.count == 2)
+        #expect(edges.filter { $0.isLine }.count == 1)
+        #expect(!edges.contains { $0.isCircle && $0.isLine })
     }
 }

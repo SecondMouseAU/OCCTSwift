@@ -1,0 +1,40 @@
+box edge 1: GetType=0 (Line=0 Circle=1)
+box edge 2: GetType=0 (Line=0 Circle=1)
+box edge 3: GetType=0 (Line=0 Circle=1)
+box edge 4: GetType=0 (Line=0 Circle=1)
+box edge 5: GetType=0 (Line=0 Circle=1)
+box edge 6: GetType=0 (Line=0 Circle=1)
+box edge 7: GetType=0 (Line=0 Circle=1)
+box edge 8: GetType=0 (Line=0 Circle=1)
+box edge 9: GetType=0 (Line=0 Circle=1)
+box edge 10: GetType=0 (Line=0 Circle=1)
+box edge 11: GetType=0 (Line=0 Circle=1)
+box edge 12: GetType=0 (Line=0 Circle=1)
+cylinder edge 1: GetType=1
+cylinder edge 2: GetType=0
+cylinder edge 3: GetType=1
+sphereDistanceSolutions: IsDone=1 NbSolution=2 Value=10 InnerSolution=0
+  [1] p1=(5, -1.2246467991473533e-15, 0) p2=(15, 6.1232339957367663e-16, 0)
+  [2] p1=(4.9999999994871489, 4.9830302707254257e-05, 5.1434002566578646e-05) p2=(15.000000000329923, 2.6094169373285289e-05, 5.1169465796018317e-05)
+boxDistanceSolutions: IsDone=1 NbSolution=4 Value=10 InnerSolution=0
+  [1] p1=(5, -5, 5) p2=(15, -5, 5)
+  [2] p1=(5, -5, -5) p2=(15, -5, -5)
+  [3] p1=(5, 5, 5) p2=(15, 5, 5)
+  [4] p1=(5, 5, -5) p2=(15, 5, -5)
+notInner: IsDone=1 NbSolution=4 Value=10 InnerSolution=0
+  [1] p1=(5, -5, 5) p2=(15, -5, 5)
+  [2] p1=(5, -5, -5) p2=(15, -5, -5)
+  [3] p1=(5, 5, 5) p2=(15, 5, 5)
+  [4] p1=(5, 5, -5) p2=(15, 5, -5)
+coplanarCircles: IsDone=1 IsParallel=0 NbExt=4
+  [1] sq=400 p1=(-5, 0, 0) p2=(15, 0, 0)
+  [2] sq=900 p1=(-5, 0, 0) p2=(25, 0, 0)
+  [3] sq=100 p1=(5, 0, 0) p2=(15, 0, 0)
+  [4] sq=400 p1=(5, 0, 0) p2=(25, 0, 0)
+coaxialCirclesReturnRadiusDifference: IsDone=1 IsParallel=1 SquareDistance(1)=4
+lineEllipseDistance: IsDone=1 IsParallel=0 NbExt=4
+  [1] sq=100 p1=(5, 0, 10) p2=(5, 0, 0)
+  [2] sq=109 p1=(3.0616169978683831e-16, 0, 10) p2=(3.0616169978683831e-16, 3, 0)
+  [3] sq=100 p1=(-5, 0, 10) p2=(-5, 3.6739403974420594e-16, 0)
+  [4] sq=109 p1=(-9.1848509936051479e-16, 0, 10) p2=(-9.1848509936051479e-16, -3, 0)
+lineOnEllipseAxisReturnsDistance: IsDone=1 IsParallel=1 SquareDistance(1)=25
