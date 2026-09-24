@@ -340,7 +340,7 @@ int main()
   }
   {
     Handle(Geom_Plane) pl = new Geom_Plane(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
-    gp_Pnt             p  = pl->Value(1e12, 1e12);
+    gp_Pnt             p  = pl->Value(1e12, -2e12);
     printf("surfaceEvalOutsideDomain: point=(%.17g, %.17g, %.17g)\n", p.X(), p.Y(), p.Z());
   }
   inChild("wireFromZeroLengthLine (unguarded MakeEdge on coincident points)", [] {

@@ -42,7 +42,7 @@ zeroDrill (unguarded, radius 0): child returned normally
 zeroDirectionVector (unguarded, gp_Dir(0,0,0)): child threw 26Standard_ConstructionError: gp_Dir() - input vector has zero norm
 outOfBoundsSubShapeIndex: edge count=12, index 999 out of range
 curveEvalOutsideDomain: domain=[0, 6.2831853071795862] point=(-4.1953576453822627, -2.7201055544468482, 0)
-surfaceEvalOutsideDomain: point=(1000000000000, 1000000000000, 0)
+surfaceEvalOutsideDomain: point=(1000000000000, -2000000000000, 0)
 wireFromZeroLengthLine: MakeEdge IsDone=0 Error=6
 wireFromZeroLengthLine (unguarded MakeEdge on coincident points): child returned normally
 booleanIdenticalPosition: valid=1 volume=1000 faces=6
