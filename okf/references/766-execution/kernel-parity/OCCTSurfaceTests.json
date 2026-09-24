@@ -13863,5 +13863,225 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate G2/G3 Constraints::nlPlateG2Deformation",
+    "bridge_function": "OCCTSurfaceNLPlateG2",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,0.5)": [
+          4.777,
+          5.397,
+          -2161222938273.674
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "solver S(0.5,0.5), displacement semantics": [
+          1,
+          1,
+          1
+        ],
+        "IsDone": true
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt nlPlateG2Deformation"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "bridge-fitted surface evaluates to z of about -2e12 at the constraint"
+      ]
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "NLPlate G2/G3 Constraints::nlPlateG3Deformation",
+    "bridge_function": "OCCTSurfaceNLPlateG3",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3,0.3)": [
+          4.77,
+          5.482,
+          -1.0402339780780796e+21
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "solver S(0.3,0.3), displacement semantics": [
+          0.6,
+          0.6,
+          0.5
+        ],
+        "IsDone": true
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt nlPlateG3Deformation"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "bridge-fitted surface evaluates to z of about -1e21 at the constraint"
+      ]
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "NLPlate G2/G3 Constraints::nlPlateIncrementalSolve",
+    "bridge_function": "OCCTSurfaceNLPlateIncrementalG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,0.5)": [
+          0.49997944573322467,
+          0.49997938750984927,
+          0.999959739527214
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "solver": "meets the target (displacement form)"
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt nlPlateIncrementalSolve"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate G2/G3 Constraints::nlPlateDerivative",
+    "bridge_function": "OCCTSurfaceNLPlateEvaluateDerivative",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "d/du at (0.5,0.5)": [
+          1,
+          0,
+          0.9999995000002498
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "d/du at (0.5,0.5)": [
+          1,
+          0,
+          0.9999995000002498
+        ]
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt nlPlateDerivative"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Parametric Plate Surface Tests::Plate through points returns parametric surface",
+    "bridge_function": "OCCTSurfacePlateThrough",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "domain u": [
+          -7.91905785,
+          7.79192669
+        ],
+        "maxPointDistance": 1.12e-07
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "domain u": [
+          -7.91905785,
+          7.79192669
+        ],
+        "maxPointDistance": 1.12e-07
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt plateThroughPoints"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Parametric Plate Surface Tests::Plate through points is evaluable",
+    "bridge_function": "OCCTSurfacePlateThrough",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "z at mid-domain": 0,
+        "maxPointDistance": 4.44e-16
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "z at mid-domain": 0,
+        "maxPointDistance": 4.44e-16
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt plateThroughEvaluable"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Parametric Plate Surface Tests::Plate through rejects fewer than 3 points",
+    "bridge_function": "OCCTSurfacePlateThrough",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt plateThroughTooFew threw Geom_RectangularTrimmedSurface::V1==V2"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Parametric Plate Surface Tests::Plate through with custom degree",
+    "bridge_function": "OCCTSurfacePlateThrough",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "maxPointDistance": 1.34e-06
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "maxPointDistance": 1.34e-06
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt plateThroughCustomDegree"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
