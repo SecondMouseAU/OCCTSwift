@@ -268,6 +268,10 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **Midpoint and raycast normals under the shared resolution (#529)** | Primitive face normals and orientation predicates are unchanged | Face midpoint normal | Normal reported |
+| **Midpoint and raycast normals under the shared resolution (#529)** | A nearly-degenerate parameterisation now reports its normal | Face midpoint normal | BRepLProp resolution |
+| **Midpoint and raycast normals under the shared resolution (#529)** | Raising the intersection tolerance does not erase the hit normals | Raycast hit normal | Tolerance as props resolution |
+| **Midpoint and raycast normals under the shared resolution (#529)** | A box's downward face still reports a downward normal at a loose tolerance | Raycast hit normal | Tolerance as props resolution |
 
 ---
 
@@ -475,6 +479,10 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Primitive face normals and orientation predicates are unchanged | OCCTFaceGetNormal | Face midpoint normal | return false after IsNormalDefined (N_FACENORMAL) | ✅ | ✅ |  |
+| A nearly-degenerate parameterisation now reports its normal | OCCTFaceGetNormal | Face midpoint normal | occtFaceLocalProps resolution 1e-6 (P_RES) | ✅ | ✅ |  |
+| Raising the intersection tolerance does not erase the hit normals | OCCTShapeRaycast | Raycast hit normal | BRepLProp_SLProps resolution = caller tolerance (N_RAYTOL) | ✅ | ✅ |  |
+| A box's downward face still reports a downward normal at a loose tolerance | OCCTShapeRaycast | Raycast hit normal | BRepLProp_SLProps resolution = caller tolerance (N_RAYTOL) | ✅ | ✅ |  |
 
 ---
 
