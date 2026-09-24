@@ -1582,5 +1582,321 @@
       "probe": "Scripts/repro/766-geom2d-bspline-manipulation/",
       "rewritten": "`let _ = removeKnot(...)`, no assertion"
     }
+  },
+  {
+    "test_name": "Geom2dEval AHTBezier 2D Curve::createAndEval",
+    "bridge_function": "OCCTGeom2dEvalAHTBezierCurveCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          0,
+          1
+        ],
+        "point(0.5)": [
+          7.72495409928,
+          0.135033262487
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          0,
+          1
+        ],
+        "point(0.5)": [
+          7.72495409928,
+          0.135033262487
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "reverse the pole order before constructing Geom2dEval_AHTBezierCurve",
+      "red": "AHTBezierCurve2DTests.swift:28:9: Expectation failed: abs(mid.x - 7.72495409928) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-aht-axisplacement/",
+      "rewritten": "asserted only `domain.lowerBound >= 0` and `upperBound > 0`, which a curve built from the wrong poles satisfies; now pins the domain and point(0.5)"
+    }
+  },
+  {
+    "test_name": "ChFi2d_AnaFilletAlgo::Analytical fillet between two edges in XY plane",
+    "bridge_function": "OCCTChFi2dAnaFillet",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "fillet_length": 3.14159265359,
+        "edge1_length": 8,
+        "edge2_length_kernel": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fillet_length": 3.14159265359,
+        "edge1_length": 8,
+        "edge2_length_kernel": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "fillet radius x 1.5",
+      "red": "AnaFilletTests.swift:31:9: Expectation failed: abs(fillet.length - Double.pi) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-aht-axisplacement/",
+      "rewritten": "asserted only isValid on the three edges, which a fillet of any radius satisfies; now pins the fillet length (pi) and trimmed edge 1 (8)"
+    }
+  },
+  {
+    "test_name": "Geom2dConvert_ApproxArcsSegments::approximate circle as arcs",
+    "bridge_function": "OCCTGeom2dConvertApproxArcsSegments",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 2,
+        "start": [
+          5,
+          0
+        ],
+        "end": [
+          -5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 2,
+        "start": [
+          5,
+          0
+        ],
+        "end": [
+          -5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "report one curve fewer than GetResult() holds",
+      "red": "ApproxArcsSegmentsTests.swift:18:13: Expectation failed: segments.count == 2",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-aht-axisplacement/",
+      "rewritten": "the only assertion (`count >= 1`) sat inside `if let`; now requires exactly the 2 arcs from (5,0) to (-5,0)"
+    }
+  },
+  {
+    "test_name": "Geom2dConvert_ApproxArcsSegments::approximate line",
+    "bridge_function": "OCCTGeom2dConvertApproxArcsSegments",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 1,
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 1,
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "report one curve fewer than GetResult() holds",
+      "red": "ApproxArcsSegmentsTests.swift:30:13: Expectation failed: segments.count == 1",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-aht-axisplacement/",
+      "rewritten": "same `if let` + `count >= 1` gap; now requires the single (0,0)-(10,0) segment"
+    }
+  },
+  {
+    "test_name": "Approx Curve2D Tests::Approximate 2D circle as BSpline",
+    "bridge_function": "OCCTApproxCurve2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          0,
+          6.28318530718
+        ],
+        "point(pi/3)": [
+          5.00000003486,
+          8.66025400622
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          0,
+          6.28318530718
+        ],
+        "point(pi/3)": [
+          5.00000003486,
+          8.66025400622
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "approximate only the first half of the requested range",
+      "red": "ApproxCurve2DTests.swift:22:9: Expectation failed: abs(rd.upperBound - 2 * Double.pi) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-aht-axisplacement/",
+      "rewritten": "`upperBound > lowerBound` inside `if let` passed an approximation of any sub-range; now pins [0, 2pi] and the point at pi/3"
+    }
+  },
+  {
+    "test_name": "AxisPlacement2D::createAxis",
+    "bridge_function": "OCCTAxisPlacement2DCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "origin": [
+          1,
+          2
+        ],
+        "direction": [
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "origin": [
+          1,
+          2
+        ],
+        "direction": [
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "swap the direction components",
+      "red": "AxisPlacement2DTests.swift:15:13: Expectation failed: abs(axis.direction.x) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-aht-axisplacement/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "AxisPlacement2D::reversed",
+    "bridge_function": "OCCTAxisPlacement2DReversed",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "direction": [
+          -1,
+          0
+        ],
+        "origin": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "direction": [
+          -1,
+          0
+        ],
+        "origin": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip Reverse() on the copy",
+      "red": "AxisPlacement2DTests.swift:24:9: Expectation failed: abs(rev.direction.x + 1.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-aht-axisplacement/",
+      "rewritten": "`guard ... else { return }` passed green when construction or reversal returned nil; now `#require`"
+    }
+  },
+  {
+    "test_name": "AxisPlacement2D::angle",
+    "bridge_function": "OCCTAxisPlacement2DAngle",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "angle": 1.5707963267948966
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "angle": 1.5707963267948966
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "halve the angle",
+      "red": "AxisPlacement2DTests.swift:32:9: Expectation failed: abs(angle - .pi / 2) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-aht-axisplacement/",
+      "rewritten": "same early-return guard; now `#require`"
+    }
   }
 ]

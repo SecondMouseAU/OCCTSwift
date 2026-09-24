@@ -695,33 +695,50 @@ struct MessengerTests {
         #expect(msg != nil)
     }
 
+    // #1987: the four tests below used to run their assertions only `if let msg`, so a
+    // Messenger() returning nil passed all of them; sendMessage asserted nothing at all.
     @Test func printerCount() {
-        if let msg = Messenger() {
-            #expect(msg.printerCount == 1)
+        guard let msg = Messenger() else {
+            Issue.record("Messenger() returned nil")
+            return
         }
+        #expect(msg.printerCount == 1)
     }
 
+    // A file printer at .info must receive the message; removing the printers closes the file.
     @Test func sendMessage() {
-        if let msg = Messenger() {
-            msg.send("Test from Swift", gravity: .info)
+        guard let msg = Messenger() else {
+            Issue.record("Messenger() returned nil")
+            return
         }
+        let path = NSTemporaryDirectory() + "test_766_send_\(UUID().uuidString).txt"
+        defer { try? FileManager.default.removeItem(atPath: path) }
+        #expect(msg.addFilePrinter(path: path, gravity: .info))
+        msg.send("Test from Swift", gravity: .info)
+        msg.removeAllPrinters()
+        let body = (try? String(contentsOfFile: path, encoding: .utf8)) ?? ""
+        #expect(body.contains("Test from Swift"))
     }
 
     @Test func addFilePrinter() {
-        if let msg = Messenger() {
-            let path = NSTemporaryDirectory() + "test_v85_msg.txt"
-            let ok = msg.addFilePrinter(path: path, gravity: .info)
-            #expect(ok)
-            #expect(msg.printerCount == 2)
-            try? FileManager.default.removeItem(atPath: path)
+        guard let msg = Messenger() else {
+            Issue.record("Messenger() returned nil")
+            return
         }
+        let path = NSTemporaryDirectory() + "test_766_addfile_\(UUID().uuidString).txt"
+        let ok = msg.addFilePrinter(path: path, gravity: .info)
+        #expect(ok)
+        #expect(msg.printerCount == 2)
+        try? FileManager.default.removeItem(atPath: path)
     }
 
     @Test func removeAllPrinters() {
-        if let msg = Messenger() {
-            msg.removeAllPrinters()
-            #expect(msg.printerCount == 0)
+        guard let msg = Messenger() else {
+            Issue.record("Messenger() returned nil")
+            return
         }
+        msg.removeAllPrinters()
+        #expect(msg.printerCount == 0)
     }
 }
 
@@ -733,24 +750,38 @@ struct ReportTests {
     }
 
     @Test func setAndGetLimit() {
-        if let report = Report() {
-            report.limit = 100
-            #expect(report.limit == 100)
+        guard let report = Report() else {
+            Issue.record("Report() returned nil")
+            return
         }
+        // Message_Report's default limit is -1 (unlimited), so reading back 100 shows the set.
+        #expect(report.limit == -1)
+        report.limit = 100
+        #expect(report.limit == 100)
     }
 
+    // #1987: this called clear() and clear(gravity:) and asserted nothing. The Swift surface has
+    // no way to add an alert to a Report, so all it can observe is that clearing leaves the
+    // report empty (Dump writes 0 bytes) and does not touch the limit.
     @Test func clearReport() {
-        if let report = Report() {
-            report.clear()
-            report.clear(gravity: .warning)
+        guard let report = Report() else {
+            Issue.record("Report() returned nil")
+            return
         }
+        report.limit = 100
+        report.clear()
+        report.clear(gravity: .warning)
+        #expect(report.dump() == "")
+        #expect(report.limit == 100)
     }
 
+    // #1987: this was `_ = str`. Message_Report::Dump of an empty report writes nothing.
     @Test func dumpReport() {
-        if let report = Report() {
-            let str = report.dump()
-            _ = str  // empty report dumps empty string
+        guard let report = Report() else {
+            Issue.record("Report() returned nil")
+            return
         }
+        #expect(report.dump() == "")
     }
 }
 
@@ -758,25 +789,40 @@ struct ReportTests {
 @Suite("OSD Timer Tests")
 struct OSDTimerTests {
 
+    // #1987: `elapsedTime >= 0` passed a timer that never started. OSD_Timer is wall-clock
+    // time (0.060 s over a 50 ms sleep in the probe), so a 50 ms sleep must register.
     @Test func basicTiming() {
         let timer = Timer()
         timer.start()
-        var sum = 0.0
-        for i in 0..<100000 { sum += sin(Double(i)) }
+        Thread.sleep(forTimeInterval: 0.05)
         timer.stop()
-        #expect(timer.elapsedTime >= 0.0)
+        #expect(timer.elapsedTime >= 0.04)
+        #expect(timer.elapsedTime < 5)
     }
 
+    // #1987: the timer now runs for 20 ms and the reading is checked before the reset, so a
+    // reset() that does nothing leaves 0.02 s rather than a sub-microsecond reading, and a timer
+    // that never started cannot pass as a reset one.
     @Test func reset() {
         let timer = Timer()
         timer.start()
+        Thread.sleep(forTimeInterval: 0.02)
         timer.stop()
+        #expect(timer.elapsedTime >= 0.01)
         timer.reset()
         #expect(abs(timer.elapsedTime) < 1e-10)
     }
 
+    // #1987: `> 0` passed a constant. OSD_Timer::GetWallClockTime is not epoch time (it sits
+    // about 1.79e9 s below gettimeofday in the probe), so the test checks that it advances with
+    // real time instead.
     @Test func wallClockTime() {
-        #expect(Timer.wallClockTime > 0)
+        let t0 = Timer.wallClockTime
+        Thread.sleep(forTimeInterval: 0.05)
+        let t1 = Timer.wallClockTime
+        #expect(t0 > 0)
+        #expect(t1 - t0 >= 0.04)
+        #expect(t1 - t0 < 5)
     }
 }
 
@@ -789,14 +835,25 @@ struct OSDMemInfoTests {
         #expect(MemInfo.heapUsage > 0)
     }
 
+    // #1987: `>= 0` passed zero and any unit. ValuePreciseMiB is Value / 2^20 exactly in the
+    // probe, so the MiB figure must fall between the byte counts read either side of it. The
+    // heap this reports is small (about 1.15 MiB in a test run) and moves a few KB between
+    // reads, hence the 25% slack; a KB-for-bytes slip is off by a factor of 1024.
     @Test func heapUsageMiB() {
-        #expect(MemInfo.heapUsageMiB >= 0)
+        let before = Double(MemInfo.heapUsage) / 1_048_576
+        let mib = MemInfo.heapUsageMiB
+        let after = Double(MemInfo.heapUsage) / 1_048_576
+        #expect(mib > 0)
+        #expect(mib >= min(before, after) * 0.75)
+        #expect(mib <= max(before, after) * 1.25)
     }
 
+    // #1987: `count > 0` passed any text. OSD_MemInfo::PrintInfo labels its heap line
+    // "Heap memory".
     @Test func infoString() {
         let info = MemInfo.infoString
         #expect(info != nil)
-        if let info { #expect(info.count > 0) }
+        if let info { #expect(info.contains("Heap memory")) }
     }
 }
 
