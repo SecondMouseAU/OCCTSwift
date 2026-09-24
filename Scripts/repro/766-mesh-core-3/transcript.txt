@@ -1,0 +1,28 @@
+MeshCinert prepareAndCompute:
+  first edge polygon points=2 (-5, -5, -5) (-5, -5, 5)
+  mass=10 centre=(-5, -5, 2.22045e-16)
+MeshProps (first face):
+  surface: mass=99.999999999999972 centre=(-5, 6.90805e-17, -4.34221e-16) faceOrientation=1
+  volume: mass=166.66666666666663 centre=(-3.75, -1.22273e-16, -3.1856e-16) faceOrientation=1
+ShapeTool:
+  MaxFaceTolerance(first face)=9.9999999999999995e-08
+  BoxMaxDimension=10.000000200000001
+  UVPoints(first edge, first face)=1 (0, 0) (10, 0)
+Poly_Polygon3D:
+  without params: nbNodes=3 hasParameters=0
+  with params: nbNodes=3 hasParameters=1 parameter(2)=10
+  deflection default=0 after Deflection(1.0)=1
+Poly_PolygonOnTriangulation:
+  without params: nbNodes=4 node(1)=1 node(4)=4 hasParameters=0
+  with params: nbNodes=3 hasParameters=1 parameter(2)=1
+  after Deflection(0.1)=0.10000000000000001
+Poly_MergeNodesTool (box at 1.0, smoothAngle pi/4):
+  nbNodes=24 nbTriangles=12
+Poly_CoherentTriangulation:
+  SetNode indices: 0 1 2
+  two triangles: NTriangles=2
+  ComputeLinks=5 NLinks=5
+  after RemoveTriangle(first): NTriangles=1
+  deflection default=0 after SetDeflection(0.5)=0.5
+  GetTriangulation: nbNodes=3 nbTriangles=1 node(1)=(1.5, 2.5, 3.5) node(2)=(4, 5, 6)
+  createFromMesh(box): first face NTriangles=2
