@@ -119,11 +119,16 @@ struct Issue477ArcLengthAccuracyTests {
         #expect(abs(curve.arcLength(from: u1, to: u2) - rangedReference) / rangedReference < 1e-5)
         #expect(abs(curve.arcLengthBetween(u1, u2) - rangedReference) / rangedReference < 1e-5)
 
+        // #766: a nil from either optional spelling used to skip its check.
         if let length = curve.length {
             #expect(abs(length - wholeReference) / wholeReference < 1e-5)
+        } else {
+            Issue.record("length returned nil")
         }
         if let ranged = curve.length(from: u1, to: u2) {
             #expect(abs(ranged - rangedReference) / rangedReference < 1e-5)
+        } else {
+            Issue.record("length(from:to:) returned nil")
         }
     }
 
@@ -150,12 +155,15 @@ struct Issue477ArcLengthAccuracyTests {
     @Test("analytic curves stay exact")
     func analyticCurvesStayExact() {
         // Both integrators are exact on these; the assertions guard the swap itself.
+        // #766: a failed factory, or a nil half-circle length, used to skip its check.
         if let segment = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(3, 4, 0)) {
             if let l = segment.length {
                 #expect(abs(l - 5.0) < 1e-9)
             } else {
                 Issue.record("length returned nil on a line segment")
             }
+        } else {
+            Issue.record("could not build the segment")
         }
 
         if let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 7) {
@@ -167,7 +175,11 @@ struct Issue477ArcLengthAccuracyTests {
             let d = circle.domain
             if let half = circle.length(from: d.lowerBound, to: d.lowerBound + .pi) {
                 #expect(abs(half - .pi * 7) < 1e-9)
+            } else {
+                Issue.record("length(from:to:) returned nil on a half circle")
             }
+        } else {
+            Issue.record("could not build the circle")
         }
     }
 
