@@ -5835,5 +5835,395 @@
       "probe": "Scripts/repro/766-geom2d-projection-simplify-transform/",
       "rewritten": ""
     }
+  },
+  {
+    "test_name": "Extrema 2D::Distance between parallel lines",
+    "bridge_function": "OCCTExtremaExtElC2dLinLin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "parallel": true,
+        "distance": 10
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "parallel": true,
+        "distance": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "squared distance x 1.1",
+      "red": "Extrema2dTests.swift:17:9: Expectation failed: abs(r.distance - 10) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-extrema-fillet2d/",
+      "rewritten": "`if let r = results.first` and 0.1 slack"
+    }
+  },
+  {
+    "test_name": "Extrema 2D::Parallel line matched points actually achieve the reported distance (#1494)",
+    "bridge_function": "OCCTExtremaExtElC2dLinLin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distance": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "distance": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "squared distance x 1.1",
+      "red": "Extrema2dTests.swift:37:9: Expectation failed: abs(r.distance - 3) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-extrema-fillet2d/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Extrema 2D::Distance between line and circle",
+    "bridge_function": "OCCTExtremaExtElC2dLinCirc",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distances": [
+          15,
+          25
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "distances": [
+          15,
+          25
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "circle centre y + 1",
+      "red": "Extrema2dTests.swift:50:9: Expectation failed: abs(ds[0] - 15) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-extrema-fillet2d/",
+      "rewritten": "`count >= 1`, 0.1 slack; now both extrema"
+    }
+  },
+  {
+    "test_name": "Extrema 2D::Closest point on circle to external point",
+    "bridge_function": "OCCTExtremaExtPElC2dCirc",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distances": [
+          5,
+          15
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "distances": [
+          5,
+          15
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "point x + 1",
+      "red": "Extrema2dTests.swift:63:9: Expectation failed: abs(ds[0] - 5) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-extrema-fillet2d/",
+      "rewritten": "`count >= 1`, 0.1 slack; now both extrema"
+    }
+  },
+  {
+    "test_name": "Extrema 2D::Closest point on line to point",
+    "bridge_function": "OCCTExtremaExtPElC2dLin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distance": 5,
+        "foot": [
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "distance": 5,
+        "foot": [
+          5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "point y + 1",
+      "red": "Extrema2dTests.swift:74:9: Expectation failed: abs(results[0].distance - 5) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-extrema-fillet2d/",
+      "rewritten": "`count >= 1`, 0.1 slack"
+    }
+  },
+  {
+    "test_name": "Extrema 2D::Distance between two curves",
+    "bridge_function": "OCCTExtremaExtCC2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distances": [
+          10,
+          20,
+          20,
+          30
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "distances": [
+          10,
+          20,
+          20,
+          30
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "measure curve 1 against itself",
+      "red": "Extrema2dTests.swift:92:13: Expectation failed: ds.count == 4",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-extrema-fillet2d/",
+      "rewritten": "`if let` and 0.1 slack on the minimum; now all four extrema"
+    }
+  },
+  {
+    "test_name": "Extrema_LocateExtCC2d Tests::localExtremum2d",
+    "bridge_function": "OCCTExtremaLocateExtCC2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distance": 5,
+        "p1": [
+          5,
+          0
+        ],
+        "p2": [
+          10,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "distance": 5,
+        "p1": [
+          5,
+          0
+        ],
+        "p2": [
+          10,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "seed u + pi",
+      "red": "ExtremaLocateExtCC2dTests.swift:19:9: Expectation failed: abs(result.squareDistance.squareRoot() - 5.0) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-extrema-fillet2d/",
+      "rewritten": "`if let` and 0.5 slack"
+    }
+  },
+  {
+    "test_name": "2D Fillet and Chamfer::Fillet single vertex of rectangular face",
+    "bridge_function": "OCCTFace2DFillet",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 5,
+        "area": 398.068583471
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 5,
+        "area": 398.068583471
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius x 1.5",
+      "red": "Fillet2DTests.swift:20:9: Expectation failed: abs(area - 398.068583471) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-extrema-fillet2d/",
+      "rewritten": "edge count only; now the area too"
+    }
+  },
+  {
+    "test_name": "2D Fillet and Chamfer::Fillet multiple vertices",
+    "bridge_function": "OCCTFace2DFillet",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 8,
+        "area": 396.566370614
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 8,
+        "area": 396.566370614
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius x 1.5",
+      "red": "Fillet2DTests.swift:31:9: Expectation failed: abs(area - 396.566370614) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-extrema-fillet2d/",
+      "rewritten": "edge count only; now the area too"
+    }
+  },
+  {
+    "test_name": "2D Fillet and Chamfer::Fillet with zero count returns nil",
+    "bridge_function": "OCCTFace2DFillet",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Swift wrapper returns the face unchanged for an empty list",
+      "red": "Fillet2DTests.swift:38:9: Expectation failed: result == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-extrema-fillet2d/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "2D Fillet and Chamfer::Chamfer between adjacent edges",
+    "bridge_function": "OCCTFace2DChamfer",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 5,
+        "area": 398
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 5,
+        "area": 398
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second distance x 1.5",
+      "red": "Fillet2DTests.swift:48:9: Expectation failed: abs(area - 398) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-extrema-fillet2d/",
+      "rewritten": "edge count only; now the area too"
+    }
+  },
+  {
+    "test_name": "2D Fillet and Chamfer::Chamfer mismatched arrays returns nil",
+    "bridge_function": "OCCTFace2DChamfer",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Swift wrapper pads missing distances with 1.0",
+      "red": "Fillet2DTests.swift:55:9: Expectation failed: result == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-extrema-fillet2d/",
+      "rewritten": ""
+    }
   }
 ]

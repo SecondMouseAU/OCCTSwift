@@ -319,3 +319,17 @@ Probe: `Scripts/repro/766-geom2d-projection-simplify-transform/`. Every row was 
 | Direction2D Utilities::normalize | `OCCTDirection2DNormalize` | swap the components | ✅ | ✅ | MATCH | unit length only; now pins (0.6, 0.8) |
 | Direction2D Utilities::angle | `OCCTDirection2DAngle` | half the angle | ✅ | ✅ | MATCH |  |
 | Direction2D Utilities::cross | `OCCTDirection2DCross` | negate | ✅ | ✅ | MATCH |  |
+### #1979 executed: `Extrema2dTests.swift`, `ExtremaLocateExtCC2dTests.swift`, `Fillet2DTests.swift`
+Probe: `Scripts/repro/766-geom2d-extrema-fillet2d/`. Every row was run red with the injection applied and green after it was reverted.
+| Extrema 2D::Distance between parallel lines | `OCCTExtremaExtElC2dLinLin` | squared distance x 1.1 | ✅ | ✅ | MATCH | `if let r = results.first` and 0.1 slack |
+| Extrema 2D::Parallel line matched points actually achieve the reported distance (#1494) | `OCCTExtremaExtElC2dLinLin` | squared distance x 1.1 | ✅ | ✅ | MATCH |  |
+| Extrema 2D::Distance between line and circle | `OCCTExtremaExtElC2dLinCirc` | circle centre y + 1 | ✅ | ✅ | MATCH | `count >= 1`, 0.1 slack; now both extrema |
+| Extrema 2D::Closest point on circle to external point | `OCCTExtremaExtPElC2dCirc` | point x + 1 | ✅ | ✅ | MATCH | `count >= 1`, 0.1 slack; now both extrema |
+| Extrema 2D::Closest point on line to point | `OCCTExtremaExtPElC2dLin` | point y + 1 | ✅ | ✅ | MATCH | `count >= 1`, 0.1 slack |
+| Extrema 2D::Distance between two curves | `OCCTExtremaExtCC2d` | measure curve 1 against itself | ✅ | ✅ | MATCH | `if let` and 0.1 slack on the minimum; now all four extrema |
+| Extrema_LocateExtCC2d Tests::localExtremum2d | `OCCTExtremaLocateExtCC2d` | seed u + pi | ✅ | ✅ | MATCH | `if let` and 0.5 slack |
+| 2D Fillet and Chamfer::Fillet single vertex of rectangular face | `OCCTFace2DFillet` | radius x 1.5 | ✅ | ✅ | MATCH | edge count only; now the area too |
+| 2D Fillet and Chamfer::Fillet multiple vertices | `OCCTFace2DFillet` | radius x 1.5 | ✅ | ✅ | MATCH | edge count only; now the area too |
+| 2D Fillet and Chamfer::Fillet with zero count returns nil | `OCCTFace2DFillet` | Swift wrapper returns the face unchanged for an empty list | ✅ | ✅ | MATCH |  |
+| 2D Fillet and Chamfer::Chamfer between adjacent edges | `OCCTFace2DChamfer` | second distance x 1.5 | ✅ | ✅ | MATCH | edge count only; now the area too |
+| 2D Fillet and Chamfer::Chamfer mismatched arrays returns nil | `OCCTFace2DChamfer` | Swift wrapper pads missing distances with 1.0 | ✅ | ✅ | MATCH |  |
