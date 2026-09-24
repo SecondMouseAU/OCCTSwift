@@ -17,37 +17,72 @@ extension SIMD3 where Scalar == Double {
 @Suite("v0.115.0 - Interpolation Expansion 3D")
 struct InterpolationExpansion3DTests {
 
-    @Test func interpolateWithEndpointTangents() {
-        let points = [SIMD3(0.0, 0.0, 0.0), SIMD3(5.0, 5.0, 0.0), SIMD3(10.0, 0.0, 0.0)]
-        let curve = Curve3D.interpolate(
-            points: points,
-            startTangent: SIMD3(1, 1, 0),
-            endTangent: SIMD3(1, -1, 0))
-        #expect(curve != nil)
+    // #1989: each of these used to assert only `curve != nil`, so a bridge that dropped the
+    // tangents or the parameters it was handed (still a valid curve through the same points)
+    // passed. The values below are GeomAPI_Interpolate's own for the same inputs, measured in
+    // Scripts/repro/766-misc-interp-construction-sketch-angle/: with no tangents loaded the start
+    // tangent is (0.447, 0.894, 0), not (0.707, 0.707, 0), and with no parameters the domain is
+    // the chord length [0, 14.142], not [0, 1].
+
+    private static let threePoints = [
+        SIMD3(0.0, 0.0, 0.0), SIMD3(5.0, 5.0, 0.0), SIMD3(10.0, 0.0, 0.0),
+    ]
+
+    /// The unit tangent at `u`, so a direction is compared independent of its magnitude.
+    private func unitTangent(_ curve: Curve3D, at u: Double) -> SIMD3<Double> {
+        simd_normalize(curve.d1(at: u).tangent)
     }
 
-    @Test func interpolateWithAllTangents() {
-        let points = [SIMD3(0.0, 0.0, 0.0), SIMD3(5.0, 5.0, 0.0), SIMD3(10.0, 0.0, 0.0)]
+    @Test func interpolateWithEndpointTangents() throws {
+        let curve = try #require(
+            Curve3D.interpolate(
+                points: Self.threePoints,
+                startTangent: SIMD3(1, 1, 0),
+                endTangent: SIMD3(1, -1, 0)))
+        let s2 = 2.0.squareRoot() / 2
+        let start = unitTangent(curve, at: curve.domain.lowerBound)
+        let end = unitTangent(curve, at: curve.domain.upperBound)
+        #expect(simd_distance(curve.startPoint, SIMD3(0, 0, 0)) < 1e-9)
+        #expect(simd_distance(curve.endPoint, SIMD3(10, 0, 0)) < 1e-9)
+        #expect(simd_distance(start, SIMD3(s2, s2, 0)) < 1e-9)
+        #expect(simd_distance(end, SIMD3(s2, -s2, 0)) < 1e-9)
+    }
+
+    @Test func interpolateWithAllTangents() throws {
         let tangents = [SIMD3(1.0, 1.0, 0.0), SIMD3(1.0, 0.0, 0.0), SIMD3(1.0, -1.0, 0.0)]
         let flags: [Bool] = [true, false, true]  // only first and last constrained
-        let curve = Curve3D.interpolate(points: points, tangents: tangents, tangentFlags: flags)
-        #expect(curve != nil)
+        let curve = try #require(
+            Curve3D.interpolate(points: Self.threePoints, tangents: tangents, tangentFlags: flags))
+        let s2 = 2.0.squareRoot() / 2
+        let start = unitTangent(curve, at: curve.domain.lowerBound)
+        let end = unitTangent(curve, at: curve.domain.upperBound)
+        #expect(simd_distance(curve.startPoint, SIMD3(0, 0, 0)) < 1e-9)
+        #expect(simd_distance(curve.endPoint, SIMD3(10, 0, 0)) < 1e-9)
+        #expect(simd_distance(start, SIMD3(s2, s2, 0)) < 1e-9)
+        #expect(simd_distance(end, SIMD3(s2, -s2, 0)) < 1e-9)
     }
 
-    @Test func interpolateWithParameters() {
-        let points = [SIMD3(0.0, 0.0, 0.0), SIMD3(5.0, 5.0, 0.0), SIMD3(10.0, 0.0, 0.0)]
+    @Test func interpolateWithParameters() throws {
         let params = [0.0, 0.5, 1.0]
-        let curve = Curve3D.interpolate(points: points, parameters: params)
-        #expect(curve != nil)
+        let curve = try #require(Curve3D.interpolate(points: Self.threePoints, parameters: params))
+        // The parameters become the curve's own: its domain is exactly [0, 1] and the middle point
+        // is reached at 0.5, where a chord-length parameterisation reaches it at 7.07.
+        #expect(abs(curve.domain.lowerBound - 0) < 1e-12)
+        #expect(abs(curve.domain.upperBound - 1) < 1e-12)
+        #expect(simd_distance(curve.point(at: 0.5), SIMD3(5, 5, 0)) < 1e-9)
     }
 
-    @Test func interpolatePeriodic() {
+    @Test func interpolatePeriodic() throws {
         let points = [
             SIMD3(0.0, 0.0, 0.0), SIMD3(10.0, 0.0, 0.0),
             SIMD3(10.0, 10.0, 0.0), SIMD3(0.0, 10.0, 0.0),
         ]
-        let curve = Curve3D.interpolatePeriodic(points: points)
-        #expect(curve != nil)
+        let curve = try #require(Curve3D.interpolatePeriodic(points: points))
+        #expect(curve.isPeriodic)
+        #expect(curve.isClosed)
+        // Chord-length domain of the closed square: four sides of 10.
+        #expect(abs(curve.domain.upperBound - curve.domain.lowerBound - 40) < 1e-9)
+        #expect(simd_distance(curve.startPoint, SIMD3(0, 0, 0)) < 1e-9)
     }
 }
 
@@ -600,17 +635,22 @@ struct DocumentConstructionContextRaceTests {
                 Issue.record("Document.create() returned nil")
                 return
             }
-            let ids = await withTaskGroup(of: ObjectIdentifier.self) { group in
+            // #1989: the tasks return the contexts themselves, not ObjectIdentifiers of them. An
+            // ObjectIdentifier outlives its object, and a context nothing retains is freed at once,
+            // so a getter that built a fresh context on every access handed back recycled
+            // addresses and this test passed against it. Holding every instance until the
+            // comparison is what makes two different contexts two different identifiers.
+            let contexts = await withTaskGroup(of: ConstructionContext.self) { group in
                 for _ in 0..<taskCount {
                     group.addTask {
-                        ObjectIdentifier(doc.constructionContext)
+                        doc.constructionContext
                     }
                 }
-                var collected: [ObjectIdentifier] = []
-                for await id in group { collected.append(id) }
+                var collected: [ConstructionContext] = []
+                for await ctx in group { collected.append(ctx) }
                 return collected
             }
-            let distinct = Set(ids).count
+            let distinct = Set(contexts.map { ObjectIdentifier($0) }).count
             if distinct != 1 {
                 divergentRounds.append((round, distinct))
             }
@@ -650,8 +690,15 @@ struct SketchBuildProfileTests {
         #expect(sketch.elements.count == 5)
         #expect(sketch.profileElementCount == 4)
 
-        let wire = sketch.buildProfile(in: ctx, graph: graph)
-        #expect(wire != nil)
+        // #1989: this used to assert only `wire != nil`, which a profile that kept the construction
+        // diagonal also satisfies. The closed 10 x 10 square is 40 long; with the diagonal left in
+        // it is 54.14 (both measured in Scripts/repro/766-misc-interp-construction-sketch-angle/).
+        guard let wire = sketch.buildProfile(in: ctx, graph: graph) else {
+            Issue.record("buildProfile returned nil for a closed four-line profile")
+            return
+        }
+        let length = wire.length ?? -1
+        #expect(abs(length - 40) < 1e-9, "profile length \(length)")
     }
 
     @Test("buildProfile returns nil if no profile elements present")
@@ -929,7 +976,11 @@ struct FaceUVMidpointSampleTests {
             guard let props = face.revolutionProperties, let axis = face.primaryAxis else {
                 continue
             }
-            #expect(props.radius > 0)
+            // #1989: pinned, not `> 0`. The face's UV midpoint sits halfway up the 10-high cone,
+            // where its radius is 2.5 (BRepAdaptor_Surface measured in
+            // Scripts/repro/766-misc-edge-face-leaf-layer/). A radius taken as the distance to the
+            // axis origin instead of to the axis line is 5.59, also positive.
+            #expect(abs(props.radius - 2.5) < 1e-9)
             #expect(simd_length(props.axis.direction - axis.direction) < 1e-9)
             found = true
         }
@@ -1396,11 +1447,14 @@ struct SheetRenderingTests {
                 owner: "ACME Co"))
         let writer = kind.makeWriter()
         sheet.render(into: writer)
-        // Should have at least 2 polylines (outer border + inner frame) plus some tick lines.
+        // #1989: exact, not lower bounds. `>= 2` polylines and `>= 4` lines stayed true with the inner
+        // frame or every centring tick missing (the projection symbol alone draws four lines). The
+        // scaffolding is 2 border polylines + the title block's, 4 centring ticks + the projection
+        // symbol's 4 lines, and 8 title-block labels + 4 values (title, number, owner, sheet scale).
         let counts = writer.entityCounts
-        #expect(counts.polylines >= 2)
-        #expect(counts.lines >= 4)  // centring ticks
-        #expect(counts.texts >= 1)  // title block field labels
+        #expect(counts.polylines == 3)
+        #expect(counts.lines == 8)
+        #expect(counts.texts == 12)
     }
 
     @Test("Sheet innerFrame respects ISO 5457 margins")
@@ -1448,7 +1502,9 @@ struct SheetRenderingTests {
         let sheet = Sheet(size: .a3, title: tb)
         let writer = kind.makeWriter()
         sheet.render(into: writer)
-        #expect(writer.entityCounts.texts >= 5)  // at least label/value pairs
+        // 8 labels + 6 values (the five given here and the sheet's default scale "1:1"). `>= 5` was
+        // satisfied by the labels alone, so a title block that dropped every value passed (#1989).
+        #expect(writer.entityCounts.texts == 14)
     }
 
     // #1180: `Sheet.render`/`renderTitleBlock`/`ProjectionSymbol.render` used to be hardcoded to
@@ -1466,10 +1522,11 @@ struct SheetRenderingTests {
                 owner: "ACME Co"))
         let writer = PDFWriter()
         sheet.render(into: writer)
+        // Exact counts; see sheetEmitsBorders(kind:) for the breakdown (#1989).
         let counts = writer.entityCounts
-        #expect(counts.polylines >= 2)
-        #expect(counts.lines >= 4)  // centring ticks
-        #expect(counts.texts >= 1)  // title block field labels
+        #expect(counts.polylines == 3)
+        #expect(counts.lines == 8)
+        #expect(counts.texts == 12)
     }
 
     @Test("Sheet render emits border + inner frame polylines onto an SVGWriter")
@@ -1482,10 +1539,11 @@ struct SheetRenderingTests {
                 owner: "ACME Co"))
         let writer = SVGWriter()
         sheet.render(into: writer)
+        // Exact counts; see sheetEmitsBorders(kind:) for the breakdown (#1989).
         let counts = writer.entityCounts
-        #expect(counts.polylines >= 2)
-        #expect(counts.lines >= 4)  // centring ticks
-        #expect(counts.texts >= 1)  // title block field labels
+        #expect(counts.polylines == 3)
+        #expect(counts.lines == 8)
+        #expect(counts.texts == 12)
     }
 
     @Test("Projection symbol renders two circles for both conventions onto a PDFWriter")
@@ -1521,7 +1579,9 @@ struct SheetRenderingTests {
         let sheet = Sheet(size: .a3, title: tb)
         let writer = PDFWriter()
         sheet.render(into: writer)
-        #expect(writer.entityCounts.texts >= 5)  // at least label/value pairs
+        // 8 labels + 6 values (the five given here and the sheet's default scale "1:1"). `>= 5` was
+        // satisfied by the labels alone, so a title block that dropped every value passed (#1989).
+        #expect(writer.entityCounts.texts == 14)
     }
 
     @Test("TitleBlock fields are emitted as text onto an SVGWriter")
@@ -1535,7 +1595,9 @@ struct SheetRenderingTests {
         let sheet = Sheet(size: .a3, title: tb)
         let writer = SVGWriter()
         sheet.render(into: writer)
-        #expect(writer.entityCounts.texts >= 5)  // at least label/value pairs
+        // 8 labels + 6 values (the five given here and the sheet's default scale "1:1"). `>= 5` was
+        // satisfied by the labels alone, so a title block that dropped every value passed (#1989).
+        #expect(writer.entityCounts.texts == 14)
     }
 }
 
@@ -1572,7 +1634,13 @@ struct SheetMetalTests {
             bends: [SheetMetal.Bend(from: "base", to: "upright", radius: 2.0)])
 
         #expect(shape.isValid)
-        if let v = shape.volume { #expect(v > 0) }
+
+
+
+        // #1989: pinned. `v > 0` held with the bend skipped entirely; this is the volume the
+        // builder produced when the evidence was taken, a regression pin, not a kernel value.
+        let v = shape.volume ?? -1
+        #expect(abs(v - 13315.796477516664) < 1e-6 * 13315.796477516664, "volume \(v)")
     }
 
     /// U-channel: three flanges (bottom + two uprights) with two bends.
@@ -1613,7 +1681,13 @@ struct SheetMetalTests {
             ])
 
         #expect(shape.isValid)
-        if let v = shape.volume { #expect(v > 0) }
+
+
+
+        // #1989: pinned. `v > 0` held with the bend skipped entirely; this is the volume the
+        // builder produced when the evidence was taken, a regression pin, not a kernel value.
+        let v = shape.volume ?? -1
+        #expect(abs(v - 2819.3141652942295) < 1e-6 * 2819.3141652942295, "volume \(v)")
     }
 
     /// Bendless composition, builder should still fuse flanges if no bends are given.
@@ -1636,6 +1710,10 @@ struct SheetMetalTests {
 
         let shape = try SheetMetal.Builder(thickness: 2).build(flanges: [a, b])
         #expect(shape.isValid)
+        // #1989: a is 20 x 10 x 2 = 400, b is 10 x 10 x 2 = 200, and they only touch, so the fused
+        // solid is 600. `isValid` alone held with b dropped from the fuse.
+        let v = shape.volume ?? -1
+        #expect(abs(v - 600) < 1e-6, "volume \(v)")
     }
 
     @Test("Single flange with no bends returns a plain extrusion")
@@ -1663,15 +1741,26 @@ struct SheetMetalTests {
             normal: SIMD3<Double>(0, 0, 1),
             uAxis: SIMD3<Double>(1, 0, 0),
             vAxis: SIMD3<Double>(0, 1, 0))
-        #expect(throws: SheetMetal.BuildError.self) {
+        // #1989: which BuildError, not just the type. With the thickness guard removed the build
+        // still throws a BuildError (the zero-length extrusion fails), so the type alone could not
+        // tell the guard from the accident.
+        let error = #expect(throws: SheetMetal.BuildError.self) {
             try SheetMetal.Builder(thickness: 0).build(flanges: [f])
+        }
+        guard case .invalidThickness? = error else {
+            Issue.record("expected invalidThickness, got \(String(describing: error))")
+            return
         }
     }
 
     @Test("Empty flange list is rejected")
     func emptyFlangesRejected() {
-        #expect(throws: SheetMetal.BuildError.self) {
+        let error = #expect(throws: SheetMetal.BuildError.self) {
             try SheetMetal.Builder(thickness: 3).build(flanges: [])
+        }
+        guard case .noFlanges? = error else {
+            Issue.record("expected noFlanges, got \(String(describing: error))")
+            return
         }
     }
 
@@ -1689,8 +1778,12 @@ struct SheetMetalTests {
             normal: SIMD3<Double>(0, 0, 1),
             uAxis: SIMD3<Double>(1, 0, 0),
             vAxis: SIMD3<Double>(0, 1, 0))
-        #expect(throws: SheetMetal.BuildError.self) {
+        let error = #expect(throws: SheetMetal.BuildError.self) {
             try SheetMetal.Builder(thickness: 3).build(flanges: [f1, f2])
+        }
+        guard case .duplicateFlangeID("same")? = error else {
+            Issue.record("expected duplicateFlangeID(\"same\"), got \(String(describing: error))")
+            return
         }
     }
 
@@ -1702,10 +1795,14 @@ struct SheetMetalTests {
             normal: SIMD3<Double>(0, 0, 1),
             uAxis: SIMD3<Double>(1, 0, 0),
             vAxis: SIMD3<Double>(0, 1, 0))
-        #expect(throws: SheetMetal.BuildError.self) {
+        let error = #expect(throws: SheetMetal.BuildError.self) {
             try SheetMetal.Builder(thickness: 2).build(
                 flanges: [f],
                 bends: [SheetMetal.Bend(from: "a", to: "ghost", radius: 1.0)])
+        }
+        guard case .unknownFlangeID("ghost")? = error else {
+            Issue.record("expected unknownFlangeID(\"ghost\"), got \(String(describing: error))")
+            return
         }
     }
 
@@ -1781,7 +1878,10 @@ struct SheetMetalTests {
             flanges: [base, upright],
             bends: [SheetMetal.Bend(from: "base", to: "vertical", radius: 1.5)])
         #expect(shape.isValid)
-        if let v = shape.volume { #expect(v > 0) }
+        // #1989: pinned. `v > 0` held with the bend skipped entirely; this is the volume the
+        // builder produced when the evidence was taken, a regression pin, not a kernel value.
+        let v = shape.volume ?? -1
+        #expect(abs(v - 8815.654315677795) < 1e-6 * 8815.654315677795, "volume \(v)")
     }
 
     /// L-bracket from issue #86: 80×40 base, 20×30 vertical mounting tab
@@ -1806,7 +1906,10 @@ struct SheetMetalTests {
             flanges: [base, tab],
             bends: [SheetMetal.Bend(from: "base", to: "tab", radius: 1.5)])
         #expect(shape.isValid)
-        if let v = shape.volume { #expect(v > 0) }
+        // #1989: pinned. `v > 0` held with the bend skipped entirely; this is the volume the
+        // builder produced when the evidence was taken, a regression pin, not a kernel value.
+        let v = shape.volume ?? -1
+        #expect(abs(v - 7580.685854250031) < 1e-6 * 7580.685854250031, "volume \(v)")
     }
 
     /// Z-bracket from issue #86: 50×30 base, 50×30 mid (full seam),
@@ -1844,7 +1947,10 @@ struct SheetMetalTests {
                 SheetMetal.Bend(from: "mid", to: "top", radius: 1.5),
             ])
         #expect(shape.isValid)
-        if let v = shape.volume { #expect(v > 0) }
+        // #1989: pinned. `v > 0` held with the bend skipped entirely; this is the volume the
+        // builder produced when the evidence was taken, a regression pin, not a kernel value.
+        let v = shape.volume ?? -1
+        #expect(abs(v - 6219.3141848384885) < 1e-6 * 6219.3141848384885, "volume \(v)")
     }
 
     /// U-channel with narrower flanges (issue #86): 100×25 spine,
@@ -1884,7 +1990,10 @@ struct SheetMetalTests {
                 SheetMetal.Bend(from: "spine", to: "right", radius: 1.5),
             ])
         #expect(shape.isValid)
-        if let v = shape.volume { #expect(v > 0) }
+        // #1989: pinned. `v > 0` held with the bend skipped entirely; this is the volume the
+        // builder produced when the evidence was taken, a regression pin, not a kernel value.
+        let v = shape.volume ?? -1
+        #expect(abs(v - 12857.94265223678) < 1e-6 * 12857.94265223678, "volume \(v)")
     }
 
     @Test("Parallel flanges cannot form a bend")
@@ -1902,10 +2011,14 @@ struct SheetMetalTests {
             normal: SIMD3<Double>(0, 0, 1),
             uAxis: SIMD3<Double>(1, 0, 0),
             vAxis: SIMD3<Double>(0, 1, 0))
-        #expect(throws: SheetMetal.BuildError.self) {
+        let error = #expect(throws: SheetMetal.BuildError.self) {
             try SheetMetal.Builder(thickness: 2).build(
                 flanges: [a, b],
                 bends: [SheetMetal.Bend(from: "a", to: "b", radius: 1.0)])
+        }
+        guard case .parallelFlangesHaveNoSeam? = error else {
+            Issue.record("expected parallelFlangesHaveNoSeam, got \(String(describing: error))")
+            return
         }
     }
 }
@@ -1941,6 +2054,11 @@ struct ConvexBendIssue89 {
                 SheetMetal.Bend(from: "web", to: "bottom", radius: 3.2),
             ])
         #expect(s.isValid)
+        // #1989: pinned regression volume (see SheetMetalTests.lBracket); validity and a single
+        // solid both held with the convex bend material never fused in.
+        let pinned = 12671.999999999995
+        let volume = s.volume ?? -1
+        #expect(abs(volume - pinned) < 1e-6 * pinned, "volume \(volume)")
         #expect((s.volume ?? 0) > 0)
         #expect(s.subShapes(ofType: .solid).count == 1, "Z-bracket should be a single solid")
         try Exporter.writeSTEP(shape: s, to: URL(fileURLWithPath: "/tmp/issue89-z-bracket.step"))
@@ -1971,6 +2089,11 @@ struct ConvexBendIssue89 {
                 SheetMetal.Bend(from: "web", to: "bottom", radius: 3),
             ])
         #expect(s.isValid)
+        // #1989: pinned regression volume (see SheetMetalTests.lBracket); validity and a single
+        // solid both held with the convex bend material never fused in.
+        let pinned = 7248.285413235574
+        let volume = s.volume ?? -1
+        #expect(abs(volume - pinned) < 1e-6 * pinned, "volume \(volume)")
         #expect(s.subShapes(ofType: .solid).count == 1)
     }
 
@@ -2000,6 +2123,11 @@ struct ConvexBendIssue89 {
                 SheetMetal.Bend(from: "web", to: "bottom", radius: 1.5),
             ])
         #expect(s.isValid)
+        // #1989: pinned regression volume (see SheetMetalTests.lBracket); validity and a single
+        // solid both held with the convex bend material never fused in.
+        let pinned = 12577.466807156732
+        let volume = s.volume ?? -1
+        #expect(abs(volume - pinned) < 1e-6 * pinned, "volume \(volume)")
     }
 
     /// Mixed concave + convex chain. Spine 100×40, two walls 30×40 fold up
@@ -2034,6 +2162,11 @@ struct ConvexBendIssue89 {
                 SheetMetal.Bend(from: "right", to: "tab", radius: 2),
             ])
         #expect(s.isValid)
+        // #1989: pinned regression volume (see SheetMetalTests.lBracket); validity and a single
+        // solid both held with the convex bend material never fused in.
+        let pinned = 10759.358422418583
+        let volume = s.volume ?? -1
+        #expect(abs(volume - pinned) < 1e-6 * pinned, "volume \(volume)")
         #expect(s.subShapes(ofType: .solid).count == 1)
     }
 
