@@ -197,3 +197,16 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Adaptor3d IsoCurve | U-iso points on cylinder face | `OCCTAdaptor3dIsoCurveEval` | U and V iso type swapped | `Adaptor3dIsoCurveTests.swift:35 abs(p.z - zk) < 1e-6` | ✅ | MATCH | Rewritten: picked any face, checked only the count |
+| Adaptor3d IsoCurve | V-iso points on cylinder face | `OCCTAdaptor3dIsoCurveEval` | U and V iso type swapped | `Adaptor3dIsoCurveTests.swift:50 abs(p.x - 10 * cos(u)) < 1e-9` | ✅ | MATCH | Rewritten: picked any face, checked only the count |
+| Adaptor3d IsoCurve | U-iso curve edge from face | `OCCTAdaptor3dIsoCurveEdge` | U and V iso type swapped | `Adaptor3dIsoCurveTests.swift:65 edge.edgeAdaptorCurveType == 0` | ✅ | MATCH | Rewritten: checked only shapeType == .edge |
+| Adaptor3d IsoCurve | V-iso curve edge from face | `OCCTAdaptor3dIsoCurveEdge` | U and V iso type swapped | `Adaptor3dIsoCurveTests.swift:84 edge.edgeAdaptorCurveType == 1` | ✅ | MATCH | Rewritten: checked only shapeType == .edge |
+| Approx CurvilinearParameter | Arc-length reparameterize circle edge | `OCCTApproxCurvilinearParameter` | return the input edge instead of Approx_CurvilinearParameter's curve | `ApproxCurvilinearParameterTests.swift:27 result.edgeAdaptorCurveType == 6` | ✅ | MATCH | Rewritten: checked only isValid |
+| Approx SameParameter Tests | same parameter on line/plane | `OCCTApproxSameParameter` | IsSameParameter() negated | `ApproxSameParameterTests.swift:25 r.isSameParameter` | ✅ | MATCH | Rewritten: `if let` let a nil result pass unchecked |
