@@ -649,3 +649,15 @@ Probe: `Scripts/repro/766-geom2d-gccana-bisector-circ/`. Every row was run red w
 | Curve2D measured continuity encoding after the retirement (#619)::An analytic 2D curve reports CN as ordinal 6, the old encoding's 99 is unreachable | `OCCTCurve2DGetContinuity` | pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99) | ✅ | ✅ | MATCH |  |
 | Curve2D measured continuity encoding after the retirement (#619)::A C1 pcurve reports C1 as ordinal 2, not 1 | `OCCTCurve2DGetContinuity` | pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99) | ✅ | ✅ | MATCH |  |
 | Curve2D measured continuity encoding after the retirement (#619)::A raw threshold of 2 now admits a merely-C1 pcurve; satisfies(.c2) still refuses it | `OCCTCurve2DGetContinuity` | pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99) | ✅ | ✅ | MATCH |  |
+### #1979 executed: `GeomToolsCurve2dSetTests.swift`, `IntAna2dTests.swift`, `IntToolsFClass2dTests.swift`, `InterpolationExpansion2DTests.swift`, `Issue1020Extrema2dBoundsTests.swift`
+Probe: `Scripts/repro/766-geom2d-curveset-intana-misc/`. Every row was run red with the injection applied and green after it was reverted.
+| GeomTools_Curve2dSet Tests::serializeDeserialize2D | `OCCTGeomToolsCurve2dSetRead` | read one curve fewer | ✅ | ✅ | MATCH | three `if let`s, count only; now both curves pinned |
+| GeomTools_Curve2dSet Tests::duplicateHandleRefusesTheBatch | `OCCTGeomToolsCurve2dSetWrite` | duplicate-index refusal disabled | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| IntAna2d Analytical Intersections::Intersection of two lines | `OCCTIntAna2dLinLin` | second line x + 2 | ✅ | ✅ | MATCH | 0.1 slack inside `if let`; now exact within 1e-9 |
+| IntAna2d Analytical Intersections::Intersection of line and circle | `OCCTIntAna2dLinCirc` | circle centre x + 1 | ✅ | ✅ | MATCH | count only; now x = 1 and 9 |
+| IntAna2d Analytical Intersections::Intersection of two circles | `OCCTIntAna2dCircCirc` | second centre x + 1 | ✅ | ✅ | MATCH | count only; now both points |
+| IntTools_FClass2d Tests::IsHole check | `OCCTIntToolsFClass2dIsHole` | IsHole negated | ✅ | ✅ | MATCH | two `if let`s; now `#require` |
+| v0.115.0 - Interpolation Expansion 2D::interpolate2DWithTangents | `OCCTCurve2DInterpolateWithTangents` | start and end tangents swapped | ✅ | ✅ | MATCH | `!= nil` only; now pole count and C(2) |
+| v0.115.0 - Interpolation Expansion 2D::interpolate2DPeriodic | `OCCTCurve2DInterpolate` | periodic flag dropped | ✅ | ✅ | MATCH | `!= nil` only; now periodic, domain and C(20) |
+| Issue1020 point-to-line 2D extrema bounds::A point projecting beyond the old 2D line bound still has an extremum | `OCCTExtremaExtPElC2dLin` | line bound back to +-1e10 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Issue1020 point-to-line 2D extrema bounds::A point projecting inside the old 2D line bound is unchanged | `OCCTExtremaExtPElC2dLin` | point y + 1 | ✅ | ✅ | MATCH | `if let`; now `#require` |
