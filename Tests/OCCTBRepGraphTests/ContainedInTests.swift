@@ -18,7 +18,10 @@ struct ContainedInTests {
         let firstFace = TopologyRef.containedIn(parent: solid, kind: .face, occurrence: 0)
         switch graph.resolve(firstFace) {
         case .success(let face):
+            // Kernel: BRepGraph_ChildExplorer(solid 0, Face) visits faces 0...5 in order, so
+            // occurrence 0 is face 0. The kind check alone passed any face.
             #expect(face.kind == .face)
+            #expect(face.index == 0)
         case .failure(let e): Issue.record("containedIn failed: \(e)")
         }
     }
