@@ -5117,5 +5117,269 @@
       "failing_expectation": ":48 `!r`"
     },
     "green": true
+  },
+  {
+    "test_name": "Polynomial Solvers::Solve quadratic x²-5x+6=0",
+    "bridge_function": "OCCTSolveQuadratic",
+    "bridge_output": {
+      "type": "observed",
+      "data": "count 2, roots [2, 3]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "count 2, roots [2, 3]",
+      "source": "Scripts/repro/766-math-polynomial-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "each root + 0.5 in occtSolvePolynomial",
+      "failing_expectation": ":13 `abs(result.roots[0] - 2.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Polynomial Solvers::Quadratic with no real roots",
+    "bridge_function": "OCCTSolveQuadratic",
+    "bridge_output": {
+      "type": "observed",
+      "data": "count 0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "count 0",
+      "source": "Scripts/repro/766-math-polynomial-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "NbSolutions() + 1 reported as the count",
+      "failing_expectation": ":20 `result.count == 0`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Polynomial Solvers::Quadratic with one root",
+    "bridge_function": "OCCTSolveQuadratic",
+    "bridge_output": {
+      "type": "observed",
+      "data": "count 2 (double root), roots [1, 1]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "count 2 (double root), roots [1, 1]",
+      "source": "Scripts/repro/766-math-polynomial-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "each root + 0.5",
+      "failing_expectation": ":27 `abs(result.roots[0] - 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Polynomial Solvers::Solve cubic x³-6x²+11x-6=0",
+    "bridge_function": "OCCTSolveCubic",
+    "bridge_output": {
+      "type": "observed",
+      "data": "count 3, roots [1, 2, 3]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "count 3, roots [1, 2, 3]",
+      "source": "Scripts/repro/766-math-polynomial-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "each root + 0.5",
+      "failing_expectation": ":34 `abs(result.roots[0] - 1.0) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Polynomial Solvers::Solve quartic x⁴-10x²+9=0",
+    "bridge_function": "OCCTSolveQuartic",
+    "bridge_output": {
+      "type": "observed",
+      "data": "count 4, roots [-3, -1, 1, 3]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "count 4, roots [-3, -1, 1, 3]",
+      "source": "Scripts/repro/766-math-polynomial-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "each root + 0.5",
+      "failing_expectation": ":44 `abs(result.roots[0] - (-3.0)) < 1e-10`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Precision Tests::confusion",
+    "bridge_function": "OCCTPrecisionConfusion",
+    "bridge_output": {
+      "type": "observed",
+      "data": "9.9999999999999995e-08",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "9.9999999999999995e-08",
+      "source": "Scripts/repro/766-math-polynomial-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Confusion() * 10",
+      "failing_expectation": ":11 `abs(OCCTPrecision.confusion - 1e-7) < 1e-15`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Precision Tests::angular",
+    "bridge_function": "OCCTPrecisionAngular",
+    "bridge_output": {
+      "type": "observed",
+      "data": "9.9999999999999998e-13",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "9.9999999999999998e-13",
+      "source": "Scripts/repro/766-math-polynomial-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "returns Confusion() instead of Angular()",
+      "failing_expectation": ":15 `abs(OCCTPrecision.angular - 1e-12) < 1e-20`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Precision Tests::isInfinite",
+    "bridge_function": "OCCTPrecisionIsInfinite",
+    "bridge_output": {
+      "type": "observed",
+      "data": "IsInfinite(3e100)=1, IsInfinite(1.0)=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "IsInfinite(3e100)=1, IsInfinite(1.0)=0",
+      "source": "Scripts/repro/766-math-polynomial-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "predicate negated",
+      "failing_expectation": ":19 `OCCTPrecision.isInfinite(3e100)`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Precision Tests::ordering",
+    "bridge_function": "OCCTPrecisionIntersection",
+    "bridge_output": {
+      "type": "observed",
+      "data": "intersection 1e-9 < confusion 1e-7 < approximation 1e-6",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "intersection 1e-9 < confusion 1e-7 < approximation 1e-6",
+      "source": "Scripts/repro/766-math-polynomial-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Intersection() returns Approximation()",
+      "failing_expectation": ":24 `OCCTPrecision.intersection < OCCTPrecision.confusion`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Precision Tests::infinite",
+    "bridge_function": "OCCTPrecisionInfinite",
+    "bridge_output": {
+      "type": "observed",
+      "data": "2e+100, IsInfinite(Infinite())=1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "2e+100, IsInfinite(Infinite())=1",
+      "source": "Scripts/repro/766-math-polynomial-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "returns 1e10 instead of Infinite()",
+      "failing_expectation": ":34 `OCCTPrecision.infinite > 1e50`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Precision Tests::pConfusion",
+    "bridge_function": "OCCTPrecisionPConfusion",
+    "bridge_output": {
+      "type": "observed",
+      "data": "PConfusion 1.0000000000000001e-09, Confusion/100 9.9999999999999986e-10",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "PConfusion 1.0000000000000001e-09, Confusion/100 9.9999999999999986e-10",
+      "source": "Scripts/repro/766-math-polynomial-precision/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "returns Confusion() (drops the /100)",
+      "failing_expectation": ":42 `abs(OCCTPrecision.pConfusion - OCCTPrecision.confusion / 100.0) < 1e-15`"
+    },
+    "green": true
   }
 ]
