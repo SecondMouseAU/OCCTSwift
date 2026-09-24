@@ -1,0 +1,12 @@
+findAllRootsQuadratic FunctionRoots: done=1 -2 2
+findAllRootsQuadratic FunctionAllRoots(samples 20): done=1 -2 2
+findAllRootsSin FunctionRoots: done=1 0 3.1415926535897931 6.2831853071795862
+findAllRootsSin FunctionAllRoots(samples 30): done=1 0 3.1415926535897931 6.2831853071795862
+findRootNewton(near: 3): done=1 root=2
+findRootNewton(near: -3): done=1 root=-2
+findRootBounded: done=1 root=2
+findRootBisection: done=1 root=2
+findRootCubic: done=1 root=2
+integrateSin: done=1 value=2
+integratePolynomial: done=1 value=0.33333333333333331
+integrateConstant: done=1 value=5
