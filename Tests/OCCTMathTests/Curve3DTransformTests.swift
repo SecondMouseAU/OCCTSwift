@@ -75,6 +75,11 @@ struct Curve3DTransformTests {
             #expect(ok)
             let p = c.point(at: 0)
             #expect(abs(p.y + 1) < 0.1)  // y=1 -> y=-1
+            // A point mirror through the origin also sends y=1 to y=-1, so pin x and z too: the
+            // X-axis mirror keeps x. Kernel value (1, -1, 0) from
+            // Scripts/repro/766-math-curve-transform-cylinder/transcript.txt.
+            #expect(abs(p.x - 1) < 1e-9)
+            #expect(abs(p.z) < 1e-9)
         }
     }
 
@@ -88,6 +93,11 @@ struct Curve3DTransformTests {
             #expect(ok)
             let p = c.point(at: 0)
             #expect(abs(p.z + 5) < 0.1)  // z=5 -> z=-5
+            // A point mirror through the origin also sends z=5 to z=-5, so pin x too: the XY-plane
+            // mirror keeps it. Kernel value (1, 0, -5) from
+            // Scripts/repro/766-math-curve-transform-cylinder/transcript.txt.
+            #expect(abs(p.x - 1) < 1e-9)
+            #expect(abs(p.y) < 1e-9)
         }
     }
 }

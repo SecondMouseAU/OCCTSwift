@@ -1,0 +1,4 @@
+evalGridPlane: rows=3 cols=2 max|z|=0 max|r-5|=5 max|grid-D0|=0
+evalGridSphere: rows=8 cols=4 max|z|=5 max|r-5|=8.88e-16 max|grid-D0|=0
+evalGridAsymmetricMatchesDirectEvaluation: rows=5 cols=3 max|z|=4.66 max|r-5|=8.88e-16 max|grid-D0|=0
+drawMeshAndEvaluateGridAgree: bounds=[0, 6.2831853071795862]x[-1.5707963267948966, 1.5707963267948966] max|D0 sweep - EvaluateGrid|=0
