@@ -666,12 +666,20 @@ struct StressMathUtilTests {
     @Test func polynomialSolverQuadratic() {
         let roots = PolynomialSolver.quadraticRc4(a: 1, b: -3, c: 2)
         #expect(roots != nil)
-        if let r = roots { #expect(r.count == 2) }
+        // math_DirectPolynomialRoots: 1 and 2.
+        let sorted = (roots ?? []).sorted()
+        #expect(sorted.count == 2)
+        if sorted.count == 2 {
+            #expect(abs(sorted[0] - 1) < 1e-12)
+            #expect(abs(sorted[1] - 2) < 1e-12)
+        }
     }
 
     @Test func polynomialSolverCubic() {
         let roots = PolynomialSolver.cubicRc4(a: 1, b: 0, c: -1, d: 0)
         #expect(roots != nil)
+        // x³ - x: -1, 0, 1.
+        #expect((roots ?? []).sorted() == [-1, 0, 1])
     }
 
     @Test func gaussIntegration() {
@@ -722,24 +730,36 @@ struct StressMeshAPITests {
         }
     }
 
-    @Test func meshVertices() {
-        if let m = standardSphere().mesh(linearDeflection: 0.5) {
-            let verts = m.vertices
-            #expect(!verts.isEmpty)
+    @Test func meshVertices() throws {
+        let m = try #require(standardSphere().mesh(linearDeflection: 0.5))
+        let verts = m.vertices
+        #expect(!verts.isEmpty)
+        #expect(verts.count == m.vertexCount)
+        #expect(m.vertexCount == 168)
+        // Every node lies on the radius-5 sphere (the count alone was satisfied by zeros).
+        for v in verts {
+            let rad = (Double(v.x * v.x + v.y * v.y + v.z * v.z)).squareRoot()
+            #expect(abs(rad - 5) < 1e-4)
         }
     }
 
-    @Test func meshNormals() {
-        if let m = standardCylinder().mesh(linearDeflection: 0.5) {
-            let normals = m.normals
-            #expect(!normals.isEmpty)
+    @Test func meshNormals() throws {
+        let m = try #require(standardCylinder().mesh(linearDeflection: 0.5))
+        let normals = m.normals
+        #expect(!normals.isEmpty)
+        #expect(normals.count == m.vertexCount)
+        #expect(m.vertexCount == 106)
+        // Every normal is a unit vector (the count alone was satisfied by zeros).
+        for n in normals {
+            let len = (Double(n.x * n.x + n.y * n.y + n.z * n.z)).squareRoot()
+            #expect(abs(len - 1) < 1e-5)
         }
     }
 
-    @Test func meshTriangles() {
-        if let m = standardTorus().mesh(linearDeflection: 0.5) {
-            #expect(m.triangleCount > 0)
-        }
+    @Test func meshTriangles() throws {
+        let m = try #require(standardTorus().mesh(linearDeflection: 0.5))
+        #expect(m.triangleCount > 0)
+        #expect(m.triangleCount == 1352)
     }
 
     @Test func meshOnAllShapes() {
@@ -765,11 +785,15 @@ struct StressFeatureRecognitionTests {
         let box = filletedBox()
         let aag = AAG(shape: box)
         #expect(aag.nodes.count > 6)
+        // One node per face: the filleted box has 26.
+        #expect(aag.nodes.count == 26)
     }
 
     @Test func aagOnDrilledPlate() {
         let plate = drilledPlate()
         let aag = AAG(shape: plate)
         #expect(aag.nodes.count > 6)
+        // Six box faces plus the hole's cylindrical face.
+        #expect(aag.nodes.count == 7)
     }
 }
