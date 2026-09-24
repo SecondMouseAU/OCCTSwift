@@ -8094,5 +8094,231 @@
     "status": "N/A",
     "source": "No kernel counterpart. Exporter.writeSTEPAssembly refuses an empty URL path with ExportError.invalidPath before reaching document.writeSTEP (OCCTDocumentWriteSTEP), so no bridge or OCCT call is made and there is nothing to compare.",
     "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "TDataStd Integer Attribute::Set and get integer",
+    "bridge_function": "OCCTDocumentGetIntegerAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 42
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 42
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd Integer Attribute::Change integer value",
+    "bridge_function": "OCCTDocumentGetIntegerAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 99
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 99
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd Integer Attribute::No integer on fresh label",
+    "bridge_function": "OCCTDocumentGetIntegerAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "integer_present": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "integer_present": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: integer_present. Bridge: label.integer on a fresh child label returned nil (OCCTDocumentGetIntegerAttr returned false), so integer_present is false. Kernel: a child of a child of Main has no TDataStd_Integer attribute (IsAttribute false).",
+    "probe": "Scripts/repro/766-xcaf-intpackedmap/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::setAndAdd",
+    "bridge_function": "OCCTIntPackedMapContains",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "c42": true,
+        "c100": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "c42": true,
+        "c100": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::extent",
+    "bridge_function": "OCCTIntPackedMapExtent",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "extent": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "extent": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::remove",
+    "bridge_function": "OCCTIntPackedMapRemove",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "removed": true,
+        "contains_10_after_remove": false,
+        "extent_after_remove": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "removed": true,
+        "contains_10_after_remove": false,
+        "extent_after_remove": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, from the test's own scenario (add 10 and 20, remove 10). Bridge: the test observed intPackedMapRemove true, intPackedMapContains(10) false and intPackedMapCount == 1. Kernel: TDataStd_IntPackedMap Remove(10) returned true, Contains(10) false, Extent 1.",
+    "probe": "Scripts/repro/766-xcaf-intpackedmap/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::clearAndEmpty",
+    "bridge_function": "OCCTIntPackedMapClear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "empty_before_clear": false,
+        "empty_after_clear": true,
+        "extent_after_clear": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "empty_before_clear": false,
+        "empty_after_clear": true,
+        "extent_after_clear": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, from the test's own scenario (add 5, clear). Bridge: the test observed intPackedMapIsEmpty false before, true after intPackedMapClear, and intPackedMapCount == 0. Kernel: TDataStd_IntPackedMap IsEmpty false before Clear, true after, Extent 0.",
+    "probe": "Scripts/repro/766-xcaf-intpackedmap/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::getValues",
+    "bridge_function": "OCCTIntPackedMapGetValues",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "extent": 3,
+        "values_sorted": [
+          7,
+          42,
+          99
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "extent": 3,
+        "values_sorted": [
+          7,
+          42,
+          99
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, from the test's own scenario (add 7, 42 and 99). Bridge: the test observed values.count == 3 and that values contains 7, 42 and 99; it asserts no order, so the values are recorded sorted. Kernel: Extent 3, and iterating GetMap() gave 7, 42, 99 (sorted).",
+    "probe": "Scripts/repro/766-xcaf-intpackedmap/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::changeValues",
+    "bridge_function": "OCCTIntPackedMapChangeValues",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "extent": 5,
+        "c30": true,
+        "c1": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "extent": 5,
+        "c30": true,
+        "c1": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
   }
 ]
