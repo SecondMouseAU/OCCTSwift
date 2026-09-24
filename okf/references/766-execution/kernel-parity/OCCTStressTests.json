@@ -316,7 +316,7 @@
     },
     "kernel_output": {
       "type": "probe",
-      "data": "Geom_Plane::Value(1e12, -2e12) = (1e12, -2e12, 0)",
+      "data": "Geom_Plane::Value(1e12, 1e12) = (1e12, 1e12, 0)",
       "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
     },
     "comparison": {
