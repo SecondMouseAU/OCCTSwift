@@ -268,6 +268,10 @@
 | **Extrema_ExtElCS Line-Cylinder** | lineCylinderDistancePerpendicular | Line-cylinder extrema | OCCTExtremaElCSLinCylinder adds 1 to SquareDistance (new, #766) |
 | **BRepExtrema_ExtPC Tests** | Point to edge distance on box | Point-edge nearest distance | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
 | **BRepExtrema_ExtPC Tests** | Point to wire edge, known distance | Point-edge nearest distance (rewritten: if-let) | OCCTBRepExtremaExtPC reports isValid = false; separately, distance + 1 |
+| **Inertia Properties** | Box volume inertia properties | BRepGProp volume | Mass/MatrixOfInertia/Moments |
+| **Inertia Properties** | Sphere has symmetry point | BRepGProp volume | Mass/HasSymmetryPoint |
+| **Inertia Properties** | Surface inertia properties | BRepGProp surface | Mass() |
+| **Inertia Properties** | Cylinder principal moments | BRepGProp volume | Moments/HasSymmetryAxis |
 
 ---
 
@@ -475,6 +479,10 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Box volume inertia properties | OCCTShapeInertiaProperties | BRepGProp volume | volume * 2; Ixx<->Iyy and principal moments disturbed | ✅ | ✅ | Rewritten: diagonal and principal moments were only checked > 0 |
+| Sphere has symmetry point | OCCTShapeInertiaProperties | BRepGProp volume | volume * 2, symmetry flags false | ✅ | ✅ |  |
+| Surface inertia properties | OCCTShapeSurfaceInertiaProperties | BRepGProp surface | area * 2 | ✅ | ✅ |  |
+| Cylinder principal moments | OCCTShapeInertiaProperties | BRepGProp volume | volume * 2, symmetry flags false; principal moments disturbed | ✅ | ✅ | Rewritten: named for the principal moments but checked only mass > 0 |
 
 ---
 
