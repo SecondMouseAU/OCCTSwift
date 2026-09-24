@@ -37,12 +37,6 @@ struct StressNilPropagationTests {
         let box = standardBox()
         let badShell = box.shelled(thickness: -6.0)
         #expect(badShell == nil)
-        if let s = badShell {
-            // If it succeeded, try to drill it
-            let drilled = s.drilled(
-                at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 1, depth: 0)
-            if let d = drilled { #expect(d.isValid) }
-        }
     }
 
     // Epic #766: the fillet succeeds (volume 993.7293492), and chamfering every edge of the
