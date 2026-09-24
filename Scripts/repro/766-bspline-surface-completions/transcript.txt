@@ -1,0 +1,22 @@
+setNotPeriodic: S(0.3,0.7) before=(7.0839999999999996,2.9160000000000004,1.0269000000000001) after=(7.0839999999999996,2.9160000000000004,1.0269000000000001) IsUPeriodic=0 IsVPeriodic=0
+increaseMultiplicity:
+  InsertUKnots([0.5],[1]): U knots=0(x4) 0.5(x1) 1(x4) V knots=0(x4) 1(x4) 
+  IncreaseUMultiplicity(2, 2): U knots=0(x4) 0.5(x2) 1(x4) V knots=0(x4) 1(x4) 
+increaseVMultiplicity:
+  InsertVKnots + IncreaseVMultiplicity(2, 2): U knots=0(x4) 1(x4) V knots=0(x4) 0.5(x2) 1(x4) 
+setKnot: first U knot=-1 first V knot=-1
+insertKnotsBatch: NbUKnots=4 NbVKnots=3
+  after: U knots=0(x4) 0.25(x1) 0.75(x1) 1(x4) V knots=0(x4) 0.5(x1) 1(x4) 
+movePoint: S(0.5,0.5)=(5,5,9.9999999999999982) S(0.2,0.2)=(1.9039999999999997,1.9039999999999997,7.1359567567567552) moved pole range u[1,4] v[1,4]
+setPoleColRow: pole(1..4, 1)=(0,0,3)(0,3,5)(0,7,5)(0,10,5) pole(1, 1..4)=(0,0,3)(3,0,3)(7,0,3)(10,0,3)
+setOriginNonPeriodic: SetUOrigin(1) threw Geom_BSplineSurface::SetUOrigin: surface is not U periodic
+  SetVOrigin(1) threw Geom_BSplineSurface::SetVOrigin: surface is not V periodic
+sphere BSpline: 6x5 poles, rational U=1 V=1, bounds [0, 6.2831853071795862]x[-1.5707963267948966, 1.5707963267948966]
+  sphere: U knots=0(x2) 2.0944(x2) 4.18879(x2) 6.28319(x2) V knots=-1.5708(x3) 0(x2) 1.5708(x3) 
+  weights col 1 before: 1 0.5 1 0.5 1 0.5 
+  weights row 1 before: 1 0.70710678118654757 1 0.70710678118654757 1 
+setWeightColRow: weights col 1 after: 1 1 1 1 1 1  row 1 after: 1 1 1 1 1  weight(2,2)=0.35355339059327379
+incrementMultiplicity:
+  after IncrementU/VMultiplicity(1, n, 1): U knots=0(x2) 2.0944(x2) 4.18879(x2) 6.28319(x2) V knots=-1.5708(x3) 0(x2) 1.5708(x3) 
+knotIndices: FirstUKnotIndex=1 LastUKnotIndex=4 FirstVKnotIndex=1 LastVKnotIndex=3
+checkAndSegment: bounds after=[0, 1]x[0, 1]

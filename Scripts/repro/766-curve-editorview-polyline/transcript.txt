@@ -1,0 +1,4 @@
+box 5: edges=12 with 3D curve=12 degenerated=0
+cylinder r=3 h=6: edges=3 with 3D curve=3 degenerated=0
+sphere r=4: edges=3 with 3D curve=1 degenerated=2
+rectangle 10x5 extruded 8: edges=12 with 3D curve=12 degenerated=0

@@ -1,0 +1,8 @@
+fillClosedWireBoundary: IsDone=1 valid=1 area=99.999999999999886
+fillPolygonBoundary: IsDone=1 valid=1 area=100
+bsplineSurface: S(0.3,0.7)=(7.0839999999999996, 2.9160000000000004, 1.0269000000000001)
+surfaceNormal: N=(0.70710678118654757, 0, 0.70710678118654746)
+surfaceCurvatures: defined=1 K=0.040000000000000001 H=-0.19999999999999998
+surfaceFromGrid: degree 4x4 poles 5x5 S(start)=(0, 0, 0) S(end)=(4, 4, 0.49467912331169095)
+knotSplitting: NbUSplits=2 NbVSplits=2 (U knots 4, V knots 2)
+normal parity: apex defined=0; v=1e-16 defined=1 N=(0.86602540378443871, 0, -0.49999999999999994); v=5 N=(0.86602540378443871, 0, -0.49999999999999989)
