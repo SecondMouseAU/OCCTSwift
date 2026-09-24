@@ -1,0 +1,14 @@
+two adjacent faces (sew 1e-06, close 0.0001): shapeFaces=2 shapeEdges=8 inputEdges=8 closedWires=1 openWires=0 closedCompoundFaces=0 isSameInput=1
+five box faces (open shell) (sew 1e-06, close 0.0001): shapeFaces=5 shapeEdges=20 inputEdges=20 closedWires=1 openWires=0 closedCompoundFaces=0 isSameInput=1
+two faces 5e-5 apart (sew 1e-06, close 0.001): shapeFaces=2 shapeEdges=8 inputEdges=8 closedWires=2 openWires=0 closedCompoundFaces=0 isSameInput=1
+two faces 5e-5 apart, tolerances swapped (FIXFBTOL) (sew 0.001, close 1e-06): shapeFaces=2 shapeEdges=8 inputEdges=8 closedWires=1 openWires=0 closedCompoundFaces=0 isSameInput=1
+kernel defaults: plane=0 bezier=0 revolution=1 extrusion=1 offset=1 cylindrical=0 conical=0 toroidal=0 spherical=0 segment=1 curve3d=1 offset3d=1 curve2d=1 offset2d=1
+cylinder volume=785.398163397
+cylinder, defaults (tol 0.01): faces=3 volume=785.418038185 Geom_CylindricalSurface=1 Geom_Plane=2
+cylinder, all kinds (tol 0.01): faces=3 volume=785.445497341 Geom_BSplineSurface=3
+sphere, all kinds (tol 0.01): faces=1 volume=523.596929503 Geom_BSplineSurface=1
+torus, all kinds (tol 0.01): faces=1 volume=1776.523876210 Geom_BSplineSurface=1
+cylinder, cylindrical only (tol 0.01): faces=3 volume=785.445497341 Geom_BSplineSurface=1 Geom_Plane=2
+cylinder, planes only (tol 0.01): faces=3 volume=785.418038185 Geom_BSplineSurface=2 Geom_CylindricalSurface=1
+cylinder, all kinds (tol 0.001): faces=3 volume=785.399994533 Geom_BSplineSurface=3
+cylinder, all kinds, tol x1000 (RTOL) (tol 1): faces=3 volume=772.797704085 Geom_BSplineSurface=3

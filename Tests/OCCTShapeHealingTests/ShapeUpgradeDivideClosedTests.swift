@@ -4,6 +4,9 @@ import simd
 
 @testable import OCCTSwift
 
+// #766: kept as written. It already asserted the kernel's answer unconditionally:
+// ShapeUpgrade_ShapeDivideClosed with 1 split point turns the cylinder's 3 faces into 4, volume
+// unchanged (Scripts/repro/766-healing-shapeupgrade/transcript.txt).
 @Suite("ShapeUpgrade DivideClosed Tests")
 struct ShapeUpgradeDivideClosedTests {
     @Test("Divide closed cylinder faces")
