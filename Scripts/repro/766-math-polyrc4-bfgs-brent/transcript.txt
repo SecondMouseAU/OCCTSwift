@@ -1,0 +1,10 @@
+linear: done=1 status=0 n=1 -2
+linearDegenerate: done=0 status=5 n=0
+quadratic: done=1 status=0 n=2 1.9999999999999991 3.0000000000000013
+quadraticNoRealRoots: done=1 status=0 n=0
+cubic: done=1 status=0 n=3 1 2 3
+quartic: done=1 status=0 n=4 0.99999999999999978 2 3 4
+BFGS minimizeQuadratic: done=1 x=3 4 min=0
+BFGS minimizeRosenbrock: done=1 x=1 1 min=0
+Brent minimizeQuadratic: done=1 location=-9.999999916733275e-09 minimum=-4
+Brent minimizeSine: done=1 location=4.7123889804110037 minimum=-1
