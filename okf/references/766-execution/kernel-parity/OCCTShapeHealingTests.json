@@ -526,23 +526,20 @@
     "bridge_output": {
       "type": "self_intersection",
       "data": {
-        "box": false,
-        "overlappingCompound": true,
-        "unchecked": null
+        "box_hasSelfIntersection": null,
+        "overlappingCompound_hasSelfIntersection": null
       }
     },
     "kernel_output": {
-      "type": "self_intersection",
-      "data": {
-        "box": 0,
-        "overlappingCompound": 1
-      }
+      "type": "n/a",
+      "data": "no kernel call: analyze() without selfIntersectionTimeout never reaches OCCTShapeSelfIntersectsBounded, which is what the test asserts"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "source": "No kernel counterpart. The test asserts hasSelfIntersection == nil for a box and for the overlapping compound when analyze() is called with no selfIntersectionTimeout, i.e. that the kernel check is NOT run (Swift-side opt-in guard). bridge_output is the two asserted nils."
   },
   {
     "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::nonNilTimeoutOnCleanShapePopulatesFalse",
@@ -550,23 +547,21 @@
     "bridge_output": {
       "type": "self_intersection",
       "data": {
-        "box": false,
-        "overlappingCompound": true,
-        "unchecked": null
+        "box_hasSelfIntersection": false
       }
     },
     "kernel_output": {
       "type": "self_intersection",
       "data": {
-        "box": 0,
-        "overlappingCompound": 1
+        "box_hasSelfIntersection": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the 10x10x10 box self-intersects, as a boolean. Bridge: analyze(tolerance: 0.001, selfIntersectionTimeout: 30).hasSelfIntersection, asserted == false. Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 7 ('#772 self-intersection: box=0 overlapping compound=1'); the probe's selfInter() returns 1 when BOPAlgo_ArgumentAnalyzer (SelfInterMode, StopOnFirstFaulty) reports BOPAlgo_SelfIntersect and 0 otherwise, so 0 is false and 1 is true."
   },
   {
     "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::nonNilTimeoutOnSelfIntersectingShapePopulatesTrue",
@@ -574,23 +569,21 @@
     "bridge_output": {
       "type": "self_intersection",
       "data": {
-        "box": false,
-        "overlappingCompound": true,
-        "unchecked": null
+        "overlappingCompound_hasSelfIntersection": true
       }
     },
     "kernel_output": {
       "type": "self_intersection",
       "data": {
-        "box": 0,
-        "overlappingCompound": 1
+        "overlappingCompound_hasSelfIntersection": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the compound of two overlapping 10x10x10 boxes (offset 5 in X) self-intersects, as a boolean. Bridge: analyze(tolerance: 0.001, selfIntersectionTimeout: 30).hasSelfIntersection, asserted == true. Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 7 ('#772 self-intersection: box=0 overlapping compound=1'); the probe's selfInter() returns 1 when BOPAlgo_ArgumentAnalyzer (SelfInterMode, StopOnFirstFaulty) reports BOPAlgo_SelfIntersect and 0 otherwise, so 0 is false and 1 is true."
   },
   {
     "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::totalProblemsReflectsOnlyWhatWasChecked",
@@ -598,23 +591,20 @@
     "bridge_output": {
       "type": "self_intersection",
       "data": {
-        "box": false,
-        "overlappingCompound": true,
-        "unchecked": null
+        "totalProblems_checked_minus_unchecked": 1,
+        "checked_isHealthy": false
       }
     },
     "kernel_output": {
-      "type": "self_intersection",
-      "data": {
-        "box": 0,
-        "overlappingCompound": 1
-      }
+      "type": "n/a",
+      "data": "no kernel counterpart: OCCT has no totalProblems or isHealthy, only the self-intersection answer already compared in the nonNilTimeoutOnSelfIntersectingShapePopulatesTrue record"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "source": "No kernel counterpart. The test asserts checked.totalProblems == unchecked.totalProblems + 1 and checked.isHealthy == false for the overlapping compound, Swift-side aggregation of the one kernel answer (hasSelfIntersection true) that the nonNilTimeoutOnSelfIntersectingShapePopulatesTrue record compares. bridge_output is the two asserted values."
   },
   {
     "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::timeoutAloneCannotBeSuppliedWithoutOptingIn",
@@ -622,22 +612,20 @@
     "bridge_output": {
       "type": "self_intersection",
       "data": {
-        "box": false,
-        "overlappingCompound": true,
-        "unchecked": null
+        "box_hasSelfIntersection": false
       }
     },
     "kernel_output": {
       "type": "self_intersection",
       "data": {
-        "box": 0,
-        "overlappingCompound": 1
+        "box_hasSelfIntersection": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the 10x10x10 box self-intersects, as a boolean. Bridge: analyze(tolerance: 0.001, selfIntersectionTimeout: 5).hasSelfIntersection, asserted == false (the timeout value does not enter the answer). Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 7 ('#772 self-intersection: box=0 overlapping compound=1'); the probe's selfInter() returns 1 when BOPAlgo_ArgumentAnalyzer (SelfInterMode, StopOnFirstFaulty) reports BOPAlgo_SelfIntersect and 0 otherwise, so 0 is false and 1 is true."
   }
 ]
