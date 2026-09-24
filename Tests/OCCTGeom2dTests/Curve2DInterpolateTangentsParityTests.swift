@@ -19,14 +19,21 @@ struct Curve2DInterpolateTangentsParityTests {
     private static let endTangent = SIMD2<Double>(1, -1)
 
     @Test("Default tolerance: the two entry points produce the same curve")
-    func defaultToleranceMatches() {
+    func defaultToleranceMatches() throws {
+        let a = Curve2D.interpolate(
+            points: Self.points, startTangent: Self.startTangent,
+            endTangent: Self.endTangent)
         expectSameCurve(
-            Curve2D.interpolate(
-                points: Self.points, startTangent: Self.startTangent,
-                endTangent: Self.endTangent),
+            a,
             Curve2D.interpolate(
                 through: Self.points, startTangent: Self.startTangent,
                 endTangent: Self.endTangent))
+        // #1979: agreement alone passed a curve both spellings got wrong. Geom2dAPI_Interpolate
+        // with these tangents gives 5 poles, (5, 5) mid-range and (1.8496, 2.0648) at u = 2
+        // (Scripts/repro/766-geom2d-tangents-islinear-line/).
+        let c = try #require(a)
+        #expect(c.poleCount == 5)
+        #expect(simd_distance(c.point(at: 2), SIMD2(1.84960461481, 2.06475180106)) < 1e-9)
     }
 
     /// The capability gap #410 found: previously `interpolate(points:...)` had no way to reach
@@ -43,6 +50,18 @@ struct Curve2DInterpolateTangentsParityTests {
                     endTangent: Self.endTangent, tolerance: tolerance),
                 "tolerance=\(tolerance)")
         }
+        // #1979: for these three points the tolerance changes nothing (the probe gives the same
+        // curve at 1e-3, 1e-6 and 1e-8), so the loop passes with the tolerance dropped. Two points
+        // 5e-5 apart make it matter: refused at 1e-4, accepted at 1e-8.
+        let near: [SIMD2<Double>] = [SIMD2(0, 0), SIMD2(5, 5), SIMD2(5, 5.00005), SIMD2(10, 0)]
+        #expect(
+            Curve2D.interpolate(
+                points: near, startTangent: Self.startTangent, endTangent: Self.endTangent,
+                tolerance: 1e-4) == nil)
+        #expect(
+            Curve2D.interpolate(
+                points: near, startTangent: Self.startTangent, endTangent: Self.endTangent,
+                tolerance: 1e-8) != nil)
     }
 
     @Test("Both entry points reject a single point")
