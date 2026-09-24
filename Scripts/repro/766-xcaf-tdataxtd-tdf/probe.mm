@@ -66,11 +66,9 @@ static const char* tf(bool b) { return b ? "true" : "false"; }
 #include <TDF_Reference.hxx>
 #include <TDF_Tool.hxx>
 #include <TDF_ChildIterator.hxx>
-#include <TDF_IDFilter.hxx>
 #include <TDF_DataSet.hxx>
 #include <TNaming_NamedShape.hxx>
 #include <TDocStd_XLinkTool.hxx>
-#include <TNaming_Builder.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
 #include <BRep_Tool.hxx>
@@ -119,7 +117,7 @@ int main()
   TDataXtd_Position::Get(posL, pos);
   printf("Position: (%g, %g, %g)\n", pos.X(), pos.Y(), pos.Z());
   TDF_Label prL = d->Main().NewChild();
-  Handle(TDataXtd_Presentation) pr = TDataXtd_Presentation::Set(prL, Standard_GUID("00000000-0000-0000-0000-000000000000"));
+  Handle(TDataXtd_Presentation) pr = TDataXtd_Presentation::Set(prL, Standard_GUID("12345678-1234-1234-1234-123456789abc"));
   pr->SetColor((Quantity_NameOfColor)12);
   pr->SetTransparency(0.5);
   pr->SetWidth(2.0);

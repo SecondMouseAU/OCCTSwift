@@ -133,7 +133,7 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "type": "parallel"
+        "type": 5
       }
     },
     "kernel_output": {
@@ -147,6 +147,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the TDataXtd_ConstraintEnum ordinal. Bridge: Document.constraintGetType returns ConstraintType(rawValue: OCCTDocumentConstraintGetType(...)); the test observed the result equal to .parallel, whose raw value is 5 (the enum is declared from radius = 0, so parallel is the sixth case). Kernel: TDataXtd_Constraint::GetType() after SetType(TDataXtd_PARALLEL) printed type=5 (PARALLEL=5).",
     "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
   },
   {
