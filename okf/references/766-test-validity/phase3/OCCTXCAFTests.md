@@ -493,3 +493,115 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `orphanNotes` | `OCCTDocumentNotesToolNbOrphanNotes` answers -1 | :60 Expectation failed: doc.notesToolOrphanNoteCount >= 0 | passed | `OCCTDocumentNotesToolNbOrphanNotes` | PASS: >= 0 (kernel: 1 orphan for one comment) |
 ### `XCAFDocShapeMapToolTests.swift`
 | `setShapeAndQuery` | `OCCTDocumentShapeMapToolIsSubShape` returns false | :16 Expectation failed: label.shapeMapToolIsSubShape(face) | passed | `OCCTDocumentShapeMapToolIsSubShape` | PASS: extent 33, face is a sub-shape |
+### `DocumentExplorerExtensionTests.swift`
+| `explorerDepth` | `OCCTDocumentExplorerDepth` returns -1 | :17 Expectation failed: depth >= 0 | passed | `OCCTDocumentExplorerDepth` | PASS: depth is non-negative on both sides (kernel depth 0 for the lone box node, which is reached) |
+| `explorerIsAssembly` | `OCCTDocumentExplorerIsAssembly` returns true | :31 Expectation failed: !isAsm | passed | `OCCTDocumentExplorerIsAssembly` | PASS: false = false |
+| `explorerIsAssemblyNeverTrueEvenForARealAssembly` | `OCCTDocumentExplorerIsAssembly` returns true | :72 Expectation failed: !doc.explorerIsAssembly(at: i) | passed | `OCCTDocumentExplorerIsAssembly` | PASS: assembly node is an assembly, the leaf list is non-empty and no leaf is an assembly, on both sides |
+| `explorerLocation` | `OCCTDocumentExplorerLocation` writes a translation into the identity branch | :85 `matrix == [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]` (rewritten; the old `count == 12` could not fail) | passed | `OCCTDocumentExplorerLocation` | PASS: identity = identity |
+| `explorerLocationOutOfRangeIndexIsATrueIdentity` | `OCCTDocumentExplorerLocation` pre-fills with the pre-#1480 `(i % 4 == i / 3)` formula | :110 Expectation failed: matrix == expectedIdentity | passed | `OCCTDocumentExplorerLocation` | N/A: no kernel counterpart: the identity is the bridge's own pre-filled fallback; the kernel walk reaches no node at that index |
+### `DocumentLayerTests.swift`
+| `builtInLayers` | `OCCTDocumentGetLayerCount` returns 0 | :12 Expectation failed: doc.layerCount > 0; :14 Expectation failed: !names.isEmpty | passed | `OCCTDocumentGetLayerCount` | EXPECTED_DIVERGENCE: the test asserts the #2413 defect: layers are positive on the bridge (3 tool labels), 0 in the kernel's layer table |
+| `outOfRange` | `OCCTDocumentGetLayerName` clamps any index to 0 | :20 Expectation failed: doc.layerName(at: 999) == nil; :21 Expectation failed: doc.layerName(at: -1) == nil | passed | `OCCTDocumentGetLayerName` | PASS: no layer name at index 999 or -1 on both sides (kernel: Value(1000) and Value(0) raise Standard_OutOfRange) |
+### `DocumentMaterialTests.swift`
+| `emptyMaterials` | `OCCTDocumentGetMaterialCount` returns 1 | :11 Expectation failed: doc.materialCount == 0 | passed | `OCCTDocumentGetMaterialCount` | PASS: 0 materials and an empty list on both sides (the document's own material table is also 0) |
+| `outOfRange` | `OCCTDocumentGetMaterialInfo` returns true for any index | :18 Expectation failed: doc.materialInfo(at: 0) == nil | passed | `OCCTDocumentGetMaterialInfo` | PASS: no material info at index 0 on both sides (kernel: 0 labels, Value(1) raises Standard_OutOfRange) |
+### `Issue1481DimensionRefCountTests.swift`
+| `singleShapeDimensionRegistersOnce` | the dimension is registered with `SetDimension(seq, seq, dim)` (the #1481 defect) | :40 Expectation failed: doc.refDimensionCount(for: labelId) == 1 | passed | `OCCTDocumentGetRefDimensionCount` | PASS: ref dimension count 1 on both sides (kernel single-shape overload 1; the sequence overload gives 2, the #1481 defect) |
+| `singleShapeDimensionWithToleranceRegistersOnce` | the dimension is registered with `SetDimension(seq, seq, dim)` (the #1481 defect) | :66 Expectation failed: doc.refDimensionCount(for: labelId) == 1 | passed | `OCCTDocumentGetRefDimensionCount` | PASS: ref dimension count 1 on both sides, with a (-0.1, 0.1) tolerance object attached |
+| `twoShapesEachRegisterOnce` | the dimension is registered with `SetDimension(seq, seq, dim)` (the #1481 defect) | :88 Expectation failed: doc.refDimensionCount(for: label1) == 1; :89 Expectation failed: doc.refDimensionCount(for: label2) == 1 | passed | `OCCTDocumentGetRefDimensionCount` | PASS: ref dimension counts [1, 1] and 2 dimension labels on both sides |
+### `Issue1588TObjApplicationReleaseTests.swift`
+| `singleGetReleaseRoundTrip` | `OCCTTObjApplicationIsVerbose` returns false | :71 Expectation failed: OCCTTObjApplicationIsVerbose(again) | passed | `OCCTTObjApplicationIsVerbose` | PASS: verbose true after SetVerbose(true) on both sides |
+| `doubleReleaseDoesNotCorruptSingleton` | `OCCTTObjApplicationIsVerbose` returns true | :89 Expectation failed: !OCCTTObjApplicationIsVerbose(again) | passed | `OCCTTObjApplicationIsVerbose` | PASS: verbose false after SetVerbose(false) and a document created, on both sides |
+| `repeatedGetReleaseCyclesDoNotCorruptSingleton` | `OCCTTObjApplicationCreateDocument` returns null | :110 Expectation failed: OCCTTObjApplicationCreateDocument(again) | passed | `OCCTTObjApplicationCreateDocument` | PASS: a document is created on both sides |
+| `repeatedSharedAccessDoesNotCorruptSingleton` | `OCCTTObjApplicationIsVerbose` returns false | :134 Expectation failed: app.isVerbose | passed | `OCCTTObjApplicationIsVerbose` | PASS: verbose true after SetVerbose(true) and a document created, on both sides |
+### `Issue173AssemblySTEPTests.swift`
+| `instancedStructure` | `OCCTDocumentAddComponentMatrix` adds a copy of the part per instance | :42 Expectation failed: count("MANIFOLD_SOLID_BREP") == 1 | passed | `OCCTDocumentAddComponentMatrix` | PASS: 1 BREP, 20 occurrences |
+| `roundTrip` | `OCCTDocumentAddComponentMatrix` returns -1 without adding | :69 Expectation failed: maxChildren == n | passed | `OCCTDocumentAddComponentMatrix` | PASS: max components under a root 8 on both sides |
+| `emptyPathThrows` | `Exporter.writeSTEPAssembly` returns without writing or throwing | :78 Expectation failed: an error was expected but none was thrown | passed | `OCCTDocumentWriteSTEP` | N/A: no kernel counterpart: the empty-path check is Swift, before any bridge or OCCT call |
+### `TDataStdIntegerTests.swift`
+| `setGetInteger` | `OCCTDocumentGetIntegerAttr` returns false | :17 Expectation failed: label.integer == 42 | passed | `OCCTDocumentGetIntegerAttr` | PASS: 42 |
+| `changeInteger` | `OCCTDocumentGetIntegerAttr` returns false | :26 Expectation failed: label.integer == 99 | passed | `OCCTDocumentGetIntegerAttr` | PASS: 99 after the second Set |
+| `noInteger` | `OCCTDocumentGetIntegerAttr` answers 0 where there is none | :34 Expectation failed: label.integer == nil | passed | `OCCTDocumentGetIntegerAttr` | PASS: no integer attribute on a fresh child label, on both sides |
+### `TDataStdIntPackedMapTests.swift`
+| `setAndAdd` | `OCCTIntPackedMapContains` returns false | :13 Expectation failed: doc.intPackedMapContains(tag: 100, value: 42); :14 Expectation failed: doc.intPackedMapContains(tag: 100, value: 100) | passed | `OCCTIntPackedMapContains` | PASS: both contained |
+| `extent` | `OCCTIntPackedMapExtent` returns 0 | :23 Expectation failed: doc.intPackedMapCount(tag: 101) == 3 | passed | `OCCTIntPackedMapExtent` | PASS: 3 |
+| `remove` | `OCCTIntPackedMapRemove` returns true without removing | :32 Expectation failed: !doc.intPackedMapContains(tag: 102, value: 10); :33 Expectation failed: doc.intPackedMapCount(tag: 102) == 1 | passed | `OCCTIntPackedMapRemove` | PASS: Remove(10) true, Contains(10) false and extent 1 on both sides |
+| `clearAndEmpty` | `OCCTIntPackedMapClear` returns true without clearing | :42 Expectation failed: doc.intPackedMapIsEmpty(tag: 103); :43 Expectation failed: doc.intPackedMapCount(tag: 103) == 0 | passed | `OCCTIntPackedMapClear` | PASS: not empty before Clear, empty with extent 0 after, on both sides |
+| `getValues` | `OCCTIntPackedMapGetValues` returns no values | :53 Expectation failed: values.count == 3; :54 Expectation failed: values.contains(7) | passed | `OCCTIntPackedMapGetValues` | PASS: extent 3 and values {7, 42, 99} on both sides (compared as a set, sorted) |
+| `changeValues` | `OCCTIntPackedMapChangeValues` returns true without changing | :64 Expectation failed: doc.intPackedMapCount(tag: 105) == 5; :65 Expectation failed: doc.intPackedMapContains(tag: 105, value: 30) | passed | `OCCTIntPackedMapChangeValues` | PASS: 5; 30 in, 1 out |
+### `TDataXtdPatternStdTests.swift`
+| `setAndGetSignature` | `OCCTDocumentPatternGetSignature` answers 2 | :18 Expectation failed: sig == .linear | passed | `OCCTDocumentPatternGetSignature` | PASS: signature ordinal 1 on both sides (PatternSignature.linear raw value 1) |
+| `hasPattern` | `OCCTDocumentHasPattern` returns false | :28 Expectation failed: doc.hasPattern(labelId: node.labelId) | passed | `OCCTDocumentHasPattern` | PASS: true after Set |
+| `noPattern` | `OCCTDocumentHasPattern` returns true | :34 Expectation failed: !doc.hasPattern(labelId: node.labelId) | passed | `OCCTDocumentHasPattern` | PASS: no pattern attribute on a fresh label, on both sides |
+### `TDataXtdPlacementTests.swift`
+| `setAndHas` | `OCCTDocumentHasPlacement` returns false | :15 Expectation failed: doc.hasPlacement(labelId: node.labelId) | passed | `OCCTDocumentHasPlacement` | PASS: true |
+| `noPlacement` | `OCCTDocumentHasPlacement` returns true | :21 Expectation failed: !doc.hasPlacement(labelId: node.labelId) | passed | `OCCTDocumentHasPlacement` | PASS: no placement attribute on a fresh label, on both sides |
+### `TDataXtdPositionAttributeTests.swift`
+| `setGetPosition` | `OCCTDocumentGetPositionAttr` answers (0, 0, 0) | :19 Expectation failed: abs(pos.x - 1.0) < 1e-10; :20 Expectation failed: abs(pos.y - 2.0) < 1e-10 | passed | `OCCTDocumentGetPositionAttr` | PASS: (1, 2, 3) |
+| `noPositionAttribute` | `OCCTDocumentHasPositionAttr` returns true | :29 Expectation failed: !label.hasPositionAttribute | passed | `OCCTDocumentHasPositionAttr` | PASS: no position attribute on a fresh label, on both sides |
+### `TDataXtdPresentationTests.swift`
+| `setAndHas` | `OCCTDocumentHasPresentation` returns false | :16 Expectation failed: doc.hasPresentation(labelId: node.labelId) | passed | `OCCTDocumentHasPresentation` | PASS: true |
+| `colorAndTransparency` | `OCCTDocumentPresentationGetColor` answers 0 | :30 Expectation failed: color == 12 | passed | `OCCTDocumentPresentationGetColor` | PASS: 12, 0.5 |
+| `widthAndMode` | `OCCTDocumentPresentationGetWidth` answers 0 | :48 Expectation failed: abs(width - 2.0) < 1e-6 | passed | `OCCTDocumentPresentationGetWidth` | PASS: width 2.0 and mode 1 on both sides |
+| `displayState` | `OCCTDocumentPresentationIsDisplayed` returns false | :63 Expectation failed: doc.presentationIsDisplayed(labelId: node.labelId) | passed | `OCCTDocumentPresentationIsDisplayed` | PASS: true |
+| `unsetPresentation` | `OCCTDocumentUnsetPresentation` returns without unsetting | :74 Expectation failed: !doc.hasPresentation(labelId: node.labelId) | passed | `OCCTDocumentUnsetPresentation` | PASS: gone after Unset |
+### `TDFLabelPropertyTests.swift`
+| `labelTag` | `OCCTDocumentLabelTag` answers 99 | :17 Expectation failed: main.tag == 1 | passed | `OCCTDocumentLabelTag` | PASS: Main tag 1 |
+| `labelDepth` | `OCCTDocumentLabelDepth` answers 5 | :25 Expectation failed: main.depth == 1; :27 Expectation failed: child.depth == 2 | passed | `OCCTDocumentLabelDepth` | PASS: Main depth 1 and depth 2 for a child of Main, on both sides |
+| `labelIsNull` | `OCCTDocumentLabelIsNull` returns true for every id | :36 Expectation failed: !main.isNull | passed | `OCCTDocumentLabelIsNull` | PASS: Main is not null on both sides |
+| `labelIsRoot` | `OCCTDocumentLabelIsRoot` returns true | :44 Expectation failed: !main.isRoot | passed | `OCCTDocumentLabelIsRoot` | PASS: Main not root; Root() is |
+| `labelFather` | `OCCTDocumentLabelFather` answers -1 | :57 `child.father?.labelId == main.labelId` (rewritten; with `father` inside the `if let`, a missing father passed) | passed | `OCCTDocumentLabelFather` | PASS: a child's father is Main on both sides |
+| `labelRoot` | `OCCTDocumentLabelIsRoot` returns false | :65 Expectation failed: root.isRoot | passed | `OCCTDocumentLabelRoot` | PASS: the root of a label is the root label on both sides |
+| `labelAttributes` | `OCCTDocumentLabelHasAttribute` returns false | :78 Expectation failed: label.hasAttribute | passed | `OCCTDocumentLabelHasAttribute` | PASS: no attributes on a fresh label, at least 1 after a name is set, on both sides |
+| `labelChildren` | `OCCTDocumentLabelNbChildren` answers 0 | :92 Expectation failed: parent.childCount == 2 | passed | `OCCTDocumentLabelNbChildren` | PASS: 0, then 2 |
+| `labelFindChild` | `OCCTDocumentLabelFindChild` answers -1 | :103 Expectation failed: found != nil; :111 Expectation failed: created != nil | passed | `OCCTDocumentLabelFindChild` | PASS: existing child found, tag 999 absent then created, 2 children after, on both sides |
+| `labelForgetAllAttributes` | `OCCTDocumentLabelForgetAllAttributes` returns without forgetting | :124 Expectation failed: !label.hasAttribute | passed | `OCCTDocumentLabelForgetAllAttributes` | PASS: no attribute after |
+| `labelDescendants` | `OCCTDocumentGetDescendantLabels` answers 0 | :137 Expectation failed: direct.count == 2; :140 Expectation failed: all.count == 4 | passed | `OCCTDocumentGetDescendantLabels` | PASS: 2 and 4 |
+| `labelDescendantsBeyondBufferCap` | `OCCTDocumentGetDescendantLabels` answers 0 | :153 Expectation failed: direct.count == extraCount | passed | `OCCTDocumentGetDescendantLabels` | PASS: 1029 children created and 1029 reported on both sides (no 1024 cap) |
+### `TFunctionLogbookTests.swift`
+| `logbookBasic` | `OCCTDocumentLogbookIsModified` returns false | :23 Expectation failed: logLabel.logbookIsModified(target1) | passed | `OCCTDocumentLogbookIsModified` | PASS: logbook set, empty when fresh, not empty after SetTouched(t1), t1 modified and t2 not, on both sides |
+| `logbookImpactedAndClear` | `OCCTDocumentLogbookClear` returns true without clearing | :36 Expectation failed: logLabel.logbookIsEmpty | passed | `OCCTDocumentLogbookClear` | PASS: empty |
+### `TFunctionScopeTests.swift`
+| `setFunctionScope` | `OCCTDocumentSetFunctionScope` returns false | :14 Expectation failed: ok | passed | `OCCTDocumentSetFunctionScope` | PASS: the scope attribute is set on the root on both sides |
+| `addAndHasFunction` | `OCCTDocumentFunctionScopeHas` returns false | :24 Expectation failed: doc.functionScopeHas(labelId: node.labelId) | passed | `OCCTDocumentFunctionScopeHas` | PASS: true |
+| `removeFunction` | `OCCTDocumentFunctionScopeRemove` returns true without removing | :36 Expectation failed: !doc.functionScopeHas(labelId: node.labelId) | passed | `OCCTDocumentFunctionScopeRemove` | PASS: removed |
+| `removeAllFunctions` | `OCCTDocumentFunctionScopeRemoveAll` returns true without removing | :49 Expectation failed: doc.functionScopeCount == 0 | passed | `OCCTDocumentFunctionScopeRemoveAll` | PASS: 2 then 0 |
+| `freeID` | `OCCTDocumentFunctionScopeGetFreeID` answers 0 | :58 Expectation failed: freeId >= 1; :62 Expectation failed: freeId2 > freeId | passed | `OCCTDocumentFunctionScopeGetFreeID` | PASS: fresh free ID at least 1 and larger after one function is added, on both sides (kernel 1 then 2) |
+### `TickTests.swift`
+| `setAndHas` | `OCCTDocumentSetTick` returns true without setting | :14 Expectation failed: doc.hasTick(tag: 500) | passed | `OCCTDocumentSetTick` | PASS: false, true |
+| `remove` | `OCCTDocumentRemoveTick` returns true without removing | :21 Expectation failed: !doc.hasTick(tag: 501) | passed | `OCCTDocumentRemoveTick` | PASS: the tick is present before removal and absent after, on both sides |
+| `removeNonExistent` | `OCCTDocumentRemoveTick` returns true without removing | :26 Expectation failed: !doc.removeTick(tag: 502) | passed | `OCCTDocumentRemoveTick` | PASS: no tick on tag 502, so removal finds nothing, on both sides |
+### `TNamingNamingTests.swift`
+| `insertNaming` | `OCCTDocumentInsertNaming` returns false | :15 Expectation failed: ok | passed | `OCCTDocumentInsertNaming` | PASS: a naming attribute is inserted on both sides |
+| `namingIsDefined` | `OCCTDocumentNamingIsDefined` returns true | :25 Expectation failed: !doc.namingIsDefined(labelId: node.labelId) | passed | `OCCTDocumentNamingIsDefined` | PASS: false on both sides, but the bridge's false is a lookup miss: Insert puts the naming on a child label (see source) |
+### `TNamingScopeTests.swift`
+| `validAndIsValid` | `OCCTDocumentNamingScopeIsValid` returns false | :14 Expectation failed: doc.namingScopeIsValid(labelId: node.labelId) | passed | `OCCTDocumentNamingScopeIsValid` | PASS: true |
+| `unvalid` | `OCCTDocumentNamingScopeUnvalid` returns true without unvalidating | :23 Expectation failed: !doc.namingScopeIsValid(labelId: node.labelId) | passed | `OCCTDocumentNamingScopeUnvalid` | PASS: not valid after Unvalid on both sides |
+| `validCount` | `OCCTDocumentNamingScopeValidCount` answers 1 | :32 Expectation failed: doc.namingScopeValidCount >= 2; :34 Expectation failed: doc.namingScopeValidCount == 0 | passed | `OCCTDocumentNamingScopeValidCount` | PASS: at least 2 valid labels after two Valid calls and 0 after Clear, on both sides (kernel count 2) |
+### `TNamingSelectResolveTests.swift`
+| `selectSubShape` | `OCCTDocumentNamingSelect` returns false | :22 Expectation failed: ok | passed | `OCCTDocumentNamingSelect` | PASS: Select(rectangle face, box) succeeds on both sides |
+| `resolveShape` | `OCCTDocumentNamingResolve` returns null | :42 `resolved != nil`, :43 the face count (rewritten; the old test asserted `Bool(true)` only when something came back) | passed | `OCCTDocumentNamingResolve` | PASS: select succeeds, resolve returns a shape holding at least 1 face, on both sides (kernel: a compound of 6 faces) |
+| `selectedEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :47 Expectation failed: evo == .selected | passed | `OCCTDocumentNamingGetEvolution` | PASS: evolution SELECTED on both sides (the bridge's code is 4, the kernel's ordinal is 5) |
+### `XDEAreaVolumeCentroidTests.swift`
+| `area` | `OCCTDocumentSetArea` stores twice the area | :21 Expectation failed: abs(area - 2200.0) < 1e-5 | passed | `OCCTDocumentGetArea` | PASS: area 2200.0 on both sides |
+| `volume` | `OCCTDocumentSetVolume` stores twice the volume | :40 Expectation failed: abs(vol - 6000.0) < 1e-5 | passed | `OCCTDocumentGetVolume` | PASS: volume 6000.0 on both sides |
+| `centroid` | `OCCTDocumentSetCentroid` stores x plus 1 | :59 Expectation failed: abs(c.x - 5.0) < 1e-5 | passed | `OCCTDocumentGetCentroid` | PASS: (5, 10, 15) |
+### `XDEAssemblyOperationTests.swift`
+| `addComponent` | `OCCTDocumentGetComponentCount` answers 1 | :34 Expectation failed: doc.componentCount(assemblyLabelId: assemblyLabelId) == 2 | passed | `OCCTDocumentGetComponentCount` | PASS: 2 |
+| `getComponents` | `OCCTDocumentGetComponentReferredLabelId` answers -1 | :55 Expectation failed: referredId >= 0 | passed | `OCCTDocumentGetComponentReferredLabelId` | PASS: the component and its referred shape are found on both sides (the referred label is the part) |
+| `removeComponent` | `OCCTDocumentRemoveComponent` returns without removing | :75 Expectation failed: doc.componentCount(assemblyLabelId: asmId) == 1 | passed | `OCCTDocumentRemoveComponent` | PASS: 2, then 1 |
+| `userCount` | `OCCTDocumentGetShapeUserCount` answers 0 | :91 Expectation failed: doc.shapeUserCount(shapeLabelId: boxId) > 0 | passed | `OCCTDocumentGetShapeUserCount` | PASS: the part has at least one user on both sides (kernel count 1) |
+| `updateAssemblies` | `OCCTDocumentUpdateAssemblies` returns without updating | the assembly-shape solid count (rewritten; the old test asserted `Bool(true)` after the call) | passed | `OCCTDocumentUpdateAssemblies` | PASS: 1 component and 1 solid in the updated assembly shape, on both sides |
+### `XDEEditorTests.swift`
+| `editorExpand` | `OCCTDocumentEditorExpand` returns false | `editorExpand(...)` and the component count (rewritten; the old test discarded the result and asserted `Bool(true)`) | passed | `OCCTDocumentEditorExpand` | PASS: Expand returns true and the two-body compound becomes 2 components, on both sides |
+| `rescaleGeometry` | `OCCTDocumentEditorRescaleGeometry` returns false | `rescaleGeometry(...)` (rewritten; the old test discarded the result and asserted `Bool(true)`) | passed | `OCCTDocumentEditorRescaleGeometry` | PASS: RescaleGeometry with force returns true on both sides |
+### `XDEColorToolByShapeTests.swift`
+| `setAndGetColor` | `OCCTDocumentIsShapeColorSet` returns false | :19 Expectation failed: doc.isShapeColorSet(box) | passed | `OCCTDocumentIsShapeColorSet` | PASS: colour set, red 1.0 and green 0.0 on both sides (the test asserts red and green only) |
+| `visibility` | `OCCTDocumentSetLabelVisibility` returns without setting | :39 Expectation failed: !node.isVisible | passed | `OCCTDocumentSetLabelVisibility` | PASS: false, true |
+| `shapeColorPreservesAlpha` | `OCCTDocumentSetShapeColorRGBA` stores alpha 1 | :69 Expectation failed: abs(got.alpha - 0.5) < 1e-5 | passed | `OCCTDocumentGetShapeColor` | PASS: rgba (0.2, 0.4, 0.6, 0.5) within 1e-5 on both sides (kernel stores single-precision floats) |
+| `shapeColorOpaqueUnaffected` | `OCCTDocumentSetShapeColorRGBA` stores alpha 0.5 | :89 Expectation failed: abs(got.alpha - 1.0) < 1e-5 | passed | `OCCTDocumentGetShapeColor` | PASS: alpha 1.0 (a double on both sides) |
+### `XDELayerToolExpansionTests.swift`
+| `setAndCheck` | `OCCTDocumentIsLayerSet` returns false | :20 Expectation failed: node.isLayerSet("Layer1") | passed | `OCCTDocumentIsLayerSet` | PASS: true |
+| `getLayers` | `OCCTDocumentGetLabelLayers` answers 0 | :38 Expectation failed: layers.count == 1 | passed | `OCCTDocumentGetLabelLayers` | PASS: 1, TestLayer |
+| `findAndVisibility` | `OCCTDocumentGetLayerVisibility` returns true | :62 Expectation failed: !doc.layerVisibility(layerLabelId: layerLabelId) | passed | `OCCTDocumentGetLayerVisibility` | PASS: found; false, true |
+| `getLayersBeyondBufferCap` | `OCCTDocumentGetLabelLayers` answers 0 | :86 Expectation failed: layers.count == extraCount | passed | `OCCTDocumentGetLabelLayers` | PASS: 19 layers set and 19 reported on both sides (no 16-entry cap) |

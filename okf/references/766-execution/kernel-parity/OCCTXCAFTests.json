@@ -7606,5 +7606,2170 @@
     },
     "status": "PASS",
     "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "DocumentExplorer Extension Tests::explorerDepth",
+    "bridge_function": "OCCTDocumentExplorerDepth",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "depth_non_negative": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "depth_non_negative": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: depth_non_negative. Bridge: with explorerNodeCount > 0 for a box added with the default makeAssembly, the test observed explorerDepth(at: 0) >= 0 (OCCTDocumentExplorerDepth returns XCAFPrs_DocumentExplorer::CurrentDepth for the node at that flat index, and 0 when no node is reached). Kernel: the leaf-only explorer over the same document reached node 0, and CurrentDepth there is 0, so depth is non-negative. Kernel values are from the probe named in the record, which makes the same calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-document-explorer-extension/"
+  },
+  {
+    "test_name": "DocumentExplorer Extension Tests::explorerIsAssembly",
+    "bridge_function": "OCCTDocumentExplorerIsAssembly",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "is_assembly": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "is_assembly": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-explorer-extension/"
+  },
+  {
+    "test_name": "DocumentExplorer Extension Tests::explorerIsAssemblyNeverTrueEvenForARealAssembly",
+    "bridge_function": "OCCTDocumentExplorerIsAssembly",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "assembly_node_is_assembly": true,
+        "leaf_count_positive": true,
+        "any_leaf_is_assembly": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "assembly_node_is_assembly": true,
+        "leaf_count_positive": true,
+        "any_leaf_is_assembly": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: after one component was added and updateAssemblies ran, the test observed assemblyNode.isAssembly true (OCCTDocumentIsAssembly, XCAFDoc_ShapeTool::IsAssembly of the assembly label), explorerNodeCount > 0, and explorerIsAssembly(at: i) false for every i (OCCTDocumentExplorerIsAssembly passes the explorer node's Label to XCAFDoc_ShapeTool::IsAssembly). Kernel: XCAFDoc_ShapeTool::IsAssembly of the assembly label is true, the leaf-only explorer holds 1 leaf, and IsAssembly of that leaf's node.Label (the label the bridge passes; node.RefLabel gives the same false) is false. Kernel values are from the probe named in the record, which makes the same calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-document-explorer-extension/"
+  },
+  {
+    "test_name": "DocumentExplorer Extension Tests::explorerLocation",
+    "bridge_function": "OCCTDocumentExplorerLocation",
+    "bridge_output": {
+      "type": "matrix12",
+      "data": {
+        "m": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "matrix12",
+      "data": {
+        "m": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-explorer-extension/"
+  },
+  {
+    "test_name": "DocumentExplorer Extension Tests::explorerLocationOutOfRangeIndexIsATrueIdentity",
+    "bridge_function": "OCCTDocumentExplorerLocation",
+    "bridge_output": {
+      "type": "n/a",
+      "data": {
+        "observed": "explorerLocation(at: count + 100) returns the identity [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]"
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": {
+        "reason": "the kernel has no node at that index: the leaf-only explorer walk reached no node at index 101 (one leaf exists), so there is no kernel location to compare"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "No kernel counterpart. The identity the test checks is the bridge's pre-filled fallback in OCCTDocumentExplorerLocation, returned when the walk finds no node at the index; XCAFPrs_DocumentExplorer has no node, and so no location, at index count + 100. The probe confirms the walk: one leaf, and no node reached at index 101. Its last line, the pre-#1480 formula evaluated as plain arithmetic (1.0 at slots 0, 5, 6, 11), is not a kernel output and is no longer carried in kernel_output.",
+    "probe": "Scripts/repro/766-xcaf-document-explorer-extension/"
+  },
+  {
+    "test_name": "Document Layers::Document has XCAF built-in layers",
+    "bridge_function": "OCCTDocumentGetLayerCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "layer_count_positive": true,
+        "names_non_empty": true
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "layer_count_positive": false,
+        "names_non_empty": false
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "layer_count_positive: the bridge side is true, the kernel's layer table gives false. The bridge calls XCAFDoc_LayerTool::Set(Main), which attaches a layer tool to the main label 0:1 and lists that label's three children as layers (Shapes at 0:1:1, Colors at 0:1:2, VisMaterials at 0:1:10), where the document's own layer table, XCAFDoc_DocumentTool::LayerTool(Main) on LayersLabel() 0:1:3, holds 0 layers on a fresh document.",
+        "names_non_empty: true on the bridge side, false in the kernel's layer table, for the same reason: the three names are the XCAF tool labels, not layers.",
+        "This is a defect, not a design choice: the test asserts it (a fresh document has layers). Tracked as #2413; the fix is in Sources/ and is not part of this PR."
+      ]
+    },
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides: whether the fresh document reports any layer and any layer name. Bridge: the test observed layerCount > 0 and layerNames non-empty (OCCTDocumentGetLayerCount / OCCTDocumentGetLayerName read XCAFDoc_LayerTool::Set(Main)). Kernel: the document's layer table, XCAFDoc_DocumentTool::LayerTool(Main) at 0:1:3, has 0 layer labels on a fresh document, so both are false; the same probe shows the bridge's own call returning 3 labels (Shapes, Colors, VisMaterials). The values differ because of #2413, so this is recorded as a divergence and not as a pass. Kernel values are from the probe named in the record, which makes the same calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-document-layer/"
+  },
+  {
+    "test_name": "Document Layers::Layer name out of range returns nil",
+    "bridge_function": "OCCTDocumentGetLayerName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name_at_999_found": false,
+        "name_at_minus_1_found": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name_at_999_found": false,
+        "name_at_minus_1_found": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether a layer name exists at index 999 and at index -1. Bridge: layerName(at: 999) and layerName(at: -1) were both nil (OCCTDocumentGetLayerName returns -1 for an index outside 0..<labels.Length()). Kernel: on the sequence the bridge reads (XCAFDoc_LayerTool::Set(Main), 3 labels), Value(1000) and Value(0), the 1-based positions for those indices, both raise Standard_OutOfRange, so no name can be read at either. The result does not depend on #2413: any label count below 1000 gives the same. Kernel values are from the probe named in the record, which makes the same calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-document-layer/"
+  },
+  {
+    "test_name": "Document Materials::Empty document has no materials",
+    "bridge_function": "OCCTDocumentGetMaterialCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "material_count": 0,
+        "materials_empty": true
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "material_count": 0,
+        "materials_empty": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: material_count and materials_empty. Bridge: the test observed materialCount == 0 and materials.isEmpty on a fresh document (OCCTDocumentGetMaterialCount reads XCAFDoc_MaterialTool::Set(Main)). Kernel: GetMaterialLabels of that tool returned 0 labels, and so did the document's material table, XCAFDoc_DocumentTool::MaterialTool(Main); unlike the layer count (#2413), no tool label is miscounted as a material. Kernel values are from the probe named in the record, which makes the same calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-document-material/"
+  },
+  {
+    "test_name": "Document Materials::Material info out of range returns nil",
+    "bridge_function": "OCCTDocumentGetMaterialInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "info_at_0_found": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "info_at_0_found": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether material info exists at index 0. Bridge: materialInfo(at: 0) was nil on a fresh document (OCCTDocumentGetMaterialInfo returns false for an index outside 0..<labels.Length()). Kernel: GetMaterialLabels returned 0 labels, and Value(1), the 1-based position for index 0, raises Standard_OutOfRange, so no material can be read. Kernel values are from the probe named in the record, which makes the same calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-document-material/"
+  },
+  {
+    "test_name": "Single-shape dimension registers once, not twice (#1481)::A single-shape dimension appears exactly once in GetRefDimensionLabels",
+    "bridge_function": "OCCTDocumentGetRefDimensionCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "ref_dimension_count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "ref_dimension_count": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: ref_dimension_count for the shape. Bridge: the test's doc.refDimensionCount(for:) after createDimension observed 1 (OCCTDocumentGetRefDimensionCount over GetRefDimensionLabels). Kernel: the probe registered one dimension with the single-shape overload SetDimension(shape, dim), as occtDocumentCreateDimensionImpl does, and GetRefDimensionLabels returned 1. For contrast, the sequence overload SetDimension(seq, seq, dim) returned 2 (the pre-#1481 defect).",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-parity/"
+  },
+  {
+    "test_name": "Single-shape dimension registers once, not twice (#1481)::A single-shape dimension created with a tolerance also registers once",
+    "bridge_function": "OCCTDocumentGetRefDimensionCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "ref_dimension_count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "ref_dimension_count": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: ref_dimension_count for the shape. Bridge: the test observed refDimensionCount == 1 for a dimension created with lowerTolerance -0.1 and upperTolerance 0.1. Kernel: the probe attached the same tolerance (SetLowerTolValue/SetUpperTolValue) before registering the dimension with the single-shape overload, and GetRefDimensionLabels returned 1.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-parity/"
+  },
+  {
+    "test_name": "Single-shape dimension registers once, not twice (#1481)::Two shapes each carrying one dimension report one ref each, not two",
+    "bridge_function": "OCCTDocumentGetRefDimensionCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "ref_dimension_counts": [
+          1,
+          1
+        ],
+        "dimension_count": 2
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "ref_dimension_counts": [
+          1,
+          1
+        ],
+        "dimension_count": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: ref_dimension_counts for shape 1 and shape 2, and dimension_count. Bridge: the test observed dimensionCount == 2 and refDimensionCount == 1 for each label. Kernel: the probe registered one dimension on each of two boxes with the single-shape overload; GetDimensionLabels returned 2 and GetRefDimensionLabels returned 1 for each shape.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-parity/"
+  },
+  {
+    "test_name": "Issue #1588: TObjApplication release path::a single get + release round-trip does not crash and leaves the singleton usable",
+    "bridge_function": "OCCTTObjApplicationIsVerbose",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "verbose_after_set_true": true
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "verbose_after_set_true": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: verbose_after_set_true. Bridge: the test called OCCTTObjApplicationSetVerbose(again, true) after a get, release and second get, and OCCTTObjApplicationIsVerbose returned true. Kernel: TObj_Application::GetInstance()->SetVerbose(true) then IsVerbose() returned true. The singleton's release path (ref counting, double release, 500 get/release cycles) is bridge-side and has no kernel counterpart, so the compared quantities are the singleton's state after the calls.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-parity/"
+  },
+  {
+    "test_name": "Issue #1588: TObjApplication release path::releasing more times than the singleton was fetched (double-release) does not crash",
+    "bridge_function": "OCCTTObjApplicationIsVerbose",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "verbose_after_set_false": false,
+        "document_created": true
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "verbose_after_set_false": false,
+        "document_created": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: verbose_after_set_false and document_created. Bridge: after a double release and a second get the test observed IsVerbose false after SetVerbose(false) and OCCTTObjApplicationCreateDocument non-nil. Kernel: SetVerbose(false) then IsVerbose() returned false, and CreateNewDocument(doc, BinOcaf), the call the bridge makes, returned true with a non-null document. The singleton's release path (ref counting, double release, 500 get/release cycles) is bridge-side and has no kernel counterpart, so the compared quantities are the singleton's state after the calls.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-parity/"
+  },
+  {
+    "test_name": "Issue #1588: TObjApplication release path::many repeated get+release cycles leave the singleton alive and functional",
+    "bridge_function": "OCCTTObjApplicationCreateDocument",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "document_created": true
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "document_created": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: document_created. Bridge: after 500 get/release cycles the test required OCCTTObjApplicationCreateDocument to return a document. Kernel: CreateNewDocument(doc, BinOcaf), the call the bridge makes, returned true with a non-null document. The singleton's release path (ref counting, double release, 500 get/release cycles) is bridge-side and has no kernel counterpart, so the compared quantities are the singleton's state after the calls.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-parity/"
+  },
+  {
+    "test_name": "Issue #1588: TObjApplication release path::TObjApplication.shared accessed and dropped repeatedly (deinit -> Release) stays usable",
+    "bridge_function": "OCCTTObjApplicationIsVerbose",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "verbose_after_set_true": true,
+        "document_created": true
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "verbose_after_set_true": true,
+        "document_created": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: verbose_after_set_true and document_created. Bridge: after 500 shared-instance accesses the test set isVerbose true, observed it true, and createDocument() returned a document. Kernel: SetVerbose(true) then IsVerbose() returned true, and CreateNewDocument(doc, BinOcaf) returned true with a non-null document. The singleton's release path (ref counting, double release, 500 get/release cycles) is bridge-side and has no kernel counterpart, so the compared quantities are the singleton's state after the calls.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-parity/"
+  },
+  {
+    "test_name": "Issue #173, instanced assembly STEP writer::geometry is shared: 1 BREP + N occurrences, size scales with unique parts",
+    "bridge_function": "OCCTDocumentAddComponentMatrix",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "manifold_solid_brep": 1,
+        "nauo": 20
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "manifold_solid_brep": 1,
+        "nauo": 20
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "Issue #173, instanced assembly STEP writer::round-trips: written assembly reads back with the same occurrence count",
+    "bridge_function": "OCCTDocumentAddComponentMatrix",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "max_components_under_a_root": 8
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "max_components_under_a_root": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: max_components_under_a_root. Bridge: the test wrote an 8-instance assembly, reloaded it, walked every node and observed maxChildren == 8 (node.children.count). Kernel: the probe wrote the same 8-instance assembly with STEPCAFControl_Writer, read it back with STEPCAFControl_Reader and took the maximum XCAFDoc_ShapeTool::GetComponents length over the free shapes, 8.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "Issue #173, instanced assembly STEP writer::empty path throws, not crashes",
+    "bridge_function": "OCCTDocumentWriteSTEP",
+    "bridge_output": {
+      "type": "n/a",
+      "data": {
+        "observed": "Exporter.writeSTEPAssembly throws ExportError.invalidPath"
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": {
+        "reason": "the empty-path check is Swift code in Exporter.writeSTEPAssembly, before any bridge or OCCT call"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "No kernel counterpart. Exporter.writeSTEPAssembly refuses an empty URL path with ExportError.invalidPath before reaching document.writeSTEP (OCCTDocumentWriteSTEP), so no bridge or OCCT call is made and there is nothing to compare.",
+    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+  },
+  {
+    "test_name": "TDataStd Integer Attribute::Set and get integer",
+    "bridge_function": "OCCTDocumentGetIntegerAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 42
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 42
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd Integer Attribute::Change integer value",
+    "bridge_function": "OCCTDocumentGetIntegerAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 99
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 99
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd Integer Attribute::No integer on fresh label",
+    "bridge_function": "OCCTDocumentGetIntegerAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "integer_present": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "integer_present": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: integer_present. Bridge: label.integer on a fresh child label returned nil (OCCTDocumentGetIntegerAttr returned false), so integer_present is false. Kernel: a child of a child of Main has no TDataStd_Integer attribute (IsAttribute false).",
+    "probe": "Scripts/repro/766-xcaf-intpackedmap/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::setAndAdd",
+    "bridge_function": "OCCTIntPackedMapContains",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "c42": true,
+        "c100": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "c42": true,
+        "c100": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::extent",
+    "bridge_function": "OCCTIntPackedMapExtent",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "extent": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "extent": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::remove",
+    "bridge_function": "OCCTIntPackedMapRemove",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "removed": true,
+        "contains_10_after_remove": false,
+        "extent_after_remove": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "removed": true,
+        "contains_10_after_remove": false,
+        "extent_after_remove": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, from the test's own scenario (add 10 and 20, remove 10). Bridge: the test observed intPackedMapRemove true, intPackedMapContains(10) false and intPackedMapCount == 1. Kernel: TDataStd_IntPackedMap Remove(10) returned true, Contains(10) false, Extent 1.",
+    "probe": "Scripts/repro/766-xcaf-intpackedmap/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::clearAndEmpty",
+    "bridge_function": "OCCTIntPackedMapClear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "empty_before_clear": false,
+        "empty_after_clear": true,
+        "extent_after_clear": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "empty_before_clear": false,
+        "empty_after_clear": true,
+        "extent_after_clear": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, from the test's own scenario (add 5, clear). Bridge: the test observed intPackedMapIsEmpty false before, true after intPackedMapClear, and intPackedMapCount == 0. Kernel: TDataStd_IntPackedMap IsEmpty false before Clear, true after, Extent 0.",
+    "probe": "Scripts/repro/766-xcaf-intpackedmap/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::getValues",
+    "bridge_function": "OCCTIntPackedMapGetValues",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "extent": 3,
+        "values_sorted": [
+          7,
+          42,
+          99
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "extent": 3,
+        "values_sorted": [
+          7,
+          42,
+          99
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, from the test's own scenario (add 7, 42 and 99). Bridge: the test observed values.count == 3 and that values contains 7, 42 and 99; it asserts no order, so the values are recorded sorted. Kernel: Extent 3, and iterating GetMap() gave 7, 42, 99 (sorted).",
+    "probe": "Scripts/repro/766-xcaf-intpackedmap/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::changeValues",
+    "bridge_function": "OCCTIntPackedMapChangeValues",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "extent": 5,
+        "c30": true,
+        "c1": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "extent": 5,
+        "c30": true,
+        "c1": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataXtd PatternStd Tests::setAndGetSignature",
+    "bridge_function": "OCCTDocumentPatternGetSignature",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "signature": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "signature": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the signature ordinal. Bridge: the test set PatternSignature.linear (raw value 1) and patternGetSignature returned .linear; OCCTDocumentPatternGetSignature returns the int32 that Swift maps back through PatternSignature(rawValue:), so the ordinal is 1. Kernel: TDataXtd_PatternStd Signature(1) read back as 1.",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd PatternStd Tests::hasPattern",
+    "bridge_function": "OCCTDocumentHasPattern",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd PatternStd Tests::noPattern",
+    "bridge_function": "OCCTDocumentHasPattern",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has_pattern": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "has_pattern": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: has_pattern. Bridge: doc.hasPattern(labelId:) on a fresh label returned false. Kernel: a fresh label has no TDataXtd_PatternStd attribute (IsAttribute(GetPatternID()) false).",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Placement Tests::setAndHas",
+    "bridge_function": "OCCTDocumentHasPlacement",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Placement Tests::noPlacement",
+    "bridge_function": "OCCTDocumentHasPlacement",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has_placement": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "has_placement": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: has_placement. Bridge: doc.hasPlacement(labelId:) on a fresh label returned false. Kernel: a fresh label has no TDataXtd_Placement attribute (IsAttribute false).",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Position Attribute::Set and get position attribute",
+    "bridge_function": "OCCTDocumentGetPositionAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "p": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "p": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Position Attribute::Label without position attribute",
+    "bridge_function": "OCCTDocumentHasPositionAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has_position": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "has_position": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: has_position. Bridge: label.hasPositionAttribute was false and positionAttribute() was nil (OCCTDocumentHasPositionAttr returns TDataXtd_Position::Get's result). Kernel: a fresh label has no TDataXtd_Position attribute (IsAttribute false).",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Presentation Tests::setAndHas",
+    "bridge_function": "OCCTDocumentHasPresentation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Presentation Tests::colorAndTransparency",
+    "bridge_function": "OCCTDocumentPresentationGetColor",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "color": 12,
+        "transparency": 0.5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "color": 12,
+        "transparency": 0.5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Presentation Tests::widthAndMode",
+    "bridge_function": "OCCTDocumentPresentationGetWidth",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "width": 2.0,
+        "mode": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "width": 2.0,
+        "mode": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: width (a double) and mode. Bridge: the test observed presentationGetWidth within 1e-6 of 2.0 and mode == 1. Kernel: TDataXtd_Presentation Width() printed 2 (%g) after SetWidth(2.0), and Mode() printed 1; both sides are recorded as the double 2.0.",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Presentation Tests::displayState",
+    "bridge_function": "OCCTDocumentPresentationIsDisplayed",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDataXtd Presentation Tests::unsetPresentation",
+    "bridge_function": "OCCTDocumentUnsetPresentation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has_after_unset": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "has_after_unset": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label tag",
+    "bridge_function": "OCCTDocumentLabelTag",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "tag": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tag": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label depth",
+    "bridge_function": "OCCTDocumentLabelDepth",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "main_depth": 1,
+        "child_depth": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "main_depth": 1,
+        "child_depth": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: main_depth and child_depth. Bridge: the test observed main.depth == 1 and, for a label created under Main, child.depth == 2 (OCCTDocumentLabelDepth). Kernel: TDF_Label::Depth() of Main is 1 and of a child of Main is 2. Kernel values are from the supplementary probe, which runs the test's own scenario through the TDF_Label call the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tdf-label-property/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label isNull",
+    "bridge_function": "OCCTDocumentLabelIsNull",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "main_is_null": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "main_is_null": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: main_is_null. Bridge: main.isNull was false (OCCTDocumentLabelIsNull). Kernel: TDF_Label::IsNull() of Main() printed false. Kernel values are from the supplementary probe, which runs the test's own scenario through the TDF_Label call the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tdf-label-property/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label isRoot",
+    "bridge_function": "OCCTDocumentLabelIsRoot",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "main": false,
+        "root": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "main": false,
+        "root": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label father",
+    "bridge_function": "OCCTDocumentLabelFather",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "father_is_main": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "father_is_main": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: father_is_main. Bridge: child.father?.labelId == main.labelId was true (OCCTDocumentLabelFather registers the father label; equal ids mean the same TDF_Label). Kernel: child.Father().IsEqual(Main()) is true (father entry 0:1). Kernel values are from the supplementary probe, which runs the test's own scenario through the TDF_Label call the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tdf-label-property/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label root",
+    "bridge_function": "OCCTDocumentLabelRoot",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "root_is_root": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "root_is_root": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: root_is_root. Bridge: child.root?.isRoot was true (OCCTDocumentLabelRoot, then OCCTDocumentLabelIsRoot). Kernel: child.Root().IsRoot() is true. Kernel values are from the supplementary probe, which runs the test's own scenario through the TDF_Label call the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tdf-label-property/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label hasAttribute and attributeCount",
+    "bridge_function": "OCCTDocumentLabelHasAttribute",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "fresh_has_attribute": false,
+        "fresh_attribute_count": 0,
+        "after_name_has_attribute": true,
+        "after_name_attribute_count_at_least_1": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_has_attribute": false,
+        "fresh_attribute_count": 0,
+        "after_name_has_attribute": true,
+        "after_name_attribute_count_at_least_1": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: label.hasAttribute false and attributeCount == 0 on a fresh label; after setName, hasAttribute true and attributeCount >= 1 (the test asserts a lower bound, so the boolean at-least-1 is compared). Kernel: TDF_Label::HasAttribute() false and NbAttributes() 0 when fresh; after TDataStd_Name::Set, true and NbAttributes() 1, so at-least-1 is true. Kernel values are from the supplementary probe, which runs the test's own scenario through the TDF_Label call the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tdf-label-property/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label hasChild and childCount",
+    "bridge_function": "OCCTDocumentLabelNbChildren",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "after": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "after": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label findChild by tag",
+    "bridge_function": "OCCTDocumentLabelFindChild",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "existing_child_found": true,
+        "missing_child_found": false,
+        "created_child_found": true,
+        "child_count_after_create": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "existing_child_found": true,
+        "missing_child_found": false,
+        "created_child_found": true,
+        "child_count_after_create": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: findChild(tag: child.tag) non-nil, findChild(tag: 999, create: false) nil, findChild(tag: 999, create: true) non-nil, and childCount == 2 (OCCTDocumentLabelFindChild returns -1 for a null child). Kernel: FindChild(existing tag, false) is the existing child, FindChild(999, false) is null, FindChild(999, true) is not null, and NbChildren() is 2. Kernel values are from the supplementary probe, which runs the test's own scenario through the TDF_Label call the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tdf-label-property/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label forgetAllAttributes",
+    "bridge_function": "OCCTDocumentLabelForgetAllAttributes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "after": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "after": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label descendants",
+    "bridge_function": "OCCTDocumentGetDescendantLabels",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "direct": 2,
+        "all": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "direct": 2,
+        "all": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Properties::Label descendants past the 1024 buffer cap reports the true count (#1563)",
+    "bridge_function": "OCCTDocumentGetDescendantLabels",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "children_created": 1029,
+        "descendants_reported": 1029
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "children_created": 1029,
+        "descendants_reported": 1029
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: after creating 1024 + 5 children the test observed parent.descendants(allLevels: false).count == 1029 (OCCTDocumentGetDescendantLabels reports the true count even past its 1024-entry buffer, #1563). Kernel: TDF_ChildIterator over the direct children walks all 1029. Kernel values are from the supplementary probe, which runs the test's own scenario through the TDF_Label call the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tdf-label-property/"
+  },
+  {
+    "test_name": "TFunction Logbook::Create logbook and mark labels",
+    "bridge_function": "OCCTDocumentLogbookIsModified",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "set_logbook": true,
+        "fresh_is_empty": true,
+        "empty_after_touch": false,
+        "t1_modified": true,
+        "t2_modified": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "set_logbook": true,
+        "fresh_is_empty": true,
+        "empty_after_touch": false,
+        "t1_modified": true,
+        "t2_modified": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: setLogbook true, logbookIsEmpty true when fresh, then after logbookSetTouched(target1) logbookIsEmpty false, logbookIsModified(target1) true and logbookIsModified(target2) false. Kernel: TFunction_Logbook::Set returned a non-null logbook (found on the root, where the bridge looks for it), IsEmpty() true when fresh, then after SetTouched(t1) IsEmpty() false, IsModified(t1) true, IsModified(t2) false. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tfunction-parity/"
+  },
+  {
+    "test_name": "TFunction Logbook::Logbook impacted and clear",
+    "bridge_function": "OCCTDocumentLogbookClear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "empty_after_clear": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "empty_after_clear": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction Scope Tests::setFunctionScope",
+    "bridge_function": "OCCTDocumentSetFunctionScope",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "scope_set": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "scope_set": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: scope_set. Bridge: setFunctionScope returned true (OCCTDocumentSetFunctionScope returns !scope.IsNull()). Kernel: TFunction_Scope::Set(Data->Root()) returned a non-null scope. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tfunction-parity/"
+  },
+  {
+    "test_name": "TFunction Scope Tests::addAndHasFunction",
+    "bridge_function": "OCCTDocumentFunctionScopeHas",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "added": true,
+        "has": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "added": true,
+        "has": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction Scope Tests::removeFunction",
+    "bridge_function": "OCCTDocumentFunctionScopeRemove",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "removed": true,
+        "has": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "removed": true,
+        "has": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction Scope Tests::removeAllFunctions",
+    "bridge_function": "OCCTDocumentFunctionScopeRemoveAll",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": 2,
+        "after": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": 2,
+        "after": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction Scope Tests::freeID",
+    "bridge_function": "OCCTDocumentFunctionScopeGetFreeID",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "fresh_free_id_at_least_1": true,
+        "free_id_increases_after_add": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_free_id_at_least_1": true,
+        "free_id_increases_after_add": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: functionScopeFreeID >= 1 on a fresh scope, and after functionScopeAdd on one label functionScopeFreeID is greater than before. Kernel: TFunction_Scope::GetFreeID() printed 1 on a fresh scope and 2 after AddFunction, so at-least-1 and increased are both true. The previous kernel value, 3, was read after two adds and a RemoveAllFunctions and is not the test's scenario. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tfunction-parity/"
+  },
+  {
+    "test_name": "TDataStd_Tick Tests::setAndHas",
+    "bridge_function": "OCCTDocumentSetTick",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TDataStd_Tick Tests::remove",
+    "bridge_function": "OCCTDocumentRemoveTick",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "present_before_remove": true,
+        "present_after_remove": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "present_before_remove": true,
+        "present_after_remove": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, from the test's scenario (tag 501). Bridge: removeTick returned true, which OCCTDocumentRemoveTick does only when the tick was found (so present_before_remove is true), and hasTick then returned false. Kernel: FindAttribute(TDataStd_Tick) found it before ForgetAttribute and not after. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tfunction-parity/"
+  },
+  {
+    "test_name": "TDataStd_Tick Tests::removeNonExistent",
+    "bridge_function": "OCCTDocumentRemoveTick",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "present_before_remove": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "present_before_remove": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: present_before_remove for tag 502. Bridge: removeTick(502) returned false, which OCCTDocumentRemoveTick does exactly when no TDataStd_Tick is found on the label. Kernel: FindAttribute(TDataStd_Tick) on tag 502 is false. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tfunction-parity/"
+  },
+  {
+    "test_name": "TNaming Naming Tests::insertNaming",
+    "bridge_function": "OCCTDocumentInsertNaming",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "naming_inserted": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "naming_inserted": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: naming_inserted. Bridge: insertNaming returned true (OCCTDocumentInsertNaming returns !naming.IsNull()). Kernel: TNaming_Naming::Insert(label) returned a non-null attribute. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tnaming-select-resolve/"
+  },
+  {
+    "test_name": "TNaming Naming Tests::namingIsDefined",
+    "bridge_function": "OCCTDocumentNamingIsDefined",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "naming_is_defined": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "naming_is_defined": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the value namingIsDefined reports, false. The values agree, the mechanisms do not, and the test's comment (\"not yet defined\") describes the wrong one. Bridge: OCCTDocumentNamingIsDefined looks the naming up with FindAttribute on the label it is given and returns false when it is not found. Kernel: TNaming_Naming::Insert(0:1:1) puts the attribute on the child label 0:1:1:1, so a FindAttribute on 0:1:1 finds nothing (false), while IsDefined() of the inserted attribute is also false. The bridge's false therefore comes from the lookup miss, not from IsDefined. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tnaming-select-resolve/"
+  },
+  {
+    "test_name": "TNaming Scope Tests::validAndIsValid",
+    "bridge_function": "OCCTDocumentNamingScopeIsValid",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Scope Tests::unvalid",
+    "bridge_function": "OCCTDocumentNamingScopeUnvalid",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "valid_after_unvalid": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "valid_after_unvalid": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: valid_after_unvalid. Bridge: after namingScopeValid then namingScopeUnvalid, namingScopeIsValid returned false. Kernel: TNaming_Scope Valid(v1) then Unvalid(v1), IsValid(v1) printed false.",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming Scope Tests::validCount",
+    "bridge_function": "OCCTDocumentNamingScopeValidCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count_at_least_2": true,
+        "count_after_clear": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count_at_least_2": true,
+        "count_after_clear": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: after two namingScopeValid calls namingScopeValidCount >= 2 (the test asserts a lower bound), and after namingScopeClear it is 0. Kernel: TNaming_Scope GetValid().Extent() printed 2 after two Valid calls, so at-least-2 is true, and 0 after ClearValid.",
+    "probe": "Scripts/repro/766-xcaf-tnaming/"
+  },
+  {
+    "test_name": "TNaming, Select and Resolve::Select a shape within context",
+    "bridge_function": "OCCTDocumentNamingSelect",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "select_ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "select_ok": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: select_ok. Bridge: selectShape(rectangle face, context: box) returned true (OCCTDocumentNamingSelect returns TNaming_Selector::Select). The selection is the unrelated planar rectangle face from Wire.rectangle(10, 10), not a face of the box. Kernel: Select of that rectangle face within the box returned true. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tnaming-select-resolve/"
+  },
+  {
+    "test_name": "TNaming, Select and Resolve::Resolve returns a shape",
+    "bridge_function": "OCCTDocumentNamingResolve",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "select_ok": true,
+        "resolved_non_null": true,
+        "resolved_face_count_at_least_1": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "select_ok": true,
+        "resolved_non_null": true,
+        "resolved_face_count_at_least_1": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, from the test's own flow (select a face of the box, then resolve). Bridge: selectShape true, resolveShape non-nil, and the resolved shape's face count >= 1 (the test asserts a lower bound; OCCTDocumentNamingResolve builds a NEW TNaming_Selector on the label and returns nullptr unless Solve succeeds). Kernel: Select true; a new selector's Solve was true, the named shape non-empty, and CurrentShape non-null. It has type COMPOUND with 6 faces, that is the whole box, not the single selected face, so the comparison is on the lower bound only. The shared transcript's Solve=false came from a different flow (one selector object, a command open) and is not this comparison. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tnaming-select-resolve/"
+  },
+  {
+    "test_name": "TNaming, Select and Resolve::Selected evolution type",
+    "bridge_function": "OCCTDocumentNamingGetEvolution",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "evolution": "SELECTED"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "evolution": "SELECTED"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the evolution, by name. Bridge: namingEvolution returned .selected (Swift raw value 4, OCCTNamingSelected), which OCCTDocumentNamingGetEvolution maps by a switch from TNaming_SELECTED. Kernel: the named shape's Evolution() is TNaming_SELECTED, whose kernel ordinal is 5 (TNaming_REPLACE is 4), so the ordinals differ and only the names are compared. The selection was the unrelated rectangle face, as in the test. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-tnaming-select-resolve/"
+  },
+  {
+    "test_name": "XDE Area Volume Centroid::Set and get area",
+    "bridge_function": "OCCTDocumentGetArea",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "area": 2200.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "area": 2200.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: area, as a double. Bridge: node.area was within 1e-5 of 2200.0 after node.setArea(2200.0) (OCCTDocumentGetArea). Kernel: XCAFDoc_Area::Set(label, 2200.0) then Get read back 2200 (printed %.17g, exact). Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-parity/"
+  },
+  {
+    "test_name": "XDE Area Volume Centroid::Set and get volume",
+    "bridge_function": "OCCTDocumentGetVolume",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "volume": 6000.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "volume": 6000.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: volume, as a double. Bridge: node.volume was within 1e-5 of 6000.0 after node.setVolume(6000.0) (OCCTDocumentGetVolume). Kernel: XCAFDoc_Volume::Set(label, 6000.0) then Get read back 6000 (printed %.17g, exact). Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-parity/"
+  },
+  {
+    "test_name": "XDE Area Volume Centroid::Set and get centroid",
+    "bridge_function": "OCCTDocumentGetCentroid",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "c": [
+          5,
+          10,
+          15
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "c": [
+          5,
+          10,
+          15
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE Assembly Operations::AddComponent creates assembly",
+    "bridge_function": "OCCTDocumentGetComponentCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "components": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "components": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE Assembly Operations::GetComponents and GetReferredShape",
+    "bridge_function": "OCCTDocumentGetComponentReferredLabelId",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "component_found": true,
+        "referred_shape_found": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "component_found": true,
+        "referred_shape_found": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: componentLabelId(at: 0) >= 0 and componentReferredLabelId >= 0 (OCCTDocumentGetComponentReferredLabelId returns -1 unless GetReferredShape succeeds with a non-null label). Kernel: GetComponents returned 1 component, the first being the one added, and GetReferredShape returned true with a non-null label, which IsEqual the part label. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-parity/"
+  },
+  {
+    "test_name": "XDE Assembly Operations::RemoveComponent",
+    "bridge_function": "OCCTDocumentRemoveComponent",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": 2,
+        "after": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": 2,
+        "after": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE Assembly Operations::ShapeUserCount",
+    "bridge_function": "OCCTDocumentGetShapeUserCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "users_positive": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "users_positive": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: users_positive. Bridge: shapeUserCount(shapeLabelId:) > 0 for a box used by one component (the test asserts a lower bound). Kernel: XCAFDoc_ShapeTool::GetUsers on that box label printed 1, so users_positive is true. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-parity/"
+  },
+  {
+    "test_name": "XDE Assembly Operations::UpdateAssemblies",
+    "bridge_function": "OCCTDocumentUpdateAssemblies",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "component_count": 1,
+        "solids_in_assembly_shape": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "component_count": 1,
+        "solids_in_assembly_shape": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: after updateAssemblies the test observed componentCount == 1 and the assembly node's shape holding one solid (node.shape?.subShapes(ofType: .solid).count == 1). Kernel: after UpdateAssemblies NbComponents is 1 and XCAFDoc_ShapeTool::GetShape of the assembly holds 1 solid. Kernel values are from the supplementary probe, which runs the test's own scenario through the calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-parity/"
+  },
+  {
+    "test_name": "XDE Editor::EditorExpand compound to assembly",
+    "bridge_function": "OCCTDocumentEditorExpand",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "expand_ok": true,
+        "component_count": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "expand_ok": true,
+        "component_count": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: editorExpand returned true and componentCount(assemblyLabelId:) == 2 for a box-plus-sphere compound added with makeAssembly false. Kernel: XCAFDoc_Editor::Expand(Main, label, false) on the same two-body compound returned true and NbComponents is 2.",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE Editor::RescaleGeometry",
+    "bridge_function": "OCCTDocumentEditorRescaleGeometry",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "rescale_ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "rescale_ok": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: rescale_ok. Bridge: rescaleGeometry(labelId:, scaleFactor: 2.0, forceIfNotRoot: true) returned true for a box added with the default makeAssembly. Kernel: XCAFDoc_Editor::RescaleGeometry(label, 2.0, true) on a free box label returned true.",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE ColorTool by Shape::SetColor and GetColor by shape",
+    "bridge_function": "OCCTDocumentIsShapeColorSet",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "is_set": true,
+        "red": 1.0,
+        "green": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "is_set": true,
+        "red": 1.0,
+        "green": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: isShapeColorSet true, and shapeColor's red within 1e-5 of 1.0 and green within 1e-5 of 0.0. The test asserts red and green and never blue or alpha, which is why the record holds two channels. Kernel: XCAFDoc_ColorTool IsSet true, and GetColor after SetColor(1, 0, 0, alpha 1) read back rgba (1, 0, 0, 1) exactly (printed %.17g); blue 0 and alpha 1 are not compared because the test does not assert them. Kernel values are from the supplementary probe, which runs the test's own scenario through the XCAFDoc_ColorTool / XCAFDoc_LayerTool calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-color-layer-parity/"
+  },
+  {
+    "test_name": "XDE ColorTool by Shape::Label visibility",
+    "bridge_function": "OCCTDocumentSetLabelVisibility",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "false_then_true": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "false_then_true": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE ColorTool by Shape::Shape color round-trips a non-opaque alpha (#763)",
+    "bridge_function": "OCCTDocumentGetShapeColor",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "rgba": [
+          0.2,
+          0.4,
+          0.6,
+          0.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "rgba": [
+          0.2,
+          0.4,
+          0.6,
+          0.5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: rgba, compared within the test's 1e-5. Bridge: shapeColor's channels were within 1e-5 of 0.2, 0.4, 0.6 and 0.5. Kernel: GetColor read back (0.20000000298023224, 0.40000000596046448, 0.60000002384185791, 0.5) at %.17g, because Quantity_Color stores single-precision floats; each is within 2.4e-8 of the value set, so both sides are recorded as the value set. Kernel values are from the supplementary probe, which runs the test's own scenario through the XCAFDoc_ColorTool / XCAFDoc_LayerTool calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-color-layer-parity/"
+  },
+  {
+    "test_name": "XDE ColorTool by Shape::Shape color round-trips full opacity (#763 regression guard)",
+    "bridge_function": "OCCTDocumentGetShapeColor",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "alpha": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "alpha": 1.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: alpha, as a double. Bridge: shapeColor's alpha was within 1e-5 of 1.0 for an opaque colour. Kernel: GetColor after SetColor(1, 0, 0, alpha 1) read back alpha 1 exactly (printed %.17g). Kernel values are from the supplementary probe, which runs the test's own scenario through the XCAFDoc_ColorTool / XCAFDoc_LayerTool calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-color-layer-parity/"
+  },
+  {
+    "test_name": "XDE LayerTool Expansion::SetLayer and IsLayerSet",
+    "bridge_function": "OCCTDocumentIsLayerSet",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "set": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "set": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE LayerTool Expansion::GetLayers returns layer names",
+    "bridge_function": "OCCTDocumentGetLabelLayers",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 1,
+        "first": "TestLayer"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 1,
+        "first": "TestLayer"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE LayerTool Expansion::FindLayer and layer visibility",
+    "bridge_function": "OCCTDocumentGetLayerVisibility",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "found": true,
+        "false_then_true": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "found": true,
+        "false_then_true": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xde/"
+  },
+  {
+    "test_name": "XDE LayerTool Expansion::GetLayers past the 16 buffer cap reports the true count (#1563)",
+    "bridge_function": "OCCTDocumentGetLabelLayers",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "layers_set": 19,
+        "layers_reported": 19
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "layers_set": 19,
+        "layers_reported": 19
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: after setting 16 + 3 layers on the node the test observed layers.count == 19 (OCCTDocumentGetLabelLayers reports the true total even past its 16-entry buffer, #1563). Kernel: XCAFDoc_LayerTool::GetLayers of the label returned a sequence of 19. Kernel values are from the supplementary probe, which runs the test's own scenario through the XCAFDoc_ColorTool / XCAFDoc_LayerTool calls the bridge makes.",
+    "probe": "Scripts/repro/766-xcaf-xde-color-layer-parity/"
   }
 ]

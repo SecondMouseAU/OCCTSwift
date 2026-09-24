@@ -15553,6 +15553,327 @@
     }
   },
   {
+    "test_name": "Curve2D knot-splitting duplicates (#562)::A curve with more splits than the first-pass buffer reports all of them",
+    "bridge_function": "Curve2D.splitIndicesAtDiscontinuities (retry)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 302,
+        "last": 302
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 302,
+        "last": 302
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the split count and the last split index. Bridge: indices.count and indices.last, both asserted by the test. Kernel: transcript.txt line 1 ('NbSplits=302 last=302'), Geom2dConvert_BSplineCurveKnotSplitting NbSplits() as count and SplitValue(NbSplits()) as last.",
+    "evidence": {
+      "injection": "no retry: result cut at 256",
+      "red": "Issue562Curve2DKnotSplitDuplicateTests.swift:43:9: Expectation failed: indices.count == 302",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D knot-splitting duplicates (#562)::The retry boundary is exact at 255, 256 and 257 splits",
+    "bridge_function": "Curve2D.splitIndicesAtDiscontinuities (retry)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "255": 255,
+        "256": 256,
+        "257": 257
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "255": 255,
+        "256": 256,
+        "257": 257
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "no retry: result cut at 256",
+      "red": "Issue562Curve2DKnotSplitDuplicateTests.swift:54:13: Expectation failed: indices?.count == splits",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D reports the nearest point over the range (#615)::A half circle queried from below answers with the near end, not the far side",
+    "bridge_function": "occtNearestProjectionOnCurve2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "u": 0,
+        "distance": 7.81024967590665
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "u": 0,
+        "distance": 7.81024967590665
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the nearest point of the half circle (radius 5, [0, pi]) to (0, -6), as parameter u and distance, both printed at 15 significant digits (the bridge value measured 7.810249675906654 at 17). Bridge: Curve2D.project(point:), which takes the nearest of the interior extrema and both ends. Kernel: transcript.txt line 5 ('half circle from (0,-6): ... nearest u=0 distance=7.81024967590665'), the probe taking the same nearest-of-extrema-and-ends. The pre-#615 answer (interior extrema only, distance 11 at u = pi/2, transcript.txt line 9) is the defect the injection reproduces, not the current kernel answer, so it is kept under evidence.defect_reference and is not compared.",
+    "evidence": {
+      "defect_reference": {
+        "what": "Geom2dAPI_ProjectPointOnCurve interior extrema only, from (0, -6)",
+        "u": 1.57079632679,
+        "distance": 11
+      },
+      "injection": "pre-#615 projection: Geom2dAPI_ProjectPointOnCurve interior extrema only, ends ignored",
+      "red": "Issue615Curve2DNearestPointTests.swift:59:9: Expectation failed: abs(projected.distance - truth) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D reports the nearest point over the range (#615)::A point on the circle but off the arc answers with the arc's end",
+    "bridge_function": "occtNearestProjectionOnCurve2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distance": 4.47213595499958,
+        "point": [
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "distance": 4.47213595499958,
+        "point": [
+          5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#615 projection: Geom2dAPI_ProjectPointOnCurve interior extrema only, ends ignored",
+      "red": "Issue615Curve2DNearestPointTests.swift:79:9: Expectation failed: abs(projected.distance - 4.47213595499958) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D reports the nearest point over the range (#615)::A point past the end is answered, not refused",
+    "bridge_function": "occtNearestProjectionOnCurve2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "(100,0)": {
+          "u": 8,
+          "distance": 92
+        },
+        "(0,0)": {
+          "u": 3,
+          "distance": 3
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "(100,0)": {
+          "u": 8,
+          "distance": 92
+        },
+        "(0,0)": {
+          "u": 3,
+          "distance": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#615 projection: Geom2dAPI_ProjectPointOnCurve interior extrema only, ends ignored",
+      "red": "Issue615Curve2DNearestPointTests.swift:91:26: Expectation failed: segment.project(point: SIMD2(100, 0))",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D reports the nearest point over the range (#615)::All four nearest-point spellings agree on every query",
+    "bridge_function": "OCCTPoint2DDistanceToCurve",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "agree": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "agree": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Point2D.distance(to: curve) + 1e-3",
+      "red": "Issue615Curve2DNearestPointTests.swift:138:13: Expectation failed: projected.distance == point2D.distance(to: curve)",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D reports the nearest point over the range (#615)::The 2D and 3D answers match for the same geometry",
+    "bridge_function": "occtNearestProjectionOnCurve2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "2D == 3D": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "2D == 3D": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#615 projection: Geom2dAPI_ProjectPointOnCurve interior extrema only, ends ignored",
+      "red": "Issue615Curve2DNearestPointTests.swift:167:13: Expectation failed: abs(flat.distance - solid.distance) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D measured continuity encoding after the retirement (#619)::An analytic 2D curve reports CN as ordinal 6, the old encoding's 99 is unreachable",
+    "bridge_function": "OCCTCurve2DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "segment": 6
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "segment": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99)",
+      "red": "Issue619Curve2DContinuityEncodingTests.swift:34:9: Expectation failed: segment.continuity == 6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D measured continuity encoding after the retirement (#619)::A C1 pcurve reports C1 as ordinal 2, not 1",
+    "bridge_function": "OCCTCurve2DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "C1": 2,
+        "C2": 4,
+        "bsplineContinuity": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "C1": 2,
+        "C2": 4,
+        "bsplineContinuity": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99)",
+      "red": "Issue619Curve2DContinuityEncodingTests.swift:47:9: Expectation failed: c1.continuity == 2",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D measured continuity encoding after the retirement (#619)::A raw threshold of 2 now admits a merely-C1 pcurve; satisfies(.c2) still refuses it",
+    "bridge_function": "OCCTCurve2DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "C1 ordinal": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "C1 ordinal": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99)",
+      "red": "Issue619Curve2DContinuityEncodingTests.swift:63:9: Expectation failed: c1.continuity >= 2",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
     "test_name": "Curve2D Analysis Tests::Line-circle intersection finds 2 points",
     "bridge_function": "OCCTCurve2DIntersect",
     "bridge_output": {
