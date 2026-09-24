@@ -529,3 +529,19 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `clearAndEmpty` | `OCCTIntPackedMapClear` returns true without clearing | :42 Expectation failed: doc.intPackedMapIsEmpty(tag: 103); :43 Expectation failed: doc.intPackedMapCount(tag: 103) == 0 | passed | `OCCTIntPackedMapClear` | PASS: not empty before Clear, empty with extent 0 after, on both sides |
 | `getValues` | `OCCTIntPackedMapGetValues` returns no values | :53 Expectation failed: values.count == 3; :54 Expectation failed: values.contains(7) | passed | `OCCTIntPackedMapGetValues` | PASS: extent 3 and values {7, 42, 99} on both sides (compared as a set, sorted) |
 | `changeValues` | `OCCTIntPackedMapChangeValues` returns true without changing | :64 Expectation failed: doc.intPackedMapCount(tag: 105) == 5; :65 Expectation failed: doc.intPackedMapContains(tag: 105, value: 30) | passed | `OCCTIntPackedMapChangeValues` | PASS: 5; 30 in, 1 out |
+### `TDataXtdPatternStdTests.swift`
+| `setAndGetSignature` | `OCCTDocumentPatternGetSignature` answers 2 | :18 Expectation failed: sig == .linear | passed | `OCCTDocumentPatternGetSignature` | PASS: signature ordinal 1 on both sides (PatternSignature.linear raw value 1) |
+| `hasPattern` | `OCCTDocumentHasPattern` returns false | :28 Expectation failed: doc.hasPattern(labelId: node.labelId) | passed | `OCCTDocumentHasPattern` | PASS: true after Set |
+| `noPattern` | `OCCTDocumentHasPattern` returns true | :34 Expectation failed: !doc.hasPattern(labelId: node.labelId) | passed | `OCCTDocumentHasPattern` | PASS: no pattern attribute on a fresh label, on both sides |
+### `TDataXtdPlacementTests.swift`
+| `setAndHas` | `OCCTDocumentHasPlacement` returns false | :15 Expectation failed: doc.hasPlacement(labelId: node.labelId) | passed | `OCCTDocumentHasPlacement` | PASS: true |
+| `noPlacement` | `OCCTDocumentHasPlacement` returns true | :21 Expectation failed: !doc.hasPlacement(labelId: node.labelId) | passed | `OCCTDocumentHasPlacement` | PASS: no placement attribute on a fresh label, on both sides |
+### `TDataXtdPositionAttributeTests.swift`
+| `setGetPosition` | `OCCTDocumentGetPositionAttr` answers (0, 0, 0) | :19 Expectation failed: abs(pos.x - 1.0) < 1e-10; :20 Expectation failed: abs(pos.y - 2.0) < 1e-10 | passed | `OCCTDocumentGetPositionAttr` | PASS: (1, 2, 3) |
+| `noPositionAttribute` | `OCCTDocumentHasPositionAttr` returns true | :29 Expectation failed: !label.hasPositionAttribute | passed | `OCCTDocumentHasPositionAttr` | PASS: no position attribute on a fresh label, on both sides |
+### `TDataXtdPresentationTests.swift`
+| `setAndHas` | `OCCTDocumentHasPresentation` returns false | :16 Expectation failed: doc.hasPresentation(labelId: node.labelId) | passed | `OCCTDocumentHasPresentation` | PASS: true |
+| `colorAndTransparency` | `OCCTDocumentPresentationGetColor` answers 0 | :30 Expectation failed: color == 12 | passed | `OCCTDocumentPresentationGetColor` | PASS: 12, 0.5 |
+| `widthAndMode` | `OCCTDocumentPresentationGetWidth` answers 0 | :48 Expectation failed: abs(width - 2.0) < 1e-6 | passed | `OCCTDocumentPresentationGetWidth` | PASS: width 2.0 and mode 1 on both sides |
+| `displayState` | `OCCTDocumentPresentationIsDisplayed` returns false | :63 Expectation failed: doc.presentationIsDisplayed(labelId: node.labelId) | passed | `OCCTDocumentPresentationIsDisplayed` | PASS: true |
+| `unsetPresentation` | `OCCTDocumentUnsetPresentation` returns without unsetting | :74 Expectation failed: !doc.hasPresentation(labelId: node.labelId) | passed | `OCCTDocumentUnsetPresentation` | PASS: gone after Unset |
