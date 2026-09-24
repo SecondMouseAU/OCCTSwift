@@ -66,7 +66,10 @@ Fourteen gates, five censuses and one merge-history audit, all pure Python over 
 No OCCT, no build, no network, ~3s for the lot (a bare `census-unmeasured-values.py` run is ~13s).
 CI runs every gate, plus every `--self-test` including the censuses', in `ci.yml`'s `gate-scripts`
 job, a **required status check on `main`**. Each gate exits 1 on a defect and 0 when clean; a census
-exits 0 always, so CI runs only its `--self-test`. The rules behind the list, the gate/census
+exits 0 always, so CI runs only its `--self-test`. The job also runs one release check's
+`--self-test` and nothing else: `check-pinned-asset-patches.py` reaches a verdict like a gate, but
+reads the pinned xcframework to reach it, so its real run belongs to the pin step and it is counted
+as neither a gate nor a census. The rules behind the list, the gate/census/release-check
 distinction, the pre-commit hook and its one deliberate divergence from CI are in
 [`okf/policies/static-gates.md`](okf/policies/static-gates.md); the ruleset rules (never give the
 job a `name:` key, never require a check that has not yet reported, `main` takes PRs only) are in
@@ -93,6 +96,7 @@ python3 Scripts/census-comment-staleness.py      # CENSUS, not a gate: comments 
 python3 Scripts/census-api-reference-rows.py     # CENSUS, not a gate: API_REFERENCE category-row entries resolving to no declaration (#1679)
 python3 Scripts/check-inventory-prose.py        # every counted claim about the patch and gate inventories matches them (#1408)
 python3 Scripts/check-changelog-transcription.py # REPORT, not a gate yet: merges that landed with no CHANGELOG entry (#742)
+python3 Scripts/check-pinned-asset-patches.py --self-test  # RELEASE CHECK: only the self-test runs here; the real run reads the pinned asset (#2190)
 ```
 
 Run a script's `--self-test` whenever you change it: three gates were confidently wrong while

@@ -14,6 +14,12 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnullability-completeness"
 
+// int32_t and friends. Unconditional, and not left to Foundation: the Foundation import below is
+// guarded out on WASI (#2049), and with it went the only thing supplying the fixed-width types the
+// diagnostics declarations use, which is 19 `unknown type name 'int32_t'` errors on the first wasm
+// compile of this header (#2256).
+#include <stdint.h>
+
 #if !defined(__wasi__)
   #import <Foundation/Foundation.h>
 #endif

@@ -1,7 +1,7 @@
 ---
 type: policy
 title: Static gates and censuses
-description: The pure-Python gate scripts in Scripts/ are the repo's cheapest correctness signal. A gate exits 1 on a defect; a census exits 0 always and only its --self-test runs in CI. Every detector proves it is not blind. The pre-commit hook mirrors CI flag for flag, with one named exception.
+description: The pure-Python gate scripts in Scripts/ are the repo's cheapest correctness signal. A gate exits 1 on a defect; a census exits 0 always and only its --self-test runs in CI; a release check's verdict is taken at the pin, so only its --self-test runs there too. Every detector proves it is not blind. The pre-commit hook mirrors CI flag for flag, with one named exception.
 tags: [policy, gates, ci, scripts, detectors, testing, agents]
 timestamp: 2026-09-07
 ---
@@ -80,6 +80,38 @@ states plainly what that leaves uncaught. Its `--tree` mode is the real check an
 `check-changelog-transcription.py` is a third kind, a **report**: it audits the branch's merge
 history for merges that landed with no CHANGELOG entry, and is not yet a gate.
 
+## The fourth kind: a release check
+
+`gate-scripts` runs one release check, `check-pinned-asset-patches.py` (#2190), and runs its
+`--self-test` alone. A **release check** answers a question about something the repo points at
+rather than something the repo contains, so its real run belongs to the step where that pointer
+moves, not to every PR. This one reads `Libraries/OCCT.xcframework`, 157 MB of static archive per
+slice across three slices, to decide whether the pinned asset holds the patches `Scripts/patches/`
+says it holds; it is run at the pin, per `CLAUDE.md`'s Release Process and
+[pinned-kernel-patch-check](pinned-kernel-patch-check.md).
+
+It is deliberately **not** counted as a gate or as a census, and neither would have been a smaller
+edit than saying so:
+
+- not a gate, because a gate's bare run is what gates, and this job cannot make that run at all.
+  Calling it the fifteenth gate would say fifteen bare invocations protect `main` when fourteen do.
+- not a census, because a census's bare run *could* run here and simply would not signal, exiting 0
+  over a list for a human to adjudicate. This one reaches a verdict and exits 1 on a defect. Calling
+  it the sixth census would say the repo holds six detectors that report without deciding.
+
+What it shares with a census is only the shape of its CI entry, and that shape is what tells the
+buckets apart mechanically: `check-inventory-prose.py` classifies a script the job runs *only* as
+`--self-test` and that is not a census as a release check, and requires it to define a
+`--require-...` flag, the #2098 mode that turns a run which examined nothing into an error. A gate
+whose bare invocation nobody added would otherwise land in this bucket and be counted, and
+described here, as a release check.
+
+**Its `--self-test` runs on every PR for a sharper version of the reason every other detector's
+does.** A detector consulted once per release is the one whose blindness is most expensive: nothing
+between two pins would reveal it, and the run it would be wrong on is the one nobody can repeat
+cheaply. #2190 is what that costs. Every count in the repo agreed with every other count, all of
+them comparing prose to prose, and the asset shipped carrying two patches nobody had reverted.
+
 ## The one gate outside `gate-scripts`
 
 `check-doc-snippets.py` (#1683) type-checks every fenced ```swift``` block in `docs/` and in `///`
@@ -128,12 +160,12 @@ Two of its design choices are worth carrying to any detector that shells out to 
 
 ## Every detector proves it is not blind
 
-Thirteen of the fourteen gates, all five censuses and the merge-history audit take `--self-test`, a
-fixture battery proving the *detector* catches each failure mode. Run it whenever you change one of
-these scripts. Three gate scripts were confidently wrong while reporting all clear (#618,
-#624/#630, #626), and a detector reporting "all clear" because it is blind looks exactly like one
-reporting "all clear" because the tree is clean. Adding a self-test case is not the rule; watching
-it fail is, per [prove-the-test-fails](prove-the-test-fails.md).
+Thirteen of the fourteen gates, all five censuses, the merge-history audit and the release check
+take `--self-test`, a fixture battery proving the *detector* catches each failure mode. Run it
+whenever you change one of these scripts. Three gate scripts were confidently wrong while
+reporting all clear (#618, #624/#630, #626), and a detector reporting "all clear" because it is
+blind looks exactly like one reporting "all clear" because the tree is clean. Adding a self-test
+case is not the rule; watching it fail is, per [prove-the-test-fails](prove-the-test-fails.md).
 
 `count-operations.py` has no `--self-test` and exits 2 on an unrecognised option rather than
 running the report, so writing `count-operations.py --self-test` to match its siblings fails loudly
@@ -180,7 +212,7 @@ of tooling earlier.
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs thirty-three of `gate-scripts`' thirty-four invocations, flag for
+`Scripts/git-hooks/pre-commit` runs thirty-four of `gate-scripts`' thirty-five invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the

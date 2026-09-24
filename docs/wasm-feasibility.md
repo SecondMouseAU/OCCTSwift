@@ -30,15 +30,17 @@ justifies this work, because OCCT-in-the-browser already exists for JS consumers
 Two structural facts make this more tractable than the `platform-expansion.md`
 (Linux/Windows/Android) review assumed:
 
-1. **The bridge is already wasm-shaped.** Despite the `.mm` extension, the 17
-   bridge files contain **zero Objective-C runtime**, no `NSString`, `NSObject`,
-   `@try`, `@autoreleasepool`. It is pure C++ with a flat C-linkage surface
-   (`double` / `int32_t` / `const char*` / `bool` / opaque `OCCT*Ref` pointers).
-   The only ObjC touch is one `#import <Foundation/Foundation.h>` in the header,
-   which is removable. A flat C ABI is exactly the recommended seam for
-   Swift-on-wasm. *(Note: this supersedes the stale "57k-line .mm, audit for
-   ObjC-isms" claim in `platform-expansion.md`, the bridge has since been split
-   into per-area files and verified clean.)*
+1. **The bridge is already wasm-shaped.** Despite the `.mm` extension, the 74
+   files in `Sources/OCCTBridge/src` contain **zero Objective-C runtime**, no
+   `NSString`, `NSObject`, `@try`, `@autoreleasepool`. It is pure C++ with a flat
+   C-linkage surface (`double` / `int32_t` / `const char*` / `bool` / opaque
+   `OCCT*Ref` pointers). The only ObjC touch is one
+   `#import <Foundation/Foundation.h>` in the header, already guarded out on WASI
+   by #2049. A flat C ABI is exactly the recommended seam for Swift-on-wasm.
+   *(Note: this supersedes the stale "57k-line .mm, audit for ObjC-isms" claim in
+   `platform-expansion.md`, the bridge has since been split into per-area files
+   and verified clean.)* **The extension is not cosmetic on this target**: see
+   "The bridge is compiled as C++, not Objective-C++" below.
 
 2. **OCCT is configured headless, and that buys less than it reads.**
    `build-occt.sh` ships Visualization / OpenGL / GLES / FreeType / TBB / VTK /
@@ -127,6 +129,32 @@ unusable afterwards, so this changes the diagnostics and not the duty to catch a
 the libc++ seam rests on weak symbol resolution that a larger link could resolve the other way, and
 `operator new` and `std::bad_alloc` under the 4 GB ceiling were not probed. Those move to #2172,
 the first OCCT compile, and #2174, the full library.
+
+### The bridge is compiled as C++, not Objective-C++ (#2256)
+
+The exception flags above cannot reach a bridge translation unit while it is compiled as
+Objective-C++, because the pinned clang **crashes in WebAssembly instruction selection** on an
+ordinary C++ `try`/`catch` in an Objective-C++ unit under `-fwasm-exceptions`. No Objective-C need
+be present, and none is: clang gives any Objective-C++ unit the Objective-C++ personality function,
+the wasm exception lowering only handles the C++ one, and what reaches the selector cannot be
+selected. `-fno-objc-exceptions` does not help, no `-fobjc-runtime` choice helps, and
+`-fobjc-runtime=macosx` is refused by the backend outright, so Objective-C cannot target this
+triple at all.
+
+The WASI build therefore compiles the bridge with `-x c++`. The 74 files are C++ already, so this
+changes no semantics, and it changes nothing on Apple targets. It is the smaller of the two answers:
+the other is renaming all 74 files to `.cpp`, which is arguably correct on its own merits and is
+recorded in [`Scripts/repro/2256`](../Scripts/repro/2256/README.md) along with what would make it
+worth doing.
+
+That directory also carries the part that matters more than the crash. A **real** bridge
+translation unit, compiled this way for `wasm32-unknown-wasip1`, linked and run, catches an OCCT
+`Standard_ConstructionError` at its own outermost `catch (...)`; the same file with the exception
+flags dropped compiles clean and never catches, which is #2171's silent failure reproduced through
+the bridge rather than through a probe.
+
+The upstream crash is [llvm/llvm-project#123659](https://github.com/llvm/llvm-project/issues/123659)
+in its Objective-C form; the C++-in-`.mm` form measured here is not covered by it.
 
 ## What breaks in the Swift layer
 
