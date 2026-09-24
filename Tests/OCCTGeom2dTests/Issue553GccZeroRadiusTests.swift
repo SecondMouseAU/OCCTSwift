@@ -52,18 +52,15 @@ struct Issue553GccZeroRadiusTests {
     /// The point/point question has its own entry point, and it answers correctly where the
     /// zero-radius circle does not: measured, `ofCircleAndPoint` with radius 0 returns two
     /// hyperbolas of major radius 0, while the perpendicular bisector is a line at x = 3.
-    @Test func pointBisectorAnswersWhatZeroRadiusCannot() {
+    @Test func pointBisectorAnswersWhatZeroRadiusCannot() throws {
         #expect(
             GccAnaBisector.ofCircleAndPoint(
                 center: SIMD2(0, 0), radius: 0,
                 point: SIMD2(6, 0)
             ).isEmpty)
-        if let line = GccAnaBisector.ofPoints(SIMD2(0, 0), SIMD2(6, 0)) {
-            #expect(abs(line.point.x - 3) < 1e-9)
-            #expect(abs(line.direction.x) < 1e-9)
-        } else {
-            Issue.record("the two-point bisector should have a solution")
-        }
+        let line = try #require(GccAnaBisector.ofPoints(SIMD2(0, 0), SIMD2(6, 0)))  // #1979: was `if let`
+        #expect(abs(line.point.x - 3) < 1e-9)
+        #expect(abs(line.direction.x) < 1e-9)
     }
 
     @Test func circlePointBisectorAcceptsValidRadius() {
@@ -284,13 +281,9 @@ struct Issue553GccZeroRadiusTests {
             ).isEmpty)
     }
 
-    @Test func requestedRadiusOfZeroIsRejectedOnCurves() {
-        guard let line = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)),
-            let centerOn = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 1))
-        else {
-            Issue.record("could not build the two 2D lines")
-            return
-        }
+    @Test func requestedRadiusOfZeroIsRejectedOnCurves() throws {
+        let line = try #require(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)))
+        let centerOn = try #require(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 1)))
         #expect(
             Curve2DGcc.circlesTangentOnCurveWithRadius(
                 line, centerOn: centerOn,
@@ -346,7 +339,7 @@ struct Issue553GccZeroRadiusTests {
     /// offset by -5 gives radius 0 and by -6 gives radius 1: `GC_MakeCircle2d` takes the absolute
     /// value rather than refusing an offset that reaches or passes the centre, so a caller asking
     /// for a circle 6 units inside a radius-5 one silently gets a radius-1 circle.
-    @Test func parallelCircleRejectsCollapsingOffset() {
+    @Test func parallelCircleRejectsCollapsingOffset() throws {
         #expect(
             Curve2D.gceCircleParallel(
                 center: SIMD2(0, 0), direction: SIMD2(1, 0),
@@ -359,14 +352,11 @@ struct Issue553GccZeroRadiusTests {
             Curve2D.gceCircleParallel(
                 center: SIMD2(0, 0), direction: SIMD2(1, 0),
                 radius: 5, distance: -6) == nil)
-        if let c = Curve2D.gceCircleParallel(
-            center: SIMD2(0, 0), direction: SIMD2(1, 0),
-            radius: 5, distance: -2)
-        {
-            #expect(abs(c.circleProperties.radius - 3) < 1e-9)
-        } else {
-            Issue.record("an offset that stays inside the base circle should still build")
-        }
+        let c = try #require(
+            Curve2D.gceCircleParallel(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                radius: 5, distance: -2))  // #1979: was `if let`
+        #expect(abs(c.circleProperties.radius - 3) < 1e-9)
     }
 
     // MARK: - Negative radius was never the gap
