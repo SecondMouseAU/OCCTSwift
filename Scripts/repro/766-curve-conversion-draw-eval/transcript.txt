@@ -1,0 +1,12 @@
+circleToBSpline: degree=2 poles=6 rational=1 periodic=1
+bsplineToBeziers: NbArcs=3
+joinCurves: add=1 start=(0, 0, 0) end=(10, 5, 0) domain=[0, 12.071067811865474]
+joinRejectsDisconnected: add=0
+drawAdaptive (circle r=5) at the Swift defaults (0.1, 0.01): 64 points
+drawUniform 32: done=1 NbPoints=32
+drawDeflection 0.1: done=1 NbPoints=17
+drawAdaptive segment at (0.1, 0.01): 2 points
+eval fixture: domain=[0, 14.422205101855956] mid=7.2111025509279782
+  EvalD0(first)=(0, 0, 0)
+  EvalD3(mid): P=(4.9999999999999991, 4.9999999999999991, 0) D1=(0.8782753106899468, -6.424162179573066e-17, 0) D2=(9.6994946414101332e-16, -0.44230769230769207, 0) D3=(-0.0213346229317402, 0.11200677039163265, 0)
+circle EvalD0(0)=(5, 0, 0)
