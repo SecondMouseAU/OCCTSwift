@@ -372,3 +372,12 @@
 | **GC_MakeScale** | Scale box about origin | `OCCTShapeScaleAboutPoint` | factor inverted (1 / factor) | red | green | PASS |
 | **GC_MakeScale** | Scale with factor 0.5 | `OCCTShapeScaleAboutPoint` | factor inverted (1 / factor) | red | green | PASS |
 | **GC_MakeTranslation** | Translate box from point to point | `OCCTShapeTranslateByPoints` | from and to points swapped | red | green | PASS |
+### 766-math-surface-transform (#1983, measured)
+| **Surface Transform** | Translate surface | `OCCTSurfaceTransform` | translation dz dropped (dx, dy, 0) | red | green | PASS |
+| **Surface Transform** | Rotate surface | `OCCTSurfaceTransform` | rotation angle negated | red | green | PASS |
+| **Surface Transform** | Scale surface | `OCCTSurfaceTransform` | scale factor inverted (1 / factor) | red | green | PASS |
+| **Surface Transform** | Mirror surface through point | `OCCTSurfaceTransform` | point mirror built as a plane mirror (normal Z) through the point | red | green | PASS |
+| **Surface Transform** | Mirror surface through axis | `OCCTSurfaceTransform` | axis mirror built as a plane mirror (gp_Ax2 for gp_Ax1) | red | green | PASS |
+| **Surface Transform** | Mirror surface through plane | `OCCTSurfaceTransform` | plane mirror built as an axis mirror (gp_Ax1 for gp_Ax2) | red | green | PASS |
+| **Surface Transform** | Transform BezierSurface values | `OCCTSurfaceTransform (surface from OCCTSurfaceBezierFill2)` | translation dz dropped | red | green | PASS |
+| **TransformedCurve, Curve with Translation** | translateCircle | `OCCTGeomAdaptorTransformedCurveCreate` | tx and ty swapped | red | green | PASS |

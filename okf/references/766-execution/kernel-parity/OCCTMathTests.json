@@ -6005,5 +6005,197 @@
       "failing_expectation": ":18 `abs(bb.min.x - 15) < 0.5`"
     },
     "green": true
+  },
+  {
+    "test_name": "Surface Transform::Translate surface",
+    "bridge_function": "OCCTSurfaceTransform",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(1,1) = (11, 1, 5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(1,1) = (11, 1, 5)",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "translation dz dropped (dx, dy, 0)",
+      "failing_expectation": "original: **green**; rewritten: :20 `simd_distance(p, SIMD3<Double>(11, 1, 5)) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Surface Transform::Rotate surface",
+    "bridge_function": "OCCTSurfaceTransform",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(1,1) = (1, 0.70710678118654757, 0.70710678118654746)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(1,1) = (1, 0.70710678118654757, 0.70710678118654746)",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "rotation angle negated",
+      "failing_expectation": "original: **green**; rewritten: :36 `simd_distance(p, SIMD3<Double>(1, 0.70710678118654757, 0.70710678118654746)) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Surface Transform::Scale surface",
+    "bridge_function": "OCCTSurfaceTransform",
+    "bridge_output": {
+      "type": "observed",
+      "data": "plane z=5 scaled x2 about origin: P(1,1) = (1, 1, 10); the original plane z=0 maps to itself, P(1,1) = (1, 1, 0) before and after",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "plane z=5 scaled x2 about origin: P(1,1) = (1, 1, 10); the original plane z=0 maps to itself, P(1,1) = (1, 1, 0) before and after",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "scale factor inverted (1 / factor)",
+      "failing_expectation": "original: **green**; rewritten: :52 `simd_distance(p, SIMD3<Double>(1, 1, 10)) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Surface Transform::Mirror surface through point",
+    "bridge_function": "OCCTSurfaceTransform",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(1,1) = (-1, -1, -5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(1,1) = (-1, -1, -5)",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "point mirror built as a plane mirror (normal Z) through the point",
+      "failing_expectation": "original: **green**; rewritten: :65 `simd_distance(p, SIMD3<Double>(-1, -1, -5)) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Surface Transform::Mirror surface through axis",
+    "bridge_function": "OCCTSurfaceTransform",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(1,1) = (1, -1, -5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(1,1) = (1, -1, -5)",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "axis mirror built as a plane mirror (gp_Ax2 for gp_Ax1)",
+      "failing_expectation": "original: **green**; rewritten: :78 `simd_distance(p, SIMD3<Double>(1, -1, -5)) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Surface Transform::Mirror surface through plane",
+    "bridge_function": "OCCTSurfaceTransform",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(1,1) = (1, 1, -5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(1,1) = (1, 1, -5)",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "plane mirror built as an axis mirror (gp_Ax1 for gp_Ax2)",
+      "failing_expectation": "original: **green**; rewritten: :91 `simd_distance(p, SIMD3<Double>(1, 1, -5)) < 1e-12`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Surface Transform::Transform BezierSurface values",
+    "bridge_function": "OCCTSurfaceTransform (surface from OCCTSurfaceBezierFill2)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "P(0.5,0.5) (5, 5, 1.5) -> (5, 5, 101.5)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "P(0.5,0.5) (5, 5, 1.5) -> (5, 5, 101.5)",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "translation dz dropped",
+      "failing_expectation": ":84 `abs(after.z - before.z - 100) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "TransformedCurve, Curve with Translation::translateCircle",
+    "bridge_function": "OCCTGeomAdaptorTransformedCurveCreate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "domain [0, 2pi], start (15, 0, 0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "domain [0, 2pi], start (15, 0, 0)",
+      "source": "Scripts/repro/766-math-surface-transform/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "tx and ty swapped",
+      "failing_expectation": "original: red; rewritten: :23 `abs(pt.x - 15.0) < 0.1`"
+    },
+    "green": true
   }
 ]
