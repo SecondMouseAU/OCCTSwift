@@ -152,3 +152,14 @@ Probe: `Scripts/repro/766-geom2d-batch-bisector/`. Every row was run red with th
 | Bisector_BisecAna::Bisector between two points | `OCCTBisectorBisecAnaPointPoint` | move the second point 2 along x | ✅ | ✅ | MATCH | asserted only `bisector != nil`; now pins x = 5 at two parameters |
 | Bisector Intersection Tests::perpendicular bisectors of right angle | `OCCTBisectorInterPointPoint` | move B 2 along x | ✅ | ✅ | MATCH | `let _ = results`, no assertion; now uses the pair order whose half-lines meet and pins (5, 5) |
 | Bisector Intersection Tests::collinear point bisectors | `OCCTBisectorInterPointPoint` | swap C and D, turning the second half-line to +x | ✅ | ✅ | MATCH | `let _ = results`, no assertion; now pins the empty result of the diverging half-lines |
+### #1979 executed: `BSplineCurve2DCompletionsV121Tests.swift`, `BSplineCurve2dKnotSplitTests.swift`
+Probe: `Scripts/repro/766-geom2d-bspline-completions/`. Every row was run red with the injection applied and green after it was reverted.
+| BSplineCurve 2D Completions v121::SetNotPeriodic on 2D curve | `OCCTCurve2DBSplineSetNotPeriodic` | skip SetNotPeriodic() | ✅ | ✅ | MATCH | the helper curve was already non-periodic and only the returned Bool was checked |
+| BSplineCurve 2D Completions v121::IncreaseMultiplicity 2D | `OCCTCurve2DBSplineIncreaseMultiplicity` | pass mult - 1 | ✅ | ✅ | MATCH | only the returned Bools, inside `if let` |
+| BSplineCurve 2D Completions v121::Reverse 2D | `OCCTCurve2DBSplineReverse` | skip Reverse() | ✅ | ✅ | MATCH | only the returned Bool, inside `if let` |
+| BSplineCurve 2D Completions v121::SetKnots 2D | `OCCTCurve2DBSplineSetKnots` | skip SetKnots() | ✅ | ✅ | MATCH | only the returned Bool, inside `if let` |
+| BSplineCurve 2D Completions v121::MovePointAndTangent 2D | `OCCTCurve2DBSplineMovePointAndTangent` | report success regardless of errorStatus | ✅ | ✅ | MATCH | nested in `if let curve`; now also pins that the failed edit left the curve unchanged |
+| BSplineCurve 2D Completions v121::MovePointAndTangent 2D with unordered independent conditions | `OCCTCurve2DBSplineMovePointAndTangent` | pass the starting condition as the ending one | ✅ | ✅ | MATCH | only the returned Bool, inside `if let`; now pins the moved point |
+| BSplineCurve 2D Completions v121::IncrementMultiplicity 2D | `OCCTCurve2DBSplineIncrementMultiplicity` | increment only index1 | ✅ | ✅ | MATCH | only the returned Bools, inside `if let` |
+| BSplineCurve 2D Completions v121::SetOrigin 2D fails on non-periodic | `OCCTCurve2DBSplineSetOrigin` | return true without calling SetOrigin | ✅ | ✅ | MATCH | nested in `if let curve`, so a nil curve passed |
+| BSplineCurve2d KnotSplitting Tests::knotSplits | `OCCTCurve2DSplitAtDiscontinuities` | split at continuity 3 whatever is asked | ✅ | ✅ | MATCH | `(indices?.count ?? 0) >= 0` is true for every result including nil |

@@ -854,5 +854,373 @@
       "probe": "Scripts/repro/766-geom2d-batch-bisector/",
       "rewritten": "`let _ = results`, no assertion; now pins the empty result of the diverging half-lines"
     }
+  },
+  {
+    "test_name": "BSplineCurve 2D Completions v121::SetNotPeriodic on 2D curve",
+    "bridge_function": "OCCTCurve2DBSplineSetNotPeriodic",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "periodic_after": false,
+        "poles": 7,
+        "point(20)": [
+          10,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "periodic_after": false,
+        "poles": 7,
+        "point(20)": [
+          10,
+          10
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip SetNotPeriodic()",
+      "red": "BSplineCurve2DCompletionsV121Tests.swift:32:9: Expectation failed: !curve.isPeriodic",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-completions/",
+      "rewritten": "the helper curve was already non-periodic and only the returned Bool was checked"
+    }
+  },
+  {
+    "test_name": "BSplineCurve 2D Completions v121::IncreaseMultiplicity 2D",
+    "bridge_function": "OCCTCurve2DBSplineIncreaseMultiplicity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "mults": [
+          4,
+          2,
+          4
+        ],
+        "poles": 6,
+        "point(0.25)": [
+          2.40625,
+          2.8125
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "mults": [
+          4,
+          2,
+          4
+        ],
+        "poles": 6,
+        "point(0.25)": [
+          2.40625,
+          2.8125
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pass mult - 1",
+      "red": "BSplineCurve2DCompletionsV121Tests.swift:44:9: Expectation failed: curve.bsplineMultiplicities == [4, 2, 4]",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-completions/",
+      "rewritten": "only the returned Bools, inside `if let`"
+    }
+  },
+  {
+    "test_name": "BSplineCurve 2D Completions v121::Reverse 2D",
+    "bridge_function": "OCCTCurve2DBSplineReverse",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          10,
+          0
+        ],
+        "point(0.25)": [
+          7.59375,
+          2.8125
+        ],
+        "point(1)": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          10,
+          0
+        ],
+        "point(0.25)": [
+          7.59375,
+          2.8125
+        ],
+        "point(1)": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip Reverse()",
+      "red": "BSplineCurve2DCompletionsV121Tests.swift:54:9: Expectation failed: simd_distance(curve.point(at: 0), SIMD2(10, 0)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-completions/",
+      "rewritten": "only the returned Bool, inside `if let`"
+    }
+  },
+  {
+    "test_name": "BSplineCurve 2D Completions v121::SetKnots 2D",
+    "bridge_function": "OCCTCurve2DBSplineSetKnots",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "domain_upper": 2,
+        "point(1)": [
+          5,
+          3.75
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "domain_upper": 2,
+        "point(1)": [
+          5,
+          3.75
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip SetKnots()",
+      "red": "BSplineCurve2DCompletionsV121Tests.swift:64:9: Expectation failed: abs(curve.domain.upperBound - 2.0) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-completions/",
+      "rewritten": "only the returned Bool, inside `if let`"
+    }
+  },
+  {
+    "test_name": "BSplineCurve 2D Completions v121::MovePointAndTangent 2D",
+    "bridge_function": "OCCTCurve2DBSplineMovePointAndTangent",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "errorStatus": 2,
+        "returned": false,
+        "point(0.5)": [
+          5,
+          3.75
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "errorStatus": 2,
+        "returned": false,
+        "point(0.5)": [
+          5,
+          3.75
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "report success regardless of errorStatus",
+      "red": "BSplineCurve2DCompletionsV121Tests.swift:80:9: Expectation failed: !r",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-completions/",
+      "rewritten": "nested in `if let curve`; now also pins that the failed edit left the curve unchanged"
+    }
+  },
+  {
+    "test_name": "BSplineCurve 2D Completions v121::MovePointAndTangent 2D with unordered independent conditions",
+    "bridge_function": "OCCTCurve2DBSplineMovePointAndTangent",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "errorStatus": 0,
+        "point(0.5)": [
+          5,
+          10
+        ],
+        "point(1)": [
+          -9,
+          -25
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "errorStatus": 0,
+        "point(0.5)": [
+          5,
+          10
+        ],
+        "point(1)": [
+          -9,
+          -25
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pass the starting condition as the ending one",
+      "red": "BSplineCurve2DCompletionsV121Tests.swift:96:9: Expectation failed: r",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-completions/",
+      "rewritten": "only the returned Bool, inside `if let`; now pins the moved point"
+    }
+  },
+  {
+    "test_name": "BSplineCurve 2D Completions v121::IncrementMultiplicity 2D",
+    "bridge_function": "OCCTCurve2DBSplineIncrementMultiplicity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "mults": [
+          4,
+          2,
+          2,
+          4
+        ],
+        "poles": 8
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "mults": [
+          4,
+          2,
+          2,
+          4
+        ],
+        "poles": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "increment only index1",
+      "red": "BSplineCurve2DCompletionsV121Tests.swift:110:9: Expectation failed: curve.bsplineMultiplicities == [4, 2, 2, 4]",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-completions/",
+      "rewritten": "only the returned Bools, inside `if let`"
+    }
+  },
+  {
+    "test_name": "BSplineCurve 2D Completions v121::SetOrigin 2D fails on non-periodic",
+    "bridge_function": "OCCTCurve2DBSplineSetOrigin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "returned": false,
+        "kernel": "Standard_NoSuchObject"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "returned": false,
+        "kernel": "Standard_NoSuchObject"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return true without calling SetOrigin",
+      "red": "BSplineCurve2DCompletionsV121Tests.swift:119:9: Expectation failed: !r",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-completions/",
+      "rewritten": "nested in `if let curve`, so a nil curve passed"
+    }
+  },
+  {
+    "test_name": "BSplineCurve2d KnotSplitting Tests::knotSplits",
+    "bridge_function": "OCCTCurve2DSplitAtDiscontinuities",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "c0": [
+          1,
+          4
+        ],
+        "c3": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "c0": [
+          1,
+          4
+        ],
+        "c3": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "split at continuity 3 whatever is asked",
+      "red": "BSplineCurve2dKnotSplitTests.swift:21:9: Expectation failed: c.splitIndicesAtDiscontinuities(continuity: .c0) == [1, 4]",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-completions/",
+      "rewritten": "`(indices?.count ?? 0) >= 0` is true for every result including nil"
+    }
   }
 ]
