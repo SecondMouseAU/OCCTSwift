@@ -28,6 +28,16 @@
 | **alongEdge on T-branch** | alongEdge on a T-branch between two non-coaxial cylinders falls back to the chord | Edge traversal | Remove alongEdge |
 | **v0.142 ConstructionAxis resolution** | v0.142 ConstructionAxis resolution | Graph axis | Remove axis resolution |
 | **deferredModeToggle()** | deferredModeToggle() | Graph mutation | Remove deferred toggle |
+| **BRepGraph Shape Reconstruction** | reconstructFace | Node to shape | ShapeFromNode returns Shell 0 for a Face request |
+| **BRepGraph Shape Reconstruction** | reconstructSolid | Node to shape | ShapeFromNode returns Shell 0 for a Solid request |
+| **BRepGraph Shape Reconstruction** | findNode | Shape to node | FindNode index + 1 |
+| **BRepGraph Shape Reconstruction** | hasNodeFalseForUnrelated | Shape to node | HasNode always true |
+| **BRepGraph Shape Reconstruction** | reconstructOccurrenceWithPlacement | Occurrence placement | LinkProducts drops the placement |
+| **BRepGraph Shell Extended** | shellCompoundCount | Shell parents | compound count + 1 |
+| **BRepGraph Shell Extended** | shellIsClosed | Shell closure | IsClosed negated |
+| **BRepGraph Shell Queries** | shellSolids | Shell parents | solid index + 1 |
+| **BRepGraph Solid Extended** | solidCompoundCount | Solid parents | compound count + 1 |
+| **BRepGraph Solid Queries** | solidCompSolidCount | Solid parents | comp-solid count + 1 |
 
 ---
 
@@ -53,6 +63,16 @@
 | alongEdge T-branch | OCCTBRepGraphAlongEdge | Edge traversal | Remove alongEdge | ✅ | ✅ |  |
 | v0.142 ConstructionAxis | OCCTBRepGraphConstructionAxis | Graph axis | Remove axis resolution | ✅ | ✅ |  |
 | deferredModeToggle | OCCTBRepGraphDeferredModeToggle | Graph mutation | Remove deferred toggle | ✅ | ✅ |  |
+| reconstructFace | OCCTBRepGraphShapeFromNode | Node to shape | Face/Solid request answered with Shell 0 | ✅ | ✅ | Rewritten: `face != nil` passed the wrong node; now pins type and area 100 |
+| reconstructSolid | OCCTBRepGraphShapeFromNode | Node to shape | Face/Solid request answered with Shell 0 | ✅ | ✅ | Rewritten: `solid != nil` passed the wrong node; now pins type and volume 1000 |
+| findNode | OCCTBRepGraphFindNode | Shape to node | outIndex = nid.Index + 1 | ✅ | ✅ | Rewritten: `node != nil` passed a wrong index; now pins (solid, 0) |
+| hasNodeFalseForUnrelated | OCCTBRepGraphHasNode | Shape to node | return true | ✅ | ✅ |  |
+| reconstructOccurrenceWithPlacement | OCCTBRepGraphLinkProducts | Occurrence placement | placement location replaced by identity | ✅ | ✅ | Kernel Shape(occurrence) already carries the (5,6,7) placement |
+| shellCompoundCount | OCCTBRepGraphShellCompoundCount | Shell parents | return n + 1 | ✅ | ✅ |  |
+| shellIsClosed | OCCTBRepGraphShellIsClosed | Shell closure | !IsClosed | ✅ | ✅ |  |
+| shellSolids | OCCTBRepGraphShellSolidIndices | Shell parents | outIndices[i] = Index + 1 | ✅ | ✅ |  |
+| solidCompoundCount | OCCTBRepGraphSolidCompoundCount | Solid parents | return n + 1 | ✅ | ✅ |  |
+| solidCompSolidCount | OCCTBRepGraphSolidCompSolidCount | Solid parents | return n + 1 | ✅ | ✅ |  |
 
 ---
 
