@@ -847,5 +847,773 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "GeomConvert ApproxSurface Tests::approximate sphere as BSpline surface",
+    "bridge_function": "OCCTGeomConvertApproxSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "hasResult": true,
+        "maxError": 0.00020644039516730319,
+        "|S(1,0.5)|": 9.99998453071169
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "hasResult": true,
+        "maxError": 0.00020644039516730319,
+        "|S(1,0.5)|": 9.99998453071169
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt approxSphere"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Circular Helicoid Surface::circularHelicoidD0",
+    "bridge_function": "OCCTGeomEvalCircularHelicoidD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,1)": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,1)": [
+          1,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt circularHelicoidD0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Circular Helicoid Surface::circularHelicoidSurfaceCreate",
+    "bridge_function": "OCCTGeomEvalCircularHelicoidCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(pi/2,2)": [
+          0,
+          2,
+          1.25
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(pi/2,2)": [
+          0,
+          2,
+          1.25
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt circularHelicoidSurfaceCreate"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Circular Helix Curve::helixD0AtZero",
+    "bridge_function": "OCCTGeomEvalCircularHelixD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0)": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0)": [
+          5,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt helixD0AtZero"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Circular Helix Curve::helixD0AtPi",
+    "bridge_function": "OCCTGeomEvalCircularHelixD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(pi)": [
+          -5,
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(pi)": [
+          -5,
+          0,
+          5
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt helixD0AtPi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Circular Helix Curve::helixD1",
+    "bridge_function": "OCCTGeomEvalCircularHelixD1",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D1(0)": [
+          0,
+          5,
+          1.5915494309189535
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D1(0)": [
+          0,
+          5,
+          1.5915494309189535
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt helixD1/D2 at 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Circular Helix Curve::helixD2",
+    "bridge_function": "OCCTGeomEvalCircularHelixD2",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D2(0)": [
+          -5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D2(0)": [
+          -5,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt helixD1/D2 at 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Circular Helix Curve::helixCurveCreate",
+    "bridge_function": "OCCTGeomEvalCircularHelixCurveCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "C(pi)": [
+          -3,
+          0,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "C(pi)": [
+          -3,
+          0,
+          3
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt helixCurveCreate"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Circular Helix Curve::helixCurveMinDistance",
+    "bridge_function": "OCCTExtremaPCMinDistance",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "minDistance": 5
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "minDistance": 5
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt helixCurveMinDistance"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Ellipsoid Surface::ellipsoidD0AtZeroZero",
+    "bridge_function": "OCCTGeomEvalEllipsoidD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,0)": [
+          3,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,0)": [
+          3,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt ellipsoidD0AtZeroZero"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Ellipsoid Surface::ellipsoidD0AtPoles",
+    "bridge_function": "OCCTGeomEvalEllipsoidD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,pi/2)": [
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,pi/2)": [
+          0,
+          0,
+          5
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt ellipsoidD0AtPoles"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Ellipsoid Surface::ellipsoidSurfaceCreate",
+    "bridge_function": "OCCTGeomEvalEllipsoidCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3,0.4)": [
+          1.759846352562514,
+          0.8165764058862943,
+          1.557673369234602
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3,0.4)": [
+          1.759846352562514,
+          0.8165764058862943,
+          1.557673369234602
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt ellipsoidSurfaceCreate"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Hyperboloid Surface::hyperboloidOneSheetD0",
+    "bridge_function": "OCCTGeomEvalHyperboloidD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,0)": [
+          2,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,0)": [
+          2,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt hyperboloidOneSheetD0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Hyperboloid Surface::hyperboloidTwoSheets",
+    "bridge_function": "OCCTGeomEvalHyperboloidD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,0)": [
+          0,
+          0,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,0)": [
+          0,
+          0,
+          2
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt hyperboloidTwoSheets"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Hyperboloid Surface::hyperboloidSurfaceCreate",
+    "bridge_function": "OCCTGeomEvalHyperboloidCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,0.3)": [
+          1.834741702543762,
+          1.0023239603198923,
+          0.9135608803414278
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,0.3)": [
+          1.834741702543762,
+          1.0023239603198923,
+          0.9135608803414278
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt hyperboloidSurfaceCreate one sheet"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Hyperboloid Surface::hyperboloidTwoSheetsCreate",
+    "bridge_function": "OCCTGeomEvalHyperboloidCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,0.3)": [
+          0.8017250978128545,
+          0.43798441710541886,
+          2.090677028257721
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,0.3)": [
+          0.8017250978128545,
+          0.43798441710541886,
+          2.090677028257721
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt hyperboloidTwoSheetsCreate"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Hyperbolic Paraboloid Surface::hypParaboloidD0AtOrigin",
+    "bridge_function": "OCCTGeomEvalHypParaboloidD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,0)": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,0)": [
+          0,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt hypParaboloidD0AtOrigin"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Hyperbolic Paraboloid Surface::hypParaboloidD0AwayFromOrigin",
+    "bridge_function": "OCCTGeomEvalHypParaboloidD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(2,0)": [
+          2,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(2,0)": [
+          2,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt hypParaboloidD0AwayFromOrigin"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Hyperbolic Paraboloid Surface::hypParaboloidSurfaceCreate",
+    "bridge_function": "OCCTGeomEvalHypParaboloidCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(1,2)": [
+          1,
+          2,
+          -0.19444444444444442
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(1,2)": [
+          1,
+          2,
+          -0.19444444444444442
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt hypParaboloidSurfaceCreate"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Paraboloid Surface::paraboloidD0",
+    "bridge_function": "OCCTGeomEvalParaboloidD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,1)": [
+          1,
+          0,
+          0.125
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0,1)": [
+          1,
+          0,
+          0.125
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt paraboloidD0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, Paraboloid Surface::paraboloidSurfaceCreate",
+    "bridge_function": "OCCTGeomEvalParaboloidCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,2)": [
+          1.7551651237807455,
+          0.958851077208406,
+          0.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,2)": [
+          1.7551651237807455,
+          0.958851077208406,
+          0.5
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt paraboloidSurfaceCreate"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, 3D Sine Wave Curve::sineWaveD0AtZero",
+    "bridge_function": "OCCTGeomEvalSineWaveD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0)": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0)": [
+          0,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt sineWaveD0AtZero"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, 3D Sine Wave Curve::sineWaveD0AtPiOver2",
+    "bridge_function": "OCCTGeomEvalSineWaveD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(pi/6)": [
+          0.5235987755982988,
+          2,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(pi/6)": [
+          0.5235987755982988,
+          2,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt sineWaveD0AtPiOver2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, 3D Sine Wave Curve::sineWaveD1",
+    "bridge_function": "OCCTGeomEvalSineWaveD1",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D1(0)": [
+          1,
+          6,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D1(0)": [
+          1,
+          6,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt sineWaveD1 at 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, 3D Sine Wave Curve::sineWaveCurveCreate",
+    "bridge_function": "OCCTGeomEvalSineWaveCurveCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "C(1)": [
+          1,
+          0.9092974268256817,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "C(1)": [
+          1,
+          0.9092974268256817,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt sineWaveCurveCreate"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval, 3D Sine Wave Curve::sineWaveWithPhase",
+    "bridge_function": "OCCTGeomEvalSineWaveD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0)": [
+          0,
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D0(0)": [
+          0,
+          1,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomeval-approx/transcript.txt sineWaveWithPhase"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
