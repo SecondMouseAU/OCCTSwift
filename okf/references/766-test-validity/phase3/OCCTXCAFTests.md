@@ -571,3 +571,14 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `setAndHas` | `OCCTDocumentSetTick` returns true without setting | :14 Expectation failed: doc.hasTick(tag: 500) | passed | `OCCTDocumentSetTick` | PASS: false, true |
 | `remove` | `OCCTDocumentRemoveTick` returns true without removing | :21 Expectation failed: !doc.hasTick(tag: 501) | passed | `OCCTDocumentRemoveTick` | PASS: the tick is present before removal and absent after, on both sides |
 | `removeNonExistent` | `OCCTDocumentRemoveTick` returns true without removing | :26 Expectation failed: !doc.removeTick(tag: 502) | passed | `OCCTDocumentRemoveTick` | PASS: no tick on tag 502, so removal finds nothing, on both sides |
+### `TNamingNamingTests.swift`
+| `insertNaming` | `OCCTDocumentInsertNaming` returns false | :15 Expectation failed: ok | passed | `OCCTDocumentInsertNaming` | PASS: a naming attribute is inserted on both sides |
+| `namingIsDefined` | `OCCTDocumentNamingIsDefined` returns true | :25 Expectation failed: !doc.namingIsDefined(labelId: node.labelId) | passed | `OCCTDocumentNamingIsDefined` | PASS: false on both sides, but the bridge's false is a lookup miss: Insert puts the naming on a child label (see source) |
+### `TNamingScopeTests.swift`
+| `validAndIsValid` | `OCCTDocumentNamingScopeIsValid` returns false | :14 Expectation failed: doc.namingScopeIsValid(labelId: node.labelId) | passed | `OCCTDocumentNamingScopeIsValid` | PASS: true |
+| `unvalid` | `OCCTDocumentNamingScopeUnvalid` returns true without unvalidating | :23 Expectation failed: !doc.namingScopeIsValid(labelId: node.labelId) | passed | `OCCTDocumentNamingScopeUnvalid` | PASS: not valid after Unvalid on both sides |
+| `validCount` | `OCCTDocumentNamingScopeValidCount` answers 1 | :32 Expectation failed: doc.namingScopeValidCount >= 2; :34 Expectation failed: doc.namingScopeValidCount == 0 | passed | `OCCTDocumentNamingScopeValidCount` | PASS: at least 2 valid labels after two Valid calls and 0 after Clear, on both sides (kernel count 2) |
+### `TNamingSelectResolveTests.swift`
+| `selectSubShape` | `OCCTDocumentNamingSelect` returns false | :22 Expectation failed: ok | passed | `OCCTDocumentNamingSelect` | PASS: Select(rectangle face, box) succeeds on both sides |
+| `resolveShape` | `OCCTDocumentNamingResolve` returns null | :42 `resolved != nil`, :43 the face count (rewritten; the old test asserted `Bool(true)` only when something came back) | passed | `OCCTDocumentNamingResolve` | PASS: select succeeds, resolve returns a shape holding at least 1 face, on both sides (kernel: a compound of 6 faces) |
+| `selectedEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :47 Expectation failed: evo == .selected | passed | `OCCTDocumentNamingGetEvolution` | PASS: evolution SELECTED on both sides (the bridge's code is 4, the kernel's ordinal is 5) |
