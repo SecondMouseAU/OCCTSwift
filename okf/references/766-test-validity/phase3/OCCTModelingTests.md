@@ -228,38 +228,70 @@ Per `upstream-occt-patch-process.md`:
 
 Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
 
+### `OffsetByJoinTests.swift` (4 tests)
+
+Probe: `Scripts/repro/766-modeling-offset-by-join/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| offsetArc | `OCCTShapeOffsetByJoin` offsets by -distance | `:15 Expectation failed: o.volume! > box.volume!` | pass | `OCCTShapeOffsetByJoin` | PASS |
+| offsetInward | `OCCTShapeOffsetByJoin` offsets by -distance | `:26 Expectation failed: o.volume! < box.volume!` | pass | `OCCTShapeOffsetByJoin` | PASS |
+| offsetIntersection | `OCCTShapeOffsetByJoin` returns nullptr | `:34 Expectation failed: offset != nil` | pass | `OCCTShapeOffsetByJoin` | PASS |
+| offsetCylinder | `OCCTShapeOffsetByJoin` returns nullptr | `:44 Expectation failed: offset != nil` | pass | `OCCTShapeOffsetByJoin` | PASS |
+
+### `OffsetWireFaceTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-offset-wire-face/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| offsetWire | `OCCTOffsetWireOnPlane` returns nullptr | `:14 Expectation failed: offset != nil` | pass | `OCCTOffsetWireOnPlane` | PASS |
+| offsetWireIntersection | `OCCTOffsetWireOnPlane` returns nullptr | `:23 Expectation failed: offset != nil` | pass | `OCCTOffsetWireOnPlane` | PASS |
+| offsetFace | `OCCTBRepOffsetOffsetFace` returns nullptr | `:32 Expectation failed: offset != nil` | pass | `OCCTBRepOffsetOffsetFace` | PASS |
+
+### `MultiEdgeBlendTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-multi-edge-blend/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| blendMultipleEdges | `OCCTShapeBlendEdges` returns nullptr | `:20 Expectation failed: blended != nil` | pass | `OCCTShapeBlendEdges` | PASS |
+| blendSingleEdge | `OCCTShapeBlendEdges` returns nullptr | `:32 Expectation failed: blended != nil` | pass | `OCCTShapeBlendEdges` | PASS |
+| blendEmptyArray | `Shape.blendedEdges` returns the input shape for an empty list instead of nil | `:44 Expectation failed: blended == nil` | pass | `OCCTShapeBlendEdges` | N/A: refused in Swift and in occtShapeFilletEdgeList before any kernel call |
+
+### `MultiFuseTests.swift` (4 tests)
+
+Probe: `Scripts/repro/766-modeling-multi-fuse/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| fuseThreeBoxes | `OCCTShapeFuseMulti` returns nullptr | `:14 Expectation failed: result != nil` | pass | `OCCTShapeFuseMulti` | PASS |
+| fuseFourSpheres | `OCCTShapeFuseMulti` returns nullptr | `:30 Expectation failed: result != nil` | pass | `OCCTShapeFuseMulti` | PASS |
+| fuseTooFew | `Shape.commonAll` / `Shape.fuseAll` return the lone operand for a one-element list instead of nil | `:40 Expectation failed: result == nil` | pass | `OCCTShapeFuseMulti` | N/A: the guard is in Swift (and again in the bridge) before any kernel call |
+| fuseNonOverlapping | `OCCTShapeFuseMulti` returns nullptr | `:48 Expectation failed: result != nil` | pass | `OCCTShapeFuseMulti` | PASS |
+
+### `MultiOffsetWireTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-multi-offset-wire/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| multipleInwardOffsets | `OCCTWireMultiOffset` returns 0 wires | `:15 Expectation failed: wires.count >= 3` | pass | `OCCTWireMultiOffset` | PASS |
+| outwardOffset | `OCCTWireMultiOffset` returns 0 wires | `:32 Expectation failed: wires.count >= 2` | pass | `OCCTWireMultiOffset` | PASS |
+| emptyOffsets | `Shape.multiOffsetWires` treats an empty offset list as a single 0 offset | `:39 Expectation failed: wires.isEmpty` | pass | `OCCTWireMultiOffset` | N/A: an empty list is refused in Swift and in the bridge before any kernel call |
 ### `LoftPolarMethodCrashTests.swift` (1 tests)
-
 Probe: `Scripts/repro/766-modeling-loft-polar-method-crash/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | mismatchedPolarProfilesDoNotCrash | `OCCTShapeCreateLoft` hands back an empty compound instead of nullptr when `Build()` leaves `IsDone()` false | `:83 Expectation failed: Shape.loft(profiles: profiles, solid: true) == nil` | pass | `OCCTShapeCreateLoft` | PASS: rewritten: `#expect(true)` after discarding the result; now pins the kernel refusal (nil) |
-
 ### `LoftVertexEndpointTests.swift` (3 tests)
-
 Probe: `Scripts/repro/766-modeling-loft-vertex-endpoint/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | coneFromCircle | `OCCTShapeCreateLoftAdvanced` returns nullptr | `:14 Expectation failed: cone != nil` | pass | `OCCTShapeCreateLoftAdvanced` | PASS |
 | bicone | `OCCTShapeCreateLoftAdvanced` returns nullptr | `:28 Expectation failed: bicone != nil` | pass | `OCCTShapeCreateLoftAdvanced` | PASS |
 | smoothCone | `OCCTShapeCreateLoftAdvanced` returns nullptr | `:37 Expectation failed: shape != nil` | pass | `OCCTShapeCreateLoftAdvanced` | PASS |
-
 ### `MakeConnectedTests.swift` (1 tests)
-
 Probe: `Scripts/repro/766-modeling-make-connected/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | connectBoxes | `OCCTShapeMakeConnected` returns nullptr | `:14 Expectation failed: connected != nil` | pass | `OCCTShapeMakeConnected` | PASS |
-
 ### `MissingShapeOpsTests.swift` (7 tests)
-
 Probe: `Scripts/repro/766-modeling-missing-shape-ops/`.
-
-| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
-|---|---|---|---|---|---|
 | torusCreation | `OCCTShapeCreateTorus` builds the torus with minorRadius * 1.1 | `:18 Expectation failed: abs(vol - expected) / expected < 0.01` | pass | `OCCTShapeCreateTorus` | PASS |
 | chamferBox | `OCCTShapeChamfer` returns the input shape unchamfered | `:28 Expectation failed: chamfered!.faces().count > 6` | pass | `OCCTShapeChamfer` | PASS |
 | offsetSolid | `OCCTShapeOffset` offsets by -distance | `:40 Expectation failed: offsetVol > originalVol` | pass | `OCCTShapeOffset` | PASS: kernel volume 1200, not the 1728 a 12 mm cube would have; the test only asks for > 1000 |

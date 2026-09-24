@@ -4,20 +4,22 @@ import simd
 
 @testable import OCCTSwift
 
+// #766: these used to nest their assertions in `if let box` / `if let graph`, so a nil graph
+// skipped every one of them and passed. They now record it.
 @Suite("v0.164 RepOps non-guard setters & cache entry inspection")
 struct EditorViewV164Tests {
     @Test("Cached face mesh inspection on a fresh graph")
     func cachedFaceMeshInspectionOnFreshGraph() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph, graph.faceCount > 0 {
-                #expect(graph.cachedFaceMeshIsPresent(0) == false)
-                #expect(graph.cachedFaceMeshTriRepCount(0) == 0)
-                #expect(graph.cachedFaceMeshActiveIndex(0) == -1)
-                #expect(graph.cachedFaceMeshTriRepId(0, repIndex: 0) == nil)
-            }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+            let graph = BRepGraph(shape: box), graph.faceCount > 0
+        else {
+            Issue.record("box graph unavailable")
+            return
         }
+        #expect(graph.cachedFaceMeshIsPresent(0) == false)
+        #expect(graph.cachedFaceMeshTriRepCount(0) == 0)
+        #expect(graph.cachedFaceMeshActiveIndex(0) == -1)
+        #expect(graph.cachedFaceMeshTriRepId(0, repIndex: 0) == nil)
     }
 
     @Test("Cached face mesh state after appendCachedTriangulation")
@@ -27,34 +29,33 @@ struct EditorViewV164Tests {
             Issue.record("Triangulation.create nil")
             return
         }
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph, graph.faceCount > 0,
-                let triRepId = graph.createTriangulationRep(tri)
-            {
-                graph.appendCachedTriangulation(faceIndex: 0, triRepId: triRepId)
-                graph.setCachedActiveIndex(faceIndex: 0, activeIndex: 0)
-                #expect(graph.cachedFaceMeshIsPresent(0) == true)
-                #expect(graph.cachedFaceMeshTriRepCount(0) == 1)
-                #expect(graph.cachedFaceMeshActiveIndex(0) == 0)
-                #expect(graph.cachedFaceMeshTriRepId(0, repIndex: 0) == triRepId)
-            }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+            let graph = BRepGraph(shape: box), graph.faceCount > 0,
+            let triRepId = graph.createTriangulationRep(tri)
+        else {
+            Issue.record("box graph or triangulation rep unavailable")
+            return
         }
+        graph.appendCachedTriangulation(faceIndex: 0, triRepId: triRepId)
+        graph.setCachedActiveIndex(faceIndex: 0, activeIndex: 0)
+        #expect(graph.cachedFaceMeshIsPresent(0) == true)
+        #expect(graph.cachedFaceMeshTriRepCount(0) == 1)
+        #expect(graph.cachedFaceMeshActiveIndex(0) == 0)
+        #expect(graph.cachedFaceMeshTriRepId(0, repIndex: 0) == triRepId)
     }
 
     @Test("Cached edge / coedge mesh accessors return absent on fresh graph")
     func cachedEdgeCoEdgeAbsent() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
             let graph = BRepGraph(shape: box)
-            if let graph {
-                #expect(graph.cachedEdgeMeshIsPresent(0) == false)
-                #expect(graph.cachedEdgeMeshPolygon3DRepId(0) == nil)
-                #expect(graph.cachedCoEdgeMeshIsPresent(0) == false)
-                #expect(graph.cachedCoEdgeMeshPolygon2DRepId(0) == nil)
-                #expect(graph.cachedCoEdgeMeshPolygonOnTriRepCount(0) == 0)
-            }
+        else {
+            Issue.record("box graph unavailable")
+            return
         }
+        #expect(graph.cachedEdgeMeshIsPresent(0) == false)
+        #expect(graph.cachedEdgeMeshPolygon3DRepId(0) == nil)
+        #expect(graph.cachedCoEdgeMeshIsPresent(0) == false)
+        #expect(graph.cachedCoEdgeMeshPolygon2DRepId(0) == nil)
+        #expect(graph.cachedCoEdgeMeshPolygonOnTriRepCount(0) == 0)
     }
 }

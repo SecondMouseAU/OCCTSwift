@@ -1,0 +1,17 @@
+resolution: Resolution(0.01) u=7.0494451571408934e-05 v=6.3129090763518051e-05 (degree 3 x 3, 4x4 poles)
+getWeight: Weight(1,1)=1 rational=0/0
+setU/VPeriodic(false): SetU/VNotPeriodic moved S(0.3,0.6) by 0, IsUPeriodic=0 IsVPeriodic=0 bounds=[0,1]x[0,1]
+  S(0.3,0.6)=(2.4704944722029167, 5.4660517833716957, 0.4728327067804845)
+  SetUPeriodic() on it: returned
+twoCurveFill stretch: bounds=[0, 10.770329614269007]x[0, 1] S(u1,v1)=(0, 0, 0) S(mid,v1)=(5, 0, 2) S(mid,v2)=(5, 10, 2) S(0.3,0.6 of domain)=(3.0000000000000004, 6, 1.6800000000000002)
+twoCurveFill curved: threw GeomFill_BSplineCurves: Courbes non jointives
+stretchFill stretch: bounds=[0, 11.661903789690601]x[0, 1] S(u1,v1)=(0, 0, 0) S(mid,v1)=(5, 0, 3) S(mid,v2)=(5, 10, 3) S(0.3,0.6 of domain)=(3.0000000000000004, 6, 2.52)
+fourCurveCoonsFill coons: bounds=[0, 1]x[0, 1] S(u1,v1)=(0, 0, 0) S(mid,v1)=(5, 0, 1) S(mid,v2)=(5, 10, 1) S(0.3,0.6 of domain)=(2.9553658884763192, 6.0255052065849597, 1.7863972231546879)
+fourCurveCoonsFill stretch: bounds=[0, 1]x[0, 1] S(u1,v1)=(0, 0, 0) S(mid,v1)=(5, 0, 1) S(mid,v2)=(5, 10, 1) S(0.3,0.6 of domain)=(2.9553658884763192, 6.0255052065849597, 1.7863972231546879)
+uIso: u=3.1415926535897931 UIso(u)(0.3)=(-4.7994720789928271, -1.4488105509382986e-16, 1.401808746929577) S(u,0.3)=(-4.7994720789928271, -1.4488105509382986e-16, 1.401808746929577)
+vIso: v=0 VIso(v)(1.0)=(2.7218159535591542, 4.194248194247792, 0) S(1.0,v)=(2.7218159535591542, 4.194248194247792, 0)
+knotSplitsU: continuity 0: NbUSplits=2 NbVSplits=2
+knotSplitsU: continuity 1: NbUSplits=4 NbVSplits=3
+knotSplitsU: continuity 2: NbUSplits=4 NbVSplits=3
+fourCurveCoonsFill with c4 := c1: calling GeomFill_BSplineCurves...
+(probe process terminated here by SIGSEGV, Segmentation fault: 11)
