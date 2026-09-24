@@ -222,3 +222,16 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: AdvancedPlateSurfaceTests.swift (8 tests), probe Scripts/repro/766-advanced-plate-surface/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| Advanced Plate Surface Tests | Plate surface with G0 constraint orders | `OCCTShapePlatePointsAdvanced` | constraint points z + 1 (INJ_PLATE_ZOFF) | AdvancedPlateSurfaceTests.swift:37 maxDistance(from: points, to: s) < 1e-6 | ✅ | MATCH | Rewritten: `area > 0` passed a surface shifted off its points; now pins area and point distance |
+| Advanced Plate Surface Tests | Plate surface rejects mixed G0/G1 orders (a bare point cannot carry tangent data) | `OCCTShapePlatePointsAdvanced` | Swift plateRejectsPointOrders returns false (INJ_PLATE_NO_ORDER_REJECT) | AdvancedPlateSurfaceTests.swift:53 shape == nil | ✅ | MATCH |  |
+| Advanced Plate Surface Tests | Plate surface with custom degree and iterations | `OCCTShapePlatePointsAdvanced` | degree and iteration count swapped (INJ_PLATE_SWAPPARAMS) | AdvancedPlateSurfaceTests.swift:70 abs((s.surfaceArea ?? 0) - 137.30983411355206) < 1e-6 | ✅ | MATCH | Rewritten: asserted only `shape != nil`; now pins area and point distance |
+| Advanced Plate Surface Tests | Plate surface rejects mismatched point/order counts | `OCCTShapePlatePointsAdvanced` | Swift and bridge count guards removed (INJ_PLATE_NO_COUNT_GUARD) | AdvancedPlateSurfaceTests.swift:80 shape == nil | ✅ | N/A | Wrapper precondition, no kernel counterpart |
+| Advanced Plate Surface Tests | Plate surface rejects fewer than 3 points | `OCCTShapePlatePointsAdvanced` | count guards removed (INJ_PLATE_NO_COUNT_GUARD): stays GREEN, kernel throws V1==V2 and the bridge catch returns nil; red only with the catch also removed (INJ_PLATE_NOCATCH): uncaught Standard_ConstructionError aborts the run | libc++abi: terminating due to uncaught exception of type Standard_ConstructionError: Geom_RectangularTrimmedSurface::V1==V2 | ✅ | MATCH | Three independent layers refuse two points (Swift guard, bridge guard, kernel throw caught) |
+| Advanced Plate Surface Tests | Mixed plate surface with points and curves | `OCCTShapePlateMixed` | curve constraints skipped (INJ_PLATE_NOCURVES) | AdvancedPlateSurfaceTests.swift:118 abs((s.surfaceArea ?? 0) - 266.0526366309989) < 1e-6 | ✅ | MATCH | Rewritten: asserted only `shape != nil`; now pins area and that points and boundary lie on the surface |
+| Advanced Plate Surface Tests | Mixed plate surface with points only | `OCCTShapePlateMixed` | constraint points z + 1 (INJ_PLATE_ZOFF) | AdvancedPlateSurfaceTests.swift:145 maxDistance(from: pointConstraints.map(\.point), to: s) < 1e-6 | ✅ | MATCH | Rewritten: asserted only `shape != nil` |
+| Advanced Plate Surface Tests | Advanced plate produces face with nonzero area | `OCCTShapePlatePointsAdvanced` | constraint points flattened to z = 0 (INJ_PLATE_ZFLAT) | AdvancedPlateSurfaceTests.swift:160 abs((s.surfaceArea ?? 0) - 161.0299905620775) < 1e-6 | ✅ | MATCH | Rewritten: `area > 50` passed the flattened 100 |
