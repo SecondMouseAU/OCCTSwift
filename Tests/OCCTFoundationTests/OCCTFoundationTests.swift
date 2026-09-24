@@ -91,20 +91,23 @@ struct OCCTSignalHandlingTests {
     /// the BRepFill_CompatibleWires polar-iterator guard carried in Scripts/patches/ (issue #176).
     /// If that patch is dropped from the xcframework, this test crashes the runner.
     @Test("Degenerate loft returns nil, does not crash")
-    func degenerateLoftIsCaught() {
-        // A valid square, a wildly different many-gon, and a near-degenerate (collinear) wire,
-        // the kind of mismatched profile set that ThruSections can crash on.
-        let square = Wire.polygon3D(
-            [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true)
-        let collinear = Wire.polygon3D(
-            [SIMD3(0, 0, 5), SIMD3(1, 0, 5), SIMD3(2, 0, 5)], closed: true)
-        if let square, let collinear {
-            // Whatever the outcome, the call must return (nil or a shape) without aborting.
-            _ = Shape.loft(profiles: [square, collinear], solid: true)
-        }
-        // Tessellating a possibly-invalid solid must also not crash.
-        if let s = Shape.box(width: 1, height: 1, depth: 1) { _ = s.mesh(linearDeflection: 0.01) }
-        #expect(Bool(true))  // reaching here means no crash
+    func degenerateLoftIsCaught() throws {
+        // A valid square and a near-degenerate (collinear) wire, the kind of mismatched profile
+        // set that ThruSections can crash on.
+        // #766: this used to end in `#expect(Bool(true))` with every call inside `if let`, so it
+        // passed whatever the loft returned. Pinned to the kernel instead
+        // (Scripts/repro/766-foundation-color-material/): both polygons build, and
+        // BRepOffsetAPI_ThruSections reports IsDone() == false for this pair, so the loft is nil.
+        let square = try #require(
+            Wire.polygon3D(
+                [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true))
+        let collinear = try #require(
+            Wire.polygon3D([SIMD3(0, 0, 5), SIMD3(1, 0, 5), SIMD3(2, 0, 5)], closed: true))
+        #expect(Shape.loft(profiles: [square, collinear], solid: true) == nil)
+        // Tessellating a solid after the failed loft must also work: a unit box is 12 triangles.
+        let box = try #require(Shape.box(width: 1, height: 1, depth: 1))
+        let mesh = try #require(box.mesh(linearDeflection: 0.01))
+        #expect(mesh.triangleCount == 12)
     }
 }
 
@@ -112,18 +115,21 @@ struct OCCTSignalHandlingTests {
 
 @Suite("Color OCCT Operations Tests")
 struct ColorOCCTTests {
-    @Test func fromName() {
-        if let c = Color.fromName("RED") {
-            #expect(c.red > 0.9)
-            #expect(c.green < 0.1)
-            #expect(c.blue < 0.1)
-        }
+    // #766: fromName, fromNameBlue, fromHex, fromHexRGBA, toHexRGBA and namedColorName nested
+    // every assertion in `if let`, so a bridge that returned nil passed them. They now require the
+    // value and pin what Quantity_Color reports (Scripts/repro/766-foundation-color-material/).
+    @Test func fromName() throws {
+        let c = try #require(Color.fromName("RED"))
+        #expect(c.red == 1)
+        #expect(c.green == 0)
+        #expect(c.blue == 0)
     }
 
-    @Test func fromNameBlue() {
-        if let c = Color.fromName("BLUE") {
-            #expect(c.blue > 0.9)
-        }
+    @Test func fromNameBlue() throws {
+        let c = try #require(Color.fromName("BLUE"))
+        #expect(c.red == 0)
+        #expect(c.green == 0)
+        #expect(c.blue == 1)
     }
 
     @Test func fromNameInvalid() {
@@ -131,11 +137,11 @@ struct ColorOCCTTests {
         #expect(c == nil)
     }
 
-    @Test func fromHex() {
-        if let c = Color.fromHex("#FF0000") {
-            #expect(c.red > 0.9)
-            #expect(c.green < 0.1)
-        }
+    @Test func fromHex() throws {
+        let c = try #require(Color.fromHex("#FF0000"))
+        #expect(c.red == 1)
+        #expect(c.green == 0)
+        #expect(c.blue == 0)
     }
 
     @Test func fromHexInvalid() {
@@ -164,18 +170,18 @@ struct ColorOCCTTests {
         #expect(c.toHex(includeHashPrefix: false) == "FF0000")
     }
 
-    @Test func fromHexRGBA() {
-        if let c = Color.fromHexRGBA("#FF000080") {
-            #expect(c.red > 0.5)
-            #expect(c.alpha < 1.0)
-        }
+    @Test func fromHexRGBA() throws {
+        let c = try #require(Color.fromHexRGBA("#FF000080"))
+        #expect(c.red == 1)
+        #expect(c.green == 0)
+        #expect(c.blue == 0)
+        #expect(abs(c.alpha - 128.0 / 255.0) < 1e-6)  // 0x80 = 128/255, stored as Float
     }
 
     @Test func toHexRGBA() {
+        // Linear 0.5 gamma-encodes to sRGB 0xBC; alpha passes through unconverted as 0x80.
         let c = Color(red: 0.5, green: 0.5, blue: 0.5, alpha: 0.5)
-        if let hex = c.toHexRGBA() {
-            #expect(!hex.isEmpty)
-        }
+        #expect(c.toHexRGBA() == "#BCBCBC80")
     }
 
     // Regression for #1571: same shape as `toHex`, for the RGBA overload. Alpha is passed through
@@ -192,25 +198,28 @@ struct ColorOCCTTests {
         #expect(c.toHexRGBA(includeHashPrefix: false) == "FF0000FF")
     }
 
+    // #766: distance and squareDistance asserted only `> 1.0`, which each other's value (sqrt 2
+    // and 2) also satisfies, so a bridge calling the wrong one passed; deltaE2000 asserted `> 0`.
+    // Pinned to Quantity_Color's values.
     @Test func distance() {
         let red = Color(red: 1, green: 0, blue: 0)
         let blue = Color(red: 0, green: 0, blue: 1)
         let d = red.distance(to: blue)
-        #expect(d > 1.0)
+        #expect(abs(d - 2.0.squareRoot()) < 1e-12)
     }
 
     @Test func squareDistance() {
         let red = Color(red: 1, green: 0, blue: 0)
         let green = Color(red: 0, green: 1, blue: 0)
         let sd = red.squareDistance(to: green)
-        #expect(sd > 1.0)
+        #expect(abs(sd - 2.0) < 1e-12)
     }
 
     @Test func deltaE2000() {
         let c1 = Color(red: 0.5, green: 0, blue: 0)
         let c2 = Color(red: 0.6, green: 0, blue: 0)
         let de = c1.deltaE2000(to: c2)
-        #expect(de > 0)
+        #expect(abs(de - 3.2403708811651222) < 1e-9)
     }
 
     @Test func deltaE2000SameColor() {
@@ -242,10 +251,14 @@ struct ColorOCCTTests {
     }
 
     @Test func changeContrast() {
-        let c = Color(red: 0.5, green: 0.5, blue: 0.5)
+        // #766: this used mid-gray, which has zero saturation, so ChangeContrast leaves it at 0.5
+        // and a bridge that skipped the call passed `modified.red >= 0`. A saturated input moves:
+        // Quantity_Color::ChangeContrast(10) takes (0.8, 0.3, 0.2) to (0.8, 0.264928, 0.164506).
+        let c = Color(red: 0.8, green: 0.3, blue: 0.2)
         let modified = c.withContrastChanged(by: 10.0)
-        // Should not crash
-        #expect(modified.red >= 0)
+        #expect(abs(modified.red - 0.80000001192092896) < 1e-6)
+        #expect(abs(modified.green - 0.26492810249328613) < 1e-6)
+        #expect(abs(modified.blue - 0.16450574994087219) < 1e-6)
     }
 
     @Test func linearToSRGB() {
@@ -274,9 +287,7 @@ struct ColorOCCTTests {
     }
 
     @Test func namedColorName() {
-        if let name = Color.namedColorName(at: 0) {
-            #expect(!name.isEmpty)
-        }
+        #expect(Color.namedColorName(at: 0) == "BLACK")  // Quantity_NOC_BLACK is ordinal 0
     }
 
     @Test func epsilon() {
@@ -294,15 +305,16 @@ struct ColorOCCTTests {
 
 @Suite("Material OCCT Operations Tests")
 struct MaterialOCCTTests {
+    // #766: the `if let` tests below passed when the bridge returned nil, and the `>= 0` bounds
+    // accepted any material. They now require the value and pin what Graphic3d_MaterialAspect
+    // reports (Scripts/repro/766-foundation-material-date/).
     @Test func predefinedMaterialCount() {
-        let count = Material.predefinedMaterialCount
-        #expect(count > 10)
+        #expect(Material.predefinedMaterialCount == 24)
     }
 
     @Test func predefinedMaterialName() {
-        if let name = Material.predefinedMaterialName(at: 1) {
-            #expect(!name.isEmpty)
-        }
+        // 1-based: index 1 is Graphic3d_NameOfMaterial 0.
+        #expect(Material.predefinedMaterialName(at: 1) == "Brass")
     }
 
     @Test func predefinedMaterialNameOutOfRange() {
@@ -310,12 +322,11 @@ struct MaterialOCCTTests {
         #expect(name == nil)
     }
 
-    @Test func predefinedMaterialByName() {
-        if let brass = Material.predefinedMaterial(named: "Brass") {
-            #expect(brass.isPhysic)
-            #expect(brass.shininess >= 0)
-            #expect(brass.transparency >= 0)
-        }
+    @Test func predefinedMaterialByName() throws {
+        let brass = try #require(Material.predefinedMaterial(named: "Brass"))
+        #expect(brass.isPhysic)
+        #expect(abs(brass.shininess - 0.65) < 1e-6)
+        #expect(brass.transparency == 0)
     }
 
     @Test func predefinedMaterialByNameInvalid() {
@@ -323,11 +334,12 @@ struct MaterialOCCTTests {
         #expect(m == nil)
     }
 
-    @Test func predefinedMaterialByIndex() {
-        if let m = Material.predefinedMaterial(at: 1) {
-            #expect(m.shininess >= 0)
-            #expect(m.pbrRoughness >= 0)
-        }
+    @Test func predefinedMaterialByIndex() throws {
+        // Index 1 is Brass, the same material predefinedMaterialByName reads by name.
+        let m = try #require(Material.predefinedMaterial(at: 1))
+        #expect(m == Material.predefinedMaterial(named: "Brass"))
+        #expect(abs(m.shininess - 0.65) < 1e-6)
+        #expect(abs(Double(m.pbrRoughness) - 0.212132) < 1e-4)
     }
 
     @Test func predefinedMaterialByIndexOutOfRange() {
@@ -335,20 +347,18 @@ struct MaterialOCCTTests {
         #expect(m == nil)
     }
 
-    @Test func predefinedMaterialColors() {
-        if let gold = Material.predefinedMaterial(named: "Gold") {
-            #expect(gold.diffuseColor.red >= 0)
-            #expect(gold.specularColor.red >= 0)
-            #expect(gold.ambientColor.red >= 0)
-        }
+    @Test func predefinedMaterialColors() throws {
+        let gold = try #require(Material.predefinedMaterial(named: "Gold"))
+        #expect(abs(gold.diffuseColor.red - 0.525642991) < 1e-6)
+        #expect(abs(gold.specularColor.red - 1.0) < 1e-6)
+        #expect(abs(gold.ambientColor.red - 0.0732389987) < 1e-6)
     }
 
-    @Test func predefinedMaterialPBR() {
-        if let copper = Material.predefinedMaterial(named: "Copper") {
-            #expect(copper.pbrMetallic >= 0)
-            #expect(copper.pbrRoughness >= 0)
-            #expect(copper.pbrIOR > 1.0)
-        }
+    @Test func predefinedMaterialPBR() throws {
+        let copper = try #require(Material.predefinedMaterial(named: "Copper"))
+        #expect(copper.pbrMetallic == 1)
+        #expect(abs(Double(copper.pbrRoughness) - 0.212132) < 1e-4)
+        #expect(abs(copper.pbrIOR - 1.5) < 1e-6)
     }
 
     @Test func minRoughness() {
@@ -357,7 +367,7 @@ struct MaterialOCCTTests {
         #expect(mr < 0.1)
     }
 
-    @Test func predefinedMaterialRoughnessIsAuthoredValueNotRemap() {
+    @Test func predefinedMaterialRoughnessIsAuthoredValueNotRemap() throws {
         // #1419: Graphic3d_MaterialAspect(Graphic3d_NameOfMaterial_Water)'s PBR material has an
         // authored (NormalizedRoughness) roughness of exactly 0.0 --
         // Graphic3d_PBRMaterial::SetBSDF's dielectric-glass branch calls SetRoughness(0.f)
@@ -366,31 +376,29 @@ struct MaterialOCCTTests {
         // it, for ANY material. Measured directly against the pinned kernel, see
         // Scripts/repro/1419-pbr-roughness-accessor/: Water/Glass/Diamond/Neon/Ionized all report
         // normalized=0.0, remapped=0.01.
-        if let water = Material.predefinedMaterial(named: "Water") {
-            #expect(Double(water.pbrRoughness) < Double(Material.minRoughness))
-            #expect(abs(water.pbrRoughness) < 1e-4)
-        }
+        let water = try #require(Material.predefinedMaterial(named: "Water"))
+        #expect(Double(water.pbrRoughness) < Double(Material.minRoughness))
+        #expect(abs(water.pbrRoughness) < 1e-4)
     }
 
-    @Test func predefinedMaterialRoughnessMatchesNormalizedNotRemappedMetallic() {
+    @Test func predefinedMaterialRoughnessMatchesNormalizedNotRemappedMetallic() throws {
         // #1419: Brass's PBR material has an authored roughness of 0.212132 (sqrt(0.045),
         // Graphic3d_BSDF::CreateMetallic's roughness parameter); Roughness() would remap it to
         // 0.220011 in [MinRoughness,1] space. The two are close enough that a loose tolerance
         // would pass either way, so this pins the value tightly against the authored one.
-        if let brass = Material.predefinedMaterial(named: "Brass") {
-            #expect(abs(Double(brass.pbrRoughness) - 0.212132) < 1e-4)
-            #expect(abs(Double(brass.pbrRoughness) - 0.220011) > 1e-4)
-        }
+        let brass = try #require(Material.predefinedMaterial(named: "Brass"))
+        #expect(abs(Double(brass.pbrRoughness) - 0.212132) < 1e-4)
+        #expect(abs(Double(brass.pbrRoughness) - 0.220011) > 1e-4)
     }
 
     @Test func roughnessFromSpecular() {
+        // Graphic3d_PBRMaterial::RoughnessFromSpecular(white, 0.8) = 1 - 0.8.
         let r = Material.roughnessFromSpecular(color: .white, shininess: 0.8)
-        #expect(r >= 0 && r <= 1)
+        #expect(abs(r - 0.2) < 1e-6)
     }
 
     @Test func metallicFromSpecular() {
-        let m = Material.metallicFromSpecular(color: .white)
-        #expect(m >= 0 && m <= 1)
+        #expect(Material.metallicFromSpecular(color: .white) == 1)
     }
 
     @Test func allPredefinedMaterialsAccessible() {
@@ -415,68 +423,57 @@ struct OCCTDateTests {
         #expect(c.day == 1)
     }
 
-    @Test func createDate() {
-        if let d = OCCTDate(month: 6, day: 15, year: 2000, hour: 14, minute: 30) {
-            #expect(d.year == 2000)
-            #expect(d.month == 6)
-            #expect(d.day == 15)
-            #expect(d.hour == 14)
-            #expect(d.minute == 30)
-        }
+    // #766: every test below that builds a date or period nested its assertions in `if let`, so
+    // a bridge that refused every date passed them all. They now require the values; each result
+    // matches Quantity_Date (Scripts/repro/766-foundation-material-date/).
+    @Test func createDate() throws {
+        let d = try #require(OCCTDate(month: 6, day: 15, year: 2000, hour: 14, minute: 30))
+        #expect(d.year == 2000)
+        #expect(d.month == 6)
+        #expect(d.day == 15)
+        #expect(d.hour == 14)
+        #expect(d.minute == 30)
     }
 
-    @Test func addPeriod() {
-        if let d = OCCTDate(month: 1, day: 1, year: 2000),
-            let oneDay = Period(days: 1)
-        {
-            let d2 = d.adding(oneDay)
-            #expect(d2.day == 2)
-        }
+    @Test func addPeriod() throws {
+        let d = try #require(OCCTDate(month: 1, day: 1, year: 2000))
+        let oneDay = try #require(Period(days: 1))
+        let d2 = d.adding(oneDay)
+        #expect(d2.day == 2)
     }
 
-    @Test func subtractPeriod() {
-        if let d = OCCTDate(month: 1, day: 15, year: 2000, hour: 12),
-            let sixHours = Period(hours: 6)
-        {
-            if let d2 = d.subtracting(sixHours) {
-                #expect(d2.hour == 6)
-            }
-        }
+    @Test func subtractPeriod() throws {
+        let d = try #require(OCCTDate(month: 1, day: 15, year: 2000, hour: 12))
+        let sixHours = try #require(Period(hours: 6))
+        let d2 = try #require(d.subtracting(sixHours))
+        #expect(d2.hour == 6)
     }
 
-    @Test func difference() {
-        if let d1 = OCCTDate(month: 1, day: 1, year: 2000),
-            let d2 = OCCTDate(month: 1, day: 2, year: 2000)
-        {
-            let diff = d1.difference(to: d2)
-            #expect(diff.totalSeconds == 86400)
-        }
+    @Test func difference() throws {
+        let d1 = try #require(OCCTDate(month: 1, day: 1, year: 2000))
+        let d2 = try #require(OCCTDate(month: 1, day: 2, year: 2000))
+        let diff = d1.difference(to: d2)
+        #expect(diff.totalSeconds == 86400)
     }
 
-    @Test func equality() {
-        let d1 = OCCTDate(month: 6, day: 15, year: 2000, hour: 12)
-        let d2 = OCCTDate(month: 6, day: 15, year: 2000, hour: 12)
-        if let a = d1, let b = d2 {
-            #expect(a == b)
-        }
+    @Test func equality() throws {
+        let a = try #require(OCCTDate(month: 6, day: 15, year: 2000, hour: 12))
+        let b = try #require(OCCTDate(month: 6, day: 15, year: 2000, hour: 12))
+        #expect(a == b)
     }
 
-    @Test func comparison() {
-        if let d1 = OCCTDate(month: 1, day: 1, year: 2000),
-            let d2 = OCCTDate(month: 1, day: 2, year: 2000)
-        {
-            #expect(d1 < d2)
-            #expect(d2 > d1)
-        }
+    @Test func comparison() throws {
+        let d1 = try #require(OCCTDate(month: 1, day: 1, year: 2000))
+        let d2 = try #require(OCCTDate(month: 1, day: 2, year: 2000))
+        #expect(d1 < d2)
+        #expect(d2 > d1)
     }
 
-    @Test func operatorPlus() {
-        if let d = OCCTDate(month: 1, day: 1, year: 2000),
-            let p = Period(hours: 24)
-        {
-            let d2 = d + p
-            #expect(d2.day == 2)
-        }
+    @Test func operatorPlus() throws {
+        let d = try #require(OCCTDate(month: 1, day: 1, year: 2000))
+        let p = try #require(Period(hours: 24))
+        let d2 = d + p
+        #expect(d2.day == 2)
     }
 
     @Test func isValid() {
@@ -491,11 +488,11 @@ struct OCCTDateTests {
         #expect(OCCTDate.isLeap(year: 2024))
     }
 
-    @Test func millisecondMicrosecond() {
-        if let d = OCCTDate(month: 1, day: 1, year: 2000, millisecond: 123, microsecond: 456) {
-            #expect(d.millisecond == 123)
-            #expect(d.microsecond == 456)
-        }
+    @Test func millisecondMicrosecond() throws {
+        let d = try #require(
+            OCCTDate(month: 1, day: 1, year: 2000, millisecond: 123, microsecond: 456))
+        #expect(d.millisecond == 123)
+        #expect(d.microsecond == 456)
     }
 
     @Test func invalidDate() {
@@ -506,16 +503,21 @@ struct OCCTDateTests {
 
 @Suite("FontManager Tests")
 struct FontManagerTests {
+    // #766: initDatabase and fontCount asserted `fontCount >= 0`, which no count can fail. The
+    // pinned kernel is built with USE_FREETYPE=OFF (Scripts/build-occt.sh), so Font_FontMgr
+    // registers no fonts at all: GetAvailableFonts() is empty after InitFontDataBase()
+    // (Scripts/repro/766-foundation-font-pixmap-units/). That is what these now pin; a kernel
+    // built with FreeType will fail them, and should, since the font surface then changes.
     @Test func initDatabase() {
         FontManager.initDatabase()
-        // Should not crash
-        #expect(FontManager.fontCount >= 0)
+        #expect(FontManager.fontCount == 0)
+        #expect(FontManager.allFontNames.isEmpty)
     }
 
     @Test func fontCount() {
         FontManager.initDatabase()
-        let count = FontManager.fontCount
-        #expect(count >= 0)
+        #expect(FontManager.fontCount == 0)
+        #expect(FontManager.fontName(at: 0) == nil)  // index 0 is already past the end
     }
 
     @Test func aspectToString() {
@@ -539,76 +541,80 @@ struct FontManagerTests {
 
 @Suite("PixMap Tests")
 struct PixMapTests {
-    @Test func createEmpty() {
-        if let img = PixMap() {
-            #expect(img.isEmpty)
-        }
+    // #766: every PixMap test below nested its assertions in `if let img = PixMap()`, so a
+    // bridge whose OCCTImageCreate returned nil passed all of them. They now require the image;
+    // each value matches Image_AlienPixMap (Scripts/repro/766-foundation-font-pixmap-units/).
+    @Test func createEmpty() throws {
+        let img = try #require(PixMap())
+        #expect(img.isEmpty)
     }
 
-    @Test func initTrash() {
-        if let img = PixMap() {
-            let ok = img.initTrash(format: .rgba, width: 64, height: 64)
-            #expect(ok)
-            #expect(!img.isEmpty)
-            #expect(img.width == 64)
-            #expect(img.height == 64)
-            #expect(img.format == .rgba)
-        }
+    @Test func initTrash() throws {
+        let img = try #require(PixMap())
+        let ok = img.initTrash(format: .rgba, width: 64, height: 64)
+        #expect(ok)
+        #expect(!img.isEmpty)
+        #expect(img.width == 64)
+        #expect(img.height == 64)
+        #expect(img.format == .rgba)
     }
 
-    @Test func initTrashRGB() {
-        if let img = PixMap() {
-            let ok = img.initTrash(format: .rgb, width: 100, height: 50)
-            #expect(ok)
-            #expect(img.width == 100)
-            #expect(img.height == 50)
-            #expect(img.format == .rgb)
-        }
+    @Test func initTrashRGB() throws {
+        let img = try #require(PixMap())
+        let ok = img.initTrash(format: .rgb, width: 100, height: 50)
+        #expect(ok)
+        #expect(img.width == 100)
+        #expect(img.height == 50)
+        #expect(img.format == .rgb)
     }
 
-    @Test func setAndGetPixel() {
-        if let img = PixMap() {
-            img.initTrash(format: .rgba, width: 4, height: 4)
-            let c = Color(red: 0.8, green: 0.2, blue: 0.5, alpha: 1.0)
-            img.setPixel(at: 2, y: 2, color: c)
-            let got = img.pixel(at: 2, y: 2)
-            #expect(abs(got.red - 0.8) < 0.02)
-        }
+    @Test func setAndGetPixel() throws {
+        let img = try #require(PixMap())
+        img.initTrash(format: .rgba, width: 4, height: 4)
+        let c = Color(red: 0.8, green: 0.2, blue: 0.5, alpha: 1.0)
+        img.setPixel(at: 2, y: 2, color: c)
+        let got = img.pixel(at: 2, y: 2)
+        #expect(abs(got.red - 0.8) < 0.02)
+        #expect(abs(got.green - 0.2) < 0.02)
+        #expect(abs(got.blue - 0.5) < 0.02)  // 8-bit storage: 0.498039, as the kernel reads it back
+        #expect(got.alpha == 1)
     }
 
-    @Test func savePPM() {
-        if let img = PixMap() {
-            img.initTrash(format: .rgb, width: 16, height: 16)
-            for y in 0..<16 {
-                for x in 0..<16 {
-                    img.setPixel(
-                        at: x, y: y,
-                        color: Color(red: Double(x) / 16.0, green: Double(y) / 16.0, blue: 0.5))
-                }
+    @Test func savePPM() throws {
+        let img = try #require(PixMap())
+        img.initTrash(format: .rgb, width: 16, height: 16)
+        for y in 0..<16 {
+            for x in 0..<16 {
+                img.setPixel(
+                    at: x, y: y,
+                    color: Color(red: Double(x) / 16.0, green: Double(y) / 16.0, blue: 0.5))
             }
-            let saved = img.save(to: "/tmp/occt_pixmap_test.ppm")
-            #expect(saved)
         }
+        // A per-run path: a fixed /tmp name is shared by every concurrent test process.
+        let path = FileManager.default.temporaryDirectory
+            .appendingPathComponent("occt_pixmap_test_\(UUID().uuidString).ppm").path
+        defer { try? FileManager.default.removeItem(atPath: path) }
+        #expect(img.save(to: path))
+        #expect(FileManager.default.fileExists(atPath: path))
     }
 
-    @Test func clear() {
-        if let img = PixMap() {
-            img.initTrash(format: .rgb, width: 32, height: 32)
-            #expect(!img.isEmpty)
-            img.clear()
-            #expect(img.isEmpty)
-        }
+    @Test func clear() throws {
+        let img = try #require(PixMap())
+        img.initTrash(format: .rgb, width: 32, height: 32)
+        #expect(!img.isEmpty)
+        img.clear()
+        #expect(img.isEmpty)
     }
 
-    @Test func initCopy() {
-        if let src = PixMap(), let dst = PixMap() {
-            src.initTrash(format: .rgb, width: 8, height: 8)
-            src.setPixel(at: 0, y: 0, color: .red)
-            let ok = dst.initCopy(from: src)
-            #expect(ok)
-            #expect(dst.width == 8)
-            #expect(dst.height == 8)
-        }
+    @Test func initCopy() throws {
+        let src = try #require(PixMap())
+        let dst = try #require(PixMap())
+        src.initTrash(format: .rgb, width: 8, height: 8)
+        src.setPixel(at: 0, y: 0, color: .red)
+        let ok = dst.initCopy(from: src)
+        #expect(ok)
+        #expect(dst.width == 8)
+        #expect(dst.height == 8)
     }
 
     @Test func formatBytesPerPixel() {
@@ -618,16 +624,16 @@ struct PixMapTests {
     }
 
     @Test func isTopDownDefault() {
-        // Just verify it doesn't crash
-        _ = PixMap.isTopDownDefault
+        // #766: this asserted nothing. Image_AlienPixMap::IsTopDownDefault() is false in the
+        // pinned kernel (bottom-up rows, the OpenGL convention).
+        #expect(PixMap.isTopDownDefault == false)
     }
 
-    @Test func grayFormat() {
-        if let img = PixMap() {
-            img.initTrash(format: .gray, width: 10, height: 10)
-            #expect(img.format == .gray)
-            #expect(!img.isEmpty)
-        }
+    @Test func grayFormat() throws {
+        let img = try #require(PixMap())
+        img.initTrash(format: .gray, width: 10, height: 10)
+        #expect(img.format == .gray)
+        #expect(!img.isEmpty)
     }
 }
 
@@ -673,6 +679,10 @@ struct UnitsAPITests {
     }
 
     @Test func localSystem() {
+        // #766: this only set .si, which is already UnitsAPI's default, so a setter that did
+        // nothing passed. Switch to MDTV and back; UnitsAPI::LocalSystem() follows both.
+        Units.setLocalSystem(.mdtv)
+        #expect(Units.localSystem == .mdtv)
         Units.setLocalSystem(.si)
         #expect(Units.localSystem == .si)
     }
@@ -802,9 +812,11 @@ struct OSDEnvironmentTests {
         #expect(gone == nil)
     }
 
+    // #1987: `home != nil` passed any value; OSD_Environment("HOME").Value() is getenv("HOME").
     @Test func readHome() {
-        let home = Environment.get("HOME")
-        #expect(home != nil)
+        let expected = getenv("HOME").map { String(cString: $0) }
+        #expect(expected != nil)
+        #expect(Environment.get("HOME") == expected)
     }
 }
 
@@ -819,72 +831,100 @@ struct OSDEnvironmentTests {
 @Suite("OSD Chronometer Tests")
 struct OSDChronometerTests {
 
+    // #1987: `user >= 0` passed a bridge reporting zero. After burning some CPU the process user
+    // time must be positive and agree with getrusage(RUSAGE_SELF); OSD_Chronometer reports it in
+    // 1/100 s steps (0.060 against getrusage's 0.0611 in the probe), hence the 0.02 s slack.
     @Test func processCPU() {
+        var sum = 0.0
+        for i in 0..<1_000_000 { sum += Double(i) }
+        var before = rusage()
+        getrusage(RUSAGE_SELF, &before)
         let cpu = CPUTime.processCPU()
-        #expect(cpu.user >= 0)
+        var after = rusage()
+        getrusage(RUSAGE_SELF, &after)
+        let lo = Double(before.ru_utime.tv_sec) + Double(before.ru_utime.tv_usec) * 1e-6
+        let hi = Double(after.ru_utime.tv_sec) + Double(after.ru_utime.tv_usec) * 1e-6
+        #expect(cpu.user > 0)
+        #expect(cpu.user >= lo - 0.02)
+        #expect(cpu.user <= hi + 0.02)
+        #expect(sum > 0)
     }
 }
 
 @Suite("OSD Process Tests")
 struct OSDProcessTests {
 
+    // #1987: `> 0` and `!= nil` passed any pid and any name. OSD_Process reports getpid() and
+    // the passwd entry's name for getuid().
     @Test func processId() {
-        #expect(ProcessInfo.processId > 0)
+        #expect(ProcessInfo.processId == Int(getpid()))
     }
 
     @Test func userName() {
-        #expect(ProcessInfo.userName != nil)
+        let expected = getpwuid(getuid()).map { String(cString: $0.pointee.pw_name) }
+        #expect(expected != nil)
+        #expect(ProcessInfo.userName == expected)
     }
 }
 
 @Suite("OSD_File Tests")
 struct OSDFileTests {
 
+    // #1987: all three tests used to `return` silently when the file failed to open, and this
+    // one read its line only `if let`. OSD_File::ReadLine keeps the line's terminating newline.
     @Test func writeAndReadBack() {
         let tmpPath = "/tmp/occt_osdfile_test_\(Int.random(in: 0..<1_000_000)).txt"
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
         let file = OSDFile(path: tmpPath)
-        let opened = file.open()
-        guard opened else { return }
+        guard file.open() else {
+            Issue.record("open() failed")
+            return
+        }
         let content = "Hello, OSD_File!\nLine 2\n"
         let wrote = file.write(content)
         #expect(wrote)
         file.close()
 
         let reader = OSDFile(path: tmpPath)
-        guard reader.openReadOnly() else { return }
-        let line1 = reader.readLine()
-        if let line1 {
-            #expect(line1.hasPrefix("Hello"))
+        guard reader.openReadOnly() else {
+            Issue.record("openReadOnly() failed")
+            return
         }
+        #expect(reader.readLine() == "Hello, OSD_File!\n")
         reader.close()
-
-        try? FileManager.default.removeItem(atPath: tmpPath)
     }
 
     @Test func fileSize() {
         let tmpPath = "/tmp/occt_osdfile_size_\(Int.random(in: 0..<1_000_000)).txt"
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
         let file = OSDFile(path: tmpPath)
-        guard file.open() else { return }
+        guard file.open() else {
+            Issue.record("open() failed")
+            return
+        }
         _ = file.write("ABCDE")
         file.close()
 
         let reader = OSDFile(path: tmpPath)
-        guard reader.openReadOnly() else { return }
-        if let sz = reader.fileSize {
-            #expect(sz >= 5)
+        guard reader.openReadOnly() else {
+            Issue.record("openReadOnly() failed")
+            return
         }
+        #expect(reader.fileSize == 5)
         reader.close()
-        try? FileManager.default.removeItem(atPath: tmpPath)
     }
 
     @Test func isOpenFalseAfterClose() {
         let tmpPath = "/tmp/occt_osdfile_open_\(Int.random(in: 0..<1_000_000)).txt"
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
         let file = OSDFile(path: tmpPath)
-        guard file.open() else { return }
+        guard file.open() else {
+            Issue.record("open() failed")
+            return
+        }
         #expect(file.isOpen)
         file.close()
         #expect(!file.isOpen)
-        try? FileManager.default.removeItem(atPath: tmpPath)
     }
 }
 
@@ -1088,34 +1128,47 @@ struct OSDSharedLibTests {
         #expect(lib != nil)
     }
 
+    // #1987: these three used to run their assertions only `if let lib`, so a SharedLibrary
+    // that failed to construct passed all of them, and libraryName accepted any non-nil name.
     @Test func libraryName() {
-        if let lib = SharedLibrary(name: "libc.dylib") {
-            #expect(lib.name != nil)
+        guard let lib = SharedLibrary(name: "libc.dylib") else {
+            Issue.record("SharedLibrary(name:) returned nil")
+            return
         }
+        #expect(lib.name == "libc.dylib")
     }
 
     @Test func openLibrary() {
-        if let lib = SharedLibrary(name: "libc.dylib") {
-            let ok = lib.open()
-            #expect(ok)
-            lib.close()
+        guard let lib = SharedLibrary(name: "libc.dylib") else {
+            Issue.record("SharedLibrary(name:) returned nil")
+            return
         }
+        let ok = lib.open()
+        #expect(ok)
+        lib.close()
     }
 
     @Test func openNonexistent() {
-        if let lib = SharedLibrary(name: "nonexistent_lib_12345.dylib") {
-            #expect(!lib.open())
+        guard let lib = SharedLibrary(name: "nonexistent_lib_12345.dylib") else {
+            Issue.record("SharedLibrary(name:) returned nil")
+            return
         }
+        #expect(!lib.open())
     }
 }
 
 @Suite("Message_Msg")
 struct MessageMsgTests {
+    // #1987: this asserted `msg != nil || msg == nil`, which nothing can fail. Message_Msg::Get
+    // for a key with no registered text returns OCCT's fixed fallback naming the key; pinned to
+    // what the kernel returns. It deliberately does not call loadDefault(): ShapeExtend::Init()
+    // returns before its messages are registered when a second thread is already inside it
+    // (Scripts/repro/766-foundation-units-msg-lib/race.mm), so two tests calling it in parallel
+    // made loadDefault() below fail.
     @Test func getMessage() {
-        // Key may not exist, but function should not crash
-        let msg = MessageSystem.message(forKey: "test.key")
-        // Returns something (either key itself or error msg)
-        #expect(msg != nil || msg == nil)  // just verify no crash
+        #expect(
+            MessageSystem.message(forKey: "test.key")
+                == "Unknown message invoked with the keyword test.key")
     }
 
     @Test func hasMessage() {
@@ -1148,8 +1201,10 @@ struct MessageMsgTests {
 struct NamedColorCountTests {
 
     @Test func colorCount() {
+        // #1987: `> 500` passed an off-by-one. Quantity_NameOfColor runs from Quantity_NOC_BLACK
+        // (0) to Quantity_NOC_WHITE (508), so the count is exactly 509.
         let count = Color.namedColorCount
-        #expect(count > 500)  // OCCT has ~520 named colors
+        #expect(count == 509)
     }
 }
 
@@ -1176,9 +1231,9 @@ struct UnitsConversionTests {
     }
 
     @Test func dumpUnit() {
+        // #1987: pinned to the exact string UnitsMethods::DumpLengthUnit(Millimeter) returns.
         let name = UnitsConversion.dumpLengthUnit(OCCTLengthUnit.millimeter)
-        #expect(name != nil)
-        if let n = name { #expect(n.contains("mm") || n.contains("illi")) }
+        #expect(name == "mm")
     }
 }
 
@@ -1187,20 +1242,28 @@ struct ColorToolGetAllColorsTests {
 
     @Test("GetAllColors returns added colors")
     func getAllColors() {
-        guard let doc = Document.create() else { return }
-        // Add two colors
+        // #1987: both tests used to `return` silently when Document.create() failed, and this one
+        // accepted any count >= 2 of any ids. XCAFDoc_ColorTool::GetColors on a fresh document
+        // after two AddColor calls returns exactly those two labels, in order.
+        guard let doc = Document.create() else {
+            Issue.record("Document.create() returned nil")
+            return
+        }
         let redId = doc.colorToolAddColor(r: 1.0, g: 0.0, b: 0.0)
         let greenId = doc.colorToolAddColor(r: 0.0, g: 1.0, b: 0.0)
         #expect(redId >= 0)
         #expect(greenId >= 0)
 
         let allColors = doc.colorToolGetAllColors()
-        #expect(allColors.count >= 2)
+        #expect(allColors == [redId, greenId])
     }
 
     @Test("GetAllColors empty for new document")
     func getAllColorsEmpty() {
-        guard let doc = Document.create() else { return }
+        guard let doc = Document.create() else {
+            Issue.record("Document.create() returned nil")
+            return
+        }
         let allColors = doc.colorToolGetAllColors()
         #expect(allColors.isEmpty)
     }
