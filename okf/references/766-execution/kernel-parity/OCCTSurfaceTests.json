@@ -3130,5 +3130,397 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Manipulation Tests::nbKnots",
+    "bridge_function": "OCCTSurfaceBSplineNbUKnots",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "nbUKnots": 4,
+        "nbVKnots": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "nbUKnots": 4,
+        "nbVKnots": 2
+      },
+      "source": "Scripts/repro/766-bspline-manipulation/transcript.txt cylinder fixture"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Manipulation Tests::nbPoles",
+    "bridge_function": "OCCTSurfaceBSplineNbUPoles",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "nbUPoles": 6,
+        "nbVPoles": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "nbUPoles": 6,
+        "nbVPoles": 2
+      },
+      "source": "Scripts/repro/766-bspline-manipulation/transcript.txt cylinder fixture"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Manipulation Tests::degree",
+    "bridge_function": "OCCTSurfaceBSplineUDegree",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "uDegree": 2,
+        "vDegree": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "uDegree": 2,
+        "vDegree": 1
+      },
+      "source": "Scripts/repro/766-bspline-manipulation/transcript.txt cylinder fixture"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Manipulation Tests::isRational",
+    "bridge_function": "OCCTSurfaceBSplineIsURational",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "isURational": false,
+        "isVRational": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "isURational": false,
+        "isVRational": true
+      },
+      "source": "Scripts/repro/766-bspline-manipulation/transcript.txt cylinder fixture: rational 0/1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Manipulation Tests::getPole",
+    "bridge_function": "OCCTSurfaceBSplineGetPole",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "pole(1,1)": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "pole(1,1)": [
+          5,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-manipulation/transcript.txt getPole"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Manipulation Tests::setPole",
+    "bridge_function": "OCCTSurfaceBSplineSetPole",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "pole(1,1) after": [
+          10,
+          10,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "pole(1,1) after": [
+          10,
+          10,
+          10
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-manipulation/transcript.txt setPole"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Manipulation Tests::exchangeUV",
+    "bridge_function": "OCCTSurfaceBSplineExchangeUV",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "poles after": [
+          2,
+          6
+        ],
+        "degree after": [
+          1,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "poles after": [
+          2,
+          6
+        ],
+        "degree after": [
+          1,
+          2
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-manipulation/transcript.txt exchangeUV"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Manipulation Tests::insertUKnot",
+    "bridge_function": "OCCTSurfaceBSplineInsertUKnot",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "nbUKnots": 5,
+        "uMults": [
+          2,
+          2,
+          1,
+          2,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "nbUKnots": 5,
+        "uMults": [
+          2,
+          2,
+          1,
+          2,
+          2
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-manipulation/transcript.txt insertUKnot"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Manipulation Tests::insertVKnot",
+    "bridge_function": "OCCTSurfaceBSplineInsertVKnot",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "nbVKnots": 3,
+        "vMults": [
+          2,
+          1,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "nbVKnots": 3,
+        "vMults": [
+          2,
+          1,
+          2
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-manipulation/transcript.txt insertVKnot"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Manipulation Tests::segment",
+    "bridge_function": "OCCTSurfaceBSplineSegment",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "bounds after": [
+          1.5707963267948966,
+          4.71238898038469,
+          2.5,
+          7.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "bounds after": [
+          1.5707963267948966,
+          4.71238898038469,
+          2.5,
+          7.5
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-manipulation/transcript.txt segment"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Manipulation Tests::increaseDegree",
+    "bridge_function": "OCCTSurfaceBSplineIncreaseDegree",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree after": [
+          3,
+          2
+        ],
+        "S(1.0,0.5) moved": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree after": [
+          3,
+          2
+        ],
+        "S(1.0,0.5) moved": 0
+      },
+      "source": "Scripts/repro/766-bspline-manipulation/transcript.txt increaseDegree"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface Manipulation Tests::setWeight",
+    "bridge_function": "OCCTSurfaceBSplineSetWeight",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "weight(1,1) after": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "weight(1,1) after": 2
+      },
+      "source": "Scripts/repro/766-bspline-manipulation/transcript.txt setWeight"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface RemoveUKnot (#815)::removeUKnot",
+    "bridge_function": "OCCTSurfaceBSplineRemoveUKnot",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "RemoveUKnot(1)": false,
+        "insert then RemoveUKnot(2)": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "RemoveUKnot(1)": false,
+        "insert then RemoveUKnot(2)": true
+      },
+      "source": "Scripts/repro/766-bspline-manipulation/transcript.txt removeUKnot: index 1 throws \"invalid Index\""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Surface RemoveVKnot v0.120.0::removeVKnot",
+    "bridge_function": "OCCTSurfaceBSplineRemoveVKnot",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "RemoveVKnot(1)": false,
+        "insert then RemoveVKnot(2)": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "RemoveVKnot(1)": false,
+        "insert then RemoveVKnot(2)": true
+      },
+      "source": "Scripts/repro/766-bspline-manipulation/transcript.txt removeVKnot: index 1 throws \"invalid Index\""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
