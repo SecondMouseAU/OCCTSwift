@@ -18,6 +18,11 @@ struct EllipseThreePointsTests {
         if let c = curve {
             let dom = c.domain
             #expect(dom.upperBound > dom.lowerBound)
+            // An ordered domain held for any ellipse, including one in the wrong plane. S1 sets
+            // the major axis (radius 10 along X), S2 the minor (5 along Y). Kernel values from
+            // Scripts/repro/766-math-drawing-eigen-solvers/transcript.txt.
+            #expect(simd_length(c.point(at: 0) - SIMD3(10, 0, 0)) < 1e-9)
+            #expect(simd_length(c.point(at: .pi / 2) - SIMD3(0, 5, 0)) < 1e-9)
         }
     }
 }
