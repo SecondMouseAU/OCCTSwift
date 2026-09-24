@@ -1,0 +1,3 @@
+circleRadius r7: value=7 valid=1 circleRadius=7 centre=(0, 0, 0)
+radiusGeometry r5: value=5 valid=1 circleRadius=5 centre=(0, 0, 0)
+nonCircularFails box: value=0 valid=0 circleRadius=1.7976931348623157e+308 centre=(0, 0, 0)

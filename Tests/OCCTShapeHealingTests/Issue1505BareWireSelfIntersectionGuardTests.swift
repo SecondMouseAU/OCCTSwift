@@ -84,7 +84,9 @@ struct Issue1505BareWireSelfIntersectionGuardTests {
 
     @Test("a face already built from the bowtie wire still refuses (unaffected by the fix)")
     func faceInputStillRefuses() {
+        // #766: this returned early, silently green, if the face failed to build.
         guard let wire = Self.bowtieWire(), let face = Shape.face(from: wire, planar: true) else {
+            Issue.record("failed to build the bowtie face fixture")
             return
         }
         #expect(face.shapeType == .face)

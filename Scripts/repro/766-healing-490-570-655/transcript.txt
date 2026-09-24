@@ -1,0 +1,15 @@
+#490 restriction C0: plain volume=785.393925208 advanced volume=785.393925208 (-1 null, -2 threw)
+#490 restriction C1: plain volume=785.418038185 advanced volume=785.418038185 (-1 null, -2 threw)
+#490 restriction C2: plain volume=785.245930155 advanced volume=785.245930155 (-1 null, -2 threw)
+#490 restriction C3: plain volume=-2.000000000 advanced volume=-2.000000000 (-1 null, -2 threw)
+#490 split C0: uSplitValues=2 vSplitValues=2
+#490 split C1: uSplitValues=2 vSplitValues=2
+#490 split C2: uSplitValues=3 vSplitValues=2
+#490 split C3: uSplitValues=3 vSplitValues=2
+#490 split CN (99 saturates here): uSplitValues=3 vSplitValues=2
+#570 ConvertToBSpline(offset sphere): isBSpline=1 uDegree=13 uPoles=14 deviation=1.210e-07
+#570 BSplineRestriction(offset sphere, tol 0.01): deviation=5.065e-04
+#570 BSplineRestriction(offset sphere, tol 10, the RTOL injection): deviation=1.655e+00
+#570 basis sphere instead of the offset (the OFFSETBASIS injection): deviation from offset=2.000e+00
+#655 INTERNAL loop: edges=12 closedWires=2 closedEdges=8 openWires=0; props(tol 0) closed=2 open=0; props(tol -1) closed=2 open=0
+#655 FORWARD loop: edges=12 closedWires=3 closedEdges=12 openWires=0; props(tol 0) closed=2 open=4; props(tol -1) closed=2 open=4
