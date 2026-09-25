@@ -1,0 +1,9 @@
+rectangle 10x4: locus.IsDone=1 arcs=5
+drawArc arc 1, 20 samples: finite=20 first=(-5, 2) last=(-3, 4.0586145430278105e-17)
+drawAll 16 samples per arc over 5 arcs:
+  arc 1: finite=16 of 16 first=(-5, 2) last=(-3, 4.0586145430278105e-17)
+  arc 2: finite=16 of 16 first=(-5, -2) last=(-3, -4.0586145430278105e-17)
+  arc 3: finite=16 of 16 first=(5, -2) last=(3, -4.0586145430278105e-17)
+  arc 4: finite=16 of 16 first=(5, 2) last=(3, 4.0586145430278105e-17)
+  arc 5: finite=16 of 16 first=(3, 4.0586145430278105e-17) last=(-3, 4.0586145430278105e-17)
+wire-only shape: TopExp_Explorer(TopAbs_FACE).More()=0

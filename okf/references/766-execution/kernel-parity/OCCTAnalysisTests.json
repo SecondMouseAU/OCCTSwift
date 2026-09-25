@@ -6022,20 +6022,39 @@
     "bridge_output": {
       "type": "polyline",
       "data": {
-        "points": 20
+        "points": 20,
+        "all_finite": true,
+        "first": [
+          -5,
+          2
+        ],
+        "last": [
+          -3,
+          4.0586145430278105e-17
+        ]
       }
     },
     "kernel_output": {
       "type": "polyline",
       "data": {
-        "arc1_trimmed_bisector": "finite, 0 to 2 from the boundary"
+        "points": 20,
+        "all_finite": true,
+        "first": [
+          -5,
+          2
+        ],
+        "last": [
+          -3,
+          4.0586145430278105e-17
+        ]
       }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "MISMATCH",
+    "status": "PASS",
+    "source": "Same quantity on both sides: sampling arc 1 of the 10 x 4 rectangle's medial axis at 20 points: how many samples, whether every one is finite, and the first and last sample. The earlier record was MISMATCH with no differences because the kernel side carried a prose description of the bisector where the bridge carried a count; the two were not the same quantity. Bridge: MedialAxis.drawArc(at: 1, maxPoints: 20) (OCCTMedialAxisDrawArc, which evaluates the trimmed bisector at maxPoints uniform parameters); a temporary print in the test (never committed) observed 20 points, all finite, first (-5, 2), last (-3, 4.0586145430278105e-17); the test asserts the count and finiteness only. Kernel: probe-evidence-fix.mm runs the same calls, BRepMAT2d_BisectingLocus::GeomBis on arc 1 then Geom2d_TrimmedCurve::D0 at 20 uniform parameters, and printed finite=20 with the same first and last point (transcript-evidence-fix.txt, drawArc line). The count is set by the sampling loop; what the kernel contributes is that every evaluation is finite and where the ends are.",
     "probe": "Scripts/repro/766-medial-axis/"
   },
   {
@@ -6044,20 +6063,37 @@
     "bridge_output": {
       "type": "polyline",
       "data": {
-        "polylines": 5
+        "polylines": 5,
+        "points_per_polyline": [
+          16,
+          16,
+          16,
+          16,
+          16
+        ],
+        "all_finite": true
       }
     },
     "kernel_output": {
       "type": "polyline",
       "data": {
-        "arcs": 5
+        "polylines": 5,
+        "points_per_polyline": [
+          16,
+          16,
+          16,
+          16,
+          16
+        ],
+        "all_finite": true
       }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "MISMATCH",
+    "status": "PASS",
+    "source": "Same quantity on both sides: drawing every arc of the 10 x 4 rectangle's medial axis at 16 points per arc: the number of polylines, the points in each, and whether every point is finite. The earlier record was MISMATCH with no differences because the bridge carried polylines and the kernel carried the graph's arc count under a different key. Bridge: MedialAxis.drawAll(maxPointsPerArc: 16) (OCCTMedialAxisDrawAll); a temporary print in the test (never committed) observed 5 polylines of 16 points each, all finite; the test asserts polylines.count == arcCount and at least 2 points each. Kernel: probe-evidence-fix.mm samples each of the graph's 5 arcs the way the bridge does (GeomBis, then D0 at 16 uniform parameters) and printed finite=16 of 16 for every arc (transcript-evidence-fix.txt, drawAll lines).",
     "probe": "Scripts/repro/766-medial-axis/"
   },
   {
@@ -6214,16 +6250,17 @@
       }
     },
     "kernel_output": {
-      "type": "graph",
+      "type": "N/A",
       "data": {
-        "no_face_to_explore": true
+        "reason": "The nil is the bridge's decision, not the kernel's: OCCTMedialAxisCompute takes the first face with TopExp_Explorer(shape, TopAbs_FACE) and returns null when there is none, before any BRepMAT2d call, and BRepMAT2d_Explorer::Perform takes a TopoDS_Face, so the kernel has no medial-axis call to make for a wire-only shape. The only kernel fact involved is that the explorer finds no face on a wire-only shape, which probe-evidence-fix.mm confirms (More()=0)."
       }
     },
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
-    "status": "MISMATCH",
+    "status": "N/A",
+    "source": "No kernel counterpart. The earlier record was MISMATCH with no differences, comparing the bridge's computed: false against a kernel key no_face_to_explore: true that is the same fact restated, not a kernel result of medial-axis computation. Bridge: MedialAxis(of: Shape.fromWire(Wire.rectangle(5, 5))) (OCCTMedialAxisCompute); a temporary print in the test (never committed) observed nil and 0 faces in the shape, and the test asserts nil. Kernel: TopExp_Explorer(wire-only shape, TopAbs_FACE).More() printed 0 (transcript-evidence-fix.txt, last line).",
     "probe": "Scripts/repro/766-medial-axis/"
   },
   {
