@@ -3486,23 +3486,24 @@
     "test_name": "#1193: addCuttingPlaneLine direction projection::projectDirectionToPlane matches OCCT's gp_Ax2 canonical basis",
     "bridge_function": "projectDirectionToPlane (Swift) vs gp_Ax2",
     "bridge_output": {
-      "projectedRight": [
-        1,
-        0
+      "right": [
+        0.0,
+        0.9777876596251666,
+        -0.20959793101254465
       ],
-      "projectedUp": [
-        0,
-        1
-      ],
-      "within": 1e-09
+      "up": [
+        -0.987868702146798,
+        0.03254876181607849,
+        0.1518420410263285
+      ]
     },
     "kernel_output": {
-      "XDirection": [
+      "right": [
         3.56876177880591e-18,
         0.9777876596251667,
         -0.20959793101254467
       ],
-      "YDirection": [
+      "up": [
         -0.9878687021467979,
         0.03254876181607849,
         0.1518420410263285
@@ -3512,65 +3513,59 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the previous record put the test's projected unit vectors and its 1e-9 tolerance on the bridge side and the raw gp_Ax2 X and Y directions on the kernel side, so the keys differed): the 3D basis vectors of the view frame for the near-degenerate view direction (sin 15deg * 0.6, sin 15deg * 0.8, cos 15deg). Bridge: perpendicularBasis(to:) right and up, the basis this function builds its 2D frame from (Scripts/repro/766-drawing-1193-881-999-evidence-fix/swift-side.txt, basis.right and basis.up). Kernel: gp_Ax2(origin, direction) XDirection() and YDirection() at %.17g (Scripts/repro/766-drawing-1193-881-999-evidence-fix/transcript.txt). The test asserts that projecting the fixture constants expectedRight and expectedUp through projectDirectionToPlane gives (1,0) and (0,1); the observed projections are right=[1.0, 0.0] up=[0.0, 1.0000000000000002] (Scripts/repro/766-drawing-1193-881-999-evidence-fix/swift-side.txt, basis.projectDirection), which holds because the Swift basis equals those constants. The two sides agree within 1e-12 and differ in the last printed digits.",
+    "probe": "Scripts/repro/766-drawing-1193-881-999/, Scripts/repro/766-drawing-1193-881-999-evidence-fix/"
   },
   {
     "test_name": "#1193: addCuttingPlaneLine direction projection::addCuttingPlaneLine's traceStart/traceEnd/arrowDirection match a hand-derived projection",
-    "bridge_function": "Drawing.addCuttingPlaneLine (Swift) vs gp_Ax2",
+    "bridge_function": "Drawing.addCuttingPlaneLine (Swift)",
     "bridge_output": {
       "traceStart": [
-        -30,
-        0
+        -30.0,
+        0.0
       ],
       "traceEnd": [
-        30,
-        0
+        30.0,
+        0.0
       ],
-      "arrow": [
-        0,
-        1
-      ],
-      "within": 1e-09
-    },
-    "kernel_output": {
-      "XDirection": [
-        3.56876177880591e-18,
-        0.9777876596251667,
-        -0.20959793101254467
-      ],
-      "YDirection": [
-        -0.9878687021467979,
-        0.03254876181607849,
-        0.1518420410263285
+      "arrowDirection": [
+        0.0,
+        1.0
       ]
     },
+    "kernel_output": null,
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": null,
+      "differences": [],
+      "reason": "the check lives in the Swift wrapper (addCuttingPlaneLine's trace and arrow geometry, hand-derived expectations); the gp_Ax2 frame it depends on is compared in the projectDirectionToPlane and projectPointToPlane records"
     },
-    "status": "PASS"
+    "status": "N/A",
+    "source": "No kernel counterpart: the checked quantity is Swift annotation geometry, the cutting-plane line's trace endpoints and arrow direction in the view's 2D frame, which the test asserts against hand-derived values (the test's own title says so). Bridge values are the annotation's observed traceStart, traceEnd and arrowDirection (Scripts/repro/766-drawing-1193-881-999-evidence-fix/swift-side.txt, cutting.trace). The previous record put the test's literals on the bridge side and the raw gp_Ax2 directions on the kernel side; the frame the function depends on is compared, like for like, in the projectDirectionToPlane and projectPointToPlane records of this suite.",
+    "probe": "Scripts/repro/766-drawing-1193-881-999/, Scripts/repro/766-drawing-1193-881-999-evidence-fix/"
   },
   {
     "test_name": "perpendicularBasis unification: Drawing projection (#881)::projectPointToPlane's basis matches OCCT's gp_Ax2 canonical basis",
     "bridge_function": "projectPointToPlane (Swift) vs gp_Ax2",
     "bridge_output": {
-      "projectedRight": [
-        1,
-        0
+      "right": [
+        0.0,
+        0.9777876596251666,
+        -0.20959793101254465
       ],
-      "projectedUp": [
-        0,
-        1
-      ],
-      "within": 1e-09
+      "up": [
+        -0.987868702146798,
+        0.03254876181607849,
+        0.1518420410263285
+      ]
     },
     "kernel_output": {
-      "XDirection": [
+      "right": [
         3.56876177880591e-18,
         0.9777876596251667,
         -0.20959793101254467
       ],
-      "YDirection": [
+      "up": [
         -0.9878687021467979,
         0.03254876181607849,
         0.1518420410263285
@@ -3580,23 +3575,32 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the previous record put the test's projected unit vectors and its 1e-9 tolerance on the bridge side and the raw gp_Ax2 X and Y directions on the kernel side, so the keys differed): the 3D basis vectors of the view frame for the near-degenerate view direction (sin 15deg * 0.6, sin 15deg * 0.8, cos 15deg). Bridge: perpendicularBasis(to:) right and up, the basis this function builds its 2D frame from (Scripts/repro/766-drawing-1193-881-999-evidence-fix/swift-side.txt, basis.right and basis.up). Kernel: gp_Ax2(origin, direction) XDirection() and YDirection() at %.17g (Scripts/repro/766-drawing-1193-881-999-evidence-fix/transcript.txt). The test asserts that projecting the fixture constants through projectPointToPlane gives (1,0) and (0,1); the observed projections are right=[1.0, 0.0] up=[0.0, 1.0000000000000002] (Scripts/repro/766-drawing-1193-881-999-evidence-fix/swift-side.txt, basis.projectPoint). The two sides agree within 1e-12 and differ in the last printed digits.",
+    "probe": "Scripts/repro/766-drawing-1193-881-999/, Scripts/repro/766-drawing-1193-881-999-evidence-fix/"
   },
   {
     "test_name": "perpendicularBasis unification: Drawing projection (#881)::projectAxisToPlane's basis matches OCCT's gp_Ax2 canonical basis",
     "bridge_function": "projectAxisToPlane (Swift) vs gp_Ax2",
     "bridge_output": {
-      "p1.y": 0,
-      "p2.y": 0,
-      "within": 1e-09
+      "right": [
+        0.0,
+        0.9777876596251666,
+        -0.20959793101254465
+      ],
+      "up": [
+        -0.987868702146798,
+        0.03254876181607849,
+        0.1518420410263285
+      ]
     },
     "kernel_output": {
-      "XDirection": [
+      "right": [
         3.56876177880591e-18,
         0.9777876596251667,
         -0.20959793101254467
       ],
-      "YDirection": [
+      "up": [
         -0.9878687021467979,
         0.03254876181607849,
         0.1518420410263285
@@ -3606,17 +3610,18 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the previous record put the test's projected unit vectors and its 1e-9 tolerance on the bridge side and the raw gp_Ax2 X and Y directions on the kernel side, so the keys differed): the 3D basis vectors of the view frame for the near-degenerate view direction (sin 15deg * 0.6, sin 15deg * 0.8, cos 15deg). Bridge: perpendicularBasis(to:) right and up, the basis this function builds its 2D frame from (Scripts/repro/766-drawing-1193-881-999-evidence-fix/swift-side.txt, basis.right and basis.up). Kernel: gp_Ax2(origin, direction) XDirection() and YDirection() at %.17g (Scripts/repro/766-drawing-1193-881-999-evidence-fix/transcript.txt). projectAxisToPlane builds on that basis (through projectDirectionToPlane and projectPointToPlane) and then clips the axis to the bounds, which is Swift arithmetic; the test asserts the clipped endpoints' y is 0 for an axis along expectedRight, observed p1=[-100.0, 0.0] p2=[100.0, 0.0] (Scripts/repro/766-drawing-1193-881-999-evidence-fix/swift-side.txt, basis.projectAxis). The two sides agree within 1e-12 and differ in the last printed digits.",
+    "probe": "Scripts/repro/766-drawing-1193-881-999/, Scripts/repro/766-drawing-1193-881-999-evidence-fix/"
   },
   {
     "test_name": "Drawing.ProjectionType is honoured (#999)::Orthographic projects the box at its true size",
     "bridge_function": "OCCTDrawingCreate",
     "bridge_output": {
       "halfExtent": [
-        50,
-        25
-      ],
-      "within": 1e-06
+        50.0000001,
+        25.0000001
+      ]
     },
     "kernel_output": {
       "halfExtent": [
@@ -3628,86 +3633,109 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the previous record put the test's pinned literals 50 and 25 and its 1e-6 tolerance on the bridge side): the visible half-extents (x, y) of the centred 100x50x30 box projected orthographically along +Z. Bridge: Drawing.project(box, direction: (0,0,1)) .visibleEdges .boundingBox, (max - min) / 2 (Scripts/repro/766-drawing-1193-881-999-evidence-fix/swift-side.txt, proj999.ortho). Kernel: HLRBRep_Algo with HLRAlgo_Projector(gp_Ax2(origin, +Z)) then BRepBndLib::Add of the visible compound at %.17g (Scripts/repro/766-drawing-1193-881-999-evidence-fix/transcript.txt). The extent includes BRepBndLib's 1e-7 tolerance gap on both sides.",
+    "probe": "Scripts/repro/766-drawing-1193-881-999/, Scripts/repro/766-drawing-1193-881-999-evidence-fix/"
   },
   {
     "test_name": "Drawing.ProjectionType is honoured (#999)::Perspective diverges from orthographic, and by the ratio the focal distance implies",
     "bridge_function": "OCCTDrawingCreate",
     "bridge_output": {
       "halfExtent": [
-        71.42857142857143,
-        35.714285714285715
-      ],
-      "within": 1e-06
+        71.42857152857144,
+        35.71428581428572
+      ]
     },
     "kernel_output": {
       "halfExtent": [
-        71.4285715286,
-        35.7142858143
+        71.42857152857144,
+        35.71428581428572
       ]
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the previous record put a hand-computed ratio 50 * (50 / 35) and the test's tolerance on the bridge side): the visible half-extents of the same box at perspective focus 50. Bridge: Drawing.project(box, direction: (0,0,1), type: .perspective(focus: 50)) visible half-extents (Scripts/repro/766-drawing-1193-881-999-evidence-fix/swift-side.txt, proj999.persp50). Kernel: HLRAlgo_Projector(gp_Ax2(origin, +Z), 50), %.17g (Scripts/repro/766-drawing-1193-881-999-evidence-fix/transcript.txt, perspective focus 50). The test's ratio 50 * 50 / 35 (the near face is 35 from the eye) is what both sides agree with.",
+    "probe": "Scripts/repro/766-drawing-1193-881-999/, Scripts/repro/766-drawing-1193-881-999-evidence-fix/"
   },
   {
     "test_name": "Drawing.ProjectionType is honoured (#999)::The focal distance sets the scale, and a longer one converges on orthographic",
     "bridge_function": "OCCTDrawingCreate",
     "bridge_output": {
       "halfExtentX": {
-        "20": 200,
-        "50": 71.4285714286,
-        "200": 54.0540540541,
-        "1000": 50.7614213198
-      },
-      "within": 1e-06
+        "20": 200.00000010000002,
+        "50": 71.42857152857144,
+        "200": 54.05405415405406,
+        "1000": 50.76142141979695
+      }
     },
     "kernel_output": {
       "halfExtentX": {
-        "20": 200.0000001,
-        "50": 71.4285715286,
-        "200": 54.0540541541,
-        "1000": 50.7614214198
+        "20": 200.00000010000002,
+        "50": 71.42857152857144,
+        "200": 54.05405415405406,
+        "1000": 50.76142141979695
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the previous record put hand-computed values 50 * focus / (focus - 15) and the test's tolerance on the bridge side): the visible half-extent in x of the box at perspective focus 20, 50, 200 and 1000, which shrinks toward the orthographic 50.0000001 as the focus grows. Bridge: Drawing.project(..., type: .perspective(focus:)) for each focus (Scripts/repro/766-drawing-1193-881-999-evidence-fix/swift-side.txt, proj999.focus lines). Kernel: HLRAlgo_Projector(gp_Ax2(origin, +Z), focus) at %.17g (Scripts/repro/766-drawing-1193-881-999-evidence-fix/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-1193-881-999/, Scripts/repro/766-drawing-1193-881-999-evidence-fix/"
   },
   {
     "test_name": "Drawing.ProjectionType is honoured (#999)::A non-positive focal distance is refused rather than silently reinterpreted",
     "bridge_function": "OCCTDrawingCreate",
     "bridge_output": {
-      "focus0": null,
-      "focusNeg100": null,
-      "focusNaN": null
+      "focus0": {
+        "drawingProduced": false,
+        "visibleEdges": 0
+      },
+      "focusNeg100": {
+        "drawingProduced": false,
+        "visibleEdges": 0
+      },
+      "focusNaN": {
+        "drawingProduced": false,
+        "visibleEdges": 0
+      }
     },
     "kernel_output": {
-      "guardFocusNotPositive": [
-        true,
-        true,
-        true
-      ]
+      "focus0": {
+        "drawingProduced": true,
+        "visibleEdges": 0
+      },
+      "focusNeg100": {
+        "drawingProduced": true,
+        "visibleEdges": 4
+      },
+      "focusNaN": {
+        "drawingProduced": true,
+        "visibleEdges": 0
+      }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "By design (#999): OCCTDrawingCreate refuses a focal distance that is not positive (a distance, and OCCT does not raise on one). Raw HLRBRep_Algo does not refuse any of them: focus 0 and NaN return an empty result with no visible edges, and focus -100 returns a real but differently scaled drawing (4 visible edges, half extent (58.823529511764711, 29.411764805882356) against 71.43 for focus 50), so none of the three reads as a failure at the call site. The test asserts the refusal."
+      ]
     },
-    "status": "PASS"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Bridge: Drawing.project(box, direction: (0,0,1), type: .perspective(focus:)) returned nil for focus 0, -100 and NaN, so no drawing and no visible edges (Scripts/repro/766-drawing-1193-881-999-evidence-fix/swift-side.txt, proj999.focus0.nil, proj999.focusNeg100.nil, proj999.focusNaN.nil, all true); the test asserts that refusal. Kernel: the same box through HLRBRep_Algo with HLRAlgo_Projector(gp_Ax2(origin, +Z), focus) WITHOUT the bridge's !(focus > 0) guard completed without an exception for all three (Scripts/repro/766-drawing-1193-881-999-evidence-fix/transcript.txt, unguarded lines). drawingProduced means the projection returned a result (an empty result counts); visibleEdges is the unique edge count of the visible compounds. The previous record's kernel side was the bridge's own C++ expression !(focus > 0) evaluated in the probe, not a kernel measurement.",
+    "probe": "Scripts/repro/766-drawing-1193-881-999/, Scripts/repro/766-drawing-1193-881-999-evidence-fix/"
   },
   {
     "test_name": "Drawing.ProjectionType is honoured (#999)::projectFast stays orthographic, which is all HLRBRep_PolyAlgo can do",
     "bridge_function": "OCCTDrawingCreatePoly",
     "bridge_output": {
       "halfExtent": [
-        50,
-        25
-      ],
-      "within": 0.001
+        50.0000001,
+        25.0000001
+      ]
     },
     "kernel_output": {
       "halfExtent": [
@@ -3719,6 +3747,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the previous record put the test's literals and its 1e-3 tolerance on the bridge side): the visible half-extents of the box from the polygonal HLR, which has no perspective. Bridge: Drawing.projectFast(box, direction: (0,0,1)) visible half-extents at the default deflection 0.01 (Scripts/repro/766-drawing-1193-881-999-evidence-fix/swift-side.txt, proj999.fast). Kernel: BRepMesh_IncrementalMesh(0.01) then HLRBRep_PolyAlgo with HLRAlgo_Projector(gp_Ax2(origin, +Z)) at %.17g (Scripts/repro/766-drawing-1193-881-999-evidence-fix/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-1193-881-999/, Scripts/repro/766-drawing-1193-881-999-evidence-fix/"
   }
 ]
