@@ -42,6 +42,16 @@ struct Curve3DInterpolateTangentToleranceParityTests {
                 #expect(simd_distance(a.point(at: t), b.point(at: t)) < 1e-12)
             }
         }
+        // Both calls resolving to one function is a compile-time property, so a runtime defect
+        // cannot make the comparison above differ (#766). Pinning what the bare call builds
+        // catches a shadowing overload that drops the tangents: GeomAPI_Interpolate with
+        // Load(startTangent, endTangent) keeps their directions
+        // (Scripts/repro/766-curve-extras-interp/transcript.txt).
+        guard let a = bare else { return }
+        let t0 = simd_normalize(a.evalD1(at: a.domain.lowerBound).d1)
+        let t1 = simd_normalize(a.evalD1(at: a.domain.upperBound).d1)
+        #expect(simd_distance(t0, simd_normalize(Self.startTangent)) < 1e-9)
+        #expect(simd_distance(t1, simd_normalize(Self.endTangent)) < 1e-9)
     }
 
     @Test("tolerance: is reachable and actually governs the minimum inter-point distance")
