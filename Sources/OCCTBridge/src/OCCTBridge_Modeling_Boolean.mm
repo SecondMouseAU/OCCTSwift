@@ -2356,20 +2356,29 @@ OCCTShapeRef OCCTShapeGlue(OCCTShapeRef shape1, OCCTShapeRef shape2, double tole
 
   try
   {
-    // Use BRepAlgoAPI_Fuse with glue option for coincident faces
+    // Use BRepAlgoAPI_Fuse with glue option for coincident faces. A boolean needs one
+    // shape as the argument and the other as the tool (#2735): putting both into
+    // SetArguments with no SetTools left the operation with nothing to fuse the
+    // argument against, so it reported errors on every input and this function always
+    // took the fallback below, silently, regardless of geometry.
     BRepAlgoAPI_Fuse fuse;
     fuse.SetGlue(BOPAlgo_GlueShift); // Enable gluing mode
     fuse.SetFuzzyValue(tolerance);
 
     TopTools_ListOfShape args;
     args.Append(shape1->shape);
-    args.Append(shape2->shape);
     fuse.SetArguments(args);
+
+    TopTools_ListOfShape tools;
+    tools.Append(shape2->shape);
+    fuse.SetTools(tools);
 
     fuse.Build();
     if (!fuse.IsDone())
     {
-      // Fallback to regular fuse
+      // A genuine glue failure now, not the missing-tools setup bug above: fall back to
+      // a plain fuse so a caller still gets a result for geometry the glue-mode fuse
+      // could not handle, same as before #2735's fix.
       BRepAlgoAPI_Fuse regularFuse(shape1->shape, shape2->shape);
       if (!regularFuse.IsDone())
         return nullptr;
