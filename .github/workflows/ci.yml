@@ -13,8 +13,12 @@ name: CI
 # repo's own intended default, see the comment above `useBridgePrebuilt` in Package.swift, and
 # it's a couple of minutes, not tens of minutes.
 
+# A draft PR is parked: the macOS jobs below skip it (they are what the queue waits on), and
+# `ready_for_review` starts them when it is marked ready, so a draft never needs a push to get CI.
+# gate-scripts stays on for drafts: it is a Linux job of a few seconds.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches:
       - main
@@ -282,6 +286,7 @@ jobs:
 
   build-and-test:
     name: swift build + test (macOS)
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: macos-15
     timeout-minutes: 30
     steps:
@@ -324,6 +329,7 @@ jobs:
 
   ios-simulator-build:
     name: swift build (iOS Simulator, smoke)
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: macos-15
     timeout-minutes: 20
     steps:

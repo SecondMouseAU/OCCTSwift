@@ -31,8 +31,11 @@ name: code-style
 # readily available via Homebrew there), but with none of that job's build
 # time or its coupling to kernel-patch-pin drift.
 
+# A draft PR is parked: the macOS job skips it, and `ready_for_review` starts it when the
+# PR is marked ready (see ci.yml).
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches:
       - main
@@ -45,6 +48,7 @@ concurrency:
 
 jobs:
   code-style:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: macos-15
     timeout-minutes: 15
     steps:
