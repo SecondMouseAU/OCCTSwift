@@ -5843,45 +5843,110 @@
       "type": "extrema",
       "data": {
         "count": 4,
-        "square_distances_sorted": [
-          100,
-          100,
-          125,
-          125
+        "square_distances": [
+          125.0,
+          125.0,
+          100.0,
+          100.0
+        ],
+        "points_on_line": [
+          [
+            3.061616997868383e-16,
+            0.0,
+            10.0
+          ],
+          [
+            -9.184850993605148e-16,
+            0.0,
+            10.0
+          ],
+          [
+            5.0,
+            0.0,
+            10.0
+          ],
+          [
+            -5.0,
+            0.0,
+            10.0
+          ]
+        ],
+        "points_on_circle": [
+          [
+            3.061616997868383e-16,
+            5.0,
+            0.0
+          ],
+          [
+            -9.184850993605148e-16,
+            -5.0,
+            0.0
+          ],
+          [
+            5.0,
+            0.0,
+            0.0
+          ],
+          [
+            -5.0,
+            6.123233995736766e-16,
+            0.0
+          ]
         ]
       }
     },
     "kernel_output": {
       "type": "extrema",
       "data": {
-        "is_parallel": false,
-        "nb_ext": 4,
+        "count": 4,
         "square_distances": [
-          125,
-          125,
-          100,
-          100
+          125.0,
+          125.0,
+          100.0,
+          100.0
+        ],
+        "points_on_line": [
+          [
+            3.061616997868383e-16,
+            0.0,
+            10.0
+          ],
+          [
+            -9.184850993605148e-16,
+            0.0,
+            10.0
+          ],
+          [
+            5.0,
+            0.0,
+            10.0
+          ],
+          [
+            -5.0,
+            0.0,
+            10.0
+          ]
         ],
         "points_on_circle": [
           [
-            0,
-            5,
-            0
+            3.061616997868383e-16,
+            5.0,
+            0.0
           ],
           [
-            0,
-            -5,
-            0
+            -9.184850993605148e-16,
+            -5.0,
+            0.0
           ],
           [
-            5,
-            0,
-            0
+            5.0,
+            0.0,
+            0.0
           ],
           [
-            -5,
-            0,
-            0
+            -5.0,
+            6.123233995736766e-16,
+            0.0
           ]
         ]
       }
@@ -5890,7 +5955,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-extrema-elc-lin-circ/probe.mm",
+    "source": "Same quantity on both sides: every extremum Extrema_ExtElC reports between the line and the circle, in the order the kernel reports them: the number of extrema, each squared distance, and the two witness points (the point on the line and the point on the circle). Bridge: ExtremaElC.lineToCircle (OCCTExtremaElCLinCirc) returned these rows in this order; a temporary print in the test observed them. Kernel: Extrema_ExtElC(gp_Lin, gp_Circ, 1e-6) printed IsDone=1 IsParallel=0 and the same rows (SquareDistance(i) and Points(i) onLine/onCircle), so the non-parallel branch is the one compared; the wrapper does not expose IsParallel. The test sorts the squared distances before asserting them; the record keeps the reported order, which the two sides share."
   },
   {
     "test_name": "Extrema_ExtElC Line-Circle::lineCircleCoplanar",
@@ -5899,48 +5966,66 @@
       "type": "extrema",
       "data": {
         "count": 2,
-        "nearest": {
-          "square_distance": 25,
-          "on_line": [
-            10,
-            0,
-            0
+        "square_distances": [
+          25.0,
+          225.0
+        ],
+        "points_on_line": [
+          [
+            10.0,
+            0.0,
+            0.0
           ],
-          "on_circle": [
-            5,
-            0,
-            0
+          [
+            10.0,
+            6.123233995736766e-16,
+            0.0
           ]
-        },
-        "farthest": {
-          "square_distance": 225,
-          "on_circle": [
-            -5,
-            0,
-            0
+        ],
+        "points_on_circle": [
+          [
+            5.0,
+            0.0,
+            0.0
+          ],
+          [
+            -5.0,
+            6.123233995736766e-16,
+            0.0
           ]
-        }
+        ]
       }
     },
     "kernel_output": {
       "type": "extrema",
       "data": {
-        "is_parallel": false,
-        "nb_ext": 2,
+        "count": 2,
         "square_distances": [
-          25,
-          225
+          25.0,
+          225.0
         ],
-        "on_circle": [
+        "points_on_line": [
           [
-            5,
-            0,
-            0
+            10.0,
+            0.0,
+            0.0
           ],
           [
-            -5,
-            0,
-            0
+            10.0,
+            6.123233995736766e-16,
+            0.0
+          ]
+        ],
+        "points_on_circle": [
+          [
+            5.0,
+            0.0,
+            0.0
+          ],
+          [
+            -5.0,
+            6.123233995736766e-16,
+            0.0
           ]
         ]
       }
@@ -5949,6 +6034,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-extrema-elc-lin-circ/probe.mm",
+    "source": "Same quantity on both sides: every extremum Extrema_ExtElC reports between the line and the circle, in the order the kernel reports them: the number of extrema, each squared distance, and the two witness points (the point on the line and the point on the circle). Bridge: ExtremaElC.lineToCircle (OCCTExtremaElCLinCirc) returned these rows in this order; a temporary print in the test observed them. Kernel: Extrema_ExtElC(gp_Lin, gp_Circ, 1e-6) printed IsDone=1 IsParallel=0 and the same rows (SquareDistance(i) and Points(i) onLine/onCircle), so the non-parallel branch is the one compared; the wrapper does not expose IsParallel. The test sorts the squared distances before asserting them; the record keeps the reported order, which the two sides share."
   }
 ]
