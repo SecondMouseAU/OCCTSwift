@@ -422,26 +422,28 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "overwritten": [
-          0
-        ],
         "declined": [],
-        "volume": "equals blendedEdges([(0,5)])"
+        "duplicatedVolume": 946.349540849362,
+        "lastOnlyVolume": 946.349540849362,
+        "firstOnlyVolume": 991.4159265358978
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "duplicatedVolume": 946.349540849,
-        "lastOnlyVolume": 946.349540849,
-        "firstOnlyVolume": 991.415926536
+        "declined": [],
+        "duplicatedVolume": 946.349540849362,
+        "lastOnlyVolume": 946.349540849362,
+        "firstOnlyVolume": 991.4159265358978
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides, all at %.17g. Bridge values are what the test observed, read from a temporary print of the report each request returned (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue633-blended-edges-duplicate-report/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats OCCTShapeBlendEdges (BRepFilletAPI_MakeFillet::Add(R, E) per entry in request order, declined edges read back as Contour(E) == 0, then Build). The 10 mm box with edge 0 requested at radius 2 then 5: the declined list, the volume of that request, and the volumes of edge 0 at 5 only and at 2 only. The duplicate equals the last-only volume and differs from the first-only one, so the last radius wins. The test asserts the report's volume equals blendedEdges' and the last-only volume; the first-only volume is measured as well. overwrittenDuplicateIndices, which this test asserts, is Swift bookkeeping over the request list with no kernel counterpart, so it is not in the payload; the payload is what the kernel owns.",
+    "probe": "Scripts/repro/766-modeling-issue633-blended-edges-duplicate-report/"
   },
   {
     "test_name": "blendedEdges reports overwritten duplicates (#633)::tripleDuplicateReportsTwoOverwrittenEntries",
@@ -449,24 +451,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "overwritten": [
-          0,
-          0
-        ],
-        "volume": "equals blendedEdges([(0,5)])"
+        "declined": [],
+        "tripleVolume": 946.349540849362,
+        "lastOnlyVolume": 946.349540849362
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "tripleVolume": 946.349540849
+        "declined": [],
+        "tripleVolume": 946.349540849362,
+        "lastOnlyVolume": 946.349540849362
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides, all at %.17g. Bridge values are what the test observed, read from a temporary print of the report each request returned (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue633-blended-edges-duplicate-report/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats OCCTShapeBlendEdges (BRepFilletAPI_MakeFillet::Add(R, E) per entry in request order, declined edges read back as Contour(E) == 0, then Build). The 10 mm box with edge 0 requested at radius 2, 3 and 5: the declined list, the volume of that request and the volume of edge 0 at 5 only. The test asserts the two volumes are equal within 1e-9. overwrittenDuplicateIndices, which this test asserts, is Swift bookkeeping over the request list with no kernel counterpart, so it is not in the payload; the payload is what the kernel owns.",
+    "probe": "Scripts/repro/766-modeling-issue633-blended-edges-duplicate-report/"
   },
   {
     "test_name": "blendedEdges reports overwritten duplicates (#633)::distinctIndicesReportNoOverwrites",
@@ -474,22 +478,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "overwritten": [],
-        "declined": []
+        "produced": true,
+        "declined": [],
+        "volume": 989.0624884756555
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "IsDone": 1,
-        "declined": 0
+        "produced": true,
+        "declined": [],
+        "volume": 989.0624884756555
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides, all at %.17g. Bridge values are what the test observed, read from a temporary print of the report each request returned (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue633-blended-edges-duplicate-report/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats OCCTShapeBlendEdges (BRepFilletAPI_MakeFillet::Add(R, E) per entry in request order, declined edges read back as Contour(E) == 0, then Build). The 10 mm box with edges (0, 1.0), (1, 2.0), (2, 0.5): whether a shape came back, the declined list (an empty list on both sides; the earlier kernel side carried the count 0) and the volume, which the test does not read. overwrittenDuplicateIndices, which this test asserts, is Swift bookkeeping over the request list with no kernel counterpart, so it is not in the payload; the payload is what the kernel owns.",
+    "probe": "Scripts/repro/766-modeling-issue633-blended-edges-duplicate-report/"
   },
   {
     "test_name": "blendedEdges reports overwritten duplicates (#633)::declinedEdgesAreNamedOnAnOpenShell",
@@ -504,7 +512,7 @@
           10,
           11
         ],
-        "area": "equals blendedEdges"
+        "area": 465.09733552923257
       }
     },
     "kernel_output": {
@@ -517,14 +525,16 @@
           10,
           11
         ],
-        "area": 465.097335529
+        "area": 465.09733552923257
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides, all at %.17g. Bridge values are what the test observed, read from a temporary print of the report each request returned (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue633-blended-edges-duplicate-report/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats OCCTShapeBlendEdges (BRepFilletAPI_MakeFillet::Add(R, E) per entry in request order, declined edges read back as Contour(E) == 0, then Build). The open shell fixture (the 10 mm box with one face dropped and the rest sewn at 1e-6) with every edge at radius 1: its edge count, the declined indices and the surface area of the result. The test asserts 12 edges, the declined set {6, 9, 10, 11} and that the report's area equals blendedEdges' (465.09733552923257 for both). overwrittenDuplicateIndices, which this test asserts, is Swift bookkeeping over the request list with no kernel counterpart, so it is not in the payload; the payload is what the kernel owns.",
+    "probe": "Scripts/repro/766-modeling-issue633-blended-edges-duplicate-report/"
   },
   {
     "test_name": "blendedEdges reports overwritten duplicates (#633)::duplicateAndDeclineAreReportedIndependently",
@@ -532,34 +542,36 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "overwritten": [
-          "accepted"
-        ],
+        "acceptedIndex": 0,
         "declined": [
           6,
           9,
           10,
           11
-        ]
+        ],
+        "area": 489.69911184307745
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "accepted": 0,
+        "acceptedIndex": 0,
         "declined": [
           6,
           9,
           10,
           11
-        ]
+        ],
+        "area": 489.69911184307745
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides, all at %.17g. Bridge values are what the test observed, read from a temporary print of the report each request returned (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue633-blended-edges-duplicate-report/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats OCCTShapeBlendEdges (BRepFilletAPI_MakeFillet::Add(R, E) per entry in request order, declined edges read back as Contour(E) == 0, then Build). The open shell with its first accepted edge (index 0) requested at radius 1 then 2, and every declined edge once: the accepted edge's index, the declined indices and the area of the result (which the test does not read). overwrittenDuplicateIndices, which this test asserts, is Swift bookkeeping over the request list with no kernel counterpart, so it is not in the payload; the payload is what the kernel owns.",
+    "probe": "Scripts/repro/766-modeling-issue633-blended-edges-duplicate-report/"
   },
   {
     "test_name": "blendedEdges reports overwritten duplicates (#633)::rejectsTheSameInputsBlendedEdgesRejects",
@@ -588,21 +600,25 @@
     "bridge_output": {
       "type": "value",
       "data": {
+        "produced": true,
         "declined": [],
-        "overwritten": []
+        "volume": 975.5870138909414
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "IsDone": 1,
-        "declined": 0
+        "produced": true,
+        "declined": [],
+        "volume": 975.5870138909414
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides, all at %.17g. Bridge values are what the test observed, read from a temporary print of the report each request returned (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue633-blended-edges-duplicate-report/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats OCCTShapeBlendEdges (BRepFilletAPI_MakeFillet::Add(R, E) per entry in request order, declined edges read back as Contour(E) == 0, then Build). The 10 mm box with all 12 of its own edges at radius 1: whether a shape came back, the declined list (empty on both sides; the earlier kernel side carried the count 0) and the volume, which the test does not read. overwrittenDuplicateIndices, which this test asserts, is Swift bookkeeping over the request list with no kernel counterpart, so it is not in the payload; the payload is what the kernel owns.",
+    "probe": "Scripts/repro/766-modeling-issue633-blended-edges-duplicate-report/"
   }
 ]
