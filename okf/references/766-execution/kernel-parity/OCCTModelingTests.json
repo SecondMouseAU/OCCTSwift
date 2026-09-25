@@ -2,9 +2,18 @@
   {
     "test_name": "Modeling domain kernel parity",
     "bridge_function": "OCCTModelingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
   },
   {
@@ -406,5 +415,405 @@
       "differences": []
     },
     "status": "N/A"
+  },
+  {
+    "test_name": "LocOpe Draft Prism Tests::draftPrismTwoHeights",
+    "bridge_function": "OCCTLocOpeDPrism",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "produced": true,
+        "type": "solid",
+        "faces": 10,
+        "valid": true,
+        "volume": 64.05064623192806
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "produced": true,
+        "type": "solid",
+        "faces": 10,
+        "valid": true,
+        "volume": 64.05064623192806
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), face count, validity and volume. Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volumes at %.17g). Kernel values are from Scripts/repro/766-modeling-locope-dprism/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call (LocOpe_DPrism(face, 5, 3, 0.1), IsDone, Shape) on face(at: 0) of the centred 10 x 10 x 1 box. The test asserts a shape came back, valid, 10 faces and a volume within 1e-6 of 64.050646231928056 (before #766 it asserted only non-nil).",
+    "probe": "Scripts/repro/766-modeling-locope-dprism/"
+  },
+  {
+    "test_name": "LocOpe Draft Prism Tests::draftPrismSingleHeight",
+    "bridge_function": "OCCTLocOpeDPrismSingleHeight",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "produced": true,
+        "type": "solid",
+        "faces": 6,
+        "valid": true,
+        "volume": 24.085995119264528
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "produced": true,
+        "type": "solid",
+        "faces": 6,
+        "valid": true,
+        "volume": 24.085995119264528
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), face count, validity and volume. Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volumes at %.17g). Kernel values are from Scripts/repro/766-modeling-locope-dprism/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call (LocOpe_DPrism(face, 5, 0.1), IsDone, Shape) on face(at: 0) of the centred 10 x 10 x 1 box. The test asserts a shape came back, valid, 6 faces and a volume within 1e-6 of 24.085995119264528 (before #766 it asserted only non-nil).",
+    "probe": "Scripts/repro/766-modeling-locope-dprism/"
+  },
+  {
+    "test_name": "LocOpe Draft Prism Tests::draftPrismHasFaces",
+    "bridge_function": "OCCTLocOpeDPrism",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "faces": 10,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 10,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: face count and validity of the two-height draft prism, with the keys and the boolean type normalised (the bridge side was faceCount/isValid true, the kernel side faces/valid 1). Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volumes at %.17g). Kernel values are from Scripts/repro/766-modeling-locope-dprism/transcript-evidence-fix.txt (LocOpe_DPrism(face, 5, 3, 0.1) on face(at: 0) of the centred 10 x 10 x 1 box).",
+    "probe": "Scripts/repro/766-modeling-locope-dprism/"
+  },
+  {
+    "test_name": "LocOpe FindEdges Tests::findEdgesInFace",
+    "bridge_function": "OCCTLocOpeFindEdgesInFace",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 4,
+        "edgeIndices": [
+          0,
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 4,
+        "edgeIndices": [
+          0,
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: how many edges LocOpe_FindEdgesInFace finds in face 0 of the centred 10 mm box, and their indices in the shape's edge enumeration. Bridge: the test asserts count == 4; the indices are read from a temporary print of Edge.index for each edge edgesInFace(at: 0) returns (run once and reverted, not committed). Kernel: Scripts/repro/766-modeling-locope-find-edges/transcript.txt (probe.mm walks LocOpe_FindEdgesInFace::Set(box, face 0) and prints edges.FindIndex(edge) - 1).",
+    "probe": "Scripts/repro/766-modeling-locope-find-edges/"
+  },
+  {
+    "test_name": "LocOpe_Gluer Tests::glueByFace",
+    "bridge_function": "OCCTLocOpeGlue",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "produced": true,
+        "type": "compound",
+        "faces": 11,
+        "valid": true,
+        "volume": 999.9999999999998
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "produced": true,
+        "type": "compound",
+        "faces": 11,
+        "valid": true,
+        "volume": 999.9999999999998
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for the one pair the test binds: box1's x=10 face (index 1) against box2's x=10 face (index 0). Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volumes at %.17g). Kernel values are from Scripts/repro/766-modeling-locope-gluer/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call (LocOpe_Gluer(base, glued), Bind(gluedFace, baseFace), Perform, IsDone, ResultingShape). The earlier record also listed pair (0,0), which the pre-#766 test kept and which the kernel accepts with an invalid result (volume -333.3333333, Scripts/repro/766-modeling-locope-gluer/transcript.txt); the test no longer binds it, so it is not part of this comparison.",
+    "probe": "Scripts/repro/766-modeling-locope-gluer/"
+  },
+  {
+    "test_name": "LocOpe LinearForm Tests::linearForm",
+    "bridge_function": "OCCTLocOpeLinearForm",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "produced": true,
+        "type": "compound",
+        "faces": 12,
+        "valid": true,
+        "volume": 5.000000000000013
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "produced": true,
+        "type": "compound",
+        "faces": 12,
+        "valid": true,
+        "volume": 4.999999999999993
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether a shape came back, its type, face count, validity and volume. Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volumes at %.17g). Kernel values are from Scripts/repro/766-modeling-locope-linear-form/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call (LocOpe_LinearForm::Perform(box, (0,0,10), (0,0,0), (0,0,10)), Shape) on the centred 5 x 5 x 0.1 box. The two volumes differ by 2e-14, inside the 1e-9 relative tolerance. The test asserts a shape came back, valid, 12 faces and a volume within 1e-6 of 5 (before #766 it asserted only non-nil).",
+    "probe": "Scripts/repro/766-modeling-locope-linear-form/"
+  },
+  {
+    "test_name": "LocOpe SplitShape Tests::splitEdge",
+    "bridge_function": "OCCTLocOpeSplitShapeByVertex",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 2,
+        "vertices": [
+          [
+            -5.0,
+            -5.0,
+            -5.0
+          ],
+          [
+            -5.0,
+            -5.0,
+            0.0
+          ],
+          [
+            -5.0,
+            -5.0,
+            5.0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 2,
+        "vertices": [
+          [
+            -5.0,
+            -5.0,
+            -5.0
+          ],
+          [
+            -5.0,
+            -5.0,
+            0.0
+          ],
+          [
+            -5.0,
+            -5.0,
+            5.0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: the edge count and the vertices, in enumeration order, of the compound of descendant edges left after edge 0 of the centred 10 mm box is split at normalized parameter 0.5. The middle vertex is the split point (-5, -5, 0) the test looks for. Bridge: the test asserts 2 edges, 3 vertices and a vertex within 1e-9 of (-5, -5, 0); the coordinates are read from a temporary print of Shape.vertices() (run once and reverted, not committed). Kernel: Scripts/repro/766-modeling-locope-split-shape/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call (LocOpe_SplitShape::Add(vertex, param, edge), DescendantShapes(edge) gathered into a compound) and lists that compound's vertices in TopExp order.",
+    "probe": "Scripts/repro/766-modeling-locope-split-shape/"
+  },
+  {
+    "test_name": "LocOpe Spliter::splitByWireOnFace",
+    "bridge_function": "OCCTLocOpeSplitByWireOnFace",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "faceIndex=5": {
+          "produced": true,
+          "faces": 7,
+          "valid": true
+        },
+        "faceIndex=1": {
+          "produced": true,
+          "faces": 6,
+          "valid": true
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faceIndex=5": {
+          "produced": true,
+          "faces": 7,
+          "valid": true
+        },
+        "faceIndex=1": {
+          "produced": true,
+          "faces": 6,
+          "valid": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for the two face indices at which the bridge reaches the kernel: whether a shape came back, its face count and validity, splitting the centred 10 mm box with the line (-6,0,5)-(6,0,5). Bridge: the test asserts faces 7 and valid at faceIndex 5 and faces 6 at faceIndex 1; validity at faceIndex 1 is read from a temporary print (run once and reverted, not committed). Kernel: Scripts/repro/766-modeling-locope-spliter/transcript.txt (LocOpe_WiresOnShape Bind + BindAll, LocOpe_Spliter::Perform). The test's third check, faceIndex 6 returns nil, is the bridge's own index guard (the box has faces 0 to 5, so the lookup finds no face and no kernel call is made), which has no kernel counterpart and is not in the payload.",
+    "probe": "Scripts/repro/766-modeling-locope-spliter/"
+  },
+  {
+    "test_name": "LocOpe_Spliter v71 Tests::splitByWireOnFace",
+    "bridge_function": "OCCTLocOpeSplitByWires",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "original": 6,
+        "best": 7,
+        "perFace": [
+          {
+            "faces": 6,
+            "valid": true
+          },
+          {
+            "faces": 6,
+            "valid": true
+          },
+          {
+            "faces": 6,
+            "valid": true
+          },
+          {
+            "faces": 6,
+            "valid": true
+          },
+          {
+            "faces": 6,
+            "valid": true
+          },
+          {
+            "faces": 7,
+            "valid": true
+          }
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "original": 6,
+        "best": 7,
+        "perFace": [
+          {
+            "faces": 6,
+            "valid": true
+          },
+          {
+            "faces": 6,
+            "valid": true
+          },
+          {
+            "faces": 6,
+            "valid": true
+          },
+          {
+            "faces": 6,
+            "valid": true
+          },
+          {
+            "faces": 6,
+            "valid": true
+          },
+          {
+            "faces": 7,
+            "valid": true
+          }
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: the origin-cornered 10 mm box's face count before the split, the best face count over the six faces the edge (0,5,10)-(10,5,10) is bound to in turn, and each face's result (face count, validity). Bridge: the test requires a result for every face and asserts that each is valid and that the face counts are exactly [6, 6, 6, 6, 6, 7] (and best > original); the per-face values are read from a temporary print of locOpeSplit(wiresOnFaces:) for each face (run once and reverted, not committed). Kernel: Scripts/repro/766-modeling-locope-spliter-v71/transcript.txt (LocOpe_WiresOnShape Bind, LocOpe_Spliter::Perform, per face).",
+    "probe": "Scripts/repro/766-modeling-locope-spliter-v71/"
+  },
+  {
+    "test_name": "LocOpe_Spliter v71 Tests::autoSplit",
+    "bridge_function": "OCCTLocOpeSplitByWiresAuto",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "onTop": {
+          "produced": true,
+          "faces": 7,
+          "valid": true
+        },
+        "offBox": {
+          "produced": true,
+          "faces": 6,
+          "valid": true
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "onTop": {
+          "produced": true,
+          "faces": 7,
+          "valid": true
+        },
+        "offBox": {
+          "produced": true,
+          "faces": 6,
+          "valid": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, on the centred 10 mm box: the auto split with an edge across the top face (z = 5) and with an edge off the box (z = 10, which auto-binds to nothing). Bridge: the test asserts 7 faces and valid for onTop and 6 faces for offBox; offBox validity is read from a temporary print (run once and reverted, not committed). Kernel: Scripts/repro/766-modeling-locope-spliter-v71/transcript.txt (LocOpe_WiresOnShape Add + BindAll, LocOpe_Spliter::Perform), lines autoSplit (edge on z=5 face) and autoSplit.",
+    "probe": "Scripts/repro/766-modeling-locope-spliter-v71/"
   }
 ]

@@ -1,0 +1,2 @@
+findEdgesInFace: edge indices = 0 1 2 3
+findEdgesInFace: count=4

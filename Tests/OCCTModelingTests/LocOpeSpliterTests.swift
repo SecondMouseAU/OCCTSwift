@@ -6,21 +6,22 @@ import simd
 @Suite("LocOpe Spliter")
 struct LocOpeSpliterTests {
     @Test("Split shape by wire on face")
-    func splitByWireOnFace() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
+    func splitByWireOnFace() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         // Create a wire that crosses a face as Shape
-        guard let wire = Wire.line(from: SIMD3(-6, 0, 5), to: SIMD3(6, 0, 5)),
-            let wireShape = Shape.fromWire(wire)
-        else { return }
-        // Try each face, the wire must lie on one of them
-        var splitFound = false
-        for i: Int32 in 1...6 {
-            if let result = box.splitByWireOnFace(wireShape, faceIndex: i) {
-                #expect(result.isValid)
-                splitFound = true
-                break
-            }
-        }
-        // It's ok if no face worked, the wire may not project onto any face
+        let wire = try #require(Wire.line(from: SIMD3(-6, 0, 5), to: SIMD3(6, 0, 5)))
+        let wireShape = try #require(Shape.fromWire(wire))
+        // #766: this tried face indices 1...6, stopped at the first non-nil result and asserted
+        // only its validity, then accepted "no face worked" outright, so it passed whether or not
+        // anything was split. Probed (Scripts/repro/766-modeling-locope-spliter): index 1 (a side
+        // face the line does not lie on) already succeeds with the box unsplit, 6 faces, which is
+        // where the loop stopped. The line lies on the top face, index 5 (z = 5), and splitting
+        // there gives 7 faces; a face it does not lie on leaves the box's 6.
+        let top = try #require(box.splitByWireOnFace(wireShape, faceIndex: 5))
+        #expect(top.isValid)
+        #expect(top.faceCount == 7)
+        let side = try #require(box.splitByWireOnFace(wireShape, faceIndex: 1))
+        #expect(side.faceCount == 6)
+        #expect(box.splitByWireOnFace(wireShape, faceIndex: 6) == nil)
     }
 }

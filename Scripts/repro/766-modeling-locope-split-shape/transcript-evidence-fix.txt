@@ -1,0 +1,5 @@
+splitEdge: range=[0, 10] parameter=5 splitPoint=(-5, -5, 0)
+splitEdge: descendants=2 edges=2 vertices=3
+splitEdge: vertex 0 = (-5, -5, -5)
+splitEdge: vertex 1 = (-5, -5, 0)
+splitEdge: vertex 2 = (-5, -5, 5)
