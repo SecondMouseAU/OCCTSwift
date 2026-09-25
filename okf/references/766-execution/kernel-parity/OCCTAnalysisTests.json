@@ -5974,8 +5974,7 @@
     "bridge_output": {
       "type": "count",
       "data": {
-        "count": 0,
-        "swift": "nil"
+        "count": 0
       }
     },
     "kernel_output": {
@@ -5989,6 +5988,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the number of hits for the ray from (100, 100, -20) along +Z against a 10-cube, which misses. The earlier record carried an extra 'swift': 'nil' key on the bridge side only. Bridge: OCCTIntCurvesFaceShapeIntersect; a temporary print (never committed) called it directly on the box and observed outCount 0, return value false and null point and parameter arrays, and observed box.rayIntersect(...) return nil, because the Swift wrapper maps a zero count to nil. The test accepts nil or an empty array and asserts nothing else. Kernel: IntCurvesFace_ShapeIntersector::NbPnt() printed NbPnt=0 (transcript.txt, ShapeIntersector box, ray (100,100,-20)+Z line).",
     "probe": "Scripts/repro/766-intcs-inttools/"
   },
   {
