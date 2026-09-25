@@ -2357,11 +2357,11 @@ public func shelledWithFullHistory(facesToRemove: [Int], thickness: Double, tole
     -> (result: Shape, history: ShapeHistoryRef)?
 ```
 
-Removes the listed faces and offsets the remaining shell inward by `thickness` (negative = outward). Returns per-face history.
+Removes the listed faces and offsets the remaining shell outward by `thickness` (negative = inward, matching `offset(by:)` and `shelled(thickness:openFaces:)`, [#2736](https://github.com/SecondMouseAU/OCCTSwift/issues/2736)). Returns per-face history.
 
 - **Parameters:**
   - `facesToRemove`: 0-based indices of faces to remove (become openings).
-  - `thickness`: wall thickness; positive = inward offset.
+  - `thickness`: wall thickness; positive = outward offset, negative = inward.
   - `tolerance`: offset tolerance (default 1e-3).
 - **Returns:** Result shape and history, or nil on failure or empty face list.
 - **OCCT:** `BRepOffsetAPI_MakeThickSolid` (via `OCCTShapeHistoryFromShell`).
