@@ -9,27 +9,26 @@ import simd
 @Suite("2D Fillet and Chamfer")
 struct Fillet2DTests {
     @Test("Fillet single vertex of rectangular face")
-    func filletSingleVertex() {
+    func filletSingleVertex() throws {
         let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
-        let result = face.fillet2D(vertexIndices: [0], radii: [3.0])
-        #expect(result != nil)
-        if let result {
-            // Original rectangle has 4 edges, fillet adds 1 arc replacing corner
-            let edges = result.edgeCount
-            #expect(edges == 5)
-        }
+        let result = try #require(face.fillet2D(vertexIndices: [0], radii: [3.0]))
+        // Original rectangle has 4 edges, fillet adds 1 arc replacing corner
+        #expect(result.edgeCount == 5)
+        // #1979: the edge count passed a fillet of any radius. A radius-3 round removes 9 - 9pi/4
+        // (BRepFilletAPI_MakeFillet2d; Scripts/repro/766-geom2d-extrema-fillet2d/).
+        let area = try #require(result.surfaceArea)
+        #expect(abs(area - 398.068583471) < 1e-6)
     }
 
     @Test("Fillet multiple vertices")
-    func filletMultipleVertices() {
+    func filletMultipleVertices() throws {
         let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
-        let result = face.fillet2D(vertexIndices: [0, 1, 2, 3], radii: [2.0, 2.0, 2.0, 2.0])
-        #expect(result != nil)
-        if let result {
-            // 4 original edges + 4 fillet arcs = 8 edges
-            let edges = result.edgeCount
-            #expect(edges == 8)
-        }
+        let result = try #require(
+            face.fillet2D(vertexIndices: [0, 1, 2, 3], radii: [2.0, 2.0, 2.0, 2.0]))
+        // 4 original edges + 4 fillet arcs = 8 edges, each corner losing 4 - pi.
+        #expect(result.edgeCount == 8)
+        let area = try #require(result.surfaceArea)
+        #expect(abs(area - 396.566370614) < 1e-6)
     }
 
     @Test("Fillet with zero count returns nil")
@@ -40,15 +39,13 @@ struct Fillet2DTests {
     }
 
     @Test("Chamfer between adjacent edges")
-    func chamferAdjacentEdges() {
+    func chamferAdjacentEdges() throws {
         let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
-        let result = face.chamfer2D(edgePairs: [(0, 1)], distances: [2.0])
-        #expect(result != nil)
-        if let result {
-            // 4 edges + 1 chamfer = 5 edges
-            let edges = result.edgeCount
-            #expect(edges == 5)
-        }
+        let result = try #require(face.chamfer2D(edgePairs: [(0, 1)], distances: [2.0]))
+        // 4 edges + 1 chamfer = 5 edges, cutting off a triangle of area 2.
+        #expect(result.edgeCount == 5)
+        let area = try #require(result.surfaceArea)
+        #expect(abs(area - 398) < 1e-6)
     }
 
     @Test("Chamfer mismatched arrays returns nil")

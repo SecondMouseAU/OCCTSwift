@@ -1,0 +1,12 @@
+segment continuity=6 IsCN(0,1,2)=111 ReversedParameter(0.2)=-0.20000000000000001
+Geom2d_BezierCurve::MaxDegree=25 Geom2d_BSplineCurve::MaxDegree=25
+line continuity=6
+interpolant continuity=4
+approx circle r5 tol 1e-3: done=1 degree=7 poles=13 maxError=0.000338
+joined: degree=1 knots=3 mults=[2, 1, 2]
+  split continuity 0: NbSplits=2 values=[1, 3]
+  split continuity 1: NbSplits=3 values=[1, 2, 3]
+  split continuity 2: NbSplits=3 values=[1, 2, 3]
+ApproxArcsSegments full circle r5 (0.1, 0.1): count=2
+  [1] Geom2d_TrimmedCurve
+  [2] Geom2d_TrimmedCurve

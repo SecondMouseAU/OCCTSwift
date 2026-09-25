@@ -17,8 +17,9 @@ struct Issue486Curve2DBatchTests {
     }
 
     @Test("empty parameters give an empty result, not one padded with zeroes")
-    func emptyParametersGiveEmptyResult() {
-        guard let curve = bspline() else { return }
+    func emptyParametersGiveEmptyResult() throws {
+        // #1979: `guard ... else { return }` passed silently when the fixture failed to build.
+        let curve = try #require(bspline())
         #expect(curve.evaluateGrid([]).isEmpty)
         #expect(curve.evaluateGridD1([]).isEmpty)
     }
