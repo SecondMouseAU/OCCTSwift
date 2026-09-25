@@ -17,26 +17,29 @@ import Testing
 @Suite("Stress: FilletBuilder Lifecycle")
 struct StressFilletBuilderLifecycleTests {
 
-    @Test func buildEmpty() {
+    // With no edges added BRepFilletAPI_MakeFillet::Build throws "There are no suitable edges
+    // for chamfer or fillet", which the bridge reports as nil.
+    @Test func buildEmpty() throws {
         let box = standardBox()
-        if let builder = FilletBuilder(shape: box) {
-            let result = builder.build()
-            // Building without adding edges: may return original or nil
-            if let r = result { #expect(r.isValid) }
-        }
+        let builder = try #require(FilletBuilder(shape: box))
+        let result = builder.build()
+        #expect(result == nil)
     }
 
-    @Test func normalCycle() {
+    @Test func normalCycle() throws {
         let box = standardBox()
         let edges = box.edges()
-        guard let builder = FilletBuilder(shape: box), !edges.isEmpty else { return }
+        try #require(!edges.isEmpty)
+        let builder = try #require(FilletBuilder(shape: box))
         builder.addEdge(edges[0], radius: 1.0)
-        if let result = builder.build() {
-            #expect(result.isValid)
-            // hasResult may be false even after successful build in some OCCT versions
-            _ = builder.hasResult
-            #expect(builder.contourCount >= 1)
-        }
+        let result = try #require(builder.build())
+        #expect(result.isValid)
+        // hasResult may be false even after successful build in some OCCT versions
+        _ = builder.hasResult
+        #expect(builder.contourCount >= 1)
+        // One r = 1 round on one 10-long edge removes 10·(1 - π/4).
+        #expect(abs((result.volume ?? 0) - 997.8539816) < 1e-6)
+        #expect(builder.contourCount == 1)
     }
 
     @Test func destroyWithoutBuild() {
@@ -49,43 +52,52 @@ struct StressFilletBuilderLifecycleTests {
         // If we reach here, no crash on dealloc
     }
 
-    @Test func invalidInput() {
+    @Test func invalidInput() throws {
         let box = standardBox()
-        guard let builder = FilletBuilder(shape: box) else { return }
+        let builder = try #require(FilletBuilder(shape: box))
         let edges = box.edges()
-        guard !edges.isEmpty else { return }
+        try #require(!edges.isEmpty)
         // Oversized radius should fail gracefully
         builder.addEdge(edges[0], radius: 100.0)
         let result = builder.build()
-        // Either nil or invalid, should not crash
-        if let r = result { _ = r.isValid }
+        // BRepFilletAPI_MakeFillet is not done for r = 100 on a 10-wide box (the old check read
+        // the result into `_`).
+        #expect(result == nil)
     }
 
-    @Test func doubleBuild() {
+    // A second Build() on the same BRepFilletAPI_MakeFillet is done but hands back the box
+    // unrounded (volume 1000, not 997.854); the probe shows the kernel doing the same, so this
+    // pins OCCT's behaviour rather than a bridge defect.
+    @Test func doubleBuild() throws {
         let box = standardBox()
         let edges = box.edges()
-        guard let builder = FilletBuilder(shape: box), !edges.isEmpty else { return }
+        try #require(!edges.isEmpty)
+        let builder = try #require(FilletBuilder(shape: box))
         builder.addEdge(edges[0], radius: 1.0)
-        let r1 = builder.build()
-        let r2 = builder.build()
-        if let r1 { #expect(r1.isValid) }
-        if let r2 { #expect(r2.isValid) }
+        let r1 = try #require(builder.build())
+        let r2 = try #require(builder.build())
+        #expect(r1.isValid)
+        #expect(r2.isValid)
+        #expect(abs((r1.volume ?? 0) - 997.8539816) < 1e-6)
+        #expect(abs((r2.volume ?? 0) - 1000) < 1e-6)
     }
 
-    @Test func queryContourDetails() {
+    @Test func queryContourDetails() throws {
         let box = standardBox()
         let edges = box.edges()
-        guard let builder = FilletBuilder(shape: box), edges.count >= 2 else { return }
+        try #require(edges.count >= 2)
+        let builder = try #require(FilletBuilder(shape: box))
         builder.addEdge(edges[0], radius: 1.0)
         builder.addEdge(edges[1], radius: 2.0)
-        if builder.build() != nil {
-            let n = builder.contourCount
-            for c in 1...max(1, n) {
-                _ = builder.radius(contour: c)
-                _ = builder.length(contour: c)
-                _ = builder.isConstant(contour: c)
-            }
-        }
+        try #require(builder.build() != nil)
+        // Two constant-radius contours, one per 10-long edge (all were read into `_` before).
+        #expect(builder.contourCount == 2)
+        #expect(builder.radius(contour: 1) == 1)
+        #expect(builder.radius(contour: 2) == 2)
+        #expect(abs(builder.length(contour: 1) - 10) < 1e-9)
+        #expect(abs(builder.length(contour: 2) - 10) < 1e-9)
+        #expect(builder.isConstant(contour: 1))
+        #expect(builder.isConstant(contour: 2))
     }
 }
 
@@ -94,23 +106,25 @@ struct StressFilletBuilderLifecycleTests {
 @Suite("Stress: ChamferBuilder Lifecycle")
 struct StressChamferBuilderLifecycleTests {
 
-    @Test func buildEmpty() {
+    // As for FilletBuilder: with no edges Build throws, and the bridge reports nil.
+    @Test func buildEmpty() throws {
         let box = standardBox()
-        if let builder = ChamferBuilder(shape: box) {
-            let result = builder.build()
-            if let r = result { #expect(r.isValid) }
-        }
+        let builder = try #require(ChamferBuilder(shape: box))
+        let result = builder.build()
+        #expect(result == nil)
     }
 
-    @Test func normalCycleSymmetric() {
+    @Test func normalCycleSymmetric() throws {
         let box = standardBox()
         let edges = box.edges()
-        guard let builder = ChamferBuilder(shape: box), !edges.isEmpty else { return }
+        try #require(!edges.isEmpty)
+        let builder = try #require(ChamferBuilder(shape: box))
         builder.addEdge(edges[0], distance: 1.0)
-        if let result = builder.build() {
-            #expect(result.isValid)
-            #expect(builder.contourCount >= 1)
-        }
+        let result = try #require(builder.build())
+        #expect(result.isValid)
+        #expect(builder.contourCount >= 1)
+        // A 1 × 1 chamfer along one 10-long edge removes 5.
+        #expect(abs((result.volume ?? 0) - 995) < 1e-6)
     }
 
     @Test func destroyWithoutBuild() {
@@ -121,40 +135,45 @@ struct StressChamferBuilderLifecycleTests {
         }
     }
 
-    @Test func invalidInput() {
+    @Test func invalidInput() throws {
         let box = standardBox()
-        guard let builder = ChamferBuilder(shape: box) else { return }
+        let builder = try #require(ChamferBuilder(shape: box))
         let edges = box.edges()
-        guard !edges.isEmpty else { return }
+        try #require(!edges.isEmpty)
         builder.addEdge(edges[0], distance: 100.0)
         let result = builder.build()
-        if let r = result { _ = r.isValid }
+        // Not done for d = 100 (the result was read into `_` before).
+        #expect(result == nil)
     }
 
-    @Test func doubleBuild() {
+    // Same kernel behaviour as FilletBuilder.doubleBuild: the second Build() returns the box
+    // unchanged (1000, not 995), in OCCT as well as through the bridge.
+    @Test func doubleBuild() throws {
         let box = standardBox()
         let edges = box.edges()
-        guard let builder = ChamferBuilder(shape: box), !edges.isEmpty else { return }
+        try #require(!edges.isEmpty)
+        let builder = try #require(ChamferBuilder(shape: box))
         builder.addEdge(edges[0], distance: 1.0)
-        let r1 = builder.build()
-        let r2 = builder.build()
-        if let r1 { #expect(r1.isValid) }
-        if let r2 { #expect(r2.isValid) }
+        let r1 = try #require(builder.build())
+        let r2 = try #require(builder.build())
+        #expect(r1.isValid)
+        #expect(r2.isValid)
+        #expect(abs((r1.volume ?? 0) - 995) < 1e-6)
+        #expect(abs((r2.volume ?? 0) - 1000) < 1e-6)
     }
 
-    @Test func queryContourDetails() {
+    // One symmetric contour (all three flags were read into `_` before).
+    @Test func queryContourDetails() throws {
         let box = standardBox()
         let edges = box.edges()
-        guard let builder = ChamferBuilder(shape: box), !edges.isEmpty else { return }
+        try #require(!edges.isEmpty)
+        let builder = try #require(ChamferBuilder(shape: box))
         builder.addEdge(edges[0], distance: 2.0)
-        if builder.build() != nil {
-            let n = builder.contourCount
-            for c in 1...max(1, n) {
-                _ = builder.isDistanceAngle(contour: c)
-                _ = builder.isSymmetric(contour: c)
-                _ = builder.isTwoDistances(contour: c)
-            }
-        }
+        try #require(builder.build() != nil)
+        #expect(builder.contourCount == 1)
+        #expect(builder.isSymmetric(contour: 1))
+        #expect(!builder.isDistanceAngle(contour: 1))
+        #expect(!builder.isTwoDistances(contour: 1))
     }
 }
 
@@ -364,24 +383,28 @@ struct StressHatchBuilderLifecycleTests {
 @Suite("Stress: UnifySameDomainBuilder Lifecycle")
 struct StressUnifySameDomainBuilderLifecycleTests {
 
-    @Test func normalCycle() {
+    @Test func normalCycle() throws {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         let b2 = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10)!
-        guard let fused = b1.union(b2) else { return }
+        let fused = try #require(b1.union(b2))
         let unifier = UnifySameDomainBuilder(shape: fused)
         unifier.build()
-        if let result = unifier.shape {
-            #expect(result.isValid)
-        }
+        // b1 is centred (x up to 5) and b2 starts at x = 10: the "fusion" is two disjoint boxes,
+        // so there is nothing to unify and all 12 faces remain.
+        let result = try #require(unifier.shape)
+        #expect(result.isValid)
+        #expect(result.subShapeCount(ofType: .face) == 12)
+        #expect(abs((result.volume ?? 0) - 2000) < 1e-6)
     }
 
-    @Test func buildWithoutModification() {
+    @Test func buildWithoutModification() throws {
         let box = standardBox()
         let unifier = UnifySameDomainBuilder(shape: box)
         unifier.build()
-        if let result = unifier.shape {
-            #expect(result.isValid)
-        }
+        let result = try #require(unifier.shape)
+        #expect(result.isValid)
+        #expect(result.subShapeCount(ofType: .face) == 6)
+        #expect(abs((result.volume ?? 0) - 1000) < 1e-6)
     }
 
     @Test func destroyWithoutBuild() {
@@ -389,7 +412,7 @@ struct StressUnifySameDomainBuilderLifecycleTests {
         _ = UnifySameDomainBuilder(shape: box)
     }
 
-    @Test func withTolerances() {
+    @Test func withTolerances() throws {
         let box = standardBox()
         let unifier = UnifySameDomainBuilder(
             shape: box, unifyEdges: true, unifyFaces: true, concatBSplines: false)
@@ -397,9 +420,10 @@ struct StressUnifySameDomainBuilderLifecycleTests {
         unifier.setAngularTolerance(1e-2)
         unifier.allowInternalEdges(false)
         unifier.build()
-        if let result = unifier.shape {
-            #expect(result.isValid)
-        }
+        let result = try #require(unifier.shape)
+        #expect(result.isValid)
+        #expect(result.subShapeCount(ofType: .face) == 6)
+        #expect(abs((result.volume ?? 0) - 1000) < 1e-6)
     }
 }
 
@@ -416,18 +440,21 @@ struct StressThruSectionsBuilderLifecycleTests {
         #expect(loft.shape == nil)
     }
 
-    @Test func normalCycle() {
-        guard let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-            let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
-            let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2)
-        else { return }
+    @Test func normalCycle() throws {
+        let w1 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let w2 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let s1 = try #require(Shape.fromWire(w1))
+        let s2 = try #require(Shape.fromWire(w2))
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
         loft.addWire(s2)
-        if loft.build(), let shape = loft.shape {
-            #expect(shape.isValid)
-            if let vol = shape.volume { #expect(vol > 0) }
-        }
+        #expect(loft.build())
+        let shape = try #require(loft.shape)
+        #expect(shape.isValid)
+        // Two coaxial circles 10 apart: the r = 5 to r = 3 frustum, π·10/3·(25 + 15 + 9).
+        #expect(abs((shape.volume ?? 0) - 513.1268001) < 1e-6)
     }
 
     @Test func singleSection() {
@@ -449,16 +476,21 @@ struct StressThruSectionsBuilderLifecycleTests {
         loft.addWire(s1)
     }
 
-    @Test func doubleBuild() {
-        guard let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-            let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
-            let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2)
-        else { return }
+    @Test func doubleBuild() throws {
+        let w1 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let w2 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let s1 = try #require(Shape.fromWire(w1))
+        let s2 = try #require(Shape.fromWire(w2))
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
         loft.addWire(s2)
-        _ = loft.build()
-        _ = loft.build()
+        // Both builds succeed, and the second gives the same frustum (both were read into `_`).
+        #expect(loft.build())
+        #expect(loft.build())
+        let shape = try #require(loft.shape)
+        #expect(abs((shape.volume ?? 0) - 513.1268001) < 1e-6)
     }
 
     // #913: checkCompatibility(false) skips BRepFill_CompatibleWires' section reconciliation, so
