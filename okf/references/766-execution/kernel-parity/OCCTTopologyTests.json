@@ -309,14 +309,15 @@
     "kernel_output": {
       "type": "bool",
       "data": {
-        "computed": true,
-        "faces_with_normals": 6
+        "computed": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: computed, whether BRepLib_ToolTriangulatedShape::ComputeNormals was applied to at least one triangulated face. Bridge: OCCTBRepLibComputeNormals walks the faces, calls ComputeNormals on each that has a triangulation and returns true if there was at least one; the test observed Shape.computeNormals() == true on a 10 x 10 x 10 box meshed with linearDeflection 0.1. Kernel: the same loop over the box printed 'computeNormals: 6 triangulated faces, 6 with normals after' (transcript.txt), so ComputeNormals ran on 6 faces and computed is true. The 6 faces with normals is not compared: the bridge returns a bool and the test does not read the normals.",
+    "probe": "Scripts/repro/766-topology-breplib-builders/transcript.txt"
   }
 ]
