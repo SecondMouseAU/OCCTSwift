@@ -1772,20 +1772,24 @@
     "note": "Kernel side: BRepMesh_IncrementalMesh + HLRBRep_PolyAlgo + HLRBRep_PolyHLRToShape::VCompound, view +X, on the BREP of the same thread."
   },
   {
-    "test_name": "Issue #196, polyhedral HLR for threaded solids (fast 2D drawings)::deflection is honoured, coarser mesh yields fewer drawing edges",
+    "test_name": "Issue #196, polyhedral HLR for threaded solids (fast 2D drawings)::deflection is honoured, a coarser mesh draws fewer outline edges and more sharp ones",
     "bridge_function": "OCCTHLRPolyGetEdgesByCategory",
     "bridge_output": {
       "type": "measurements",
       "data": {
-        "196_fine.edges": 1869.0,
-        "196_coarse.edges": 2089.0
+        "196_fine.sharp": 1869,
+        "196_fine.outline": 17088,
+        "196_coarse.sharp": 2089,
+        "196_coarse.outline": 3578
       }
     },
     "kernel_output": {
       "type": "measurements",
       "data": {
-        "196_fine.edges": 1869.0,
-        "196_coarse.edges": 2089.0
+        "196_fine.sharp": 1869,
+        "196_fine.outline": 17088,
+        "196_coarse.sharp": 2089,
+        "196_coarse.outline": 3578
       }
     },
     "comparison": {
@@ -1793,8 +1797,8 @@
       "differences": []
     },
     "status": "PASS",
-    "kernel_probe": "Scripts/repro/766-thread-193-222/probe.mm",
-    "source": "Same quantity on both sides: the number of visible-sharp polyhedral HLR edges of the M10x1.0 thread viewed from +X, at deflection 0.05 and 0.8. The kernel probe reads the BREP the Swift run wrote, and a BREP text round trip perturbs the mesh input, so the like-for-like bridge reading is the Swift call on the shape read back from that BREP: BRIDGE 196_fine_fromBREP edges=1869 and the kernel's 'hlr 196_fine.brep defl=0.05 edges=1869'; at deflection 0.8 the in-process Swift shape and the kernel agree at 2089. The test itself observes the in-process shape, 1873 edges at 0.05 (BRIDGE 196_fine, and two fresh in-process builds 196_fine_fresh0 and 196_fine_fresh1 both give 1873); the 4-edge gap to 1869 is the BREP round trip and not the bridge or the kernel, and the test's own assertions (fine > 0, coarse > 0, coarse != fine) hold for either. Transcript: Scripts/repro/766-thread-193-222/transcript.txt."
+    "kernel_probe": "Scripts/repro/766-thread-193-222/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the number of visible-sharp and visible-outline polyhedral HLR edges of the M10x1.0 thread viewed from +X, at deflection 0.05 (fine) and 0.8 (coarse). The kernel reads the BREP the Swift run wrote, and a BREP text round trip perturbs the mesh input slightly, so the like-for-like bridge reading is Shape.loadBREP then hlrPolyEdges on that BREP, printed by a temporary instrumentation of the test (reverted): fine 1869 sharp and 17088 outline, coarse 2089 and 3578. Kernel: Scripts/repro/766-thread-193-222/probe-evidence-fix.mm drives BRepMesh_IncrementalMesh and HLRBRep_PolyAlgo the way OCCTHLRPolyGetEdgesByCategory does and printed the same four counts (Scripts/repro/766-thread-193-222/transcript-evidence-fix.txt: defl=0.05 visibleSharp=1869 visibleOutline=17088, defl=0.8 visibleSharp=2089 visibleOutline=3578). The test observes the in-process shape, which differs from the BREP reading only at 0.05 (sharp 1873, outline 17041; at 0.8 in-process and BREP agree), and asserts each count within 1%. What the data say: the outline count falls with a coarser mesh (about a fifth), the sharp count RISES (11% more), and the sharp count is not monotonic in the deflection (kernel sweep on the BREP, sharp: 2000 at 1.6, 2089 at 0.8, 1912 at 0.4, 1909 at 0.2, 1741 at 0.1, 1869 at 0.05). The kernel and the bridge agree on the same input, so this is the kernel's behaviour and not the bridge's. The earlier record and test name claimed a coarser mesh yields fewer edges, which held for the outline count only."
   },
   {
     "test_name": "Issue #213, ISO-68 V-thread profile::threadedShaft removes a V-groove's worth of material, not a square slot's",
@@ -1827,23 +1831,31 @@
     "source": "Same quantity on both sides: the measurements of the Swift-built solids that the test asserts. Bridge: the values the test reads through the bridge, printed by dump.swift (BRIDGE lines of Scripts/repro/766-thread-193-222/transcript.txt). Kernel: the probe recomputes each on the BREP of the same solid with the bridge's own OCCT calls (KERNEL lines of the same transcript). The probe also rebuilds the blank with BRepPrimAPI_MakeCylinder (the KERNEL prim_* lines, prim_213_shaft: valid, vol 1570.79633, opt -5,-5,0,5,5,20, equal to the Swift-built 213_shaft); that is a check on the fixture, not on the bridge, and it is not a compared key."
   },
   {
-    "test_name": "Issue #213, ISO-68 V-thread profile::the cutter cross-section spec yields 30° flanks (the geometric core of #213)",
-    "bridge_function": "none (pure Swift: ThreadSpec.halfFlankAngle / rootFlat / cutDepth)",
+    "test_name": "Issue #213, ISO-68 V-thread profile::the built thread's flanks are 30 degrees (the geometric core of #213)",
+    "bridge_function": "OCCTShapeClassifyPoint (the measurement) on the solid Shape.threadedShaft builds (direct cam-section build, OCCTShapeCreateLoftAdvanced)",
     "bridge_output": {
       "type": "measurements",
-      "data": {}
+      "data": {
+        "groove_width_deep": 0.6093688964843746,
+        "groove_width_shallow": 1.0781188964843746,
+        "flank_half_angle_degrees": 29.999999999999996
+      }
     },
     "kernel_output": {
       "type": "measurements",
-      "data": {}
+      "data": {
+        "groove_width_deep": 0.6093688964843746,
+        "groove_width_shallow": 1.0781188964843746,
+        "flank_half_angle_degrees": 29.999999999999996
+      }
     },
     "comparison": {
-      "equal": null,
-      "differences": [],
-      "reason": "Pure Swift arithmetic on ThreadSpec (halfFlankAngle, rootFlat, cutDepth); no kernel call, so there is no kernel counterpart to compare. The Swift values the run printed (BRIDGE 213 rootFlat=0.375 cutDepth=0.811898816 half=0.523598776 in Scripts/repro/766-thread-193-222/transcript.txt) are not compared with anything. The expression the test asserts reduces to halfFlankAngle, so the test checks that constant and nothing about the cutter."
+      "equal": true,
+      "differences": []
     },
-    "status": "N/A",
-    "note": "Pure Swift arithmetic on ThreadSpec; no kernel call. The expression reduces to halfFlankAngle, so the test checks that constant and nothing about the cutter."
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-thread-193-222/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the axial width of the groove of the M10x1.5 ISO-68 thread at two radii (0.75 and 0.25 of the cut depth up from the root, the deep and shallow radius), and the flank half-angle they imply, atan((wShallow - wDeep) / 2 / (0.5 * cutDepth)). The groove is found by classifying points along the axial line (r, 0, z) over two pitches from z = 6 at a 0.05 step and bisecting each edge to 1e-5. Bridge: Shape.classifyPoint on the built thread, a temporary print in the test (reverted): 0.6093688964843746, 1.0781188964843746, 29.999999999999996 degrees (the ISO-68 groove predicts 0.609375, 1.078125 and 30). Kernel: Scripts/repro/766-thread-193-222/probe-evidence-fix.mm (mode groove) runs BRepClass3d_SolidClassifier(shape, point, 1e-6) with the same scan on the BREP the Swift run wrote (Scripts/repro/766-thread-193-222/transcript-evidence-fix.txt): the same three values. The threaded solid is built by Swift composition (buildThreadedRodDirect), so parity covers the measurement, not a C++ rebuild of the thread. This replaces a pure-Swift record (status N/A): the earlier test rebuilt the flank angle from ThreadSpec arithmetic that reduces to halfFlankAngle, so it asserted a constant and could not see the built geometry."
   },
   {
     "test_name": "Issue #219, smooth fine-pitch internal thread::3/8-16 UNC internal thread cuts smooth (few faces), not faceted",
