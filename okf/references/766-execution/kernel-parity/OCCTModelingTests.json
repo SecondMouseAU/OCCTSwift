@@ -422,8 +422,10 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "fused": "non-nil",
-        "isValid": true
+        "done": true,
+        "valid": true,
+        "solids": 2,
+        "signedVolume": 2000
       }
     },
     "kernel_output": {
@@ -432,14 +434,16 @@
         "done": true,
         "valid": true,
         "solids": 2,
-        "volume": 2000
+        "signedVolume": 2000
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, solid count and signedVolume of the boolean result (centred 10 mm cube fused with the 10 mm cube at origin (9.999,0,0), fuzzy 0.01). Bridge: Shape.fused(with:tolerance:) non-nil (OCCTShapeUnionEx returns nullptr when the BRepAlgoAPI operation is not done), isValid, subShapes(ofType: .solid).count and Shape.signedVolume, the raw BRepGProp mass, used instead of volume because Shape.volume is nil for an empty result. The test asserted non-nil and valid. Kernel: BRepAlgoAPI_Fuse with SetArguments/SetTools and SetFuzzyValue(0.01), IsDone, BRepCheck_Analyzer, TopExp::MapShapes solid count, BRepGProp::VolumeProperties; fuseWithTolerance line of the transcript at %.17g. The cubes do not touch (the first spans x -5..5, the second starts at 9.999), so the result is two disjoint solids and the fuzzy value is never exercised. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-tolerance/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "v0.114.0 - Boolean Tolerance::cutWithTolerance",
@@ -447,8 +451,10 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "cut": "non-nil",
-        "isValid": true
+        "done": true,
+        "valid": true,
+        "solids": 1,
+        "signedVolume": 999.9999999999998
       }
     },
     "kernel_output": {
@@ -457,14 +463,16 @@
         "done": true,
         "valid": true,
         "solids": 1,
-        "volume": 1000
+        "signedVolume": 999.9999999999998
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, solid count and signedVolume of the boolean result (centred 10 mm cube minus the 10 mm cube at origin (5,5,5), fuzzy 0.001). Bridge: Shape.subtracted(_:tolerance:) non-nil (OCCTShapeSubtractEx returns nullptr when the BRepAlgoAPI operation is not done), isValid, subShapes(ofType: .solid).count and Shape.signedVolume, the raw BRepGProp mass, used instead of volume because Shape.volume is nil for an empty result. The test asserted non-nil and valid. Kernel: BRepAlgoAPI_Cut with SetArguments/SetTools and SetFuzzyValue(0.001), IsDone, BRepCheck_Analyzer, TopExp::MapShapes solid count, BRepGProp::VolumeProperties; cutWithTolerance line of the transcript at %.17g. The cubes meet only at the corner (5,5,5), so the cut returns the first cube unchanged. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-tolerance/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "v0.114.0 - Boolean Tolerance::commonWithTolerance",
@@ -472,8 +480,10 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "common": "non-nil",
-        "isValid": true
+        "done": true,
+        "valid": true,
+        "solids": 0,
+        "signedVolume": 0
       }
     },
     "kernel_output": {
@@ -482,14 +492,16 @@
         "done": true,
         "valid": true,
         "solids": 0,
-        "volume": 0
+        "signedVolume": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, solid count and signedVolume of the boolean result (centred 10 mm cube intersected with the 10 mm cube at origin (5,5,5), fuzzy 0.001). Bridge: Shape.intersected(with:tolerance:) non-nil (OCCTShapeIntersectEx returns nullptr when the BRepAlgoAPI operation is not done), isValid, subShapes(ofType: .solid).count and Shape.signedVolume, the raw BRepGProp mass, used instead of volume because Shape.volume is nil for an empty result. The test asserted non-nil and valid. Kernel: BRepAlgoAPI_Common with SetArguments/SetTools and SetFuzzyValue(0.001), IsDone, BRepCheck_Analyzer, TopExp::MapShapes solid count, BRepGProp::VolumeProperties; commonWithTolerance line of the transcript at %.17g. The cubes meet only at a corner, so the common is empty (no solid, mass 0). Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-tolerance/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "v0.114.0 - Boolean Tolerance::fuseWithGlue",
@@ -497,8 +509,10 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "fused": "non-nil",
-        "isValid": true
+        "done": true,
+        "valid": true,
+        "solids": 2,
+        "signedVolume": 1999.9999999999995
       }
     },
     "kernel_output": {
@@ -507,14 +521,16 @@
         "done": true,
         "valid": true,
         "solids": 2,
-        "volume": 2000
+        "signedVolume": 1999.9999999999995
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, solid count and signedVolume of the boolean result (centred 10 mm cube fused with the 10 mm cube at origin (10,0,0), glue shift). Bridge: Shape.fused(with:glue: .shift) non-nil (OCCTShapeUnionEx returns nullptr when the BRepAlgoAPI operation is not done), isValid, subShapes(ofType: .solid).count and Shape.signedVolume, the raw BRepGProp mass, used instead of volume because Shape.volume is nil for an empty result. The test asserted non-nil and valid. Kernel: BRepAlgoAPI_Fuse with SetArguments/SetTools and SetGlue(BOPAlgo_GlueShift), IsDone, BRepCheck_Analyzer, TopExp::MapShapes solid count, BRepGProp::VolumeProperties; fuseWithGlue line of the transcript at %.17g. The cubes do not touch (the first spans x -5..5, the second starts at 10), so the result is two disjoint solids and the glue mode is never exercised. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-tolerance/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "v0.114.0 - Boolean Tolerance::cutWithGlue",
@@ -522,7 +538,10 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "cut": "non-nil"
+        "done": true,
+        "valid": true,
+        "solids": 1,
+        "signedVolume": 7875.000000000002
       }
     },
     "kernel_output": {
@@ -531,14 +550,16 @@
         "done": true,
         "valid": true,
         "solids": 1,
-        "volume": 7875
+        "signedVolume": 7875.000000000002
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, solid count and signedVolume of the boolean result (centred 20 mm cube minus the 10 mm cube at origin (5,5,5), glue off). Bridge: Shape.subtracted(_:glue: .off) non-nil (OCCTShapeSubtractEx returns nullptr when the BRepAlgoAPI operation is not done), isValid, subShapes(ofType: .solid).count and Shape.signedVolume, the raw BRepGProp mass, used instead of volume because Shape.volume is nil for an empty result. The test asserted non-nil. Kernel: BRepAlgoAPI_Cut with SetArguments/SetTools and SetGlue(BOPAlgo_GlueOff), IsDone, BRepCheck_Analyzer, TopExp::MapShapes solid count, BRepGProp::VolumeProperties; cutWithGlue line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-tolerance/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "v0.114.0 - Boolean Tolerance::commonWithGlue",
@@ -546,7 +567,10 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "common": "non-nil"
+        "done": true,
+        "valid": true,
+        "solids": 0,
+        "signedVolume": 0
       }
     },
     "kernel_output": {
@@ -555,13 +579,15 @@
         "done": true,
         "valid": true,
         "solids": 0,
-        "volume": 0
+        "signedVolume": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, solid count and signedVolume of the boolean result (centred 10 mm cube intersected with the 10 mm cube at origin (5,5,5), glue off). Bridge: Shape.intersected(with:glue: .off) non-nil (OCCTShapeIntersectEx returns nullptr when the BRepAlgoAPI operation is not done), isValid, subShapes(ofType: .solid).count and Shape.signedVolume, the raw BRepGProp mass, used instead of volume because Shape.volume is nil for an empty result. The test asserted non-nil. Kernel: BRepAlgoAPI_Common with SetArguments/SetTools and SetGlue(BOPAlgo_GlueOff), IsDone, BRepCheck_Analyzer, TopExp::MapShapes solid count, BRepGProp::VolumeProperties; commonWithGlue line of the transcript at %.17g. The cubes meet only at a corner, so the common is empty (no solid, mass 0). Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-tolerance/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   }
 ]
