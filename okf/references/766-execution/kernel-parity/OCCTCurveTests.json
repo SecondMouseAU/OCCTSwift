@@ -2393,12 +2393,11 @@
       "data": "N/A: rejected before the kernel is reached"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        "No kernel counterpart: the Swift guard rejects the input"
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: no kernel counterpart. The check lives in the Swift wrapper CompBezierConverter.toBSpline: its `guard` returns nil before OCCTConvertCompBezierToBSpline is called, so no kernel call exists to compare. The test observed nil.",
     "injection": "Swift: empty input returns an empty result instead of nil",
     "red": "CompBezierToBSplineTests.swift:55 result == nil",
     "green": "passed",
@@ -2418,12 +2417,11 @@
       "data": "N/A: rejected before the kernel is reached"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        "No kernel counterpart: the Swift guard rejects the input"
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: no kernel counterpart. The check lives in the Swift wrapper CompBezierConverter.toBSpline: its `guard` returns nil before OCCTConvertCompBezierToBSpline is called, so no kernel call exists to compare. The test observed nil.",
     "injection": "Swift: segment-size check skipped",
     "red": "CompBezierToBSplineTests.swift:62 result == nil",
     "green": "passed",
@@ -4462,12 +4460,11 @@
       "data": "N/A: rejected by the Swift guard before the kernel"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        "No kernel counterpart: the Swift guard rejects the input"
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: no kernel counterpart. The check lives in the Swift wrapper Wire.interpolate(through:): `guard points.count >= 2 else { return nil }` returns nil before any bridge or kernel call. The test observed nil.",
     "injection": "Swift: a lone point is padded to two",
     "red": "CurveInterpolationTests.swift:111 wire == nil",
     "green": "passed",
@@ -4556,12 +4553,11 @@
       "data": "N/A: Swift-only drawing geometry (Drawing.addCuttingPlaneLine), no kernel counterpart"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        "Rewritten: checked only the label"
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: no kernel counterpart. Drawing.addCuttingPlaneLine is Swift-only drawing geometry (cross product, projection and the trace endpoints are computed in Swift) and reaches no OCCT call. The test observed a stored annotation whose trace length is 60 with a unit arrow perpendicular to the trace.",
     "injection": "Swift: trace length halved (and, separately, arrow taken along the trace)",
     "red": "CuttingPlaneLineTests.swift:34 abs(simd_length(trace) - 60) < 1e-9",
     "green": "passed",
@@ -4581,12 +4577,11 @@
       "data": "N/A: Swift-only drawing geometry (Drawing.addCuttingPlaneLine), no kernel counterpart"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: no kernel counterpart. Drawing.addCuttingPlaneLine is Swift-only drawing geometry (cross product, projection and the trace endpoints are computed in Swift) and reaches no OCCT call. The Swift guard returns nil when the trace direction cross(cuttingPlaneNormal, viewDirection) has length below 1e-9. The test observed nil.",
     "injection": "Swift: parallel-trace guard skipped",
     "red": "CuttingPlaneLineTests.swift:53 ann == nil",
     "green": "passed",
@@ -4605,12 +4600,11 @@
       "data": "N/A: Swift-only drawing geometry (Drawing.addCuttingPlaneLine), no kernel counterpart"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: no kernel counterpart. Drawing.addCuttingPlaneLine is Swift-only drawing geometry (cross product, projection and the trace endpoints are computed in Swift) and reaches no OCCT call. The Swift guard (#1581) returns nil for a zero-length cuttingPlaneNormal before normalising. The test observed nil.",
     "injection": "Swift: zero-length guard skipped (#1581 path)",
     "red": "CuttingPlaneLineTests.swift:77 ann == nil",
     "green": "passed",
@@ -4629,12 +4623,11 @@
       "data": "N/A: Swift-only drawing geometry (Drawing.addCuttingPlaneLine), no kernel counterpart"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: no kernel counterpart. Drawing.addCuttingPlaneLine is Swift-only drawing geometry (cross product, projection and the trace endpoints are computed in Swift) and reaches no OCCT call. The Swift guard (#1581) returns nil for a zero-length viewDirection before normalising. The test observed nil.",
     "injection": "Swift: zero-length guard skipped (#1581 path)",
     "red": "CuttingPlaneLineTests.swift:94 ann == nil",
     "green": "passed",
@@ -4653,12 +4646,11 @@
       "data": "N/A: Swift-only drawing geometry (Drawing.addCuttingPlaneLine), no kernel counterpart"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        "Rewritten: `lines >= 9` was met by the view's own edges"
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: no kernel counterpart. The DXF emitter is Swift and writes entities the drawing already holds; it reaches no OCCT call. The test counts only the delta the cutting plane annotation adds to the collected entities and observed 9 lines and 2 texts.",
     "injection": "Swift: middle chain segment not emitted",
     "red": "CuttingPlaneLineTests.swift:119 counts.lines - before.entityCounts.lines == 9",
     "green": "passed",
@@ -4860,16 +4852,15 @@
       "data": "N/A: BRepGraph_LayerRegularity is absent from the 8.0.1 library, so the bridge is a stub by design"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        "Strengthened: nested `if let` let a nil box or graph pass unchecked"
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: no kernel counterpart in the pinned kernel. OCCTBRepGraphSetEdgeRegularity is a stub that returns 0 because BRepGraph_LayerRegularity is absent from the 8.0.1 headers (Scripts/repro/766-curve-evidence-fix/transcript.txt, EVID 57: present=0), so there is no kernel value to compare. The test observed false.",
     "injection": "stub reports success",
     "red": "EditorViewV162Tests.swift:34 graph.setEdgeRegularity(0, face1: 0, face2: 1, continuity: 1) == false",
     "green": "passed",
-    "probe": "Scripts/repro/766-curve-editorview-polyline/transcript.txt",
+    "probe": "Scripts/repro/766-curve-evidence-fix/",
     "note": "Strengthened: nested `if let` let a nil box or graph pass unchecked"
   },
   {
