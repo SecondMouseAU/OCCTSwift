@@ -1,6 +1,6 @@
 # Phase 3: OCCTBRepGraphTests Injection Matrix
 
-**Target**: `OCCTBRepGraphTests` (226 tests) — BRepGraph traversal, attributes, queries
+**Target**: `OCCTBRepGraphTests` (226 tests): BRepGraph traversal, attributes, queries
 **Policy**: `prove-the-test-fails.md` — inject defect → confirm fail (red) → restore → confirm pass (green)
 **Priority**: 🟡 P2 (graph traversal, thread safety)
 
