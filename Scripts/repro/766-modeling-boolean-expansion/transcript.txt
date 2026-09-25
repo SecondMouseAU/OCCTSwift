@@ -1,0 +1,5 @@
+sectionWithTolerance: done=1 edges=0 vertices=1
+splitMulti: done=1 solids=2 volume=8000
+cutWithHistory: done=1 valid=1 volume=7875 hasDeleted=1 hasModified=1 hasGenerated=1
+defeature: filletDone=1 faces=26 filletedVolume=7804.696111
+defeature: done=1 valid=1 faces=25 volume=7806.487696 delta=1.791584946
