@@ -286,4 +286,4 @@ Probe: `Scripts/repro/766-modeling-history-extended/`.
 | getModifiedGeneratedShapes | `OCCTHistoryAddModified` returns without recording | `:58 Expectation failed: modified.count == 1` | pass | `OCCTHistoryGetModifiedShapes` | PASS |
 ### `IntegrationBooleanChainStressTests.swift` (1 tests)
 Probe: `Scripts/repro/766-modeling-integration-boolean-chain-stress/`.
-| twentySubtractions | `OCCTShapeSubtractEx` returns nullptr | `:33 Expectation failed: vol < prevVolume` | pass | `OCCTShapeSubtractEx` | PASS |
+| twentySubtractions | `OCCTShapeSubtractEx` returns nullptr on every third call (the earlier `if let` loop dropped the nil and passed) | `:31 Issue recorded` | pass | `OCCTShapeSubtractEx` | PASS |
