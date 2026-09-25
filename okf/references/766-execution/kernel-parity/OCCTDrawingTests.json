@@ -71,7 +71,8 @@
     "test_name": "Angle Dimension::Angle between perpendicular faces is 90 degrees",
     "bridge_function": "OCCTDimensionCreateAngleFromFaces",
     "bridge_output": {
-      "degrees": 90.0
+      "degrees": 90.0,
+      "isValid": true
     },
     "kernel_output": {
       "degrees": 90.0,
@@ -81,7 +82,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the angle between two perpendicular planar faces, in degrees, and whether the dimension is valid. Bridge: AngleDimension(face1:face2:) then .degrees and .isValid (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, angleFaces lines); the test asserts the angle. Kernel: PrsDim_AngleDimension(f1, f2) GetValue() * 180/pi and IsValid() printed degrees=90 valid=1 (Scripts/repro/766-drawing-angle-centermarks/transcript.txt, perpendicularFaces).",
+    "probe": "Scripts/repro/766-drawing-angle-centermarks/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "emitAngular sweep matches Angular.value for reflex ray pairs (#1169)::Rays 200 degrees apart draw the 160-degree (non-reflex) arc, matching Angular.value",
@@ -105,7 +108,7 @@
         5.0,
         -10.0
       ],
-      "marks": [
+      "circleCentres2D": [
         [
           5.0,
           -10.0
@@ -121,7 +124,7 @@
         5.0,
         -10.0
       ],
-      "gp_Ax2Projected": [
+      "circleCentres2D": [
         [
           5.0,
           -10.0
@@ -136,63 +139,73 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the 2D centre of the projected visible edges' bounding box, and the 2D centre of each of the cylinder's two circular faces in the view frame. Bridge: the visible edges' boundingBox centre from Drawing.project, and the two .centermark annotations' centre from addAutoCentermarks (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, frame lines). Kernel: BRepBndLib box centre of the HLR visible compound, and the two circle centres (0,10,5) and (10,10,5) dotted onto gp_Ax2(origin, (1,0,0)) X and Y (Scripts/repro/766-drawing-angle-centermarks/transcript.txt, frameAgreement lines).",
+    "probe": "Scripts/repro/766-drawing-angle-centermarks/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "v0.147 Drawing.addAutoCentermarks::Cylinder top view produces one centermark",
     "bridge_function": "OCCTDrawingCreate",
     "bridge_output": {
-      "added": 2,
-      "skipped": 0
+      "facingCircles": 2,
+      "edgeOnCircles": 0
     },
     "kernel_output": {
-      "circularEdgesFacingView": 2
+      "facingCircles": 2,
+      "edgeOnCircles": 0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: how many of the cylinder's circular edges face the view (get a centermark) and how many are edge-on (top view). Bridge: addAutoCentermarks result .added.count and .skipped.count (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, centermarks.top). Kernel: the probe walks the cylinder's unique edge map with BRepAdaptor_Curve and applies the same |axis . view| < 0.1 edge-on test, printing the counts (Scripts/repro/766-drawing-angle-centermarks/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-angle-centermarks/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "v0.147 Drawing.addAutoCentermarks::Cylinder side view skips edge-on circles",
     "bridge_function": "OCCTDrawingCreate",
     "bridge_output": {
-      "added": 0,
-      "skipped": 2
+      "facingCircles": 0,
+      "edgeOnCircles": 2
     },
     "kernel_output": {
-      "circularEdgesEdgeOn": 2
+      "facingCircles": 0,
+      "edgeOnCircles": 2
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: how many of the cylinder's circular edges face the view (get a centermark) and how many are edge-on (side view). Bridge: addAutoCentermarks result .added.count and .skipped.count (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, centermarks.side). Kernel: the probe walks the cylinder's unique edge map with BRepAdaptor_Curve and applies the same |axis . view| < 0.1 edge-on test, printing the counts (Scripts/repro/766-drawing-angle-centermarks/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-angle-centermarks/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "v0.147 Drawing.addAutoCentermarks::minRadius filters small holes",
     "bridge_function": "OCCTDrawingCreate",
     "bridge_output": {
-      "added": 0
+      "facingCircles": 0,
+      "edgeOnCircles": 0
     },
     "kernel_output": {
-      "circlesBelowMinRadius": 2
+      "facingCircles": 0,
+      "edgeOnCircles": 0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: how many of the cylinder's circular edges face the view (get a centermark) and how many are edge-on (top view, minRadius 100). Bridge: addAutoCentermarks result .added.count and .skipped.count (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, centermarks.minRadius). Kernel: the probe walks the cylinder's unique edge map with BRepAdaptor_Curve and applies the same |axis . view| < 0.1 edge-on test, printing the counts (Scripts/repro/766-drawing-angle-centermarks/transcript.txt). The kernel probe also counted belowMinRadius=2 (both circles have radius 5 < 100); Swift's skipped list records only edge-on skips, so that count is a kernel-only fact and is not part of the compared payload.",
+    "probe": "Scripts/repro/766-drawing-angle-centermarks/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "v0.149 Drawing.addAutoDimensions::Box front view produces two linear dimensions",
     "bridge_function": "OCCTShapeGetBounds (Shape.bounds) + perpendicularBasis",
     "bridge_output": {
-      "linear": [
-        3.0000002,
-        10.0000002
-      ]
+      "projectedWidth": 3.0000002,
+      "projectedHeight": 10.0000002
     },
     "kernel_output": {
       "projectedWidth": 3.0000001999999997,
@@ -202,21 +215,20 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the width and height of the box's bounding box projected into the front view. Bridge: the values of the two .linear dimensions addAutoDimensions adds (auto-width, auto-height) (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, autodim.boxFront.linear). Kernel: BRepBndLib box of the centred 10x5x3 box, its 8 corners dotted onto gp_Ax2(origin, (0,1,0)) X and Y (Scripts/repro/766-drawing-autodim-balloon-camera/transcript.txt, boxLinearExtents). The two sides agree within 1e-9 and differ in the last printed digits.",
+    "probe": "Scripts/repro/766-drawing-autodim-balloon-camera/"
   },
   {
     "test_name": "v0.149 Drawing.addAutoDimensions::Cylinder top view produces diameter + linear extents",
     "bridge_function": "OCCTDrawingCreate + testCircleVisibility",
     "bridge_output": {
-      "diameters": 2,
-      "linear": 2,
-      "extent": [
-        10.0000002,
-        10.0000002
-      ]
+      "facingCircles": 2,
+      "projectedWidth": 10.0000002,
+      "projectedHeight": 10.0000002
     },
     "kernel_output": {
-      "circlesFacing": 2,
+      "facingCircles": 2,
       "projectedWidth": 10.0000002,
       "projectedHeight": 10.0000002
     },
@@ -224,37 +236,47 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: how many circular edges face the top view, and the width and height of the cylinder's bounding box projected into it. Bridge: the number of .diameter dimensions addAutoDimensions adds (one per facing circle) and the two .linear dimensions' values (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, autodim.cylTop). Kernel: circle counts and the projected width/height for the radius-5 height-20 cylinder (Scripts/repro/766-drawing-autodim-balloon-camera/transcript.txt, cylinderTopViewHasDiameters). The count of linear dimensions (2) is a Swift-side count of non-zero extents with no kernel counterpart.",
+    "probe": "Scripts/repro/766-drawing-autodim-balloon-camera/"
   },
   {
     "test_name": "v0.149 Drawing.addAutoDimensions::Cylinder side view skips edge-on circles",
     "bridge_function": "OCCTDrawingCreate + testCircleVisibility",
     "bridge_output": {
-      "diameters": 0
+      "facingCircles": 0,
+      "edgeOnCircles": 2
     },
     "kernel_output": {
-      "circlesEdgeOn": 2
+      "facingCircles": 0,
+      "edgeOnCircles": 2
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: how many circular edges face the front view (get a diameter dimension) and how many are edge-on. Bridge: the number of .diameter dimensions, and the number of 'circle edge-on in view' entries in addAutoDimensions' skipped list (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, autodim.cylSide). Kernel: the probe's counts for the cylinder viewed down +Y (Scripts/repro/766-drawing-autodim-balloon-camera/transcript.txt, cylinderSideViewEdgeOn).",
+    "probe": "Scripts/repro/766-drawing-autodim-balloon-camera/"
   },
   {
     "test_name": "v0.149 Drawing.addAutoDimensions::minRadius filters small circles",
     "bridge_function": "OCCTDrawingCreate + testCircleVisibility",
     "bridge_output": {
-      "diameters": 0
+      "facingCircles": 0,
+      "belowMinRadiusCircles": 2
     },
     "kernel_output": {
-      "circlesBelowMinRadius": 2
+      "facingCircles": 0,
+      "belowMinRadiusCircles": 2
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: how many circular edges survive a minRadius of 100 (get a diameter dimension) and how many are dropped for being smaller. Bridge: the number of .diameter dimensions, and the number of 'circle radius ... < minRadius' entries in addAutoDimensions' skipped list (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, autodim.minRadius). Kernel: the probe's counts for the same cylinder, top view, minRadius 100 (Scripts/repro/766-drawing-autodim-balloon-camera/transcript.txt, minRadiusFilters).",
+    "probe": "Scripts/repro/766-drawing-autodim-balloon-camera/"
   },
   {
     "test_name": "v0.150 DrawingAnnotation.balloon::Balloon with leader emits circle + text + leader line",
@@ -462,33 +484,35 @@
     "bridge_function": "OCCTCameraFitBBox",
     "bridge_output": {
       "center": [
-        25,
-        25,
-        0
+        25.0,
+        25.0,
+        0.0
       ],
       "mid": [
-        0,
-        0
+        0.0,
+        0.0
       ],
-      "cornerNDC": 1.0
+      "maxCornerNDC": 1.0
     },
     "kernel_output": {
       "center": [
-        25,
-        25,
-        0
+        25.0,
+        25.0,
+        0.0
       ],
       "mid": [
-        0,
-        0
+        0.0,
+        0.0
       ],
-      "maxCornerNDC": 1
+      "maxCornerNDC": 1.0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the previous record spelled the last key cornerNDC on the bridge side and maxCornerNDC on the kernel side): after fitting the box (20,20,-5)..(30,30,5), the camera centre, the projected NDC position of the box centre, and the largest |NDC| coordinate over the box's 8 corners. Bridge: Camera.center, Camera.project(box centre) and the max over corner projections after Camera.fit (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, camera lines). Kernel: Graphic3d_Camera::FitMinMax(box, 0.01, false) then Center() and Project, with zero-to-one depth as OCCTCamera sets it (Scripts/repro/766-drawing-autodim-balloon-camera/transcript.txt, fitBoundingBox box=(20..30)).",
+    "probe": "Scripts/repro/766-drawing-autodim-balloon-camera/"
   },
   {
     "test_name": "v0.146 Cosmetic thread annotations::Side view produces two parallel centrelines",
@@ -675,17 +699,20 @@
     "test_name": "Diameter Dimension::Diameter of circle is twice radius",
     "bridge_function": "OCCTDimensionCreateDiameterFromShape",
     "bridge_output": {
-      "value": 16.0
+      "value": 16.0,
+      "isValid": true
     },
     "kernel_output": {
-      "value": 16,
+      "value": 16.0,
       "isValid": true
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the value and validity of a diameter dimension on a radius-8 circle wire. Bridge: DiameterDimension(shape:) .value and .isValid (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, diameter lines); the test asserts the value. Kernel: PrsDim_DiameterDimension GetValue() and IsValid() printed value=16 valid=1 (Scripts/repro/766-drawing-thread-cylproj-diameter/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-thread-cylproj-diameter/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Diameter Dimension::Diameter geometry has circle info",
@@ -984,101 +1011,117 @@
       "axes": [
         {
           "origin": [
-            0,
-            0,
-            0
+            0.0,
+            0.0,
+            0.0
           ],
           "direction": [
-            0,
-            0,
-            1
+            0.0,
+            0.0,
+            1.0
           ]
         }
       ],
-      "added": 0,
-      "skipped": 1
+      "projectedAxisDirection": [
+        0.0,
+        0.0
+      ]
     },
     "kernel_output": {
-      "cylinderAxis": {
-        "origin": [
-          0,
-          0,
-          0
-        ],
-        "direction": [
-          0,
-          0,
-          1
-        ]
-      },
-      "projectedDown+Z": [
-        0,
-        0
+      "axes": [
+        {
+          "origin": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      ],
+      "projectedAxisDirection": [
+        0.0,
+        0.0
       ]
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the cylinder's revolution axes (origin and direction) and that axis direction projected into the top view's 2D frame; a zero projection is why addAutoCentrelines skips it. Bridge: Shape.revolutionAxes() and projectDirectionToPlane(axis.direction, viewDirection: (0,0,1)) (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, axes lines); the test's own assertions (added 0, skipped 1) follow from the zero projection (Swift: centreline.top added=0 skipped=1). Kernel: the cylinder face's axis from BRepAdaptor_Surface, and the axis dotted onto gp_Ax2(origin, (0,0,1)) X and Y (Scripts/repro/766-drawing-append-centrelines/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-append-centrelines/"
   },
   {
     "test_name": "v0.137 Drawing auto-centrelines (#64 ↔ #65)::Cylinder side view draws one centreline along axis",
     "bridge_function": "OCCTShapeRevolutionAxes",
     "bridge_output": {
-      "added": 1,
-      "from": [
-        -55.0,
-        0.0
+      "axes": [
+        {
+          "origin": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
       ],
-      "to": [
-        55.0,
+      "projectedAxisDirection": [
+        1.0,
         0.0
       ]
     },
     "kernel_output": {
-      "projectedDown+Y": [
-        1,
-        0
+      "axes": [
+        {
+          "origin": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
       ],
-      "gp_Ax2X": [
-        0,
-        0,
-        1
-      ],
-      "clippedWithOvershoot": [
-        [
-          -55,
-          0
-        ],
-        [
-          55,
-          0
-        ]
+      "projectedAxisDirection": [
+        1.0,
+        0.0
       ]
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the cylinder's revolution axes and that axis direction projected into the front view's 2D frame. Bridge: Shape.revolutionAxes() and projectDirectionToPlane(axis.direction, viewDirection: (0,1,0)) (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, axes lines). Kernel: the axis dotted onto gp_Ax2(origin, (0,1,0)) X and Y (Scripts/repro/766-drawing-append-centrelines/transcript.txt). The previous record also carried the centreline endpoints (-55,0) and (55,0) on the kernel side; those are Swift's clip-to-bounds-plus-overshoot arithmetic, not a kernel quantity, so they are dropped from the compared payload. The test still asserts them (Swift: centreline.side.endpoints [[-55.0, 0.0], [55.0, 0.0]]) and a red run proved that assertion.",
+    "probe": "Scripts/repro/766-drawing-append-centrelines/"
   },
   {
     "test_name": "v0.137 Drawing auto-centrelines (#64 ↔ #65)::Box produces no centrelines (no revolution axes)",
     "bridge_function": "OCCTShapeRevolutionAxes",
     "bridge_output": {
-      "axes": 0,
-      "added": 0,
-      "skipped": 0
+      "axes": []
     },
     "kernel_output": {
-      "revolutionFaces": 0
+      "axes": []
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the box's revolution axes (none). Bridge: Shape.revolutionAxes() on the 10-unit box, count 0 (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, axes.box.count). Kernel: the probe walks the box's faces with BRepAdaptor_Surface and finds no cylindrical face (revolution faces=0), so no axis (Scripts/repro/766-drawing-append-centrelines/transcript.txt, boxNoCentrelines). The Swift-side added and skipped counts (0, 0) follow from there being no axes.",
+    "probe": "Scripts/repro/766-drawing-append-centrelines/"
   },
   {
     "test_name": "v0.137 Drawing dimensions::Add linear dimension stores measurable value",
@@ -1266,12 +1309,10 @@
     "test_name": "v0.161 EditorView Add/Remove + Ref setters::Add operations on a fresh box graph do not crash",
     "bridge_function": "OCCTBRepGraphEdgeAddInternalVertex",
     "bridge_output": {
-      "edgeInternalVertex": 1,
-      "faceVertex": 2,
-      "shellAdd": null,
-      "solidAdd": null,
-      "compoundAdd": null,
-      "compSolidAdd": null
+      "edgeInternalVertexUid": 1,
+      "faceVertexUid": 2,
+      "compoundAppendValid": false,
+      "compSolidAppendValid": false
     },
     "kernel_output": {
       "edgeInternalVertexUid": 1,
@@ -1283,41 +1324,66 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the supplement attachment uids the kernel mints for an edge-internal vertex and a face vertex, and whether a compound / comp-solid append is accepted on a graph that has neither. Bridge: BRepGraph.edgeAddInternalVertex, faceAddVertex (uids) and compoundAddChild, compSolidAddSolid (nil means not valid) (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, add lines). Kernel: Supplement().AttachToEdge / AttachToFace uids and Compounds().Append / CompSolids().Append IsValid (Scripts/repro/766-drawing-editorview/transcript.txt, addOpsSafe). shellAddChild and solidAddChild with childKind 4 (Edge) return nil in Swift (nil, nil) because the bridge's own kind check refuses before any OCCT call, so they have no kernel counterpart and are not in the compared payload.",
+    "probe": "Scripts/repro/766-drawing-editorview/"
   },
   {
     "test_name": "v0.161 EditorView Add/Remove + Ref setters::Remove operations on invalid ref ids return false without crashing",
     "bridge_function": "OCCTBRepGraphEdgeRemoveVertex",
     "bridge_output": {
-      "all": false
+      "edgeRemoveVertex": false,
+      "edgeReplaceVertexValid": false,
+      "wireRemoveCoEdge": false,
+      "faceRemoveVertex": false,
+      "faceRemoveWire": false,
+      "shellRemoveFace": false,
+      "shellRemoveChild": false,
+      "solidRemoveShell": false,
+      "solidRemoveChild": false,
+      "compoundRemoveChild": false,
+      "compSolidRemoveSolid": false
     },
     "kernel_output": {
       "edgeRemoveVertex": false,
       "edgeReplaceVertexValid": false,
       "wireRemoveCoEdge": false,
-      "removeAttachment": false,
+      "faceRemoveVertex": false,
       "faceRemoveWire": false,
-      "shellRemoveFace": false
+      "shellRemoveFace": false,
+      "shellRemoveChild": false,
+      "solidRemoveShell": false,
+      "solidRemoveChild": false,
+      "compoundRemoveChild": false,
+      "compSolidRemoveSolid": false
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether each of the eleven remove/replace calls the test makes on invalid ref id 99999 reports success (all refuse). Bridge: BRepGraph.edgeRemoveVertex, edgeReplaceVertex (nil = not valid), wireRemoveCoEdge, faceRemoveVertex, faceRemoveWire, shellRemoveFace, shellRemoveChild, solidRemoveShell, solidRemoveChild, compoundRemoveChild, compSolidRemoveSolid (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, remove lines; removeRep returns void and is not compared). Kernel: the matching Editor() calls (Edges().RemoveVertex/ReplaceVertex, Wires().RemoveCoEdge, Supplement().RemoveAttachment for faceRemoveVertex, Faces().RemoveWire, Shells().RemoveFace for both shellRemove calls, Solids().RemoveShell for both solidRemove calls, Compounds().RemoveChild, CompSolids().RemoveSolid): the first six in Scripts/repro/766-drawing-editorview/transcript.txt (removeOpsSafe), the last five in the new Scripts/repro/766-drawing-evidence-fix/transcript.txt.",
+    "probe": "Scripts/repro/766-drawing-editorview/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "v0.161 EditorView Add/Remove + Ref setters::Edge / face / coedge ref setters operate on existing entities",
     "bridge_function": "OCCTBRepGraphSetCoEdgeEdgeDefId",
     "bridge_output": {
-      "coedge0Edge": 5,
-      "coedge0Face": 3
+      "before": [
+        0,
+        0
+      ],
+      "after": [
+        5,
+        3
+      ]
     },
     "kernel_output": {
       "before": [
         0,
         0
       ],
-      "afterSetChildEdgeId5SetFaceId3": [
+      "after": [
         5,
         3
       ]
@@ -1326,7 +1392,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: coedge 0's [edge index, face index] before and after it is re-pointed at edge 5 and face 3. Bridge: BRepGraph.coedgeEdge(0) / coedgeFace(0) around setCoEdgeEdgeDefId / setCoEdgeFaceDefId (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, coedge lines). Kernel: Topo().CoEdges().Edge / Face around Editor().CoEdges().SetChildEdgeId / SetFaceId (Scripts/repro/766-drawing-editorview/transcript.txt, refSetters).",
+    "probe": "Scripts/repro/766-drawing-editorview/"
   },
   {
     "test_name": "v0.163 EditorView ProductOps assembly building::Create empty product and link to topology",
@@ -1424,29 +1492,36 @@
     "test_name": "v0.163 EditorView ProductOps assembly building::Occurrence ref local location setter overwrites the placement linkProducts wrote",
     "bridge_function": "OCCTBRepGraphSetOccurrenceRefLocalLocation",
     "bridge_output": {
-      "translation": [
-        11,
-        12,
-        13
+      "afterLink": [
+        5.0,
+        6.0,
+        7.0
+      ],
+      "afterSet": [
+        11.0,
+        12.0,
+        13.0
       ]
     },
     "kernel_output": {
       "afterLink": [
-        5,
-        6,
-        7
+        5.0,
+        6.0,
+        7.0
       ],
       "afterSet": [
-        11,
-        12,
-        13
+        11.0,
+        12.0,
+        13.0
       ]
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the translation part of the occurrence ref's local location after linkProducts wrote (5,6,7) and after SetRefLocalLocation overwrote it with (11,12,13). Bridge: BRepGraph.occurrenceRefLocalLocation(ref) entries [3], [7], [11] (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, occ lines). Kernel: Refs().Gen().LocalLocation(occurrence ref) TranslationPart (Scripts/repro/766-drawing-editorview/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-editorview/"
   },
   {
     "test_name": "v0.159 EditorView field setters::Vertex point and tolerance set then read back",
@@ -1534,55 +1609,54 @@
     "test_name": "v0.164 RepOps non-guard setters & cache entry inspection::Cached face mesh inspection on a fresh graph",
     "bridge_function": "OCCTBRepGraphCachedFaceMeshIsPresent",
     "bridge_output": {
-      "present": false,
-      "count": 0,
-      "active": -1,
-      "repId": null
+      "facePresent": false
     },
     "kernel_output": {
-      "faceCacheHas": false
+      "facePresent": false
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the face mesh cache holds an entry for face 0 of a fresh graph. Bridge: BRepGraph.cachedFaceMeshIsPresent(0) (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, cache.fresh.facePresent), which is Mesh().Cache().Faces().Has directly. Kernel: Mesh().Cache().Faces().Has(face 0) printed 0 (Scripts/repro/766-drawing-editorview/transcript.txt, cachedMesh fresh). The test's other three assertions (cachedFaceMeshTriRepCount 0, ActiveIndex -1, TriRepId nil; Swift: count=0 active=-1 repId=nil) are synthesised by the bridge from that same Has() call, so they are not independent kernel measurements and are not in the compared payload.",
+    "probe": "Scripts/repro/766-drawing-editorview/"
   },
   {
     "test_name": "v0.164 RepOps non-guard setters & cache entry inspection::Cached face mesh state after appendCachedTriangulation",
     "bridge_function": "OCCTBRepGraphMeshAppendCachedTriangulation",
     "bridge_output": {
-      "present": true,
-      "count": 1,
-      "active": 0,
-      "repId": 0
+      "facePresent": true
     },
     "kernel_output": {
-      "faceCacheHasAfterSetCachedTriangulation": true
+      "facePresent": true
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the face mesh cache holds an entry for face 0 after a triangulation is cached on it. Bridge: BRepGraph.cachedFaceMeshIsPresent(0) after appendCachedTriangulation (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, cache.after.facePresent). Kernel: Mesh().Cache().Faces().Has(face 0) after Mesh().Editor().Faces().SetCachedTriangulation printed 1 (Scripts/repro/766-drawing-editorview/transcript.txt, cachedMesh after SetCachedTriangulation). The test's count / active index / rep id assertions (count=1 active=0 repId=Optional(0) rep=0) are synthesised from that Has() call and are not compared; the rep id equals the triangulation rep id only because both are 0 (see PR #2441).",
+    "probe": "Scripts/repro/766-drawing-editorview/"
   },
   {
     "test_name": "v0.164 RepOps non-guard setters & cache entry inspection::Cached edge / coedge mesh accessors return absent on fresh graph",
     "bridge_function": "OCCTBRepGraphCachedEdgeMeshIsPresent",
     "bridge_output": {
-      "edge": false,
-      "coedge": false,
-      "onTriCount": 0
+      "edgePresent": false,
+      "coedgePresent": false
     },
     "kernel_output": {
-      "edgeCacheHas": false,
-      "coedgeCacheHas": false
+      "edgePresent": false,
+      "coedgePresent": false
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the edge and coedge mesh caches hold an entry for edge 0 and coedge 0 of a fresh graph. Bridge: BRepGraph.cachedEdgeMeshIsPresent(0) and cachedCoEdgeMeshIsPresent(0) (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, cache.fresh lines). Kernel: Mesh().Cache().Edges().Has and CoEdges().Has printed edge=0 coedge=0 (Scripts/repro/766-drawing-editorview/transcript.txt, cachedMesh fresh). The test also asserts two nil rep ids and cachedCoEdgeMeshPolygonOnTriRepCount == 0 (Swift: 0), which have no separate kernel measurement here and are not compared.",
+    "probe": "Scripts/repro/766-drawing-editorview/"
   },
   {
     "test_name": "HLR ReflectLines Tests::reflect lines on sphere",
@@ -1666,52 +1740,58 @@
     "test_name": "Perspective eye anchor and the regime beyond it (#1036)::A shape wholly beyond the eye is refused, not drawn mirrored",
     "bridge_function": "OCCTDrawingCreate",
     "bridge_output": {
-      "drawing": null
+      "projectionProduced": false
     },
     "kernel_output": {
-      "reach": 1010,
-      "focus": 50,
-      "guard": "refuse"
+      "projectionProduced": true
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "projectionProduced: bridge false, kernel true. shapeBeyondTheEye (box x 20..30, z 1000..1010): reach along +Z=1010 focus=50; the bridge refuses (#1036), raw HLRBRep_Algo returns 7 visible edges with x in [-1.57894747, -1.04166657], the mirrored / degenerate drawing the guard exists to prevent. By design; the test asserts the refusal."
+      ]
     },
-    "status": "PASS"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Bridge: Drawing.project(shape, direction: (0,0,1), type: .perspective(focus:)) returned nil, i.e. no drawing (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, p1036.beyondEye.drawingNil=true); the test asserts exactly that refusal. Kernel: the same fixture run through HLRBRep_Algo with HLRAlgo_Projector(gp_Ax2(origin, +Z), focus) WITHOUT the bridge's guard did produce a drawing (Scripts/repro/766-drawing-evidence-fix/transcript.txt, shapeBeyondTheEye (box x 20..30, z 1000..1010)). The two sides are different by design (#1036): OCCTDrawingCreate refuses when the shape's reach along the view direction (reach along +Z=1010 focus=50) is not below the focal distance, because HLRAlgo_Projector divides by R = 1 - Z/focus and returns a mirrored drawing for R <= 0.",
+    "probe": "Scripts/repro/766-drawing-evidence-fix/, Scripts/repro/766-drawing-reflect-1036-1059/"
   },
   {
     "test_name": "Perspective eye anchor and the regime beyond it (#1036)::An eye plane cutting the shape is refused, not drawn half mirrored",
     "bridge_function": "OCCTDrawingCreate",
     "bridge_output": {
-      "drawing": null
+      "projectionProduced": false
     },
     "kernel_output": {
-      "reach": 10.0000001,
-      "focus": 5.5,
-      "guard": "refuse"
+      "projectionProduced": true
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "projectionProduced: bridge false, kernel true. eyePlaneCutting (box x 20..30, z 0..10): reach along +Z=10.0000001 focus=5.5; the bridge refuses (#1036), raw HLRBRep_Algo returns 4 visible edges with x in [-24.4444445, 20.0000001], the mirrored / degenerate drawing the guard exists to prevent. By design; the test asserts the refusal."
+      ]
     },
-    "status": "PASS"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Bridge: Drawing.project(shape, direction: (0,0,1), type: .perspective(focus:)) returned nil, i.e. no drawing (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, p1036.eyePlaneCutting.drawingNil=true); the test asserts exactly that refusal. Kernel: the same fixture run through HLRBRep_Algo with HLRAlgo_Projector(gp_Ax2(origin, +Z), focus) WITHOUT the bridge's guard did produce a drawing (Scripts/repro/766-drawing-evidence-fix/transcript.txt, eyePlaneCutting (box x 20..30, z 0..10)). The two sides are different by design (#1036): OCCTDrawingCreate refuses when the shape's reach along the view direction (reach along +Z=10.0000001 focus=5.5) is not below the focal distance, because HLRAlgo_Projector divides by R = 1 - Z/focus and returns a mirrored drawing for R <= 0.",
+    "probe": "Scripts/repro/766-drawing-evidence-fix/, Scripts/repro/766-drawing-reflect-1036-1059/"
   },
   {
     "test_name": "Perspective eye anchor and the regime beyond it (#1036)::An eye exactly on a face is refused rather than divided by zero",
     "bridge_function": "OCCTDrawingCreate",
     "bridge_output": {
-      "drawing": null
+      "projectionProduced": false
     },
     "kernel_output": {
-      "reach": 10.0000001,
-      "focus": 10,
-      "guard": "refuse"
+      "projectionProduced": true
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "projectionProduced: bridge false, kernel true. eyeExactlyOnAFace (box x 20..30, z 0..10): reach along +Z=10.0000001 focus=10; the bridge refuses (#1036), raw HLRBRep_Algo returns 4 visible edges with x in [-1.12589991e+17, 20.0000001], the mirrored / degenerate drawing the guard exists to prevent. By design; the test asserts the refusal."
+      ]
     },
-    "status": "PASS"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Bridge: Drawing.project(shape, direction: (0,0,1), type: .perspective(focus:)) returned nil, i.e. no drawing (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, p1036.eyeOnFace.drawingNil=true); the test asserts exactly that refusal. Kernel: the same fixture run through HLRBRep_Algo with HLRAlgo_Projector(gp_Ax2(origin, +Z), focus) WITHOUT the bridge's guard did produce a drawing (Scripts/repro/766-drawing-evidence-fix/transcript.txt, eyeExactlyOnAFace (box x 20..30, z 0..10)). The two sides are different by design (#1036): OCCTDrawingCreate refuses when the shape's reach along the view direction (reach along +Z=10.0000001 focus=10) is not below the focal distance, because HLRAlgo_Projector divides by R = 1 - Z/focus and returns a mirrored drawing for R <= 0.",
+    "probe": "Scripts/repro/766-drawing-evidence-fix/, Scripts/repro/766-drawing-reflect-1036-1059/"
   },
   {
     "test_name": "Perspective eye anchor and the regime beyond it (#1036)::The eye is anchored at the world origin, so the scale follows the shape's position",
@@ -1830,17 +1910,20 @@
     "test_name": "Length Dimension::Point-to-point distance",
     "bridge_function": "OCCTDimensionCreateLengthFromPoints",
     "bridge_output": {
-      "value": 10
+      "value": 10.0,
+      "isValid": true
     },
     "kernel_output": {
-      "value": 10,
+      "value": 10.0,
       "isValid": true
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the value and validity of a length dimension (the distance between (0,0,0) and (10,0,0)). Bridge: LengthDimension(from:to:) then .value and .isValid (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, length.points10); the test asserts the value. Kernel: PrsDim_LengthDimension GetValue() and IsValid() printed value=10 valid=1 (Scripts/repro/766-drawing-length-normalproj/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-length-normalproj/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Length Dimension::Diagonal distance",
@@ -1876,33 +1959,39 @@
     "test_name": "Length Dimension::Edge length measurement",
     "bridge_function": "OCCTDimensionCreateLengthFromEdge",
     "bridge_output": {
-      "value": 7
+      "value": 7.0,
+      "isValid": true
     },
     "kernel_output": {
-      "value": 7,
+      "value": 7.0,
       "isValid": true
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the value and validity of a length dimension (the length of the 7-unit edge). Bridge: LengthDimension(edge:) on the edge as a Shape then .value and .isValid (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, length.edge7); the test asserts the value. Kernel: PrsDim_LengthDimension GetValue() and IsValid() printed value=7 valid=1 (Scripts/repro/766-drawing-length-normalproj/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-length-normalproj/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Length Dimension::Face-to-face distance equals box dimension",
     "bridge_function": "OCCTDimensionCreateLengthFromFaces",
     "bridge_output": {
-      "value": 10
+      "value": 10.0,
+      "isValid": true
     },
     "kernel_output": {
-      "value": 10,
+      "value": 10.0,
       "isValid": true
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the value and validity of a length dimension (the distance between two parallel 20x30 faces 10 apart). Bridge: LengthDimension(face1:face2:) then .value and .isValid (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, length.faces10); the test asserts the value. Kernel: PrsDim_LengthDimension GetValue() and IsValid() printed value=10 valid=1 (Scripts/repro/766-drawing-length-normalproj/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-length-normalproj/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Length Dimension::Geometry contains valid first and second points",
@@ -1963,30 +2052,29 @@
       "edges": 2,
       "bbox": [
         [
-          9.70142485,
-          -2.4253564,
-          -1.46871406e-07
+          9.701424854581914,
+          -2.4253563972347387,
+          -1.468714060483818e-07
         ],
         [
-          10.0000001,
-          2.4253564,
-          1.46871406e-07
+          10.000000146871416,
+          2.425356397234736,
+          1.468714060483818e-07
         ]
-      ],
-      "within": 1e-06
+      ]
     },
     "kernel_output": {
       "edges": 2,
       "bbox": [
         [
-          9.70142485,
-          -2.4253564,
-          -1.46871406e-07
+          9.701424854581914,
+          -2.4253563972347387,
+          -1.468714060483818e-07
         ],
         [
-          10.0000001,
-          2.4253564,
-          1.46871406e-07
+          10.000000146871416,
+          2.425356397234736,
+          1.468714060483818e-07
         ]
       ]
     },
@@ -1994,7 +2082,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the edge count and bounding box of the line (8,-2,0)-(8,2,0) normal-projected onto the radius-10 sphere. Bridge: Shape.normalProjection(of:) result .edges().count and .boundingBox at full precision (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, normalProj.inside). The previous record put the test's pinned 9-digit literals and its 1e-6 tolerance on the bridge side; this one uses the observed values. Kernel: BRepOffsetAPI_NormalProjection with the Swift defaults (1e-4, 1e-5, C2, degree 14, 16 segments), printed at %.17g by the new Scripts/repro/766-drawing-evidence-fix/probe.mm.",
+    "probe": "Scripts/repro/766-drawing-length-normalproj/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Normal Projection::Project line outside sphere",
@@ -2003,30 +2093,29 @@
       "edges": 2,
       "bbox": [
         [
-          9.48683264,
-          -3.162278,
-          -3.40436912e-07
+          9.486832640068224,
+          -3.1622780006052933,
+          -3.4043691237357003e-07
         ],
         [
-          10.0000003,
-          3.162278,
-          3.40436912e-07
+          10.000000340436916,
+          3.162278000605292,
+          3.4043691237357003e-07
         ]
-      ],
-      "within": 1e-06
+      ]
     },
     "kernel_output": {
       "edges": 2,
       "bbox": [
         [
-          9.48683264,
-          -3.162278,
-          -3.40436912e-07
+          9.486832640068224,
+          -3.1622780006052933,
+          -3.4043691237357003e-07
         ],
         [
-          10.0000003,
-          3.162278,
-          3.40436912e-07
+          10.000000340436916,
+          3.162278000605292,
+          3.4043691237357003e-07
         ]
       ]
     },
@@ -2034,7 +2123,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the edge count and bounding box of the line (15,-5,0)-(15,5,0) normal-projected onto the radius-10 sphere. Bridge: Shape.normalProjection(of:) result .edges().count and .boundingBox at full precision (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, normalProj.outside), replacing the previous record's pinned literals and tolerance. Kernel: BRepOffsetAPI_NormalProjection with the Swift defaults, printed at %.17g by the new Scripts/repro/766-drawing-evidence-fix/probe.mm.",
+    "probe": "Scripts/repro/766-drawing-length-normalproj/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "v0.149 DrawingDimension.ordinate::3-feature ordinate emits origin cross + X + Y extensions per feature",
@@ -2185,67 +2276,73 @@
     "bridge_function": "OCCTFaceProjectPoint",
     "bridge_output": {
       "point": [
-        0,
-        0,
-        5
+        0.0,
+        0.0,
+        5.0
       ],
-      "distance": 10
+      "distance": 10.0
     },
     "kernel_output": {
-      "nearest": [
-        0,
-        0,
-        5
+      "point": [
+        0.0,
+        0.0,
+        5.0
       ],
-      "distance": 10
+      "distance": 10.0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the previous record spelled the point key nearest on the kernel side): the nearest point on the box's top face to (0,0,15) and its distance. Bridge: Face.project(point:) .point and .distance (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, pointProj.boxTop). Kernel: GeomAPI_ProjectPointOnSurf over the face's UV bounds, NearestPoint() and LowerDistance() (Scripts/repro/766-drawing-pointproj-polyhlr/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-pointproj-polyhlr/"
   },
   {
     "test_name": "Point Projection Tests::Project point onto sphere face with UV",
     "bridge_function": "OCCTFaceProjectPoint",
     "bridge_output": {
       "point": [
-        5,
-        0,
-        0
+        5.0,
+        0.0,
+        0.0
       ],
-      "distance": 5
+      "distance": 5.0
     },
     "kernel_output": {
-      "nearest": [
-        5,
-        0,
-        0
+      "point": [
+        5.0,
+        0.0,
+        0.0
       ],
-      "distance": 5
+      "distance": 5.0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the nearest point on the radius-5 sphere's face to (10,0,0) and its distance. Bridge: Face.project(point:) .point and .distance (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, pointProj.sphere). Kernel: GeomAPI_ProjectPointOnSurf NearestPoint() and LowerDistance() (Scripts/repro/766-drawing-pointproj-polyhlr/transcript.txt); the kernel reports nbPoints=2 extrema and Face.project returns the nearer.",
+    "probe": "Scripts/repro/766-drawing-pointproj-polyhlr/"
   },
   {
     "test_name": "Point Projection Tests::All projections returns results",
     "bridge_function": "OCCTFaceProjectPointAll",
     "bridge_output": {
       "count": 1,
-      "distance": 10
+      "distance": 10.0
     },
     "kernel_output": {
-      "nbPoints": 1,
-      "distance": 10
+      "count": 1,
+      "distance": 10.0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the previous record spelled the count key nbPoints on the kernel side): the number of projections of (0,0,15) onto the box's top face and the first one's distance. Bridge: Face.allProjections(of:) .count and .first.distance (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, pointProj.boxTopAll). Kernel: GeomAPI_ProjectPointOnSurf NbPoints() and the (single) point's distance (Scripts/repro/766-drawing-pointproj-polyhlr/transcript.txt, box top face).",
+    "probe": "Scripts/repro/766-drawing-pointproj-polyhlr/"
   },
   {
     "test_name": "Point Projection Tests::Project point onto straight edge",
@@ -2444,13 +2541,15 @@
       "hits": 0
     },
     "kernel_output": {
-      "NbPicked": 0
+      "hits": 0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the previous record spelled it NbPicked on the kernel side): the number of entities picked for a 10-unit box under the centre pixel of an 800x600 view, camera at z 50. Bridge: Selector.pick(at:) result .count (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, selector.centre). Kernel: SelectMgr_ViewerSelector NbPicked() after PickPoint, with the bridge's OCCTBRepSelectable and OCCTHeadlessSelector copied into the probe and the camera set as the test sets it (Scripts/repro/766-drawing-evidence-fix/transcript.txt). Zero hits is the shared result on both sides: Selector.pick returns no hit for any scene in SelectorTests (finding in PR #2569), so the tests carry their hit expectations under withKnownIssue.",
+    "probe": "Scripts/repro/766-drawing-evidence-fix/, Scripts/repro/766-drawing-selector-tolerance/"
   },
   {
     "test_name": "Selector Tests::Pick miss at far corner",
@@ -2459,49 +2558,51 @@
       "hits": 0
     },
     "kernel_output": {
-      "NbPicked": 0
+      "hits": 0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the previous record spelled it NbPicked on the kernel side): the number of entities picked for a 1-unit box, pixel (0,0), camera at z 50. Bridge: Selector.pick(at:) result .count (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, selector.miss). Kernel: SelectMgr_ViewerSelector NbPicked() after PickPoint, with the bridge's OCCTBRepSelectable and OCCTHeadlessSelector copied into the probe and the camera set as the test sets it (Scripts/repro/766-drawing-evidence-fix/transcript.txt). Zero hits is the shared result on both sides: Selector.pick returns no hit for any scene in SelectorTests (finding in PR #2569), so the tests carry their hit expectations under withKnownIssue.",
+    "probe": "Scripts/repro/766-drawing-evidence-fix/, Scripts/repro/766-drawing-selector-tolerance/"
   },
   {
     "test_name": "Selector Tests::Multiple shapes return correct IDs",
     "bridge_function": "OCCTSelectorAddShape",
     "bridge_output": {
-      "added": [
-        true,
-        true
-      ],
       "hitsLeft": 0,
       "hitsRight": 0
     },
     "kernel_output": {
-      "NbPicked": 0
+      "hitsLeft": 0,
+      "hitsRight": 0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of entities picked at each box's centre pixel, (384,300) and (416,300), for two 10-unit boxes at x -20 and 20 seen from z 100. The previous record compared the Swift add results and picks with a kernel probe of a different, single-box scene; the new probe runs this scene. Bridge: Selector.pick(at:) counts (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, selector.multi lines); add(shape:id:) returned [true, true] for both shapes, a bridge-side return with no kernel counterpart. Kernel: NbPicked() after PickPoint at each pixel (Scripts/repro/766-drawing-evidence-fix/transcript.txt). Zero hits is the shared result on both sides: Selector.pick returns no hit for any scene in SelectorTests (finding in PR #2569), so the tests carry their hit expectations under withKnownIssue.",
+    "probe": "Scripts/repro/766-drawing-evidence-fix/, Scripts/repro/766-drawing-selector-tolerance/"
   },
   {
     "test_name": "Selector Tests::Remove shape then pick returns miss",
     "bridge_function": "OCCTSelectorRemoveShape",
     "bridge_output": {
-      "removed": true,
       "hits": 0
     },
     "kernel_output": {
-      "NbPicked": 0
+      "hits": 0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of entities picked at the centre pixel after the only box has been added and removed. Bridge: Selector.pick(at:) count after remove(id:) (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, selector.remove.hits); remove(id:) itself returned true, a bridge-side return with no kernel counterpart. Kernel: NbPicked() after SelectMgr_SelectionManager::Remove (Scripts/repro/766-drawing-evidence-fix/transcript.txt). Zero hits is the shared result on both sides: Selector.pick returns no hit for any scene in SelectorTests (finding in PR #2569), so the tests carry their hit expectations under withKnownIssue.",
+    "probe": "Scripts/repro/766-drawing-evidence-fix/, Scripts/repro/766-drawing-selector-tolerance/"
   },
   {
     "test_name": "Selector Tests::Rectangle pick covers geometry",
@@ -2510,13 +2611,15 @@
       "hits": 0
     },
     "kernel_output": {
-      "NbPicked (point route)": 0
+      "hits": 0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of entities picked by the rectangle (100,100)-(700,500) over a 10-unit box seen from z 50. The previous record's kernel side was a point pick, not a box pick; the new probe calls PickBox. Bridge: Selector.pick(rect:) count (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, selector.rect). Kernel: NbPicked() after the headless selector's PickBox (Scripts/repro/766-drawing-evidence-fix/transcript.txt). Zero hits is the shared result on both sides: Selector.pick returns no hit for any scene in SelectorTests (finding in PR #2569), so the tests carry their hit expectations under withKnownIssue.",
+    "probe": "Scripts/repro/766-drawing-evidence-fix/, Scripts/repro/766-drawing-selector-tolerance/"
   },
   {
     "test_name": "Selector Tests::Clear all removes everything",
@@ -2525,13 +2628,15 @@
       "hits": 0
     },
     "kernel_output": {
-      "NbPicked": 0
+      "hits": 0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of entities picked at the centre pixel after two boxes were added and all cleared. Bridge: Selector.pick(at:) count after clearAll() (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, selector.clear). Kernel: NbPicked() after both objects are removed from the selection manager, as OCCTSelectorClear does (Scripts/repro/766-drawing-evidence-fix/transcript.txt). Zero hits is the shared result on both sides: Selector.pick returns no hit for any scene in SelectorTests (finding in PR #2569), so the tests carry their hit expectations under withKnownIssue.",
+    "probe": "Scripts/repro/766-drawing-evidence-fix/, Scripts/repro/766-drawing-selector-tolerance/"
   },
   {
     "test_name": "v0.149 DrawingTolerance::Symmetric tolerance rendered inline on the nominal label",
@@ -2844,17 +2949,19 @@
       "topOSD": -4
     },
     "kernel_output": {
-      "BotOSD": -5,
-      "Default": 0,
-      "Top": -2,
-      "Topmost": -3,
-      "TopOSD": -4
+      "bottomOSD": -5,
+      "default": 0,
+      "top": -2,
+      "topmost": -3,
+      "topOSD": -4
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the previous record used the kernel's capitalised names on one side, so the key sets differed): the five predefined z-layer ids. Both sides use the Swift constant names. Bridge: ZLayerSettings.bottomOSD, .default, .top, .topmost, .topOSD (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, zlayer line, in that order). Kernel: Graphic3d_ZLayerId_BotOSD, _Default, _Top, _Topmost, _TopOSD printed BotOSD=-5 Default=0 Top=-2 Topmost=-3 TopOSD=-4 (Scripts/repro/766-drawing-zlayer/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-zlayer/"
   },
   {
     "test_name": "#1185 DrawingDimension.Radial/.Diameter share Circular::DrawingDimension.value: .radial reports radius, .diameter reports 2*radius",
@@ -2951,17 +3058,20 @@
     "test_name": "Radius Dimension::Radius of circle wire",
     "bridge_function": "OCCTDimensionCreateRadiusFromShape",
     "bridge_output": {
-      "value": 7
+      "value": 7.0,
+      "isValid": true
     },
     "kernel_output": {
-      "value": 7,
+      "value": 7.0,
       "isValid": true
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the value and validity of a radius dimension on a radius-7 circle wire. Bridge: RadiusDimension(shape:) .value and .isValid (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, radius lines); the test asserts the value. Kernel: PrsDim_RadiusDimension GetValue() and IsValid() printed value=7 valid=1 (Scripts/repro/766-drawing-radial-radius/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-radial-radius/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Radius Dimension::Radius geometry has circle center",
@@ -2994,16 +3104,19 @@
     "test_name": "Radius Dimension::Nil for non-circular shape",
     "bridge_function": "OCCTDimensionIsValid",
     "bridge_output": {
-      "isValid": false
+      "isValid": false,
+      "value": 0.0
     },
     "kernel_output": {
       "isValid": false,
-      "value": 0
+      "value": 0.0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the validity and value of the radius dimension built on a box, which is not circular. Bridge: RadiusDimension(shape: box) is non-nil on the pinned kernel (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, radiusBox.constructed=true), and .isValid and .value (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, radiusBox lines); the test asserts !isValid and accepts a nil dimension. Kernel: PrsDim_RadiusDimension on the same box constructs, reporting value=0 valid=0 (its circle radius is DBL_MAX) (Scripts/repro/766-drawing-radial-radius/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-radial-radius/, Scripts/repro/766-drawing-evidence-fix/"
   }
 ]
