@@ -614,4 +614,4 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `isExternRef` | `OCCTDocumentShapeToolIsExternRef` returns true | :75 Expectation failed: !doc.shapeToolIsExternRef(labelId: labelId) | passed | `OCCTDocumentShapeToolIsExternRef` | PASS: false |
 | `getUsers` | `OCCTDocumentShapeToolGetUsers` returns 1 | :88 Expectation failed: users == 0 | passed | `OCCTDocumentShapeToolGetUsers` | PASS: 0 |
 | `nbComponents` | `OCCTDocumentShapeToolNbComponents` returns 1 | :101 Expectation failed: nb == 0 | passed | `OCCTDocumentShapeToolNbComponents` | PASS: 0 |
-| `computeShapes` | `OCCTDocumentShapeToolComputeShapes` calls `abort()` | process crash (no expectation in the test; a crash is the only failure it can report) | passed | `OCCTDocumentShapeToolComputeShapes` | PASS: returns; the label is unchanged |
+| `computeShapes` | `OCCTDocumentShapeToolComputeShapes` calls `abort()` | process crash (no expectation in the test; a crash is the only failure it can report) | passed | `OCCTDocumentShapeToolComputeShapes` | PASS: the call returns on both sides |
