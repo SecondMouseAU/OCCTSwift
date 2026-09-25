@@ -649,6 +649,71 @@ Probe: `Scripts/repro/766-geom2d-gccana-bisector-circ/`. Every row was run red w
 | Curve2D measured continuity encoding after the retirement (#619)::An analytic 2D curve reports CN as ordinal 6, the old encoding's 99 is unreachable | `OCCTCurve2DGetContinuity` | pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99) | ✅ | ✅ | MATCH |  |
 | Curve2D measured continuity encoding after the retirement (#619)::A C1 pcurve reports C1 as ordinal 2, not 1 | `OCCTCurve2DGetContinuity` | pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99) | ✅ | ✅ | MATCH |  |
 | Curve2D measured continuity encoding after the retirement (#619)::A raw threshold of 2 now admits a merely-C1 pcurve; satisfies(.c2) still refuses it | `OCCTCurve2DGetContinuity` | pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99) | ✅ | ✅ | MATCH |  |
+### #1979 executed: `TransformFactory2DTests.swift`, `Vector2DUtilityTests.swift`
+Probe: `Scripts/repro/766-geom2d-transform-vector/`. Every row was run red with the injection applied and green after it was reverted.
+| gce Transform Factory 2D Tests::pointMirror2d | `OCCTMakeMirror2dPoint` | mirror point x + 1 | ✅ | ✅ | MATCH |  |
+| gce Transform Factory 2D Tests::rotation2d | `OCCTMakeRotation2d` | angle negated | ✅ | ✅ | MATCH |  |
+| gce Transform Factory 2D Tests::scale2d | `OCCTMakeScale2d` | factor + 1 | ✅ | ✅ | MATCH |  |
+| gce Transform Factory 2D Tests::translation2d | `OCCTMakeTranslation2dVec` | vy + 1 | ✅ | ✅ | MATCH | x only; y now pinned |
+| gce Transform Factory 2D Tests::direction2d | `OCCTMakeDir2d` | x and y swapped | ✅ | ✅ | MATCH | unit length only, inside `if let`; now the direction |
+| gce Transform Factory 2D Tests::direction2dFromPoints | `OCCTMakeDir2dFromPoints` | second point x + 1 | ✅ | ✅ | MATCH | `!= nil` only; now the direction |
+| Vector2D Utilities::angle | `OCCTVector2DAngle` | angle + 1e-3 | ✅ | ✅ | MATCH |  |
+| Vector2D Utilities::cross | `OCCTVector2DCross` | operands swapped | ✅ | ✅ | MATCH |  |
+| Vector2D Utilities::dot | `OCCTVector2DDot` | y term dropped, + 1 | ✅ | ✅ | MATCH |  |
+| Vector2D Utilities::magnitude | `OCCTVector2DMagnitude` | square instead of root | ✅ | ✅ | MATCH |  |
+| Vector2D Utilities::normalize | `OCCTVector2DNormalize` | x divided by half the magnitude | ✅ | ✅ | MATCH |  |
+### #1979 executed: `Wire2DChamferTests.swift`, `Wire2DFilletTests.swift`
+Probe: `Scripts/repro/766-geom2d-projlib-wire-tbezier/`. Every row was run red with the injection applied and green after it was reverted.
+| Wire 2D Chamfer Tests::Chamfer single vertex of rectangle | `OCCTWireChamfer2D` | distance1 + 0.5 | ✅ | ✅ | MATCH | `!= nil` only |
+| Wire 2D Chamfer Tests::Chamfer all vertices of rectangle | `OCCTWireChamferAll2D` | only every other corner chamfered | ✅ | ✅ | MATCH | `!= nil` only |
+| Wire 2D Chamfer Tests::Asymmetric chamfer | `OCCTWireChamfer2D` | distance1 + 0.5 | ✅ | ✅ | MATCH | `!= nil` only |
+| Wire 2D Chamfer Tests::chamferedAll2D pairs edges by true wire connection order, not TopExp::MapShapes insertion order | `OCCTWireChamferAll2D` | only every other corner chamfered | ✅ | ✅ | MATCH |  |
+| Wire 2D Fillet Tests::Fillet single vertex of rectangle | `OCCTWireFillet2D` | radius + 0.5 | ✅ | ✅ | MATCH | `!= nil` only |
+| Wire 2D Fillet Tests::Fillet all vertices of rectangle | `OCCTWireFilletAll2D` | radius + 0.5 | ✅ | ✅ | MATCH | `!= nil` only |
+| Wire 2D Fillet Tests::Fillet polygon wire | `OCCTWireFillet2D` | radius + 0.5 | ✅ | ✅ | MATCH | `!= nil` only |
+| Wire 2D Fillet Tests::filletedAll2D falls back to the original wire on a mid-loop failure, not just a last-vertex one | `OCCTWireFilletAll2D` | a failed AddFillet is ignored | ✅ | ✅ | MATCH |  |
+### #1979 executed: `WireFromCurve2DOnPlaneTests.swift`, `Section2DTests.swift`
+| Wire fromCurve2D on Plane Tests::Segment on XY plane lifts to horizontal 3D wire | `OCCTWireFromCurve2DOnPlane` | pcurve trimmed to half its range | ✅ | ✅ | MATCH | nested `if let`s, 0.01 slack |
+| Wire fromCurve2D on Plane Tests::Circle arc on XY plane lifts correctly | `OCCTWireFromCurve2DOnPlane` | pcurve trimmed to half its range | ✅ | ✅ | MATCH | nested `if let`s, 0.05 slack |
+| Wire fromCurve2D on Plane Tests::Segment on XY plane at Z offset | `OCCTWireFromCurve2DOnPlane` | plane origin ignored | ✅ | ✅ | MATCH | nested `if let`s, force-unwrapped bounds |
+| Wire fromCurve2D on Plane Tests::Segment on YZ plane (normal = X axis) | `OCCTWireFromCurve2DOnPlane` | plane origin ignored | ✅ | ✅ | MATCH | nested `if let`s, force-unwrapped bounds |
+| Wire fromCurve2D on Plane Tests::BSpline interpolated curve lifts to 3D wire | `OCCTWireFromCurve2DOnPlane` | pcurve trimmed to half its range | ✅ | ✅ | MATCH | `isValid` only; now the 2D length |
+| Wire fromCurve2D on Plane Tests::Resulting 3D wire can be used as profile for extrusion | `OCCTWireFromCurve2DOnPlane` | pcurve trimmed to half its range | ✅ | ✅ | MATCH | nested `if let`s; now area 78 pi |
+| v0.144 Shape.section2D::Section of a box with the XY plane returns a Drawing | `Shape.section2D (Swift)` | section plane moved off the box | ✅ | ✅ | MATCH | `!= nil` only |
+| v0.144 Shape.section2D::section2DView includes hatch and label | `Shape.section2DView (Swift)` | label dropped | ✅ | ✅ | MATCH | `if let`; now `#require`, counts pinned |
+| v0.144 Shape.section2D::section2DView on a box with a through-hole keeps both the outer and inner contour loops | `Shape.section2DView (Swift)` | section plane moved off the box | ✅ | ✅ | MATCH | `if let`, `>= 5`; now `== 20` (measured) |
+### #1979 executed: `Curve2DTests.swift`
+Probe: `Scripts/repro/766-geom2d-curve2d-basics/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D Tests::Create segment and verify endpoints | `OCCTCurve2DCreateSegment` | end x + 1 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Curve2D Tests::Segment degenerate returns nil | `OCCTCurve2DCreateSegment` | coincident end nudged apart | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Create circle and verify closed/periodic | `OCCTCurve2DGetPeriod` | period + 1 | ✅ | ✅ | MATCH | `period != nil` inside `if let`; now 2 pi |
+| Curve2D Tests::Circle zero radius returns nil | `OCCTCurve2DCreateCircle` | non-positive radius replaced by 1 | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Arc of circle is not closed | `OCCTCurve2DCreateArcOfCircle` | end angle doubled | ✅ | ✅ | MATCH | `!isClosed` inside `if let`; now endpoints |
+| Curve2D Tests::Arc through 3 points | `OCCTCurve2DCreateArcThrough` | middle point y + 1 | ✅ | ✅ | MATCH | `if let`, start only; now end and mid |
+| Curve2D Tests::Create ellipse and verify closed | `OCCTCurve2DCreateEllipse` | major radius + 1 | ✅ | ✅ | MATCH | flags inside `if let`; now points |
+| Curve2D Tests::Ellipse minor > major returns nil | `OCCTCurve2DCreateEllipse` | radii reordered instead of refused | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Infinite line | `OCCTCurve2DCreateLine` | point y + 1 | ✅ | ✅ | MATCH | `!isClosed` inside `if let` |
+| Curve2D Tests::Parabola creation | `OCCTCurve2DCreateParabola` | focus x + 1 | ✅ | ✅ | MATCH | `!= nil` only |
+| Curve2D Tests::Hyperbola creation | `OCCTCurve2DCreateHyperbola` | major radius + 1 | ✅ | ✅ | MATCH | `!= nil` only |
+| Curve2D Tests::Evaluate segment midpoint | `OCCTCurve2DGetPoint` | x + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Circle point at 0 and pi/2 | `OCCTCurve2DGetPoint` | x + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::D1 returns non-zero tangent | `OCCTCurve2DD1` | D1 x + 1e-3 | ✅ | ✅ | MATCH | `|D1| > 0`; now the unit direction |
+| Curve2D Tests::D2 second derivative of a circle points from the curve back to its own center | `OCCTCurve2DD2` | D2 x + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Adaptive draw on circle produces at least 10 points | `OCCTCurve2DDrawAdaptive` | one point dropped | ✅ | ✅ | MATCH | `>= 10`; now 64 |
+| Curve2D Tests::Uniform draw produces exact count | `OCCTCurve2DDrawUniform` | one point dropped | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Uniform draw stays within the requested count on an overshooting ellipse | `OCCTCurve2DDrawUniform` | one point dropped | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Uniform draw rejects counts below two | `Curve2D.drawUniform (Swift guard)` | counts below two raised to two | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Deflection draw produces points | `OCCTCurve2DDrawDeflection` | deflection doubled | ✅ | ✅ | MATCH | `>= 4`; now 17 |
+| Curve2D Tests::Adaptive draw on segment produces at least 2 points | `OCCTCurve2DDrawAdaptive` | one point dropped | ✅ | ✅ | MATCH | `>= 2`; now exactly 2 |
+| Curve2D Tests::Draw arc of ellipse | `OCCTCurve2DDrawAdaptive` | one point dropped | ✅ | ✅ | MATCH | `>= 3` inside `if let`; now 43 and the ends |
+### #1979 executed: `ProjLibTests.swift`, `ProjLibComputeApproxTests.swift`, `ProjLibComputeApproxOnPolarSurfaceTests.swift`, `ProjLibProjectOnSurfaceTests.swift`, `TBezierCurve2DTests.swift`
+| ProjLib::lineOnPlane | `OCCTProjLibPlaneProjectLine` | direction x + 1e-3 | ✅ | ✅ | MATCH | `!= nil` and `|dir| > 0.5`; now location and direction |
+| ProjLib::circleOnPlane | `OCCTProjLibPlaneProjectCircle` | radius + 1e-3 | ✅ | ✅ | MATCH | `if let`; now `#require` and centre pinned |
+| ProjLib::lineOnCylinder | `OCCTProjLibCylinderProjectLine` | location x + 1e-3 | ✅ | ✅ | MATCH | `!= nil` only |
+| ProjLib ComputeApprox::Project edge onto cylinder face | `OCCTProjLibComputeApprox` | returns nullptr | ✅ | ✅ | MATCH | returned at the first success, silently if none |
+| ProjLib ComputeApproxOnPolarSurface::Project edge onto sphere face | `OCCTProjLibComputeApproxOnPolarSurface` | returns nullptr | ✅ | ✅ | MATCH | "may or may not succeed": nothing asserted on failure |
+| ProjLib_ProjectOnSurface Tests::projectLineOnCylinder | `OCCTProjLibProjectOnSurface` | trim end halved | ✅ | ✅ | MATCH | two `if let`s, `upper > lower`; now domain and start pinned |
+| Geom2dEval TBezier 2D Curve::createAndEval | `OCCTGeom2dEvalTBezierCurveCreate` | alpha + 0.5 | ✅ | ✅ | MATCH | domain signs only |
 ### #1979 executed: `Curve2DBisectorTests.swift`, `Curve2DBoundingBoxTests.swift`, `Curve2DBSplineExtrasTests.swift`
 Probe: `Scripts/repro/766-geom2d-bisector-bbox-weights/`. Every row was run red with the injection applied and green after it was reverted.
 | Curve2D Bisector Tests::Bisector between two lines | `OCCTCurve2DBisectorCC` | return the curve even when IsEmpty() | ✅ | ✅ | MATCH | the assertion sat inside `if let bis` and the kernel returns empty, so nothing was ever checked; now pins nil |
