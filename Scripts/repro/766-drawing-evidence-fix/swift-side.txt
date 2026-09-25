@@ -95,3 +95,11 @@ EV|camera.view.m00|[1.0, 0.0]
 EV|camera.view.m22|[1.0, 0.0]
 EV|camera.roundtrip.screen|[0.01, 0.006, 0.09909909909909909]
 EV|camera.roundtrip.world|[5.0, 3.0, 0.0]
+# Follow-up: full-precision re-observation for five records (Tests/OCCTDrawingTests/ZZEvidenceDump3.swift, never committed).
+EV|precision.cameraProjection|m00=0.0013333333190530539 m11=0.0020000000949949026 m22=-0.0003333334461785853 m23=-3.333334461785853e-07
+EV|precision.cameraOrthographic|perspM00=2.4142134189605713 orthoM00=0.0020000000949949026
+EV|precision.behindPicturePlane|[0.9433961264150944, 1.4285715285714287]
+EV|precision.fastIso.visible|edges=9 min=[-8.838834864831846, -9.185586635436922] max=[8.838834864831846, 9.185586635436922]
+EV|precision.fastIso.hidden|edges=3 min=[-8.838834864831846, -7.14434518311761] max=[8.838834864831847, 9.185586635436922]
+EV|precision.fastCyl.visible|edges=76 min=[-1e-07, -5.000000099706646] max=[10.0000001, 5.000000099706646]
+EV|precision.fastCyl.outline|edges=4 min=[-1e-07, -5.000000099706646] max=[10.0000001, 5.000000099706646]

@@ -383,22 +383,24 @@
     "test_name": "Camera Tests::Projection matrix non-identity",
     "bridge_function": "OCCTCameraGetProjectionMatrix",
     "bridge_output": {
-      "m00": 0.0013333333,
-      "m11": 0.002,
-      "m22": -0.00033333345,
-      "m23": -3.3333345e-07
+      "m00": 0.0013333333190530539,
+      "m11": 0.0020000000949949026,
+      "m22": -0.0003333334461785853,
+      "m23": -3.333334461785853e-07
     },
     "kernel_output": {
-      "m00": 0.00133333332,
-      "m11": 0.00200000009,
-      "m22": -0.000333333446,
-      "m23": -3.33333446e-07
+      "m00": 0.0013333333190530539,
+      "m11": 0.0020000000949949026,
+      "m22": -0.0003333334461785853,
+      "m23": -3.333334461785853e-07
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously the bridge side held the float32 entries' shortest decimal strings and the kernel side the same floats printed at 9 significant digits, so they agreed only to about 9 digits): projection matrix entries (0,0), (1,1), (2,2) and (2,3) of a default camera at aspect 1.5, each float32 entry widened to Double. Bridge: Camera.projectionMatrix columns.0.x, columns.1.y, columns.2.z and columns.3.z as Double (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, precision.cameraProjection). Kernel: Graphic3d_Camera::ProjectionMatrixF() GetValue(0,0), (1,1), (2,2), (2,3) as double at %.17g (Scripts/repro/766-drawing-evidence-fix/transcript.txt, cameraProjection).",
+    "probe": "Scripts/repro/766-drawing-autodim-balloon-camera/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Camera Tests::View matrix changes with eye/center",
@@ -470,18 +472,20 @@
     "test_name": "Camera Tests::Orthographic mode produces different matrices",
     "bridge_function": "OCCTCameraSetProjectionType",
     "bridge_output": {
-      "perspM00": 2.4142134,
-      "orthoM00": 0.002
+      "perspM00": 2.4142134189605713,
+      "orthoM00": 0.0020000000949949026
     },
     "kernel_output": {
-      "perspM00": 2.41421342,
-      "orthoM00": 0.00200000009
+      "perspM00": 2.4142134189605713,
+      "orthoM00": 0.0020000000949949026
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously float32 shortest strings against %.9g): projection matrix entry (0,0) for the perspective and the orthographic camera at eye (0,0,100), aspect 1, z range 1..1000, each float32 entry widened to Double. Bridge: Camera.projectionMatrix columns.0.x after setting projectionType to .perspective and then .orthographic (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, precision.cameraOrthographic). Kernel: Graphic3d_Camera::ProjectionMatrixF() GetValue(0,0) as double at %.17g after SetProjectionType(Projection_Perspective) and (Projection_Orthographic) (Scripts/repro/766-drawing-evidence-fix/transcript.txt, cameraOrthographic).",
+    "probe": "Scripts/repro/766-drawing-autodim-balloon-camera/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Camera Tests::Fit bounding box adjusts camera",
@@ -1843,15 +1847,17 @@
     },
     "kernel_output": {
       "x": [
-        0.943396126415,
-        1.42857152857
+        0.9433961264150944,
+        1.4285715285714287
       ]
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the kernel side was previously printed at 12 significant digits): the visible x range of the box (20,-5,-1010) 10x10x10 projected perspectively along +Z at focus 50. Bridge: Drawing.project(..., type: .perspective(focus: 50)) .visibleEdges .boundingBox x min and max (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, precision.behindPicturePlane). Kernel: HLRBRep_Algo with HLRAlgo_Projector(gp_Ax2(origin, +Z), 50) then BRepBndLib::Add of the visible compound at %.17g (Scripts/repro/766-drawing-evidence-fix/transcript.txt, shapeBehindThePicturePlane).",
+    "probe": "Scripts/repro/766-drawing-reflect-1036-1059/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Perspective eye anchor and the regime beyond it (#1036)::A focal distance just clear of the shape is accepted, however extreme the scale",
@@ -2441,12 +2447,12 @@
       "hidden": 3,
       "extent": [
         [
-          -8.83883486,
-          -9.18558664
+          -8.838834864831846,
+          -9.185586635436922
         ],
         [
-          8.83883486,
-          9.18558664
+          8.838834864831846,
+          9.185586635436922
         ]
       ]
     },
@@ -2454,7 +2460,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the kernel side was previously printed at 9 significant digits): the unique visible and hidden edge counts and the BRepBndLib extent of the visible edges for the polygonal isometric view of the centred 20x10x5 box. Bridge: Drawing.fastIsometricView(of:) .visibleEdges and .hiddenEdges (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, precision.fastIso lines). Kernel: BRepMesh_IncrementalMesh(0.01) then HLRBRep_PolyAlgo with HLRAlgo_Projector(gp_Ax2(origin, (1,1,1)/sqrt 3)), BRepBndLib::Add at %.17g (Scripts/repro/766-drawing-evidence-fix/transcript.txt, fastIsometricBox lines).",
+    "probe": "Scripts/repro/766-drawing-pointproj-polyhlr/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Polygon-Based HLR::Fast projection of cylinder",
@@ -2479,11 +2487,11 @@
       "extent": [
         [
           -1e-07,
-          -5.0000001
+          -5.000000099706646
         ],
         [
           10.0000001,
-          5.0000001
+          5.000000099706646
         ]
       ]
     },
@@ -2491,7 +2499,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the kernel side was previously printed at 9 significant digits): the unique visible and outline edge counts and the BRepBndLib extent of the visible edges for the polygonal side view of the radius-5 height-10 cylinder along +X. Bridge: Drawing.projectFast(cylinder, direction: (1,0,0)) .visibleEdges and .outlineEdges (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, precision.fastCyl lines). Kernel: BRepMesh_IncrementalMesh(0.01) then HLRBRep_PolyAlgo, BRepBndLib::Add at %.17g (Scripts/repro/766-drawing-evidence-fix/transcript.txt, fastProjectCylinder lines). The edge counts are mesh-segment counts, fixed for the pinned kernel's mesher.",
+    "probe": "Scripts/repro/766-drawing-pointproj-polyhlr/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Polygon-Based HLR::Fast projection has hidden edges",

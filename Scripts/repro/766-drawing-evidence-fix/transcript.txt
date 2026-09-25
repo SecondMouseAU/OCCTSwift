@@ -18,3 +18,10 @@ remove solidRemoveShell  Solids().RemoveShell(0, 99999): 0
 remove solidRemoveChild  Solids().RemoveShell(0, 99999): 0
 remove compoundRemoveChild  Compounds().RemoveChild(0, 99999): 0
 remove compSolidRemoveSolid  CompSolids().RemoveSolid(0, 99999): 0
+cameraProjection (default camera, aspect 1.5): m00=0.0013333333190530539 m11=0.0020000000949949026 m22=-0.00033333344617858529 m23=-3.3333344617858529e-07
+cameraOrthographic (eye z 100, aspect 1, z range 1..1000): perspM00=2.4142134189605713 orthoM00=0.0020000000949949026
+shapeBehindThePicturePlane (box x 20..30, z -1010..-1000, focus 50): visible x range [0.9433961264150944, 1.4285715285714287]
+fastIsometricBox (PolyAlgo, box 20x10x5, deflection 0.01) visible: edges=9 min=(-8.8388348648318456, -9.1855866354369216) max=(8.8388348648318456, 9.1855866354369216)
+fastIsometricBox (PolyAlgo, box 20x10x5, deflection 0.01) hidden: edges=3 min=(-8.8388348648318456, -7.1443451831176104) max=(8.8388348648318473, 9.1855866354369216)
+fastProjectCylinder (PolyAlgo, cylinder r5 h10 down +X, deflection 0.01) visible: edges=76 min=(-9.9999999999999995e-08, -5.0000000997066456) max=(10.000000099999999, 5.0000000997066456)
+fastProjectCylinder (PolyAlgo, cylinder r5 h10 down +X, deflection 0.01) outline: edges=4 min=(-9.9999999999999995e-08, -5.0000000997066456) max=(10.000000099999999, 5.0000000997066456)

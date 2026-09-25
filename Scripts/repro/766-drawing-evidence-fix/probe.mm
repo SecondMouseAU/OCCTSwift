@@ -8,11 +8,20 @@
 //   2. #1036: what HLRBRep_Algo returns for the three fixtures OCCTDrawingCreate refuses, run
 //      WITHOUT the bridge's reach guard, so the refusal can be recorded as a design divergence.
 //   3. Normal projection: BRepOffsetAPI_NormalProjection at full precision (%.17g).
+//   5. Precision re-measurement (the follow-up commit): five records whose kernel side was printed at
+//      9 to 12 significant digits, re-measured at %.17g: the perspective and orthographic projection
+//      matrix entries (float32 widened to double, as the Swift side reads them), the #1036
+//      behind-the-picture-plane x range, and the polygonal HLR isometric-box and cylinder extents.
 //   4. BRepGraph editor: the five remove calls SetterTests' remove test makes that the earlier
 //      probe did not (Shells().RemoveFace via shellRemoveChild, Solids().RemoveShell twice,
 //      Compounds().RemoveChild, CompSolids().RemoveSolid), each wrapped as the bridge wraps it:
 //      an exception is caught and the call reports false.
 #include <BRepBndLib.hxx>
+#include <BRepMesh_IncrementalMesh.hxx>
+#include <BRepPrimAPI_MakeCylinder.hxx>
+#include <HLRBRep_PolyAlgo.hxx>
+#include <HLRBRep_PolyHLRToShape.hxx>
+#include <cmath>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepOffsetAPI_NormalProjection.hxx>
@@ -186,6 +195,65 @@ static void projection(const char* tag, gp_Pnt a, gp_Pnt b)
          proj.IsDone(), m.Extent(), x0, y0, z0, x1, y1, z1);
 }
 
+
+// ------------------------------------------------------------ 5. precision re-measurement
+
+static Handle(Graphic3d_Camera) plainCam()
+{
+  Handle(Graphic3d_Camera) c = new Graphic3d_Camera();
+  c->SetZeroToOneDepth(Standard_True);
+  return c;
+}
+
+static TopoDS_Compound joinN(const TopoDS_Shape parts[], int n)
+{
+  BRep_Builder    bld;
+  TopoDS_Compound c;
+  bld.MakeCompound(c);
+  for (int i = 0; i < n; ++i)
+    if (!parts[i].IsNull())
+      bld.Add(c, parts[i]);
+  return c;
+}
+
+static void extent17(const char* tag, const TopoDS_Compound& c)
+{
+  TopTools_IndexedMapOfShape m;
+  TopExp::MapShapes(c, TopAbs_EDGE, m);
+  Bnd_Box bb;
+  BRepBndLib::Add(c, bb, true);
+  double x0, y0, z0, x1, y1, z1;
+  bb.Get(x0, y0, z0, x1, y1, z1);
+  printf("%s: edges=%d min=(%.17g, %.17g) max=(%.17g, %.17g)\n", tag, m.Extent(), x0, y0, x1, y1);
+}
+
+static void polyView(const char* tag, const TopoDS_Shape& s, gp_Dir view, bool wantHidden, bool wantOutline)
+{
+  BRepMesh_IncrementalMesh mesh(s, 0.01);
+  Handle(HLRBRep_PolyAlgo) algo = new HLRBRep_PolyAlgo();
+  algo->Projector(HLRAlgo_Projector(gp_Ax2(gp_Pnt(0, 0, 0), view)));
+  algo->Load(s);
+  algo->Update();
+  HLRBRep_PolyHLRToShape h;
+  h.Update(algo);
+  char t[128];
+  TopoDS_Shape v[3] = {h.VCompound(), h.Rg1LineVCompound(), h.OutLineVCompound()};
+  snprintf(t, sizeof t, "%s visible", tag);
+  extent17(t, joinN(v, 3));
+  if (wantHidden)
+  {
+    TopoDS_Shape hd[3] = {h.HCompound(), h.Rg1LineHCompound(), h.OutLineHCompound()};
+    snprintf(t, sizeof t, "%s hidden", tag);
+    extent17(t, joinN(hd, 3));
+  }
+  if (wantOutline)
+  {
+    TopoDS_Shape o[2] = {h.OutLineVCompound(), h.OutLineHCompound()};
+    snprintf(t, sizeof t, "%s outline", tag);
+    extent17(t, joinN(o, 2));
+  }
+}
+
 // ------------------------------------------------------------ 4. graph remove calls
 
 static void build(BRepGraph& g)
@@ -285,6 +353,51 @@ int main()
     removeCall("compSolidRemoveSolid  CompSolids().RemoveSolid(0, 99999)", [&] {
       return g.Editor().CompSolids().RemoveSolid(BRepGraph_CompSolidId(0), BRepGraph_SolidRefId(99999));
     });
+  }
+
+  // ---- 5. precision re-measurement
+  {
+    Handle(Graphic3d_Camera) c = plainCam();
+    c->SetAspect(1.5);
+    const NCollection_Mat4<float>& m = c->ProjectionMatrixF();
+    printf("cameraProjection (default camera, aspect 1.5): m00=%.17g m11=%.17g m22=%.17g m23=%.17g\n",
+           (double)m.GetValue(0, 0), (double)m.GetValue(1, 1), (double)m.GetValue(2, 2), (double)m.GetValue(2, 3));
+  }
+  {
+    Handle(Graphic3d_Camera) c = plainCam();
+    c->SetEye(gp_Pnt(0, 0, 100));
+    c->SetCenter(gp_Pnt(0, 0, 0));
+    c->SetUp(gp_Dir(0, 1, 0));
+    c->SetAspect(1.0);
+    c->SetZRange(1, 1000);
+    c->SetProjectionType(Graphic3d_Camera::Projection_Perspective);
+    double persp = (double)c->ProjectionMatrixF().GetValue(0, 0);
+    c->SetProjectionType(Graphic3d_Camera::Projection_Orthographic);
+    double ortho = (double)c->ProjectionMatrixF().GetValue(0, 0);
+    printf("cameraOrthographic (eye z 100, aspect 1, z range 1..1000): perspM00=%.17g orthoM00=%.17g\n", persp, ortho);
+  }
+  {
+    TopoDS_Shape box = BRepPrimAPI_MakeBox(gp_Pnt(20, -5, -1010), 10, 10, 10).Shape();
+    Handle(HLRBRep_Algo) algo = new HLRBRep_Algo();
+    algo->Add(box);
+    algo->Projector(HLRAlgo_Projector(gp_Ax2(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), 50));
+    algo->Update();
+    algo->Hide();
+    HLRBRep_HLRToShape h(algo);
+    TopoDS_Shape       v[3] = {h.VCompound(), h.Rg1LineVCompound(), h.OutLineVCompound()};
+    TopoDS_Compound    c    = joinN(v, 3);
+    Bnd_Box            bb;
+    BRepBndLib::Add(c, bb, true);
+    double x0, y0, z0, x1, y1, z1;
+    bb.Get(x0, y0, z0, x1, y1, z1);
+    printf("shapeBehindThePicturePlane (box x 20..30, z -1010..-1000, focus 50): visible x range [%.17g, %.17g]\n", x0, x1);
+  }
+  {
+    const double iso = 1.0 / std::sqrt(3.0);
+    polyView("fastIsometricBox (PolyAlgo, box 20x10x5, deflection 0.01)",
+             BRepPrimAPI_MakeBox(gp_Pnt(-10, -5, -2.5), 20, 10, 5).Shape(), gp_Dir(iso, iso, iso), true, false);
+    polyView("fastProjectCylinder (PolyAlgo, cylinder r5 h10 down +X, deflection 0.01)",
+             BRepPrimAPI_MakeCylinder(5, 10).Shape(), gp_Dir(1, 0, 0), false, true);
   }
   return 0;
 }
