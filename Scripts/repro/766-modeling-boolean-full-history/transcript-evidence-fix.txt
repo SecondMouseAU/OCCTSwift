@@ -1,0 +1,11 @@
+unionWithFullHistory: done=1 volume=1999.9999999999991
+unionWithFullHistory box1 faces (modified,generated,deleted): [0]=(0,0,0) [1]=(0,0,0) [2]=(0,0,0) [3]=(0,0,0) [4]=(0,0,0) [5]=(0,0,0)
+subtractedWithFullHistorySplitsFace: done=1 volume=1599.9999999999995 bigVolume=1999.9999999999995
+subtractedWithFullHistorySplitsFace big faces (modified,generated,deleted): [0]=(1,1,0) [1]=(1,0,0) [2]=(0,0,0) [3]=(0,0,1) [4]=(1,1,0) [5]=(1,1,0)
+intersectionWithFullHistory: done=1 volume=124.99999999999997 box1Volume=999.99999999999977
+intersectionWithFullHistory box1 faces (modified,generated,deleted): [0]=(0,0,1) [1]=(1,3,0) [2]=(0,0,1) [3]=(1,3,0) [4]=(0,0,1) [5]=(1,3,0)
+splitWithFullHistory: done=1 pieces=2
+splitWithFullHistory box faces (modified,generated,deleted): [0]=(2,1,0) [1]=(2,0,0) [2]=(0,0,0) [3]=(1,0,0) [4]=(2,1,0) [5]=(2,0,0)
+historyHandleSurvives: done=1
+historyHandleSurvives box1 (first read) faces (modified,generated,deleted): [0]=(0,0,0) [1]=(1,3,0) [2]=(0,0,0) [3]=(1,3,0) [4]=(0,0,0) [5]=(1,3,0)
+historyHandleSurvives box1 (second read) faces (modified,generated,deleted): [0]=(0,0,0) [1]=(1,3,0) [2]=(0,0,0) [3]=(1,3,0) [4]=(0,0,0) [5]=(1,3,0)
