@@ -2,9 +2,18 @@
   {
     "test_name": "Modeling domain kernel parity",
     "bridge_function": "OCCTModelingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
   },
   {
@@ -406,5 +415,383 @@
       "differences": []
     },
     "status": "N/A"
+  },
+  {
+    "test_name": "BiTgte Blend Tests::blendBoxEdge",
+    "bridge_function": "OCCTBiTgteBlend",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SHELL",
+        "faces": 6,
+        "valid": true,
+        "volume": 480000
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SHELL",
+        "faces": 6,
+        "valid": true,
+        "volume": 480000
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, result type, face count, valid and volume of the BiTgte blend of edge 0 of the 100x80x60 box at r=5. Bridge: Shape.biTgteBlend non-nil (OCCTBiTgteBlend returns nullptr when BiTgte_Blend is not done or the shape is null), shapeType (ordinal 3, TopAbs_SHELL), faces().count, isValid and Shape.volume; the test asserts a non-nil result (try #require), the SHELL type, 6 faces and the volume; the type is what tells the kernel's shell from the input solid handed back unchanged. Kernel: BiTgte_Blend(box, r, 1e-3, false) with SetEdge on the same TopExp edge-map indices and Perform(true), IsDone, TopAbs::ShapeTypeToString, a TopExp_Explorer face count, BRepCheck_Analyzer, BRepGProp::VolumeProperties; blendBoxEdge line of the transcript at %.17g. Doubles are compared to 1e-9 relative. #766 note: this blends a convex box edge, where BiTgte_Blend hands back the box's own faces and volume as a SHELL, so the record pins that kernel behaviour and is not evidence that a blend works; blendConcaveEdge carries the blend.",
+    "probe": "Scripts/repro/766-modeling-bitgte-blend/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "BiTgte Blend Tests::blendMultipleEdges",
+    "bridge_function": "OCCTBiTgteBlend",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SHELL",
+        "faces": 6,
+        "valid": true,
+        "volume": 124999.99999999999
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SHELL",
+        "faces": 6,
+        "valid": true,
+        "volume": 124999.99999999999
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, result type, face count, valid and volume of the BiTgte blend of edges 0 and 1 of the 50 mm cube at r=3. Bridge: Shape.biTgteBlend non-nil (OCCTBiTgteBlend returns nullptr when BiTgte_Blend is not done or the shape is null), shapeType (ordinal 3, TopAbs_SHELL), faces().count, isValid and Shape.volume; the test asserts a non-nil result (try #require), the SHELL type, 6 faces and the volume; the type is what tells the kernel's shell from the input solid handed back unchanged. Kernel: BiTgte_Blend(box, r, 1e-3, false) with SetEdge on the same TopExp edge-map indices and Perform(true), IsDone, TopAbs::ShapeTypeToString, a TopExp_Explorer face count, BRepCheck_Analyzer, BRepGProp::VolumeProperties; blendMultipleEdges line of the transcript at %.17g. Doubles are compared to 1e-9 relative. #766 note: this blends a convex box edge, where BiTgte_Blend hands back the box's own faces and volume as a SHELL, so the record pins that kernel behaviour and is not evidence that a blend works; blendConcaveEdge carries the blend.",
+    "probe": "Scripts/repro/766-modeling-bitgte-blend/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "BiTgte Blend Tests::blendConcaveEdge",
+    "bridge_function": "OCCTBiTgteBlend",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "cornerEdges": 1,
+        "edgeIndex": 22,
+        "inputFaces": 14,
+        "inputVolume": 24000,
+        "done": true,
+        "type": "SHELL",
+        "faces": 17,
+        "valid": true,
+        "volume": 24076.815240690972,
+        "halfRadiusFaces": 17,
+        "halfRadiusVolume": 24019.261082480105
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "cornerEdges": 1,
+        "edgeIndex": 22,
+        "inputFaces": 14,
+        "inputVolume": 24000,
+        "done": true,
+        "type": "SHELL",
+        "faces": 17,
+        "valid": true,
+        "volume": 24076.815240690972,
+        "halfRadiusFaces": 17,
+        "halfRadiusVolume": 24019.261082480105
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the BiTgte blend of the one concave edge of an L-shaped solid, a 40 x 40 x 10 slab fused with a 40 x 10 x 30 wall (the input is 14 faces and 24000 mm3, and the inner corner along X at y = 10, z = 10 is the only edge found in the region, index 22), at r = 3: done, result type SHELL, valid, 17 faces (the input's 14 and three blend surfaces) and volume 24076.815240690972; halfRadius* is the same blend at r = 1.5 (17 faces, 24019.261082480105), so the volume names the radius. This test exists because blendBoxEdge and blendMultipleEdges blend convex edges, where BiTgte_Blend hands back the box's own faces and volume: the kernel's blend of every one of the 28 edges of this solid was measured (probe-concave-scan.mm, transcript-concave-scan.txt) and only edge 22 changes the shape. The test finds the edge by where it is (Shape.edges(inBounds:), exactly one match) rather than by ordinal, and asserts SHELL, valid, 17 faces and the volume within 1e-4. Bridge: Shape.union (OCCTShapeUnionEx) of the two boxes, Shape.edges(inBounds:).count and .index, faces and volume of the input, Shape.biTgteBlend (OCCTBiTgteBlend returns nullptr when BiTgte_Blend is not done or the shape is null), shapeType, isValid, subShapes(ofType: .face).count and Shape.volume. Kernel: BRepAlgoAPI_Fuse with SetArguments/SetTools and Build, TopExp::MapShapes edge enumeration with the concave edge found by its two vertices, BiTgte_Blend(shape, r, 1e-3, false) with SetEdge and Perform(true), IsDone, TopAbs::ShapeTypeToString, TopExp::MapShapes face count, BRepCheck_Analyzer, BRepGProp::VolumeProperties; the blendConcaveEdge line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-bitgte-blend/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Boolean Pre-Validation::validBoxCheck",
+    "bridge_function": "OCCTShapeBooleanCheckSingle",
+    "bridge_output": {
+      "type": "value",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Boolean Pre-Validation::twoBoxesValid",
+    "bridge_function": "OCCTShapeBooleanCheckPair",
+    "bridge_output": {
+      "type": "value",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Boolean Pre-Validation::cylinderValid",
+    "bridge_function": "OCCTShapeBooleanCheckSingle",
+    "bridge_output": {
+      "type": "value",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Boolean Pre-Validation::singleShapeValid",
+    "bridge_function": "OCCTShapeBooleanCheckSingle",
+    "bridge_output": {
+      "type": "value",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Boolean Pre-Validation::sphereValid",
+    "bridge_function": "OCCTShapeBooleanCheckSingle",
+    "bridge_output": {
+      "type": "value",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Boolean Pre-Validation::pairShapesValidForFuse",
+    "bridge_function": "OCCTShapeBooleanCheckPair",
+    "bridge_output": {
+      "type": "value",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Boolean Pre-Validation::pairShapesValidForCut",
+    "bridge_function": "OCCTShapeBooleanCheckPair",
+    "bridge_output": {
+      "type": "value",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Boolean Pre-Validation::solidVsFaceCutAndCut21Disagree",
+    "bridge_function": "OCCTShapeBooleanCheckPair",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "cut": false,
+        "cut21": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "cut": false,
+        "cut21": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Boolean Pre-Validation::singleShapeNoSelfInterference",
+    "bridge_function": "OCCTShapeBooleanCheckSingle",
+    "bridge_output": {
+      "type": "value",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Boolean Pre-Validation::singleShapeParityWithBooleanValid",
+    "bridge_function": "OCCTShapeBooleanCheckSingle",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "box": {
+          "valid": true,
+          "analyzerValid": true
+        },
+        "sphere": {
+          "valid": true,
+          "analyzerValid": true
+        },
+        "thinBox": {
+          "valid": false,
+          "analyzerValid": false,
+          "validWithoutSmallEdgeTest": true
+        },
+        "overlappingCompound": {
+          "valid": false,
+          "analyzerValid": false,
+          "validWithoutSelfInterferenceTest": true
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "box": {
+          "valid": true,
+          "analyzerValid": true
+        },
+        "sphere": {
+          "valid": true,
+          "analyzerValid": true
+        },
+        "thinBox": {
+          "valid": false,
+          "analyzerValid": false,
+          "validWithoutSmallEdgeTest": true
+        },
+        "overlappingCompound": {
+          "valid": false,
+          "analyzerValid": false,
+          "validWithoutSelfInterferenceTest": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides, per shape: `valid`, whether the shape is valid for a boolean at the defaults (small-edge and self-interference tests on), and `analyzerValid`, the kernel's own BOPAlgo_ArgumentAnalyzer verdict on the same shape with every mode on, paired with a valid 5 mm sphere as the second argument. Shapes: a centred 10x20x30 box and a 5 mm sphere (valid), a box 10x10x5e-7 (its short edges trip only the small-edge test) and a compound of two overlapping 10 mm cubes at (0,0,0) and (5,5,5) (trips only the self-interference test); each of the last two also carries the check with that one test turned off (`validWithoutSmallEdgeTest`, `validWithoutSelfInterferenceTest`), which is true. The earlier record held [isValidForBoolean, isBooleanValid()] on the bridge side against one flag on the kernel side, both for a box and a sphere for which every setting of both tests answers true, so no drift in the forwarded defaults could show. Bridge: Shape.isValidForBoolean (OCCTShapeBooleanCheckSingle), Shape.analyzeBoolean(_, sphere, operation: .fuse) (OCCTBOPAlgoAnalyzeArguments) and Shape.isBooleanValid with one test off. Kernel: BRepAlgoAPI_Check(s, true, true).IsValid(), BOPAlgo_ArgumentAnalyzer with SetShape1/SetShape2, OperationType FUSE, ArgumentTypeMode/SelfInterMode/SmallEdgeMode true, Perform, !HasFaulty, and BRepAlgoAPI_Check with one test off; the singleShapeParityWithBooleanValid lines of the transcript.",
+    "probe": "Scripts/repro/766-modeling-boolean-check/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Boolean Pre-Validation::pairParityWithBooleanValidWith",
+    "bridge_function": "OCCTShapeBooleanCheckPair",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "boxSphere": {
+          "valid": true,
+          "analyzerValid": true
+        },
+        "thinBoxSphere": {
+          "valid": false,
+          "analyzerValid": false,
+          "validWithoutSmallEdgeTest": true
+        },
+        "boxOverlappingCompound": {
+          "valid": false,
+          "analyzerValid": false,
+          "validWithoutSelfInterferenceTest": true
+        },
+        "overlappingCompoundSphere": {
+          "valid": false,
+          "analyzerValid": false
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "boxSphere": {
+          "valid": true,
+          "analyzerValid": true
+        },
+        "thinBoxSphere": {
+          "valid": false,
+          "analyzerValid": false,
+          "validWithoutSmallEdgeTest": true
+        },
+        "boxOverlappingCompound": {
+          "valid": false,
+          "analyzerValid": false,
+          "validWithoutSelfInterferenceTest": true
+        },
+        "overlappingCompoundSphere": {
+          "valid": false,
+          "analyzerValid": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides, per pair: `valid`, whether the two shapes are valid for a boolean together at the defaults (operation unknown, small-edge and self-interference tests on), and `analyzerValid`, the kernel's own BOPAlgo_ArgumentAnalyzer verdict on the pair (operation FUSE, every mode on). Pairs: box and sphere (valid), the thin box and the sphere (small-edge fault; `validWithoutSmallEdgeTest` is the same check with that test off), the box and the overlapping compound (self-interference fault in the second argument; `validWithoutSelfInterferenceTest`) and the overlapping compound and the sphere. Shapes as in singleShapeParityWithBooleanValid. The earlier record held one flag for a box and a sphere, where isValidForBoolean(with:) and isBooleanValidWith are one call. Bridge: Shape.isValidForBoolean(with:) (OCCTShapeBooleanCheckPair) and Shape.analyzeBoolean(_, _, operation: .fuse) (OCCTBOPAlgoAnalyzeArguments), Shape.isBooleanValidWith with one test off. Kernel: BRepAlgoAPI_Check(a, b, BOPAlgo_UNKNOWN, true, true).IsValid() and BOPAlgo_ArgumentAnalyzer as above; the pairParityWithBooleanValidWith lines of the transcript.",
+    "probe": "Scripts/repro/766-modeling-boolean-check/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   }
 ]

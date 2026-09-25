@@ -1,0 +1,3 @@
+blendBoxEdge: done=true type="SHELL" faces=6 valid=true volume=480000
+blendMultipleEdges: done=true type="SHELL" faces=6 valid=true volume=124999.99999999999
+blendConcaveEdge: cornerEdges=1 edgeIndex=22 inputFaces=14 inputVolume=24000 done=true type="SHELL" faces=17 valid=true volume=24076.815240690972 halfRadiusFaces=17 halfRadiusVolume=24019.261082480105
