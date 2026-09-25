@@ -278,7 +278,7 @@
 | **Local* local-properties parity (#494)** | Shape.surfaceLocalProps agrees with Face's per-scalar entry points | Aggregate vs per-scalar face props | OCCTGeomLPropSLProps |
 | **Local* local-properties parity (#494)** | Shape.surfaceLocalProps agrees with Face approaching a cone apex | Aggregate vs per-scalar face definedness | OCCTGeomLPropSLProps |
 | **Local* local-properties parity (#494)** | A cusp's infinite curvature yields no centre of curvature, not a NaN one | RealLast sentinel | OCCTCurve3DGetCenterOfCurvature |
-| **Local* local-properties parity (#494)** | No local-properties entry point returns a non-finite number | RealLast sentinel | OCCTCurve3DLocalCentreOfCurvature |
+| **Local* local-properties parity (#494)** | No local-properties entry point returns a non-finite number | RealLast sentinel | OCCTCurve3DLocalCentreOfCurvature, OCCTSurfaceLocalCurvatureDirections |
 
 ---
 
@@ -496,7 +496,7 @@
 | Shape.surfaceLocalProps agrees with Face's per-scalar entry points | OCCTGeomLPropSLProps | Aggregate vs per-scalar face props | aggregate mean curvature nudged one ULP | ✅ | ✅ |  |
 | Shape.surfaceLocalProps agrees with Face approaching a cone apex | OCCTGeomLPropSLProps | Aggregate vs per-scalar face definedness | aggregate props back at 1e-6 (original: green); mean nudged one ULP | ✅ | ✅ | Rewritten: the old v in 1e-8...1 sampled the base circle (v = 0), not the apex (v = hypot(5, 10)), so the 1e-6 regression passed |
 | A cusp's infinite curvature yields no centre of curvature, not a NaN one | OCCTCurve3DGetCenterOfCurvature | RealLast sentinel | invertibility gate back to |k| > 1e-10, which RealLast passes | ✅ | ✅ | Parity: the kernel's raw centre is non-finite, which the bridge correctly refuses |
-| No local-properties entry point returns a non-finite number | OCCTCurve3DLocalCentreOfCurvature | RealLast sentinel | invertibility gate back to |k| > 1e-10 | ✅ | ✅ | Invariant test; kernel column records the non-finite raw values the bridge must filter |
+| No local-properties entry point returns a non-finite number | OCCTCurve3DLocalCentreOfCurvature, OCCTSurfaceLocalCurvatureDirections | RealLast sentinel | invertibility gate back to |k| > 1e-10; maxDirection.z = NaN; minDirection.y = infinity; directions never defined | ✅ | ✅ | Rewritten: the direction check read .x of each direction only, so a NaN or infinity in .y or .z passed (the old test stayed green under maxDirection.z = NaN); now every component of both directions is checked and the sweep must reach 3 direction pairs. Red at LocalPropsParityTests.swift:404 (maxDirection.z = NaN), :405 (minDirection.y = infinity), :412 (directions never defined). Invariant test; kernel column records the non-finite raw values the bridge must filter |
 
 ---
 

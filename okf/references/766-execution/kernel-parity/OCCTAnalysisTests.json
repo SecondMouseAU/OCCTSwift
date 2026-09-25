@@ -6152,7 +6152,7 @@
   },
   {
     "test_name": "Local* local-properties parity (#494)::No local-properties entry point returns a non-finite number",
-    "bridge_function": "OCCTCurve3DLocalCentreOfCurvature",
+    "bridge_function": "OCCTCurve3DLocalCentreOfCurvature, OCCTSurfaceLocalCurvatureDirections",
     "bridge_output": {
       "type": "finiteness",
       "data": {
@@ -6173,6 +6173,11 @@
     },
     "status": "EXPECTED_DIVERGENCE",
     "probe": "Scripts/repro/766-local-props-parity/transcript-evidence-fix.txt",
-    "source": "Same quantity on both sides: all_returned_values_finite, whether every number the entry points return is finite. Bridge: the test's sweep (curvature, centerOfCurvature, localCentreOfCurvature, normal, localNormal, tangentDirection and localTangent on the cusp at spacing 0, 1e-12 and 1e-8, the circle and the line at u 0, 1e-9, 0.5 and 1: 20 curve points; localCurvatures and localCurvatureDirections on the apex cone and a radius-3 sphere at v 0, 1e-9, 1e-8, 1e-7, pi/2 and 1: 12 surface points) returned 306 numbers, none non-finite, so true (temporary print of every returned value, not committed; nil is not a number, and RealLast is finite). Kernel: the raw GeomLProp_CLProps tangent, curvature, Normal and CentreOfCurvature over the same 20 curve points returned 155 numbers, 15 of them non-finite, all raw centre components at the cusp: (inf, -inf, nan) at spacing 0 u 1e-9, (nan, inf, nan) at spacing 1e-12 and 1e-8 u 0, (-inf, inf, nan) at spacing 1e-12 and 1e-8 u 1e-9 (the last section of transcript-evidence-fix.txt); 15 further calls raised instead of returning, so false. The bridge's guard is what makes the two differ (#494). The kernel sweep covers the curve entry points only, since the non-finite values are curve centres; the raw surface accessors raise where curvature is undefined."
+    "source": "Same quantity on both sides: all_returned_values_finite, whether every number the entry points return is finite. Bridge: the test's sweep (curvature, centerOfCurvature, localCentreOfCurvature, normal, localNormal, tangentDirection and localTangent on the cusp at spacing 0, 1e-12 and 1e-8, the circle and the line at u 0, 1e-9, 0.5 and 1: 20 curve points; localCurvatures and localCurvatureDirections on the apex cone and a radius-3 sphere at v 0, 1e-9, 1e-8, 1e-7, pi/2 and 1: 12 surface points) returned 306 numbers, none non-finite, so true (temporary print of every returned value, not committed; nil is not a number, and RealLast is finite). Kernel: the raw GeomLProp_CLProps tangent, curvature, Normal and CentreOfCurvature over the same 20 curve points returned 155 numbers, 15 of them non-finite, all raw centre components at the cusp: (inf, -inf, nan) at spacing 0 u 1e-9, (nan, inf, nan) at spacing 1e-12 and 1e-8 u 0, (-inf, inf, nan) at spacing 1e-12 and 1e-8 u 1e-9 (the last section of transcript-evidence-fix.txt); 15 further calls raised instead of returning, so false. The bridge's guard is what makes the two differ (#494). The kernel sweep covers the curve entry points only, since the non-finite values are curve centres; the raw surface accessors raise where curvature is undefined.",
+    "test_file": "Tests/OCCTAnalysisTests/LocalPropsParityTests.swift",
+    "injection": "A: OCCTSurfaceLocalCurvatureDirections writes maxDirection.z = NaN; B: writes minDirection.y = infinity; C: directions never defined",
+    "red": "LocalPropsParityTests.swift:404 maxDir.x.isFinite && maxDir.y.isFinite && maxDir.z.isFinite (A); :405 minDir.x.isFinite && minDir.y.isFinite && minDir.z.isFinite (B); :412 directionsChecked == 3 (C)",
+    "green": "passed",
+    "note": "REWRITTEN: the direction check read .x of each direction only, so injection A (a NaN in maxDirection.z) left the old test green; now every component of both directions is checked, and the sweep must reach 3 direction pairs so the check cannot pass vacuously"
   }
 ]

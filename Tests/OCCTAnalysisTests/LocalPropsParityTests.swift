@@ -388,6 +388,7 @@ struct LocalPropsParityTests {
             ("apex cone", Self.apexCone()),
             ("sphere", Surface.sphere(center: .zero, radius: 3)!),
         ]
+        var directionsChecked = 0
         for (name, surface) in surfaces {
             for v in [0.0, 1e-9, 1e-8, 1e-7, .pi / 2, 1.0] {
                 let label: Comment = "\(name) v=\(v)"
@@ -396,9 +397,18 @@ struct LocalPropsParityTests {
                     #expect(c.maxCurvature.isFinite && c.minCurvature.isFinite, label)
                 }
                 if let d = surface.localCurvatureDirections(u: 0, v: v) {
-                    #expect(d.maxDirection.x.isFinite && d.minDirection.x.isFinite, label)
+                    // Every component of both directions: the check used to read `.x` only, so a
+                    // NaN or infinity in `.y` or `.z` of either direction passed (#766).
+                    let maxDir = d.maxDirection
+                    let minDir = d.minDirection
+                    #expect(maxDir.x.isFinite && maxDir.y.isFinite && maxDir.z.isFinite, label)
+                    #expect(minDir.x.isFinite && minDir.y.isFinite && minDir.z.isFinite, label)
+                    directionsChecked += 1
                 }
             }
         }
+        // Not vacuous: the sweep reaches a direction pair at the apex cone's v = 1 and v = pi/2
+        // and at the sphere's v = 1 (measured; the other points are undefined or umbilic).
+        #expect(directionsChecked == 3, "directions checked: \(directionsChecked)")
     }
 }
