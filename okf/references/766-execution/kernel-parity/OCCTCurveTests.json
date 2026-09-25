@@ -407,12 +407,11 @@
       "data": "N/A: rejected before the kernel (which SIGSEGVs on 0 for a Bezier/BSpline, #487)"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: rejected before the kernel (which SIGSEGVs on 0 for a Bezier/BSpline, #487)",
     "injection": "Swift: count clamped to 2 instead of rejected",
     "red": "GCPntsSamplerBoundsTests.swift:96 curve.quasiUniformParameters(count: count).isEmpty",
     "green": "passed",
@@ -431,12 +430,11 @@
       "data": "N/A: rejected before the kernel"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: rejected before the kernel",
     "injection": "Swift: count clamped to 2 instead of rejected",
     "red": "GCPntsSamplerBoundsTests.swift:111 edge.uniformAbscissa(pointCount: count) == nil",
     "green": "passed",
