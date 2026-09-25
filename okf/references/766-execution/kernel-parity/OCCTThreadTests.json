@@ -1630,5 +1630,275 @@
     },
     "status": "PASS",
     "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
+  },
+  {
+    "test_name": "Issue #257, smooth multi-start direct thread build::Full-length multi-start is a smooth, in-envelope, valid solid",
+    "bridge_function": "none directly; composed in Swift (Shape.threadedRodSolid) from OCCTWireCreateArcThroughPoints, OCCTWireInterpolate, OCCTWireJoin, OCCTShapeCreateLoftAdvanced; measured with OCCTShapeGetVolume, OCCTShapeGetSubShapeCount, OCCTShapeIsValidSolid, OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "n2": {
+          "faces": 12,
+          "validSolid": true,
+          "crest": 5.000000954,
+          "volume": 1693.684692337
+        },
+        "n3": {
+          "faces": 17,
+          "validSolid": true,
+          "crest": 5.000000954,
+          "volume": 1693.679586746
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "n2": {
+          "faces": 12,
+          "validSolid": true,
+          "crest": 5.000000954,
+          "volume": 1693.684692337
+        },
+        "n3": {
+          "faces": 17,
+          "validSolid": true,
+          "crest": 5.000000954,
+          "volume": 1693.679586746
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Crest = max XY radius of mesh(0.03) nodes, computed in Float as meshMaxRadialExtent does."
+  },
+  {
+    "test_name": "Issue #257, smooth multi-start direct thread build::Partial-length multi-start closes via per-start shoulders",
+    "bridge_function": "none directly; Shape.threadedRodSolid sews loft skin + shoulder faces (OCCTShapeCreateLoftAdvanced, Shape.sew, Shape.solidFromShell); measured with OCCTShapeIsValidSolid, OCCTShapeGetSubShapeCount, OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "faces": 15,
+        "validSolid": true,
+        "crest": 5.000001431,
+        "volume": 2088.230609817
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "faces": 15,
+        "validSolid": true,
+        "crest": 5.000001431,
+        "volume": 2088.230609817
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Measurement parity only: the sewn Swift result was written to BREP and re-measured with raw OCCT."
+  },
+  {
+    "test_name": "Issue #257, smooth multi-start direct thread build::Trapezoidal 2-start lead screw builds smooth and valid",
+    "bridge_function": "none directly; composed in Swift (Shape.threadedRodSolid) from OCCTWireCreateArcThroughPoints, OCCTWireInterpolate, OCCTWireJoin, OCCTShapeCreateLoftAdvanced; measured with OCCTShapeGetVolume, OCCTShapeGetSubShapeCount, OCCTShapeIsValidSolid, OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "faces": 12,
+        "validSolid": true,
+        "volume": 3521.663516583
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "faces": 12,
+        "validSolid": true,
+        "volume": 3521.663516583
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #257, smooth multi-start direct thread build::Start count equals the requested number of starts",
+    "bridge_function": "none directly; composed in Swift (Shape.threadedRodSolid) from OCCTWireCreateArcThroughPoints, OCCTWireInterpolate, OCCTWireJoin, OCCTShapeCreateLoftAdvanced; measured with OCCTShapeGetVolume, OCCTShapeGetSubShapeCount, OCCTShapeIsValidSolid, OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "crest_clusters",
+      "data": {
+        "n1": {
+          "clusters": 1
+        },
+        "n2": {
+          "clusters": 2
+        },
+        "n3": {
+          "clusters": 3
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "crest_clusters",
+      "data": {
+        "n1": {
+          "clusters": 1,
+          "offsetModPitch": 0.399711,
+          "expected": 0.375
+        },
+        "n2": {
+          "clusters": 2,
+          "offsetModPitch": 0.75307,
+          "expected": 0.75
+        },
+        "n3": {
+          "clusters": 3,
+          "offsetModPitch": 1.083317,
+          "expected": 1.125
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Rewritten (#1990): the count alone stayed green with starts ignored. Probe values from mesh(0.02) of the OCCT-built loft; the Swift build is the same loft (volumes and face counts match the other rows)."
+  },
+  {
+    "test_name": "Issue #257, smooth multi-start direct thread build::Single-start build is unchanged",
+    "bridge_function": "none directly; composed in Swift (Shape.threadedRodSolid) from OCCTWireCreateArcThroughPoints, OCCTWireInterpolate, OCCTWireJoin, OCCTShapeCreateLoftAdvanced; measured with OCCTShapeGetVolume, OCCTShapeGetSubShapeCount, OCCTShapeIsValidSolid, OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "faces": 7,
+        "validSolid": true,
+        "crest": 5.000005245,
+        "volume": 1693.718374724
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "faces": 7,
+        "validSolid": true,
+        "crest": 5.000005245,
+        "volume": 1693.718374724
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #1266, mesh crest-radius measurement is deduplicated and its sentinel fixed::a forced mesh failure is reported as nil, not a sentinel a caller could silently pass",
+    "bridge_function": "none (pure Swift: meshMaxRadialExtent with an injected failing mesher)",
+    "bridge_output": {
+      "type": "optional",
+      "data": {
+        "crest": null
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "The mesher is replaced by a closure returning nil; no OCCT call is made."
+  },
+  {
+    "test_name": "Issue #1266, mesh crest-radius measurement is deduplicated and its sentinel fixed::a forced mesh failure fails the call sites' crest check instead of passing it",
+    "bridge_function": "none (pure Swift: meshMaxRadialExtent with an injected failing mesher)",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "crestCheckPassed": false
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "Rewritten (#1990): was #expect(-1.0 <= 5.0 * 1.005), which could not fail. No OCCT call is made."
+  },
+  {
+    "test_name": "Issue #1266, mesh crest-radius measurement is deduplicated and its sentinel fixed::real geometry still measures a sensible crest radius through the shared helper",
+    "bridge_function": "OCCTShapeCreateCylinder, OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "double",
+      "data": {
+        "crest": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": {
+        "crest": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "BRepPrimAPI_MakeCylinder(5, 10), BRepMesh_IncrementalMesh(0.05, false, 0.5)."
+  },
+  {
+    "test_name": "Issue #1578, threadedHole's internal cutter used the major radius instead of the minor::the nut's root matches the bolt's own crest radius (they'd actually mate)",
+    "bridge_function": "none directly; Shape.applyThreadCut composes OCCTShapeBuildThreadCutter (or the screw-loft fallback) and a boolean cut; measured with OCCTShapeCreateMesh; bolt via the direct loft",
+    "bridge_output": {
+      "type": "radii",
+      "data": {
+        "boltCrest": 8.000009537,
+        "nutRoot": 8.000001907
+      }
+    },
+    "kernel_output": {
+      "type": "radii",
+      "data": {
+        "boltCrest": 8.000009537,
+        "nutRoot": 8.000001907
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Bolt rebuilt from OCCT in the probe; the nut is measurement parity only (Swift result to BREP, re-measured)."
+  },
+  {
+    "test_name": "Issue #1578, threadedHole's internal cutter used the major radius instead of the minor::the internal thread's root reaches exactly the nominal diameter, not beyond it",
+    "bridge_function": "none directly; Shape.applyThreadCut composes OCCTShapeBuildThreadCutter (or the screw-loft fallback) and a boolean cut; measured with OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "radii",
+      "data": {
+        "root": 8.001458168
+      }
+    },
+    "kernel_output": {
+      "type": "radii",
+      "data": {
+        "root": 8.001458168
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Measurement parity only: Swift result to BREP, re-measured with ceiling 9.623797632."
   }
 ]
