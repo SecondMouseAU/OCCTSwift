@@ -279,3 +279,11 @@ Probe: `Scripts/repro/766-modeling-multi-offset-wire/`.
 | multipleInwardOffsets | `OCCTWireMultiOffset` returns 0 wires | `:15 Expectation failed: wires.count >= 3` | pass | `OCCTWireMultiOffset` | PASS |
 | outwardOffset | `OCCTWireMultiOffset` returns 0 wires | `:32 Expectation failed: wires.count >= 2` | pass | `OCCTWireMultiOffset` | PASS |
 | emptyOffsets | `Shape.multiOffsetWires` treats an empty offset list as a single 0 offset | `:39 Expectation failed: wires.isEmpty` | pass | `OCCTWireMultiOffset` | N/A: an empty list is refused in Swift and in the bridge before any kernel call |
+### `HistoryExtendedTests.swift` (3 tests)
+Probe: `Scripts/repro/766-modeling-history-extended/`.
+| mergeHistories | `OCCTHistoryMerge` returns without merging | `:26 Expectation failed: history1.hasGenerated` | pass | `OCCTHistoryMerge` | PASS |
+| replaceGeneratedModified | `OCCTHistoryReplaceGenerated` returns without replacing | `:40 Expectation failed: generated.first?.isSame(as: b3) == true` | pass | `OCCTHistoryReplaceGenerated` | PASS |
+| getModifiedGeneratedShapes | `OCCTHistoryAddModified` returns without recording | `:58 Expectation failed: modified.count == 1` | pass | `OCCTHistoryGetModifiedShapes` | PASS |
+### `IntegrationBooleanChainStressTests.swift` (1 tests)
+Probe: `Scripts/repro/766-modeling-integration-boolean-chain-stress/`.
+| twentySubtractions | `OCCTShapeSubtractEx` returns nullptr on every third call (the earlier `if let` loop dropped the nil and passed) | `:31 Issue recorded` | pass | `OCCTShapeSubtractEx` | PASS |
