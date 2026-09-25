@@ -2,9 +2,18 @@
   {
     "test_name": "Modeling domain kernel parity",
     "bridge_function": "OCCTModelingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
   },
   {
@@ -406,5 +415,222 @@
       "differences": []
     },
     "status": "N/A"
+  },
+  {
+    "test_name": "PipeSweepMode Frenet/correctedFrenet were swapped (#598)::frenetMatchesTrueFrenet",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "enumFrenet": 177.34755725657078,
+        "oracleFrenet": 177.34755725657078,
+        "oracleCorrected": 180.28672436859057
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "enumFrenet": 177.34755725657078,
+        "oracleFrenet": 177.34755725657078,
+        "oracleCorrected": 180.28672436859057
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, all at %.17g. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the kernel calls: the enum path is BRepOffsetAPI_MakePipeShell with SetMode(IsFrenet), a transformed transition and MakeSolid (OCCTShapeCreatePipeShellMultiSection), the oracle path is BRepFill_PipeShell::Set(frenet) (PipeShellBuilder). Volumes on the S-curve spine (0,0,0) (10,5,0) (20,-5,10) (30,0,10), rectangle 5 x 3: the .frenet enum sweep, and the oracle Frenet and corrected-Frenet sweeps. The test asserts enum == oracle Frenet, enum != oracle corrected, oracle Frenet != oracle corrected, and enum within 1e-5 of 177.347557.",
+    "probe": "Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/"
+  },
+  {
+    "test_name": "PipeSweepMode Frenet/correctedFrenet were swapped (#598)::correctedFrenetMatchesTrueCorrectedFrenet",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "enumCorrected": 180.28672436859057,
+        "oracleCorrected": 180.28672436859057,
+        "oracleFrenet": 177.34755725657078
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "enumCorrected": 180.28672436859057,
+        "oracleCorrected": 180.28672436859057,
+        "oracleFrenet": 177.34755725657078
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, all at %.17g. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the kernel calls: the enum path is BRepOffsetAPI_MakePipeShell with SetMode(IsFrenet), a transformed transition and MakeSolid (OCCTShapeCreatePipeShellMultiSection), the oracle path is BRepFill_PipeShell::Set(frenet) (PipeShellBuilder). Volumes on the same spine and profile: the .correctedFrenet enum sweep, and the oracle corrected-Frenet and Frenet sweeps. The test asserts enum == oracle corrected, enum != oracle Frenet, and enum within 1e-5 of 180.286724.",
+    "probe": "Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/"
+  },
+  {
+    "test_name": "PipeSweepMode Frenet/correctedFrenet were swapped (#598)::multiSectionSpellingAlsoFixed",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "multiSectionFrenet": 177.34755725657078,
+        "oracleFrenet": 177.34755725657078
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "multiSectionFrenet": 177.34755725657078,
+        "oracleFrenet": 177.34755725657078
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, all at %.17g. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the kernel calls: the enum path is BRepOffsetAPI_MakePipeShell with SetMode(IsFrenet), a transformed transition and MakeSolid (OCCTShapeCreatePipeShellMultiSection), the oracle path is BRepFill_PipeShell::Set(frenet) (PipeShellBuilder). Volumes on the same spine and profile: pipeShellMultiSection with one profile and mode .frenet, and the oracle Frenet sweep. The multi-section and single-profile spellings reach the same bridge function, so the kernel value for the first is the enum path's Frenet sweep. The test asserts the two are equal within 1e-6 relative.",
+    "probe": "Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/"
+  },
+  {
+    "test_name": "PipeSweepMode Frenet/correctedFrenet were swapped (#598)::theTwoModesAgreeOnASpineWithNoTorsion",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "frenet": 251.3274122871834,
+        "corrected": 251.3274122871834
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "frenet": 251.3274122871834,
+        "corrected": 251.3274122871834
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, all at %.17g. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the kernel calls: the enum path is BRepOffsetAPI_MakePipeShell with SetMode(IsFrenet), a transformed transition and MakeSolid (OCCTShapeCreatePipeShellMultiSection), the oracle path is BRepFill_PipeShell::Set(frenet) (PipeShellBuilder). Volumes of the 20 mm straight spine swept with a radius-2 circle, mode .frenet and mode .correctedFrenet; the test asserts they agree within 1e-6 relative.",
+    "probe": "Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/"
+  },
+  {
+    "test_name": "PipeSweepMode Frenet/correctedFrenet were swapped (#598)::frenetSelfIntersectsAtCurvatureInflection",
+    "bridge_function": "OCCTShapeSelfIntersectsBounded",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "minCurvature": 0.0,
+        "frenetSelfIntersects": true,
+        "correctedSelfIntersects": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "minCurvature": 0.0,
+        "frenetSelfIntersects": true,
+        "correctedSelfIntersects": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, all at %.17g. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the kernel calls: the enum path is BRepOffsetAPI_MakePipeShell with SetMode(IsFrenet), a transformed transition and MakeSolid (OCCTShapeCreatePipeShellMultiSection), the oracle path is BRepFill_PipeShell::Set(frenet) (PipeShellBuilder). The minimum curvature over 201 samples of the planar S-curve spine (0,0,0) (10,10,0) (20,0,0) (30,-10,0) (40,0,0), and whether each sweep of a radius-2 circle normal to the start tangent self-intersects (isSelfIntersecting(hardTimeout: 30) on the bridge, BOPAlgo_ArgumentAnalyzer with SelfInterMode on the kernel side). The test asserts minCurvature < 1e-9, .frenet true and .correctedFrenet false.",
+    "probe": "Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/"
+  },
+  {
+    "test_name": "PipeSweepMode Frenet/correctedFrenet were swapped (#598)::cookbookSpringRecipeVolumeInvariant",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "startPoint": [
+          -10.0,
+          -1.7763568394002505e-15,
+          0.0
+        ],
+        "enumFrenet": 2225.1520024595375,
+        "enumCorrected": 2225.1517092617,
+        "oracleFrenet": 2225.1520024595375,
+        "oracleCorrected": 2225.1517092617,
+        "textbook": 2225.1564400078882
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "startPoint": [
+          -10.0,
+          -1.7763568394002505e-15,
+          0.0
+        ],
+        "enumFrenet": 2225.1520024595375,
+        "enumCorrected": 2225.1517092617,
+        "oracleFrenet": 2225.1520024595375,
+        "oracleCorrected": 2225.1517092617,
+        "textbook": 2225.1564400078882
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, all at %.17g. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the kernel calls: the enum path is BRepOffsetAPI_MakePipeShell with SetMode(IsFrenet), a transformed transition and MakeSolid (OCCTShapeCreatePipeShellMultiSection), the oracle path is BRepFill_PipeShell::Set(frenet) (PipeShellBuilder). The helix spring (radius 10, pitch 4, 5 turns) swept with a radius-1.5 circle placed at the spine's own measured start point and tangent (#721): the start point, the two enum volumes, the two oracle volumes and the textbook tube volume pi r^2 L. The test asserts enum == oracle for both modes, each within 1e-3 of the textbook volume, and the two modes within 1e-4 of each other.",
+    "probe": "Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/"
+  },
+  {
+    "test_name": "PipeSweepMode Frenet/correctedFrenet were swapped (#598)::misplacedProfileReproducesIssue721Divergence",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "frenetRatios": [
+          0.9999979619342962,
+          0.9999976576087141,
+          0.9999930050086236,
+          0.999990057472636
+        ],
+        "correctedRatios": [
+          1.0051367032052414,
+          1.074731388744016,
+          1.275773479067236,
+          0.8009713551948093
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "frenetRatios": [
+          0.9999979619342962,
+          0.9999976576087141,
+          0.9999930050086222,
+          0.9999900574726353
+        ],
+        "correctedRatios": [
+          1.0051367032052414,
+          1.074731388744016,
+          1.275773479067238,
+          0.8009713551948109
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, all at %.17g. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the kernel calls: the enum path is BRepOffsetAPI_MakePipeShell with SetMode(IsFrenet), a transformed transition and MakeSolid (OCCTShapeCreatePipeShellMultiSection), the oracle path is BRepFill_PipeShell::Set(frenet) (PipeShellBuilder). Volume over the textbook tube volume for the mis-placed profile at pitch 1, 4, 12 and 30 (3 turns, radius 10, profile radius 1.5), mode .frenet and mode .correctedFrenet, in that pitch order. The two sides differ only in the last two or three digits (at most 2e-15 relative), inside the 1e-9 tolerance. The test asserts .frenet within 1e-3 of the textbook volume, .correctedFrenet not within 2e-3, and .correctedFrenet within 5e-3 of the issue's 1.005, 1.075, 1.276 and 0.801.",
+    "probe": "Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/"
   }
 ]
