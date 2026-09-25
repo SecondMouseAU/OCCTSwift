@@ -606,10 +606,10 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `findAndVisibility` | `OCCTDocumentGetLayerVisibility` returns true | :62 Expectation failed: !doc.layerVisibility(layerLabelId: layerLabelId) | passed | `OCCTDocumentGetLayerVisibility` | PASS: found; false, true |
 | `getLayersBeyondBufferCap` | `OCCTDocumentGetLabelLayers` answers 0 | :86 Expectation failed: layers.count == extraCount | passed | `OCCTDocumentGetLabelLayers` | PASS: 19 layers set and 19 reported on both sides (no 16-entry cap) |
 ### `OBJDocumentIOTests.swift`
-| `loadOBJ` | `OCCTDocumentLoadOBJ` returns null | :20 Expectation failed: doc != nil | passed | `OCCTDocumentLoadOBJ` | PASS: `RWObj_CafReader` reads one free shape |
-| `loadOBJSinglePrecision` | `OCCTDocumentLoadOBJWithOptions` returns null | :36 Expectation failed: doc != nil | passed | `OCCTDocumentLoadOBJWithOptions` | PASS: reads |
-| `writeOBJ` | `OCCTDocumentWriteOBJ` returns false | :49 Expectation failed: ok; :50 Expectation failed: FileManager.default.fileExists(atPath: outPath) | passed | `OCCTDocumentWriteOBJ` | PASS: `RWObj_CafWriter` writes |
-| `loadOBJWithCS` | `OCCTDocumentLoadOBJWithCS` returns null | :65 Expectation failed: doc != nil | passed | `OCCTDocumentLoadOBJWithCS` | PASS: reads |
+| `loadOBJ` | `OCCTDocumentLoadOBJ` returns null | :20 Expectation failed: doc != nil | passed | `OCCTDocumentLoadOBJ` | PASS: the file loads and the document holds shapes (one free shape, two counted), on both sides |
+| `loadOBJSinglePrecision` | `OCCTDocumentLoadOBJWithOptions` returns null | :36 Expectation failed: doc != nil | passed | `OCCTDocumentLoadOBJWithOptions` | PASS: the file loads with single precision set, on both sides |
+| `writeOBJ` | `OCCTDocumentWriteOBJ` returns false | :49 Expectation failed: ok; :50 Expectation failed: FileManager.default.fileExists(atPath: outPath) | passed | `OCCTDocumentWriteOBJ` | PASS: the write succeeds and the output file exists, on both sides |
+| `loadOBJWithCS` | `OCCTDocumentLoadOBJWithCS` returns null | :65 Expectation failed: doc != nil | passed | `OCCTDocumentLoadOBJWithCS` | PASS: the file loads with Z-up in and Y-up out, on both sides |
 ### `OCAFDocumentMetadataTests.swift`
 | `storageFormat` | `OCCTDocumentGetStorageFormat` answers `XmlXCAF` | :14 Expectation failed: doc.storageFormat == "BinOcaf" | passed | `OCCTDocumentGetStorageFormat` | PASS: BinOcaf |
 | `changeFormat` | `OCCTDocumentSetStorageFormat` returns true without setting | :21 Expectation failed: doc.storageFormat == "XmlOcaf" | passed | `OCCTDocumentSetStorageFormat` | PASS: XmlOcaf |
