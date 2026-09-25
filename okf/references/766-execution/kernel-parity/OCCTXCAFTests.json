@@ -2255,7 +2255,7 @@
     "kernel_output": {
       "type": "bool",
       "data": {
-        "contains": true
+        "modified": true
       }
     },
     "comparison": {
@@ -2263,6 +2263,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether a label is reported modified after SetModified. Bridge: isModified(label) was true. Kernel: 'modified: after SetModified contains=true'. Kernel value: Scripts/repro/766-xcaf-document-transactions/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-transactions/"
   },
   {
@@ -2279,7 +2280,7 @@
       "type": "bool",
       "data": {
         "before": true,
-        "after_purge": false
+        "after_clear": false
       }
     },
     "comparison": {
@@ -2287,6 +2288,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: whether the label is modified before and after clearing. Bridge: true, then false after clearModified. Kernel: 'modified: after SetModified contains=true' then 'modified: after PurgeModified contains=false'. Kernel value: Scripts/repro/766-xcaf-document-transactions/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-transactions/"
   },
   {
@@ -2295,13 +2297,13 @@
     "bridge_output": {
       "type": "count",
       "data": {
-        "root_nodes": 0
+        "root_count": 0
       }
     },
     "kernel_output": {
       "type": "count",
       "data": {
-        "free_shapes": 0
+        "root_count": 0
       }
     },
     "comparison": {
@@ -2309,6 +2311,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the root count of a fresh document. Bridge: rootNodes.isEmpty. Kernel: 'fresh document free shapes=0' from GetFreeShapes. Kernel value: Scripts/repro/766-xcaf-document/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document/"
   },
   {
@@ -2326,8 +2329,8 @@
       "type": "unit",
       "data": {
         "present": true,
-        "scale": 0.001,
-        "name": "mm"
+        "scale_positive": true,
+        "name_non_empty": true
       }
     },
     "comparison": {
@@ -2335,6 +2338,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: whether a length unit is present after a STEP round trip, whether its scale is positive and whether its name is non-empty. Bridge: lengthUnit was non-nil with scale > 0 and a non-empty name (the test asserts these, not the values). Kernel: 'STEP round-trip length unit present=true scale=0.001 name=\"mm\"', so the scale is positive and the name non-empty. Kernel value: Scripts/repro/766-xcaf-document/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document/"
   },
   {
@@ -2551,30 +2555,31 @@
     "bridge_output": {
       "type": "labels",
       "data": {
-        "point_child": true,
-        "point_bounds_before": null,
-        "point_values": [
+        "datum_index": 0,
+        "point_child_exists": true,
+        "plane_child_exists": true,
+        "point_array_present_before": false,
+        "point_array_upper_after": 3,
+        "point_values_at_1_and_3": [
           7,
           7
         ],
-        "plane_child": true,
-        "plane_bounds": null
+        "plane_array_present_after": false
       }
     },
     "kernel_output": {
       "type": "labels",
       "data": {
-        "child17": true,
-        "child14": true,
-        "point_array_before": false,
-        "point_bounds": [
-          1,
-          3
-        ],
-        "values": [
+        "datum_index": 0,
+        "point_child_exists": true,
+        "plane_child_exists": true,
+        "point_array_present_before": false,
+        "point_array_upper_after": 3,
+        "point_values_at_1_and_3": [
           7,
           7
-        ]
+        ],
+        "plane_array_present_after": false
       }
     },
     "comparison": {
@@ -2582,7 +2587,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+    "source": "Same quantities on both sides, for a datum created by the bridge's create path and then given a point array by hand: its index, whether children 17 (point) and 14 (plane location) exist, whether a point array is present before the write, the array's upper bound and values at 1 and 3 after writing a triple of 7, and whether a plane location array is present. Bridge: createDatum returned 0, both children found, no array before, upper 3 and values 7 and 7 after, and no plane array. Kernel: 'datum labels=1 (index of new = 0), child 17 exists=true child 14 exists=true, point array present=false, plane array present=false; after writing the point triple 7: bounds 1..3 value(1)=7 value(3)=7, plane array present=false'. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [80].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Datum lookup reads the point-without-plane shape, guard retired (#1030)::A datum with a point and no plane location is read, where the guard refused it",
@@ -2591,15 +2597,16 @@
       "type": "datum",
       "data": {
         "name": "Datum1030",
-        "count": 1
+        "readable_datums": 1,
+        "datum_labels": 1
       }
     },
     "kernel_output": {
       "type": "datum",
       "data": {
-        "get_object_null": false,
         "name": "Datum1030",
-        "labels": 1
+        "readable_datums": 1,
+        "datum_labels": 1
       }
     },
     "comparison": {
@@ -2607,7 +2614,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+    "source": "Same quantities on both sides, for a datum with a point array and no plane location (the #1030 shape): the name read, the number of datums that read, and the number of datum labels. Bridge: datum(at:).name, datums.count and datumCount were \"Datum1030\", 1 and 1. Kernel: XCAFDoc_Datum::GetObject returned a non-null object named Datum1030 with 1 datum label and 1 readable. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [81].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Datum lookup reads the point-without-plane shape, guard retired (#1030)::A write path succeeds, where the shared lookup used to refuse it first",
@@ -2622,7 +2630,8 @@
     "kernel_output": {
       "type": "datum",
       "data": {
-        "get_object_null": false
+        "writes_succeed": true,
+        "position": 2
       }
     },
     "comparison": {
@@ -2630,7 +2639,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+    "source": "Same quantities on both sides, on the point-without-plane datum: whether the five write paths (position, modifiers, modifier with value, point target, cleared target) succeed, and the position that reads back. Bridge: all five returned true and datum(at:).position was 2. Kernel: the same five writes through the attribute threw nothing, GetObject was readable before each, and the final position is 2. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [82].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Datum lookup reads the point-without-plane shape, guard retired (#1030)::A plane location array too short for the point's own index is read, not refused",
@@ -2644,7 +2654,6 @@
     "kernel_output": {
       "type": "datum",
       "data": {
-        "get_object_null": false,
         "name": "Datum1030"
       }
     },
@@ -2653,7 +2662,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+    "source": "Same quantity on both sides: the name read from a datum whose plane location array is too short for the point array's own index (plane 1..3, point 1000000..1000002). Bridge: datum(at:).name was \"Datum1030\". Kernel: GetObject returned a non-null object named Datum1030. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [83].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Datum lookup reads the point-without-plane shape, guard retired (#1030)::A datum with both a point and a plane location still reads",
@@ -2661,15 +2671,17 @@
     "bridge_output": {
       "type": "datum",
       "data": {
+        "datum_found": true,
         "name": "Datum1030",
-        "count": 1
+        "readable_datums": 1
       }
     },
     "kernel_output": {
       "type": "datum",
       "data": {
-        "get_object_null": false,
-        "name": "Datum1030"
+        "datum_found": true,
+        "name": "Datum1030",
+        "readable_datums": 1
       }
     },
     "comparison": {
@@ -2677,7 +2689,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+    "source": "Same quantities on both sides, for a datum with both a point and a plane location: whether it is found, its name and the readable datum count. Bridge: datum(at:) was non-nil, named \"Datum1030\", and datums.count was 1. Kernel: GetObject returned a non-null object named Datum1030 with 1 of 1 datum labels readable. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [84].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Datum lookup reads the point-without-plane shape, guard retired (#1030)::A point array of the wrong length is not the kernel's point block, so it still reads",
@@ -2691,7 +2704,6 @@
     "kernel_output": {
       "type": "datum",
       "data": {
-        "get_object_null": false,
         "name": "Datum1030"
       }
     },
@@ -2700,7 +2712,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+    "source": "Same quantity on both sides: the name read from a datum whose point array has length 2, not the kernel's point block. Bridge: datum(at:).name was \"Datum1030\". Kernel: GetObject returned a non-null object named Datum1030. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [85].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Datum lookup reads the point-without-plane shape, guard retired (#1030)::Rescaling a document whose datums are all readable still succeeds",
@@ -2714,7 +2727,7 @@
     "kernel_output": {
       "type": "bool",
       "data": {
-        "rescale": true
+        "rescaled": true
       }
     },
     "comparison": {
@@ -2722,6 +2735,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether the document rescales with one readable datum present. Bridge: rescaleGeometry(scale 2.0, force) returned true. Kernel: 'RescaleGeometry(Main, 2.0, force) with one readable datum=true' from XCAFDoc_Editor::RescaleGeometry. Kernel value: Scripts/repro/766-xcaf-issue1030-datum-lookup/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
   },
   {
@@ -2731,14 +2745,14 @@
       "type": "datum",
       "data": {
         "name": "Datum1030",
-        "position": 2
+        "position_after_write": 2
       }
     },
     "kernel_output": {
       "type": "datum",
       "data": {
-        "child17_exists": true,
-        "point_array": false
+        "name": "Datum1030",
+        "position_after_write": 2
       }
     },
     "comparison": {
@@ -2746,7 +2760,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue1030-datum-lookup/"
+    "source": "Same quantities on both sides, for a plain datum (no point child array): its name, and the position after a position write of 2. Bridge: datum(at:).name was \"Datum1030\" and setDatumPosition(2) then datum(at:).position was 2. Kernel: GetObject returned name Datum1030, and after SetPosition(2) and SetObject a fresh GetObject reads position 2. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [87].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Document Undo/Redo::Set and get undo limit",
@@ -2944,7 +2959,7 @@
     "kernel_output": {
       "type": "bool",
       "data": {
-        "get_is_null": false
+        "exists": true
       }
     },
     "comparison": {
@@ -2952,6 +2967,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether the driver table exists. Bridge: DriverTable.exists is true (the test documents that it is a tautology, #1587). Kernel: 'DriverTable::Get null=false', TPrsStd_DriverTable::Get() creates the table on demand and never returns null, so it exists. Kernel value: Scripts/repro/766-xcaf-driver-table-expression/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-driver-table-expression/"
   },
   {
@@ -2966,8 +2982,7 @@
     "kernel_output": {
       "type": "void",
       "data": {
-        "returned": true,
-        "get_null_after": false
+        "returned": true
       }
     },
     "comparison": {
@@ -2975,6 +2990,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether initStandard and clear return. The test asserts nothing else. Bridge: both calls returned. Kernel: 'InitStandardDrivers + Clear returned; Get null afterwards=false'. Kernel value: Scripts/repro/766-xcaf-driver-table-expression/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-driver-table-expression/"
   },
   {
@@ -2983,15 +2999,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "name": "add part",
-        "attribute_deltas_at_least": 1
+        "delta_name": "add part",
+        "attribute_deltas_at_least_1": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "name_after_SetName": "add part",
-        "attribute_deltas": 2
+        "delta_name": "add part",
+        "attribute_deltas_at_least_1": true
       }
     },
     "comparison": {
@@ -2999,6 +3015,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: the name on the delta a named transaction commits, and whether it has at least one attribute delta. Bridge: delta.name was \"add part\" and attributeDeltaCount >= 1 (the bridge records the name on the TDF_Delta at commit). Kernel: the committed delta has 2 attribute deltas and, after TDF_Delta::SetName(\"add part\"), reads \"add part\". Kernel value: Scripts/repro/766-xcaf-issue970-transactions/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
   },
   {
@@ -3007,13 +3024,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "name": ""
+        "delta_name": ""
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "fresh_delta_name": ""
+        "delta_name": ""
       }
     },
     "comparison": {
@@ -3021,7 +3038,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+    "source": "Same quantity on both sides: the name on the delta of a second, unnamed transaction. Bridge: delta.name was \"\" (the bridge's pending-name bookkeeping, not the kernel, decides that the first transaction's name is not carried over). Kernel: a second transaction committed after a first has a delta named \"\" unless SetName is called. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [91].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Transaction naming and numbering (#970)::anUnnamedOpenSupersedesAPendingName",
@@ -3029,14 +3047,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "name": ""
+        "delta_name": ""
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "fresh_delta_name": "",
-        "second_open_throws": true
+        "delta_name": ""
       }
     },
     "comparison": {
@@ -3044,7 +3061,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+    "source": "Same quantity on both sides: the name on the delta of a transaction opened while another is running. Bridge: delta.name was \"\" after openNamedTransaction then openTransaction. Kernel: the second OpenCommand throws (one is already running) and the committed delta is named \"\" unless SetName is called. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [92].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Transaction naming and numbering (#970)::aRefusedNamedOpenLeavesTheRunningNameAlone",
@@ -3052,16 +3070,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "first": 1,
-        "second": 0,
-        "name": "first"
+        "first_open_number": 1,
+        "second_open_refused": true,
+        "delta_name": "first"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "second_open_throws": true,
-        "transaction": 1
+        "first_open_number": 1,
+        "second_open_refused": true,
+        "delta_name": "first"
       }
     },
     "comparison": {
@@ -3069,7 +3088,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+    "source": "Same quantities on both sides: the number the first open reports, whether the second open is refused, and the delta's name. Bridge: openNamedTransaction(\"first\") returned 1, openNamedTransaction(\"second\") returned 0 (refused), and the committed delta was named \"first\" (the bridge calls TDF_Delta::SetName at commit). Kernel: the first OpenCommand gives Transaction=1, the second throws, and after SetName(\"first\") the delta reads \"first\". Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [93].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Transaction naming and numbering (#970)::abortDiscardsThePendingName",
@@ -3077,14 +3097,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "name": ""
+        "delta_name": ""
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "after_abort_open": false,
-        "undos": 1
+        "delta_name": ""
       }
     },
     "comparison": {
@@ -3092,7 +3111,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+    "source": "Same quantity on both sides: the name on the delta of a transaction opened after an aborted named one. Bridge: delta.name was \"\". Kernel: after OpenCommand, a write and AbortCommand, a second transaction commits one delta (undos=1) named \"\". Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [94].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Transaction naming and numbering (#970)::commitWithDeltaReturnsADeltaAndKeepsTheUndoLimit",
@@ -3100,15 +3120,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "delta": true,
+        "delta_returned": true,
         "undo_limit": 10,
-        "undos": 1
+        "available_undos": 1
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "undos": 1
+        "delta_returned": true,
+        "undo_limit": 10,
+        "available_undos": 1
       }
     },
     "comparison": {
@@ -3116,7 +3138,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+    "source": "Same quantities on both sides: whether a delta is returned, the undo limit and the available undos after commitWithDelta. Bridge: the delta was non-nil, undoLimit 10, availableUndos 1. Kernel: the committed delta is non-null, GetUndoLimit is 10 and GetAvailableUndos is 1. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [95].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Transaction naming and numbering (#970)::transactionNumberTracksTheOpenTransaction",
@@ -3150,14 +3173,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "after_two_opens": 1
+        "transaction_after_two_opens": 1,
+        "transaction_after_commit": 0
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "second_open_throws": true,
-        "transaction": 1
+        "transaction_after_two_opens": 1,
+        "transaction_after_commit": 0
       }
     },
     "comparison": {
@@ -3165,7 +3189,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+    "source": "Same quantities on both sides: the transaction number after two opens, and after a commit. Bridge: transactionNumber was 1, then 0. Kernel: the second OpenCommand throws and Transaction stays 1, then 0 after CommitCommand. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [96].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Transaction naming and numbering (#970)::withoutAnUndoLimitNothingOpens",
@@ -3173,15 +3198,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "transaction": 0,
-        "open": false
+        "undo_limit": 0,
+        "transaction_after_open": 0,
+        "has_open_transaction": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "undo_limit_0_open": false,
-        "transaction": 0
+        "undo_limit": 0,
+        "transaction_after_open": 0,
+        "has_open_transaction": false
       }
     },
     "comparison": {
@@ -3189,7 +3216,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+    "source": "Same quantities on both sides, for a document with no undo limit set: the limit, the transaction number after an open and whether one is open. Bridge: undoLimit 0, transactionNumber 0, hasOpenTransaction false. Kernel: GetUndoLimit 0, and OpenCommand leaves Transaction=0 and HasOpenCommand=false. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [97].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Transaction naming and numbering (#970)::openNamedTransactionReportsTheNumberItOpened",
@@ -3198,14 +3226,16 @@
       "type": "value",
       "data": {
         "without_limit": 0,
-        "with_limit": 1
+        "with_limit": 1,
+        "after_abort": 0
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "undo_limit_0": 0,
-        "undo_limit_10": 1
+        "without_limit": 0,
+        "with_limit": 1,
+        "after_abort": 0
       }
     },
     "comparison": {
@@ -3213,7 +3243,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+    "source": "Same quantities on both sides: the transaction number an open reports without an undo limit and with one, and the number after an abort. Bridge: openNamedTransaction returned 0, then 1 after setUndoLimit(10), and transactionNumber was 0 after abortTransaction. Kernel: Transaction=0 after OpenCommand at limit 0, 1 at limit 10, and 0 after AbortCommand. Lines tagged [97] [98] and [98] [118] of the evidence-fix transcript.",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T write paths answer for what the document took (#1056)::A tolerance the document will not take refuses the whole call",
@@ -3221,23 +3252,27 @@
     "bridge_output": {
       "type": "create",
       "data": {
-        "index": null,
-        "dimensions": 0
+        "dimension_created": false,
+        "dimension_count": 0
       }
     },
     "kernel_output": {
-      "type": "tolerance",
+      "type": "create",
       "data": {
-        "set_accepts_nan": true,
-        "readback_equal": false
+        "dimension_created": true,
+        "dimension_count": 1
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "dimension_created, dimension_count: the bridge refuses each of the three NaN pairs (NaN, 0.5), (-0.3, NaN) and (NaN, NaN) and leaves 0 dimensions; the raw kernel accepts them: SetLowerTolValue and SetUpperTolValue both return true, the dimension is created (1 label) and reads back as plus/minus with the NaN stored.",
+        "By design (#1056): the bridge reads the pair back after writing and refuses when it does not compare equal (NaN != NaN), so the caller is told nothing was created rather than that a dimension with a NaN tolerance was."
+      ]
     },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, for the three NaN tolerance pairs the test runs: whether a dimension is created and how many dimension labels exist. Bridge: createDimension returned nil and dimensionCount was 0 for each pair. Kernel, the same writes without the bridge's readback refusal: SetLower=true SetUpper=true, 1 dimension label, plusMinus=true, reading back (nan, 0.5), (-0.3, nan) and (nan, nan). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [99].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T write paths answer for what the document took (#1056)::A storable tolerance pair still creates the dimension and applies both bounds",
@@ -3245,18 +3280,21 @@
     "bridge_output": {
       "type": "dimension",
       "data": {
-        "lowerTol": -0.3,
-        "upperTol": 0.7,
-        "value": 20.0
+        "dimension_count": 1,
+        "plus_minus": true,
+        "value": 20.0,
+        "lower_tol": -0.3,
+        "upper_tol": 0.7
       }
     },
     "kernel_output": {
       "type": "dimension",
       "data": {
-        "plusMinus": true,
-        "lowerTol": -0.3,
-        "upperTol": 0.7,
-        "value": 20
+        "dimension_count": 1,
+        "plus_minus": true,
+        "value": 20.0,
+        "lower_tol": -0.3,
+        "upper_tol": 0.7
       }
     },
     "comparison": {
@@ -3264,7 +3302,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+    "source": "Same quantities on both sides, for a diameter of 20 with tolerances (-0.3, 0.7): the dimension count and the value, tolerances and plus/minus flag that read back. Bridge: dimensionCount 1, bounds plusMinus(-0.3, 0.7), value 20. Kernel: 1 dimension label, plusMinus=true value=20 lowerTol=-0.3 upperTol=0.7 (read at %.17g, exactly the doubles written). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [100].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T write paths answer for what the document took (#1056)::Omitting both bounds still creates a simple dimension",
@@ -3272,15 +3311,15 @@
     "bridge_output": {
       "type": "dimension",
       "data": {
-        "bounds": "simple"
+        "dimension_count": 1,
+        "simple": true
       }
     },
     "kernel_output": {
       "type": "dimension",
       "data": {
-        "nvals": 1,
-        "range": false,
-        "plusMinus": false
+        "dimension_count": 1,
+        "simple": true
       }
     },
     "comparison": {
@@ -3288,7 +3327,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+    "source": "Same quantities on both sides, for a diameter of 20 with no tolerance: the dimension count and whether it is simple. Bridge: dimensionCount 1 and bounds == .simple. Kernel: 1 dimension label with IsDimWithRange=false and IsDimWithPlusMinusTolerance=false, which is a simple dimension. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [101].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T write paths answer for what the document took (#1056)::The standalone setter refuses the same pair, and leaves the dimension alone",
@@ -3296,22 +3336,28 @@
     "bridge_output": {
       "type": "bool",
       "data": {
-        "refused": true,
-        "bounds": "simple"
+        "write_refused": true,
+        "bounds_after": "simple"
       }
     },
     "kernel_output": {
-      "type": "tolerance",
+      "type": "bool",
       "data": {
-        "readback_equal": false
+        "write_refused": false,
+        "bounds_after": "plusMinus"
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "write_refused: the bridge's setDimensionTolerance refuses (NaN, 0.5) because the readback compare fails; the raw kernel setters return true and SetObject takes it.",
+        "bounds_after: the bridge leaves the dimension simple; the raw kernel converts it to plus/minus with lowerTol NaN and upperTol 0.5.",
+        "By design (#1056): the standalone setter and createDimension refuse the same pair, so the two spellings agree."
+      ]
     },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, for a simple dimension given the tolerance (NaN, 0.5): whether the write is refused and the bounds afterwards. Bridge: setDimensionTolerance returned false and bounds stayed .simple. Kernel, the same writes without the readback refusal: SetLower=true SetUpper=true, then plusMinus=true range=false lowerTol=nan upperTol=0.5. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [102].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T write paths answer for what the document took (#1056)::A value passed with .none is not stored",
@@ -3319,22 +3365,27 @@
     "bridge_output": {
       "type": "tolerance",
       "data": {
-        "zone": "none",
-        "value": null
+        "zone_ordinal": 0,
+        "zone_modifier_value": null
       }
     },
     "kernel_output": {
       "type": "tolerance",
       "data": {
-        "none_keeps_old_value": 15
+        "zone_ordinal": 0,
+        "zone_modifier_value": 15.0
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "zone_modifier_value: the bridge reports no value (it writes 0 under a None zone modifier); the raw kernel call persists 15, which a reader gating on > 0 alone would report as a projected-zone length on a tolerance with no projected zone.",
+        "By design (#1056): the value passed with .none is not stored."
+      ]
     },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, for a tolerance that never had a modifier given zone None with value 15: the zone ordinal and the zone value that reads back. Bridge: setGeomToleranceZoneModifier returned true, zoneModifier was .none and zoneModifierValue was nil. Kernel, the same write without the bridge's clearing: zone=0 value=15. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [103].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T write paths answer for what the document took (#1056)::Clearing a modifier clears its value, whether or not one is passed with the clear",
@@ -3342,21 +3393,30 @@
     "bridge_output": {
       "type": "tolerance",
       "data": {
-        "after_clear": null
+        "projected_value": 15.0,
+        "value_after_none_with_value": null,
+        "value_after_none_without_value": null
       }
     },
     "kernel_output": {
       "type": "tolerance",
       "data": {
-        "none_keeps_old_value": 15
+        "projected_value": 15.0,
+        "value_after_none_with_value": 7.5,
+        "value_after_none_without_value": 15.0
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "value_after_none_with_value: after a real projected zone (15), the bridge's None with value 7.5 reads back no value; the raw kernel persists 7.5 under zone 0.",
+        "value_after_none_without_value: after projected 15 again, the bridge's None with no value reads back no value; the raw kernel keeps the stale 15 under zone 0.",
+        "projected_value agrees (15) on both sides. By design (#1056): the bridge clears the value with the modifier."
+      ]
     },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, for a tolerance given a projected zone of 15, then None with 7.5, then projected 15 again and None with no value: the value read after each. Bridge: zoneModifierValue was 15.0, then nil, then nil. Kernel, the same writes without the bridge's clearing: 'Projected 15 -> zone=1 value=15; None with 7.5 -> zone=0 value=7.5; Projected 15 then None with no value -> zone=0 value=15'. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [104].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T write paths answer for what the document took (#1056)::A real zone modifier still stores its value",
@@ -3388,14 +3448,13 @@
     "bridge_output": {
       "type": "datum",
       "data": {
-        "modifierWithValue": null
+        "modifier_with_value_reported": false
       }
     },
     "kernel_output": {
       "type": "datum",
       "data": {
-        "modifier": 0,
-        "value": 15
+        "modifier_with_value_reported": false
       }
     },
     "comparison": {
@@ -3403,7 +3462,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+    "source": "Same quantity on both sides: whether a datum reports a modifier with value after None is written with 15. Bridge: datum(at:).modifierWithValue was nil. Kernel, the same write without the bridge's clearing, through the attribute: the read back is modifier=0 (None) value=0, so nothing is reported. The kernel already drops the value under None when it persists a datum, unlike the tolerance zone value above; the in-memory object of the shared probe keeps 15, which is not what the document stores. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [105].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Datum lands on the real DocumentTool 0:1:4 table, not Main() itself (#1435)::A created datum is a real child of Main().FindChild(4), the DimTolTool label",
@@ -3412,6 +3472,7 @@
       "type": "value",
       "data": {
         "index": 0,
+        "table_label_exists": true,
         "table_children": 1,
         "datum_count": 1
       }
@@ -3419,8 +3480,10 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "tool_label": "0:1:4",
-        "children_after_one": 1
+        "index": 0,
+        "table_label_exists": true,
+        "table_children": 1,
+        "datum_count": 1
       }
     },
     "comparison": {
@@ -3428,7 +3491,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue1435-datum-table/"
+    "source": "Same quantities on both sides, after creating one datum: the index it gets, whether Main().FindChild(4, false) exists, its child count and the datum count. Bridge: createDatum returned 0, the label at tag 4 was found with 1 child, datumCount 1. Kernel: 'Main().FindChild(4, false) null=false entry=0:1:4 children=1, GetDatumLabels=1 (index of the last = 0)'. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [106] [107].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Datum lands on the real DocumentTool 0:1:4 table, not Main() itself (#1435)::doc.datumCount agrees with a direct count of Main().FindChild(4)'s children",
@@ -3443,9 +3507,8 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "children_after_three": 3,
-        "datum_labels": 3,
-        "set_on_main_creates_0_1_4": false
+        "table_children": 3,
+        "datum_count": 3
       }
     },
     "comparison": {
@@ -3453,7 +3516,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue1435-datum-table/"
+    "source": "Same quantities on both sides, after creating three datums: the child count of Main().FindChild(4) and the datum count. Bridge: 3 and 3. Kernel: 'children=3, GetDatumLabels=3' under 0:1:4. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [106] [107].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDataXtd Shape Attribute::Set and get shape attribute on label",
@@ -3468,7 +3532,8 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "stored_non_null": true
+        "has": true,
+        "valid": true
       }
     },
     "comparison": {
@@ -3476,7 +3541,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantities on both sides: whether the label has a TDataXtd_Shape attribute after the set, and whether it holds a valid (non-null) shape. Bridge: hasShapeAttribute true and shapeAttribute().isValid true (OCCTDocumentSetShapeAttr adds a TDataXtd_Shape and builds the named shape with TNaming_Builder::Generated). Kernel: the same steps give 'TDataXtd_Shape present=true Get null=false'. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [108].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDataXtd Shape Attribute::Label without shape attribute",
@@ -3491,7 +3557,8 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "fresh_has_named_shape": false
+        "has": false,
+        "shape": null
       }
     },
     "comparison": {
@@ -3499,7 +3566,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantities on both sides, for the label createLabel makes: whether it has a TDataXtd_Shape attribute and whether a shape reads. Bridge: hasShapeAttribute false and shapeAttribute() nil. Kernel: 'TDataXtd_Shape present=false Get null=true'. The shared probe checked TNaming_NamedShape, a different attribute. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [109].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDataXtd Triangulation Attribute::Set triangulation from meshed shape",
@@ -3514,8 +3582,8 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "sphere_nodes": 168,
-        "sphere_triangles": 306
+        "nodes_positive": true,
+        "triangles_positive": true
       }
     },
     "comparison": {
@@ -3523,7 +3591,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantities on both sides: whether a meshed sphere's stored triangulation has nodes and triangles. Bridge: triangulationNodeCount > 0 and triangulationTriangleCount > 0. Kernel: the sphere r10 at deflection 1.0 gives merged nodes=168 triangles=306, so both are positive. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [110].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDataXtd Triangulation Attribute::Triangulation deflection",
@@ -3537,7 +3606,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "mesh_deflection_positive": true
+        "positive": true
       }
     },
     "comparison": {
@@ -3545,7 +3614,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantity on both sides: whether the deflection stored for a box meshed at 0.5 is positive. Bridge: triangulationDeflection > 0. Kernel: the box 10x20x30 at deflection 0.5 has a worst face deflection of 4.9650683064945462e-16, positive only by rounding, so the predicate is true. The shared probe measured a sphere, not this box. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [111].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDF AttributeIterator Tests::attributeCount",
@@ -3553,13 +3623,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "at_least": 3
+        "attribute_count_at_least_3": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "count": 3
+        "attribute_count_at_least_3": true
       }
     },
     "comparison": {
@@ -3567,6 +3637,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether a label with an integer, a real and a name has at least 3 attributes. Bridge: attributeCount(labelId:) >= 3. Kernel: 'AttributeIterator: 3 attributes' from TDF_AttributeIterator on such a label. Kernel value: Scripts/repro/766-xcaf-tdataxtd-tdf/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
   },
   {
@@ -3575,13 +3646,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "at_least": 0
+        "attribute_count_at_least_0": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "count": 0
+        "attribute_count_at_least_0": true
       }
     },
     "comparison": {
@@ -3589,7 +3660,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantity on both sides: whether the attribute count of the label createLabel makes is at least 0. Bridge: attributeCount(labelId:) >= 0, which cannot fail. Kernel: TDF_AttributeIterator counts 2 on that label. Document.createLabel() is Main().NewChild(), which on an XCAF document is the existing label 0:1:1, not an empty one (it carries 2 attributes). The shared probe's \"empty label 0\" was a literal, not a measurement. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [113].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDF AttributeIterator Tests::dataSetIsEmpty",
@@ -3603,7 +3675,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "attributes": 3
+        "empty": false
       }
     },
     "comparison": {
@@ -3611,7 +3683,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantity on both sides: whether the TDF_DataSet built from the created label is empty. Bridge: dataSetIsEmpty was false (OCCTDocumentDataSetIsEmpty adds the label to a new TDF_DataSet and returns IsEmpty). Kernel: 'TDF_DataSet with a fresh label added: IsEmpty=false'. The shared probe counted the attributes of a different label. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [114].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDF ChildIDIterator Tests::countByGUID",
@@ -3685,14 +3758,14 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true,
+        "copy_done": true,
         "name": "Original"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": true,
+        "copy_done": true,
         "name": "Original"
       }
     },
@@ -3701,6 +3774,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: whether the copy completes and the destination's name. Bridge: copyLabel returned true (OCCTDocumentCopyLabel returns TDF_CopyLabel::IsDone) and dest.name was \"Original\". Kernel: 'CopyLabel: IsDone=true dest name=Original'. Kernel value: Scripts/repro/766-xcaf-tdataxtd-tdf/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
   },
   {
@@ -3709,14 +3783,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true,
+        "copy_done": true,
         "dest_has_child": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": true
+        "copy_done": true,
+        "dest_has_child": true
       }
     },
     "comparison": {
@@ -3724,7 +3799,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantities on both sides, copying a label with a named child: whether the copy completes and whether the destination has a child. Bridge: copyLabel returned true and dest.hasChild. Kernel: 'TDF_CopyLabel of a label with a child: IsDone=true, destination HasChild=true'. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [116].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDF Label Name Set/Get::Set and get label name",
@@ -3798,13 +3874,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ref": null
+        "has_reference": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "fresh_has_reference": false
+        "has_reference": false
       }
     },
     "comparison": {
@@ -3812,7 +3888,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantity on both sides: whether the created label carries a TDF_Reference. Bridge: referencedLabel was nil, which OCCTDocumentLabelGetReference returns when the label has no TDF_Reference. Kernel: 'TDF_Reference present=false' on 0:1:1, the label createLabel makes. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [117].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDF Transaction Named Tests::openNamedTransaction",
@@ -3820,13 +3897,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "number_at_least": 1
+        "number_at_least_1": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "transaction": 1
+        "number_at_least_1": true
       }
     },
     "comparison": {
@@ -3834,7 +3911,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+    "source": "Same quantity on both sides: whether an open at undo limit 10 reports a transaction number of at least 1. Bridge: openNamedTransaction returned >= 1. Kernel: OpenCommand at limit 10 gives Transaction=1. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [98] [118].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDF Transaction Named Tests::transactionNumber",
@@ -3851,7 +3929,7 @@
       "type": "value",
       "data": {
         "before": 0,
-        "open": 1,
+        "during": 1,
         "after": 0
       }
     },
@@ -3860,7 +3938,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+    "source": "Same quantities on both sides: the transaction number before an open, during it and after the commit. Bridge: 0, 1, 0. Kernel: 'before=0 during=1 after commit=0'. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [119].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDF Transaction Named Tests::commitWithDelta",
@@ -3868,17 +3947,21 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "delta": true,
-        "attribute_deltas_at_least": 1,
+        "delta_returned": true,
+        "delta_non_empty": true,
+        "attribute_deltas_at_least_1": true,
+        "begin_non_negative": true,
         "end_ge_begin": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "attribute_deltas": 2,
-        "begin": 0,
-        "end": 1
+        "delta_returned": true,
+        "delta_non_empty": true,
+        "attribute_deltas_at_least_1": true,
+        "begin_non_negative": true,
+        "end_ge_begin": true
       }
     },
     "comparison": {
@@ -3886,7 +3969,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+    "source": "Same quantities on both sides, for a committed transaction: whether a delta comes back, whether it is non-empty, whether it has at least one attribute delta, and whether its begin time is >= 0 and its end >= begin. Bridge: the delta was non-nil, not empty, attributeDeltaCount >= 1, beginTime >= 0 and endTime >= beginTime. Kernel: the committed delta is non-null, IsEmpty=false, 2 attribute deltas, begin=0 end=1. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [95] [120].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDF Transaction Named Tests::deltaName",
@@ -3900,7 +3984,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "name_after_SetName": "add part"
+        "name": "MyDelta"
       }
     },
     "comparison": {
@@ -3908,7 +3992,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+    "source": "Same quantity on both sides: the delta's name after it is set. Bridge: delta.name was \"MyDelta\" after setName. Kernel: TDF_Delta::SetName(\"MyDelta\") then Name() reads \"MyDelta\". Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [121].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDocStd XLinkTool Tests::xlinkCopy",
@@ -3916,7 +4001,7 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true,
+        "done": true,
         "integer": 77
       }
     },
@@ -3932,6 +4017,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: whether the XLink copy completes and the integer on the target. Bridge: xlinkCopy returned true (OCCTDocumentXLinkCopy returns TDocStd_XLinkTool::IsDone) and tgt.integer was 77. Kernel: 'XLinkTool::Copy: IsDone=true target integer=77'. Kernel value: Scripts/repro/766-xcaf-tdataxtd-tdf/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
   },
   {
@@ -3940,7 +4026,7 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true,
+        "done": true,
         "integer": 88
       }
     },
@@ -3956,6 +4042,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: whether CopyWithLink completes and the integer on the target. Bridge: xlinkCopyWithLink returned true and tgt.integer was 88. Kernel: 'CopyWithLink: IsDone=true target integer=88'. Kernel value: Scripts/repro/766-xcaf-tdataxtd-tdf/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
   },
   {
@@ -3964,6 +4051,7 @@
     "bridge_output": {
       "type": "value",
       "data": {
+        "faces": 6,
         "nodes": 24,
         "triangles": 12
       }
@@ -3981,6 +4069,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: the box's face count and the stored node and triangle counts at deflection 1.0. Bridge: subShapeCount(.face) 6, triangulationNodeCount 24, triangulationTriangleCount 12. Kernel: 'box 10x10x10 at 1.0: faces=6 nodes=24 triangles=12', BRepMesh_IncrementalMesh summed over every face the way the bridge merges. Kernel value: Scripts/repro/766-xcaf-issue443-triangulation/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
   },
   {
@@ -3989,6 +4078,7 @@
     "bridge_output": {
       "type": "value",
       "data": {
+        "faces": 12,
         "nodes": 48,
         "triangles": 24
       }
@@ -4006,6 +4096,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: the two-box compound's face count and stored node and triangle counts at deflection 1.0. Bridge: 12, 48 and 24. Kernel: 'compound of two boxes at 1.0: faces=12 nodes=48 triangles=24'. Kernel value: Scripts/repro/766-xcaf-issue443-triangulation/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
   },
   {
@@ -4014,17 +4105,21 @@
     "bridge_output": {
       "type": "value",
       "data": {
+        "coarse_triangles_positive": true,
         "fine_more_triangles": true,
-        "fine_smaller_deflection": true
+        "coarse_deflection_positive": true,
+        "fine_deflection_positive": true,
+        "fine_deflection_smaller": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "coarse_triangles": 306,
-        "fine_triangles": 516,
-        "coarse_deflection": 0.62736,
-        "fine_deflection": 0.238182
+        "coarse_triangles_positive": true,
+        "fine_more_triangles": true,
+        "coarse_deflection_positive": true,
+        "fine_deflection_positive": true,
+        "fine_deflection_smaller": true
       }
     },
     "comparison": {
@@ -4032,6 +4127,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides, for a sphere of radius 10 meshed at deflection 2.0 (coarse) and 0.2 (fine): whether the coarse mesh has triangles, whether the fine one has more, whether both deflections are positive and whether the fine one is smaller. Bridge: all five asserted true. Kernel: 'sphere r10 at 2.0: triangles=306 worstDeflection=0.62736' and 'sphere r10 at 0.2: triangles=516 worstDeflection=0.238182', so 306 > 0, 516 > 306, both positive and 0.238 < 0.627. Kernel value: Scripts/repro/766-xcaf-issue443-triangulation/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
   },
   {
@@ -4040,13 +4136,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "nonnegative": true
+        "deflection_non_negative": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "box_deflection": 3.14018e-16
+        "deflection_non_negative": true
       }
     },
     "comparison": {
@@ -4054,6 +4150,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether the stored deflection of a planar shape is >= 0. Bridge: triangulationDeflection >= 0 for the box. Kernel: 'box 10x10x10 at 1.0: ... worstDeflection=3.14018e-16', the box's faces record their own tiny deflection, so it is >= 0. Kernel value: Scripts/repro/766-xcaf-issue443-triangulation/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
   },
   {
@@ -4063,17 +4160,14 @@
       "type": "value",
       "data": {
         "nodes": 24,
-        "in_frame": true
+        "all_nodes_within_shape_bounds": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
         "nodes": 24,
-        "nodeX": [
-          95,
-          105
-        ]
+        "all_nodes_within_shape_bounds": true
       }
     },
     "comparison": {
@@ -4081,7 +4175,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+    "source": "Same quantities on both sides, for a 10x10x10 box located at (100, 200, 300): the stored node count and whether every node lies inside the shape's own bounds on all three axes (slack 1e-6). Bridge: 24 nodes, each within the bounding box. Kernel: the per-face triangulations transformed by each face's location give 24 nodes, and against the shape bounds x[95, 105] y[195, 205] z[295, 305] none lies outside. The shared probe moved the box in x only. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [128].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Issue 443: triangulation attribute stores the whole shape::a mirrored shape stores every face, in frame",
@@ -4091,7 +4186,8 @@
       "data": {
         "nodes": 24,
         "triangles": 12,
-        "x_negative": true
+        "shape_max_x_negative": true,
+        "all_nodes_within_shape_x_bounds": true
       }
     },
     "kernel_output": {
@@ -4099,10 +4195,8 @@
       "data": {
         "nodes": 24,
         "triangles": 12,
-        "nodeX": [
-          -20,
-          -10
-        ]
+        "shape_max_x_negative": true,
+        "all_nodes_within_shape_x_bounds": true
       }
     },
     "comparison": {
@@ -4110,7 +4204,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+    "source": "Same quantities on both sides, for the box at x 10..20 mirrored in x: the node and triangle counts, whether the shape's max x is negative (< 1e-6) and whether every node's x lies inside the shape's x bounds. Bridge: 24 nodes, 12 triangles, bounds.max.x < 1e-6, every node.x within [min.x, max.x]. Kernel: 24 nodes, 12 triangles, shape bounds x[-20, -10], no node outside. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [129].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Issue 443: triangulation attribute stores the whole shape::triangulationNode rejects out-of-range and attribute-less labels",
@@ -4118,14 +4213,23 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "one_based": true,
-        "count": 24
+        "node_count": 24,
+        "index_0_found": false,
+        "index_1_found": true,
+        "index_count_found": true,
+        "index_past_count_found": false,
+        "attribute_less_label_found": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "nodes": 24
+        "node_count": 24,
+        "index_0_found": false,
+        "index_1_found": true,
+        "index_count_found": true,
+        "index_past_count_found": false,
+        "attribute_less_label_found": false
       }
     },
     "comparison": {
@@ -4133,7 +4237,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+    "source": "Same quantities on both sides, for a box's stored triangulation: the node count, whether a node is found at index 0, 1, the count and the count plus 1 (1-based), and whether a label with no triangulation attribute yields a node. Bridge: triangulationNode(at:) was nil at 0 and count + 1 and on the attribute-less label, and non-nil at 1 and at the count. Kernel: a 24-node Poly_Triangulation held by a TDataXtd_Triangulation attribute: Node(0) and Node(25) raise Standard_OutOfRange, Node(1) and Node(24) do not, and a label without the attribute has none. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [130].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Issue 443: triangulation attribute stores the whole shape::a glTF-imported mesh carries its node normals through the merge",
@@ -4141,14 +4246,19 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "unit_normals": true,
-        "brep_normals": null
+        "imported_normals_present": true,
+        "first_normal_unit_length": true,
+        "checked_normals_outward": true,
+        "brep_mesh_normals_present": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "brep_mesh_normals": false
+        "imported_normals_present": true,
+        "first_normal_unit_length": true,
+        "checked_normals_outward": true,
+        "brep_mesh_normals_present": false
       }
     },
     "comparison": {
@@ -4156,7 +4266,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
+    "source": "Same quantities on both sides: whether a sphere exported to GLB and read back carries node normals, whether the first is unit length, whether every checked normal points outward (dot with the radial direction > 0.5), and whether the same sphere meshed from B-Rep carries normals. Bridge: triangulationNormal(at: 1) was non-nil and unit within 1e-6, every checked node's normal had dot > 0.5, and the B-Rep label's normal was nil. Kernel: RWGltf_CafReader gives 1 face whose triangulation has normals, the first of length 1, and 168 of 168 checked normals point outward once the face orientation and location are applied (the merge's own steps); BRepMesh_IncrementalMesh leaves normals=false ('sphere r10 at 2.0' in the #443 transcript). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [131].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Issue 443: triangulation attribute stores the whole shape::a shape with no face stores nothing",
@@ -4164,15 +4275,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": false,
-        "nodes": 0
+        "stored": false,
+        "nodes": 0,
+        "triangles": 0
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "faces": 0,
-        "nodes": 0
+        "stored": false,
+        "nodes": 0,
+        "triangles": 0
       }
     },
     "comparison": {
@@ -4180,6 +4293,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides, for a lone edge: whether a triangulation is stored and the node and triangle counts. Bridge: setTriangulationFromShape returned false and both counts were 0. Kernel: 'a lone edge (no face): faces=0 nodes=0 triangles=0', so there is nothing to merge and nothing is stored. Kernel value: Scripts/repro/766-xcaf-issue443-triangulation/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
   },
   {

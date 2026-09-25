@@ -49,6 +49,7 @@ static const char* tf(bool b) { return b ? "true" : "false"; }
 #include <Message_ProgressRange.hxx>
 #include <Standard_GUID.hxx>
 #include <Standard_OutOfRange.hxx>
+#include <TDF_Reference.hxx>
 #include <TFunction_Function.hxx>
 #include <TFunction_IFunction.hxx>
 #include <TFunction_Scope.hxx>
@@ -93,6 +94,31 @@ static const char* tf(bool b) { return b ? "true" : "false"; }
 #include <XCAFDimTolObjects_DatumSingleModif.hxx>
 #include <XCAFDimTolObjects_DimensionFormVariance.hxx>
 #include <XCAFDimTolObjects_DimensionGrade.hxx>
+#include <BRepBndLib.hxx>
+#include <BRepMesh_IncrementalMesh.hxx>
+#include <BRepPrimAPI_MakeSphere.hxx>
+#include <BRepBuilderAPI_Transform.hxx>
+#include <BRep_Tool.hxx>
+#include <Bnd_Box.hxx>
+#include <Poly_Triangulation.hxx>
+#include <RWGltf_CafReader.hxx>
+#include <RWGltf_CafWriter.hxx>
+#include <TDF_AttributeIterator.hxx>
+#include <TDF_ChildIterator.hxx>
+#include <TDF_CopyLabel.hxx>
+#include <TDF_DataSet.hxx>
+#include <TDF_Delta.hxx>
+#include <TDataStd_Integer.hxx>
+#include <TDataStd_Real.hxx>
+#include <TDataStd_RealArray.hxx>
+#include <TDataXtd_Shape.hxx>
+#include <TDataXtd_Triangulation.hxx>
+#include <TNaming_Builder.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
+#include <NCollection_IndexedDataMap.hxx>
+#include <XCAFDoc_Editor.hxx>
+#include <cmath>
 
 // Kernel measurements for the #1982 evidence correction pass over OCCTXCAFTests. Each section prints lines
 // tagged with the worklist index ([n]) of the parity record it backs, so a record's kernel value can be
@@ -159,26 +185,43 @@ static void itemRefOrphan()
 // [171]-[174] TFunctionIFunctionTests: TFunction_IFunction on a fresh child label of Main().
 static void iFunction()
 {
-  Handle(TDocStd_Application) app;
-  Handle(TDocStd_Document)    d = newDoc(app);
-  TFunction_Scope::Set(d->GetData()->Root());
-  TDF_Label                  l1 = d->Main().NewChild();
+  // One document per test, as each test has: Document.createLabel() is Main().NewChild(), which on an XCAF document is 0:1:1.
   Handle(TFunction_Function) f;
-  bool created = TFunction_IFunction::NewFunction(l1, Standard_GUID("12345678-1234-1234-1234-123456789abc"));
-  printf("[171] NewFunction on a fresh label: returned=%s TFunction_Function attribute present=%s\n", tf(created),
-         tf(l1.FindAttribute(TFunction_Function::GetID(), f)));
-  TDF_Label l2 = d->Main().NewChild();
-  TFunction_IFunction::NewFunction(l2, Standard_GUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"));
-  printf("[172] NewFunction then DeleteFunction: DeleteFunction returned=%s\n", tf(TFunction_IFunction::DeleteFunction(l2)));
-  TDF_Label l3 = d->Main().NewChild();
-  TFunction_IFunction::NewFunction(l3, Standard_GUID("11111111-2222-3333-4444-555555555555"));
-  TFunction_IFunction ifn(l3);
-  printf("[173] fresh function GetStatus=%d (WrongDefinition=%d NotExecuted=%d Succeeded=%d)", (int)ifn.GetStatus(),
-         (int)TFunction_ES_WrongDefinition, (int)TFunction_ES_NotExecuted, (int)TFunction_ES_Succeeded);
-  ifn.SetStatus(TFunction_ES_Succeeded);
-  printf(", after SetStatus(Succeeded) GetStatus=%d\n", (int)ifn.GetStatus());
-  TDF_Label l4 = d->Main().NewChild();
-  printf("[174] fresh label without NewFunction: TFunction_Function attribute present=%s\n", tf(l4.FindAttribute(TFunction_Function::GetID(), f)));
+  {
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TFunction_Scope::Set(d->GetData()->Root());
+    TDF_Label l1      = d->Main().NewChild();
+    bool      created = TFunction_IFunction::NewFunction(l1, Standard_GUID("12345678-1234-1234-1234-123456789abc"));
+    printf("[171] NewFunction on the created label: returned=%s TFunction_Function attribute present=%s\n", tf(created),
+           tf(l1.FindAttribute(TFunction_Function::GetID(), f)));
+  }
+  {
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TFunction_Scope::Set(d->GetData()->Root());
+    TDF_Label l2 = d->Main().NewChild();
+    TFunction_IFunction::NewFunction(l2, Standard_GUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"));
+    printf("[172] NewFunction then DeleteFunction: DeleteFunction returned=%s\n", tf(TFunction_IFunction::DeleteFunction(l2)));
+  }
+  {
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TFunction_Scope::Set(d->GetData()->Root());
+    TDF_Label l3 = d->Main().NewChild();
+    TFunction_IFunction::NewFunction(l3, Standard_GUID("11111111-2222-3333-4444-555555555555"));
+    TFunction_IFunction ifn(l3);
+    printf("[173] fresh function GetStatus=%d (WrongDefinition=%d NotExecuted=%d Succeeded=%d)", (int)ifn.GetStatus(),
+           (int)TFunction_ES_WrongDefinition, (int)TFunction_ES_NotExecuted, (int)TFunction_ES_Succeeded);
+    ifn.SetStatus(TFunction_ES_Succeeded);
+    printf(", after SetStatus(Succeeded) GetStatus=%d\n", (int)ifn.GetStatus());
+  }
+  {
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d  = newDoc(app);
+    TDF_Label                   l4 = d->Main().NewChild();
+    printf("[174] created label without NewFunction: TFunction_Function attribute present=%s\n", tf(l4.FindAttribute(TFunction_Function::GetID(), f)));
+  }
 }
 
 // [209] [211] [212] a fresh child label of Main() carries no DimTol / Location / Material attribute.
@@ -193,6 +236,11 @@ static void freshLabelAttrs()
   printf("[209] fresh label: XCAFDoc_DimTol present=%s\n", tf(l.FindAttribute(XCAFDoc_DimTol::GetID(), dt)));
   printf("[211] fresh label: XCAFDoc_Location present=%s\n", tf(l.FindAttribute(XCAFDoc_Location::GetID(), lo)));
   printf("[212] fresh label: XCAFDoc_Material present=%s\n", tf(l.FindAttribute(XCAFDoc_Material::GetID(), ma)));
+  TCollection_AsciiString entry;
+  TDF_Tool::Entry(l, entry);
+  Handle(TDF_Reference) ref;
+  printf("[117] the label Document.createLabel() makes (Main().NewChild(), entry %s): TDF_Reference present=%s\n", entry.ToCString(),
+         tf(l.FindAttribute(TDF_Reference::GetID(), ref)));
 }
 
 // [135] VisMaterialCommonTests.commonMaterialRoughnessFromShininess: OBJ/MTL import (Ks 0.8, Ns 300), then the
@@ -927,6 +975,603 @@ static void gdtRawWrites()
   }
 }
 
+// ---- KEYS group 3 -----------------------------------------------------------------------------------------------------
+
+// [80] [81] [82] [83] [84] [85] [87] Issue1030DatumLookupGuardTests: the datum shapes the tests author, read through
+// XCAFDoc_Datum::GetObject (patch 0029 is in the pinned kernel), and the five write paths on the point-without-plane datum.
+static TDF_Label d1030Make(const Handle(TDocStd_Document)& d, GdtDoc& g)
+{
+  g.d     = d;
+  g.t     = XCAFDoc_DocumentTool::DimTolTool(d->Main());
+  g.shape = XCAFDoc_DocumentTool::ShapeTool(d->Main())->AddShape(centredBox(10, 10, 10), false);
+  Handle(XCAFDoc_Datum) a = gdtAddDatum(g, "Datum1030");
+  return a->Label();
+}
+
+static void d1030Triple(const TDF_Label& l, int tag, double v, int lower = 1, int upper = 3)
+{
+  Handle(TDataStd_RealArray) arr = TDataStd_RealArray::Set(l.FindChild(tag, true), lower, upper);
+  for (int i = lower; i <= upper; i++)
+    arr->SetValue(i, v);
+}
+
+static void d1030Read(const char* tag, const TDF_Label& l, GdtDoc& g)
+{
+  Handle(XCAFDoc_Datum) a;
+  l.FindAttribute(XCAFDoc_Datum::GetID(), a);
+  Handle(XCAFDimTolObjects_DatumObject) o = a->GetObject();
+  TDF_LabelSequence                     ls;
+  g.t->GetDatumLabels(ls);
+  int readable = 0;
+  for (int i = 1; i <= ls.Length(); i++)
+  {
+    Handle(XCAFDoc_Datum) x;
+    ls.Value(i).FindAttribute(XCAFDoc_Datum::GetID(), x);
+    if (!x->GetObject().IsNull())
+      readable++;
+  }
+  printf("%s: GetObject null=%s name=%s, datum labels=%d readable=%d\n", tag, tf(o.IsNull()),
+         (o.IsNull() || o->GetName().IsNull()) ? "-" : o->GetName()->ToCString(), ls.Length(), readable);
+}
+
+static void datum1030()
+{
+  {  // [80]
+    Handle(TDocStd_Application) app;
+    GdtDoc                      g;
+    g.app = app;
+    TDF_Label l = d1030Make(newDoc(app), g);
+    TDF_LabelSequence ls;
+    g.t->GetDatumLabels(ls);
+    printf("[80] fresh datum: datum labels=%d (index of new = %d), child 17 exists=%s child 14 exists=%s, point array present=%s, "
+           "plane array present=%s",
+           ls.Length(), ls.Length() - 1, tf(!l.FindChild(17, false).IsNull()), tf(!l.FindChild(14, false).IsNull()),
+           tf(l.FindChild(17, false).IsAttribute(TDataStd_RealArray::GetID())), tf(l.FindChild(14, false).IsAttribute(TDataStd_RealArray::GetID())));
+    d1030Triple(l, 17, 7);
+    Handle(TDataStd_RealArray) p;
+    l.FindChild(17, false).FindAttribute(TDataStd_RealArray::GetID(), p);
+    printf("; after writing the point triple 7: bounds %d..%d value(1)=%g value(3)=%g, plane array present=%s\n", p->Lower(), p->Upper(),
+           p->Value(1), p->Value(3), tf(l.FindChild(14, false).IsAttribute(TDataStd_RealArray::GetID())));
+  }
+  {  // [81]
+    Handle(TDocStd_Application) app;
+    GdtDoc                      g;
+    g.app = app;
+    TDF_Label l = d1030Make(newDoc(app), g);
+    d1030Triple(l, 17, 7);
+    d1030Read("[81] point, no plane location", l, g);
+  }
+  {  // [83]
+    Handle(TDocStd_Application) app;
+    GdtDoc                      g;
+    g.app = app;
+    TDF_Label l = d1030Make(newDoc(app), g);
+    d1030Triple(l, 14, 6);
+    d1030Triple(l, 17, 0, 1000000, 1000002);
+    d1030Read("[83] plane location 1..3, point at 1000000", l, g);
+  }
+  {  // [84]
+    Handle(TDocStd_Application) app;
+    GdtDoc                      g;
+    g.app = app;
+    TDF_Label l = d1030Make(newDoc(app), g);
+    d1030Triple(l, 14, 6);
+    d1030Triple(l, 17, 7);
+    d1030Read("[84] point and plane location", l, g);
+  }
+  {  // [85]
+    Handle(TDocStd_Application) app;
+    GdtDoc                      g;
+    g.app = app;
+    TDF_Label l = d1030Make(newDoc(app), g);
+    d1030Triple(l, 17, 0, 1, 2);
+    d1030Read("[85] point array of length 2", l, g);
+  }
+  {  // [82] the five write paths of the test, on the point-without-plane datum
+    Handle(TDocStd_Application) app;
+    GdtDoc                      g;
+    g.app = app;
+    TDF_Label l = d1030Make(newDoc(app), g);
+    d1030Triple(l, 17, 7);
+    Handle(XCAFDoc_Datum) a;
+    l.FindAttribute(XCAFDoc_Datum::GetID(), a);
+    bool threw = false, readable = true;
+    try
+    {
+      auto get = [&]() {
+        Handle(XCAFDimTolObjects_DatumObject) o = a->GetObject();
+        if (o.IsNull())
+          readable = false;
+        return o;
+      };
+      Handle(XCAFDimTolObjects_DatumObject) o = get();
+      o->SetPosition(2);
+      a->SetObject(o);
+      o = get();
+      NCollection_Sequence<XCAFDimTolObjects_DatumSingleModif> m;
+      m.Append(XCAFDimTolObjects_DatumSingleModif_Basic);
+      o->SetModifiers(m);
+      a->SetObject(o);
+      o = get();
+      o->SetModifierWithValue(XCAFDimTolObjects_DatumModifWithValue_CircularOrCylindrical, 1.5);
+      a->SetObject(o);
+      o = get();
+      o->IsDatumTarget(true);
+      o->SetDatumTargetType(XCAFDimTolObjects_DatumTargetType_Point);
+      o->SetDatumTargetNumber(1);
+      a->SetObject(o);
+      o = get();
+      o->IsDatumTarget(false);
+      a->SetObject(o);
+    }
+    catch (const Standard_Failure&)
+    {
+      threw = true;
+    }
+    printf("[82] five write paths on the point-without-plane datum (position 2, modifiers [Basic], modifier with value, point target, "
+           "target cleared): threw=%s, GetObject readable throughout=%s, final position=%d\n",
+           tf(threw), tf(readable), a->GetObject()->GetPosition());
+  }
+  {  // [86] RescaleGeometry with one readable datum
+    Handle(TDocStd_Application) app;
+    GdtDoc                      g;
+    g.app = app;
+    d1030Make(newDoc(app), g);
+    printf("[86] RescaleGeometry(Main, 2.0, force) with one readable datum=%s\n", tf(XCAFDoc_Editor::RescaleGeometry(g.d->Main(), 2.0, true)));
+  }
+  {  // [87] a plain datum
+    Handle(TDocStd_Application) app;
+    GdtDoc                      g;
+    g.app = app;
+    TDF_Label             l = d1030Make(newDoc(app), g);
+    Handle(XCAFDoc_Datum) a;
+    l.FindAttribute(XCAFDoc_Datum::GetID(), a);
+    Handle(XCAFDimTolObjects_DatumObject) o = a->GetObject();
+    printf("[87] plain datum: name=%s", o->GetName()->ToCString());
+    o->SetPosition(2);
+    a->SetObject(o);
+    printf(", after SetPosition(2) and SetObject: position=%d\n", a->GetObject()->GetPosition());
+  }
+}
+
+// [99] [100] [101] [102] Issue1056: what the raw kernel does with the tolerance pairs the bridge checks by reading back, and
+// with the modifier values it clears itself ([103] [104] [105]).
+static void dim1056()
+{
+  const double nan_ = std::nan("");
+  const double pairs[3][2] = {{nan_, 0.5}, {-0.3, nan_}, {nan_, nan_}};
+  for (const auto& p : pairs)
+  {
+    GdtDoc g;
+    gdtInit(g);
+    TDF_Label dl = g.t->AddDimension();
+    g.t->SetDimension(g.shape, dl);
+    Handle(XCAFDoc_Dimension) da;
+    dl.FindAttribute(XCAFDoc_Dimension::GetID(), da);
+    Handle(XCAFDimTolObjects_DimensionObject) o = new XCAFDimTolObjects_DimensionObject();
+    o->SetType(XCAFDimTolObjects_DimensionType_Size_Diameter);
+    Handle(TColStd_HArray1OfReal) vals = new TColStd_HArray1OfReal(1, 1);
+    vals->SetValue(1, 20.0);
+    o->SetValues(vals);
+    bool lo = o->SetLowerTolValue(p[0]);
+    bool up = o->SetUpperTolValue(p[1]);
+    da->SetObject(o);
+    TDF_LabelSequence dls;
+    g.t->GetDimensionLabels(dls);
+    Handle(XCAFDimTolObjects_DimensionObject) r = da->GetObject();
+    printf("[99] raw tolerance (%g, %g) without the bridge's readback refusal: SetLower=%s SetUpper=%s, dimension labels=%d, plusMinus=%s "
+           "read back (%g, %g)\n",
+           p[0], p[1], tf(lo), tf(up), dls.Length(), tf(r->IsDimWithPlusMinusTolerance()), r->GetLowerTolValue(), r->GetUpperTolValue());
+  }
+  {  // [100]
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Dimension) da = gdtAddDim(g, XCAFDimTolObjects_DimensionType_Size_Diameter, 20.0);
+    Handle(XCAFDimTolObjects_DimensionObject) o = da->GetObject();
+    bool                                      lo = o->SetLowerTolValue(-0.3);
+    bool                                      up = o->SetUpperTolValue(0.7);
+    da->SetObject(o);
+    TDF_LabelSequence dls;
+    g.t->GetDimensionLabels(dls);
+    Handle(XCAFDimTolObjects_DimensionObject) r = da->GetObject();
+    printf("[100] tolerance (-0.3, 0.7): SetLower=%s SetUpper=%s, dimension labels=%d, plusMinus=%s value=%.17g lowerTol=%.17g upperTol=%.17g\n",
+           tf(lo), tf(up), dls.Length(), tf(r->IsDimWithPlusMinusTolerance()), r->GetValue(), r->GetLowerTolValue(), r->GetUpperTolValue());
+  }
+  {  // [101]
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Dimension) da = gdtAddDim(g, XCAFDimTolObjects_DimensionType_Size_Diameter, 20.0);
+    TDF_LabelSequence         dls;
+    g.t->GetDimensionLabels(dls);
+    Handle(XCAFDimTolObjects_DimensionObject) r = da->GetObject();
+    printf("[101] no tolerance: dimension labels=%d, IsDimWithRange=%s IsDimWithPlusMinusTolerance=%s (so simple)\n", dls.Length(),
+           tf(r->IsDimWithRange()), tf(r->IsDimWithPlusMinusTolerance()));
+  }
+  {  // [102] the standalone setter, raw, on a simple dimension
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Dimension) da = gdtAddDim(g, XCAFDimTolObjects_DimensionType_Size_Diameter, 20.0);
+    Handle(XCAFDimTolObjects_DimensionObject) o = da->GetObject();
+    bool                                      lo = o->SetLowerTolValue(nan_);
+    bool                                      up = o->SetUpperTolValue(0.5);
+    da->SetObject(o);
+    Handle(XCAFDimTolObjects_DimensionObject) r = da->GetObject();
+    printf("[102] raw SetLowerTolValue(nan) SetUpperTolValue(0.5) on a simple dimension without the readback refusal: SetLower=%s "
+           "SetUpper=%s, then plusMinus=%s range=%s lowerTol=%g upperTol=%g\n",
+           tf(lo), tf(up), tf(r->IsDimWithPlusMinusTolerance()), tf(r->IsDimWithRange()), r->GetLowerTolValue(), r->GetUpperTolValue());
+  }
+  {  // [103]
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_GeomTolerance) t = gdtAddTol(g, XCAFDimTolObjects_GeomToleranceType_Position, 0.1);
+    Handle(XCAFDimTolObjects_GeomToleranceObject) o = t->GetObject();
+    o->SetZoneModifier(XCAFDimTolObjects_GeomToleranceZoneModif_None);
+    o->SetValueOfZoneModifier(15.0);
+    t->SetObject(o);
+    Handle(XCAFDimTolObjects_GeomToleranceObject) r = t->GetObject();
+    printf("[103] raw zone None with value 15 (the bridge writes 0 under None): read back zone=%d value=%g\n", (int)r->GetZoneModifier(),
+           r->GetValueOfZoneModifier());
+  }
+  {  // [104]
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_GeomTolerance) t = gdtAddTol(g, XCAFDimTolObjects_GeomToleranceType_Position, 0.1);
+    auto write = [&](XCAFDimTolObjects_GeomToleranceZoneModif z, bool withValue, double v) {
+      Handle(XCAFDimTolObjects_GeomToleranceObject) o = t->GetObject();
+      o->SetZoneModifier(z);
+      if (withValue)
+        o->SetValueOfZoneModifier(v);
+      t->SetObject(o);
+    };
+    auto read = [&]() {
+      Handle(XCAFDimTolObjects_GeomToleranceObject) r = t->GetObject();
+      static char buf[64];
+      snprintf(buf, sizeof buf, "zone=%d value=%g", (int)r->GetZoneModifier(), r->GetValueOfZoneModifier());
+      return std::string(buf);
+    };
+    write(XCAFDimTolObjects_GeomToleranceZoneModif_Projected, true, 15.0);
+    std::string s1 = read();
+    write(XCAFDimTolObjects_GeomToleranceZoneModif_None, true, 7.5);
+    std::string s2 = read();
+    write(XCAFDimTolObjects_GeomToleranceZoneModif_Projected, true, 15.0);
+    write(XCAFDimTolObjects_GeomToleranceZoneModif_None, false, 0.0);
+    std::string s3 = read();
+    printf("[104] raw writes without the bridge's clearing: Projected 15 -> %s; None with 7.5 -> %s; Projected 15 then None with no value -> %s\n",
+           s1.c_str(), s2.c_str(), s3.c_str());
+  }
+  {  // [105]
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Datum) d = gdtAddDatum(g, "A");
+    Handle(XCAFDimTolObjects_DatumObject) o = d->GetObject();
+    o->SetModifierWithValue(XCAFDimTolObjects_DatumModifWithValue_None, 15.0);
+    d->SetObject(o);
+    XCAFDimTolObjects_DatumModifWithValue m = XCAFDimTolObjects_DatumModifWithValue_Spherical;
+    double                                v = -1;
+    d->GetObject()->GetModifierWithValue(m, v);
+    printf("[105] raw datum modifier None with value 15 (the bridge writes 0 under None): read back modifier=%d value=%g\n", (int)m, v);
+  }
+}
+
+// [106] [107] Issue1435: datums created through the DimTolTool of XCAFDoc_DocumentTool land under Main().FindChild(4).
+static void datum1435()
+{
+  for (int n : {1, 3})
+  {
+    GdtDoc g;
+    gdtInit(g);
+    for (int i = 0; i < n; i++)
+      gdtAddDatum(g, i == 0 ? "A" : (i == 1 ? "B" : "C"));
+    TDF_Label         table = g.d->Main().FindChild(4, false);
+    TDF_LabelSequence xls;
+    g.t->GetDatumLabels(xls);
+    TCollection_AsciiString e;
+    if (!table.IsNull())
+      TDF_Tool::Entry(table, e);
+    printf("[106] [107] after %d datum(s): Main().FindChild(4, false) null=%s entry=%s children=%d, GetDatumLabels=%d (index of the last = %d)\n",
+           n, tf(table.IsNull()), e.ToCString(), table.IsNull() ? -1 : table.NbChildren(), xls.Length(), xls.Length() - 1);
+  }
+}
+
+// [108] [109] [110] [111] [113] [114] [116] TDataXtd shape, triangulation and TDF label attribute tests.
+static void tdfMisc()
+{
+  {  // [108] [109] the bridge's shape attribute: a new TDataXtd_Shape plus a TNaming_Builder Generated
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   fresh = d->Main().NewChild();
+    Handle(TDataXtd_Shape)      fa;
+    printf("[109] fresh label: TDataXtd_Shape present=%s Get null=%s\n", tf(fresh.FindAttribute(TDataXtd_Shape::GetID(), fa)),
+           tf(TDataXtd_Shape::Get(fresh).IsNull()));
+    TDF_Label l = d->Main().NewChild();
+    Handle(TDataXtd_Shape) attr = new TDataXtd_Shape();
+    l.AddAttribute(attr);
+    TNaming_Builder builder(l);
+    builder.Generated(centredBox(10, 20, 30));
+    Handle(TDataXtd_Shape) found;
+    printf("[108] after the bridge's set: TDataXtd_Shape present=%s Get null=%s\n", tf(l.FindAttribute(TDataXtd_Shape::GetID(), found)),
+           tf(TDataXtd_Shape::Get(l).IsNull()));
+  }
+  {  // [110] [111] a sphere at 1.0 and a box at 0.5, merged the way the bridge merges
+    TopoDS_Shape sphere = BRepPrimAPI_MakeSphere(10).Shape();
+    BRepMesh_IncrementalMesh(sphere, 1.0);
+    int    nodes = 0, tris = 0;
+    for (TopExp_Explorer e(sphere, TopAbs_FACE); e.More(); e.Next())
+    {
+      TopLoc_Location            l;
+      Handle(Poly_Triangulation) t = BRep_Tool::Triangulation(TopoDS::Face(e.Current()), l);
+      if (!t.IsNull())
+      {
+        nodes += t->NbNodes();
+        tris += t->NbTriangles();
+      }
+    }
+    printf("[110] sphere r10 at deflection 1.0: merged nodes=%d triangles=%d\n", nodes, tris);
+    TopoDS_Shape box = centredBox(10, 20, 30);
+    BRepMesh_IncrementalMesh(box, 0.5);
+    double worst = 0;
+    for (TopExp_Explorer e(box, TopAbs_FACE); e.More(); e.Next())
+    {
+      TopLoc_Location            l;
+      Handle(Poly_Triangulation) t = BRep_Tool::Triangulation(TopoDS::Face(e.Current()), l);
+      if (!t.IsNull())
+        worst = std::max(worst, t->Deflection());
+    }
+    printf("[111] box 10x20x30 at deflection 0.5: worst face deflection=%.17g positive=%s\n", worst, tf(worst > 0));
+  }
+  {  // [113] [114] [116]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   e = d->Main().NewChild();
+    int                         n = 0;
+    for (TDF_AttributeIterator it(e); it.More(); it.Next())
+      n++;
+    TCollection_AsciiString entry;
+    TDF_Tool::Entry(e, entry);
+    printf("[113] the label Document.createLabel() makes (Main().NewChild(), entry %s, NbAttributes=%d): TDF_AttributeIterator count=%d\n",
+           entry.ToCString(), e.NbAttributes(), n);
+    Handle(TDF_DataSet) ds = new TDF_DataSet();
+    ds->AddLabel(e);
+    printf("[114] TDF_DataSet with a fresh label added: IsEmpty=%s\n", tf(ds->IsEmpty()));
+    TDF_Label src = d->Main().NewChild();
+    TDataStd_Name::Set(src, "Parent");
+    TDF_Label child = src.NewChild();
+    TDataStd_Name::Set(child, "Child");
+    TDF_Label dst = d->Main().NewChild();
+    TDF_CopyLabel cp(src, dst);
+    cp.Perform();
+    printf("[116] TDF_CopyLabel of a label with a child: IsDone=%s, destination HasChild=%s\n", tf(cp.IsDone()), tf(dst.HasChild()));
+  }
+}
+
+// [118] [119] [120] [121] [90] [91] [92] [93] [94] [95] [96] [97] [98] transactions: TDocStd_Document command numbering and TDF_Delta.
+static void txn970()
+{
+  auto fresh = [](Handle(TDocStd_Application)& app, int limit) {
+    Handle(TDocStd_Document) d = newDoc(app);
+    if (limit > 0)
+      d->SetUndoLimit(limit);
+    return d;
+  };
+  auto touch = [](const Handle(TDocStd_Document)& d, int v) { TDataStd_Integer::Set(d->Main().NewChild(), v); };
+  auto open2 = [](const Handle(TDocStd_Document)& d) {
+    bool threw = false;
+    try
+    {
+      d->OpenCommand();
+    }
+    catch (const Standard_Failure&)
+    {
+      threw = true;
+    }
+    return threw;
+  };
+  {  // [91] a second transaction, never named
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = fresh(app, 10);
+    d->OpenCommand();
+    touch(d, 1);
+    d->CommitCommand();
+    d->OpenCommand();
+    touch(d, 2);
+    d->CommitCommand();
+    printf("[91] second transaction committed: delta name=\"%s\" undos=%d\n", TCollection_AsciiString(d->GetUndos().Last()->Name()).ToCString(),
+           d->GetAvailableUndos());
+  }
+  {  // [92] [93] a second open while one runs
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = fresh(app, 10);
+    d->OpenCommand();
+    int  first  = d->GetData()->Transaction();
+    bool threw  = open2(d);
+    int  second = d->GetData()->Transaction();
+    touch(d, 1);
+    d->CommitCommand();
+    Handle(TDF_Delta) delta = d->GetUndos().Last();
+    printf("[92] [93] first open number=%d, second open throws=%s (number still %d); committed delta name=\"%s\"", first, tf(threw), second,
+           TCollection_AsciiString(delta->Name()).ToCString());
+    delta->SetName(TCollection_ExtendedString("first"));
+    printf("; after SetName(\"first\") name=\"%s\"\n", TCollection_AsciiString(delta->Name()).ToCString());
+  }
+  {  // [94] an aborted transaction, then a second one
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = fresh(app, 10);
+    d->OpenCommand();
+    touch(d, 1);
+    d->AbortCommand();
+    d->OpenCommand();
+    touch(d, 2);
+    d->CommitCommand();
+    printf("[94] abort then a second transaction committed: delta name=\"%s\" undos=%d\n",
+           TCollection_AsciiString(d->GetUndos().Last()->Name()).ToCString(), d->GetAvailableUndos());
+  }
+  {  // [95] [120] [121]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = fresh(app, 10);
+    d->OpenCommand();
+    touch(d, 3);
+    d->CommitCommand();
+    Handle(TDF_Delta) delta = d->GetUndos().Last();
+    printf("[95] [120] committed delta non-null=%s IsEmpty=%s attribute deltas=%d begin=%d end=%d; undo limit=%d undos=%d\n", tf(!delta.IsNull()),
+           tf(delta->IsEmpty()), delta->AttributeDeltas().Extent(), delta->BeginTime(), delta->EndTime(), d->GetUndoLimit(),
+           d->GetAvailableUndos());
+    delta->SetName(TCollection_ExtendedString("MyDelta"));
+    printf("[121] after SetName(\"MyDelta\") name=\"%s\"\n", TCollection_AsciiString(delta->Name()).ToCString());
+  }
+  {  // [96] [97] [98] [118] [119]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d0 = fresh(app, 0);
+    int                         lim0 = d0->GetUndoLimit();
+    d0->OpenCommand();
+    printf("[97] [98] undo limit %d: OpenCommand -> Transaction=%d HasOpenCommand=%s\n", lim0, d0->GetData()->Transaction(),
+           tf(d0->HasOpenCommand()));
+    Handle(TDocStd_Application) app2;
+    Handle(TDocStd_Document)    d = fresh(app2, 10);
+    printf("[119] before=%d", d->GetData()->Transaction());
+    d->OpenCommand();
+    printf(" during=%d", d->GetData()->Transaction());
+    d->CommitCommand();
+    printf(" after commit=%d\n", d->GetData()->Transaction());
+    d->OpenCommand();
+    printf("[98] [118] undo limit 10: OpenCommand -> Transaction=%d", d->GetData()->Transaction());
+    d->AbortCommand();
+    printf(", after AbortCommand Transaction=%d\n", d->GetData()->Transaction());
+    Handle(TDocStd_Application) app3;
+    Handle(TDocStd_Document)    e = fresh(app3, 10);
+    e->OpenCommand();
+    open2(e);
+    printf("[96] two opens: Transaction=%d", e->GetData()->Transaction());
+    e->CommitCommand();
+    printf(", after commit=%d\n", e->GetData()->Transaction());
+  }
+}
+
+// [124]-[131] Issue443: the per-face triangulations the kernel leaves, and the frame the nodes are in.
+static void tri443()
+{
+  auto boundsOK = [](const TopoDS_Shape& s, double defl, const char* tag) {
+    BRepMesh_IncrementalMesh m(s, defl);
+    Bnd_Box shapeBox;
+    BRepBndLib::Add(s, shapeBox);
+    double x0, y0, z0, x1, y1, z1;
+    shapeBox.Get(x0, y0, z0, x1, y1, z1);
+    int  nodes = 0, tris = 0, outside = 0, outsideX = 0;
+    const double slack = 1e-6;
+    for (TopExp_Explorer e(s, TopAbs_FACE); e.More(); e.Next())
+    {
+      TopLoc_Location            loc;
+      Handle(Poly_Triangulation) t = BRep_Tool::Triangulation(TopoDS::Face(e.Current()), loc);
+      if (t.IsNull())
+        continue;
+      nodes += t->NbNodes();
+      tris += t->NbTriangles();
+      for (int i = 1; i <= t->NbNodes(); i++)
+      {
+        gp_Pnt p = t->Node(i).Transformed(loc.Transformation());
+        if (p.X() < x0 - slack || p.X() > x1 + slack)
+          outsideX++;
+        if (p.X() < x0 - slack || p.X() > x1 + slack || p.Y() < y0 - slack || p.Y() > y1 + slack || p.Z() < z0 - slack || p.Z() > z1 + slack)
+          outside++;
+      }
+    }
+    printf("%s: nodes=%d triangles=%d, shape bounds x[%g, %g] y[%g, %g] z[%g, %g], nodes outside the bounds (x, y, z)=%d, outside in x=%d\n", tag,
+           nodes, tris, x0, x1, y0, y1, z0, z1, outside, outsideX);
+  };
+  gp_Trsf mv;
+  mv.SetTranslation(gp_Vec(100, 200, 300));
+  boundsOK(centredBox(10, 10, 10).Moved(TopLoc_Location(mv)), 1.0, "[128] centred box located at (100, 200, 300)");
+  gp_Trsf mir;
+  mir.SetMirror(gp_Ax2(gp_Pnt(0, 0, 0), gp_Dir(1, 0, 0)));
+  TopoDS_Shape mb = BRepBuilderAPI_Transform(BRepPrimAPI_MakeBox(gp_Pnt(10, 0, 0), 10, 10, 10).Shape(), mir, true).Shape();
+  boundsOK(mb, 1.0, "[129] box at x 10..20 mirrored in x");
+  {  // [130] the merged triangulation the bridge stores, indexed the way OCCTDocumentTriangulationNode indexes it
+    TopoDS_Shape box = centredBox(10, 10, 10);
+    BRepMesh_IncrementalMesh m(box, 1.0);
+    int nodes = 0, tris = 0;
+    for (TopExp_Explorer e(box, TopAbs_FACE); e.More(); e.Next())
+    {
+      TopLoc_Location            loc;
+      Handle(Poly_Triangulation) t = BRep_Tool::Triangulation(TopoDS::Face(e.Current()), loc);
+      nodes += t->NbNodes();
+      tris += t->NbTriangles();
+    }
+    Handle(Poly_Triangulation) merged = new Poly_Triangulation(nodes, tris, Standard_False, Standard_False);
+    auto raises = [&](int i) {
+      try
+      {
+        (void)merged->Node(i);
+        return false;
+      }
+      catch (const Standard_OutOfRange&)
+      {
+        return true;
+      }
+    };
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   attrLess = d->Main().NewChild(), withAttr = d->Main().NewChild();
+    TDataXtd_Triangulation::Set(withAttr, merged);
+    Handle(TDataXtd_Triangulation) a;
+    printf("[130] merged triangulation of %d nodes: Node(0) raises=%s, Node(1) raises=%s, Node(%d) raises=%s, Node(%d) raises=%s; label without the "
+           "attribute has TDataXtd_Triangulation=%s, label with it=%s\n",
+           merged->NbNodes(), tf(raises(0)), tf(raises(1)), nodes, tf(raises(nodes)), nodes + 1, tf(raises(nodes + 1)),
+           tf(attrLess.FindAttribute(TDataXtd_Triangulation::GetID(), a)), tf(withAttr.FindAttribute(TDataXtd_Triangulation::GetID(), a)));
+  }
+  {  // [131] a sphere exported to GLB and read back by RWGltf_CafReader (what Shape.loadGLTF does)
+    TopoDS_Shape sphere = BRepPrimAPI_MakeSphere(10).Shape();
+    const char*  path   = "/tmp/766-xcaf-evidence-fix-443.glb";
+    {
+      BRepMesh_IncrementalMesh    mesher(sphere, 0.5);
+      Handle(TDocStd_Application) app;
+      Handle(TDocStd_Document)    d = newDoc(app);
+      XCAFDoc_DocumentTool::ShapeTool(d->Main())->AddShape(sphere);
+      RWGltf_CafWriter writer(TCollection_AsciiString(path), true);
+      NCollection_IndexedDataMap<TCollection_AsciiString, TCollection_AsciiString> info;
+      writer.Perform(d, info, Message_ProgressRange());
+    }
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    RWGltf_CafReader            reader;
+    reader.SetDocument(d);
+    bool         ok   = reader.Perform(TCollection_AsciiString(path), Message_ProgressRange());
+    TopoDS_Shape imp  = XCAFDoc_DocumentTool::ShapeTool(d->Main())->GetOneShape();
+    int          hasN = 0, faces = 0, checked = 0, outward = 0;
+    double       firstLen = -1;
+    for (TopExp_Explorer e(imp, TopAbs_FACE); e.More(); e.Next())
+    {
+      TopoDS_Face                face = TopoDS::Face(e.Current());
+      TopLoc_Location            loc;
+      Handle(Poly_Triangulation) t = BRep_Tool::Triangulation(face, loc);
+      if (t.IsNull())
+        continue;
+      faces++;
+      if (!t->HasNormals())
+        continue;
+      hasN++;
+      for (int i = 1; i <= t->NbNodes() && checked < 200; i++)
+      {
+        gp_Dir n = t->Normal(i);
+        if (firstLen < 0)
+          firstLen = std::sqrt(n.X() * n.X() + n.Y() * n.Y() + n.Z() * n.Z());
+        if (face.Orientation() == TopAbs_REVERSED)
+          n.Reverse();
+        n.Transform(loc.Transformation());
+        gp_Pnt p = t->Node(i).Transformed(loc.Transformation());
+        double r = std::sqrt(p.X() * p.X() + p.Y() * p.Y() + p.Z() * p.Z());
+        if (r > 1e-6)
+        {
+          checked++;
+          if (n.X() * p.X() / r + n.Y() * p.Y() / r + n.Z() * p.Z() / r > 0.5)
+            outward++;
+        }
+      }
+    }
+    printf("[131] glTF import: Perform=%s, faces with a triangulation=%d, of which with normals=%d, first normal length=%.17g, nodes checked=%d of which "
+           "the normal points outward (dot > 0.5)=%d; the BRepMesh sphere carries normals=false (see the #443 transcript)\n",
+           tf(ok), faces, hasN, firstLen, checked, outward);
+  }
+}
+
 int main()
 {
   textLabel();
@@ -943,5 +1588,11 @@ int main()
   gdtPlacement();
   gdtNames();
   gdtRawWrites();
+  datum1030();
+  dim1056();
+  datum1435();
+  tdfMisc();
+  txn970();
+  tri443();
   return 0;
 }

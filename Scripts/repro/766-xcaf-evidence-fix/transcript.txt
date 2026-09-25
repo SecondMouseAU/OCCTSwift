@@ -4,16 +4,17 @@
 [162] AIS_TextLabel SetPosition(0, 0, 0) then SetPosition(5, 10, 15) Position=(5, 10, 15)
 [137] XCAFDoc_VisMaterialPBR same fields (metallic 0, roughness 0.5, base colour 0.8/0.2/0.1): IsEqual=true
 [142] XCAFDoc_AssemblyItemRef::Set(label, "/99:99:99") non-null=true IsOrphan=true
-[171] NewFunction on a fresh label: returned=false TFunction_Function attribute present=true
+[171] NewFunction on the created label: returned=false TFunction_Function attribute present=true
 [172] NewFunction then DeleteFunction: DeleteFunction returned=true
 [173] fresh function GetStatus=0 (WrongDefinition=0 NotExecuted=1 Succeeded=3), after SetStatus(Succeeded) GetStatus=3
-[174] fresh label without NewFunction: TFunction_Function attribute present=false
+[174] created label without NewFunction: TFunction_Function attribute present=false
 [209] fresh label: XCAFDoc_DimTol present=false
 [211] fresh label: XCAFDoc_Location present=false
 [212] fresh label: XCAFDoc_Material present=false
+[117] the label Document.createLabel() makes (Main().NewChild(), entry 0:1:1): TDF_Reference present=false
 [32;1mMesh /tmp/766-xcaf-evidence-fix-1508.obj
 [3 nodes] [1 2d elements]
-[read in 0.000276 s][0m
+[read in 0.000314 s][0m
 [135] RWObj_CafReader::Perform=true free shapes=1 common material found=true Shininess=0.300000012 specular=(0.603827357, 0.603827357, 0.603827357) RoughnessFromSpecular=0.699999988 |r-0.7|=1.19209289e-08
 [32;1m
 *******************************************************************
@@ -73,3 +74,45 @@
 [65] unguarded single 9999: threw=false, read back [9999]
 [65] unguarded single -1: threw=false, read back [-1]
 [66] [2, 3] written again (modifiers=2), then an empty sequence: threw=false, modifiers=0
+[80] fresh datum: datum labels=1 (index of new = 0), child 17 exists=true child 14 exists=true, point array present=false, plane array present=false; after writing the point triple 7: bounds 1..3 value(1)=7 value(3)=7, plane array present=false
+[81] point, no plane location: GetObject null=false name=Datum1030, datum labels=1 readable=1
+[83] plane location 1..3, point at 1000000: GetObject null=false name=Datum1030, datum labels=1 readable=1
+[84] point and plane location: GetObject null=false name=Datum1030, datum labels=1 readable=1
+[85] point array of length 2: GetObject null=false name=Datum1030, datum labels=1 readable=1
+[82] five write paths on the point-without-plane datum (position 2, modifiers [Basic], modifier with value, point target, target cleared): threw=false, GetObject readable throughout=true, final position=2
+[86] RescaleGeometry(Main, 2.0, force) with one readable datum=true
+[87] plain datum: name=Datum1030, after SetPosition(2) and SetObject: position=2
+[99] raw tolerance (nan, 0.5) without the bridge's readback refusal: SetLower=true SetUpper=true, dimension labels=1, plusMinus=true read back (nan, 0.5)
+[99] raw tolerance (-0.3, nan) without the bridge's readback refusal: SetLower=true SetUpper=true, dimension labels=1, plusMinus=true read back (-0.3, nan)
+[99] raw tolerance (nan, nan) without the bridge's readback refusal: SetLower=true SetUpper=true, dimension labels=1, plusMinus=true read back (nan, nan)
+[100] tolerance (-0.3, 0.7): SetLower=true SetUpper=true, dimension labels=1, plusMinus=true value=20 lowerTol=-0.29999999999999999 upperTol=0.69999999999999996
+[101] no tolerance: dimension labels=1, IsDimWithRange=false IsDimWithPlusMinusTolerance=false (so simple)
+[102] raw SetLowerTolValue(nan) SetUpperTolValue(0.5) on a simple dimension without the readback refusal: SetLower=true SetUpper=true, then plusMinus=true range=false lowerTol=nan upperTol=0.5
+[103] raw zone None with value 15 (the bridge writes 0 under None): read back zone=0 value=15
+[104] raw writes without the bridge's clearing: Projected 15 -> zone=1 value=15; None with 7.5 -> zone=0 value=7.5; Projected 15 then None with no value -> zone=0 value=15
+[105] raw datum modifier None with value 15 (the bridge writes 0 under None): read back modifier=0 value=0
+[106] [107] after 1 datum(s): Main().FindChild(4, false) null=false entry=0:1:4 children=1, GetDatumLabels=1 (index of the last = 0)
+[106] [107] after 3 datum(s): Main().FindChild(4, false) null=false entry=0:1:4 children=3, GetDatumLabels=3 (index of the last = 2)
+[109] fresh label: TDataXtd_Shape present=false Get null=true
+[108] after the bridge's set: TDataXtd_Shape present=true Get null=false
+[110] sphere r10 at deflection 1.0: merged nodes=168 triangles=306
+[111] box 10x20x30 at deflection 0.5: worst face deflection=4.9650683064945462e-16 positive=true
+[113] the label Document.createLabel() makes (Main().NewChild(), entry 0:1:1, NbAttributes=2): TDF_AttributeIterator count=2
+[114] TDF_DataSet with a fresh label added: IsEmpty=false
+[116] TDF_CopyLabel of a label with a child: IsDone=true, destination HasChild=true
+[91] second transaction committed: delta name="" undos=2
+[92] [93] first open number=1, second open throws=true (number still 1); committed delta name=""; after SetName("first") name="first"
+[94] abort then a second transaction committed: delta name="" undos=1
+[95] [120] committed delta non-null=true IsEmpty=false attribute deltas=2 begin=0 end=1; undo limit=10 undos=1
+[121] after SetName("MyDelta") name="MyDelta"
+[97] [98] undo limit 0: OpenCommand -> Transaction=0 HasOpenCommand=false
+[119] before=0 during=1 after commit=0
+[98] [118] undo limit 10: OpenCommand -> Transaction=1, after AbortCommand Transaction=0
+[96] two opens: Transaction=1, after commit=0
+[128] centred box located at (100, 200, 300): nodes=24 triangles=12, shape bounds x[95, 105] y[195, 205] z[295, 305], nodes outside the bounds (x, y, z)=0, outside in x=0
+[129] box at x 10..20 mirrored in x: nodes=24 triangles=12, shape bounds x[-20, -10] y[-1e-07, 10] z[-1e-07, 10], nodes outside the bounds (x, y, z)=0, outside in x=0
+[130] merged triangulation of 24 nodes: Node(0) raises=true, Node(1) raises=false, Node(24) raises=false, Node(25) raises=true; label without the attribute has TDataXtd_Triangulation=false, label with it=true
+[32;1mMesh /tmp/766-xcaf-evidence-fix-443.glb
+[168 nodes] [306 2d elements]
+[read in 0.000112 s][0m
+[131] glTF import: Perform=true, faces with a triangulation=1, of which with normals=1, first normal length=1, nodes checked=168 of which the normal points outward (dot > 0.5)=168; the BRepMesh sphere carries normals=false (see the #443 transcript)
