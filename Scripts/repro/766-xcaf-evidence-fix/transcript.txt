@@ -1,0 +1,184 @@
+[159] AIS_TextLabel SetText("Hello") Text="Hello"
+[160] AIS_TextLabel SetPosition(10, 20, 30) Position=(10, 20, 30)
+[161] AIS_TextLabel SetText("Original") then SetText("Updated") Text="Updated"
+[162] AIS_TextLabel SetPosition(0, 0, 0) then SetPosition(5, 10, 15) Position=(5, 10, 15)
+[137] XCAFDoc_VisMaterialPBR same fields (metallic 0, roughness 0.5, base colour 0.8/0.2/0.1): IsEqual=true
+[142] XCAFDoc_AssemblyItemRef::Set(label, "/99:99:99") non-null=true IsOrphan=true
+[171] NewFunction on the created label: returned=false TFunction_Function attribute present=true
+[172] NewFunction then DeleteFunction: DeleteFunction returned=true
+[173] fresh function GetStatus=0 (WrongDefinition=0 NotExecuted=1 Succeeded=3), after SetStatus(Succeeded) GetStatus=3
+[174] created label without NewFunction: TFunction_Function attribute present=false
+[209] fresh label: XCAFDoc_DimTol present=false
+[211] fresh label: XCAFDoc_Location present=false
+[212] fresh label: XCAFDoc_Material present=false
+[117] the label Document.createLabel() makes (Main().NewChild(), entry 0:1:1): TDF_Reference present=false
+[32;1mMesh /tmp/766-xcaf-evidence-fix-1508.obj
+[3 nodes] [1 2d elements]
+[read in <time> s][0m
+[135] RWObj_CafReader::Perform=true free shapes=1 common material found=true Shininess=0.300000012 specular=(0.603827357, 0.603827357, 0.603827357) RoughnessFromSpecular=0.699999988 |r-0.7|=1.19209289e-08
+[32;1m
+*******************************************************************
+******        Statistics on Transfer (Write)                 ******
+
+*******************************************************************
+******        Transfer Mode = 0  I.E.  As Is       ******
+[0m
+[32;1m******        Transferring Shape, ShapeType = 2                      ******
+[0m
+[32;1m** WorkSession : Sending all data
+[0m
+[32;1m Step File Name : /tmp/766-xcaf-evidence-fix-16.step(350 ents)  Write  Done
+[0m
+[16] free shapes=1, re-fetched root IsEqual first=true, name(first)="Open CASCADE STEP translator 8.0 1" name(re-fetched)="Open CASCADE STEP translator 8.0 1" equal=true
+[45] dimensions=3 tolerances=2 datums=2, has Size_Diameter=true, has Perpendicularity=true, sorted datum names=["A", "B"]
+[43] flatness 0.01: tolerance labels=1 (index of new = 0) GetType=7 (Flatness=7) GetValue=0.01
+[44] datum A: datum labels=1 (index of new = 0) GetName="A"
+[49] first dimension (qualifier Max, modifiers [Square]): qualifier=2 modifiers=[1] decimal places=(0, 0) present=false
+[49] second dimension (decimal places (1, 1)): qualifier=0 modifiers=[] decimal places=(1, 1) present=true
+[50] dimension labels=1: Value(6) (index 5) raises Standard_OutOfRange=true
+[50] SetNbOfDecimalPlaces(-1, 0) without the bridge's guard: threw=false, read back (0, 0) (present=false)
+[54] [55] [56] fresh document: dimension labels=0 tolerance labels=0 datum labels=0
+[54] dimension index 0 (Value(1)) raises=true, index -1 (Value(0)) raises=true, index 999 (Value(1000)) raises=true
+[55] tolerance index 0 (Value(1)) raises=true, index -1 (Value(0)) raises=true
+[56] datum index 0 (Value(1)) raises=true, index -1 (Value(0)) raises=true
+[57] fresh tolerance modifiers=0; written [15, 1, 3], read back [15, 1, 3]; after clearing modifiers=0
+[58] Rectangle target after placement (30, 18), read back: IsDatumTarget=true type=2 number=4 HasDatumTargetParams=true length=30 width=18
+[58] Line target after placement (30, 18), read back: IsDatumTarget=true type=1 number=4 HasDatumTargetParams=true length=30 width=0
+[58] Point target after placement (30, 18), read back: IsDatumTarget=true type=0 number=4 HasDatumTargetParams=true length=0 width=0
+[59] gp_Dir(0, 0, 0) in the placement throws Standard_ConstructionError=true; after the failed placement: IsDatumTarget=true type=1 number=1 HasDatumTargetParams=false length=0 width=0
+[60] tolerance A: typeOfValue=1 modifiers=0; tolerance B: typeOfValue=0 modifiers=[16]; datum A: name=A position=1 isTarget=false; datum B: name=B position=0 isTarget=true type=3 number=7
+[61] tolerance labels=1: index 5 (Value(6)) raises=true; datum labels=0: index 0 (Value(1)) raises=true
+[67] placement threw=false; fresh datum, placement (30, 18) applied without the precondition, read back: IsDatumTarget=false type=0 number=0 HasDatumTargetParams=false length=0 width=0
+[68] placement threw=false; Area target (type 4), placement (30, 18) applied without the precondition, read back: IsDatumTarget=true type=4 number=1 HasDatumTargetParams=false length=0 width=0
+[69] rectangle target with placement (30, 18), read back: IsDatumTarget=true type=2 number=1 HasDatumTargetParams=true length=30 width=18
+[69] second placement threw=false; after IsDatumTarget(false) and a second placement (44, 22) applied without the precondition, read back: IsDatumTarget=false type=0 number=0 HasDatumTargetParams=false length=0 width=0
+[71] datum labels=1: index 1 (Value(2)) raises=true
+[73] [74] XCAFDoc_LayerTool::Set(Main): 3 layer labels, name lengths [6, 6, 12]; index 3 (Value(4)) raises=true, index -1 (Value(0)) raises=true
+[62] valid [2, 19] read back [2, 19] (StatisticalTolerance=2 AnyCrossSection=19)
+[62] unguarded single 24: threw=false, read back [24]
+[62] unguarded single 9999: threw=false, read back [9999]
+[62] unguarded single -1: threw=false, read back [-1]
+[62] unguarded mixed [2, 9999, 19]: threw=false, read back [2, 9999, 19]
+[63] unguarded SetClassOfTolerance(true, 29, 7): threw=false, IsDimWithClassOfTolerance=true GetClassOfTolerance=true (29, 7)
+[63] unguarded SetClassOfTolerance(true, 9999, 7): threw=false, IsDimWithClassOfTolerance=true GetClassOfTolerance=true (9999, 7)
+[63] unguarded SetClassOfTolerance(true, -1, 7): threw=false, IsDimWithClassOfTolerance=true GetClassOfTolerance=true (-1, 7)
+[63] unguarded SetClassOfTolerance(true, 11, 20): threw=false, IsDimWithClassOfTolerance=true GetClassOfTolerance=true (11, 20)
+[63] unguarded SetClassOfTolerance(true, 11, -1): threw=false, IsDimWithClassOfTolerance=true GetClassOfTolerance=true (11, -1)
+[63] unguarded SetClassOfTolerance(true, 11, 7): threw=false, IsDimWithClassOfTolerance=true GetClassOfTolerance=true (11, 7)
+[64] valid [3, 15] read back [3, 15] (2 modifiers)
+[64] unguarded single 17: threw=false, read back [17] (1 modifiers)
+[64] unguarded single 9999: threw=false, read back [9999] (1 modifiers)
+[64] unguarded single -1: threw=false, read back [-1] (1 modifiers)
+[65] [66] valid [2, 3] read back [2, 3] (2 modifiers; Basic=2 ContactingFeature=3)
+[65] unguarded single 22: threw=false, read back [22]
+[65] unguarded single 9999: threw=false, read back [9999]
+[65] unguarded single -1: threw=false, read back [-1]
+[66] [2, 3] written again (modifiers=2), then an empty sequence: threw=false, modifiers=0
+[80] fresh datum: datum labels=1 (index of new = 0), child 17 exists=true child 14 exists=true, point array present=false, plane array present=false; after writing the point triple 7: bounds 1..3 value(1)=7 value(3)=7, plane array present=false
+[81] point, no plane location: GetObject null=false name=Datum1030, datum labels=1 readable=1
+[83] plane location 1..3, point at 1000000: GetObject null=false name=Datum1030, datum labels=1 readable=1
+[84] point and plane location: GetObject null=false name=Datum1030, datum labels=1 readable=1
+[85] point array of length 2: GetObject null=false name=Datum1030, datum labels=1 readable=1
+[82] five write paths on the point-without-plane datum (position 2, modifiers [Basic], modifier with value, point target, target cleared): threw=false, GetObject readable throughout=true, final position=2
+[86] RescaleGeometry(Main, 2.0, force) with one readable datum=true
+[87] plain datum: name=Datum1030, after SetPosition(2) and SetObject: position=2
+[99] raw tolerance (nan, 0.5) without the bridge's readback refusal: SetLower=true SetUpper=true, dimension labels=1, plusMinus=true read back (nan, 0.5)
+[99] raw tolerance (-0.3, nan) without the bridge's readback refusal: SetLower=true SetUpper=true, dimension labels=1, plusMinus=true read back (-0.3, nan)
+[99] raw tolerance (nan, nan) without the bridge's readback refusal: SetLower=true SetUpper=true, dimension labels=1, plusMinus=true read back (nan, nan)
+[100] tolerance (-0.3, 0.7): SetLower=true SetUpper=true, dimension labels=1, plusMinus=true value=20 lowerTol=-0.29999999999999999 upperTol=0.69999999999999996
+[101] no tolerance: dimension labels=1, IsDimWithRange=false IsDimWithPlusMinusTolerance=false (so simple)
+[102] raw SetLowerTolValue(nan) SetUpperTolValue(0.5) on a simple dimension without the readback refusal: SetLower=true SetUpper=true, then plusMinus=true range=false lowerTol=nan upperTol=0.5
+[103] raw zone None with value 15 (the bridge writes 0 under None): read back zone=0 value=15
+[104] raw writes without the bridge's clearing: Projected 15 -> zone=1 value=15; None with 7.5 -> zone=0 value=7.5; Projected 15 then None with no value -> zone=0 value=15
+[105] raw datum modifier None with value 15 (the bridge writes 0 under None): read back modifier=0 value=0
+[106] [107] after 1 datum(s): Main().FindChild(4, false) null=false entry=0:1:4 children=1, GetDatumLabels=1 (index of the last = 0)
+[106] [107] after 3 datum(s): Main().FindChild(4, false) null=false entry=0:1:4 children=3, GetDatumLabels=3 (index of the last = 2)
+[109] fresh label: TDataXtd_Shape present=false Get null=true
+[108] after the bridge's set: TDataXtd_Shape present=true Get null=false
+[110] sphere r10 at deflection 1.0: merged nodes=168 triangles=306
+[111] box 10x20x30 at deflection 0.5: worst face deflection=4.9650683064945462e-16 positive=true
+[113] the label Document.createLabel() makes (Main().NewChild(), entry 0:1:1, NbAttributes=2): TDF_AttributeIterator count=2
+[114] TDF_DataSet with a fresh label added: IsEmpty=false
+[116] TDF_CopyLabel of a label with a child: IsDone=true, destination HasChild=true
+[91] second transaction committed: delta name="" undos=2
+[92] [93] first open number=1, second open throws=true (number still 1); committed delta name=""; after SetName("first") name="first"
+[94] abort then a second transaction committed: delta name="" undos=1
+[95] [120] committed delta non-null=true IsEmpty=false attribute deltas=2 begin=0 end=1; undo limit=10 undos=1
+[121] after SetName("MyDelta") name="MyDelta"
+[97] [98] undo limit 0: OpenCommand -> Transaction=0 HasOpenCommand=false
+[119] before=0 during=1 after commit=0
+[98] [118] undo limit 10: OpenCommand -> Transaction=1, after AbortCommand Transaction=0
+[96] two opens: Transaction=1, after commit=0
+[128] centred box located at (100, 200, 300): nodes=24 triangles=12, shape bounds x[95, 105] y[195, 205] z[295, 305], nodes outside the bounds (x, y, z)=0, outside in x=0
+[129] box at x 10..20 mirrored in x: nodes=24 triangles=12, shape bounds x[-20, -10] y[-1e-07, 10] z[-1e-07, 10], nodes outside the bounds (x, y, z)=0, outside in x=0
+[130] merged triangulation of 24 nodes: Node(0) raises=true, Node(1) raises=false, Node(24) raises=false, Node(25) raises=true; label without the attribute has TDataXtd_Triangulation=false, label with it=true
+[32;1mMesh /tmp/766-xcaf-evidence-fix-443.glb
+[168 nodes] [306 2d elements]
+[read in <time> s][0m
+[131] glTF import: Perform=true, faces with a triangulation=1, of which with normals=1, first normal length=1, nodes checked=168 of which the normal points outward (dot > 0.5)=168; the BRepMesh sphere carries normals=false (see the #443 transcript)
+[133] invisible red-surface style vs its visible copy: IsEqual=false (control, the style against itself: true)
+[134] common material shininess 0.5 vs 0.6: IsEqual=false (control, the material against itself: true)
+[136] PBR material roughness 0.5 vs 0.6: IsEqual=false (control, the material against itself: true)
+[138] rigid component null=false, reflection component null=false, NbComponents=2
+[139] XCAFDoc_AssemblyGraph over a document with no shape: non-null=true nodes=0 links=0 roots=0
+[140] AssemblyItemId("0:1:1:1/0:1:1:2"): IsNull=false path size=2
+[141] AssemblyItemId(""): IsNull=true
+[143] NoteObject created non-null=true
+[144] SetPlane(origin (1, 2, 3), normal (0, 0, 1)): HasPlane=true origin.x=1
+[145] SetPoint(10, 20, 30): HasPoint=true point.x=10
+[146] ViewObject created non-null=true
+[147] SetType(Central) -> 2, SetType(Parallel) -> 1, SetType(NoCamera) -> 0
+[148] raw values written with a bare cast and read back: 0 -> 0 1 -> 1 2 -> 2 (XCAFView_ProjectionType NoCamera=0 Parallel=1 Central=2)
+[149] [150] [151] one box added: GetShapes=1 GetFreeShapes=1 FindShape=true (label non-null=true) Search=true (label non-null=true)
+[152] TDocStd_XLink::Set on the tag-1 label: non-null=true
+[178] TDataStd_Variable::Set on the tag-1 label: non-null=true
+[153] created label: TDataXtd_Constraint present=false
+[154] TDataXtd_Point::Set((5, 10, 15)) non-null=true
+[155] TDataXtd_Axis::Set(origin (0, 0, 0), direction (0, 0, 1)) non-null=true
+[156] TDataXtd_Plane::Set(origin (0, 0, 0), normal (0, 0, 1)) non-null=true
+[157] TDataXtd_Geometry attribute present=true; SetType then GetType: 1 -> 1 6 -> 6 7 -> 7
+[158] TDataXtd_Geometry SetType then GetType for ordinals 0..7: 0 -> 0 1 -> 1 2 -> 2 3 -> 3 4 -> 4 5 -> 5 6 -> 6 7 -> 7
+[163] AIS_TextLabel default Attributes()->TextAspect()->Height()=16
+[164] after SetHeight(30): Attributes()->TextAspect()->Height()=30
+[169] SetStatus(NotExecuted) -> GetStatus=1, SetStatus(Succeeded) -> GetStatus=3
+[170] TFunction_GraphNode SetStatus then GetStatus for the five statuses: 0 -> 0 1 -> 1 2 -> 2 3 -> 3 4 -> 4
+[177] TObj_Application::CreateNewDocument(doc, "BinOcaf")=true, document non-null=true
+[179] Main().NewChild() null=false
+[180] child of a created label: NewChild() null=false
+[181] primitive record: TNaming_NamedShape present=true evolution=PRIMITIVE
+[182] CurrentShape non-null=true IsSame(box)=true
+[183] GetShape non-null=true IsSame(box)=true
+[185] TNaming_Iterator: entries=1 hasOld=false hasNew=true
+[184] created label: TNaming_NamedShape present=false
+[186] [188] primitive(box) then modify(box -> sphere): evolution=MODIFY CurrentShape non-null=true history entries=1
+[187] generated(old, new): evolution=GENERATED entries=1 hasOld=true hasNew=true
+[189] TNaming_CopyShape of a box: non-null=true BRepCheck_Analyzer valid=true IsSame(source)=false
+[190] TNaming_CopyShape of a sphere: non-null=true BRepCheck_Analyzer valid=true IsSame(source)=false
+[205] TNaming_Translator: IsDone=true copy non-null=true BRepCheck_Analyzer valid=true IsSame(source)=false
+[191] created label: TNaming_NamedShape present=false
+[192] primitive: TNaming_Tool::OriginalShape null=true
+[193] modify(box -> sphere) on the second label: OriginalShape non-null=true IsSame(box)=true
+[194] one primitive record: TNaming_Tool::Label null=false IsEqual(record label)=true
+[195] TNaming_Tool::ValidUntil=0
+[196] [197] two primitive records of the box: TNaming_SameShapeIterator labels=2
+[198] [203] primitive(box) + generated(box -> sphere): forward trace count=1 includes the source=false threw=false
+[199] [204] same document, from the sphere: backward trace count=1 includes itself=false threw=false
+[200] box generating a sphere and a cylinder: forward trace count=2 includes the source=false threw=false
+[201] unrelated sphere: TNaming_Tool::HasLabel=false; forward from it: forward trace count=0 includes the source=false threw=true
+[202] primitive(box) then modify(box -> sphere) on one label: forward trace count=1 includes the source=false threw=false
+[206] one box added with AddShape(box, true): XCAFDoc_AssemblyIterator items=1 (limit 100000 not reached=true)
+[207] three boxes added: XCAFDoc_AssemblyIterator items=3 (limit 100000 not reached=true)
+[208] XCAFDoc_Color::Set(red) non-null=true GetNOC=407
+[210] n1 IsFather(n2)=true, n2 IsChild(n1)=true, n1 NbChildren=1
+[213] ShapeMapTool::Set non-null=true, IsSubShape(first face)=true, extent=33
+[extra datum modifiers] fresh: modifiers=0 modifier with value=0; written [21, 2, 3] and Projected 12.5, read back modifiers=[21, 2, 3] modifier with value=3 value=12.5; valued modifier cleared: modifier with value=0 value=0 modifiers=[21, 2, 3]; sequence cleared: modifiers=0
+[extra rectangle target] placement threw=false; rectangle target number 1 then placement (30, 18), read back: IsDatumTarget=true type=2 number=1 HasDatumTargetParams=true length=30 width=18
+[extra item ref] Set(label, "/0:1:1:1") non-null=true, FindAttribute=true, GetItem().ToString()="0:1:1:1"
+[extra delete evolution] primitive(box) then delete(box) on one label: evolution=DELETE
+[proof createLabel] XCAF document as OCCTDocument() initialises it: Main=0:1, children: 0:1:1 [TDataStd_Name, XCAFDoc_ShapeTool] 0:1:2 [TDataStd_Name, XCAFDoc_ColorTool] 0:1:10 [TDataStd_Name, XCAFDoc_VisMaterialTool]; TDF_TagSource attribute on Main present=false (Get() = -1 means absent)
+[proof createLabel] NewChild call 1: entry 0:1:1, Main children 3 -> 3 (an existing label was returned, none was added), NbAttributes=2 [TDataStd_Name, XCAFDoc_ShapeTool], TDF_TagSource Get()=1
+[proof createLabel] NewChild call 2: entry 0:1:2, Main children 3 -> 3 (an existing label was returned, none was added), NbAttributes=2 [TDataStd_Name, XCAFDoc_ColorTool], TDF_TagSource Get()=2
+[proof createLabel] NewChild call 3: entry 0:1:3, Main children 3 -> 4 (a new label was added), NbAttributes=0 [none], TDF_TagSource Get()=3
+[proof createLabel] NewChild call 4: entry 0:1:4, Main children 4 -> 5 (a new label was added), NbAttributes=0 [none], TDF_TagSource Get()=4
+[proof createLabel] tool labels named by XCAFDoc_DocumentTool: ShapesLabel=0:1:1 ColorsLabel=0:1:2 LayersLabel=0:1:3 DGTsLabel=0:1:4
+[proof createLabel] contrast, a MDTV-Standard document with no XCAF tools: Main().NewChild() -> entry 0:1:1, NbAttributes=0
