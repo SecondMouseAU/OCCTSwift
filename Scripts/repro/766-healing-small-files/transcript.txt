@@ -1,0 +1,22 @@
+ShapeAnalysis_Shell(box 10): orientationProblem=0 freeEdges=0 badEdges=0 connected=1 freeCount=0
+ShapeAnalysis_Shell(sphere r5): orientationProblem=0 freeEdges=0 badEdges=0 connected=1 freeCount=0
+toBSpline(infinite cylinder): throws GeomConvert::SurfaceToBSplineSurface() - infinite surface
+trimmed cylinder r10 h10 as BSpline: degree u=2 v=1, u knots=4
+SplitSurfaceContinuity(bsp r10 h10, C2): u=4 [0.000000, 2.094395, 4.188790, 6.283185] v=2 [0.000000, 10.000000]
+SplitSurfaceAngle(infinite cylinder r10, pi/2): u=5 [0.000000, 1.570796, 3.141593, 4.712389, 6.283185] v=2 [-20000000000000000318057822195198360936721617127890562779562655115495677544340762121626939971713630208.000000, 20000000000000000318057822195198360936721617127890562779562655115495677544340762121626939971713630208.000000]
+SplitSurfaceArea(plane [0,10]^2, 4 parts): u=3 [0.000000, 5.000000, 10.000000] v=3 [0.000000, 5.000000, 10.000000]
+ConvertToAnalytical(bsp r5 h10, 1e-4): null=0 type=Geom_CylindricalSurface gap=3.580e-15 radius=5.000000000
+SplitSurfaceContinuity(bsp r5 h10, C2): OK=0 DONE1=1 : u=4 [0.000000, 2.094395, 4.188790, 6.283185] v=2 [0.000000, 10.000000]
+plane ValueOfUV(5,3,2) = (5.000000000, 3.000000000) gap=2.000000000
+plane NextValueOfUV((5.000, 3.000), (5.5,3.5,0)) = (5.500000000, 3.500000000) gap=0.000000000
+sphere r5 ValueOfUV(0,0,10) = (0.000000000, 1.570796327) gap=5.000000000
+fused boxes: faces=10 edges=20 volume=2000.000000
+unify default: faces=6 edges=12 valid=1 volume=2000.000000
+unify AllowInternalEdges(true): faces=6 edges=12 valid=1 volume=2000.000000
+  (edges kept: 1)
+unify KeepShape(top internal edge): faces=7 edges=15 valid=1 volume=2000.000000
+unify SetSafeInputMode(true): faces=6 edges=12 valid=1 volume=2000.000000
+unify SetLinearTolerance(1e-6) SetAngularTolerance(1e-3): faces=6 edges=12 valid=1 volume=2000.000000
+UpdateTolerances(box): valid=1 volume=1000.000000 maxTol=1.0000000200000005e-06
+UpdateTolerances(cylinder r5 h10): valid=1 volume=785.398163397 (input 785.398163397) maxTol=1.0000000200000005e-06
+WireVertex(open L, 0.01): done=1 nbEdges=2 status: 1 -1

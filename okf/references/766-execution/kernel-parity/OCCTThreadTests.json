@@ -418,5 +418,1217 @@
     },
     "status": "PASS",
     "note": "Kernel re-measure matches. On the shipped corner-edge fixture the 2-start threadedHole returned nil, so the original if-let test asserted nothing."
+  },
+  {
+    "test_name": "Issue #298, fillet-of-boolean is thread-safe (SheetMetal build)::Concurrent U-channel builds all match the single-build result",
+    "bridge_function": "OCCTShapeFilletEdges",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "reference_volume": 2819.3141652942,
+        "valid": true,
+        "solids": 1,
+        "faces": 18,
+        "after_first_fillet_volume": 2809.6570826471
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "reference_volume": 2819.3141652942,
+        "solids": 1,
+        "faces": 18,
+        "after_first_fillet_volume": 2809.6570826471,
+        "concurrent_8x25_fillets_failed": 0,
+        "concurrent_8x25_fillets_wrong_volume": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel side refillets the exact shapes and edge indices SheetMetal.Builder passed to OCCTShapeFilletEdges (Scripts/repro/766-thread-safety/inputs). The kernel's 8x25 concurrent fillets agree: #298's statics are fixed in 8.0.1 (OCCT#1374)."
+  },
+  {
+    "test_name": "Issue #341, concurrent OBJ import/export is thread-safe (meshCafMutex)::Concurrent OBJ round-trips all succeed with a non-empty shape",
+    "bridge_function": "OCCTExportOBJ + OCCTDocumentLoadOBJ",
+    "bridge_output": {
+      "type": "document",
+      "data": {
+        "allShapes_count": 2,
+        "faces_per_shape": [
+          1,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "document",
+      "data": {
+        "free_shapes_plus_components": 2,
+        "faces_of_first": 1,
+        "concurrent_8x15_failed": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Document.allShapes() walks roots and their components; the probe counts both."
+  },
+  {
+    "test_name": "Issue #359, concurrent STEP import/export is thread-safe (igesMutex)::Concurrent STEP import + export round-trips all succeed with a non-empty shape",
+    "bridge_function": "OCCTExportSTEPWithMode + OCCTImportSTEPProgress",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "faces": 6,
+        "volume": 6000.0
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "faces": 6,
+        "volume": 6000.0,
+        "concurrent_8x15_serialized_failed": 0,
+        "concurrent_8x15_unserialized_failed": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "The kernel also round-trips cleanly with no lock at 8x15, matching the Swift finding that removing igesMutex() from these two entry points does not turn the test red."
+  },
+  {
+    "test_name": "Issue #361/#363, shared singletons (TNaming_Scope, Font_FontMgr) are thread-safe::Two documents' naming scopes are isolated (#363, not just race-free, but not shared)",
+    "bridge_function": "OCCTDocumentNamingScopeValid / IsValid / Clear / ValidCount",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "A_count": 1,
+        "B_count": 0,
+        "A_isValid": true,
+        "B_isValid": false,
+        "after_B_valid_A_clear": {
+          "A": 0,
+          "B": 1
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "A_count": 1,
+        "B_count": 0,
+        "A_isValid": true,
+        "B_isValid": false,
+        "after_B_valid_A_clear": {
+          "A": 0,
+          "B": 1
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel side: two TNaming_Scope instances, one per document, as OCCTDocument::namingScope."
+  },
+  {
+    "test_name": "Issue #361/#363, shared singletons (TNaming_Scope, Font_FontMgr) are thread-safe::Concurrent naming-scope access across independent documents stays per-document",
+    "bridge_function": "OCCTDocumentNamingScopeValid / ValidChildren / IsValid / Unvalid / Clear / ValidCount",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "after_valid": 1,
+        "after_valid_children": 1,
+        "after_unvalid_isValid": false,
+        "after_clear": 0
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "after_valid": 1,
+        "after_valid_children": 1,
+        "after_unvalid_isValid": false,
+        "after_clear": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Rewritten under #1990 (it asserted only that Document.create() succeeded, and stayed green with a shared scope). Parity is the single-document sequence; the concurrency is Swift-side."
+  },
+  {
+    "test_name": "Issue #361/#363, shared singletons (TNaming_Scope, Font_FontMgr) are thread-safe::Concurrent font-database init + queries don't crash or deadlock",
+    "bridge_function": "OCCTFontMgrInitDatabase / OCCTFontMgrFontCount (fontName/fontPath/fontHasAspect not reached)",
+    "bridge_output": {
+      "type": "fonts",
+      "data": {
+        "font_count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "fonts",
+      "data": {
+        "font_count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Font_FontMgr finds 0 fonts on this build and machine in both the probe and Swift, so the test's `if count > 0` branch never runs here: only initDatabase and fontCount are exercised. The test has no #expect; its Red is ThreadSanitizer (see phase3)."
+  },
+  {
+    "test_name": "Issue #367, Shape.fuseAll concurrent calls produce correct results (SetRunParallel removed)::Concurrent fuseAll calls all match the single-threaded baseline face count",
+    "bridge_function": "OCCTShapeFuseMulti",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "faces": 11,
+        "solids": 3,
+        "volume": 1791.6813487046
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "faces": 11,
+        "solids": 3,
+        "volume": 1791.6813487046,
+        "concurrent_8x50_parallel_false_wrong": 0,
+        "concurrent_8x50_parallel_true_wrong": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "BRepAlgoAPI_BuilderAlgo (General Fuse), so 3 solids, not a merged one (#369)."
+  },
+  {
+    "test_name": "Issue #1404, TObj_Application's own singleton fields are serialized::isVerbose round-trips through the shared singleton",
+    "bridge_function": "OCCTTObjApplicationSetVerbose / OCCTTObjApplicationIsVerbose",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "after_true": true,
+        "after_false": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "after_true": true,
+        "after_false": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel side: TObj_Application::GetInstance()->SetVerbose/IsVerbose."
+  },
+  {
+    "test_name": "Issue #1404, TObj_Application's own singleton fields are serialized::Concurrent isVerbose get/set doesn't crash or deadlock",
+    "bridge_function": "OCCTTObjApplicationSetVerbose / OCCTTObjApplicationIsVerbose",
+    "bridge_output": {
+      "type": "bool",
+      "data": null
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "No value is asserted (last writer wins by design); nothing to compare. Kernel single-call behaviour is the round-trip entry above. Red is ThreadSanitizer (see phase3)."
+  },
+  {
+    "test_name": "Issue #1404, TObj_Application's own singleton fields are serialized::Concurrent createDocument() reports success honestly and doesn't deadlock",
+    "bridge_function": "OCCTTObjApplicationCreateDocument",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "created": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "created": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel side: TObj_Application::CreateNewDocument(doc, \"BinOcaf\") returns true."
+  },
+  {
+    "test_name": "Issue #1404, TObj_Application's own singleton fields are serialized::Concurrent createDocument() and isVerbose together don't deadlock",
+    "bridge_function": "OCCTTObjApplicationCreateDocument / SetVerbose / IsVerbose",
+    "bridge_output": {
+      "type": "bool",
+      "data": null
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "Deadlock/race exerciser with no asserted value; the single-call values are the two entries above."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::each piecewise-linear form builds a valid, smooth external thread",
+    "bridge_function": "none (Swift direct build: OCCTShapeCreateLoftAdvanced ruled=false + OCCTShapeSew) + OCCTShapeGetVolume + OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r6_h24": 2714.336052702,
+        "iso68": 2331.528851886,
+        "unified": 2331.528851886,
+        "whitworth": 2315.923353696,
+        "bspParallel": 2315.923353696,
+        "acme": 2400.878691005,
+        "trapezoidal": 2400.790171471,
+        "square": 2403.315552846,
+        "buttress": 2228.712459156
+      }
+    },
+    "kernel_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r6_h24": 2714.336052702,
+        "iso68": 2331.528851886,
+        "unified": 2331.528851886,
+        "whitworth": 2315.923353696,
+        "bspParallel": 2315.923353696,
+        "acme": 2400.878691005,
+        "trapezoidal": 2400.790171471,
+        "square": 2403.315552846,
+        "buttress": 2228.712459156
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs. All eight valid with 9 faces. Finding: with the shank meshed before threading every form shifts by +5.4636 mm^3 and gains 2 faces (bounds inflated by the mesh deflection)."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::rounded forms (knuckle) build a valid external thread via the faceted cut path",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced ruled=true (faceted screw-loft cutter) + OCCTShapeSubtractEx + OCCTShapeGetVolume + OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r6_h24": 2714.336052702,
+        "knuckle": 2364.205392678
+      }
+    },
+    "kernel_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r6_h24": 2714.336052702,
+        "knuckle": 2364.205392678
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::each form builds a valid internal thread (cut path)",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced (screw-loft cutter) + OCCTShapeSubtractEx + OCCTShapeGetVolume + OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "annulus_iso68": 6022.735014273,
+        "iso68": 5746.14675921,
+        "annulus_whitworth": 6118.705255017,
+        "whitworth": 5836.786997335,
+        "annulus_acme": 5981.592412435,
+        "acme": 5746.594286947,
+        "annulus_square": 5981.592412435,
+        "square": 5741.827370224,
+        "annulus_buttress": 6324.120556444,
+        "buttress": 5983.07015736,
+        "annulus_knuckle": 6031.355240068,
+        "knuckle": 5788.752239222
+      }
+    },
+    "kernel_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "annulus_iso68": 6022.735014273,
+        "iso68": 5746.14675921,
+        "annulus_whitworth": 6118.705255017,
+        "whitworth": 5836.786997335,
+        "annulus_acme": 5981.592412435,
+        "acme": 5746.594286947,
+        "annulus_square": 5981.592412435,
+        "square": 5741.827370224,
+        "annulus_buttress": 6324.120556444,
+        "buttress": 5983.07015736,
+        "annulus_knuckle": 6031.355240068,
+        "knuckle": 5788.752239222
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs. iso68 also builds OCCTShapeBuildThreadCutter's analytic candidate first; isSoundCut rejects it here."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::tapered pipe threads (NPT, BSPT) build a valid thread",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced ruled=true (faceted screw-loft cutter) + OCCTShapeSubtractEx + OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r8_h24": 4825.486315914,
+        "nptTapered": 4264.80994505,
+        "bsptTapered": 4239.639847674
+      }
+    },
+    "kernel_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r8_h24": 4825.486315914,
+        "nptTapered": 4264.80994505,
+        "bsptTapered": 4239.639847674
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::a custom cross-section threads a cylinder",
+    "bridge_function": "none (Swift direct build: OCCTShapeCreateLoftAdvanced ruled=false + OCCTShapeSew) + OCCTShapeGetVolume + OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r6_h20": 2261.946710585,
+        "custom": 1952.030286331
+      }
+    },
+    "kernel_output": {
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r6_h20": 2261.946710585,
+        "custom": 1952.030286331
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::ThreadProfile validation + JSON round-trip",
+    "bridge_function": "none (pure Swift: ThreadProfile.init?(vertices:), synthesized Codable)",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "Pure Swift in Sources/OCCTSwift/ThreadFeatures.swift; no OCCT call, so no kernel counterpart."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::form geometry: cutDepth + segment shape",
+    "bridge_function": "none (pure Swift: ThreadSpec.cutDepth / minorDiameter, ThreadProfile segments)",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "Pure Swift in Sources/OCCTSwift/ThreadFeatures.swift; no OCCT call, so no kernel counterpart."
+  },
+  {
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::parser recognises the new designations",
+    "bridge_function": "none (pure Swift: ThreadSpec.parse)",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "Pure Swift in Sources/OCCTSwift/ThreadFeatures.swift; no OCCT call, so no kernel counterpart."
+  },
+  {
+    "test_name": "Issue #181 robustness, threaded shaft envelope + STEP writer::threadedShaft is always nil or within the blank envelope, never garbage (#181-C)",
+    "bridge_function": "Shape.threadedShaft -> Swift cam-section build (buildThreadedRodDirect/threadedRodSolid) over OCCTShapeCreateLoftAdvanced; measured with OCCTShapeBoundingBoxOptimal",
+    "bridge_output": {
+      "type": "measurements",
+      "data": {
+        "181_blank.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          18.0
+        ],
+        "181_blank.vol": 2035.75204,
+        "181_p1.0.opt": [
+          -6.00000174,
+          -6.00000049,
+          -1e-07,
+          6.00000172,
+          6.00000055,
+          18.0000002
+        ],
+        "181_p1.0.vol": 1858.8878,
+        "181_p1.75.opt": [
+          -6.00000701,
+          -6.00000098,
+          -1e-07,
+          6.00000174,
+          6.0000051,
+          18.0000002
+        ],
+        "181_p1.75.vol": 1735.06874,
+        "181_p2.0.opt": [
+          -6.00000175,
+          -6.0000005,
+          -1e-07,
+          6.00000177,
+          6.00000055,
+          18.0000002
+        ],
+        "181_p2.0.vol": 1695.48352,
+        "181_p3.14159.opt": [
+          -6.00000674,
+          -6.00000481,
+          -1e-07,
+          6.00000329,
+          6.00000141,
+          18.0000002
+        ],
+        "181_p3.14159.vol": 1525.44881
+      }
+    },
+    "kernel_output": {
+      "type": "measurements",
+      "data": {
+        "181_blank.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          18.0
+        ],
+        "181_blank.vol": 2035.75204,
+        "prim_181_blank.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          18.0
+        ],
+        "prim_181_blank.vol": 2035.75204,
+        "181_p1.0.opt": [
+          -6.00000174,
+          -6.00000049,
+          -1e-07,
+          6.00000172,
+          6.00000055,
+          18.0000002
+        ],
+        "181_p1.0.vol": 1858.8878,
+        "181_p1.75.opt": [
+          -6.00000701,
+          -6.00000098,
+          -1e-07,
+          6.00000174,
+          6.0000051,
+          18.0000002
+        ],
+        "181_p1.75.vol": 1735.06874,
+        "181_p2.0.opt": [
+          -6.00000175,
+          -6.0000005,
+          -1e-07,
+          6.00000177,
+          6.00000055,
+          18.0000002
+        ],
+        "181_p2.0.vol": 1695.48352,
+        "181_p3.14159.opt": [
+          -6.00000674,
+          -6.00000481,
+          -1e-07,
+          6.00000329,
+          6.00000141,
+          18.0000002
+        ],
+        "181_p3.14159.vol": 1525.44881
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
+  },
+  {
+    "test_name": "Issue #181 robustness, threaded shaft envelope + STEP writer::Single STEP export still succeeds after writer serialization (#181-B)",
+    "bridge_function": "OCCTExportSTEP",
+    "bridge_output": {
+      "type": "measurements",
+      "data": {
+        "181_step.size": 15454.0
+      }
+    },
+    "kernel_output": {
+      "type": "measurements",
+      "data": {
+        "181_step.size": 15454.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Kernel side: STEPControl_Writer, AP214, AsIs, on the same centred 4x3x2 box. The two files differ only in the FILE_NAME timestamp."
+  },
+  {
+    "test_name": "Issue #185 helical sweep, worm-thread helicoid::helicalSweep builds a valid, radial worm helicoid (not nil), both handedness",
+    "bridge_function": "Shape.helicalSweep -> OCCTWireCreateHelix + OCCTShapeCreatePipeShellMultiSection (auxiliary spine); measured with OCCTShapeIsValid, OCCTShapeGetBounds",
+    "bridge_output": {
+      "type": "measurements",
+      "data": {
+        "185_cwfalse.valid": true,
+        "185_cwfalse.bounds": [
+          -6.00111672,
+          -6.79889947,
+          -14.6746007,
+          6.48893376,
+          6.79722176,
+          2.83079643
+        ],
+        "185_cwfalse.vol": 615.226061,
+        "185_cwtrue.valid": true,
+        "185_cwtrue.bounds": [
+          -6.52431929,
+          -6.90110764,
+          -1.2600001,
+          6.0004476,
+          6.90196585,
+          16.2453971
+        ],
+        "185_cwtrue.vol": 615.224625
+      }
+    },
+    "kernel_output": {
+      "type": "measurements",
+      "data": {
+        "185_cwfalse.valid": true,
+        "185_cwfalse.bounds": [
+          -6.00111672,
+          -6.79889947,
+          -14.6746007,
+          6.48893376,
+          6.79722176,
+          2.83079643
+        ],
+        "185_cwfalse.vol": 615.226061,
+        "185_cwtrue.valid": true,
+        "185_cwtrue.bounds": [
+          -6.52431929,
+          -6.90110764,
+          -1.2600001,
+          6.0004476,
+          6.90196585,
+          16.2453971
+        ],
+        "185_cwtrue.vol": 615.224625
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
+  },
+  {
+    "test_name": "Issue #185 helical sweep, worm-thread helicoid::helicalSweep rejects degenerate parameters",
+    "bridge_function": "none (pure Swift guard in Shape.helicalSweep)",
+    "bridge_output": {
+      "type": "measurements",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurements",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "Pure Swift argument guard; no kernel counterpart."
+  },
+  {
+    "test_name": "Issue #187, screw-motion thread cutter (tight envelope)::threadedShaft cuts a TIGHT in-envelope thread (crest ~= nominal radius)",
+    "bridge_function": "Shape.threadedShaft -> Swift cam-section build (buildThreadedRodDirect/threadedRodSolid) over OCCTShapeCreateLoftAdvanced; measured with OCCTShapeIsValid, OCCTShapeBoundingBoxOptimal, OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "measurements",
+      "data": {
+        "187_shank_6.0_1.0.valid": true,
+        "187_shank_6.0_1.0.opt": [
+          -3.0,
+          -3.0,
+          0.0,
+          3.0,
+          3.0,
+          22.0
+        ],
+        "187_shank_6.0_1.0.vol": 622.035345,
+        "187_shank_8.0_1.25.valid": true,
+        "187_shank_8.0_1.25.opt": [
+          -4.0,
+          -4.0,
+          0.0,
+          4.0,
+          4.0,
+          22.0
+        ],
+        "187_shank_8.0_1.25.vol": 1105.84061,
+        "187_shank_10.0_1.5.valid": true,
+        "187_shank_10.0_1.5.opt": [
+          -5.0,
+          -5.0,
+          0.0,
+          5.0,
+          5.0,
+          22.0
+        ],
+        "187_shank_10.0_1.5.vol": 1727.87596,
+        "187_shank_12.0_1.75.valid": true,
+        "187_shank_12.0_1.75.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          22.0
+        ],
+        "187_shank_12.0_1.75.vol": 2488.14138,
+        "187_shank_12.0_3.14159.valid": true,
+        "187_shank_12.0_3.14159.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          22.0
+        ],
+        "187_shank_12.0_3.14159.vol": 2488.14138,
+        "187_tight_6.0_1.0.valid": true,
+        "187_tight_6.0_1.0.opt": [
+          -3.00000407,
+          -3.00000699,
+          -1e-07,
+          3.00000407,
+          3.0000008,
+          22.0000002
+        ],
+        "187_tight_6.0_1.0.vol": 536.969564,
+        "187_tight_8.0_1.25.valid": true,
+        "187_tight_8.0_1.25.opt": [
+          -4.00000814,
+          -4.00000824,
+          -1e-07,
+          4.00000365,
+          4.00000363,
+          22.0000002
+        ],
+        "187_tight_8.0_1.25.vol": 963.355003,
+        "187_tight_10.0_1.5.valid": true,
+        "187_tight_10.0_1.5.opt": [
+          -5.00000094,
+          -5.00000724,
+          -1e-07,
+          5.00000452,
+          5.00000441,
+          22.0000002
+        ],
+        "187_tight_10.0_1.5.vol": 1513.5189,
+        "187_tight_12.0_1.75.valid": true,
+        "187_tight_12.0_1.75.opt": [
+          -6.00000701,
+          -6.00000098,
+          -1e-07,
+          6.00000174,
+          6.0000051,
+          22.0000002
+        ],
+        "187_tight_12.0_1.75.vol": 2187.45807,
+        "187_tight_12.0_3.14159.valid": true,
+        "187_tight_12.0_3.14159.opt": [
+          -6.00000674,
+          -6.00000481,
+          -1e-07,
+          6.00000329,
+          6.00000141,
+          22.0000002
+        ],
+        "187_tight_12.0_3.14159.vol": 1977.83815
+      }
+    },
+    "kernel_output": {
+      "type": "measurements",
+      "data": {
+        "187_shank_6.0_1.0.valid": true,
+        "187_shank_6.0_1.0.opt": [
+          -3.0,
+          -3.0,
+          0.0,
+          3.0,
+          3.0,
+          22.0
+        ],
+        "187_shank_6.0_1.0.vol": 622.035345,
+        "187_shank_8.0_1.25.valid": true,
+        "187_shank_8.0_1.25.opt": [
+          -4.0,
+          -4.0,
+          0.0,
+          4.0,
+          4.0,
+          22.0
+        ],
+        "187_shank_8.0_1.25.vol": 1105.84061,
+        "187_shank_10.0_1.5.valid": true,
+        "187_shank_10.0_1.5.opt": [
+          -5.0,
+          -5.0,
+          0.0,
+          5.0,
+          5.0,
+          22.0
+        ],
+        "187_shank_10.0_1.5.vol": 1727.87596,
+        "187_shank_12.0_1.75.valid": true,
+        "187_shank_12.0_1.75.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          22.0
+        ],
+        "187_shank_12.0_1.75.vol": 2488.14138,
+        "187_shank_12.0_3.14159.valid": true,
+        "187_shank_12.0_3.14159.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          22.0
+        ],
+        "187_shank_12.0_3.14159.vol": 2488.14138,
+        "prim_187_shank_6.0_1.0.valid": true,
+        "prim_187_shank_6.0_1.0.opt": [
+          -3.0,
+          -3.0,
+          0.0,
+          3.0,
+          3.0,
+          22.0
+        ],
+        "prim_187_shank_6.0_1.0.vol": 622.035345,
+        "prim_187_shank_8.0_1.25.valid": true,
+        "prim_187_shank_8.0_1.25.opt": [
+          -4.0,
+          -4.0,
+          0.0,
+          4.0,
+          4.0,
+          22.0
+        ],
+        "prim_187_shank_8.0_1.25.vol": 1105.84061,
+        "prim_187_shank_10.0_1.5.valid": true,
+        "prim_187_shank_10.0_1.5.opt": [
+          -5.0,
+          -5.0,
+          0.0,
+          5.0,
+          5.0,
+          22.0
+        ],
+        "prim_187_shank_10.0_1.5.vol": 1727.87596,
+        "prim_187_shank_12.0_1.75.valid": true,
+        "prim_187_shank_12.0_1.75.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          22.0
+        ],
+        "prim_187_shank_12.0_1.75.vol": 2488.14138,
+        "prim_187_shank_12.0_3.14159.valid": true,
+        "prim_187_shank_12.0_3.14159.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          22.0
+        ],
+        "prim_187_shank_12.0_3.14159.vol": 2488.14138,
+        "187_tight_6.0_1.0.valid": true,
+        "187_tight_6.0_1.0.opt": [
+          -3.00000407,
+          -3.00000699,
+          -1e-07,
+          3.00000407,
+          3.0000008,
+          22.0000002
+        ],
+        "187_tight_6.0_1.0.vol": 536.969564,
+        "187_tight_8.0_1.25.valid": true,
+        "187_tight_8.0_1.25.opt": [
+          -4.00000814,
+          -4.00000824,
+          -1e-07,
+          4.00000365,
+          4.00000363,
+          22.0000002
+        ],
+        "187_tight_8.0_1.25.vol": 963.355003,
+        "187_tight_10.0_1.5.valid": true,
+        "187_tight_10.0_1.5.opt": [
+          -5.00000094,
+          -5.00000724,
+          -1e-07,
+          5.00000452,
+          5.00000441,
+          22.0000002
+        ],
+        "187_tight_10.0_1.5.vol": 1513.5189,
+        "187_tight_12.0_1.75.valid": true,
+        "187_tight_12.0_1.75.opt": [
+          -6.00000701,
+          -6.00000098,
+          -1e-07,
+          6.00000174,
+          6.0000051,
+          22.0000002
+        ],
+        "187_tight_12.0_1.75.vol": 2187.45807,
+        "187_tight_12.0_3.14159.valid": true,
+        "187_tight_12.0_3.14159.opt": [
+          -6.00000674,
+          -6.00000481,
+          -1e-07,
+          6.00000329,
+          6.00000141,
+          22.0000002
+        ],
+        "187_tight_12.0_3.14159.vol": 1977.83815
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
+  },
+  {
+    "test_name": "Issue #187, screw-motion thread cutter (tight envelope)::threadedShaft is deterministic (same bounds across runs)",
+    "bridge_function": "Shape.threadedShaft -> Swift cam-section build (buildThreadedRodDirect/threadedRodSolid) over OCCTShapeCreateLoftAdvanced; measured with OCCTShapeGetBounds",
+    "bridge_output": {
+      "type": "measurements",
+      "data": {
+        "187_det0.bounds": [
+          -3.50852556,
+          -3.5179605,
+          -1e-07,
+          3.50852556,
+          3.48033395,
+          20.0000002
+        ],
+        "187_det0.vol": 480.420897,
+        "187_det1.bounds": [
+          -3.50852556,
+          -3.5179605,
+          -1e-07,
+          3.50852556,
+          3.48033395,
+          20.0000002
+        ],
+        "187_det1.vol": 480.420897
+      }
+    },
+    "kernel_output": {
+      "type": "measurements",
+      "data": {
+        "187_det0.bounds": [
+          -3.50852556,
+          -3.5179605,
+          -1e-07,
+          3.50852556,
+          3.48033395,
+          20.0000002
+        ],
+        "187_det0.vol": 480.420897,
+        "187_det1.bounds": [
+          -3.50852556,
+          -3.5179605,
+          -1e-07,
+          3.50852556,
+          3.48033395,
+          20.0000002
+        ],
+        "187_det1.vol": 480.420897
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
+  },
+  {
+    "test_name": "Issue #187, screw-motion thread cutter (tight envelope)::Thread surface is SMOOTH (analytic helicoid), few faces, not hundreds of facets",
+    "bridge_function": "Shape.threadedShaft -> Swift cam-section build (buildThreadedRodDirect/threadedRodSolid) over OCCTShapeCreateLoftAdvanced; measured with OCCTShapeGetSubShapes",
+    "bridge_output": {
+      "type": "measurements",
+      "data": {
+        "187_smooth.faces": 9.0,
+        "187_smooth.vol": 1546.45896
+      }
+    },
+    "kernel_output": {
+      "type": "measurements",
+      "data": {
+        "187_smooth.faces": 9.0,
+        "187_smooth.vol": 1546.45896
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
+  },
+  {
+    "test_name": "Issue #187, screw-motion thread cutter (tight envelope)::threadedHole cuts a valid in-envelope thread into a bore wall",
+    "bridge_function": "Shape.threadedHole -> applyThreadCut: OCCTShapeBuildThreadCutter (analytic) or screw-loft cutter via OCCTShapeCreateLoftAdvanced/OCCTShapeCreateLoft, OCCTShapeSubtractEx; measured with OCCTShapeIsValid, OCCTShapeGetBounds",
+    "bridge_output": {
+      "type": "measurements",
+      "data": {
+        "187_block.valid": true,
+        "187_block.bounds": [
+          -12.0000001,
+          -12.0000001,
+          -1e-07,
+          12.0000001,
+          12.0000001,
+          16.0000001
+        ],
+        "187_block.vol": 5954.91987,
+        "187_hole.valid": true,
+        "187_hole.bounds": [
+          -12.000005,
+          -12.000005,
+          -0.76563,
+          12.000005,
+          12.000005,
+          16.000005
+        ],
+        "187_hole.vol": 5708.98096
+      }
+    },
+    "kernel_output": {
+      "type": "measurements",
+      "data": {
+        "187_block.valid": true,
+        "187_block.bounds": [
+          -12.0000001,
+          -12.0000001,
+          -1e-07,
+          12.0000001,
+          12.0000001,
+          16.0000001
+        ],
+        "187_block.vol": 5954.91987,
+        "187_hole.valid": true,
+        "187_hole.bounds": [
+          -12.000005,
+          -12.000005,
+          -0.76563,
+          12.000005,
+          12.000005,
+          16.000005
+        ],
+        "187_hole.vol": 5708.98096
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
+  },
+  {
+    "test_name": "Issue #189, thread guard regression (fastener threads)::threadedShaft builds valid external threads for standard fasteners (not nil)",
+    "bridge_function": "Shape.threadedShaft -> Swift cam-section build (buildThreadedRodDirect/threadedRodSolid) over OCCTShapeCreateLoftAdvanced; measured with OCCTShapeIsValid, OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "measurements",
+      "data": {
+        "189_shank_6.0_1.0.valid": true,
+        "189_shank_6.0_1.0.vol": 706.858347,
+        "189_shank_8.0_1.25.valid": true,
+        "189_shank_8.0_1.25.vol": 1256.63706,
+        "189_shank_10.0_1.5.valid": true,
+        "189_shank_10.0_1.5.vol": 1963.49541,
+        "189_shank_5.0_0.8.valid": true,
+        "189_shank_5.0_0.8.vol": 490.873852,
+        "189_fast_6.0_1.0.valid": true,
+        "189_fast_6.0_1.0.vol": 611.152663,
+        "189_fast_8.0_1.25.valid": true,
+        "189_fast_8.0_1.25.vol": 1096.34562,
+        "189_fast_10.0_1.5.valid": true,
+        "189_fast_10.0_1.5.vol": 1722.34077,
+        "189_fast_5.0_0.8.valid": true,
+        "189_fast_5.0_0.8.vol": 426.870539
+      }
+    },
+    "kernel_output": {
+      "type": "measurements",
+      "data": {
+        "189_shank_6.0_1.0.valid": true,
+        "189_shank_6.0_1.0.vol": 706.858347,
+        "189_shank_8.0_1.25.valid": true,
+        "189_shank_8.0_1.25.vol": 1256.63706,
+        "189_shank_10.0_1.5.valid": true,
+        "189_shank_10.0_1.5.vol": 1963.49541,
+        "189_shank_5.0_0.8.valid": true,
+        "189_shank_5.0_0.8.vol": 490.873852,
+        "prim_189_shank_6.0_1.0.valid": true,
+        "prim_189_shank_6.0_1.0.vol": 706.858347,
+        "prim_189_shank_8.0_1.25.valid": true,
+        "prim_189_shank_8.0_1.25.vol": 1256.63706,
+        "prim_189_shank_10.0_1.5.valid": true,
+        "prim_189_shank_10.0_1.5.vol": 1963.49541,
+        "prim_189_shank_5.0_0.8.valid": true,
+        "prim_189_shank_5.0_0.8.vol": 490.873852,
+        "189_fast_6.0_1.0.valid": true,
+        "189_fast_6.0_1.0.vol": 611.152663,
+        "189_fast_8.0_1.25.valid": true,
+        "189_fast_8.0_1.25.vol": 1096.34562,
+        "189_fast_10.0_1.5.valid": true,
+        "189_fast_10.0_1.5.vol": 1722.34077,
+        "189_fast_5.0_0.8.valid": true,
+        "189_fast_5.0_0.8.vol": 426.870539
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
+  },
+  {
+    "test_name": "Issue #189, thread guard regression (fastener threads)::Coarse worm-pitch result is still rejected or in (loosened) envelope (#181-C kept)",
+    "bridge_function": "Shape.threadedShaft -> Swift cam-section build (buildThreadedRodDirect/threadedRodSolid) over OCCTShapeCreateLoftAdvanced; measured with OCCTShapeGetBounds",
+    "bridge_output": {
+      "type": "measurements",
+      "data": {
+        "189_wshank.bounds": [
+          -6.0000001,
+          -6.0000001,
+          -1e-07,
+          6.0000001,
+          6.0000001,
+          15.0000001
+        ],
+        "189_wshank.vol": 1696.46003,
+        "189_worm.bounds": [
+          -6.80941938,
+          -6.82868266,
+          -1e-07,
+          6.77594317,
+          6.7620372,
+          15.0000001
+        ],
+        "189_worm.vol": 1218.04695
+      }
+    },
+    "kernel_output": {
+      "type": "measurements",
+      "data": {
+        "189_wshank.bounds": [
+          -6.0000001,
+          -6.0000001,
+          -1e-07,
+          6.0000001,
+          6.0000001,
+          15.0000001
+        ],
+        "189_wshank.vol": 1696.46003,
+        "189_worm.bounds": [
+          -6.80941938,
+          -6.82868266,
+          -1e-07,
+          6.77594317,
+          6.7620372,
+          15.0000001
+        ],
+        "189_worm.vol": 1218.04695
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
   }
 ]
