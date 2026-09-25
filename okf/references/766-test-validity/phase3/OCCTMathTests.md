@@ -10,22 +10,8 @@
 
 | Suite | Tests | Primary Category |
 |-------|-------|------------------|
-| gce_MakeLin Tests | 26 | WR/CR |
-| gce_MakeCirc Tests | 24 | WR/CR |
-| gce_MakeHypr Tests | 22 | WR/CR |
 | gce_MakeElips Tests | 20 | WR/CR |
 | gce_MakeParab Tests | 18 | WR/CR |
-| GC_MakeTranslation | 16 | WR |
-| GC_MakeTrimmedCylinder Tests | 15 | WR |
-| GC_MakePipe Tests | 14 | WR |
-| Convert_CompPolynomialToPoles | 13 | WR |
-| MathJacobi Tests | 12 | WR/CR |
-| MathSolver Powell v0.110 | 11 | WR |
-| Vector2DMath | 10 | WR |
-| LineGeometry_Operations | 9 | WR |
-| MathSolver FunctionRoot v0.110 | 8 | WR |
-| BRepTools_TrsfModification | 8 | WR |
-| MathSolver GaussIntegrate v0.111 | 7 | WR |
 | ... | ... | ... |
 
 **Total**: 342 tests across ~25 suites
@@ -103,9 +89,6 @@
 
 | Suite | Tests | Injected | Red ✓ | Green ✓ | PR Ready |
 |-------|-------|----------|-------|---------|----------|
-| gce_MakeLin Tests | 26 |  |  |  |  |
-| gce_MakeCirc Tests | 24 |  |  |  |  |
-| gce_MakeHypr Tests | 22 |  |  |  |  |
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
