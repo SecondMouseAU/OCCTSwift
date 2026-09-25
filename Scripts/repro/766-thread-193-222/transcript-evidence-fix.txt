@@ -1,0 +1,15 @@
+# probe-evidence-fix.mm against the pinned v4.0.0-kernel.1 xcframework, run 2026-09-25 on BREP files that a temporary
+# (reverted) instrumentation of Issue196PolyHLRTests and Issue213VProfile wrote (no triangles, written before any meshing).
+# Bridge side of the same BREPs (Shape.loadBREP, then hlrPolyEdges), printed by that instrumentation:
+#   196_0.8.brep  visibleSharp=2089 visibleOutline=3578;  196_0.05.brep  visibleSharp=1869 visibleOutline=17088.
+# In-process, no BREP round trip: 0.8 -> 2089 / 3578; 0.05 -> 1873 / 17041.
+# Bridge groove measurement, in-process: deep=4.391075887964067 shallow=4.797025295988022 wDeep=0.6093688964843746
+#   wShallow=1.0781188964843746 halfAngle=29.999999999999996
+KERNEL 196_0.05.brep defl=1.6 visibleSharp=2000 visibleOutline=5092 triangles=21852
+KERNEL 196_0.05.brep defl=0.8 visibleSharp=2089 visibleOutline=3578 triangles=15876
+KERNEL 196_0.05.brep defl=0.4 visibleSharp=1912 visibleOutline=6378 triangles=27984
+KERNEL 196_0.05.brep defl=0.2 visibleSharp=1909 visibleOutline=6373 triangles=46986
+KERNEL 196_0.05.brep defl=0.1 visibleSharp=1741 visibleOutline=9197 triangles=72572
+KERNEL 196_0.05.brep defl=0.05 visibleSharp=1869 visibleOutline=17088 triangles=213662
+KERNEL 196_0.8.brep defl=0.8 visibleSharp=2089 visibleOutline=3578 triangles=15876
+KERNEL groove cutDepth=0.81189881604791125 deep=4.3910758879640666 shallow=4.7970252959880222 wDeep=0.60936889648437464 wShallow=1.0781188964843746 halfAngle=29.999999999999996
