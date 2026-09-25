@@ -1895,7 +1895,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Bridge: bsplineRestriction with every surface-kind switch on, at tolerance 0.01, for a cylinder, a sphere and a torus: the result's face count and how many of those faces are Geom_BSplineSurface, per shape, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1636-1637/transcript.txt line 8, Scripts/repro/766-healing-1636-1637/transcript.txt line 9 and Scripts/repro/766-healing-1636-1637/transcript.txt line 10 (cylinder, sphere, torus all kinds: faces=3, 1, 1 and Geom_BSplineSurface=3, 1, 1), ShapeCustom::BSplineRestriction with every ConvertXxx parameter set. The kernel prints the surface type name and its count; the record keeps the count under `bsplineFaces`."
+    "source": "Bridge: bsplineRestriction with every surface-kind switch on, at tolerance 0.01, for a cylinder, a sphere and a torus: the result's face count and how many of those faces are Geom_BSplineSurface, per shape, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1636-1637/transcript.txt lines 8-10 (cylinder, sphere, torus all kinds: faces=3, 1, 1 and Geom_BSplineSurface=3, 1, 1), ShapeCustom::BSplineRestriction with every ConvertXxx parameter set. The kernel prints the surface type name and its count; the record keeps the count under `bsplineFaces`."
   },
   {
     "test_name": "Issue #1637: BSplineRestriction's per-surface-kind switches are reachable::perKindSwitchesActIndependently",
@@ -1931,7 +1931,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Bridge: bsplineRestriction on a cylinder with only the cylindrical switch on, then only the plane switch on: how many faces are Geom_BSplineSurface and how many stay Geom_Plane (first case) or Geom_CylindricalSurface (second), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1636-1637/transcript.txt line 11 (cylinder, cylindrical only: Geom_BSplineSurface=1 Geom_Plane=2) and Scripts/repro/766-healing-1636-1637/transcript.txt line 12 (planes only: Geom_BSplineSurface=2 Geom_CylindricalSurface=1), ShapeCustom::BSplineRestriction with that one switch set. The kernel prints OCCT surface type names; the record uses bsplineFaces, planeFaces and cylinderFaces for Geom_BSplineSurface, Geom_Plane and Geom_CylindricalSurface."
+    "source": "Bridge: bsplineRestriction on a cylinder with only the cylindrical switch on, then only the plane switch on: how many faces are Geom_BSplineSurface and how many stay Geom_Plane (first case) or Geom_CylindricalSurface (second), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1636-1637/transcript.txt lines 11-12 (cylinder, cylindrical only: Geom_BSplineSurface=1 Geom_Plane=2; planes only: Geom_BSplineSurface=2 Geom_CylindricalSurface=1), ShapeCustom::BSplineRestriction with that one switch set. The kernel prints OCCT surface type names; the record uses bsplineFaces, planeFaces and cylinderFaces for Geom_BSplineSurface, Geom_Plane and Geom_CylindricalSurface."
   },
   {
     "test_name": "Issue #1637: BSplineRestriction's per-surface-kind switches are reachable::conversionPreservesTheSolid",
