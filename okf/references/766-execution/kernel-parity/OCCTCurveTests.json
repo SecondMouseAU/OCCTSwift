@@ -7612,10 +7612,9 @@
       "data": "N/A: the refusal is Swift-side (Sampling.impliedCount), before the kernel"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": [],
+      "reason": "no kernel counterpart: the refusal is Swift-side (Sampling.impliedCount), before the kernel is reached"
     },
     "status": "N/A",
     "injection": "uafake: a refused distance answers [0, 1]",
@@ -7636,10 +7635,9 @@
       "data": "N/A: the refusal is Swift-side (Sampling.impliedCount), before the kernel"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": [],
+      "reason": "no kernel counterpart: the refusal is Swift-side (Sampling.impliedCount), before the kernel is reached"
     },
     "status": "N/A",
     "injection": "uafake: a refused distance answers [0, 1]",
