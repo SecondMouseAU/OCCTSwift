@@ -1,0 +1,11 @@
+plane z=0 before: P(0,0)=(0, 0, 0) P(1,0)=(1, 0, 0) P(0,1)=(0, 1, 0) P(1,1)=(1, 1, 0)
+plane z=5 before: P(0,0)=(0, 0, 5) P(1,0)=(1, 0, 5) P(0,1)=(0, 1, 5) P(1,1)=(1, 1, 5)
+translateSurface: P(0,0)=(10, 0, 5) P(1,0)=(11, 0, 5) P(0,1)=(10, 1, 5) P(1,1)=(11, 1, 5)
+rotateSurface: P(0,0)=(0, 0, 0) P(1,0)=(1, 0, 0) P(0,1)=(0, 0.70710678118654757, 0.70710678118654746) P(1,1)=(1, 0.70710678118654757, 0.70710678118654746)
+scaleSurface (plane z=0, as written): P(0,0)=(0, 0, 0) P(1,0)=(1, 0, 0) P(0,1)=(0, 1, 0) P(1,1)=(1, 1, 0)
+scaleSurface (plane z=5, rewritten): P(0,0)=(0, 0, 10) P(1,0)=(1, 0, 10) P(0,1)=(0, 1, 10) P(1,1)=(1, 1, 10)
+mirrorPointSurface: P(0,0)=(0, 0, -5) P(1,0)=(-1, 0, -5) P(0,1)=(0, -1, -5) P(1,1)=(-1, -1, -5)
+mirrorAxisSurface: P(0,0)=(0, 0, -5) P(1,0)=(1, 0, -5) P(0,1)=(0, -1, -5) P(1,1)=(1, -1, -5)
+mirrorPlaneSurface: P(0,0)=(0, 0, -5) P(1,0)=(1, 0, -5) P(0,1)=(0, 1, -5) P(1,1)=(1, 1, -5)
+transformBezierSurface (OCCTSurfaceBezierFill2, default GeomFill_StretchStyle): before (5, 5, 1.5) after (5, 5, 101.5) delta z 100
+translateCircle: domain [0, 6.2831853071795862] start (15, 0, 0)

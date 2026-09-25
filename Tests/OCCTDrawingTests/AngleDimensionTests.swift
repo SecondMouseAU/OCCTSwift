@@ -67,12 +67,16 @@ struct AngleDimensionTests {
         let wire2 = Wire.rectangle(width: 10, height: 10)!
         let face2 = Shape.face(from: wire2)!.rotated(
             axis: SIMD3(1, 0, 0), angle: .pi / 2)!
-        let dim = AngleDimension(face1: face1, face2: face2)
-        if let dim = dim {
-            let deg = dim.degrees
-            #expect(
-                abs(deg - 90.0) < 1.0,
-                "Perpendicular faces should be ~90 degrees")
+        // #766: this used to be `if let dim`, so a nil from OCCTDimensionCreateAngleFromFaces
+        // passed silently. PrsDim_AngleDimension(f1, f2) reports exactly 90 degrees here
+        // (Scripts/repro/766-drawing-angle-centermarks/transcript.txt).
+        guard let dim = AngleDimension(face1: face1, face2: face2) else {
+            Issue.record("AngleDimension(face1:face2:) returned nil for two perpendicular faces")
+            return
         }
+        #expect(dim.isValid)
+        #expect(
+            abs(dim.degrees - 90.0) < 1e-9,
+            "Perpendicular faces should be 90 degrees, got \(dim.degrees)")
     }
 }

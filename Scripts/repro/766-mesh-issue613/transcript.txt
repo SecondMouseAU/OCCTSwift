@@ -1,0 +1,14 @@
+fixture: splitter done=1 solids=2
+  shared face index 5 carries both FORWARD and REVERSED
+fixtureSharesAWall: distinctFaces=11 occurrences=12 sharedFaces=1
+mesh(linearDeflection: 0.5), used by meshFaceIndices*, sharedWall*, meshWinding*:
+  split compound: triangles=24 faceIndices={ 0 1 2 3 4 5 6 7 8 9 10 } wall(+x): idx5=2 wall(-x): idx5=2 outwardPerOwner=24 inward=0
+fixture: splitter done=1 solids=2
+parameterisedMeshHoldsTheContract (MeshParameters.default, deflection 0.5):
+  split compound: triangles=24 faceIndices={ 0 1 2 3 4 5 6 7 8 9 10 } wall(+x): idx5=2 wall(-x): idx5=2 outwardPerOwner=24 inward=0
+plainBoxWindingUnchanged:
+  plain box (owner test reads centre (5,5,5) as the lower interior): triangles=12 faceIndices={ 0 1 2 3 4 5 } wall(+x): idx1=2 wall(-x): outwardPerOwner=12 inward=0
+mergedNodesKeepBothWallSides:
+  split compound: nbNodes=40 nbTriangles=24 wall +x=2 -x=2
+mergedNodesPlainBoxOutward:
+  plain box: nbNodes=24 nbTriangles=12 outward=12 inward=0

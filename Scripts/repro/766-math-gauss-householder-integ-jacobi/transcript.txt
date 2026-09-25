@@ -1,0 +1,9 @@
+solve2x2: done=1 x=1.6000000000000001 1.8
+determinant (Gauss): 5
+overdetermindedSolve: done=1 x=1.3333333333333328 2.3333333333333339
+gauss: done=1 value=2
+gaussAdaptive: done=1 value=1.9999999999999998
+kronrod: done=1 value=1.9999999999999962
+kronrodAdaptive: done=1 value=1.9999999999999962
+tanhSinh: done=1 value=2
+eigenvalues (Jacobi): done=1 3 1
