@@ -1,0 +1,25 @@
+GetAvailableFonts().Size()=0
+FontAspectToString(0)=[regular]
+FontAspectToString(1)=[bold]
+FontAspectToString(2)=[italic]
+FontAspectToString(3)=[bold-italic]
+new Image_AlienPixMap: IsEmpty=1
+InitTrash(RGBA,64,64)=1 IsEmpty=0 SizeX=64 SizeY=64 Format=7
+InitTrash(RGB,100,50)=1 SizeX=100 SizeY=50 Format=3
+RGBA 4x4 set(2,2)=(0.8,0.2,0.5,1) -> get r=0.800000012 g=0.200000003 b=0.498039216 a=1
+Save(/tmp/occt_pixmap_probe.ppm)=1
+RGB 32x32 IsEmpty before Clear=0 after=1
+InitCopy(8x8 RGB)=1 SizeX=8 SizeY=8
+SizePixelBytes RGBA=4 RGB=3 Gray=1
+Image_AlienPixMap::IsTopDownDefault()=0
+InitTrash(Gray,10,10): Format=1 IsEmpty=0
+AnyToAny(1000, mm, m)=1
+AnyToAny(1, m, mm)=1000
+AnyToAny(1, in, mm)=25.399999999999999
+AnyToAny(180, deg, rad)=3.1415926535897931
+AnyToSI(1000, mm)=1
+AnyFromSI(1, mm)=1000
+AnyToAny(1, kg, g)=1000
+LocalSystem() before=1
+SetLocalSystem(UnitsAPI_SI=1) -> LocalSystem()=1
+SetLocalSystem(UnitsAPI_MDTV=2) -> LocalSystem()=2

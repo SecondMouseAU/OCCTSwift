@@ -1,0 +1,11 @@
+gce_MakeCirc radius 0: done=1
+gce_MakeCirc radius -1: done=0
+gce_MakeElips (10,0)=1 (0,0)=1 (5,10)=0 (10,-1)=0
+gce_MakeHypr (0,3)=1 (8,0)=1 (0,0)=1 (-8,3)=0
+gce_MakeParab focal 0=1 -1=0
+direct vs gce max distance: circle 0 ellipse 0 hyperbola 0 parabola 0
+ellipse(0) = (11, 2, 3)
+line: Continuity=6 IsCN(0)=1 IsCN(1)=1 IsCN(2)=1 ReversedParameter(2)=-2 ParametricTransformation(identity)=1
+interpolated 4-point BSpline: Continuity=4 (GeomAbs_C2 = 4)
+Bezier Resolution(0.01)=0.0025000000000000001
+Geom_BezierCurve::MaxDegree()=25 Geom_BSplineCurve::MaxDegree()=25

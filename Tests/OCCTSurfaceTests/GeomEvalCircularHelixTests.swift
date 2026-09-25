@@ -40,13 +40,24 @@ struct GeomEvalCircularHelixTests {
     @Test func helixCurveCreate() {
         let curve = Curve3D.circularHelix(radius: 3.0, pitch: 6.0)
         #expect(curve != nil)
+        // #766: pinned to the GeomEval evaluator's own value on the same inputs, see Scripts/repro/766-geomeval-approx/; `!= nil` passed a surface built from the wrong parameters.
+        if let curve {
+            #expect(simd_length(curve.point(at: .pi) - SIMD3(-3, 0, 3)) < 1e-12)
+        }
     }
 
     @Test func helixCurveMinDistance() {
         // Verify the helix curve object works with extrema queries
-        if let curve = Curve3D.circularHelix(radius: 5.0, pitch: 10.0) {
-            if let d = curve.minimumDistance(from: SIMD3(10, 0, 0)) {
-                #expect(d > 0)
+        // #766: nested `if let`s and `d > 0` passed any positive distance, including the squared
+        // one. ExtremaPC_Curve::PerformWithEndpoints gives exactly 5 (the point (5, 0, 0) at u = 0),
+        // see Scripts/repro/766-geomeval-approx/.
+        let curve = Curve3D.circularHelix(radius: 5.0, pitch: 10.0)
+        #expect(curve != nil)
+        if let curve {
+            let d = curve.minimumDistance(from: SIMD3(10, 0, 0))
+            #expect(d != nil)
+            if let d {
+                #expect(abs(d - 5) < 1e-9)
             }
         }
     }

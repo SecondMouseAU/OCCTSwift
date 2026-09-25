@@ -6,15 +6,12 @@ import simd
 
 @Suite("BRepGraph Solid Extended")
 struct BRepGraphSolidExtendedTests {
-    @Test func solidCompoundCount() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                for i in 0..<graph.solidCount {
-                    #expect(graph.solidCompoundCount(i) == 0)
-                }
-            }
+    @Test func solidCompoundCount() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        #expect(graph.solidCount == 1)
+        for i in 0..<graph.solidCount {
+            #expect(graph.solidCompoundCount(i) == 0)
         }
     }
 }
