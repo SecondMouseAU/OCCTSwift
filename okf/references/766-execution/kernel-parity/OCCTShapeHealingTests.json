@@ -180,9 +180,10 @@
         ],
         "last": [
           5,
-          0,
+          -1.2246467991473533e-15,
           0
-        ]
+        ],
+        "maxRadiusDev": 8.881784197001252e-16
       }
     },
     "kernel_output": {
@@ -190,14 +191,14 @@
       "data": {
         "count": 360,
         "first": [
-          5,
-          0,
-          0
+          5.0,
+          0.0,
+          0.0
         ],
         "last": [
-          5,
-          0,
-          0
+          5.0,
+          0.0,
+          0.0
         ],
         "maxRadiusDev": 8.882e-16
       }
@@ -206,7 +207,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Curve3D.samplePoints over the circle's full domain (count, first and last point, and the largest |radius - 5| over all points, which the test bounds at 1e-9), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-curve-custom/transcript.txt, line 'samples circle' (ShapeAnalysis_Curve::GetSamplePoints). Values agree within 1e-9; the last point's y differs in the fifteenth digit (-1.2e-15 vs -0.0)."
   },
   {
     "test_name": "ShapeAnalysis Curve GetSamplePoints Tests::sampleLine",
@@ -300,9 +302,9 @@
     "bridge_output": {
       "type": "range",
       "data": {
-        "first": 2.0,
-        "last": 8.0,
-        "wasAdjusted": true
+        "first": 2,
+        "last": 8,
+        "returned": true
       }
     },
     "kernel_output": {
@@ -317,7 +319,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Curve3D.validateRange(first: 2, last: 8): first, last, and the Swift property `wasAdjusted`, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-curve-custom/transcript.txt, line 'ValidateRange(2, 8)': returned=1 first=2 last=8. The Swift property `wasAdjusted` carries ShapeAnalysis_Curve::ValidateRange's return value (OCCT: true if the parameters are OK or were corrected), so it is recorded under the kernel's name, `returned`; it is true for an untouched in-range input."
   },
   {
     "test_name": "ShapeAnalysis Curve ValidateRange Tests::validateOutOfBounds",
@@ -325,9 +328,9 @@
     "bridge_output": {
       "type": "range",
       "data": {
-        "first": 0.0,
-        "last": 10.0,
-        "wasAdjusted": true
+        "first": 0,
+        "last": 10,
+        "returned": true
       }
     },
     "kernel_output": {
@@ -342,7 +345,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Curve3D.validateRange(first: -5, last: 15) on the segment [0, 10]: first, last, `wasAdjusted`, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-curve-custom/transcript.txt, line 'ValidateRange(-5, 15)': returned=1 first=0 last=10. `wasAdjusted` is the kernel's `returned` flag (true when the parameters are OK or were corrected), as in the in-bounds record."
   },
   {
     "test_name": "Divide by Number::divideBox",
@@ -367,21 +371,19 @@
     "bridge_output": {
       "type": "object",
       "data": {
-        "result": null
+        "resultIsNull": true
       }
     },
     "kernel_output": {
-      "type": "object",
-      "data": {
-        "Perform(1,1)": false,
-        "resultFaces": 6
-      }
+      "type": "n/a",
+      "data": "no kernel call: Shape.dividedByNumber(1) returns nil at the Swift guard `parts > 1`, before OCCTShapeDivideByNumber is reached"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "source": "No kernel counterpart for what the test observes: the nil comes from the Swift-side guard `guard parts > 1` in Shape.dividedByNumber, which returns before the bridge function or OCCT is called. For information only, ShapeUpgrade_FaceDivideArea with one part also reports Perform=false (Scripts/repro/766-healing-divide-encode-fastsew/transcript.txt line 2), so the outcomes agree, but the test exercises neither the bridge nor the kernel. bridge_output is the observed nil (bridge-observed.txt)."
   },
   {
     "test_name": "Divide by Number::divideCylinder",
@@ -407,16 +409,19 @@
       "type": "continuity_codes",
       "data": {
         "sharedEdges": 12,
-        "C0": 12,
-        "volume": 1000.0
+        "encodedBefore": 0,
+        "encodedAfter": 12,
+        "c0After": 12,
+        "volume": 999.9999999999998
       }
     },
     "kernel_output": {
       "type": "continuity_codes",
       "data": {
         "sharedEdges": 12,
-        "encoded": 12,
-        "C0": 12,
+        "encodedBefore": 0,
+        "encodedAfter": 12,
+        "c0After": 12,
         "volume": 1000.0
       }
     },
@@ -424,7 +429,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the box's edges shared by exactly two faces, how many carry a continuity code before and after Shape.encodingRegularity(), how many of those are C0, and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-divide-encode-fastsew/transcript.txt lines 4-6 (BRepLib::EncodeRegularity: before sharedEdges=12 encoded=0; after encoded=12 C0=12; volume 1000)."
   },
   {
     "test_name": "Encode Regularity::encodeRegularityFilleted",
@@ -434,7 +440,8 @@
       "data": {
         "faces": 26,
         "sharedEdges": 48,
-        "aboveC0": 48
+        "encodedAfter": 48,
+        "aboveC0After": 48
       }
     },
     "kernel_output": {
@@ -442,15 +449,16 @@
       "data": {
         "faces": 26,
         "sharedEdges": 48,
-        "aboveC0_before": 48,
-        "aboveC0_after": 48
+        "encodedAfter": 48,
+        "aboveC0After": 48
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the filleted box after encodingRegularity(toleranceDegrees: 1): face count, shared edges, how many carry a code, how many carry a code above C0, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-divide-encode-fastsew/transcript.txt lines 7 and 9 (filleted box faces=26; after encode(1 deg): sharedEdges=48 encoded=48 aboveC0=48). The fillet already encodes these edges (line 8 shows 48 before encoding too), so this record cannot tell an encode call from its absence; that is the test's own caveat."
   },
   {
     "test_name": "Encode Regularity::fixtureStartsUnencoded",
@@ -458,6 +466,7 @@
     "bridge_output": {
       "type": "continuity_codes",
       "data": {
+        "sharedEdges": 1,
         "encoded": 0
       }
     },
@@ -472,7 +481,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the hand-built two-face near-tangent shell: edges shared by two faces and how many carry a continuity code before encodingRegularity(), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-divide-encode-fastsew/transcript.txt line 10 (nearTangent fixture: sharedEdges=1 encoded=0)."
   },
   {
     "test_name": "Encode Regularity::defaultToleranceMarksNearTangentEdgeRegular",
@@ -526,23 +536,25 @@
     "bridge_output": {
       "type": "shape_summary",
       "data": {
+        "produced": true,
         "faces": 1,
-        "area": 1256.637061436
+        "area": 1256.637061435917
       }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
+        "produced": true,
         "faces": 1,
-        "area": 1256.637061436,
-        "type": "compound"
+        "area": 1256.637061436
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.fastSewn() on a radius-10 sphere: whether a shape came back, its face count and its surface area (the test bounds the area within 1.0 of 4 pi r^2), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-divide-encode-fastsew/transcript.txt line 13 (FastSewing tol 1e-6: null=0 faces=1 area=1256.637061436). `produced` is the kernel's `null=0` read as a boolean. The kernel's compound type (type=0) is not observed by the test and is left out of both sides."
   },
   {
     "test_name": "Fast Sewing::fastSewTolerance",
@@ -573,21 +585,21 @@
     "bridge_output": {
       "type": "object",
       "data": {
-        "result": null
+        "resultIsNull": true
       }
     },
     "kernel_output": {
       "type": "object",
       "data": {
-        "Add": false,
-        "GetResultNull": true
+        "resultIsNull": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.fastSewn() on a box returns nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-divide-encode-fastsew/transcript.txt line 15 (FastSewing(box): added=0 resultNull=1). The kernel declines every face of the box (Add() false for each) and GetResult() is a null shape, which the bridge reports as nil."
   },
   {
     "test_name": "Free Boundary Analysis::closedSolidNoFreeBounds",
@@ -595,21 +607,21 @@
     "bridge_output": {
       "type": "free_bounds",
       "data": {
-        "result": null
+        "hasFreeBounds": false
       }
     },
     "kernel_output": {
       "type": "free_bounds",
       "data": {
-        "closedWires": 0,
-        "openWires": 0
+        "hasFreeBounds": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.freeBounds() on a box is nil, recorded as hasFreeBounds = (result != nil), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-freebounds-geomconv/transcript.txt line 1 (box, tol 1e-6: closedWires=0 closedEdges=0 openWires=0). hasFreeBounds on the kernel side is closedWires + openWires > 0; the bridge returns nil when ShapeAnalysis_FreeBounds finds no wire."
   },
   {
     "test_name": "Free Boundary Analysis::compoundFacesHasFreeBounds",
@@ -617,9 +629,9 @@
     "bridge_output": {
       "type": "free_bounds",
       "data": {
-        "closed": 1,
-        "open": 0,
-        "edges": 6
+        "closedWires": 1,
+        "closedEdges": 6,
+        "openWires": 0
       }
     },
     "kernel_output": {
@@ -634,7 +646,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.freeBounds() on two adjacent 10x10 faces: closed wire count, the edges of the returned wires, open wire count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-freebounds-geomconv/transcript.txt line 3 (two adjacent 10x10 faces, tol 1e-6: closedWires=1 closedEdges=6 openWires=0)."
   },
   {
     "test_name": "Free Boundary Analysis::freeBoundsSphere",
@@ -642,21 +655,21 @@
     "bridge_output": {
       "type": "free_bounds",
       "data": {
-        "result": null
+        "hasFreeBounds": false
       }
     },
     "kernel_output": {
       "type": "free_bounds",
       "data": {
-        "closedWires": 0,
-        "openWires": 0
+        "hasFreeBounds": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.freeBounds() on a sphere is nil, recorded as hasFreeBounds = (result != nil), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-freebounds-geomconv/transcript.txt line 2 (sphere r5, tol 1e-6: closedWires=0 closedEdges=0 openWires=0). hasFreeBounds on the kernel side is closedWires + openWires > 0."
   },
   {
     "test_name": "Free Boundary Analysis::fixFreeBoundsCallable",
@@ -665,8 +678,8 @@
       "type": "free_bounds_fix",
       "data": {
         "faces": 1,
-        "closed": 0,
-        "open": 0
+        "closedWires": 0,
+        "openWires": 0
       }
     },
     "kernel_output": {
@@ -681,7 +694,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-4) on a lone rectangular face: faces of the returned shape, closed and open wire counts, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-freebounds-geomconv/transcript.txt line 4 (ShapeFix_FreeBounds(lone face): shapeFaces=1 closedWires=0 openWires=0). `faces` is the kernel's `shapeFaces`."
   },
   {
     "test_name": "Free Boundary Analysis::issue310DisjointFacesFreeBounds",
@@ -689,8 +703,8 @@
     "bridge_output": {
       "type": "free_bounds",
       "data": {
-        "closedCount": 2,
         "closedWires": 2,
+        "closedEdges": 8,
         "openWires": 0
       }
     },
@@ -706,7 +720,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: two disjoint 1x1 faces at tol 0.01: closed wire count (freeBoundsClosedCount), the edges of the closed-wire compound, and the open wire count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-freebounds-geomconv/transcript.txt line 5 (two disjoint 1x1 faces, tol 0.01: closedWires=2 closedEdges=8 openWires=0)."
   },
   {
     "test_name": "ShapeCustom Geometry Conversion::cylinderToBSpline",
@@ -714,7 +729,8 @@
     "bridge_output": {
       "type": "shape_summary",
       "data": {
-        "faces": {
+        "valid": true,
+        "surfaces": {
           "plane": 2,
           "cylinder": 1
         }
@@ -723,18 +739,19 @@
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "faces": {
+        "valid": true,
+        "surfaces": {
           "plane": 2,
           "cylinder": 1
-        },
-        "volume": 785.398163397
+        }
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.withSurfacesAsBSpline() on a cylinder: validity and faces per surface kind (the test pins exactly plane 2, cylinder 1), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-freebounds-geomconv/transcript.txt line 7 (ConvertToBSpline(cyl, T,T,T,F): valid=1 faces=3 surfaces: plane=2 cylinder=1). The kernel's volume on that line (785.398163397) is not observed by this test and is left out of both sides."
   },
   {
     "test_name": "ShapeCustom Geometry Conversion::toRevolution",
@@ -825,8 +842,10 @@
     "bridge_output": {
       "type": "free_bound_info",
       "data": {
-        "area": 100.0,
-        "perimeter": 40.0,
+        "area": 100.00000000000003,
+        "perimeter": 39.999999999999936,
+        "ratio": 0,
+        "width": 0,
         "notches": 0
       }
     },
@@ -844,7 +863,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.closedFreeBoundInfo(tolerance: 0.01, index: 0) on two stacked 10x10 faces: area, perimeter, ratio, width, notch count (the test asserts area, perimeter and notches; ratio and width are printed as well), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-freebounds-props/transcript.txt line 2 (closed[0]: area=100 perimeter=40 ratio=0 width=0 notches=0)."
   },
   {
     "test_name": "ShapeAnalysis FreeBoundsProperties Tests::freeBoundWire",
@@ -852,8 +872,7 @@
     "bridge_output": {
       "type": "wire",
       "data": {
-        "edges": 4,
-        "valid": true
+        "edges": 4
       }
     },
     "kernel_output": {
@@ -866,7 +885,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.closedFreeBoundWire(tolerance: 0.01, index: 0): the wire's edge count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-freebounds-props/transcript.txt line 2 (closed[0] wireEdges=4). The test also asserts wire.isValid, a BRepCheck run on the wrapper that the probe did not perform, so validity is not part of this comparison."
   },
   {
     "test_name": "ShapeAnalysis FreeBoundsProperties Tests::freeBoundIndexOutOfRange",
@@ -874,24 +894,25 @@
     "bridge_output": {
       "type": "free_bounds",
       "data": {
-        "closed": 2,
-        "index1": "present",
-        "index2": null,
-        "index7": null,
-        "index-1": null
+        "closedWires": 2,
+        "boundInfoAtIndex0": true,
+        "boundInfoAtIndex1": true
       }
     },
     "kernel_output": {
       "type": "free_bounds",
       "data": {
-        "closed": 2
+        "closedWires": 2,
+        "boundInfoAtIndex0": true,
+        "boundInfoAtIndex1": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: freeBoundsAnalysis(tolerance: 0.01).closedCount, and whether closedFreeBoundInfo returns a value at index 0 and at index 1, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-freebounds-props/transcript.txt lines 1-3 (closed=2; closed[0] and closed[1] each read with area=100). boundInfoAtIndexN is true on the kernel side because the probe read that bound. The test's other assertions (index 2, 7 and -1 return nil) are the bridge's own range check (#504) with no kernel counterpart, so they are not part of this comparison."
   },
   {
     "test_name": "ShapeAnalysis FreeBoundsProperties Tests::openFreeBoundsAbsent",
@@ -930,17 +951,15 @@
       "data": {
         "total": 0,
         "closed": 0,
-        "open": 0,
-        "wrappedInCompound": {
-          "closed": 1
-        }
+        "open": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: freeBoundsAnalysis(tolerance: 0.01) on a lone face: total, closed, open, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-freebounds-props/transcript.txt line 4 (lone face: total=0 closed=0 open=0). Wrapping the same face in a compound gives closed=1 (line 5); that is a different input and is not part of this record."
   },
   {
     "test_name": "ShapeAnalysis FreeBoundsProperties Tests::shapeAndPropertiesAgree",
@@ -948,23 +967,49 @@
     "bridge_output": {
       "type": "free_bound_info",
       "data": {
-        "closed": 2,
-        "equalFields": true
+        "closedWires": 2,
+        "bound0": {
+          "area": 100.00000000000003,
+          "perimeter": 39.999999999999936,
+          "ratio": 0,
+          "width": 0,
+          "notches": 0
+        },
+        "bound1": {
+          "area": 100.00000000000003,
+          "perimeter": 39.999999999999936,
+          "ratio": 0,
+          "width": 0,
+          "notches": 0
+        }
       }
     },
     "kernel_output": {
       "type": "free_bound_info",
       "data": {
-        "closed": 2,
-        "area": 100.0,
-        "perimeter": 40.0
+        "closedWires": 2,
+        "bound0": {
+          "area": 100.0,
+          "perimeter": 40.0,
+          "ratio": 0.0,
+          "width": 0.0,
+          "notches": 0
+        },
+        "bound1": {
+          "area": 100.0,
+          "perimeter": 40.0,
+          "ratio": 0.0,
+          "width": 0.0,
+          "notches": 0
+        }
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: FreeBoundsProperties(shape:tolerance: 0.01).closedCount and, for each closed bound, the info the Shape method returns (area, perimeter, ratio, width, notches), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-freebounds-props/transcript.txt lines 1-3 (closed=2; closed[0] and closed[1] area=100 perimeter=40 ratio=0 width=0 notches=0). The test asserts that the Shape method and FreeBoundsProperties return identical fields for each bound; that agreement (printed as sameViaProps, true for both bounds) is a Swift-level relation and is not part of the kernel comparison. The kernel side is the shared OCCT class both paths wrap."
   },
   {
     "test_name": "ShapeAnalysis_FreeBounds Simplified Tests::closedCountOnBox",
@@ -1268,7 +1313,7 @@
       "type": "shape_summary",
       "data": {
         "faces": 6,
-        "volume": 1000.0,
+        "volume": 1000.0000000000001,
         "valid": false
       }
     },
@@ -1277,16 +1322,15 @@
       "data": {
         "faces": 6,
         "volume": 1000.0,
-        "valid": false,
-        "invalidWires": 3,
-        "invalidFaces": 5
+        "valid": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.fixEdgeConnect() on a box: faces, volume and BRepCheck validity, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1479-1491/transcript.txt line 2 (EdgeConnect(box): faces=6 edges=24 volume=1000 valid=0). The kernel leaves the box BRepCheck-invalid (3 of 6 wires and 5 of 6 faces, lines 5-6); the test records that with withKnownIssue, so valid=false is what both sides report. Not asserted here: the invalid wire and face counts."
   },
   {
     "test_name": "Issue #1491: OCCTShapeDivideByNumber respects nbU/nbV::exactSplitCountUOnly",
@@ -1394,15 +1438,15 @@
     "kernel_output": {
       "type": "self_intersection",
       "data": {
-        "bareWireFlag": false,
-        "planarFaceFlag": true
+        "refused": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.extruded(by:) on the bowtie as a bare wire returns nil, recorded as refused, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1505-1507-1634/transcript.txt line 2 (bowtie as planar face: valid=0 selfIntersectingFlag=1). The bridge refuses when occtHasSelfIntersectingWire says the profile self-intersects; for a bare wire that guard builds a planar face from the wire and asks BRepCheck_Analyzer, which is exactly the probe's 'planar face' line, so refused is true iff the analyzer flags BRepCheck_SelfIntersectingWire there. The kernel does NOT flag the bare wire itself (line 1, selfIntersectingFlag=0), which is the gap #1505 closed."
   },
   {
     "test_name": "Issue 1505: bare-wire self-intersection guard::bareWireRefusesHeal",
@@ -1416,15 +1460,15 @@
     "kernel_output": {
       "type": "self_intersection",
       "data": {
-        "bareWireFlag": false,
-        "planarFaceFlag": true
+        "refused": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.healed() on the bowtie as a bare wire returns nil, recorded as refused, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1505-1507-1634/transcript.txt line 2 (bowtie as planar face: selfIntersectingFlag=1). Same mapping as the extrusion record: refused is true iff BRepCheck_Analyzer flags a self-intersecting wire on the planar face the guard builds from the bare wire; the bare wire alone reads 0 (line 1)."
   },
   {
     "test_name": "Issue 1505: bare-wire self-intersection guard::bareWireRefusesHealWithHistory",
@@ -1438,15 +1482,15 @@
     "kernel_output": {
       "type": "self_intersection",
       "data": {
-        "bareWireFlag": false,
-        "planarFaceFlag": true
+        "refused": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.healedWithFullHistory() on the bowtie as a bare wire returns nil, recorded as refused, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1505-1507-1634/transcript.txt line 2 (bowtie as planar face: selfIntersectingFlag=1). Same mapping as the extrusion record."
   },
   {
     "test_name": "Issue 1505: bare-wire self-intersection guard::cleanBareWireStillWorks",
@@ -1460,15 +1504,15 @@
     "kernel_output": {
       "type": "self_intersection",
       "data": {
-        "bareWireFlag": false,
-        "planarFaceFlag": false
+        "refused": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.extruded(by:) and Shape.healed() on a clean square as a bare wire both succeed, recorded as refused = false, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1505-1507-1634/transcript.txt lines 3-4 (clean square as bare wire and as planar face: selfIntersectingFlag=0). refused is false iff the analyzer does not flag the wire on the planar face built from it."
   },
   {
     "test_name": "Issue 1505: bare-wire self-intersection guard::faceInputStillRefuses",
@@ -1482,14 +1526,15 @@
     "kernel_output": {
       "type": "self_intersection",
       "data": {
-        "planarFaceFlag": true
+        "refused": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.extruded(by:) and Shape.healed() on a face built from the bowtie (Shape.face(from:planar:)) both return nil, recorded as refused, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1505-1507-1634/transcript.txt line 2 (bowtie as planar face: valid=0 selfIntersectingFlag=1). For a face input the guard reads the analyzer's own flag on that face, which is the probe's planar-face line."
   },
   {
     "test_name": "Issue #1507: OCCTSewing null guards::nbMultipleEdgesNullRawPointerReturnsZero",
@@ -1533,17 +1578,16 @@
       "data": {
         "freeEdges": 0,
         "multipleEdges": 0,
-        "type": "shell",
+        "typeOrdinal": 3,
         "faces": 6
       }
     },
     "kernel_output": {
       "type": "sewing",
       "data": {
-        "NbFreeEdges": 0,
-        "NbMultipleEdges": 0,
-        "NbContigousEdges": 0,
-        "type": "shell",
+        "freeEdges": 0,
+        "multipleEdges": 0,
+        "typeOrdinal": 3,
         "faces": 6
       }
     },
@@ -1551,7 +1595,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: SewingBuilder on the six faces of a box at 1e-6: nbFreeEdges, multipleEdgeCount, the result's shape type ordinal and face count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1505-1507-1634/transcript.txt line 5 (Sewing(box faces): NbFreeEdges=0 NbMultipleEdges=0 sewedType=3 sewedFaces=6). typeOrdinal is TopAbs_ShapeEnum (3 = shell); Swift's ShapeType raw values are the same ordinals. The kernel's NbContigousEdges (0) is not observed by the test and is left out."
   },
   {
     "test_name": "Issue #1634: ConvertToRevolution runs elementary -> revolution::directionIsElementaryToRevolution",
@@ -1620,24 +1665,25 @@
     "bridge_output": {
       "type": "free_bounds_fix",
       "data": {
-        "faces": 2,
-        "edges": 8
+        "shapeFaces": 2,
+        "shapeEdges": 8,
+        "inputEdges": 8
       }
     },
     "kernel_output": {
       "type": "free_bounds_fix",
       "data": {
-        "faces": 2,
-        "edges": 8,
-        "inputEdges": 8,
-        "isSameInput": true
+        "shapeFaces": 2,
+        "shapeEdges": 8,
+        "inputEdges": 8
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-4) on two adjacent faces: faces and edges of the returned shape, and the input's edges, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1636-1637/transcript.txt line 1 (two adjacent faces: shapeFaces=2 shapeEdges=8 inputEdges=8). The kernel's isSameInput (true) is not observed by the test and is left out."
   },
   {
     "test_name": "Issue #1636: fixedFreeBounds returns the shape, not a bag of wires::openShellKeepsItsFaces",
@@ -1645,14 +1691,15 @@
     "bridge_output": {
       "type": "free_bounds_fix",
       "data": {
-        "faces": 5,
-        "closed": 1
+        "shapeFaces": 5,
+        "closedWires": 1,
+        "openWires": 0
       }
     },
     "kernel_output": {
       "type": "free_bounds_fix",
       "data": {
-        "faces": 5,
+        "shapeFaces": 5,
         "closedWires": 1,
         "openWires": 0
       }
@@ -1661,7 +1708,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: fixedFreeBounds() on an open five-face box shell: faces of the returned shape and the closed and open wire counts (the test asserts closedWireCount >= 1; the exact value is printed), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1636-1637/transcript.txt line 2 (five box faces: shapeFaces=5 closedWires=1 openWires=0)."
   },
   {
     "test_name": "Issue #1636: fixedFreeBounds returns the shape, not a bag of wires::wiresAreStillAvailable",
@@ -1669,9 +1717,9 @@
     "bridge_output": {
       "type": "free_bounds_fix",
       "data": {
-        "closed": 1,
-        "open": 0,
-        "compoundFaces": 0
+        "closedWires": 1,
+        "openWires": 0,
+        "closedCompoundFaces": 0
       }
     },
     "kernel_output": {
@@ -1686,7 +1734,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: fixedFreeBounds() on two adjacent faces: closed and open wire counts, and the faces inside the closed-wire compound, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1636-1637/transcript.txt line 1 (closedWires=1 openWires=0 closedCompoundFaces=0)."
   },
   {
     "test_name": "Issue #1636: fixedFreeBounds returns the shape, not a bag of wires::gapWiderThanTheSewingToleranceIsNotSewn",
@@ -1694,23 +1743,25 @@
     "bridge_output": {
       "type": "free_bounds_fix",
       "data": {
-        "faces": 2,
-        "closed": 2
+        "shapeFaces": 2,
+        "closedWires": 2,
+        "openWires": 0
       }
     },
     "kernel_output": {
       "type": "free_bounds_fix",
       "data": {
-        "faces": 2,
+        "shapeFaces": 2,
         "closedWires": 2,
-        "swappedTolerancesClosedWires": 1
+        "openWires": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-3) on two faces 5e-5 apart: faces of the returned shape and the closed and open wire counts, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1636-1637/transcript.txt line 3 (two faces 5e-5 apart, sew 1e-6, close 1e-3: shapeFaces=2 closedWires=2 openWires=0). Line 4 (tolerances swapped: closedWires=1) is a different call and is not part of this record."
   },
   {
     "test_name": "Issue #1637: BSplineRestriction's per-surface-kind switches are reachable::defaultsMatchTheKernel",
@@ -1839,22 +1890,23 @@
     "bridge_output": {
       "type": "volume",
       "data": {
-        "relativeChange": "< 0.01"
+        "volumeBefore": 785.3981633974482,
+        "volumeAfter": 785.3999945330238
       }
     },
     "kernel_output": {
       "type": "volume",
       "data": {
-        "before": 785.398163397,
-        "after_tol0.001": 785.399994533,
-        "after_tol1.0": 772.797704085
+        "volumeBefore": 785.398163397,
+        "volumeAfter": 785.399994533
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a cylinder's volume before and after bsplineRestriction(tol3d: 0.001, tol2d: 0.001, parameters: .allSurfaceTypes) (the test bounds the relative change at 1%), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1636-1637/transcript.txt lines 6 and 13 (cylinder volume 785.398163397; all kinds at tol 0.001: volume 785.399994533)."
   },
   {
     "test_name": "Issue #490: one continuity vocabulary per operation (healing)::restrictionEntryPointsAgree",
@@ -2083,21 +2135,21 @@
     "bridge_output": {
       "type": "deviation",
       "data": {
-        "deviation": "<= 0.01"
+        "deviation": 0.0005064525299411152
       }
     },
     "kernel_output": {
       "type": "deviation",
       "data": {
-        "deviation": 0.0005065,
-        "at_tol_10": 1.655
+        "deviation": 0.0005064525299411152
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.bsplineRestriction(surfaceTolerance: 0.01, curveTolerance: 0.01, maxDegree: 9, maxSegments: 10000) on an offset sphere over its full domain: the largest distance between the source surface and the fitted face on a 25 x 25 grid (the test bounds it at the 0.01 tolerance), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (K033): ShapeCustom::BSplineRestriction with C1/C1, degree priority true, rational true, default parameters, the call OCCTShapeBSplineRestriction makes, same deviation grid. The earlier record compared this to a 4-digit print of a different call."
   },
   {
     "test_name": "Issue 570: healing approximations accepted on a zeroed error::bsplineRestrictionAtEachContinuity",
@@ -2105,20 +2157,25 @@
     "bridge_output": {
       "type": "deviation",
       "data": {
-        "deviation": "<= 0.01 at C0/C1/C2"
+        "c0": 0.0005064525299411152,
+        "c1": 0.0005064525299411152,
+        "c2": 0.0005064525299411152
       }
     },
     "kernel_output": {
       "type": "deviation",
       "data": {
-        "deviation_C1": 0.0005065
+        "c0": 0.0005064525299411152,
+        "c1": 0.0005064525299411152,
+        "c2": 0.0005064525299411152
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.bsplineRestriction(tol3d: 0.01, tol2d: 0.01, maxDegree: 9, maxSegments: 10000, continuity3d: c, continuity2d: c, degreePriority: true, rational: true) for c in C0, C1, C2 on the offset sphere: the largest source-to-fit distance on a 25 x 25 grid, one key per requested continuity, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (K034): ShapeCustom::BSplineRestriction with the same arguments for GeomAbs_C0, C1, C2. The three deviations are identical on both sides, as the test's comment says: with degree priority every request degrades to the same C0 fit for this fixture. The earlier record held only a C1 number for a different call."
   },
   {
     "test_name": "Issue 570: healing approximations accepted on a zeroed error::bsplineRestrictionAdvancedHonoursTolerance",
@@ -2126,20 +2183,21 @@
     "bridge_output": {
       "type": "deviation",
       "data": {
-        "deviation": "<= 0.01"
+        "deviation": 0.0005064525299411152
       }
     },
     "kernel_output": {
       "type": "deviation",
       "data": {
-        "deviation_C1": 0.0005065
+        "deviation": 0.0005064525299411152
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.bsplineRestrictionAdvanced(face, tol3d: 0.01, tol2d: 0.01, maxDegree: 9, maxSegments: 10000) on the offset sphere: the largest source-to-fit distance on a 25 x 25 grid, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (K035): ShapeCustom_BSplineRestriction(approx surface, 3d and 2d curves true, tol 0.01/0.01, C1/C1, degree 9, 10000 segments, degree priority true, rational false) through BRepTools_Modifier, the call OCCTShapeBSplineRestrictionAdvanced makes with the Swift defaults."
   },
   {
     "test_name": "Issue 570: healing approximations accepted on a zeroed error::trimmedOffsetSphereWasNeverAffected",
@@ -3589,30 +3647,23 @@
     "bridge_output": {
       "type": "shape_summary",
       "data": {
-        "faces": 6,
-        "volume": 1000.0
+        "done": true,
+        "faces": 6
       }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "box": {
-          "IsDone": true,
-          "faces": 6
-        },
-        "mirroredBox": {
-          "locatedFacesBefore": 0,
-          "IsDone": true,
-          "faces": 6,
-          "volume": 1000.0
-        }
+        "done": true,
+        "faces": 6
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.purgedLocations on a box: whether a shape came back, and its face count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-locations-nurbs-sameparam/transcript.txt line 1 (purge box: IsDone=1 faces=6). `done` on the bridge side is the shape being returned (the bridge returns nil when BRepTools_PurgeLocations is not done). The test also asserts the volume; the probe did not measure the box's volume, so it is left out."
   },
   {
     "test_name": "Location Purge::mirroredShapePurge",
@@ -3620,30 +3671,25 @@
     "bridge_output": {
       "type": "shape_summary",
       "data": {
+        "done": true,
         "faces": 6,
-        "volume": 1000.0
+        "volume": 999.9999999999998
       }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "box": {
-          "IsDone": true,
-          "faces": 6
-        },
-        "mirroredBox": {
-          "locatedFacesBefore": 0,
-          "IsDone": true,
-          "faces": 6,
-          "volume": 1000.0
-        }
+        "done": true,
+        "faces": 6,
+        "volume": 1000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.purgedLocations on a mirrored box: whether a shape came back, its face count and volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-locations-nurbs-sameparam/transcript.txt line 2 (purge mirrored box: locatedFacesBefore=0 IsDone=1 faces=6 locatedFacesAfter=0 volume=1000). The kernel's located-face counts (0 before and after) are not observed by the test and are left out."
   },
   {
     "test_name": "ShapeAnalysis_Geom NearestPlane::nearestPlane",
@@ -5533,18 +5579,16 @@
     "kernel_output": {
       "type": "analysis",
       "data": {
-        "edges": 65,
-        "degenerate": 61,
-        "smallNonDegenerate": 0,
-        "smallIncludingDegenerate": 60,
-        "shells": 0
+        "smallEdgeCount": 0,
+        "freeEdgeCount": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.analyze(tolerance: 0.11477) on the #318 sewn shape: smallEdgeCount and freeEdgeCount, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (K038): the bridge's own algorithm run on the same BREP with OCCT calls only: non-degenerate edges whose BRepGProp::LinearProperties length is below 0.11477, and the free edges ShapeAnalysis_Shell::CheckOrientedShells finds summed over the shape's shells (the fixture has none, shellsInFixture=0, so the sum is 0)."
   },
   {
     "test_name": "Issue #438: divided(at:) and dividedByContinuity unified over one OCCT class::dividedVariesWithContinuity",
@@ -5552,33 +5596,37 @@
     "bridge_output": {
       "type": "face_count",
       "data": {
-        "C0": null,
-        "C1": 4,
-        "C2": 4,
-        "C3": 25,
-        "CN": 25,
-        "G1": 4,
-        "G2": 4
+        "faces": {
+          "c0": null,
+          "c1": 4,
+          "c2": 4,
+          "c3": 25,
+          "cn": 25,
+          "g1": 4,
+          "g2": 4
+        }
       }
     },
     "kernel_output": {
       "type": "face_count",
       "data": {
-        "C0": null,
-        "C1": 4,
-        "C2": 4,
-        "C3": 25,
-        "CN": 25,
-        "G1": 4,
-        "G2": 4,
-        "boundaryOnly": "4 at every level"
+        "faces": {
+          "c0": null,
+          "c1": 4,
+          "c2": 4,
+          "c3": 25,
+          "cn": 25,
+          "g1": 4,
+          "g2": 4
+        }
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.divided(at:tolerance: 1e-4) on the kinked-surface face at each continuity level: the resulting face count, null when no shape comes back, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1638-266-318-438/transcript.txt lines 14, 16, 18, 20, 22, 24, 26 (ShapeUpgrade_ShapeDivideContinuity at C0..G2: C0 Perform=0, then 4, 4, 25, 25, 4, 4 faces). The kernel's C0 line reads 'Perform=0 faces=-1', the -1 being the probe's sentinel for no result, recorded here as null. The 'boundary criterion only' lines (the pre-#438 behaviour) are different calls and are left out."
   },
   {
     "test_name": "Issue #438: divided(at:) and dividedByContinuity unified over one OCCT class::dividedContinuityIsObservable",
@@ -5586,33 +5634,25 @@
     "bridge_output": {
       "type": "face_count",
       "data": {
-        "C0": null,
-        "C1": 4,
-        "C2": 4,
-        "C3": 25,
-        "CN": 25,
-        "G1": 4,
-        "G2": 4
+        "atC1": 4,
+        "atC3": 25,
+        "faceCountsDiffer": true
       }
     },
     "kernel_output": {
       "type": "face_count",
       "data": {
-        "C0": null,
-        "C1": 4,
-        "C2": 4,
-        "C3": 25,
-        "CN": 25,
-        "G1": 4,
-        "G2": 4,
-        "boundaryOnly": "4 at every level"
+        "atC1": 4,
+        "atC3": 25,
+        "faceCountsDiffer": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the kinked-surface face divided at C1 and at C3: the two face counts and whether they differ, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1638-266-318-438/transcript.txt lines 16 and 20 (C1: 4 faces; C3: 25 faces). faceCountsDiffer on the kernel side is 4 != 25."
   },
   {
     "test_name": "ShapeConstruct Curve Tests::convert3DLine",
@@ -6675,23 +6715,21 @@
     "bridge_output": {
       "type": "counts",
       "data": {
-        "fixEdgeSameParameter": 0,
-        "fixEdgeVertexTolerance": 0
+        "fixSameParameterCount": 0
       }
     },
     "kernel_output": {
       "type": "counts",
       "data": {
-        "FixSameParameter count": 0,
-        "FixVertexTolerance count": 0,
-        "edgesExplored": 24
+        "fixSameParameterCount": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.fixEdgeSameParameter() on a box: the number of edges ShapeFix_Edge::FixSameParameter changed, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 3 (box edges: FixSameParameter count=0)."
   },
   {
     "test_name": "ShapeFix Edge Tests::fixVertexTolerance",
@@ -6699,23 +6737,21 @@
     "bridge_output": {
       "type": "counts",
       "data": {
-        "fixEdgeSameParameter": 0,
-        "fixEdgeVertexTolerance": 0
+        "fixVertexToleranceCount": 0
       }
     },
     "kernel_output": {
       "type": "counts",
       "data": {
-        "FixSameParameter count": 0,
-        "FixVertexTolerance count": 0,
-        "edgesExplored": 24
+        "fixVertexToleranceCount": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.fixEdgeVertexTolerance() on a box: the number of edges ShapeFix_Edge::FixVertexTolerance changed, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 3 (box edges: FixVertexTolerance count=0)."
   },
   {
     "test_name": "v0.122.0, ShapeFix_Edge Extended::addRemoveCurve3d",
@@ -6815,6 +6851,7 @@
     "bridge_output": {
       "type": "range",
       "data": {
+        "bothDone": true,
         "first": 0,
         "last": 10
       }
@@ -6822,17 +6859,17 @@
     "kernel_output": {
       "type": "range",
       "data": {
-        "firstDone": true,
-        "first": 0,
-        "lastDone": true,
-        "last": 10
+        "bothDone": true,
+        "first": 0.0,
+        "last": 10.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.edgeProjAux(faceIndex: 0, edgeIndex: 0) on a box: a result (bothDone), first and last parameter, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 2 (EdgeProjAux: firstDone=1 first=0 lastDone=1 last=10). The bridge returns a value only when both IsFirstDone() and IsLastDone() hold, so bothDone is the conjunction of the kernel's two flags."
   },
   {
     "test_name": "v0.115.0 - ShapeFixer Builder::basicFixer",
@@ -7969,24 +8006,23 @@
     "bridge_output": {
       "type": "shape_summary",
       "data": {
-        "faces": 4
+        "facesBefore": 3,
+        "facesAfter": 4
       }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "cyl splitPoints 1": {
-          "Perform": true,
-          "faces": 4,
-          "volume": 785.398163
-        }
+        "facesBefore": 3,
+        "facesAfter": 4
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.dividedClosedFaces() on a cylinder: face count before and after, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt lines 6 and 19 (cylinder faces=3; DivideClosed(cyl, 1): Perform=1 faces=4)."
   },
   {
     "test_name": "ShapeUpgrade EdgeDivide::analyzeEdgeDivide",
@@ -8832,29 +8868,25 @@
     "bridge_output": {
       "type": "tolerance",
       "data": {
-        "maxTol": 1.0000000200000005e-06
+        "valid": true,
+        "volume": 999.9999999999998,
+        "maxTolerance": 1.0000000200000005e-06
       }
     },
     "kernel_output": {
       "type": "tolerance",
       "data": {
-        "box": {
-          "valid": true,
-          "volume": 1000,
-          "maxTol": 1.0000000200000005e-06
-        },
-        "cylinder": {
-          "valid": true,
-          "volume": 785.398163397,
-          "maxTol": 1.0000000200000005e-06
-        }
+        "valid": true,
+        "volume": 1000.0,
+        "maxTolerance": 1.0000000200000005e-06
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.updatingTolerances() on a box: validity, volume and the largest tolerance, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 20 (UpdateTolerances(box): valid=1 volume=1000 maxTol=1.0000000200000005e-06). The box's own maximum tolerance before the call is 1e-7 (asserted by the test); the probe measured only the updated copy."
   },
   {
     "test_name": "Update Tolerances::updateTolerancesPreservesVolume",
@@ -8862,29 +8894,25 @@
     "bridge_output": {
       "type": "tolerance",
       "data": {
-        "maxTol": 1.0000000200000005e-06
+        "valid": true,
+        "volume": 785.3981633974482,
+        "maxTolerance": 1.0000000200000005e-06
       }
     },
     "kernel_output": {
       "type": "tolerance",
       "data": {
-        "box": {
-          "valid": true,
-          "volume": 1000,
-          "maxTol": 1.0000000200000005e-06
-        },
-        "cylinder": {
-          "valid": true,
-          "volume": 785.398163397,
-          "maxTol": 1.0000000200000005e-06
-        }
+        "valid": true,
+        "volume": 785.398163397,
+        "maxTolerance": 1.0000000200000005e-06
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.updatingTolerances() on a cylinder r5 h10: validity, volume and the largest tolerance, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 21 (UpdateTolerances(cylinder r5 h10): valid=1 volume=785.398163397 maxTol=1.0000000200000005e-06)."
   },
   {
     "test_name": "ShapeAnalysis_WireVertex::wireVertex",
