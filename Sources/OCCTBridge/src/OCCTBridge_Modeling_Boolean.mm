@@ -2361,8 +2361,17 @@ OCCTShapeRef OCCTShapeGlue(OCCTShapeRef shape1, OCCTShapeRef shape2, double tole
     // SetArguments with no SetTools left the operation with nothing to fuse the
     // argument against, so it reported errors on every input and this function always
     // took the fallback below, silently, regardless of geometry.
+    //
+    // GlueFull, not GlueShift (#2749): BOPAlgo_GlueEnum.hxx documents GlueShift for
+    // PARTIAL face coincidence (faces overlap but are split) and GlueFull for FULL
+    // coincidence (no split at all), which is this function's own contract ("faces
+    // that perfectly align"). Scripts/repro/2749-glue-mode-choice/probe.mm measured
+    // both across five fixtures: identical solids/faces/volume on every one, including
+    // a genuinely non-coincident input and a genuine partial-overlap input, and
+    // GlueFull was the faster of the two in 6 of 6 runs once a fixture was large
+    // enough to move past scheduler noise (a two-box fuse is microseconds either way).
     BRepAlgoAPI_Fuse fuse;
-    fuse.SetGlue(BOPAlgo_GlueShift); // Enable gluing mode
+    fuse.SetGlue(BOPAlgo_GlueFull); // Enable gluing mode
     fuse.SetFuzzyValue(tolerance);
 
     TopTools_ListOfShape args;

@@ -2205,7 +2205,10 @@ public final class Shape: @unchecked Sendable {
 
     /// Glue two shapes together at coincident faces.
     ///
-    /// More efficient than boolean union when shapes have faces that perfectly align.
+    /// More efficient than boolean union when shapes have faces that perfectly align. Uses
+    /// `BOPAlgo_GlueFull`, OCCT's option for fully coincident faces (#2749); see
+    /// `Sources/OCCTBridge/src/OCCTBridge_Modeling_Boolean.mm`'s `OCCTShapeGlue` for the
+    /// measurement behind that choice.
     ///
     /// - Parameters:
     ///   - shape1: First shape

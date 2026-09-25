@@ -305,7 +305,9 @@ Glues two shapes together at coincident faces.
 public static func glue(_ shape1: Shape, _ shape2: Shape, tolerance: Double = 1e-6) -> Shape?
 ```
 
-More efficient than boolean union when the shapes have perfectly coincident faces. Uses OCCT's glue option (`BRepAlgoAPI_Fuse` with `GlueShift`) to avoid full topology re-computation. `shape1` is the argument and `shape2` is the tool (#2735); before the fix, both were passed as arguments with no tool set, which `BRepAlgoAPI_Fuse` always reports as an error, so the operation silently fell back to a plain fuse on every call.
+More efficient than boolean union when the shapes have perfectly coincident faces. Uses OCCT's glue option (`BRepAlgoAPI_Fuse` with `GlueFull`) to avoid full topology re-computation. `shape1` is the argument and `shape2` is the tool (#2735); before that fix, both were passed as arguments with no tool set, which `BRepAlgoAPI_Fuse` always reports as an error, so the operation silently fell back to a plain fuse on every call.
+
+`GlueFull`, not `GlueShift` (#2749): `BOPAlgo_GlueEnum.hxx` documents `GlueShift` for partial face coincidence (faces overlap but are split) and `GlueFull` for full coincidence (no split at all), which matches this function's own contract of perfectly aligned faces. `Scripts/repro/2749-glue-mode-choice/` measured both across five fixtures, including a genuinely non-coincident input and a genuine partial-overlap input: identical solids, faces and volume on every one, and `GlueFull` was the faster of the two in 6 of 6 runs once a fixture was large enough to move past scheduler noise.
 
 - **Parameters:** `shape1`, first shape; `shape2`, second shape with coincident faces; `tolerance`, face-matching tolerance.
 - **Returns:** Glued shape, or `nil` on failure.
