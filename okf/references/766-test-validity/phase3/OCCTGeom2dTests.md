@@ -10,19 +10,10 @@
 
 | Suite | Tests | Primary Category |
 |-------|-------|------------------|
-| BSpline Curve 2D Manipulation Tests | 22 | WR |
-| Curve2D Primitive Tests | 18 | WR |
-| Curve2D Operations Tests | 17 | WR |
-| BSplineCurve 2D Completions v121 | 15 | WR |
-| **Arc length stops being one quadrature per span (#603, 2D)** | **14** | **CR/WR (#603)** |
-| Curve2D Conic Factory Families | 13 | WR |
-| Analytical conversion contract (#492) | 12 | WR |
-| Bezier Curve 2D Manipulation Tests | 11 | WR |
 | Curve2D Plane Projection Tests | 10 | WR |
 | The nearest point is on the curve, not on its basis (#539) | 10 | WR |
 | Curve2D Conic Family Tests | 10 | WR |
 | Curve2D Continuity Queries v0.120.0 | 9 | WR |
-| Curve2D arc-length accuracy on multi-span curves (#477) | 9 | CR/WR (#477) |
 | Issue #211/#212, EdgeCurve arc-length adaptor | 9 | CR/WR |
 | v0.114.0 - Curve2D DN | 8 | WR |
 | Curve2D Extras v0.109 | 8 | WR |
@@ -50,8 +41,6 @@
 
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
-| mirrorAxisZeroDirection (2D) | `OCCTMakeMirror2dAxis` → `gp_Dir2d` | Zero direction vector | Remove `try/catch` |  |  | SIGABRT |
-| geomDirection2dZeroVector | `OCCTGeomDirection2dCreate` → `Geom2d_Direction` | Zero vector handled | N/A | N/A |  | Graceful |
 
 ### #603: CPnts_AbscissaPoint 2D Single Quadrature (Bridge + Kernel Fix)
 
@@ -114,13 +103,6 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 
 | Suite | Tests | Injected | Red ✓ | Green ✓ | PR Ready |
 |-------|-------|----------|-------|---------|----------|
-| BSpline Curve 2D Manipulation Tests | 22 |  |  |  |  |
-| Curve2D Primitive Tests | 18 |  |  |  |  |
-| Curve2D Operations Tests | 17 |  |  |  |  |
-| BSplineCurve 2D Completions v121 | 15 |  |  |  |  |
-| **Arc length stops being one quadrature per span (#603, 2D)** | **14** |  |  |  |  |
-| Curve2D Conic Factory Families | 13 |  |  |  |  |
-| Analytical conversion contract (#492) | 12 |  |  |  |  |
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
