@@ -59,6 +59,8 @@
 #include <Geom_Surface.hxx>
 #include <GeomAbs_Shape.hxx>
 #include <BRep_Tool.hxx>
+#include <BRep_TEdge.hxx>               // #2750: the BRepCheck_Edge::InContext precondition
+#include <BRep_CurveRepresentation.hxx> // #2750: same
 #include <Poly_Triangulation.hxx>
 #include <Poly_Polygon3D.hxx>
 #include <Poly_Polygon2D.hxx>
@@ -1632,6 +1634,130 @@ inline bool occtShapeIsPresent(OCCTFaceRef face)
 inline bool occtShapeIsType(OCCTShapeRef shape, TopAbs_ShapeEnum type)
 {
   return occtShapeIsPresent(shape) && shape->shape.ShapeType() == type;
+}
+
+// === #2750: the shape that takes BRepCheck_Analyzer's process down (#2746) ===
+//
+// BRepCheck_Edge::InContext(face) faults on one precise input, and BRepCheck_Analyzer::Perform()
+// calls it once per edge per face, so every BRepCheck_Analyzer this bridge constructs can reach it.
+// What the fault DOES is a race the caller does not control, measured in
+// Scripts/repro/2750-analyzer-incontext-guard/signal-probe.mm: after occtEnsureSignals() has run,
+// which any of fourteen bridge entry points does once per process, OCCT's SegvHandler reaches
+// Standard_ErrorHandler::Abort, which is a plain `throw` with OCC_CONVERT_SIGNALS undefined, and
+// BRepCheck_ParallelAnalyzer's own catch (Standard_Failure const&) records BRepCheck_CheckFail.
+// Before it, the process dies with SIGSEGV. One wrong answer, one dead process, same input.
+// Perform()'s OCC_CATCH_SIGNALS is inert here either way and absorbs nothing.
+//
+// The fault, read from the pinned BRepCheck_Edge.cxx:488-489 and measured in
+// Scripts/repro/2746-brepcheck-incontext-sigsegv/:
+//
+//   occ::handle<GeomAdaptor_Curve> Gac = occ::down_cast<GeomAdaptor_Curve>(myHCurve);
+//   occ::handle<Geom_Curve>        C3d = Gac->Curve();
+//
+// myHCurve is declared handle<Adaptor3d_Curve>, and Minimum() sets it to an
+// Adaptor3d_CurveOnSurface in exactly one case: when no curve-3D representation of the edge holds
+// a non-null Geom_Curve, the edge is not degenerated, and some curve-on-surface representation is
+// there to be adopted as myCref instead. The down_cast then yields null and Gac->Curve() reads
+// through it.
+//
+// So the predicate is: A NON-DEGENERATED EDGE OF A FACE, WITH NO VALID 3D CURVE AND AT LEAST ONE
+// PCURVE. The face clause is not decoration: BRepCheck_Analyzer::Perform reaches
+// BRepCheck_Edge::InContext only from its TopAbs_FACE case, so a loose edge in the same state is
+// checked with Minimum() alone and never crashes, and a predicate that ignored this would refuse
+// shapes that are safe.
+// The rest is written to mirror Minimum()'s own scan rather than approximate it, because the
+// obvious predicate is wrong in a way that matters. "Has a null Curve3D representation" is FALSE
+// for the shape a BRepTools::Write/Read round trip produces, which drops the null record on the way
+// out and crashes the analyzer anyway. Measured, four shapes:
+//
+//                                              null Curve3D rep   pcurve-only   faults
+//   healthy box                                false              false         no
+//   box with the 3D curve nulled in place      true               true          yes
+//   box with the Curve3D representation gone   false              true          yes
+//   cylinder (seam plus degenerated edges)     false              false         no
+//
+// A .brep file is therefore enough to reach this through the shipped validity API, with no
+// BRep_Builder call anywhere, which is why the guard lives here rather than at one entry point.
+//
+// It lives in this header, not as a file static, because its reach is six files:
+// OCCTBridge.mm, OCCTBridge_Healing_Analysis.mm, OCCTBridge_IO_IgesFormat.mm,
+// OCCTBridge_IO_Misc.mm, OCCTBridge_Modeling_HealingSewing.mm and this header's own
+// occtBRepCheckSubShapeStatus below.
+//
+// What a guarded site answers is decided per site and is never "I could not check": an edge in
+// this state is a shape OCCT's own BRepCheck_No3DCurve status exists to describe, so a whole-shape
+// validity question is answered "invalid" from a measurement that was taken, while a question
+// about one named sub-shape uses the site's existing "could not determine" channel, because the
+// predicate says nothing about which sub-shape the caller asked after.
+
+/// Counts the edges of `shape` that would drive BRepCheck_Edge::InContext into its null
+/// GeomAdaptor_Curve dereference: an edge OF A FACE that is not degenerated, has no curve-3D
+/// representation carrying a non-null Geom_Curve, and has at least one curve-on-surface
+/// representation for Minimum() to adopt instead. `limit` stops the walk once that many have been
+/// found; pass 0 to count them all.
+inline int32_t occtShapePCurveOnlyEdgeCount(const TopoDS_Shape& shape, int32_t limit)
+{
+  if (shape.IsNull())
+    return 0;
+  // Only an edge reachable from a face can reach the fault: BRepCheck_Analyzer::Perform calls
+  // BRepCheck_Edge::InContext(face) from its TopAbs_FACE case alone, walking that face's own
+  // edges. A loose edge, or a compound of them, is checked with Minimum() only and is safe, so
+  // testing every edge of the shape would refuse shapes that never crash. The indexed map is
+  // what keeps an edge two faces share from being counted twice.
+  TopTools_IndexedMapOfShape faceEdges;
+  for (TopExp_Explorer faceExp(shape, TopAbs_FACE); faceExp.More(); faceExp.Next())
+  {
+    TopExp::MapShapes(faceExp.Current(), TopAbs_EDGE, faceEdges);
+  }
+
+  int32_t found = 0;
+  for (int i = 1; i <= faceEdges.Extent(); i++)
+  {
+    const TopoDS_Edge& edge = TopoDS::Edge(faceEdges.FindKey(i));
+    if (BRep_Tool::Degenerated(edge))
+      continue; // Minimum() guards the curve-on-surface fallback with !Degenerated
+    const BRep_TEdge* tedge = static_cast<const BRep_TEdge*>(edge.TShape().get());
+    if (!tedge)
+      continue;
+    // Minimum() adopts the first curve-3D representation whose Curve3D() is non-null, and only
+    // when there is none does it fall back to the first curve-on-surface one. BRep_Tool::Curve is
+    // not a substitute: it returns the first curve-3D representation whatever it holds, so an
+    // edge carrying a null one ahead of a usable one would read as curveless here and does not.
+    bool hasCurve3D = false;
+    bool hasPCurve  = false;
+    for (NCollection_List<occ::handle<BRep_CurveRepresentation>>::Iterator it(tedge->Curves());
+         it.More();
+         it.Next())
+    {
+      const occ::handle<BRep_CurveRepresentation>& rep = it.Value();
+      if (rep->IsCurve3D())
+      {
+        if (!rep->Curve3D().IsNull())
+        {
+          hasCurve3D = true;
+          break;
+        }
+      }
+      else if (rep->IsCurveOnSurface())
+      {
+        hasPCurve = true;
+      }
+    }
+    if (!hasCurve3D && hasPCurve)
+    {
+      found++;
+      if (limit > 0 && found >= limit)
+        break;
+    }
+  }
+  return found;
+}
+
+/// Whether `shape` carries at least one such edge, and so must not be handed to a
+/// BRepCheck_Analyzer. Short-circuits on the first one.
+inline bool occtShapeHasPCurveOnlyEdge(const TopoDS_Shape& shape)
+{
+  return occtShapePCurveOnlyEdgeCount(shape, 1) > 0;
 }
 
 // === #502: one sub-shape enumeration ===
@@ -3231,6 +3357,14 @@ inline OCCTShapeRef occtPipeShellFinish(BRepOffsetAPI_MakePipeShell& pipeShell, 
 // Returns: -1 on error, 0 for NoError, >0 for first status enum value.
 inline int32_t occtBRepCheckSubShapeStatus(const TopoDS_Shape& shape, const TopoDS_Shape& subShape)
 {
+  // #2750: the analyzer faults on this shape (#2746). -1 is the answer rather than
+  // a status, because this entry point reports on ONE named sub-shape and the guard's predicate
+  // is a property of the whole shape: it says nothing about whether `subShape` is the offending
+  // edge or an unrelated vertex. -1 is this function's existing "could not determine", already
+  // returned for a null input and for a null BRepCheck_Result, and it is outside the
+  // BRepCheck_Status range, so it cannot be misread as BRepCheck_NoError.
+  if (occtShapeHasPCurveOnlyEdge(shape))
+    return -1;
   try
   {
     BRepCheck_Analyzer       analyzer(shape, Standard_True);

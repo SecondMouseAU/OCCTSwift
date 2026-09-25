@@ -1440,8 +1440,13 @@ extension Shape {
     ///
     /// - Parameters:
     ///   - lineMode: Convert lines to Bezier (default: true)
-    ///   - circleMode: Convert circles to Bezier (default: true)
-    ///   - conicMode: Convert conics to Bezier (default: true)
+    ///   - circleMode: Convert circles to Bezier (default: true). A circle only converts when
+    ///     `conicMode` is **also** true (#2748: `Geom_Circle` is-a `Geom_Conic` in OCCT, so
+    ///     `circleMode` alone can exclude circles from an enabled conic pass but never
+    ///     independently include them); see `docs/reference/Shape-Builders-2.md` for the measured
+    ///     kernel path.
+    ///   - conicMode: Convert conics to Bezier (default: true), including circles; see
+    ///     `circleMode` above
     /// - Returns: Shape with Bezier curves, or nil on failure
     public func convertCurves3dToBezier(
         lineMode: Bool = true, circleMode: Bool = true,

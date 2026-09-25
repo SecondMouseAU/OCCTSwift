@@ -308,6 +308,26 @@ the reproducer). What a bridge author needs without opening it:
   none of OCCT's own sites above it is uncatchable in-process, and so is a C++ exception that
   reaches the Swift boundary (#345), which is why every `gp_Dir`/`gp_Ax*`/`Geom_Direction`
   construction from caller doubles sits inside a `try`.
+  **Do not read that as "the process always dies", measured #2750.** Once `occtEnsureSignals()`
+  has run, which any of fourteen bridge entry points does once per process, OCCT's own
+  `SegvHandler` reaches `Standard_ErrorHandler::Abort`, and the same fault therefore kills one
+  process and comes back as a caught `Standard_Failure` in another, depending on nothing the
+  caller controls. Guard the fault; never rely on either outcome. (#2750 attributed that to
+  `Abort` being "a plain `throw` with `OCC_CONVERT_SIGNALS` undefined". The define is present
+  for OCCT's own units, and `OSD_signal.cxx` is the only translation unit that instantiates that
+  template, so it takes the `longjmp` branch, which explains both outcomes on its own: a handler
+  is found, or `FindHandler()` returns null and it prints and calls `exit(1)`. The observation
+  stands, the mechanism is under review as #2763.)
+- **`BRepCheck_Analyzer` is not crash-safe on a shape it did not build.** `Perform()` calls
+  `BRepCheck_Edge::InContext(face)`, which dereferences a failed `down_cast<GeomAdaptor_Curve>` on
+  a non-degenerated **edge of a face** with no valid 3D curve and at least one pcurve (#2746).
+  `Minimum()` reports `NoError` first, only the one owning face whose pcurve became `myCref`
+  faults, and a `.brep` file round-trips the state, so an imported shape reaches it. Guarded at all
+  20 bridge construction sites by `occtShapeHasPCurveOnlyEdge` /
+  `occtShapePCurveOnlyEdgeCount` in `OCCTBridge_Internal.h` (#2750): call one of them before any
+  new `BRepCheck_Analyzer`, and answer "invalid" for a whole-shape question or the site's existing
+  "could not determine" for a per-sub-shape one. The predicate is **not** "has a null `Curve3D`
+  representation", which is false for the shape a `.brep` round trip produces and crashes anyway.
 - `GeomAbs_G2` is never a valid order for `BRepFill_Filling`: curvature continuity is
   `GeomAbs_C1` (ordinal 2), whatever `BRepOffsetAPI_MakeFilling.hxx` says. Test any filling change
   on both a planar and a periodic support surface, since #430 was catchable on one and an
