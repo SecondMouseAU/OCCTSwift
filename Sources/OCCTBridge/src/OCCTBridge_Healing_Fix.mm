@@ -395,10 +395,11 @@ static OCCTShapeCheckResult checkSubShape(OCCTShapeRef shape, TopAbs_ShapeEnum t
       if (*it != BRepCheck_NoError)
       {
         result.isValid = false;
-        if (result.firstError == OCCTCheckNoError)
+        if (result.errorCount == 0)
         {
           result.firstError = mapBRepCheckStatus(*it);
         }
+        result.errorCount++;
       }
     }
     return result;

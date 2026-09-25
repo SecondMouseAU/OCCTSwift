@@ -652,7 +652,8 @@ extension Shape {
     ///   was dropped and the solid was shelled with fewer openings than asked for.
     ///
     /// - Parameters:
-    ///   - thickness: Wall thickness (positive = inward, negative = outward)
+    ///   - thickness: Wall thickness (positive = outward, negative = inward), matching
+    ///     ``offset(by:)`` and `BRepOffsetAPI_MakeThickSolid`'s own convention (#2736)
     ///   - openFaces: Faces to leave open (must have valid indices from this shape)
     /// - Returns: Shelled shape with specified faces open, or nil on failure
     ///
@@ -1375,8 +1376,8 @@ extension Shape {
     }
 
     /// Shell / hollow: remove the listed faces and offset the remaining shell
-    /// inward by `thickness` (use a negative `thickness` for outward), with a
-    /// queryable per-face history.
+    /// outward by `thickness` (use a negative `thickness` for inward, matching
+    /// ``shelled(thickness:openFaces:)``, #2736), with a queryable per-face history.
     public func shelledWithFullHistory(
         facesToRemove: [Int], thickness: Double, tolerance: Double = 1e-3
     )
@@ -1626,14 +1627,15 @@ extension Shape {
         else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
-    /// Create a hollowed (thick) solid by removing faces and offsetting inward.
+    /// Create a hollowed (thick) solid by removing faces and offsetting the rest.
     ///
     /// Removes the specified faces and creates a shell with uniform wall thickness.
     /// The removed faces become openings in the resulting hollow shape.
     ///
     /// - Parameters:
     ///   - faceIndices: 0-based indices of faces to remove (become openings)
-    ///   - thickness: Wall thickness (positive = offset inward)
+    ///   - thickness: Wall thickness (positive = outward, negative = inward), matching
+    ///     ``offset(by:)`` and ``shelled(thickness:openFaces:)`` (#2736)
     ///   - tolerance: Tolerance for the operation
     ///   - joinType: How to join offset edges (default: .arc)
     /// - Returns: Hollowed solid, or nil on failure
