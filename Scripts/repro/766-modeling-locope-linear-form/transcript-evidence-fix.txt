@@ -1,0 +1,1 @@
+linearForm: produced=1 type=compound faces=12 valid=1 volume=4.9999999999999929
