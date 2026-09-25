@@ -415,19 +415,21 @@
     },
     "kernel_output": {
       "m00": [
-        1,
-        0
+        1.0,
+        0.0
       ],
       "m22": [
-        1,
-        0
+        1.0,
+        0.0
       ]
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously a float on the bridge side and an int on the kernel side): view matrix entries (0,0) and (2,2) for a camera at (0,0,10) and then at (10,0,0), both looking at the origin with up +Y. Bridge: Camera.viewMatrix columns.0.x and columns.2.z, each converted to Double (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, camera.view lines). Kernel: Graphic3d_Camera::OrientationMatrixF() entries printed m00 1 -> 0, m22 1 -> 0 (Scripts/repro/766-drawing-autodim-balloon-camera/transcript.txt, viewMatrixChanges).",
+    "probe": "Scripts/repro/766-drawing-autodim-balloon-camera/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Camera Tests::Project/Unproject roundtrip",
@@ -451,16 +453,18 @@
         0.09909909909909909
       ],
       "world": [
-        5,
-        3,
-        0
+        5.0,
+        3.0,
+        0.0
       ]
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously the world coordinates were ints on the kernel side): the screen coordinates of the world point (5,3,0) and the world point recovered from them, for a camera at (0,0,100), fov 45, aspect 1, z range 1..1000. Bridge: Camera.project then Camera.unproject (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, camera.roundtrip lines). Kernel: Graphic3d_Camera::Project then UnProject with zero-to-one depth (Scripts/repro/766-drawing-autodim-balloon-camera/transcript.txt, projectUnprojectRoundtrip).",
+    "probe": "Scripts/repro/766-drawing-autodim-balloon-camera/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Camera Tests::Orthographic mode produces different matrices",
@@ -722,14 +726,16 @@
       "endpointDistance": 10.0
     },
     "kernel_output": {
-      "circleRadius": 5,
-      "endpointDistance": 10
+      "circleRadius": 5.0,
+      "endpointDistance": 10.0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously a float on the bridge side and an int on the kernel side): the circle radius and the distance between the diameter's two endpoints for a radius-5 circle wire. Bridge: DiameterDimension.geometry .circleRadius and the distance between .firstPoint and .secondPoint (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, diameterGeometry). Kernel: PrsDim_DiameterDimension Circle().Radius() and the distance from the anchor to the point opposite it through the centre (Scripts/repro/766-drawing-thread-cylproj-diameter/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-thread-cylproj-diameter/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Diameter Dimension::Custom value on diameter",
@@ -738,13 +744,15 @@
       "value": 99.0
     },
     "kernel_output": {
-      "value": 99
+      "value": 99.0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously a float on the bridge side and an int on the kernel side): the diameter dimension's value after SetCustomValue(99). Bridge: DiameterDimension.setCustomValue(99) then .value (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, diameterCustom.value). Kernel: PrsDim_DiameterDimension::SetCustomValue(99) then GetValue() (Scripts/repro/766-drawing-thread-cylproj-diameter/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-thread-cylproj-diameter/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Display Drawer::Default values",
@@ -1444,16 +1452,18 @@
     },
     "kernel_output": {
       "translation": [
-        5,
-        6,
-        7
+        5.0,
+        6.0,
+        7.0
       ]
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously floats on the bridge side and ints on the kernel side): the translation part of the occurrence ref's local location after linkProducts wrote the placement (5,6,7). Bridge: BRepGraph.occurrenceRefLocalLocation(ref) entries [3], [7], [11] (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, occ.afterLink). Kernel: Refs().Gen().LocalLocation(occurrence ref) TranslationPart (Scripts/repro/766-drawing-editorview/transcript.txt, occurrenceRef after link).",
+    "probe": "Scripts/repro/766-drawing-editorview/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "v0.163 EditorView ProductOps assembly building::Child ref local location round-trip",
@@ -2802,58 +2812,64 @@
     "test_name": "Z-Layer Settings::Polygon offset roundtrip",
     "bridge_function": "OCCTZLayerSettingsSetPolygonOffset",
     "bridge_output": {
-      "mode": "fill",
+      "mode": 1,
       "factor": 1.5,
       "units": 2.0
     },
     "kernel_output": {
       "mode": 1,
       "factor": 1.5,
-      "units": 2
+      "units": 2.0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously the mode was the string fill on the bridge side and the raw int 1 on the kernel side, and factor and units were ints): a polygon offset of mode fill, factor 1.5, units 2.0, as the raw mode value (Aspect_POM_Fill = 1) and float factor and units. Bridge: ZLayerSettings.polygonOffset .mode.rawValue, .factor and .units (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, zlayer.polygonOffset); the test asserts .mode == .fill. Kernel: Graphic3d_ZLayerSettings PolygonOffset() Mode, Factor and Units (Scripts/repro/766-drawing-zlayer/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-zlayer/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Z-Layer Settings::Depth offset positive convenience",
     "bridge_function": "OCCTZLayerSettingsSetDepthOffsetPositive",
     "bridge_output": {
-      "mode": "fill",
-      "factor": 1,
-      "units": 1
+      "mode": 1,
+      "factor": 1.0,
+      "units": 1.0
     },
     "kernel_output": {
       "mode": 1,
-      "factor": 1,
-      "units": 1
+      "factor": 1.0,
+      "units": 1.0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously the mode was the string fill on the bridge side and the raw int 1 on the kernel side, and factor and units were ints): the offset after setDepthOffsetPositive(), as the raw mode value (Aspect_POM_Fill = 1) and float factor and units. Bridge: ZLayerSettings.polygonOffset .mode.rawValue, .factor and .units (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, zlayer.depthOffsetPositive); the test asserts .mode == .fill. Kernel: Graphic3d_ZLayerSettings PolygonOffset() Mode, Factor and Units (Scripts/repro/766-drawing-zlayer/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-zlayer/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Z-Layer Settings::Depth offset negative convenience",
     "bridge_function": "OCCTZLayerSettingsSetDepthOffsetNegative",
     "bridge_output": {
-      "mode": "fill",
-      "factor": 1,
-      "units": -1
+      "mode": 1,
+      "factor": 1.0,
+      "units": -1.0
     },
     "kernel_output": {
       "mode": 1,
-      "factor": 1,
-      "units": -1
+      "factor": 1.0,
+      "units": -1.0
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously the mode was the string fill on the bridge side and the raw int 1 on the kernel side, and factor and units were ints): the offset after setDepthOffsetNegative(), as the raw mode value (Aspect_POM_Fill = 1) and float factor and units. Bridge: ZLayerSettings.polygonOffset .mode.rawValue, .factor and .units (Scripts/repro/766-drawing-evidence-fix/swift-side.txt, zlayer.depthOffsetNegative); the test asserts .mode == .fill. Kernel: Graphic3d_ZLayerSettings PolygonOffset() Mode, Factor and Units (Scripts/repro/766-drawing-zlayer/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-zlayer/, Scripts/repro/766-drawing-evidence-fix/"
   },
   {
     "test_name": "Z-Layer Settings::Immediate mode toggle",
