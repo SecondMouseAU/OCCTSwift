@@ -2,9 +2,18 @@
   {
     "test_name": "Modeling domain kernel parity",
     "bridge_function": "OCCTModelingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
   },
   {
@@ -406,5 +415,227 @@
       "differences": []
     },
     "status": "N/A"
+  },
+  {
+    "test_name": "v0.114.0 - Boolean Tolerance::fuseWithTolerance",
+    "bridge_function": "OCCTShapeUnionEx",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "solids": 1,
+        "faces": 10,
+        "signedVolume": 2000.0666666666662,
+        "controlSolids": 2,
+        "controlFaces": 12,
+        "controlSignedVolume": 1999.9999999999993
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "solids": 1,
+        "faces": 10,
+        "signedVolume": 2000.0666666666662,
+        "controlSolids": 2,
+        "controlFaces": 12,
+        "controlSignedVolume": 1999.9999999999993
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, solid and face counts and signedVolume of the fuse of a 10 mm cube (0..10) with a second 10 mm cube at origin (10.001,0,0), a 0.001 gap between coincident-plane faces, at fuzzy 0.01, next to the same fuse at tolerance 0. The fuzzy value is larger than the gap, so it joins the cubes: 1 solid of 10 faces where the control keeps 2 solids of 12 faces. The test asserts the control's 2 solids, and the with-tolerance validity, 1 solid, 10 faces and volume within 1e-6 of 2000.0667. The earlier fixture (a centred first cube, so the second sat 4.999 clear of it) never reached the fuzzy value. Bridge: Shape.fused(with:tolerance: 0.01) non-nil (OCCTShapeUnionEx returns nullptr when the BRepAlgoAPI operation is not done), isValid, subShapes(ofType: .solid).count, subShapes(ofType: .face).count and Shape.signedVolume, the raw BRepGProp mass, used instead of volume because Shape.volume is nil for an empty result; the same call with the option off is the control* keys, each run on its own freshly built boxes. Kernel: BRepAlgoAPI_Fuse with SetArguments/SetTools and SetFuzzyValue(0.01), IsDone, BRepCheck_Analyzer, TopExp::MapShapes solid and face counts, BRepGProp::VolumeProperties; the fuseWithTolerance line of the transcript at %.17g, boxes rebuilt for each run because a fuzzy boolean raises the tolerance of its arguments' sub-shapes in place. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-tolerance/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "v0.114.0 - Boolean Tolerance::cutWithTolerance",
+    "bridge_function": "OCCTShapeSubtractEx",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "solids": 1,
+        "faces": 6,
+        "signedVolume": 999.9999999999998,
+        "controlSolids": 1,
+        "controlFaces": 6,
+        "controlSignedVolume": 999.9
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "solids": 1,
+        "faces": 6,
+        "signedVolume": 999.9999999999998,
+        "controlSolids": 1,
+        "controlFaces": 6,
+        "controlSignedVolume": 999.9
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, solid and face counts and signedVolume of the cut of a 10 mm cube (0..10) by a 12 x 12 x 2 slab at origin (-1,-1,9.999), whose lower face is 0.001 below the cube's top face, at fuzzy 0.01, next to the same cut at tolerance 0. Strict, the slab really overlaps and 0.1 comes off the top (volume 999.9); with fuzzy 0.01 the two faces are one face and nothing comes off (volume 1000). The test asserts both volumes within 1e-6 and the with-tolerance validity. The earlier fixture met the cube at one corner, so the cut returned the first cube unchanged whatever the tolerance. Bridge: Shape.subtracted(_:tolerance: 0.01) non-nil (OCCTShapeSubtractEx returns nullptr when the BRepAlgoAPI operation is not done), isValid, subShapes(ofType: .solid).count, subShapes(ofType: .face).count and Shape.signedVolume, the raw BRepGProp mass, used instead of volume because Shape.volume is nil for an empty result; the same call with the option off is the control* keys, each run on its own freshly built boxes. Kernel: BRepAlgoAPI_Cut with SetArguments/SetTools and SetFuzzyValue(0.01), IsDone, BRepCheck_Analyzer, TopExp::MapShapes solid and face counts, BRepGProp::VolumeProperties; the cutWithTolerance line of the transcript at %.17g, boxes rebuilt for each run because a fuzzy boolean raises the tolerance of its arguments' sub-shapes in place. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-tolerance/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "v0.114.0 - Boolean Tolerance::commonWithTolerance",
+    "bridge_function": "OCCTShapeIntersectEx",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "solids": 0,
+        "faces": 0,
+        "signedVolume": 0,
+        "controlSolids": 1,
+        "controlFaces": 6,
+        "controlSignedVolume": 0.09999999999994458
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "solids": 0,
+        "faces": 0,
+        "signedVolume": 0,
+        "controlSolids": 1,
+        "controlFaces": 6,
+        "controlSignedVolume": 0.09999999999994458
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, solid and face counts and signedVolume of the common of a 10 mm cube (0..10) and a second 10 mm cube at origin (9.999,0,0), a 0.001 sliver of overlap, at fuzzy 0.01, next to the same common at tolerance 0. Strict, the common is the sliver, one solid of 6 faces and volume 0.1; with fuzzy 0.01 the sliver is thinner than the fuzzy value and the common is a valid empty shape (no solid, mass 0). The test asserts the control's 1 solid and volume 0.1 within 1e-9, and the with-tolerance validity and no solid. The earlier fixture met at one corner and was empty whatever the tolerance. Bridge: Shape.intersected(with:tolerance: 0.01) non-nil (OCCTShapeIntersectEx returns nullptr when the BRepAlgoAPI operation is not done), isValid, subShapes(ofType: .solid).count, subShapes(ofType: .face).count and Shape.signedVolume, the raw BRepGProp mass, used instead of volume because Shape.volume is nil for an empty result; the same call with the option off is the control* keys, each run on its own freshly built boxes. Kernel: BRepAlgoAPI_Common with SetArguments/SetTools and SetFuzzyValue(0.01), IsDone, BRepCheck_Analyzer, TopExp::MapShapes solid and face counts, BRepGProp::VolumeProperties; the commonWithTolerance line of the transcript at %.17g, boxes rebuilt for each run because a fuzzy boolean raises the tolerance of its arguments' sub-shapes in place. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-tolerance/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "v0.114.0 - Boolean Tolerance::fuseWithGlue",
+    "bridge_function": "OCCTShapeUnionEx",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "solids": 2,
+        "faces": 12,
+        "signedVolume": 1999.9999999999995,
+        "controlSolids": 1,
+        "controlFaces": 12,
+        "controlSignedVolume": 1875
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "solids": 2,
+        "faces": 12,
+        "signedVolume": 1999.9999999999995,
+        "controlSolids": 1,
+        "controlFaces": 12,
+        "controlSignedVolume": 1875
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, solid and face counts and signedVolume of the fuse of two 10 mm cubes overlapping in a 5 x 5 x 5 corner (origins (0,0,0) and (5,5,5)) with GlueShift, next to the same fuse with glue off. Glue off is the true union, 1 solid of volume 1875; GlueShift takes the cubes as disjoint, skips the face/face intersection and keeps both: 2 solids of volume 2000, the overlap counted twice. That wrong-by-design answer is the only observable signature of the glue argument, since on genuinely coincident faces every glue mode returned the identical shape (measured while writing the probe). The test asserts both. The earlier fixture (a centred first cube, so the second sat 5 clear of it) had nothing to glue. Bridge: Shape.fused(with:glue: .shift) non-nil (OCCTShapeUnionEx returns nullptr when the BRepAlgoAPI operation is not done), isValid, subShapes(ofType: .solid).count, subShapes(ofType: .face).count and Shape.signedVolume, the raw BRepGProp mass, used instead of volume because Shape.volume is nil for an empty result; the same call with the option off is the control* keys, each run on its own freshly built boxes. Kernel: BRepAlgoAPI_Fuse with SetArguments/SetTools and SetGlue(BOPAlgo_GlueShift), IsDone, BRepCheck_Analyzer, TopExp::MapShapes solid and face counts, BRepGProp::VolumeProperties; the fuseWithGlue line of the transcript at %.17g, boxes rebuilt for each run because a fuzzy boolean raises the tolerance of its arguments' sub-shapes in place. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-tolerance/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "v0.114.0 - Boolean Tolerance::cutWithGlue",
+    "bridge_function": "OCCTShapeSubtractEx",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "solids": 1,
+        "faces": 6,
+        "signedVolume": 7999.999999999998,
+        "controlSolids": 1,
+        "controlFaces": 9,
+        "controlSignedVolume": 7875.000000000002
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "solids": 1,
+        "faces": 6,
+        "signedVolume": 7999.999999999998,
+        "controlSolids": 1,
+        "controlFaces": 9,
+        "controlSignedVolume": 7875.000000000002
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, solid and face counts and signedVolume of the cut of a 20 mm cube (origin (-10,-10,-10)) by a 10 mm cube at (5,5,5), overlapping in a 5 x 5 x 5 corner, with GlueFull, next to the same cut with glue off. Glue off is the true cut, 9 faces and volume 7875; GlueFull takes the two as disjoint and removes nothing: 6 faces, volume 8000. The test asserts both and the with-glue validity. The earlier test passed glue .off, the default, so it exercised no glue mode at all. Bridge: Shape.subtracted(_:glue: .full) non-nil (OCCTShapeSubtractEx returns nullptr when the BRepAlgoAPI operation is not done), isValid, subShapes(ofType: .solid).count, subShapes(ofType: .face).count and Shape.signedVolume, the raw BRepGProp mass, used instead of volume because Shape.volume is nil for an empty result; the same call with the option off is the control* keys, each run on its own freshly built boxes. Kernel: BRepAlgoAPI_Cut with SetArguments/SetTools and SetGlue(BOPAlgo_GlueFull), IsDone, BRepCheck_Analyzer, TopExp::MapShapes solid and face counts, BRepGProp::VolumeProperties; the cutWithGlue line of the transcript at %.17g, boxes rebuilt for each run because a fuzzy boolean raises the tolerance of its arguments' sub-shapes in place. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-tolerance/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "v0.114.0 - Boolean Tolerance::commonWithGlue",
+    "bridge_function": "OCCTShapeIntersectEx",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "solids": 0,
+        "faces": 0,
+        "signedVolume": 0,
+        "controlSolids": 1,
+        "controlFaces": 6,
+        "controlSignedVolume": 124.99999999999997
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "solids": 0,
+        "faces": 0,
+        "signedVolume": 0,
+        "controlSolids": 1,
+        "controlFaces": 6,
+        "controlSignedVolume": 124.99999999999997
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, solid and face counts and signedVolume of the common of two 10 mm cubes overlapping in a 5 x 5 x 5 corner (origins (0,0,0) and (5,5,5)) with GlueShift, next to the same common with glue off. Glue off is the overlap, one solid of 6 faces and volume 125; GlueShift takes the cubes as disjoint and finds no common: a valid empty shape. The test asserts both. The earlier fixture met at a corner and passed glue .off, so it was empty and glue-free whatever the bridge did. Bridge: Shape.intersected(with:glue: .shift) non-nil (OCCTShapeIntersectEx returns nullptr when the BRepAlgoAPI operation is not done), isValid, subShapes(ofType: .solid).count, subShapes(ofType: .face).count and Shape.signedVolume, the raw BRepGProp mass, used instead of volume because Shape.volume is nil for an empty result; the same call with the option off is the control* keys, each run on its own freshly built boxes. Kernel: BRepAlgoAPI_Common with SetArguments/SetTools and SetGlue(BOPAlgo_GlueShift), IsDone, BRepCheck_Analyzer, TopExp::MapShapes solid and face counts, BRepGProp::VolumeProperties; the commonWithGlue line of the transcript at %.17g, boxes rebuilt for each run because a fuzzy boolean raises the tolerance of its arguments' sub-shapes in place. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-tolerance/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   }
 ]

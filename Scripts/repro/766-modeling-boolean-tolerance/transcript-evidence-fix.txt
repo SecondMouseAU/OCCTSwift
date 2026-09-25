@@ -1,0 +1,6 @@
+fuseWithTolerance: done=true valid=true solids=1 faces=10 signedVolume=2000.0666666666662 controlSolids=2 controlFaces=12 controlSignedVolume=1999.9999999999993
+cutWithTolerance: done=true valid=true solids=1 faces=6 signedVolume=999.99999999999977 controlSolids=1 controlFaces=6 controlSignedVolume=999.89999999999998
+commonWithTolerance: done=true valid=true solids=0 faces=0 signedVolume=0 controlSolids=1 controlFaces=6 controlSignedVolume=0.099999999999944578
+fuseWithGlue: done=true valid=true solids=2 faces=12 signedVolume=1999.9999999999995 controlSolids=1 controlFaces=12 controlSignedVolume=1875
+cutWithGlue: done=true valid=true solids=1 faces=6 signedVolume=7999.9999999999982 controlSolids=1 controlFaces=9 controlSignedVolume=7875.0000000000018
+commonWithGlue: done=true valid=true solids=0 faces=0 signedVolume=0 controlSolids=1 controlFaces=6 controlSignedVolume=124.99999999999997
