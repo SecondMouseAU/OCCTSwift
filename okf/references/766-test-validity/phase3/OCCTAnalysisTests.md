@@ -481,12 +481,12 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
-| lineDirection | OCCTCurve3DLineDirection | Geom_Line | swap dx/dy | ✅ | ✅ | Fixture now #require'd |
+| lineDirection | OCCTCurve3DLineDirection | Geom_Line | swap dx/dy | ✅ | ✅ | Fixture now #require'd. Tightened: it asserted x only; y and z are asserted too. Red at `GeomLine3DTests.swift:15` with dy + 0.5 and at `:16` with dz + 0.5 |
 | lineLocation | OCCTCurve3DLineLocation | Geom_Line | x + 1 | ✅ | ✅ | Fixture now #require'd |
-| lineSetDirection | OCCTCurve3DLineSetDirection | Geom_Line setter | skip SetDirection | ✅ | ✅ | Fixture now #require'd |
-| lineSetLocation | OCCTCurve3DLineSetLocation | Geom_Line setter | skip SetLocation | ✅ | ✅ | Fixture now #require'd |
-| linePosition | OCCTCurve3DLinePosition | Geom_Line | location y + 1 | ✅ | ✅ | Fixture now #require'd |
-| lineLin | OCCTCurve3DLineLin | Geom_Line | location z + 1 | ✅ | ✅ | Fixture now #require'd |
+| lineSetDirection | OCCTCurve3DLineSetDirection | Geom_Line setter | skip SetDirection | ✅ | ✅ | Fixture now #require'd. Tightened: it asserted y only, which a unit vector leaning 1e-4 in x or z still satisfies at 1e-6; x and z are asserted at 1e-12. Red at `:32` with SetDirection given x + 1e-4 and at `:34` with z + 1e-4, y passing both times |
+| lineSetLocation | OCCTCurve3DLineSetLocation | Geom_Line setter | skip SetLocation | ✅ | ✅ | Fixture now #require'd. Tightened: it asserted x only; y and z are asserted too. Red at `:42` with y + 1 and at `:43` with z + 1 |
+| linePosition | OCCTCurve3DLinePosition | Geom_Line | location y + 1 | ✅ | ✅ | Fixture now #require'd. Tightened: location.x and direction y and z are asserted too. Red at `:54` with location x + 1, `:50` with direction y + 0.5 and `:51` with direction z + 0.5 |
+| lineLin | OCCTCurve3DLineLin | Geom_Line | location z + 1 | ✅ | ✅ | Fixture now #require'd. Tightened: the direction was never asserted; all three components are. Red at `:67` with direction x + 1, `:68` with y + 0.5 and `:69` with z + 0.5 |
 
 ---
 
