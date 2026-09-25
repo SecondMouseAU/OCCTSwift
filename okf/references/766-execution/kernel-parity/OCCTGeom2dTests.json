@@ -15558,28 +15558,35 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "nil"
+        "ellipse_0x0": false,
+        "ellipse_5x0": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "0x0": "degree 2, 5 poles all (0,0)",
-        "5x0": "degree 2, 5 poles on the x-axis"
+        "ellipse_0x0": true,
+        "ellipse_5x0": true
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #514: the bridge refuses a degenerate dimension (occtValidEllipseRadii / HyperbolaRadii / ParabolaFocal / CircleRadius) before any OCCT call; the kernel does not refuse it. Convert_EllipseToBSplineCurve builds a degree-2, 5-pole B-spline for both 0x0 (all poles at the origin) and 5x0 (poles on the x-axis, (5, 0) to (-5, 0)).",
+        "ellipse_0x0: bridge false, kernel true",
+        "ellipse_5x0: bridge false, kernel true"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "every #514 validity guard disabled",
       "red": "Issue514Conic2dDegenerateTests.swift:22:9: Expectation failed: Curve2D.fromEllipseArc(",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-conic-degenerate/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_curve, whether an ellipse arc [0, pi] centred (0,0) with the radii in the key is converted to a B-spline. Bridge: Curve2D.fromEllipseArc returned nil (OCCTConvertEllipseToBSpline2D). Kernel: Convert_EllipseToBSplineCurve on gp_Elips2d(ax, major, minor), the call the bridge makes past its guard, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-conic-degenerate/"
   },
   {
     "test_name": "Issue514 2D conic degenerate dimensions::ellipseArcRejectsNegativeAndInvertedRadii",
@@ -15587,13 +15594,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "nil"
+        "ellipse_5x_minus3": false,
+        "ellipse_3x5": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "gp_Elips2d 5x-3 and 3x5": "throws invalid construction parameters"
+        "ellipse_5x_minus3": false,
+        "ellipse_3x5": false
       }
     },
     "comparison": {
@@ -15607,7 +15616,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-conic-degenerate/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_curve, whether an ellipse arc [0, pi] with radii 5 x -3 and 3 x 5 is converted to a B-spline. Bridge: Curve2D.fromEllipseArc returned nil. Kernel: gp_Elips2d(ax, major, minor) raised for both (\"invalid construction parameters\"), so Convert_EllipseToBSplineCurve is never reached, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-conic-degenerate/"
   },
   {
     "test_name": "Issue514 2D conic degenerate dimensions::ellipseArcAcceptsValidRadii",
@@ -15681,27 +15692,38 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "nil"
+        "hyperbola_0x0": false,
+        "hyperbola_5x0": false,
+        "hyperbola_0x3": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "0x0": "degree 2, 3 poles all (0,0)"
+        "hyperbola_0x0": true,
+        "hyperbola_5x0": true,
+        "hyperbola_0x3": true
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #514: the bridge refuses a degenerate dimension (occtValidEllipseRadii / HyperbolaRadii / ParabolaFocal / CircleRadius) before any OCCT call; the kernel does not refuse it. Convert_HyperbolaToBSplineCurve builds a degree-2, 3-pole B-spline for all three: 0x0 (all poles at the origin), 5x0 (poles on the x-axis) and 0x3 (poles on the y-axis).",
+        "hyperbola_0x0: bridge false, kernel true",
+        "hyperbola_5x0: bridge false, kernel true",
+        "hyperbola_0x3: bridge false, kernel true"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "every #514 validity guard disabled",
       "red": "Issue514Conic2dDegenerateTests.swift:64:9: Expectation failed: Curve2D.fromHyperbolaArc(",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-conic-degenerate/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_curve, whether a hyperbola arc [0, 1] centred (0,0) with the radii in the key is converted to a B-spline. Bridge: Curve2D.fromHyperbolaArc returned nil (OCCTConvertHyperbolaToBSpline2D). Kernel: Convert_HyperbolaToBSplineCurve on gp_Hypr2d(ax, major, minor), the call the bridge makes past its guard, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-conic-degenerate/"
   },
   {
     "test_name": "Issue514 2D conic degenerate dimensions::hyperbolaArcAcceptsMinorLargerThanMajor",
@@ -15755,27 +15777,32 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "nil"
+        "parabola_focal_0": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "focal 0": "poles (nan, nan) .. (inf, nan)"
+        "parabola_focal_0": true
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #514: the bridge refuses a degenerate dimension (occtValidEllipseRadii / HyperbolaRadii / ParabolaFocal / CircleRadius) before any OCCT call; the kernel does not refuse it. Convert_ParabolaToBSplineCurve builds a degree-2, 3-pole B-spline for focal 0 whose poles are not finite (first pole (nan, nan), last pole (inf, nan) in the probe), so everything evaluated on it is NaN.",
+        "parabola_focal_0: bridge false, kernel true"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "every #514 validity guard disabled",
       "red": "Issue514Conic2dDegenerateTests.swift:93:9: Expectation failed: Curve2D.fromParabolaArc(centerX: 0, centerY: 0, focal: 0, u1: 0, u2: 1) == nil",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-conic-degenerate/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_curve, whether a parabola arc [0, 1] with focal 0 is converted to a B-spline. Bridge: Curve2D.fromParabolaArc returned nil (OCCTConvertParabolaToBSpline2D). Kernel: Convert_ParabolaToBSplineCurve on gp_Parab2d(ax, 0), the call the bridge makes past its guard, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-conic-degenerate/"
   },
   {
     "test_name": "Issue514 2D conic degenerate dimensions::parabolaArcAcceptsPositiveFocal",
@@ -15989,27 +16016,35 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "nil"
+        "ellipse_0x0": false,
+        "ellipse_5x0": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "IntAna2d_Conic 0x0": "A=B=C=D=E=F=0"
+        "ellipse_0x0": true,
+        "ellipse_5x0": true
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #514: the bridge refuses a degenerate dimension (occtValidEllipseRadii / HyperbolaRadii / ParabolaFocal / CircleRadius) before any OCCT call; the kernel does not refuse it. IntAna2d_Conic returns coefficients for both: A=B=C=D=E=F=0 for 0x0, the equation 0 = 0 that every point satisfies, and A=1, F=-25 (the pair of lines x = +-5) for 5x0.",
+        "ellipse_0x0: bridge false, kernel true",
+        "ellipse_5x0: bridge false, kernel true"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "every #514 validity guard disabled",
       "red": "Issue514Conic2dDegenerateTests.swift:161:9: Expectation failed: Conic2D.ellipse(",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-conic-degenerate/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_conic, whether the conic coefficients of an ellipse centred (0,0), direction (1,0), with the radii in the key are returned. Bridge: Conic2D.ellipse returned nil (OCCTConic2dFromEllipse). Kernel: IntAna2d_Conic(gp_Elips2d(ax, major, minor)), the call the bridge makes past its guard, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-conic-degenerate/"
   },
   {
     "test_name": "Issue514 2D conic degenerate dimensions::conicCircleRejectsZeroRadius",
@@ -16045,13 +16080,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "nil x3"
+        "circle": false,
+        "line": false,
+        "ellipse": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "gp_Dir2d(0,0)": "throws: input vector has zero norm"
+        "circle": false,
+        "line": false,
+        "ellipse": false
       }
     },
     "comparison": {
@@ -16065,7 +16104,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-conic-degenerate/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_conic, whether the conic coefficients are returned when the axis direction is (0, 0), for a circle of radius 5, a line and an ellipse 5 x 3. Bridge: Conic2D.circle, .line and .ellipse returned nil. Kernel: IntAna2d_Conic on a gp_Circ2d / gp_Lin2d / gp_Elips2d whose gp_Dir2d(0, 0) raised (\"input vector has zero norm\"); each was run separately in the probe.",
+    "probe": "Scripts/repro/766-geom2d-conic-degenerate/"
   },
   {
     "test_name": "Issue514 2D conic degenerate dimensions::conicCoefficientOrderIsOCCTs",
@@ -16173,37 +16214,33 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "r0": "empty",
-        "r5": 2
+        "r0_points": 0,
+        "r5_points": 2
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "r0": "1 point (0, 0)",
-        "r5": [
-          [
-            5,
-            0
-          ],
-          [
-            -5,
-            0
-          ]
-        ]
+        "r0_points": 1,
+        "r5_points": 2
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #514: the bridge refuses a degenerate dimension (occtValidEllipseRadii / HyperbolaRadii / ParabolaFocal / CircleRadius) before any OCCT call; the kernel does not refuse it. For radius 0 IntAna2d_AnaIntersection reports 1 point, (0, 0), a point-on-line test rather than an intersection.",
+        "r0_points: bridge 0, kernel 1"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "every #514 validity guard disabled",
       "red": "Issue514Conic2dDegenerateTests.swift:217:9: Expectation failed: Conic2D.lineCircleIntersection(",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-conic-degenerate/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: the number of intersection points of the x-axis with a circle centred (0,0), direction (1,0), of the radius in the key (r0_points is radius 0, r5_points radius 5). Bridge: Conic2D.lineCircleIntersection (OCCTConic2dLineCircleIntersect). Kernel: IntAna2d_AnaIntersection(line, IntAna2d_Conic(circle)) NbPoints, the sequence the bridge makes, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-conic-degenerate/"
   }
 ]

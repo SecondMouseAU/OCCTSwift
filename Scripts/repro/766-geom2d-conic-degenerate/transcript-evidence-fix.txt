@@ -1,0 +1,30 @@
+A ellipse 0x0: yields (degree 2, 5 poles, first (0, 0), last (0, 0))
+EF A1.ellipse_0x0 = true
+A ellipse 5x0: yields (degree 2, 5 poles, first (5, 0), last (-5, 0))
+EF A1.ellipse_5x0 = true
+B ellipse 5x-3: raised gp_Elips2d() - invalid construction parameters
+EF A2.ellipse_5x_minus3 = false
+B ellipse 3x5: raised gp_Elips2d() - invalid construction parameters
+EF A2.ellipse_3x5 = false
+C hyperbola 0x0: yields (degree 2, 3 poles, first (0, 0), last (0, 0))
+EF A3.hyperbola_0x0 = true
+C hyperbola 5x0: yields (degree 2, 3 poles, first (5, 0), last (7.7154, 0))
+EF A3.hyperbola_5x0 = true
+C hyperbola 0x3: yields (degree 2, 3 poles, first (0, 0), last (0, 3.5256))
+EF A3.hyperbola_0x3 = true
+D parabola focal 0: yields (degree 2, 3 poles, first (nan, nan), last (inf, nan))
+EF A4.parabola_focal_0 = true
+E conic ellipse 0x0: yields (A=0 B=0 C=0 D=0 E=0 F=0)
+EF A5.ellipse_0x0 = true
+E conic ellipse 5x0: yields (A=1 B=0 C=0 D=-0 E=-0 F=-25)
+EF A5.ellipse_5x0 = true
+F conic circle, direction (0,0): raised gp_Dir2d() - input vector has zero norm
+EF A6.circle = false
+F conic line, direction (0,0): raised gp_Dir2d() - input vector has zero norm
+EF A6.line = false
+F conic ellipse, direction (0,0): raised gp_Dir2d() - input vector has zero norm
+EF A6.ellipse = false
+G x-axis vs circle radius 0: IsDone=1 points=1 (0, 0)
+EF A7.r0_points = 1
+G x-axis vs circle radius 5: IsDone=1 points=2 (5, 0) (-5, 0)
+EF A7.r5_points = 2
