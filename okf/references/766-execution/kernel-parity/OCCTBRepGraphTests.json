@@ -2123,17 +2123,23 @@
     "bridge_function": "OCCTBRepGraphSampleEdgeCurve",
     "bridge_output": {
       "type": "points",
-      "data": []
+      "data": {
+        "has_curve": false
+      }
     },
     "kernel_output": {
       "type": "points",
-      "data": []
+      "data": {
+        "has_curve": false
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether edge index 999, which the graph does not hold, has a curve. Bridge: edgeHasCurve(999), which the sampler checks first and returns no points for; the test asserts the sampler returned no points (printed points=0). Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: Tool::Edge::HasCurve(edge 999) returns false without throwing, \"edge 999: hasCurve=0\" in the probe transcript. The zero-point result is the bridge's own guard on that answer, so it is recorded in this note rather than as a kernel value.",
+    "probe": "Scripts/repro/766-brepgraph-edge-query-sampling/"
   },
   {
     "test_name": "BRepGraph Edge Sampling::sampleZeroCount",
@@ -2162,7 +2168,7 @@
         "poleEdges": "empty",
         "seamFirstZ": -5,
         "seamLastZ": 5,
-        "max|r-5|": "< 1e-9"
+        "max|r-5|": 8.88e-16
       }
     },
     "kernel_output": {
@@ -2178,7 +2184,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the 20 samples on the sphere's seam edge (edge 1) and the two degenerate pole edges. Bridge: sampleEdgeCurve(edgeIndex: 1, count: 20) gives first z = -5, last z = 5 and max |r - 5| = 8.881784197001252e-16, and the pole edges 0 and 2 give no points; the test asserts each within 1e-9 / 1e-12. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: Tool::Edge::Curve evaluated over Tool::Edge::Range, \"max|r-5|=8.88e-16\" with first and last points at z = -5 and 5, and \"no curve -> 0 points\" for edges 0 and 2, in the probe transcript. The numeric error is compared within the test's tolerance; the old record wrote the bridge side as the string \"< 1e-9\".",
+    "probe": "Scripts/repro/766-brepgraph-edge-query-sampling/"
   },
   {
     "test_name": "v0.142 ConstructionPoint resolution::atVertex",
@@ -3456,7 +3464,7 @@
         "isPart": true,
         "isAssembly": false,
         "shapeRoot": [
-          "solid",
+          0,
           0
         ],
         "roots": 1
@@ -3480,7 +3488,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: product count before and after linking the box's solid, part / assembly, the product's shape root as [kind ordinal, index] (kind 0 = solid), and the root product count. Bridge: the test asserts productCount 0 then 1, productIsPart true, productIsAssembly false, productShapeRoot == (.solid, 0) and rootProductCount == productCount, so those are the observed values (.solid is ordinal 0). The old record wrote the bridge shape root as the string \"solid\" against the kernel's ordinal 0. Kernel: \"linked product: index=0 products=1 roots=1 isPart=1 isAssembly=0 components=1 shapeRoot=(kind 0, 0)\" in the probe transcript.",
+    "probe": "Scripts/repro/766-brepgraph-products-refs/"
   },
   {
     "test_name": "BRepGraph Products::productQueriesOnSphere",
@@ -3604,7 +3614,7 @@
     "bridge_output": {
       "type": "node",
       "data": [
-        "face",
+        2,
         0
       ]
     },
@@ -3619,7 +3629,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the child node of face ref 0 as [kind ordinal, index] (kind 2 = face). Bridge: the test asserts refChildNodeKind(.face, refIndex: 0) == .face (ordinal 2) and refChildNodeIndex == 0. The old record wrote the bridge side as the string \"face\" against the kernel's ordinal 2. Kernel: Refs().Gen().ChildNode(face ref 0), \"faceRef0: childKind=2 childIndex=0\" in the probe transcript.",
+    "probe": "Scripts/repro/766-brepgraph-products-refs/"
   },
   {
     "test_name": "BRepGraph Ref Entry Queries::refNotRemoved",
@@ -4691,12 +4703,7 @@
           ]
         ],
         "deleted": [],
-        "untouched": [
-          [
-            2,
-            2
-          ]
-        ]
+        "untouched": []
       }
     },
     "kernel_output": {
@@ -4716,7 +4723,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: FindDerived for a modified face (face 0 -> face 100), a deleted face (face 1, mapped to nothing) and an untouched face (face 2), as [kind ordinal, index] lists. Bridge: findDerived(of:) for each. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_LayerHistory::FindDerived, \"modified: FindDerived(kind 2, 0) = [ (2,100) ]\", \"deleted: ... = [ ]\" and \"untouched: ... = [ ]\" in the probe transcript. The test's findDerivedOrSelf turns the untouched empty result into [self] (printed [(2, 2)]) and keeps the deleted one empty; that disambiguation is Swift logic with no kernel counterpart. The old record put that [self] result on the bridge side against the kernel's empty list while claiming equal.",
+    "probe": "Scripts/repro/766-brepgraph-face-history/"
   },
   {
     "test_name": "v0.141 BRepGraph history record readback::findDerivedOrSelfMatchesFindDerivedWhenNonEmpty",
