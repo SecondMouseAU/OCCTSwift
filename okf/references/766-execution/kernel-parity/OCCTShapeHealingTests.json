@@ -9538,5 +9538,266 @@
     },
     "status": "PASS",
     "source": "Same quantity on both sides: whether the 10x10x10 box self-intersects, as a boolean. Bridge: analyze(tolerance: 0.001, selfIntersectionTimeout: 5).hasSelfIntersection, asserted == false (the timeout value does not enter the answer). Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 7 ('#772 self-intersection: box=0 overlapping compound=1'); the probe's selfInter() returns 1 when BOPAlgo_ArgumentAnalyzer (SelfInterMode, StopOnFirstFaulty) reports BOPAlgo_SelfIntersect and 0 otherwise, so 0 is false and 1 is true."
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::averageTolerance",
+    "bridge_function": "OCCTShapeToleranceValue",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "average_tolerance": 1e-07
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "average_tolerance": 1e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the average tolerance over every sub-shape of the 10 x 20 x 30 box (Shape.toleranceValue(mode: .average), sub-shape type 8 = TopAbs_SHAPE). Kernel line 'average=9.9999999999999995e-08'. Bridge value: a temporary print in ShapeToleranceTests (reverted). Kernel value: Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm, transcript Scripts/repro/766-healing-shapetolerance/transcript-evidence-fix.txt, which calls ShapeAnalysis_ShapeTolerance the way the bridge does and prints at %.17g. Every one of the eleven records of this suite used to carry the same string on the bridge side against a dictionary of every reading on the kernel side; each now carries the one quantity its own test asserts."
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::maximumTolerance",
+    "bridge_function": "OCCTShapeToleranceValue",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "maximum_tolerance": 1e-07
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "maximum_tolerance": 1e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the maximum tolerance over every sub-shape of the 10 x 20 x 30 box (mode .maximum). Kernel line 'maximum=9.9999999999999995e-08'. Bridge value: a temporary print in ShapeToleranceTests (reverted). Kernel value: Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm, transcript Scripts/repro/766-healing-shapetolerance/transcript-evidence-fix.txt, which calls ShapeAnalysis_ShapeTolerance the way the bridge does and prints at %.17g. Every one of the eleven records of this suite used to carry the same string on the bridge side against a dictionary of every reading on the kernel side; each now carries the one quantity its own test asserts."
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::minimumTolerance",
+    "bridge_function": "OCCTShapeToleranceValue",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "minimum_tolerance": 1e-07
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "minimum_tolerance": 1e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the minimum tolerance over every sub-shape of the 10 x 20 x 30 box (mode .minimum). Kernel line 'minimum=9.9999999999999995e-08'. Bridge value: a temporary print in ShapeToleranceTests (reverted). Kernel value: Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm, transcript Scripts/repro/766-healing-shapetolerance/transcript-evidence-fix.txt, which calls ShapeAnalysis_ShapeTolerance the way the bridge does and prints at %.17g. Every one of the eleven records of this suite used to carry the same string on the bridge side against a dictionary of every reading on the kernel side; each now carries the one quantity its own test asserts."
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::toleranceOrdering",
+    "bridge_function": "OCCTShapeToleranceValue",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "minimum": 1e-07,
+        "average": 1e-07,
+        "maximum": 1e-07,
+        "min_le_average": true,
+        "average_le_maximum": true
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "minimum": 1e-07,
+        "average": 1e-07,
+        "maximum": 1e-07,
+        "min_le_average": true,
+        "average_le_maximum": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the minimum, average and maximum tolerance of the 10 x 20 x 30 box and whether they are ordered minimum <= average <= maximum, which is what the test asserts. The ordering holds trivially here because every sub-shape sits at the same 1e-07. Kernel line 'ordering min=9.9999999999999995e-08 avg=9.9999999999999995e-08 max=9.9999999999999995e-08 minLeAvg=1 avgLeMax=1'. Bridge value: a temporary print in ShapeToleranceTests (reverted). Kernel value: Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm, transcript Scripts/repro/766-healing-shapetolerance/transcript-evidence-fix.txt, which calls ShapeAnalysis_ShapeTolerance the way the bridge does and prints at %.17g. Every one of the eleven records of this suite used to carry the same string on the bridge side against a dictionary of every reading on the kernel side; each now carries the one quantity its own test asserts."
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::overToleranceCount",
+    "bridge_function": "OCCTShapeToleranceOverCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "over_tolerance_count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "over_tolerance_count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: how many sub-shapes of the 10 x 20 x 30 box have a tolerance over 1e-3 (Shape.toleranceOverCount(value: 1e-3)). Kernel line 'overToleranceCount=0'. Bridge value: a temporary print in ShapeToleranceTests (reverted). Kernel value: Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm, transcript Scripts/repro/766-healing-shapetolerance/transcript-evidence-fix.txt, which calls ShapeAnalysis_ShapeTolerance the way the bridge does and prints at %.17g. Every one of the eleven records of this suite used to carry the same string on the bridge side against a dictionary of every reading on the kernel side; each now carries the one quantity its own test asserts."
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::inToleranceRangeCount",
+    "bridge_function": "OCCTShapeToleranceInRangeCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "in_range_count": 30
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "in_range_count": 30
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: how many sub-shapes of the 10 x 20 x 30 box have a tolerance in [0, 1e-3] (Shape.toleranceInRangeCount(min: 0, max: 1e-3)); the test pins 30, the sequence length the kernel reports. Kernel line 'inToleranceRangeCount=30'. Bridge value: a temporary print in ShapeToleranceTests (reverted). Kernel value: Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm, transcript Scripts/repro/766-healing-shapetolerance/transcript-evidence-fix.txt, which calls ShapeAnalysis_ShapeTolerance the way the bridge does and prints at %.17g. Every one of the eleven records of this suite used to carry the same string on the bridge side against a dictionary of every reading on the kernel side; each now carries the one quantity its own test asserts."
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::vertexTolerance",
+    "bridge_function": "OCCTShapeToleranceValue",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "vertex_average_tolerance": 1e-07
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "vertex_average_tolerance": 1e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the average tolerance over the vertices of the 10 x 20 x 30 box (sub-shape type 7 = TopAbs_VERTEX). Kernel line 'vertexAverage=9.9999999999999995e-08'. Bridge value: a temporary print in ShapeToleranceTests (reverted). Kernel value: Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm, transcript Scripts/repro/766-healing-shapetolerance/transcript-evidence-fix.txt, which calls ShapeAnalysis_ShapeTolerance the way the bridge does and prints at %.17g. Every one of the eleven records of this suite used to carry the same string on the bridge side against a dictionary of every reading on the kernel side; each now carries the one quantity its own test asserts."
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::edgeTolerance",
+    "bridge_function": "OCCTShapeToleranceValue",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "edge_average_tolerance": 1e-07
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "edge_average_tolerance": 1e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the average tolerance over the edges of the 10 x 20 x 30 box (sub-shape type 6 = TopAbs_EDGE). Kernel line 'edgeAverage=9.9999999999999995e-08'. Bridge value: a temporary print in ShapeToleranceTests (reverted). Kernel value: Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm, transcript Scripts/repro/766-healing-shapetolerance/transcript-evidence-fix.txt, which calls ShapeAnalysis_ShapeTolerance the way the bridge does and prints at %.17g. Every one of the eleven records of this suite used to carry the same string on the bridge side against a dictionary of every reading on the kernel side; each now carries the one quantity its own test asserts."
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::toleranceValueOnNullifiedShapeReturnsZero",
+    "bridge_function": "OCCTShapeToleranceValue",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "null_shape_average_tolerance": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "null_shape_average_tolerance": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the average tolerance reported for a nullified shape. Kernel line 'nullAverage=0'. For a nullified shape (a non-null wrapper around a null TopoDS_Shape) the bridge returns 0 from its occtShapeIsPresent guard before OCCT is called (#1438); the kernel value is ShapeAnalysis_ShapeTolerance's own answer to a null TopoDS_Shape, the value that guard has to agree with. Bridge value: a temporary print in ShapeToleranceTests (reverted). Kernel value: Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm, transcript Scripts/repro/766-healing-shapetolerance/transcript-evidence-fix.txt, which calls ShapeAnalysis_ShapeTolerance the way the bridge does and prints at %.17g. Every one of the eleven records of this suite used to carry the same string on the bridge side against a dictionary of every reading on the kernel side; each now carries the one quantity its own test asserts."
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::toleranceOverCountOnNullifiedShapeReturnsZero",
+    "bridge_function": "OCCTShapeToleranceOverCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "null_shape_over_tolerance_count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "null_shape_over_tolerance_count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the over-tolerance count (value 1e-3) reported for a nullified shape. Kernel line 'nullOverToleranceCount=0'. For a nullified shape (a non-null wrapper around a null TopoDS_Shape) the bridge returns 0 from its occtShapeIsPresent guard before OCCT is called (#1438); the kernel value is ShapeAnalysis_ShapeTolerance's own answer to a null TopoDS_Shape, the value that guard has to agree with. Bridge value: a temporary print in ShapeToleranceTests (reverted). Kernel value: Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm, transcript Scripts/repro/766-healing-shapetolerance/transcript-evidence-fix.txt, which calls ShapeAnalysis_ShapeTolerance the way the bridge does and prints at %.17g. Every one of the eleven records of this suite used to carry the same string on the bridge side against a dictionary of every reading on the kernel side; each now carries the one quantity its own test asserts."
+  },
+  {
+    "test_name": "ShapeAnalysis_ShapeTolerance::toleranceInRangeCountOnNullifiedShapeReturnsZero",
+    "bridge_function": "OCCTShapeToleranceInRangeCount",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "null_shape_in_range_count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "null_shape_in_range_count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the in-range count ([0, 1e-3]) reported for a nullified shape. Kernel line 'nullInToleranceRangeCount=0'. For a nullified shape (a non-null wrapper around a null TopoDS_Shape) the bridge returns 0 from its occtShapeIsPresent guard before OCCT is called (#1438); the kernel value is ShapeAnalysis_ShapeTolerance's own answer to a null TopoDS_Shape, the value that guard has to agree with. Bridge value: a temporary print in ShapeToleranceTests (reverted). Kernel value: Scripts/repro/766-healing-shapetolerance/probe-evidence-fix.mm, transcript Scripts/repro/766-healing-shapetolerance/transcript-evidence-fix.txt, which calls ShapeAnalysis_ShapeTolerance the way the bridge does and prints at %.17g. Every one of the eleven records of this suite used to carry the same string on the bridge side against a dictionary of every reading on the kernel side; each now carries the one quantity its own test asserts."
   }
 ]
