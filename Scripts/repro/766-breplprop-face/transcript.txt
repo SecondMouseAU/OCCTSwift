@@ -1,0 +1,11 @@
+face count=1
+face orientation=0 (0=FORWARD, 1=REVERSED)
+faceValue: (3.8507557646703496, 2.1036774620197414, 2.397127693021015) |p|=5
+IsNormalDefined=1
+faceNormal: (0.77015115293406988, 0.42073549240394825, 0.47942553860420301)
+IsCurvatureDefined=1
+faceCurvature: max=-0.19999999999999998 min=-0.20000000000000001
+faceMeanAndGaussianCurvature: mean=-0.19999999999999998 gauss=0.039999999999999994
+faceIsUmbilic: IsUmbilic=0
+IsTangentUDefined=1
+faceTangentU: (-0.47942553860420301, 0.87758256189037276, 0)
