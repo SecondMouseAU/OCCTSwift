@@ -5967,308 +5967,288 @@
   },
   {
     "test_name": "v0.115.0 - ShapeFixer Builder::basicFixer",
-    "bridge_function": "OCCTShapeFixer*",
+    "bridge_function": "OCCTShapeFixerPerform / OCCTShapeFixerShape",
     "bridge_output": {
       "type": "status",
-      "data": "as asserted"
+      "data": {
+        "perform": false,
+        "valid": true,
+        "isSolid": true,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "status",
       "data": {
-        "Perform": false,
+        "perform": false,
         "valid": true,
-        "type": "SOLID",
-        "volume": 1000.0,
-        "FAIL": false
+        "isSolid": true,
+        "volume": 1000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: ShapeFixer(shape:) on a 10 mm cube with precision 1e-7, maximum tolerance 1.0 and minimum tolerance 1e-10: perform()'s answer, whether the result is valid, whether it is a solid, and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 4 (ShapeFixer(box) Perform=0 valid=1 type=2 volume=1000), ShapeFix_Shape with the same three Set calls, Perform, then BRepCheck_Analyzer, ShapeType and BRepGProp; type 2 is TopAbs_SOLID, recorded as a flag."
   },
   {
     "test_name": "v0.115.0 - ShapeFixer Builder::fixerStatus",
-    "bridge_function": "OCCTShapeFixer*",
+    "bridge_function": "OCCTShapeFixerPerform / OCCTShapeFixerStatus / OCCTShapeFixerShape",
     "bridge_output": {
       "type": "status",
-      "data": "as asserted"
+      "data": {
+        "fail": false,
+        "shapeIsNull": false
+      }
     },
     "kernel_output": {
       "type": "status",
       "data": {
-        "Perform": false,
-        "valid": true,
-        "type": "SOLID",
-        "volume": 1000.0,
-        "FAIL": false
+        "fail": false,
+        "shapeIsNull": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: ShapeFixer(shape:) on a 10 mm cube with default settings, after perform(): status(3), the legacy FAIL query, and whether shape is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T127): ShapeFix_Shape on the same cube, Perform, Status(ShapeExtend_FAIL), and whether Shape() is null."
   },
   {
     "test_name": "Shape Fixing Tests::fixHealthyShape",
-    "bridge_function": "OCCTShapeFixDetailed / OCCTShapeHeal",
+    "bridge_function": "OCCTShapeFixDetailed",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "isSolid": true,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "fixSolid=1": {
-          "valid": true,
-          "type": "SOLID",
-          "volume": 1000.0
-        },
-        "fixSolid=0": {
-          "valid": true,
-          "type": "SOLID",
-          "volume": 1000.0
-        },
-        "healed": {
-          "valid": true,
-          "volume": 1000.0
-        }
+        "valid": true,
+        "isSolid": true,
+        "volume": 1000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.fixed(tolerance: 0.001) on a 10 mm cube: whether the result is valid, whether it is a solid, and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 5 (fixed(0.001, fixSolid=1): valid=1 type=2 volume=1000), ShapeFix_Shape at precision 0.001 with the solid, free shell, free face and free wire modes on; type 2 is TopAbs_SOLID, recorded as a flag."
   },
   {
     "test_name": "Shape Fixing Tests::fixWithSelectiveModes",
-    "bridge_function": "OCCTShapeFixDetailed / OCCTShapeHeal",
+    "bridge_function": "OCCTShapeFixDetailed",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "fixSolid=1": {
-          "valid": true,
-          "type": "SOLID",
-          "volume": 1000.0
-        },
-        "fixSolid=0": {
-          "valid": true,
-          "type": "SOLID",
-          "volume": 1000.0
-        },
-        "healed": {
-          "valid": true,
-          "volume": 1000.0
-        }
+        "valid": true,
+        "volume": 1000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.fixed(tolerance: 0.001, fixSolid: false, fixShell: true, fixFace: true, fixWire: true) on a 10 mm cube: whether the result is valid and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 6 (fixed(0.001, fixSolid=0): valid=1 type=2 volume=1000), the same ShapeFix_Shape with the solid mode off."
   },
   {
     "test_name": "Shape Fixing Tests::existingHealStillWorks",
-    "bridge_function": "OCCTShapeFixDetailed / OCCTShapeHeal",
+    "bridge_function": "OCCTShapeHeal",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "fixSolid=1": {
-          "valid": true,
-          "type": "SOLID",
-          "volume": 1000.0
-        },
-        "fixSolid=0": {
-          "valid": true,
-          "type": "SOLID",
-          "volume": 1000.0
-        },
-        "healed": {
-          "valid": true,
-          "volume": 1000.0
-        }
+        "valid": true,
+        "volume": 1000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.healed() on a 10 mm cube: whether the result is valid and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 7 (healed(box) (ShapeFix_Shape): valid=1 volume=1000), a default ShapeFix_Shape and Perform. The bridge first refuses a shape with a self-intersecting wire (#263); the cube has none, so that guard does not act here."
   },
   {
     "test_name": "ShapeFix IntersectionTool Tests::fixIntersectingWires",
     "bridge_function": "OCCTShapeFixIntersectingWires",
     "bridge_output": {
       "type": "bools",
-      "data": "as asserted"
+      "data": {
+        "fixed": false
+      }
     },
     "kernel_output": {
       "type": "bools",
       "data": {
-        "box face0": false,
-        "overlappingHoleFace": {
-          "fixed": true,
-          "edgesBefore": 8,
-          "edgesAfter": 12
-        }
+        "fixed": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.fixIntersectingWires(faceIndex: 0) on a 10 mm cube: whether the call reported a fix, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 8 (IntersectionTool FixIntersectingWires(box face0)=0), ShapeFix_IntersectionTool::FixIntersectingWires on the cube's first face; recorded as false."
   },
   {
     "test_name": "ShapeFix IntersectionTool Tests::fixIntersectingWiresActuallyAppliesTheFix",
     "bridge_function": "OCCTShapeFixIntersectingWires",
     "bridge_output": {
       "type": "bools",
-      "data": "as asserted"
+      "data": {
+        "fixed": true,
+        "edgesBefore": 8,
+        "edgesAfter": 12
+      }
     },
     "kernel_output": {
       "type": "bools",
       "data": {
-        "box face0": false,
-        "overlappingHoleFace": {
-          "fixed": true,
-          "edgesBefore": 8,
-          "edgesAfter": 12
-        }
+        "fixed": true,
+        "edgesBefore": 8,
+        "edgesAfter": 12
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: fixIntersectingWires(faceIndex: 0) on a 20 x 20 face with a 10 x 10 hole straddling its right edge: whether a fix was reported, and the shape's edge count before and after, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 9 (overlapping hole face: edges before=8 FixIntersectingWires=1 edges after=12), ShapeFix_IntersectionTool then ShapeBuild_ReShape::Apply on the same face; recorded as true."
   },
   {
     "test_name": "ShapeFix FixSmallSolid Tests::removeSmallSolids",
-    "bridge_function": "OCCTShapeFixSmallSolid*",
+    "bridge_function": "OCCTShapeFixRemoveSmallSolids",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "solids": 1,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "Remove(big+tiny,1.0)": {
-          "solids": 1,
-          "volume": 1000.0
-        },
-        "Merge(big+thinSlab,1.0)": {
-          "solids": 2,
-          "valid": true,
-          "volume": 1001.0
-        }
+        "solids": 1,
+        "volume": 999.9999999999998
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: compound.removeSmallSolids(volumeThreshold: 1.0) on a compound of a 10 mm cube and a 0.01 mm cube moved to x = 20: the solid count and the volume of the result, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T133): ShapeFix_FixSmallSolid with fix mode 2 and volume threshold 1.0, Remove(compound, a fresh ShapeBuild_ReShape), as OCCTShapeFixRemoveSmallSolids drives it, on the same two boxes."
   },
   {
     "test_name": "ShapeFix FixSmallSolid Tests::mergeSmallSolids",
-    "bridge_function": "OCCTShapeFixSmallSolid*",
+    "bridge_function": "OCCTShapeFixMergeSmallSolids",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "solids": 2,
+        "volume": 1000.9999999999997
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "Remove(big+tiny,1.0)": {
-          "solids": 1,
-          "volume": 1000.0
-        },
-        "Merge(big+thinSlab,1.0)": {
-          "solids": 2,
-          "valid": true,
-          "volume": 1001.0
-        }
+        "valid": true,
+        "solids": 2,
+        "volume": 1000.9999999999998
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: compound.mergeSmallSolids(widthFactorThreshold: 1.0) on a compound of a centred 10 mm cube and a 0.01 x 10 x 10 slab whose corner is at (10, 0, 0): whether the result is valid, its solid count and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T134): ShapeFix_FixSmallSolid with fix mode 1 and width factor 1.0, Merge(compound, a fresh ShapeBuild_ReShape), as OCCTShapeFixMergeSmallSolids drives it, on the same two boxes. The older transcript's probe placed the cube's corner at the origin so the slab touched it; the test's cube is centred, so the two are 5 mm apart and this record measures that geometry."
   },
   {
     "test_name": "ShapeFix Solid Tests::fixSolid",
-    "bridge_function": "OCCTShapeFixSolid / OCCTShapeSolidFromShell",
+    "bridge_function": "OCCTShapeFixSolid",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "isSolid": true,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "fixSolid": {
-          "type": "SOLID",
-          "valid": true,
-          "volume": 1000.0
-        },
-        "solidFromShell": {
-          "type": "SOLID",
-          "volume": 1000.0
-        }
+        "valid": true,
+        "isSolid": true,
+        "volume": 1000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.fixSolid() on a 10 mm cube: whether the result is valid, whether it is a solid, and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 12 (ShapeFix_Solid(box): type=2 valid=1 volume=1000), ShapeFix_Solid Perform; type 2 is TopAbs_SOLID, recorded as a flag."
   },
   {
     "test_name": "ShapeFix Solid Tests::solidFromShellFixed",
-    "bridge_function": "OCCTShapeFixSolid / OCCTShapeSolidFromShell",
+    "bridge_function": "OCCTShapeSolidFromShell",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "isSolid": true,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "fixSolid": {
-          "type": "SOLID",
-          "valid": true,
-          "volume": 1000.0
-        },
-        "solidFromShell": {
-          "type": "SOLID",
-          "volume": 1000.0
-        }
+        "isSolid": true,
+        "volume": 1000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.solidFromShellFixed() on a 10 mm cube: whether the result is a solid and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 12 (SolidFromShell: type=2 volume=1000), ShapeFix_Solid::SolidFromShell on the cube's shell; type 2 is TopAbs_SOLID, recorded as a flag."
   },
   {
     "test_name": "ShapeFix SplitCommonVertex Tests::splitVertices",
-    "bridge_function": "OCCTShapeSplitCommonVertex",
+    "bridge_function": "OCCTShapeFixSplitCommonVertex",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "vertices": 8,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
@@ -6282,158 +6262,138 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.splitCommonVertices() on a 10 mm cube: whether the result is valid, its vertex count and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 13 (SplitCommonVertex(box): valid=1 vertices=8 volume=1000), ShapeFix_SplitCommonVertex Init and Perform."
   },
   {
     "test_name": "ShapeFix Tolerance Tests::setTolerance",
-    "bridge_function": "OCCTShapeSetTolerance / OCCTShapeLimitTolerance",
+    "bridge_function": "OCCTShapeFixSetTolerance / OCCTShapeToleranceValue",
     "bridge_output": {
       "type": "tolerance",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "max": 1e-05,
+        "min": 1e-05
+      }
     },
     "kernel_output": {
       "type": "tolerance",
       "data": {
-        "SetTolerance(1e-5)": {
-          "max": 1e-05,
-          "min": 1e-05
-        },
-        "LimitTolerance(1e-7,1e-3)": {
-          "result": false,
-          "max": 1e-07
-        }
+        "valid": true,
+        "max": 1e-05,
+        "min": 1e-05
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.setTolerance(1e-5) on a 10 mm cube: whether the box is valid, and the maximum and minimum tolerance over its sub-shapes, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 14 (SetTolerance(box, 1e-5): valid=1 max=1.000e-05 min=1.000e-05), ShapeFix_ShapeTolerance::SetTolerance then ShapeAnalysis_ShapeTolerance::Tolerance at modes 1 and -1."
   },
   {
     "test_name": "ShapeFix Tolerance Tests::limitTolerance",
-    "bridge_function": "OCCTShapeSetTolerance / OCCTShapeLimitTolerance",
+    "bridge_function": "OCCTShapeFixLimitTolerance / OCCTShapeToleranceValue",
     "bridge_output": {
       "type": "tolerance",
-      "data": "as asserted"
+      "data": {
+        "limited": false,
+        "valid": true,
+        "max": 1e-07
+      }
     },
     "kernel_output": {
       "type": "tolerance",
       "data": {
-        "SetTolerance(1e-5)": {
-          "max": 1e-05,
-          "min": 1e-05
-        },
-        "LimitTolerance(1e-7,1e-3)": {
-          "result": false,
-          "max": 1e-07
-        }
+        "limited": false,
+        "valid": true,
+        "max": 1e-07
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.limitTolerance(min: 1e-7, max: 1e-3) on a 10 mm cube: whether any tolerance was changed, whether the box is valid, and its maximum tolerance, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 15 (LimitTolerance(box, 1e-7, 1e-3)=0 valid=1 max=1.000e-07), ShapeFix_ShapeTolerance::LimitTolerance then ShapeAnalysis_ShapeTolerance::Tolerance at mode 1; the change flag is recorded as false."
   },
   {
     "test_name": "ShapeFix_Wireframe Extension Tests::fixWireGapsReturnsShape",
-    "bridge_function": "OCCTShapeFixWireGaps / OCCTShapeFixSmallEdges",
+    "bridge_function": "OCCTShapeFixWireGaps",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "edges": 12,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "FixWireGaps": {
-          "valid": true,
-          "edges": 12,
-          "volume": 1000.0
-        },
-        "FixSmallEdges(drop)": {
-          "valid": true,
-          "edges": 12,
-          "volume": 1000.0
-        },
-        "FixSmallEdges(merge)": {
-          "valid": true,
-          "edges": 12,
-          "volume": 1000.0
-        }
+        "valid": true,
+        "edges": 12,
+        "volume": 1000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: fixWireGaps(tolerance: 1e-7) on a 10 mm cube with a corner at the origin: whether the result is valid, its edge count and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 17 (FixWireGaps(box): valid=1 edges=12 volume=1000), ShapeFix_Wireframe at precision 1e-7, FixWireGaps."
   },
   {
     "test_name": "ShapeFix_Wireframe Extension Tests::fixSmallEdgesDropMode",
-    "bridge_function": "OCCTShapeFixWireGaps / OCCTShapeFixSmallEdges",
+    "bridge_function": "OCCTShapeFixSmallEdges",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "edges": 12,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "FixWireGaps": {
-          "valid": true,
-          "edges": 12,
-          "volume": 1000.0
-        },
-        "FixSmallEdges(drop)": {
-          "valid": true,
-          "edges": 12,
-          "volume": 1000.0
-        },
-        "FixSmallEdges(merge)": {
-          "valid": true,
-          "edges": 12,
-          "volume": 1000.0
-        }
+        "valid": true,
+        "edges": 12,
+        "volume": 1000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: fixSmallEdges(tolerance: 1e-7, dropSmall: true, limitAngle: -1) on the same cube: whether the result is valid, its edge count and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 18 (FixSmallEdges(box, drop=1): valid=1 edges=12 volume=1000), ShapeFix_Wireframe at precision 1e-7 with ModeDropSmallEdges on."
   },
   {
     "test_name": "ShapeFix_Wireframe Extension Tests::fixSmallEdgesMergeMode",
-    "bridge_function": "OCCTShapeFixWireGaps / OCCTShapeFixSmallEdges",
+    "bridge_function": "OCCTShapeFixSmallEdges",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "edges": 12,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "FixWireGaps": {
-          "valid": true,
-          "edges": 12,
-          "volume": 1000.0
-        },
-        "FixSmallEdges(drop)": {
-          "valid": true,
-          "edges": 12,
-          "volume": 1000.0
-        },
-        "FixSmallEdges(merge)": {
-          "valid": true,
-          "edges": 12,
-          "volume": 1000.0
-        }
+        "valid": true,
+        "edges": 12,
+        "volume": 1000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: fixSmallEdges(tolerance: 1e-7, dropSmall: false, limitAngle: 0.01) on the same cube: whether the result is valid, its edge count and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 19 (FixSmallEdges(box, drop=0): valid=1 edges=12 volume=1000), ShapeFix_Wireframe at precision 1e-7 with ModeDropSmallEdges off and SetLimitAngle(0.01)."
   },
   {
     "test_name": "ShapeFix WireVertex Tests::fixWireVertices",
@@ -6458,88 +6418,98 @@
   },
   {
     "test_name": "#837: fixed() mode-flag wiring::fixtureHasBadOrientation",
-    "bridge_function": "OCCTShapeFixDetailed (FixFreeFaceMode) / OCCTCheckFaceWireOrientation",
+    "bridge_function": "OCCTBRepCheckFaceOrientationOfWires",
     "bridge_output": {
       "type": "check_status",
-      "data": "as asserted"
+      "data": {
+        "orientationOfWires": "BadOrientationOfSubshape"
+      }
     },
     "kernel_output": {
       "type": "check_status",
       "data": {
-        "fixture OrientationOfWires": "BRepCheck_BadOrientationOfSubshape (32)",
-        "FixFreeFaceMode=0": "32 (defect left)",
-        "FixFreeFaceMode=1": "0 (NoError)"
+        "orientationOfWires": "BadOrientationOfSubshape"
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: checkFaceWireOrientation() on a 10 x 10 face with a 2 x 2 hole wound the same way as its outer wire, as the OCCT status name, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T143): BRepCheck_Face::OrientationOfWires with GeometricControls(true) on the same face (built with BRepBuilderAPI_MakePolygon and BRep_Builder), the name of the BRepCheck_Status it returns; Scripts/repro/766-healing-702-999/transcript.txt line 8 holds the same answer as ordinal 32."
   },
   {
     "test_name": "#837: fixed() mode-flag wiring::fixFaceFalseLeavesDefectInPlace",
-    "bridge_function": "OCCTShapeFixDetailed (FixFreeFaceMode) / OCCTCheckFaceWireOrientation",
+    "bridge_function": "OCCTShapeFixDetailed / OCCTBRepCheckFaceOrientationOfWires",
     "bridge_output": {
       "type": "check_status",
-      "data": "as asserted"
+      "data": {
+        "orientationOfWires": "BadOrientationOfSubshape"
+      }
     },
     "kernel_output": {
       "type": "check_status",
       "data": {
-        "fixture OrientationOfWires": "BRepCheck_BadOrientationOfSubshape (32)",
-        "FixFreeFaceMode=0": "32 (defect left)",
-        "FixFreeFaceMode=1": "0 (NoError)"
+        "orientationOfWires": "BadOrientationOfSubshape"
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the face inside a compound after fixed(tolerance: 1e-6, fixSolid: true, fixShell: true, fixFace: false, fixWire: true): checkFaceWireOrientation() on the result face, as the OCCT status name, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T144): ShapeFix_Shape at precision 1e-6 with FixFreeFaceMode 0 on the compound, then BRepCheck_Face::OrientationOfWires on the result face; Scripts/repro/766-healing-702-999/transcript.txt line 9 holds the same answer as ordinal 32."
   },
   {
     "test_name": "#837: fixed() mode-flag wiring::fixFaceTrueCorrectsDefect",
-    "bridge_function": "OCCTShapeFixDetailed (FixFreeFaceMode) / OCCTCheckFaceWireOrientation",
+    "bridge_function": "OCCTShapeFixDetailed / OCCTBRepCheckFaceOrientationOfWires",
     "bridge_output": {
       "type": "check_status",
-      "data": "as asserted"
+      "data": {
+        "orientationOfWires": "NoError"
+      }
     },
     "kernel_output": {
       "type": "check_status",
       "data": {
-        "fixture OrientationOfWires": "BRepCheck_BadOrientationOfSubshape (32)",
-        "FixFreeFaceMode=0": "32 (defect left)",
-        "FixFreeFaceMode=1": "0 (NoError)"
+        "orientationOfWires": "NoError"
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the same face after fixed(..., fixFace: true, ...): checkFaceWireOrientation() on the result face, as the OCCT status name, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T145): the same ShapeFix_Shape with FixFreeFaceMode 1, then BRepCheck_Face::OrientationOfWires on the result face; Scripts/repro/766-healing-702-999/transcript.txt line 10 holds the same answer as ordinal 0."
   },
   {
     "test_name": "Issue #839: droppingSmallEdges / fixSmallEdges default tolerance alignment::defaultsAgreeOnBorderlineEdge",
     "bridge_function": "OCCTShapeDropSmallEdges / OCCTShapeFixSmallEdges",
     "bridge_output": {
       "type": "edge_counts",
-      "data": "as asserted"
+      "data": {
+        "fixture": 6,
+        "default": {
+          "dropping": 6,
+          "fixSmallEdges": 6
+        },
+        "tol1e-6": {
+          "dropping": 5,
+          "fixSmallEdges": 5
+        }
+      }
     },
     "kernel_output": {
       "type": "edge_counts",
       "data": {
-        "3e-7 edge": {
-          "fixture": 6,
-          "tol 1e-7": 6,
-          "tol 1e-6": 5,
-          "tol 0.5": 5
+        "fixture": 6,
+        "default": {
+          "dropping": 6,
+          "fixSmallEdges": 6
         },
-        "0.1 edge": {
-          "fixture": 6,
-          "tol 1e-7": 6,
-          "tol 1e-6": 6,
-          "tol 0.5": 5
+        "tol1e-6": {
+          "dropping": 5,
+          "fixSmallEdges": 5
         }
       }
     },
@@ -6547,125 +6517,153 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a face with a 3e-7 edge in one side: the fixture's edge count, then the edge count after droppingSmallEdges() and after fixSmallEdges(dropSmall: true) at their default tolerance (1e-7), and after each at tolerance 1e-6, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 11 (#839 edge 3e-07: fixture edges=6; tol 1e-07 -> 6; tol 1e-06 -> 5), ShapeFix_Wireframe with ModeDropSmallEdges on at each precision. Both Swift entry points run that one ShapeFix_Wireframe recipe (SetPrecision, ModeDropSmallEdges, FixSmallEdges), so each kernel count answers both keys; the default tolerance is 1e-7."
   },
   {
     "test_name": "Issue #839: droppingSmallEdges / fixSmallEdges default tolerance alignment::bothAgreeAtASharedExplicitTolerance",
     "bridge_function": "OCCTShapeDropSmallEdges / OCCTShapeFixSmallEdges",
     "bridge_output": {
       "type": "edge_counts",
-      "data": "as asserted"
+      "data": {
+        "fixture": 6,
+        "dropping": 5,
+        "fixSmallEdges": 5
+      }
     },
     "kernel_output": {
       "type": "edge_counts",
       "data": {
-        "3e-7 edge": {
-          "fixture": 6,
-          "tol 1e-7": 6,
-          "tol 1e-6": 5,
-          "tol 0.5": 5
-        },
-        "0.1 edge": {
-          "fixture": 6,
-          "tol 1e-7": 6,
-          "tol 1e-6": 6,
-          "tol 0.5": 5
-        }
+        "fixture": 6,
+        "dropping": 5,
+        "fixSmallEdges": 5
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a face with a 0.1 edge in one side: the fixture's edge count, then the edge count after droppingSmallEdges(tolerance: 0.5) and after fixSmallEdges(tolerance: 0.5, dropSmall: true), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 12 (#839 edge 0.1: fixture edges=6; tol 0.5 -> 5), ShapeFix_Wireframe with ModeDropSmallEdges on at precision 0.5. Both Swift entry points run that one ShapeFix_Wireframe recipe, so the one kernel count answers both keys."
   },
   {
     "test_name": "#849 - ShapeFixStatus real OCCT ordinals::rawValuesMatchTheRealOCCTEnum",
-    "bridge_function": "ShapeFixStatus / OCCTShapeFixerStatusFlag",
+    "bridge_function": "OCCTShapeFixerStatusFlag (ShapeFixStatus raw values)",
     "bridge_output": {
       "type": "enum_ordinals",
-      "data": "as asserted"
+      "data": {
+        "ok": 0,
+        "done1": 1,
+        "done2": 2,
+        "done3": 3,
+        "done4": 4,
+        "done5": 5,
+        "done6": 6,
+        "done7": 7,
+        "done8": 8,
+        "done": 9,
+        "fail1": 10,
+        "fail2": 11,
+        "fail3": 12,
+        "fail4": 13,
+        "fail5": 14,
+        "fail6": 15,
+        "fail7": 16,
+        "fail8": 17,
+        "fail": 18
+      }
     },
     "kernel_output": {
       "type": "enum_ordinals",
       "data": {
-        "ShapeExtend_Status": {
-          "OK": 0,
-          "DONE1": 1,
-          "DONE8": 8,
-          "DONE": 9,
-          "FAIL1": 10,
-          "FAIL8": 17,
-          "FAIL": 18
-        },
-        "ShapeFix_Shape(box)": {
-          "OK": false,
-          "DONE": true,
-          "FAIL": false
-        }
+        "ok": 0,
+        "done1": 1,
+        "done2": 2,
+        "done3": 3,
+        "done4": 4,
+        "done5": 5,
+        "done6": 6,
+        "done7": 7,
+        "done8": 8,
+        "done": 9,
+        "fail1": 10,
+        "fail2": 11,
+        "fail3": 12,
+        "fail4": 13,
+        "fail5": 14,
+        "fail6": 15,
+        "fail7": 16,
+        "fail8": 17,
+        "fail": 18
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the raw value of each of the 19 ShapeFixStatus cases (ok, done1 to done8, done, fail1 to fail8, fail), which OCCTShapeFixerStatusFlag passes straight to ShapeFix_Shape::Status, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T148): the ordinal of each ShapeExtend_Status constant, read from the enum in the pinned headers; Scripts/repro/766-healing-702-999/transcript.txt line 13 holds seven of them."
   },
   {
     "test_name": "#849 - ShapeFixStatus real OCCT ordinals::faceFixerStatusIsTheSharedType",
-    "bridge_function": "ShapeFixStatus / OCCTShapeFixerStatusFlag",
+    "bridge_function": "OCCTFaceFixerStatus (ShapeFixStatus raw values)",
     "bridge_output": {
       "type": "enum_ordinals",
-      "data": "as asserted"
+      "data": {
+        "done": 9,
+        "fail1": 10,
+        "fail8": 17
+      }
     },
     "kernel_output": {
       "type": "enum_ordinals",
       "data": {
-        "ShapeExtend_Status": {
-          "OK": 0,
-          "DONE1": 1,
-          "DONE8": 8,
-          "DONE": 9,
-          "FAIL1": 10,
-          "FAIL8": 17,
-          "FAIL": 18
-        },
-        "ShapeFix_Shape(box)": {
-          "OK": false,
-          "DONE": true,
-          "FAIL": false
-        }
+        "done": 9,
+        "fail1": 10,
+        "fail8": 17
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the raw values of FaceFixer.Status.done, .fail1 and .fail8, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T149): the ordinals of ShapeExtend_DONE, ShapeExtend_FAIL1 and ShapeExtend_FAIL8. The test also asserts FaceFixer.Status is the same Swift type as ShapeFixStatus, a typealias identity that has no kernel counterpart and is not part of the record."
   },
   {
     "test_name": "#849 - ShapeFixStatus real OCCT ordinals::legacyAndTypeSafeOverloadsAgree",
-    "bridge_function": "ShapeFixStatus / OCCTShapeFixerStatusFlag",
+    "bridge_function": "OCCTShapeFixerStatus / OCCTShapeFixerStatusFlag",
     "bridge_output": {
       "type": "enum_ordinals",
-      "data": "as asserted"
+      "data": {
+        "ok": {
+          "legacy": false,
+          "typed": false
+        },
+        "done": {
+          "legacy": true,
+          "typed": true
+        },
+        "fail": {
+          "legacy": false,
+          "typed": false
+        }
+      }
     },
     "kernel_output": {
       "type": "enum_ordinals",
       "data": {
-        "ShapeExtend_Status": {
-          "OK": 0,
-          "DONE1": 1,
-          "DONE8": 8,
-          "DONE": 9,
-          "FAIL1": 10,
-          "FAIL8": 17,
-          "FAIL": 18
+        "ok": {
+          "legacy": false,
+          "typed": false
         },
-        "ShapeFix_Shape(box)": {
-          "OK": false,
-          "DONE": true,
-          "FAIL": false
+        "done": {
+          "legacy": true,
+          "typed": true
+        },
+        "fail": {
+          "legacy": false,
+          "typed": false
         }
       }
     },
@@ -6673,172 +6671,177 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a ShapeFixer on a 10 mm cube after perform(): status(1), status(2), status(3) (the legacy overload) and status(.ok), status(.done), status(.fail) (the ShapeFixStatus overload), under `<flag>.legacy` and `<flag>.typed`, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T150): ShapeFix_Shape::Status(ShapeExtend_OK), Status(ShapeExtend_DONE) and Status(ShapeExtend_FAIL) after Perform on the cube, the one kernel call both overloads reach; Scripts/repro/766-healing-702-999/transcript.txt line 14 holds the same three answers. The legacy overload maps 1, 2 and 3 to ShapeExtend_OK, ShapeExtend_DONE and ShapeExtend_FAIL, so on those inputs it and the typed overload ask the kernel the same question."
   },
   {
     "test_name": "#849 - ShapeFixStatus real OCCT ordinals::legacyOverloadStaysNarrow",
-    "bridge_function": "ShapeFixStatus / OCCTShapeFixerStatusFlag",
+    "bridge_function": "OCCTShapeFixerStatus",
     "bridge_output": {
       "type": "enum_ordinals",
-      "data": "as asserted"
+      "data": {
+        "status0": false,
+        "status4": false,
+        "status9": false,
+        "status18": false
+      }
     },
     "kernel_output": {
       "type": "enum_ordinals",
       "data": {
-        "ShapeExtend_Status": {
-          "OK": 0,
-          "DONE1": 1,
-          "DONE8": 8,
-          "DONE": 9,
-          "FAIL1": 10,
-          "FAIL8": 17,
-          "FAIL": 18
-        },
-        "ShapeFix_Shape(box)": {
-          "OK": false,
-          "DONE": true,
-          "FAIL": false
-        }
+        "status0": false,
+        "status4": true,
+        "status9": true,
+        "status18": false
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "status4: bridge false vs kernel true. The legacy status(Int) overload answers only 1 (OK), 2 (DONE) and 3 (FAIL) and returns false for every other value without asking the kernel, while ShapeFix_Shape::Status(ShapeExtend_DONE4) is set after Perform on a cube",
+        "status9: bridge false vs kernel true, the same narrow contract: 9 is the ordinal of ShapeExtend_DONE, which the legacy overload does not forward (its 2 is DONE), while the kernel reports DONE set"
+      ]
     },
-    "status": "PASS"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Bridge: a ShapeFixer on a 10 mm cube after perform(): the legacy status(0), status(4), status(9) and status(18), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T151): ShapeFix_Shape::Status(static_cast<ShapeExtend_Status>(n)) after Perform on the cube, for n = 0, 4, 9 and 18. The divergence is the point of the test: it pins the legacy overload's narrow contract (false outside 1 to 3) so nobody turns it into a raw-ordinal forwarder. status0 and status18 agree (both false)."
   },
   {
     "test_name": "Issue #870: OCCTShapeExtendShapeType failure fallback::nullShapeReturnsUnknownSentinel",
     "bridge_function": "OCCTShapeExtendShapeType",
     "bridge_output": {
       "type": "shape_type",
-      "data": "as asserted"
-    },
-    "kernel_output": {
-      "type": "shape_type",
       "data": {
-        "box": "TopAbs_SOLID (2)",
-        "vertex": "TopAbs_VERTEX (7)",
-        "null shape": "bridge sentinel -1, not 7"
+        "nilLookInside": -1,
+        "nilTopLevel": -1
       }
     },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "no kernel call: OCCTShapeExtendShapeType returns the failure sentinel -1 for a null OCCTShapeRef before ShapeExtend_Explorer is touched, and a nil C pointer is not a null TopoDS_Shape"
+    },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "source": "No kernel counterpart. The test calls the bridge function with a nil pointer (unreachable from Swift, where Shape.handle is non-optional) and observes the sentinel -1 the bridge chose so a failed classification cannot decode as TopAbs_VERTEX (7); the values are in bridge-observed.txt."
   },
   {
     "test_name": "Issue #870: OCCTShapeExtendShapeType failure fallback::sentinelDecodesToUnknownNotVertex",
     "bridge_function": "OCCTShapeExtendShapeType",
     "bridge_output": {
       "type": "shape_type",
-      "data": "as asserted"
-    },
-    "kernel_output": {
-      "type": "shape_type",
       "data": {
-        "box": "TopAbs_SOLID (2)",
-        "vertex": "TopAbs_VERTEX (7)",
-        "null shape": "bridge sentinel -1, not 7"
+        "decodesToUnknown": true,
+        "decodesToVertex": false,
+        "raw": -1
       }
     },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "no kernel call: -1 is the bridge's own failure sentinel and ShapeType(rawValue:) is Swift decoding of it into .unknown, a case OCCT's TopAbs_ShapeEnum does not have"
+    },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "source": "No kernel counterpart. The test decodes the bridge's sentinel through the Swift ShapeType enum and observes .unknown, not .vertex (bridge-observed.txt); neither the sentinel nor the .unknown case exists in the kernel."
   },
   {
     "test_name": "Issue #870: OCCTShapeExtendShapeType failure fallback::ordinaryShapeUnaffected",
     "bridge_function": "OCCTShapeExtendShapeType",
     "bridge_output": {
       "type": "shape_type",
-      "data": "as asserted"
+      "data": {
+        "boxIsSolid": true,
+        "vertexIsVertex": true
+      }
     },
     "kernel_output": {
       "type": "shape_type",
       "data": {
-        "box": "TopAbs_SOLID (2)",
-        "vertex": "TopAbs_VERTEX (7)",
-        "null shape": "bridge sentinel -1, not 7"
+        "boxIsSolid": true,
+        "vertexIsVertex": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: predominantShapeType() on a 10 mm cube and on one of its vertices: whether each is reported as solid and as vertex, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 15 (#870 ShapeExtend_Explorer::ShapeType: box=2 vertex=7, TopAbs_SOLID=2 TopAbs_VERTEX=7), ShapeExtend_Explorer::ShapeType(shape, true); recorded as two flags."
   },
   {
     "test_name": "SAWireAnalysis.checkOuterBound performs the check it is named for (#999)::verdictVariesWithTheWire",
-    "bridge_function": "OCCTSAWireCheckOuterBound",
+    "bridge_function": "OCCTWireCheckOuterBound",
     "bridge_output": {
       "type": "bools",
-      "data": "as asserted"
+      "data": {
+        "wires": 2,
+        "verdictTrue": 1,
+        "verdictFalse": 1
+      }
     },
     "kernel_output": {
       "type": "bools",
       "data": {
-        "panel CheckOuterBound per wire": [
-          false,
-          true
-        ],
-        "single-wire face": false
+        "wires": 2,
+        "verdictTrue": 1,
+        "verdictFalse": 1
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: SAWireAnalysis.checkOuterBound(wire:face:) for each of the two wires of a 10 x 10 panel with a centred 4 x 4 window: the wire count, and how many verdicts were true and how many false, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 16 (#999 panel CheckOuterBound per wire: 0 1), ShapeAnalysis_Wire::CheckOuterBound on each wire of the panel, in the explorer's order; two answers, one false and one true. The Swift call is tri-state (nil when the wire is not on the face); both wires belong to the face, so no verdict is nil, and the kernel gives a plain bool for each."
   },
   {
     "test_name": "SAWireAnalysis.checkOuterBound performs the check it is named for (#999)::plainFaceReportsNoProblem",
-    "bridge_function": "OCCTSAWireCheckOuterBound",
+    "bridge_function": "OCCTWireCheckOuterBound",
     "bridge_output": {
       "type": "bools",
-      "data": "as asserted"
+      "data": {
+        "verdict": false
+      }
     },
     "kernel_output": {
       "type": "bools",
       "data": {
-        "panel CheckOuterBound per wire": [
-          false,
-          true
-        ],
-        "single-wire face": false
+        "verdict": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: checkOuterBound(wire:face:) on a 10 x 10 face's own single wire, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 16 (#999 single-wire face: 0), ShapeAnalysis_Wire::CheckOuterBound on that wire; recorded as false."
   },
   {
     "test_name": "ShapeUpgrade ClosedEdgeDivide::closedEdgeOnCylinder",
     "bridge_function": "OCCTShapeUpgradeClosedEdgeDivideCompute",
     "bridge_output": {
       "type": "bool_per_edge",
-      "data": [
-        true,
-        false,
-        true
-      ]
+      "data": {
+        "edges": 3,
+        "canDivide": [
+          true,
+          false,
+          true
+        ]
+      }
     },
     "kernel_output": {
       "type": "bool_per_edge",
       "data": {
-        "cylinderEdgesOnFace0": [
+        "edges": 3,
+        "canDivide": [
           true,
           false,
           true
-        ],
-        "edgeKinds": [
-          "circle",
-          "seam line",
-          "circle"
         ]
       }
     },
@@ -6846,7 +6849,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a cylinder's edge count, then canDivideClosedEdge(onFace:) for each edge against the cylinder's first face, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt lines 1-4 (cylinder: edges=3; edge0 ClosedEdgeDivide.Compute(face0)=1; edge1 =0; edge2 =1), ShapeUpgrade_ClosedEdgeDivide::Compute per edge in TopExp::MapShapes order; recorded as true, false, true."
   },
   {
     "test_name": "ShapeUpgrade ConvertCurves3dToBezier::convertBoxCurves",

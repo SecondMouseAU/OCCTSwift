@@ -64,6 +64,8 @@
 #include <ShapeCustom_Surface.hxx>
 #include <ShapeFix_Edge.hxx>
 #include <ShapeFix_Face.hxx>
+#include <ShapeExtend_Status.hxx>
+#include <ShapeFix_FixSmallSolid.hxx>
 #include <Standard_Failure.hxx>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -912,6 +914,107 @@ int main()
     TopExp::MapShapes(box(-5, -5, -5, 10), TopAbs_EDGE, es);
     ShapeAnalysis_Edge sae;
     emitBool("T122", "hasCurve3d", sae.HasCurve3d(TopoDS::Edge(es(1))));
+  }
+  // ===== TYPES batch 3 (T126-T157) =====
+  static const char* kStatusNames[] = {"ok",    "done1", "done2", "done3", "done4", "done5", "done6",
+                                       "done7", "done8", "done",  "fail1", "fail2", "fail3", "fail4",
+                                       "fail5", "fail6", "fail7", "fail8", "fail"};
+  {
+    // T127: ShapeFix_Shape(box) with default settings: Perform, Status(FAIL), whether Shape() is null
+    Handle(ShapeFix_Shape) sf = new ShapeFix_Shape(box(-5, -5, -5, 10));
+    sf->Perform();
+    emitBool("T127", "fail", sf->Status(ShapeExtend_FAIL));
+    emitBool("T127", "shapeIsNull", sf->Shape().IsNull());
+  }
+  {
+    // T133: ShapeFix_FixSmallSolid::Remove (fix mode 2, volume 1.0) on a compound of the centred 10 mm box and a
+    // 0.01 mm box moved to x = 20, as OCCTShapeFixRemoveSmallSolids drives it
+    TopoDS_Shape               c   = compoundOf({box(-5, -5, -5, 10), BRepPrimAPI_MakeBox(gp_Pnt(20 - 0.005, -0.005, -0.005), 0.01, 0.01, 0.01).Shape()});
+    Handle(ShapeFix_FixSmallSolid) fx = new ShapeFix_FixSmallSolid();
+    fx->SetFixMode(2);
+    fx->SetVolumeThreshold(1.0);
+    Handle(ShapeBuild_ReShape) ctx = new ShapeBuild_ReShape();
+    TopoDS_Shape               r   = fx->Remove(c, ctx);
+    emitInt("T133", "solids", uniq(r, TopAbs_SOLID));
+    emit("T133", "volume", vol(r));
+    // T134: ShapeFix_FixSmallSolid::Merge (fix mode 1, width factor 1.0) on the centred 10 mm box and a 0.01 x 10 x 10
+    // slab whose corner is at (10, 0, 0), as OCCTShapeFixMergeSmallSolids drives it
+    TopoDS_Shape                   c2 = compoundOf({box(-5, -5, -5, 10), BRepPrimAPI_MakeBox(gp_Pnt(10, 0, 0), 0.01, 10, 10).Shape()});
+    Handle(ShapeFix_FixSmallSolid) fm = new ShapeFix_FixSmallSolid();
+    fm->SetFixMode(1);
+    fm->SetWidthFactorThreshold(1.0);
+    Handle(ShapeBuild_ReShape) ctx2 = new ShapeBuild_ReShape();
+    TopoDS_Shape               r2   = fm->Merge(c2, ctx2);
+    emitBool("T134", "valid", BRepCheck_Analyzer(r2).IsValid());
+    emitInt("T134", "solids", uniq(r2, TopAbs_SOLID));
+    emit("T134", "volume", vol(r2));
+  }
+  {
+    // T143-T145: a 10 x 10 face with a hole wound the same way as its outer wire (a BRepCheck_Face
+    // orientation defect), checked raw and after ShapeFix_Shape with FixFreeFaceMode 0 and 1, as
+    // OCCTShapeFixDetailed(tolerance 1e-6, solid, shell, face, wire) drives it
+    auto orientName = [](BRepCheck_Status st) {
+      return st == BRepCheck_NoError ? "NoError" : (st == BRepCheck_BadOrientationOfSubshape ? "BadOrientationOfSubshape" : "Other");
+    };
+    BRep_Builder               b;
+    BRepBuilderAPI_MakePolygon po(gp_Pnt(-5, -5, 0), gp_Pnt(5, -5, 0), gp_Pnt(5, 5, 0), gp_Pnt(-5, 5, 0), true);
+    TopoDS_Face                f = BRepBuilderAPI_MakeFace(po.Wire());
+    TopoDS_Wire                hole;
+    b.MakeWire(hole);
+    gp_Pnt hp[] = {gp_Pnt(-1, -1, 0), gp_Pnt(1, -1, 0), gp_Pnt(1, 1, 0), gp_Pnt(-1, 1, 0)};
+    for (int i = 0; i < 4; i++)
+      b.Add(hole, BRepBuilderAPI_MakeEdge(hp[i], hp[(i + 1) % 4]).Edge());
+    b.Add(f, hole);
+    Handle(BRepCheck_Face) c = new BRepCheck_Face(f);
+    c->GeometricControls(true);
+    printf("T143|orientationOfWires|\"%s\"\n", orientName(c->OrientationOfWires()));
+    for (int mode = 0; mode <= 1; mode++)
+    {
+      TopoDS_Compound comp;
+      b.MakeCompound(comp);
+      b.Add(comp, f);
+      Handle(ShapeFix_Shape) sf = new ShapeFix_Shape(comp);
+      sf->SetPrecision(1e-6);
+      sf->FixSolidMode()     = 1;
+      sf->FixFreeShellMode() = 1;
+      sf->FixFreeFaceMode()  = mode;
+      sf->FixFreeWireMode()  = 1;
+      sf->Perform();
+      TopoDS_Face            r  = TopoDS::Face(TopExp_Explorer(sf->Shape(), TopAbs_FACE).Current());
+      Handle(BRepCheck_Face) rc = new BRepCheck_Face(r);
+      rc->GeometricControls(true);
+      printf("T%d|orientationOfWires|\"%s\"\n", 144 + mode, orientName(rc->OrientationOfWires()));
+    }
+  }
+  {
+    // T148 / T149: the ShapeExtend_Status ordinals; T150 / T151: ShapeFix_Shape(box).Status after Perform
+    const int ord[] = {ShapeExtend_OK,    ShapeExtend_DONE1, ShapeExtend_DONE2, ShapeExtend_DONE3, ShapeExtend_DONE4,
+                       ShapeExtend_DONE5, ShapeExtend_DONE6, ShapeExtend_DONE7, ShapeExtend_DONE8, ShapeExtend_DONE,
+                       ShapeExtend_FAIL1, ShapeExtend_FAIL2, ShapeExtend_FAIL3, ShapeExtend_FAIL4, ShapeExtend_FAIL5,
+                       ShapeExtend_FAIL6, ShapeExtend_FAIL7, ShapeExtend_FAIL8, ShapeExtend_FAIL};
+    for (int i = 0; i < 19; i++)
+      emitInt("T148", kStatusNames[i], ord[i]);
+    emitInt("T149", "done", ShapeExtend_DONE);
+    emitInt("T149", "fail1", ShapeExtend_FAIL1);
+    emitInt("T149", "fail8", ShapeExtend_FAIL8);
+    Handle(ShapeFix_Shape) sf = new ShapeFix_Shape(box(-5, -5, -5, 10));
+    sf->Perform();
+    for (const char* who : {"legacy", "typed"})
+    {
+      char key[32];
+      snprintf(key, sizeof key, "ok.%s", who);
+      emitBool("T150", key, sf->Status(ShapeExtend_OK));
+      snprintf(key, sizeof key, "done.%s", who);
+      emitBool("T150", key, sf->Status(ShapeExtend_DONE));
+      snprintf(key, sizeof key, "fail.%s", who);
+      emitBool("T150", key, sf->Status(ShapeExtend_FAIL));
+    }
+    for (int n : {0, 4, 9, 18})
+    {
+      char key[32];
+      snprintf(key, sizeof key, "status%d", n);
+      emitBool("T151", key, sf->Status(static_cast<ShapeExtend_Status>(n)));
+    }
   }
   return 0;
 }
