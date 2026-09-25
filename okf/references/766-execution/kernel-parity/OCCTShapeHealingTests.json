@@ -9545,21 +9545,22 @@
     "bridge_output": {
       "type": "object",
       "data": {
-        "result": null
+        "divisions_performed": false
       }
     },
     "kernel_output": {
       "type": "object",
       "data": {
-        "Perform": false,
-        "resultFaces": 3
+        "divisions_performed": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-advanced/probe.mm",
+    "source": "Same quantity on both sides: whether dividing the cylinder at C1 performed any division. Bridge: Shape.divided(at: .c1) (OCCTShapeDivide) returned nil, which the bridge reports when Perform() is false (no divisions needed); a temporary print in the test observed nil (divisions_performed false). Kernel: ShapeUpgrade_ShapeDivideContinuity::Perform() returned false ('divide C1 Perform=0' in Scripts/repro/766-healing-advanced/transcript.txt). The probe also printed the untouched result shape (3 faces, 'divide C1 result'), which the bridge does not return when Perform() is false, so it is not a compared key."
   },
   {
     "test_name": "Advanced Healing Tests::directFacesBox",
@@ -9695,22 +9696,27 @@
       "type": "shape_summary",
       "data": {
         "type": "solid",
-        "volume": 1000.0
+        "faces": 6,
+        "valid": true,
+        "volume": 999.9999999999998
       }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "sewedShapeType": "shell",
+        "type": "solid",
         "faces": 6,
-        "volume": 1000.0
+        "valid": true,
+        "volume": 999.9999999999998
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-advanced/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the shape OCCTShapeSewSingle returns for the sewn box: its type, face count, validity and volume. Bridge: Shape.sewn(tolerance: 1e-6); a temporary print in the test observed valid=true type=Solid faces=6 volume=999.9999999999998. Kernel: Scripts/repro/766-healing-advanced/probe-evidence-fix.mm makes the bridge's own calls, BRepBuilderAPI_Sewing then BRepBuilderAPI_MakeSolid on a closed shell, and Scripts/repro/766-healing-advanced/transcript-evidence-fix.txt printed 'type=2 (2 = solid) valid=1 faces=6 volume=999.99999999999977'. The raw SewedShape is a closed shell (type=3, the earlier record's sewedShapeType shell); the bridge turns it into a solid, so the shell is the intermediate, not what the bridge returns."
   },
   {
     "test_name": "Advanced Healing Tests::upgradePipeline",
@@ -9744,30 +9750,31 @@
         "type": "circle",
         "radius": 10.0,
         "point_at_0": [
-          10,
-          0,
-          0
+          10.0,
+          0.0,
+          0.0
         ]
       }
     },
     "kernel_output": {
       "type": "curve",
       "data": {
-        "type": "Geom_Circle",
+        "type": "circle",
         "radius": 10.0,
         "point_at_0": [
-          10,
-          0,
-          0
-        ],
-        "gap": 3.553e-15
+          10.0,
+          0.0,
+          0.0
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-advanced/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the analytical curve a circle's BSpline converts back to: its kind, radius and point at parameter 0. Bridge: Curve3D.toAnalytical(tolerance: 0.01) (OCCTGeomConvertCurveToAnalytical); a temporary print in the test observed curveType 1 (Circle), radius 10.0 and point (10, 0, 0). Kernel: GeomConvert_CurveToAnaCurve on the same BSpline, Scripts/repro/766-healing-advanced/transcript-evidence-fix.txt 'isCircle=1 radius=10 value(0)=(10, 0, 0)', so type is circle on both sides (the bridge's curveType 1 is the kernel's Geom_Circle). The kernel's gap 3.553e-15 (Scripts/repro/766-healing-advanced/transcript.txt) is not exposed by the bridge and is not a compared key."
   },
   {
     "test_name": "Analytical Conversion::surfaceConversion",
@@ -9775,33 +9782,33 @@
     "bridge_output": {
       "type": "surface",
       "data": {
-        "untrimmed_toBSpline": null,
+        "untrimmed_toBSpline_refused": true,
         "type": "cylinder",
         "point_uv00": [
-          5,
-          0,
-          0
+          5.0,
+          -2.226611672223751e-16,
+          0.0
         ]
       }
     },
     "kernel_output": {
       "type": "surface",
       "data": {
-        "untrimmed_toBSpline": "throws: infinite surface",
-        "type": "Geom_CylindricalSurface",
-        "radius": 5.0,
+        "untrimmed_toBSpline_refused": true,
+        "type": "cylinder",
         "point_uv00": [
-          5,
-          0,
-          0
-        ],
-        "gap": 3.58e-15
+          5.0,
+          -2.226611672223751e-16,
+          0.0
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-advanced/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether converting the unbounded cylinder to a BSpline is refused, and the analytical surface the trimmed patch converts back to (its kind and the point at (u, v) = (0, 0)). Bridge: Surface.toBSpline() on the infinite cylinder returned nil (the bridge catches the kernel's exception), and Surface.toAnalytical(tolerance: 0.01) on the trimmed patch gave surfaceKind cylinder and point (5, -2.226611672223751e-16, 0); a temporary print in the test observed all three. Kernel: GeomConvert::SurfaceToBSplineSurface on the infinite Geom_CylindricalSurface threw 'infinite surface' (Scripts/repro/766-healing-advanced/transcript.txt, and infiniteThrew=1 in Scripts/repro/766-healing-advanced/transcript-evidence-fix.txt), and GeomConvert_SurfToAnaSurf on the trimmed patch gave a Geom_CylindricalSurface with value(0,0)=(5, -2.2266116722237509e-16, 0). The kernel's radius (5) and gap (3.58e-15) are not read by the test or the bridge and are not compared keys."
   }
 ]
