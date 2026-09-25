@@ -319,8 +319,71 @@ jobs:
       - name: check-doc-snippets (every fenced Swift snippet type-checks)
         run: python3 Scripts/check-doc-snippets.py --require-typecheck
 
+      # #2714: this single process runs all 6,388 tests in one `OCCTSwiftPackageTests` bundle
+      # (the whole point of this job, see the header comment), and about once in forty runs it
+      # dies from an uncatchable SIGSEGV/SIGBUS before a single test finishes. `tee`ing to a file
+      # rather than only letting `swift test` print to the step's own log is what lets the
+      # detection step below grep it; the default macOS/Linux `run:` shell already invokes
+      # `bash --noprofile --norc -eo pipefail {0}`, so this step still fails on `swift test`'s own
+      # exit code, `tee` does not hide it.
       - name: swift test
-        run: swift test
+        run: swift test 2>&1 | tee swift-test-output.log
+
+      # #2714 step 1: "the evidence that has been missing since #922." The log above carries no
+      # backtrace and no test attribution when the process dies this way, which is exactly what
+      # has blocked root-causing it. macOS writes a crash report with the faulting thread's
+      # backtrace and every thread's stack to one of these two directories; one captured report
+      # likely settles library-versus-harness. The path is a glob (`/*`, not the bare directory),
+      # so this is a no-op, not a failure, both when a directory is absent and when an ordinary
+      # test-assertion failure leaves it empty; `if-no-files-found: ignore` says the same for the
+      # upload step itself.
+      - name: Upload crash diagnostic reports (#2714)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: diagnostic-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ~/Library/Logs/DiagnosticReports/*
+            /Library/Logs/DiagnosticReports/*
+          if-no-files-found: ignore
+          retention-days: 30
+
+      # #2714 step 7, reporting half only: no automatic re-run (out of scope for this PR, see the
+      # issue). Signature: an uncatchable SIGSEGV/SIGBUS ("no catch was found" or "unexpected
+      # signal code") together with zero finished tests (no `✔`/`✘` line, because nothing
+      # completed before the process died). Recording the match in the job summary is what lets
+      # #2714's occurrences table keep growing without a human reading a raw log. `set +e` and the
+      # trailing `exit 0` mean this step can never itself fail the job or change its outcome: it
+      # only runs after `swift test` already has, via `if: failure()`, and it does not retry
+      # anything.
+      - name: Detect the #2714 startup-crash signature
+        if: failure()
+        run: |
+          set +e
+          log=swift-test-output.log
+          if [ -f "$log" ] && grep -qE 'no catch was found|unexpected signal code' "$log" \
+              && ! grep -qE '✔|✘' "$log"; then
+            {
+              echo '## #2714 startup-crash signature detected'
+              echo
+              echo 'This run matches the pattern tracked in'
+              echo '[#2714](https://github.com/SecondMouseAU/OCCTSwift/issues/2714): an uncatchable'
+              echo 'SIGSEGV/SIGBUS ("no catch was found" or "unexpected signal code") with zero'
+              echo '`✔`/`✘` lines, meaning zero tests finished before the process died.'
+              echo
+              echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+              echo "Commit: ${GITHUB_SHA}"
+              echo
+              echo 'Matched line(s):'
+              echo '```'
+              grep -E 'no catch was found|unexpected signal code|SIGSEGV|SIGBUS|Address' "$log" | head -20
+              echo '```'
+              echo
+              echo 'Add this occurrence to the table in #2714. This step does not retry the job;'
+              echo 'the job still fails.'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit 0
 
   ios-simulator-build:
     name: swift build (iOS Simulator, smoke)

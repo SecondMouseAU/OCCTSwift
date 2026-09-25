@@ -1,0 +1,151 @@
+name: Malloc-scribble stress loop (#2714 step 2)
+
+# workflow_dispatch only, deliberately: this is investigative tooling for issue #2714 (the
+# `swift build + test (macOS)` job's `swift test` step intermittently dies within seconds of
+# starting, an uncatchable SIGSEGV or SIGBUS, before a single test finishes). It costs nothing
+# until someone asks for it: no `pull_request` or `push` trigger, so it never runs on its own.
+#
+# This is #2714's suggested next step 2, "make corruption loud": run the CI job's own shape (the
+# whole 6,388-test suite in one `OCCTSwiftPackageTests` process) in a loop, with malloc
+# scribbling and guard-edge checking turned on. A use-after-free tends to fail far more often
+# with scribbling on, because a freed block is overwritten with a repeating pattern instead of
+# being left readable, and an out-of-bounds write into a guarded allocation aborts immediately
+# instead of silently corrupting a neighboring block.
+#
+# The issue's own estimate is that a useful sample is 50 or more iterations on macos-15 runners;
+# default the count low and let the caller raise it, since a single iteration already runs the
+# whole suite. Step 1's crash-report collection (ci.yml's `build-and-test` job) is duplicated
+# here rather than shared, because this workflow has no build-and-test job to attach it to.
+
+on:
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: 'Number of times to run the CI-shape swift test in a loop'
+        required: true
+        default: '5'
+
+jobs:
+  stress:
+    name: swift test loop, malloc scribbling (macOS)
+    runs-on: macos-15
+    # GitHub-hosted runners hard-cap a job at 6 hours regardless of this value. A 50-plus
+    # iteration campaign at this suite's size may not fit in one run; that is a reason to split
+    # it across dispatches or lower the count, not a reason to raise this past the platform's own
+    # ceiling.
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Cache SwiftPM artifacts
+        uses: actions/cache@v6
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      # Each iteration is `swift test` with no flags, the same command ci.yml's `build-and-test`
+      # job runs, so the shape (one process, all 6,388 tests, ~7,600+ started at once) matches
+      # what #2714 is chasing. `set +e` keeps a mid-loop crash from aborting the whole step, since
+      # the default macOS `run:` shell is `bash --noprofile --norc -eo pipefail {0}`; the actual
+      # pass/fail decision for the job is the dedicated step below, driven by `fail_count`.
+      - name: Stress loop
+        id: stress-loop
+        env:
+          MallocScribble: '1'
+          MallocPreScribble: '1'
+          MallocGuardEdges: '1'
+          MallocErrorAbort: '1'
+          ITERATIONS: ${{ inputs.iterations }}
+        run: |
+          set +e
+          # Reject anything that is not a whole number, and then zero: `seq 1 0` prints
+          # nothing, so a zero count would run no iterations and report a green "0 passed, 0
+          # failed" job, which reads as evidence the stress loop found nothing when it never ran.
+          case "$ITERATIONS" in
+            ''|*[!0-9]*) valid=no ;;
+            *) [ "$ITERATIONS" -gt 0 ] && valid=yes || valid=no ;;
+          esac
+          if [ "$valid" != yes ]; then
+            echo "::error::iterations must be a positive whole number, got '$ITERATIONS'"
+            echo "fail_count=1" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          mkdir -p crash-evidence
+          pass=0
+          fail=0
+          {
+            echo '## Malloc-scribble stress loop (#2714 step 2)'
+            echo
+            echo "\`MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1 MallocErrorAbort=1\`, ${ITERATIONS} iteration(s), commit \`${GITHUB_SHA}\`."
+            echo
+            echo '| Iteration | Result | Notes |'
+            echo '|---|---|---|'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for i in $(seq 1 "$ITERATIONS"); do
+            echo "=== iteration $i/$ITERATIONS ==="
+            log="crash-evidence/iteration-$i.log"
+            swift test 2>&1 | tee "$log"
+            status=${PIPESTATUS[0]}
+            if [ "$status" -eq 0 ]; then
+              pass=$((pass + 1))
+              echo "| $i | pass | |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              fail=$((fail + 1))
+              note="exit $status"
+              if grep -qE 'no catch was found|unexpected signal code' "$log" && ! grep -qE '✔|✘' "$log"; then
+                note="$note, matches #2714's signature"
+              fi
+              echo "| $i | FAIL | $note |" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+
+          {
+            echo
+            echo "**${pass} passed, ${fail} failed, out of ${ITERATIONS} iteration(s).**"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "fail_count=$fail" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload per-iteration test logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: stress-loop-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: crash-evidence/*.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # Same rationale as ci.yml's #2714 step-1 upload: a glob path, so absent or empty is a
+      # no-op, not a failure.
+      - name: Upload crash diagnostic reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: diagnostic-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ~/Library/Logs/DiagnosticReports/*
+            /Library/Logs/DiagnosticReports/*
+          if-no-files-found: ignore
+          retention-days: 30
+
+      # The loop step above always exits 0 so a mid-loop crash cannot cut the loop short; this is
+      # what actually fails the job when an iteration did.
+      - name: Fail the job if any iteration failed
+        if: always()
+        run: |
+          fail_count='${{ steps.stress-loop.outputs.fail_count }}'
+          if [ "$fail_count" != '0' ]; then
+            echo "::error::${fail_count} iteration(s) failed; see the job summary for which."
+            exit 1
+          fi
