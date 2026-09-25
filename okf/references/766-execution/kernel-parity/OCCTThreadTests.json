@@ -153,9 +153,11 @@
     "bridge_output": {
       "type": "shape",
       "data": {
-        "facesDirect": 7,
-        "facesAuto": 7,
+        "faces": 7,
         "volume": 1693.718374724
+      },
+      "bridge_only": {
+        "facesAuto": 7
       }
     },
     "kernel_output": {
@@ -163,14 +165,16 @@
       "data": {
         "faces": 7,
         "volume": 1693.718374724
-      }
+      },
+      "source": "Scripts/repro/766-thread-225-254/transcript.txt, the \"254 direct\" line"
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
-    "note": "ISO-68 10x1.5, length 26. The kernel has no build-mode notion; parity is on the direct build both modes take."
+    "note": "ISO-68 10x1.5, length 26. The kernel has no build-mode notion; parity is on the direct build both modes take.",
+    "source": "Same quantity on both sides: the face count and volume of the ISO-68 10x1.5 threaded rod, length 26. Bridge: the .direct build (faces = facesDirect = 7). The test also asserts the .auto build gives the same count (facesAuto = 7, kept under bridge_only); the kernel has no build-mode notion, so that check has no kernel counterpart and is not compared."
   },
   {
     "test_name": "v0.138 ThreadSpec parsing::Metric M5x0.8",
@@ -429,26 +433,35 @@
         "valid": true,
         "solids": 1,
         "faces": 18,
-        "after_first_fillet_volume": 2809.6570826471
+        "after_first_fillet_volume": 2809.6570826471,
+        "concurrent_8x25_failed": 0,
+        "concurrent_8x25_invalid": 0,
+        "concurrent_8x25_wrong_solid_count": 0,
+        "concurrent_8x25_wrong_volume": 0
       }
     },
     "kernel_output": {
       "type": "shape",
       "data": {
         "reference_volume": 2819.3141652942,
+        "valid": true,
         "solids": 1,
         "faces": 18,
         "after_first_fillet_volume": 2809.6570826471,
-        "concurrent_8x25_fillets_failed": 0,
-        "concurrent_8x25_fillets_wrong_volume": 0
-      }
+        "concurrent_8x25_failed": 0,
+        "concurrent_8x25_invalid": 0,
+        "concurrent_8x25_wrong_solid_count": 0,
+        "concurrent_8x25_wrong_volume": 0
+      },
+      "source": "Scripts/repro/766-thread-safety/transcript.txt lines 22-23; Scripts/repro/766-thread-evidence-fix/transcript.txt lines 4-5"
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
-    "note": "Kernel side refillets the exact shapes and edge indices SheetMetal.Builder passed to OCCTShapeFilletEdges (Scripts/repro/766-thread-safety/inputs). The kernel's 8x25 concurrent fillets agree: #298's statics are fixed in 8.0.1 (OCCT#1374)."
+    "note": "Kernel side refillets the exact shapes and edge indices SheetMetal.Builder passed to OCCTShapeFilletEdges (Scripts/repro/766-thread-safety/inputs). The kernel's 8x25 concurrent fillets agree: #298's statics are fixed in 8.0.1 (OCCT#1374).",
+    "source": "Same quantity on both sides, same keys. Deterministic part: the volume, validity, solid count and face count of the final fillet, and the volume after the first fillet. Bridge: what the Swift test observes (its temporary observation run, recorded in the header of the thread-safety transcript). Kernel: BRepFilletAPI_MakeFillet on the exact shapes and edge indices SheetMetal.Builder passed, with BRepCheck_Analyzer for valid (new probe). Concurrent part: the four counters the Swift test asserts to be 0 over its 8 tasks x 25 SheetMetal builds (threw, BRepCheck-invalid, solid count not 1, volume off the reference), against the same four counted over 8 threads x 25 fillets of the same input. The units of work differ (a whole U-channel build against one fillet), the counters and the 200 operations do not."
   },
   {
     "test_name": "Issue #341, concurrent OBJ import/export is thread-safe (meshCafMutex)::Concurrent OBJ round-trips all succeed with a non-empty shape",
@@ -456,27 +469,33 @@
     "bridge_output": {
       "type": "document",
       "data": {
-        "allShapes_count": 2,
+        "shapes_including_components": 2,
         "faces_per_shape": [
           1,
           1
-        ]
+        ],
+        "concurrent_8x15_failed": 0
       }
     },
     "kernel_output": {
       "type": "document",
       "data": {
-        "free_shapes_plus_components": 2,
-        "faces_of_first": 1,
+        "shapes_including_components": 2,
+        "faces_per_shape": [
+          1,
+          1
+        ],
         "concurrent_8x15_failed": 0
-      }
+      },
+      "source": "Scripts/repro/766-thread-safety/transcript.txt lines 25 and 26; Scripts/repro/766-thread-evidence-fix/transcript.txt line 6"
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
-    "note": "Document.allShapes() walks roots and their components; the probe counts both."
+    "note": "Document.allShapes() walks roots and their components; the probe counts both.",
+    "source": "Same quantity on both sides, same keys. shapes_including_components: what Document.allShapes() walks (root labels and their components), 2 on both sides. faces_per_shape: the face count of each of those shapes, [1, 1] on both sides. concurrent_8x15_failed: the Swift test asserts writeFailed, readFailed and emptyDocument all 0 over its 8 tasks x 15 OBJ round trips, so their sum is 0; the kernel counts an OBJ round trip that writes, reads and yields a free shape as ok, and 0 of 8 x 15 failed. Bridge values: the test's observation run and its zero-count assertions. Kernel values: the thread-safety transcript and the new probe."
   },
   {
     "test_name": "Issue #359, concurrent STEP import/export is thread-safe (igesMutex)::Concurrent STEP import + export round-trips all succeed with a non-empty shape",
@@ -485,7 +504,8 @@
       "type": "shape",
       "data": {
         "faces": 6,
-        "volume": 6000.0
+        "volume": 6000.0,
+        "concurrent_8x15_failed": 0
       }
     },
     "kernel_output": {
@@ -493,7 +513,10 @@
       "data": {
         "faces": 6,
         "volume": 6000.0,
-        "concurrent_8x15_serialized_failed": 0,
+        "concurrent_8x15_failed": 0
+      },
+      "source": "Scripts/repro/766-thread-safety/transcript.txt lines 27, 28",
+      "kernel_only": {
         "concurrent_8x15_unserialized_failed": 0
       }
     },
@@ -502,7 +525,8 @@
       "differences": []
     },
     "status": "PASS",
-    "note": "The kernel also round-trips cleanly with no lock at 8x15, matching the Swift finding that removing igesMutex() from these two entry points does not turn the test red."
+    "note": "The kernel also round-trips cleanly with no lock at 8x15, matching the Swift finding that removing igesMutex() from these two entry points does not turn the test red.",
+    "source": "Same quantity on both sides, same keys. faces and volume: a 10x20x30 box written to STEP AP214 and read back. concurrent_8x15_failed: the Swift test asserts writeFailed, readFailed and emptyShape all 0 over its 8 tasks x 15 round trips (sum 0); the kernel column is the serialized variant (a mutex around the writer and reader, as the bridge holds igesMutex()), 0 of 8 x 15 failed. The unserialized kernel variant (also 0) is a kernel-only extra kept under kernel_only. Bridge values: the test's observation run and its zero-count assertions."
   },
   {
     "test_name": "Issue #361/#363, shared singletons (TNaming_Scope, Font_FontMgr) are thread-safe::Two documents' naming scopes are isolated (#363, not just race-free, but not shared)",
@@ -598,7 +622,9 @@
       "data": {
         "faces": 11,
         "solids": 3,
-        "volume": 1791.6813487046
+        "volume": 1791.6813487046,
+        "concurrent_8x50_failed": 0,
+        "concurrent_8x50_wrong_face_count": 0
       }
     },
     "kernel_output": {
@@ -607,8 +633,13 @@
         "faces": 11,
         "solids": 3,
         "volume": 1791.6813487046,
-        "concurrent_8x50_parallel_false_wrong": 0,
-        "concurrent_8x50_parallel_true_wrong": 0
+        "concurrent_8x50_failed": 0,
+        "concurrent_8x50_wrong_face_count": 0
+      },
+      "source": "Scripts/repro/766-thread-safety/transcript.txt lines 34, 35",
+      "kernel_only": {
+        "concurrent_8x50_parallel_true_failed": 0,
+        "concurrent_8x50_parallel_true_wrong_face_count": 0
       }
     },
     "comparison": {
@@ -616,7 +647,8 @@
       "differences": []
     },
     "status": "PASS",
-    "note": "BRepAlgoAPI_BuilderAlgo (General Fuse), so 3 solids, not a merged one (#369)."
+    "note": "BRepAlgoAPI_BuilderAlgo (General Fuse), so 3 solids, not a merged one (#369).",
+    "source": "Same quantity on both sides, same keys. faces, solids and volume: the General Fuse of a 10-cube and a radius-6 sphere at (5,5,5). concurrent_8x50_failed and concurrent_8x50_wrong_face_count: the Swift test asserts failures == 0 and wrongFaceCounts == 0 over its 8 tasks x 50 fuseAll calls; the kernel columns are 8 threads x 50 BRepAlgoAPI_BuilderAlgo builds with SetRunParallel(false), the setting the bridge uses (#369). The SetRunParallel(true) variant (also 0) is a kernel-only extra kept under kernel_only. Bridge values: the test's observation run and its zero-count assertions."
   },
   {
     "test_name": "Issue #1404, TObj_Application's own singleton fields are serialized::isVerbose round-trips through the shared singleton",
@@ -651,7 +683,7 @@
     },
     "kernel_output": null,
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
@@ -688,7 +720,7 @@
     },
     "kernel_output": null,
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
@@ -951,15 +983,6 @@
           18.0
         ],
         "181_blank.vol": 2035.75204,
-        "prim_181_blank.opt": [
-          -6.0,
-          -6.0,
-          0.0,
-          6.0,
-          6.0,
-          18.0
-        ],
-        "prim_181_blank.vol": 2035.75204,
         "181_p1.0.opt": [
           -6.00000174,
           -6.00000049,
@@ -996,6 +1019,17 @@
           18.0000002
         ],
         "181_p3.14159.vol": 1525.44881
+      },
+      "kernel_only": {
+        "prim_181_blank.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          18.0
+        ],
+        "prim_181_blank.vol": 2035.75204
       }
     },
     "comparison": {
@@ -1003,7 +1037,8 @@
       "differences": []
     },
     "status": "PASS",
-    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI.",
+    "source": "Same quantity on both sides, same keys: every asserted validity, bounding box and volume of the shapes the Swift side built. Bridge: the Swift observation run. Kernel: the probe recomputes each of those from the BREP the Swift side wrote, with the bridge's own OCCT calls and flags. The prim_* entries are the kernel's independent rebuild of the blanks with BRepPrimAPI, measured only on the kernel side, so they are kept under kernel_only and not compared."
   },
   {
     "test_name": "Issue #181 robustness, threaded shaft envelope + STEP writer::Single STEP export still succeeds after writer serialization (#181-B)",
@@ -1099,7 +1134,7 @@
       "data": {}
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
@@ -1266,56 +1301,6 @@
           22.0
         ],
         "187_shank_12.0_3.14159.vol": 2488.14138,
-        "prim_187_shank_6.0_1.0.valid": true,
-        "prim_187_shank_6.0_1.0.opt": [
-          -3.0,
-          -3.0,
-          0.0,
-          3.0,
-          3.0,
-          22.0
-        ],
-        "prim_187_shank_6.0_1.0.vol": 622.035345,
-        "prim_187_shank_8.0_1.25.valid": true,
-        "prim_187_shank_8.0_1.25.opt": [
-          -4.0,
-          -4.0,
-          0.0,
-          4.0,
-          4.0,
-          22.0
-        ],
-        "prim_187_shank_8.0_1.25.vol": 1105.84061,
-        "prim_187_shank_10.0_1.5.valid": true,
-        "prim_187_shank_10.0_1.5.opt": [
-          -5.0,
-          -5.0,
-          0.0,
-          5.0,
-          5.0,
-          22.0
-        ],
-        "prim_187_shank_10.0_1.5.vol": 1727.87596,
-        "prim_187_shank_12.0_1.75.valid": true,
-        "prim_187_shank_12.0_1.75.opt": [
-          -6.0,
-          -6.0,
-          0.0,
-          6.0,
-          6.0,
-          22.0
-        ],
-        "prim_187_shank_12.0_1.75.vol": 2488.14138,
-        "prim_187_shank_12.0_3.14159.valid": true,
-        "prim_187_shank_12.0_3.14159.opt": [
-          -6.0,
-          -6.0,
-          0.0,
-          6.0,
-          6.0,
-          22.0
-        ],
-        "prim_187_shank_12.0_3.14159.vol": 2488.14138,
         "187_tight_6.0_1.0.valid": true,
         "187_tight_6.0_1.0.opt": [
           -3.00000407,
@@ -1366,6 +1351,58 @@
           22.0000002
         ],
         "187_tight_12.0_3.14159.vol": 1977.83815
+      },
+      "kernel_only": {
+        "prim_187_shank_6.0_1.0.valid": true,
+        "prim_187_shank_6.0_1.0.opt": [
+          -3.0,
+          -3.0,
+          0.0,
+          3.0,
+          3.0,
+          22.0
+        ],
+        "prim_187_shank_6.0_1.0.vol": 622.035345,
+        "prim_187_shank_8.0_1.25.valid": true,
+        "prim_187_shank_8.0_1.25.opt": [
+          -4.0,
+          -4.0,
+          0.0,
+          4.0,
+          4.0,
+          22.0
+        ],
+        "prim_187_shank_8.0_1.25.vol": 1105.84061,
+        "prim_187_shank_10.0_1.5.valid": true,
+        "prim_187_shank_10.0_1.5.opt": [
+          -5.0,
+          -5.0,
+          0.0,
+          5.0,
+          5.0,
+          22.0
+        ],
+        "prim_187_shank_10.0_1.5.vol": 1727.87596,
+        "prim_187_shank_12.0_1.75.valid": true,
+        "prim_187_shank_12.0_1.75.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          22.0
+        ],
+        "prim_187_shank_12.0_1.75.vol": 2488.14138,
+        "prim_187_shank_12.0_3.14159.valid": true,
+        "prim_187_shank_12.0_3.14159.opt": [
+          -6.0,
+          -6.0,
+          0.0,
+          6.0,
+          6.0,
+          22.0
+        ],
+        "prim_187_shank_12.0_3.14159.vol": 2488.14138
       }
     },
     "comparison": {
@@ -1373,7 +1410,8 @@
       "differences": []
     },
     "status": "PASS",
-    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI.",
+    "source": "Same quantity on both sides, same keys: every asserted validity, bounding box and volume of the shapes the Swift side built. Bridge: the Swift observation run. Kernel: the probe recomputes each of those from the BREP the Swift side wrote, with the bridge's own OCCT calls and flags. The prim_* entries are the kernel's independent rebuild of the blanks with BRepPrimAPI, measured only on the kernel side, so they are kept under kernel_only and not compared."
   },
   {
     "test_name": "Issue #187, screw-motion thread cutter (tight envelope)::threadedShaft is deterministic (same bounds across runs)",
@@ -1550,14 +1588,6 @@
         "189_shank_10.0_1.5.vol": 1963.49541,
         "189_shank_5.0_0.8.valid": true,
         "189_shank_5.0_0.8.vol": 490.873852,
-        "prim_189_shank_6.0_1.0.valid": true,
-        "prim_189_shank_6.0_1.0.vol": 706.858347,
-        "prim_189_shank_8.0_1.25.valid": true,
-        "prim_189_shank_8.0_1.25.vol": 1256.63706,
-        "prim_189_shank_10.0_1.5.valid": true,
-        "prim_189_shank_10.0_1.5.vol": 1963.49541,
-        "prim_189_shank_5.0_0.8.valid": true,
-        "prim_189_shank_5.0_0.8.vol": 490.873852,
         "189_fast_6.0_1.0.valid": true,
         "189_fast_6.0_1.0.vol": 611.152663,
         "189_fast_8.0_1.25.valid": true,
@@ -1566,6 +1596,16 @@
         "189_fast_10.0_1.5.vol": 1722.34077,
         "189_fast_5.0_0.8.valid": true,
         "189_fast_5.0_0.8.vol": 426.870539
+      },
+      "kernel_only": {
+        "prim_189_shank_6.0_1.0.valid": true,
+        "prim_189_shank_6.0_1.0.vol": 706.858347,
+        "prim_189_shank_8.0_1.25.valid": true,
+        "prim_189_shank_8.0_1.25.vol": 1256.63706,
+        "prim_189_shank_10.0_1.5.valid": true,
+        "prim_189_shank_10.0_1.5.vol": 1963.49541,
+        "prim_189_shank_5.0_0.8.valid": true,
+        "prim_189_shank_5.0_0.8.vol": 490.873852
       }
     },
     "comparison": {
@@ -1573,7 +1613,8 @@
       "differences": []
     },
     "status": "PASS",
-    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI."
+    "note": "Construction is a Swift composition of many bridge calls, so the probe does not rebuild it: the Swift side wrote each shape to BREP before measuring and the probe recomputes every asserted value with the bridge's own OCCT calls and flags; blanks are also rebuilt with BRepPrimAPI.",
+    "source": "Same quantity on both sides, same keys: every asserted validity, bounding box and volume of the shapes the Swift side built. Bridge: the Swift observation run. Kernel: the probe recomputes each of those from the BREP the Swift side wrote, with the bridge's own OCCT calls and flags. The prim_* entries are the kernel's independent rebuild of the blanks with BRepPrimAPI, measured only on the kernel side, so they are kept under kernel_only and not compared."
   },
   {
     "test_name": "Issue #189, thread guard regression (fastener threads)::Coarse worm-pitch result is still rejected or in (loosened) envelope (#181-C kept)",
