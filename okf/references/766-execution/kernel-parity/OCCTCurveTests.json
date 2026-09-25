@@ -428,12 +428,11 @@
       "data": "N/A: empty input returns before the bridge"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        "A silent `guard ... else { return }` now records an issue"
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: empty input returns before the bridge",
     "injection": "gridpad: empty input answers one zero point",
     "red": "Issue486Curve3DBatchTests.swift:26 evaluateGrid([]).isEmpty",
     "green": "passed",
@@ -475,12 +474,11 @@
       "data": "N/A: GeomAPI_PointsToBSpline not probed here; the test is a does-not-fail contract"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: GeomAPI_PointsToBSpline not probed here; the test is a does-not-fail contract",
     "injection": "fitfail: continuity 3 answers nil",
     "red": "Issue490ContinuityDecoderTests.swift:56 approximate(points:, continuity: 3) != nil",
     "green": "passed",
@@ -522,12 +520,11 @@
       "data": "N/A: the C2 ceiling is the bridge's decoder; LocalAnalysis_CurveContinuity has no predicate above C2"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        "A silent return now records an issue"
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: the C2 ceiling is the bridge's decoder; LocalAnalysis_CurveContinuity has no predicate above C2",
     "injection": "aord: requested order echoed unsaturated",
     "red": "Issue490ContinuityDecoderTests.swift:106 atC2.order == beyond.order",
     "green": "passed",
@@ -547,12 +544,11 @@
       "data": "N/A: the echo is bridge-side; the measured-class half is Issue495's"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        "A silent return now records an issue"
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: the echo is bridge-side; the measured-class half is Issue495's",
     "injection": "aecho: order always reported as .c2",
     "red": "Issue490ContinuityDecoderTests.swift:128 analysis.order == order",
     "green": "passed",
