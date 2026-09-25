@@ -253,26 +253,26 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 ### `XCAFPrsStyleTests.swift`
 | `emptyStyle` | `OCCTXCAFPrsStyleCreate` reports a non-empty style | :10 Expectation failed: style.isEmpty | passed | `OCCTXCAFPrsStyleCreate` | PASS: empty |
 | `surfaceColor` | `OCCTXCAFPrsStyleCreateWithSurfColor` returns an empty style | :15 Expectation failed: !style.isEmpty | passed | `OCCTXCAFPrsStyleCreateWithSurfColor` | PASS: not empty |
-| `visibility` | `OCCTXCAFPrsStyleIsEqual` returns true | :27 `!style.isEqual(to: visible)` (rewritten; reading back a stored property could not fail) | passed | `OCCTXCAFPrsStyleIsEqual` | PASS: unequal |
+| `visibility` | `OCCTXCAFPrsStyleIsEqual` returns true | :27 `!style.isEqual(to: visible)` (rewritten; reading back a stored property could not fail) | passed | `OCCTXCAFPrsStyleIsEqual` | PASS: a visible copy of an invisible style compares unequal on both sides |
 | `equality` | `OCCTXCAFPrsStyleIsEqual` returns false | :36 Expectation failed: s1.isEqual(to: s2) | passed | `OCCTXCAFPrsStyleIsEqual` | PASS: equal |
 | `curveColorOnly` | `OCCTXCAFPrsStyleCreateWithCurvColor` returns an empty style | :48 Expectation failed: !style.isEmpty; :56 Expectation failed: !style.isEqual(to: differentCurve) | passed | `OCCTXCAFPrsStyleCreateWithCurvColor` | PASS: not empty; same equal; different unequal |
 ### `VisMaterialCommonTests.swift`
 | `defaultValues` | `OCCTVisMaterialCommonDefault` returns a zeroed material | :10 Expectation failed: mat.isDefined; :11 Expectation failed: abs(mat.diffuseColor.red - 0.8) < 0.02 | passed | `OCCTVisMaterialCommonDefault` | PASS: 0.8 |
-| `setProperties` | `OCCTVisMaterialCommonIsEqual` returns true | `!mat.isEqual(to: other)` (rewritten; reading back stored properties could not fail) | passed | `OCCTVisMaterialCommonIsEqual` | PASS: unequal |
+| `setProperties` | `OCCTVisMaterialCommonIsEqual` returns true | `!mat.isEqual(to: other)` (rewritten; reading back stored properties could not fail) | passed | `OCCTVisMaterialCommonIsEqual` | PASS: materials that differ in shininess compare unequal on both sides |
 | `equality` | `OCCTVisMaterialCommonIsEqual` returns false | :37 Expectation failed: m1.isEqual(to: m2) | passed | `OCCTVisMaterialCommonIsEqual` | PASS: equal |
 | `commonMaterialRoughnessFromShininess` | `OCCTMaterialRoughnessFromSpecular` answers 0.1 | :105 Expectation failed: abs(material.roughness - 0.7) < 0.01 | passed | `OCCTDocumentGetLabelMaterial` | PASS: roughness within 0.01 of 0.7 on both sides (kernel RoughnessFromSpecular 0.699999988 for Shininess 0.3) |
 ### `VisMaterialPBRTests.swift`
 | `defaultValues` | `OCCTVisMaterialPBRDefault` returns a zeroed material | :10 Expectation failed: pbr.isDefined; :11 Expectation failed: abs(pbr.metallic - 1.0) < 1e-6 | passed | `OCCTVisMaterialPBRDefault` | PASS: 1, 1, 1.5 |
-| `setProperties` | `OCCTVisMaterialPBRIsEqual` returns true | `!pbr.isEqual(to: other)` (rewritten; reading back stored properties could not fail) | passed | `OCCTVisMaterialPBRIsEqual` | PASS: unequal |
+| `setProperties` | `OCCTVisMaterialPBRIsEqual` returns true | `!pbr.isEqual(to: other)` (rewritten; reading back stored properties could not fail) | passed | `OCCTVisMaterialPBRIsEqual` | PASS: materials that differ in roughness compare unequal on both sides |
 | `equality` | `OCCTVisMaterialPBRIsEqual` returns false | :39 Expectation failed: p1.isEqual(to: p2) | passed | `OCCTVisMaterialPBRIsEqual` | PASS: equal materials compare equal on both sides |
 ### `XCAFComponentMatrixTests.swift`
-| `matrixComponentPlacement` | `OCCTDocumentAddComponentMatrix` returns -1 without adding | :20 Expectation failed: doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: rigid) >= 0; :24 Expectation failed: doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: reflect) >= 0 | passed | `OCCTDocumentAddComponentMatrix` | PASS: both added, 2 components |
+| `matrixComponentPlacement` | `OCCTDocumentAddComponentMatrix` returns -1 without adding | :20 Expectation failed: doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: rigid) >= 0; :24 Expectation failed: doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: reflect) >= 0 | passed | `OCCTDocumentAddComponentMatrix` | PASS: rigid and reflection components are both added and the count is 2 on both sides |
 ### `XCAFDocAssemblyGraphTests.swift`
-| `createFromDocument` | `OCCTAssemblyGraphNbNodes` answers -1 | :15 Expectation failed: graph.nodeCount >= 0 | passed | `OCCTAssemblyGraphNbNodes` | PASS: counts non-negative |
+| `createFromDocument` | `OCCTAssemblyGraphNbNodes` answers -1 | :15 Expectation failed: graph.nodeCount >= 0 | passed | `OCCTAssemblyGraphNbNodes` | PASS: the graph's counts are non-negative on both sides (kernel 0, 0, 0 for a document with no shape) |
 | `nodeTypeMatchesRealOCCTCategories` | `OCCTAssemblyGraphGetNodeType` answers 0 | :64 Expectation failed: graph.nodeType(at: 1) == .assemblyRoot; :65 Expectation failed: graph.nodeType(at: 2) == .occurrence | passed | `OCCTAssemblyGraphGetNodeType` | PASS: 1 3 2 3 4 |
 ### `XCAFDocAssemblyItemIdTests.swift`
-| `createFromString` | `OCCTAssemblyItemIdPathCount` answers 1 | :11 Expectation failed: id.pathCount == 2 | passed | `OCCTAssemblyItemIdPathCount` | PASS: 2 |
-| `emptyIsNull` | `OCCTAssemblyItemIdIsValid` returns true | :16 Expectation failed: !id.isValid | passed | `OCCTAssemblyItemIdIsValid` | PASS: null |
+| `createFromString` | `OCCTAssemblyItemIdPathCount` answers 1 | :11 Expectation failed: id.pathCount == 2 | passed | `OCCTAssemblyItemIdPathCount` | PASS: the item id is valid with a path of 2 on both sides |
+| `emptyIsNull` | `OCCTAssemblyItemIdIsValid` returns true | :16 Expectation failed: !id.isValid | passed | `OCCTAssemblyItemIdIsValid` | PASS: the empty item id is not valid on both sides |
 | `equality` | `OCCTAssemblyItemIdIsEqual` returns false | :22 Expectation failed: id1.isEqual(to: id2) | passed | `OCCTAssemblyItemIdIsEqual` | PASS: equal |
 | `inequality` | `OCCTAssemblyItemIdIsEqual` returns true | :28 Expectation failed: !id1.isEqual(to: id2) | passed | `OCCTAssemblyItemIdIsEqual` | PASS: unequal |
 ### `XCAFDocAssemblyItemRefTests.swift`
@@ -281,50 +281,50 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `clearExtra` | `OCCTDocumentAssemblyItemRefClearExtra` returns true without clearing | :42 Expectation failed: !doc.assemblyItemRefHasExtra(labelId: node.labelId) | passed | `OCCTDocumentAssemblyItemRefClearExtra` | PASS: cleared |
 | `isOrphan` | `OCCTDocumentAssemblyItemRefIsOrphan` returns false | :51 Expectation failed: doc.assemblyItemRefIsOrphan(labelId: node.labelId) | passed | `OCCTDocumentAssemblyItemRefIsOrphan` | PASS: a ref to a path that names no label is orphan on both sides |
 ### `XCAFNoteObjectsTests.swift`
-| `create` | `OCCTNoteObjectCreate` returns null | :10 Expectation failed: obj != nil | passed | `OCCTNoteObjectCreate` | PASS: created |
+| `create` | `OCCTNoteObjectCreate` returns null | :10 Expectation failed: obj != nil | passed | `OCCTNoteObjectCreate` | PASS: the note object is created on both sides (trivial) |
 | `initiallyEmpty` | `OCCTNoteObjectHasPlane` returns true | :15 Expectation failed: !obj.hasPlane | passed | `OCCTNoteObjectHasPlane` | PASS: all false |
-| `setPlane` | `OCCTNoteObjectGetPlane` answers the origin | :28 Expectation failed: abs(origin.x - 1.0) < 1e-6 | passed | `OCCTNoteObjectGetPlane` | PASS: x 1 |
-| `setPoint` | `OCCTNoteObjectHasPoint` returns false | :35 Expectation failed: obj.hasPoint | passed | `OCCTNoteObjectHasPoint` | PASS: x 10 |
+| `setPlane` | `OCCTNoteObjectGetPlane` answers the origin | :28 Expectation failed: abs(origin.x - 1.0) < 1e-6 | passed | `OCCTNoteObjectGetPlane` | PASS: the plane is set with origin x = 1 on both sides |
+| `setPoint` | `OCCTNoteObjectHasPoint` returns false | :35 Expectation failed: obj.hasPoint | passed | `OCCTNoteObjectHasPoint` | PASS: the point is set with x = 10 on both sides |
 | `setPresentation` | `OCCTNoteObjectGetPresentation` returns null | :45 Expectation failed: obj.presentation != nil | passed | `OCCTNoteObjectGetPresentation` | PASS: kept |
 | `reset` | `OCCTNoteObjectReset` returns without resetting | :57 Expectation failed: !obj.hasPlane; :58 Expectation failed: !obj.hasPoint | passed | `OCCTNoteObjectReset` | PASS: cleared |
 ### `XCAFViewObjectTests.swift`
-| `create` | `OCCTViewObjectCreate` returns null | :11 Expectation failed: view != nil | passed | `OCCTViewObjectCreate` | PASS: created |
-| `projectionType` | `OCCTViewObjectGetType` answers 99 | :17 Expectation failed: view.type == .central; :19 Expectation failed: view.type == .parallel | passed | `OCCTViewObjectGetType` | PASS: 2, 1, 0 |
-| `realOCCTProjectionTypeValuesDecodeCorrectly` | `OCCTViewObjectGetType` answers 99 | :53 Expectation failed: readBack == raw; :55 Expectation failed: decoded == expected | passed | `OCCTViewObjectGetType` | PASS: raw values 0, 1, 2 |
+| `create` | `OCCTViewObjectCreate` returns null | :11 Expectation failed: view != nil | passed | `OCCTViewObjectCreate` | PASS: the view object is created on both sides (trivial) |
+| `projectionType` | `OCCTViewObjectGetType` answers 99 | :17 Expectation failed: view.type == .central; :19 Expectation failed: view.type == .parallel | passed | `OCCTViewObjectGetType` | PASS: projection types read back 2, 1, 0 on both sides |
+| `realOCCTProjectionTypeValuesDecodeCorrectly` | `OCCTViewObjectGetType` answers 99 | :53 Expectation failed: readBack == raw; :55 Expectation failed: decoded == expected | passed | `OCCTViewObjectGetType` | PASS: raw projection values 0, 1, 2 round-trip on both sides |
 | `viewDirection` | `OCCTViewObjectGetViewDirection` answers (0, 0, 0) | :63 Expectation failed: abs(dir.x - 1.0) < 1e-6 | passed | `OCCTViewObjectGetViewDirection` | PASS: (1, 0, 0) |
 | `upDirection` | `OCCTViewObjectGetUpDirection` answers (0, 0, 0) | :71 Expectation failed: abs(up.z - 1.0) < 1e-6 | passed | `OCCTViewObjectGetUpDirection` | PASS: (0, 0, 1) |
 | `windowSize` | `OCCTViewObjectGetWindowHSize` answers 0 | :79 Expectation failed: abs(view.windowHorizontalSize - 800) < 1e-6 | passed | `OCCTViewObjectGetWindowHSize` | PASS: 800 x 600 |
 | `clippingPlanes` | `OCCTViewObjectHasFrontPlaneClipping` returns false | :88 Expectation failed: view.hasFrontPlaneClipping | passed | `OCCTViewObjectHasFrontPlaneClipping` | PASS: 1, 1000, then unset |
 | `name` | `OCCTViewObjectGetName` returns null | :100 Expectation failed: view.name == "TopView" | passed | `OCCTViewObjectGetName` | PASS: TopView |
 ### `XDEShapeToolQueryTests.swift`
-| `addShapeAndCount` | `OCCTDocumentGetShapeCount` answers 0 | :21 Expectation failed: doc.shapeCount > 0 | passed | `OCCTDocumentGetShapeCount` | PASS: positive |
-| `freeShapeCount` | `OCCTDocumentGetFreeShapeCount` answers 0 | :34 Expectation failed: doc.freeShapeCount > 0 | passed | `OCCTDocumentGetFreeShapeCount` | PASS: positive |
-| `findAndSearch` | `OCCTDocumentFindShape` answers -1 | :49 Expectation failed: foundId >= 0 | passed | `OCCTDocumentFindShape` | PASS: true, true |
+| `addShapeAndCount` | `OCCTDocumentGetShapeCount` answers 0 | :21 Expectation failed: doc.shapeCount > 0 | passed | `OCCTDocumentGetShapeCount` | PASS: the shape count is positive on both sides (kernel 1) |
+| `freeShapeCount` | `OCCTDocumentGetFreeShapeCount` answers 0 | :34 Expectation failed: doc.freeShapeCount > 0 | passed | `OCCTDocumentGetFreeShapeCount` | PASS: the free shape count is positive on both sides (kernel 1) |
+| `findAndSearch` | `OCCTDocumentFindShape` answers -1 | :49 Expectation failed: foundId >= 0 | passed | `OCCTDocumentFindShape` | PASS: FindShape and SearchShape both find the box on both sides |
 | `newAndRemove` | `OCCTDocumentRemoveShape` returns false | :66 Expectation failed: removed | passed | `OCCTDocumentRemoveShape` | PASS: true |
 | `labelQueries` | `OCCTDocumentIsTopLevel` returns false | :82 Expectation failed: root.isTopLevel | passed | `OCCTDocumentIsTopLevel` | PASS: top-level, not a component |
 ### `XLinkTests.swift`
-| `setXLink` | `OCCTDocumentXLinkSet` returns false | :11 Expectation failed: ok | passed | `OCCTDocumentXLinkSet` | PASS: set |
+| `setXLink` | `OCCTDocumentXLinkSet` returns false | :11 Expectation failed: ok | passed | `OCCTDocumentXLinkSet` | PASS: an XLink is set on the tag-1 label on both sides |
 | `documentEntry` | `OCCTDocumentXLinkGetDocumentEntry` returns null | :20 Expectation failed: entry == "/doc/path" | passed | `OCCTDocumentXLinkGetDocumentEntry` | PASS: /doc/path |
 | `labelEntry` | `OCCTDocumentXLinkGetLabelEntry` returns null | :29 Expectation failed: entry == "0:1:2" | passed | `OCCTDocumentXLinkGetLabelEntry` | PASS: 0:1:2 |
 ### `TDataXtdConstraintTests.swift`
 | `setAndGetType` | `OCCTDocumentConstraintGetType` answers 3 | :18 Expectation failed: type == .parallel | passed | `OCCTDocumentConstraintGetType` | PASS: PARALLEL (5) |
 | `isPlanarAndDimension` | `OCCTDocumentConstraintIsPlanar` returns true | :29 Expectation failed: !doc.constraintIsPlanar(labelId: node.labelId) | passed | `OCCTDocumentConstraintIsPlanar` | PASS: false, false |
 | `verifiedFlag` | `OCCTDocumentConstraintGetVerified` returns false | :40 Expectation failed: doc.constraintGetVerified(labelId: node.labelId) | passed | `OCCTDocumentConstraintGetVerified` | PASS: true |
-| `noConstraint` | `OCCTDocumentConstraintGetType` answers 0 where there is none | :46 Expectation failed: doc.constraintGetType(labelId: node.labelId) == nil | passed | `OCCTDocumentConstraintGetType` | PASS: no constraint on a fresh label |
+| `noConstraint` | `OCCTDocumentConstraintGetType` answers 0 where there is none | :46 Expectation failed: doc.constraintGetType(labelId: node.labelId) == nil | passed | `OCCTDocumentConstraintGetType` | PASS: no constraint on the created label on both sides |
 ### `TDataXtdGeometricAttrTests.swift`
-| `setPoint` | `OCCTDocumentSetPointAttr` returns false | :15 Expectation failed: label.setPointAttribute(x: 5.0, y: 10.0, z: 15.0) | passed | `OCCTDocumentSetPointAttr` | PASS: `TDataXtd_Point::Set` non-null |
-| `setAxis` | `OCCTDocumentSetAxisAttr` returns false | :22 Expectation failed: label.setAxisAttribute(originX: 0, originY: 0, originZ: 0, directionX: 0, directionY: 0, directionZ: 1) | passed | `OCCTDocumentSetAxisAttr` | PASS: `TDataXtd_Axis::Set` non-null |
-| `setPlane` | `OCCTDocumentSetPlaneAttr` returns false | :32 Expectation failed: label.setPlaneAttribute(originX: 0, originY: 0, originZ: 0, normalX: 0, normalY: 0, normalZ: 1) | passed | `OCCTDocumentSetPlaneAttr` | PASS: `TDataXtd_Plane::Set` non-null |
+| `setPoint` | `OCCTDocumentSetPointAttr` returns false | :15 Expectation failed: label.setPointAttribute(x: 5.0, y: 10.0, z: 15.0) | passed | `OCCTDocumentSetPointAttr` | PASS: the point attribute is set on both sides |
+| `setAxis` | `OCCTDocumentSetAxisAttr` returns false | :22 Expectation failed: label.setAxisAttribute(originX: 0, originY: 0, originZ: 0, directionX: 0, directionY: 0, directionZ: 1) | passed | `OCCTDocumentSetAxisAttr` | PASS: the axis attribute is set on both sides |
+| `setPlane` | `OCCTDocumentSetPlaneAttr` returns false | :32 Expectation failed: label.setPlaneAttribute(originX: 0, originY: 0, originZ: 0, normalX: 0, normalY: 0, normalZ: 1) | passed | `OCCTDocumentSetPlaneAttr` | PASS: the plane attribute is set on both sides |
 ### `TDataXtdGeometryAttributeTests.swift`
-| `setGetGeometryType` | `OCCTDocumentGetGeometryType` answers 0 | :18 Expectation failed: label.geometryType() == .point; :21 Expectation failed: label.geometryType() == .plane | passed | `OCCTDocumentGetGeometryType` | PASS: 1, 6, 7 |
-| `allGeometryTypes` | `OCCTDocumentGetGeometryType` answers 0 | :36 Expectation failed: label.geometryType() == type; :36 Expectation failed: label.geometryType() == type | passed | `OCCTDocumentGetGeometryType` | PASS: each type reads back |
+| `setGetGeometryType` | `OCCTDocumentGetGeometryType` answers 0 | :18 Expectation failed: label.geometryType() == .point; :21 Expectation failed: label.geometryType() == .plane | passed | `OCCTDocumentGetGeometryType` | PASS: the geometry attribute reads back point (1), plane (6) and cylinder (7) on both sides |
+| `allGeometryTypes` | `OCCTDocumentGetGeometryType` answers 0 | :36 Expectation failed: label.geometryType() == type; :36 Expectation failed: label.geometryType() == type | passed | `OCCTDocumentGetGeometryType` | PASS: all eight geometry types round-trip on both sides |
 ### `TextLabelAndPointCloudTests.swift`
 | `createTextLabel` | `OCCTTextLabelGetInfo` returns false | :15 Expectation failed: label!.text == "Hello" | passed | `OCCTTextLabelGetInfo` | PASS: text "Hello" on both sides (AIS_TextLabel is the kernel object) |
 | `textLabelPosition` | `OCCTTextLabelGetInfo` returns false | :22 Expectation failed: abs(pos.x - 10) < 1e-6; :23 Expectation failed: abs(pos.y - 20) < 1e-6 | passed | `OCCTTextLabelGetInfo` | PASS: position (10, 20, 30) on both sides (kernel exact) |
 | `updateText` | `OCCTTextLabelSetText` returns without setting | :31 Expectation failed: label.text == "Updated" | passed | `OCCTTextLabelSetText` | PASS: updated text "Updated" on both sides |
 | `updatePosition` | `OCCTTextLabelSetPosition` returns without setting | :39 Expectation failed: abs(pos.x - 5) < 1e-6; :40 Expectation failed: abs(pos.y - 10) < 1e-6 | passed | `OCCTTextLabelSetPosition` | PASS: position x, y = (5, 10) on both sides after the update (kernel z 15, not asserted) |
-| `textLabelDefaultHeightMatchesOCCT` | `OCCTTextLabelGetInfo` returns false | :49 Expectation failed: OCCTTextLabelGetInfo(label.handle, &info); :50 Expectation failed: abs(info.height - 16.0) < 1e-6 | passed | `OCCTTextLabelGetInfo` | PASS: 16 = 16 |
-| `textLabelHeightRoundTrips` | `OCCTTextLabelSetHeight` returns without setting | :59 Expectation failed: abs(info.height - 30.0) < 1e-6 | passed | `OCCTTextLabelSetHeight` | PASS: 30 |
+| `textLabelDefaultHeightMatchesOCCT` | `OCCTTextLabelGetInfo` returns false | :49 Expectation failed: OCCTTextLabelGetInfo(label.handle, &info); :50 Expectation failed: abs(info.height - 16.0) < 1e-6 | passed | `OCCTTextLabelGetInfo` | PASS: the default text height is 16 on both sides |
+| `textLabelHeightRoundTrips` | `OCCTTextLabelSetHeight` returns without setting | :59 Expectation failed: abs(info.height - 30.0) < 1e-6 | passed | `OCCTTextLabelSetHeight` | PASS: the height 30 reads back on both sides |
 | `createPointCloud` | `OCCTPointCloudGetCount` answers 0 | :67 Expectation failed: cloud!.count == 3 | passed | `OCCTPointCloudGetCount` | PASS: 3 |
 | `pointCloudBounds` | `OCCTPointCloudGetBounds` returns false | :75 Expectation failed: bounds != nil | passed | `OCCTPointCloudGetBounds` | PASS: x -1..4, y 0..5 |
 | `pointCloudRetrieval` | `OCCTPointCloudGetPoints` answers 0 | :89 Expectation failed: retrieved.count == 2 | passed | `OCCTPointCloudGetPoints` | N/A: the points are the bridge's own copy (no OCCT class) |
@@ -337,84 +337,84 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `createFunction` | `OCCTDocumentFunctionIsFailed` returns true | :18 Expectation failed: !label.functionIsFailed | passed | `OCCTDocumentFunctionIsFailed` | PASS: false |
 | `functionFailure` | `OCCTDocumentFunctionGetFailure` answers 0 | :30 Expectation failed: failure == 1 | passed | `OCCTDocumentFunctionGetFailure` | PASS: 1 |
 ### `TFunctionGraphNodeTests.swift`
-| `graphNodeStatus` | `OCCTDocumentGraphNodeGetStatus` answers 99 | :18 Expectation failed: label.graphNodeStatus() == .notExecuted; :21 Expectation failed: label.graphNodeStatus() == .succeeded | passed | `OCCTDocumentGraphNodeGetStatus` | PASS: 1, 3 |
+| `graphNodeStatus` | `OCCTDocumentGraphNodeGetStatus` answers 99 | :18 Expectation failed: label.graphNodeStatus() == .notExecuted; :21 Expectation failed: label.graphNodeStatus() == .succeeded | passed | `OCCTDocumentGraphNodeGetStatus` | PASS: statuses NotExecuted (1) and Succeeded (3) read back on both sides |
 | `graphNodeDeps` | `OCCTDocumentGraphNodeAddNext` returns false | :34 Expectation failed: node1.graphNodeAddNext(tag: node2.tag) | passed | `OCCTDocumentGraphNodeAddNext` | PASS: true, true |
-| `allStatuses` | `OCCTDocumentGraphNodeGetStatus` answers 99 | :52 Expectation failed: label.graphNodeStatus() == status; :52 Expectation failed: label.graphNodeStatus() == status | passed | `OCCTDocumentGraphNodeGetStatus` | PASS: round-trips |
+| `allStatuses` | `OCCTDocumentGraphNodeGetStatus` answers 99 | :52 Expectation failed: label.graphNodeStatus() == status; :52 Expectation failed: label.graphNodeStatus() == status | passed | `OCCTDocumentGraphNodeGetStatus` | PASS: all five execution statuses round-trip on both sides |
 ### `TFunctionIFunctionTests.swift`
 | `newFunction` | `OCCTDocumentNewFunction` returns false | :16 Expectation failed: ok | passed | `OCCTDocumentNewFunction` | PASS: the function attribute exists after NewFunction on both sides (NewFunction's own return is false, unused) |
 | `deleteFunction` | `OCCTDocumentDeleteFunction` returns false | :26 Expectation failed: deleted | passed | `OCCTDocumentDeleteFunction` | PASS: DeleteFunction succeeds on both sides |
 | `functionExecStatus` | `OCCTDocumentFunctionSetExecStatus` returns true without setting | :41 Expectation failed: status == .succeeded | passed | `OCCTDocumentFunctionSetExecStatus` | PASS: status WrongDefinition then Succeeded on both sides |
 | `noFunction` | `OCCTDocumentFunctionGetExecStatus` answers 0 | :50 Expectation failed: status == nil | passed | `OCCTDocumentFunctionGetExecStatus` | PASS: no function attribute on a fresh label, so no status is readable on both sides |
 ### `TObjApplicationTests.swift`
-| `getInstance` | `OCCTTObjApplicationGetInstance` returns null | :10 Expectation failed: app != nil | passed | `OCCTTObjApplicationGetInstance` | PASS: non-null |
-| `verboseFlag` | `OCCTTObjApplicationIsVerbose` returns false | :21 Expectation failed: app.isVerbose | passed | `OCCTTObjApplicationIsVerbose` | PASS: true, false |
-| `createDocument` | `OCCTTObjApplicationCreateDocument` returns null | :32 Expectation failed: doc != nil | passed | `OCCTTObjApplicationCreateDocument` | PASS: created |
+| `getInstance` | `OCCTTObjApplicationGetInstance` returns null | :10 Expectation failed: app != nil | passed | `OCCTTObjApplicationGetInstance` | PASS: the TObj application instance exists on both sides |
+| `verboseFlag` | `OCCTTObjApplicationIsVerbose` returns false | :21 Expectation failed: app.isVerbose | passed | `OCCTTObjApplicationIsVerbose` | PASS: the verbose flag reads true then false on both sides |
+| `createDocument` | `OCCTTObjApplicationCreateDocument` returns null | :32 Expectation failed: doc != nil | passed | `OCCTTObjApplicationCreateDocument` | PASS: the TObj application creates a document on both sides |
 ### `UAttributeTests.swift`
 | `setAndHas` | `OCCTUAttributeHas` returns false | :13 Expectation failed: doc.hasUAttribute(tag: 300, guid: guid) | passed | `OCCTUAttributeHas` | PASS: true |
 | `differentGUID` | `OCCTUAttributeHas` returns true | :22 Expectation failed: !doc.hasUAttribute(tag: 301, guid: guid2) | passed | `OCCTUAttributeHas` | PASS: g1 yes, g2 no |
 | `getID` | `OCCTUAttributeGetID` returns null | :30 Expectation failed: retrieved != nil | passed | `OCCTUAttributeGetID` | N/A: the GUID string is the one passed in; not probed in this pass, so no kernel value is claimed |
 ### `VariableTests.swift`
-| `setVariable` | `OCCTDocumentVariableSet` returns false | :11 Expectation failed: ok | passed | `OCCTDocumentVariableSet` | PASS: set |
+| `setVariable` | `OCCTDocumentVariableSet` returns false | :11 Expectation failed: ok | passed | `OCCTDocumentVariableSet` | PASS: a variable is set on the tag-1 label on both sides |
 | `setAndGetName` | `OCCTDocumentVariableGetName` returns null | :20 Expectation failed: name == "velocity" | passed | `OCCTDocumentVariableGetName` | PASS: velocity |
 | `setAndGetValue` | `OCCTDocumentVariableGetValue` answers 0 | :30 Expectation failed: abs(val - 42.5) < 1e-10 | passed | `OCCTDocumentVariableGetValue` | PASS: 42.5 |
 | `unitString` | `OCCTDocumentVariableGetUnit` returns null | :39 Expectation failed: unit == "m/s" | passed | `OCCTDocumentVariableGetUnit` | PASS: m/s |
 | `constantFlag` | `OCCTDocumentVariableIsConstant` returns true | :49 Expectation failed: !doc.variableIsConstant(at: 1) | passed | `OCCTDocumentVariableIsConstant` | PASS: true, false |
 | `assignAndDesassignExpression` | `OCCTDocumentVariableIsAssigned` returns false | :58 Expectation failed: doc.variableIsAssigned(at: 1) | passed | `OCCTDocumentVariableIsAssigned` | PASS: true, false |
 ### `TNamingBasicTests.swift`
-| `createLabel` | `OCCTDocumentCreateLabel` returns -1 | force-unwrap crash on the nil label (`createLabel()!`) | passed | `OCCTDocumentCreateLabel` | PASS: a new child of Main |
-| `createChildLabel` | `OCCTDocumentCreateLabel` returns -1 | force-unwrap crash on the nil parent label | passed | `OCCTDocumentCreateLabel` | PASS: a child label |
-| `recordPrimitive` | `OCCTDocumentNamingRecord` returns false | :32 Expectation failed: ok | passed | `OCCTDocumentNamingRecord` | PASS: recorded as PRIMITIVE (0) |
-| `currentShapeAfterPrimitive` | `OCCTDocumentNamingGetCurrentShape` returns null | :43 Expectation failed: current != nil | passed | `OCCTDocumentNamingGetCurrentShape` | PASS: current shape is the box |
-| `storedShape` | `OCCTDocumentNamingGetShape` returns null | :54 Expectation failed: stored != nil | passed | `OCCTDocumentNamingGetShape` | PASS: stored shape is the box |
+| `createLabel` | `OCCTDocumentCreateLabel` returns -1 | force-unwrap crash on the nil label (`createLabel()!`) | passed | `OCCTDocumentCreateLabel` | PASS: a label is created on both sides |
+| `createChildLabel` | `OCCTDocumentCreateLabel` returns -1 | force-unwrap crash on the nil parent label | passed | `OCCTDocumentCreateLabel` | PASS: a child label is created on both sides |
+| `recordPrimitive` | `OCCTDocumentNamingRecord` returns false | :32 Expectation failed: ok | passed | `OCCTDocumentNamingRecord` | PASS: the primitive record is made and reads as PRIMITIVE on both sides |
+| `currentShapeAfterPrimitive` | `OCCTDocumentNamingGetCurrentShape` returns null | :43 Expectation failed: current != nil | passed | `OCCTDocumentNamingGetCurrentShape` | PASS: the current shape is found (the box) on both sides |
+| `storedShape` | `OCCTDocumentNamingGetShape` returns null | :54 Expectation failed: stored != nil | passed | `OCCTDocumentNamingGetShape` | PASS: the stored shape is found (the box) on both sides |
 | `evolutionType` | `OCCTDocumentNamingGetEvolution` answers 99 | :64 Expectation failed: doc.namingEvolution(on: label) == .primitive | passed | `OCCTDocumentNamingGetEvolution` | PASS: PRIMITIVE (0) |
-| `noEvolutionOnEmptyLabel` | `OCCTDocumentNamingGetEvolution` answers 0 (primitive) where there is none | :71 Expectation failed: doc.namingEvolution(on: label) == nil | passed | `OCCTDocumentNamingGetEvolution` | PASS: no named shape |
-| `historyAfterPrimitive` | `OCCTDocumentNamingHistoryCount` answers 0 | :82 `history.count == 1`, then an index-out-of-range crash on `history[0]` | passed | `OCCTDocumentNamingHistoryCount` | PASS: 1 entry, new only |
+| `noEvolutionOnEmptyLabel` | `OCCTDocumentNamingGetEvolution` answers 0 (primitive) where there is none | :71 Expectation failed: doc.namingEvolution(on: label) == nil | passed | `OCCTDocumentNamingGetEvolution` | PASS: no evolution is readable on a label with no naming, on both sides |
+| `historyAfterPrimitive` | `OCCTDocumentNamingHistoryCount` answers 0 | :82 `history.count == 1`, then an index-out-of-range crash on `history[0]` | passed | `OCCTDocumentNamingHistoryCount` | PASS: one history entry with a new shape and no old shape on both sides |
 | `newShapeFromHistory` | `OCCTDocumentNamingGetNewShape` returns null | :96 Expectation failed: newShape != nil | passed | `OCCTDocumentNamingGetNewShape` | PASS: new present, old absent |
-| `modifyEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :111 Expectation failed: doc.namingEvolution(on: label) == .modify | passed | `OCCTDocumentNamingGetEvolution` | PASS: MODIFY (2) |
+| `modifyEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :111 Expectation failed: doc.namingEvolution(on: label) == .modify | passed | `OCCTDocumentNamingGetEvolution` | PASS: the evolution is MODIFY and a current shape exists on both sides |
 | `deleteEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :124 Expectation failed: doc.namingEvolution(on: label) == .delete | passed | `OCCTDocumentNamingGetEvolution` | PASS: DELETE (3) |
-| `generatedEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :135 Expectation failed: doc.namingEvolution(on: label) == .generated | passed | `OCCTDocumentNamingGetEvolution` | PASS: GENERATED (1), old and new |
-| `multipleHistoryEntries` | `OCCTDocumentNamingHistoryCount` answers 0 | :153 Expectation failed: history.count >= 1 | passed | `OCCTDocumentNamingHistoryCount` | PASS: at least 1 |
+| `generatedEvolution` | `OCCTDocumentNamingGetEvolution` answers 99 | :135 Expectation failed: doc.namingEvolution(on: label) == .generated | passed | `OCCTDocumentNamingGetEvolution` | PASS: GENERATED with one entry holding an old and a new shape on both sides |
+| `multipleHistoryEntries` | `OCCTDocumentNamingHistoryCount` answers 0 | :153 Expectation failed: history.count >= 1 | passed | `OCCTDocumentNamingHistoryCount` | PASS: at least 1 history entry on both sides (kernel 1) |
 ### `TNamingCopyShapeTests.swift`
-| `deepCopyBox` | `OCCTShapeDeepCopy` returns a null shape | :15 Expectation failed: copy.isValid | passed | `OCCTShapeDeepCopy` | PASS: copy exists and is not the same TShape |
-| `deepCopySphere` | `OCCTShapeDeepCopy` returns a null shape | :24 Expectation failed: copy.isValid | passed | `OCCTShapeDeepCopy` | PASS: copy exists |
+| `deepCopyBox` | `OCCTShapeDeepCopy` returns a null shape | :15 Expectation failed: copy.isValid | passed | `OCCTShapeDeepCopy` | PASS: the deep copy of a box is returned and valid on both sides |
+| `deepCopySphere` | `OCCTShapeDeepCopy` returns a null shape | :24 Expectation failed: copy.isValid | passed | `OCCTShapeDeepCopy` | PASS: the deep copy of a sphere is returned and valid on both sides |
 ### `TNamingExtensionTests.swift`
-| `namingIsEmpty` | `OCCTNamingIsEmpty` returns false | :15 Expectation failed: doc.namingIsEmpty(on: node) | passed | `OCCTNamingIsEmpty` | PASS: empty |
+| `namingIsEmpty` | `OCCTNamingIsEmpty` returns false | :15 Expectation failed: doc.namingIsEmpty(on: node) | passed | `OCCTNamingIsEmpty` | PASS: no naming on the created label on both sides |
 | `namingIsEmptyAfterRecord` | `OCCTNamingIsEmpty` returns true | :23 Expectation failed: !doc.namingIsEmpty(on: node) | passed | `OCCTNamingIsEmpty` | PASS: not empty |
 | `namingVersion` | `OCCTNamingGetVersion` answers 7 | :31 Expectation failed: doc.namingVersion(on: node) == 0; :33 Expectation failed: doc.namingVersion(on: node) == 42 | passed | `OCCTNamingGetVersion` | PASS: 0, then 42 |
-| `namingOriginalShape` | `OCCTNamingOriginalShape` returns a (null) shape where there is none | :43 Expectation failed: original == nil | passed | `OCCTNamingOriginalShape` | PASS: a primitive has no old shape |
-| `namingOriginalShapeFromModify` | `OCCTNamingOriginalShape` returns null | :55 Expectation failed: original != nil | passed | `OCCTNamingOriginalShape` | PASS: the box |
+| `namingOriginalShape` | `OCCTNamingOriginalShape` returns a (null) shape where there is none | :43 Expectation failed: original == nil | passed | `OCCTNamingOriginalShape` | PASS: a primitive has no original shape on both sides |
+| `namingOriginalShapeFromModify` | `OCCTNamingOriginalShape` returns null | :55 Expectation failed: original != nil | passed | `OCCTNamingOriginalShape` | PASS: a modify record's original shape is found (the box) on both sides |
 | `namingHasLabel` | `OCCTNamingHasLabel` returns false | :63 Expectation failed: doc.namingHasLabel(shape: box) | passed | `OCCTNamingHasLabel` | PASS: true |
-| `namingFindLabel` | `OCCTNamingFindLabel` answers -1 | :72 Expectation failed: found != nil | passed | `OCCTNamingFindLabel` | PASS: the recording label |
-| `namingValidUntil` | `OCCTNamingValidUntil` answers -1 | :81 Expectation failed: valid >= 0 | passed | `OCCTNamingValidUntil` | PASS: 1 |
-| `sameShapeCount` | `OCCTNamingSameShapeCount` answers 1 | :92 Expectation failed: count >= 2 | passed | `OCCTNamingSameShapeCount` | PASS: 3 labels hold the box |
-| `sameShapeLabels` | `OCCTNamingSameShapeLabels` answers 1 | :103 Expectation failed: labels.count >= 2 | passed | `OCCTNamingSameShapeLabels` | PASS: 3 |
+| `namingFindLabel` | `OCCTNamingFindLabel` answers -1 | :72 Expectation failed: found != nil | passed | `OCCTNamingFindLabel` | PASS: the recording label is found on both sides |
+| `namingValidUntil` | `OCCTNamingValidUntil` answers -1 | :81 Expectation failed: valid >= 0 | passed | `OCCTNamingValidUntil` | PASS: ValidUntil is >= 0 on both sides (kernel 0) |
+| `sameShapeCount` | `OCCTNamingSameShapeCount` answers 1 | :92 Expectation failed: count >= 2 | passed | `OCCTNamingSameShapeCount` | PASS: at least 2 labels hold the box on both sides (kernel 2) |
+| `sameShapeLabels` | `OCCTNamingSameShapeLabels` answers 1 | :103 Expectation failed: labels.count >= 2 | passed | `OCCTNamingSameShapeLabels` | PASS: at least 2 labels are listed on both sides (kernel 2) |
 ### `TNamingTracingTests.swift`
-| `traceForward` | `OCCTDocumentNamingTraceForward` answers 0 | :21 Expectation failed: forward.count >= 1 | passed | `OCCTDocumentNamingTraceForward` | PASS: 2 |
-| `traceBackward` | `OCCTDocumentNamingTraceBackward` answers 0 | :36 Expectation failed: backward.count >= 1 | passed | `OCCTDocumentNamingTraceBackward` | PASS: 1 |
-| `multipleGenerations` | `OCCTDocumentNamingTraceForward` answers 0 | :55 Expectation failed: forward.count >= 2 | passed | `OCCTDocumentNamingTraceForward` | PASS: 2 |
-| `emptyTraceForUnrelated` | `OCCTDocumentNamingTraceForward` answers the source shape | :67 Expectation failed: forward.isEmpty | passed | `OCCTDocumentNamingTraceForward` | PASS: not in the used-shape table, so 0 |
-| `traceModificationChain` | `OCCTDocumentNamingTraceForward` answers 0 | :81 Expectation failed: forward.count >= 1 | passed | `OCCTDocumentNamingTraceForward` | PASS: at least 1 |
-| `forwardTraceExcludesSource` | `OCCTDocumentNamingTraceForward` answers the source shape | :98 Expectation failed: !shape.isSame(as: box) | passed | `OCCTDocumentNamingTraceForward` | PASS: the source is not in its own forward trace |
-| `backwardTraceExcludesGenerated` | `OCCTDocumentNamingTraceBackward` answers the given shape | :116 Expectation failed: !shape.isSame(as: sphere) | passed | `OCCTDocumentNamingTraceBackward` | PASS: the shape is not in its own backward trace |
+| `traceForward` | `OCCTDocumentNamingTraceForward` answers 0 | :21 Expectation failed: forward.count >= 1 | passed | `OCCTDocumentNamingTraceForward` | PASS: the forward trace finds 1 shape on both sides |
+| `traceBackward` | `OCCTDocumentNamingTraceBackward` answers 0 | :36 Expectation failed: backward.count >= 1 | passed | `OCCTDocumentNamingTraceBackward` | PASS: the backward trace finds 1 shape on both sides |
+| `multipleGenerations` | `OCCTDocumentNamingTraceForward` answers 0 | :55 Expectation failed: forward.count >= 2 | passed | `OCCTDocumentNamingTraceForward` | PASS: the forward trace finds both generated shapes on both sides |
+| `emptyTraceForUnrelated` | `OCCTDocumentNamingTraceForward` answers the source shape | :67 Expectation failed: forward.isEmpty | passed | `OCCTDocumentNamingTraceForward` | PASS: the trace from an unrelated shape is empty on both sides (the kernel iterator throws) |
+| `traceModificationChain` | `OCCTDocumentNamingTraceForward` answers 0 | :81 Expectation failed: forward.count >= 1 | passed | `OCCTDocumentNamingTraceForward` | PASS: the forward trace through a modify finds 1 shape on both sides |
+| `forwardTraceExcludesSource` | `OCCTDocumentNamingTraceForward` answers the source shape | :98 Expectation failed: !shape.isSame(as: box) | passed | `OCCTDocumentNamingTraceForward` | PASS: the forward trace finds the generated shape and not the source on both sides |
+| `backwardTraceExcludesGenerated` | `OCCTDocumentNamingTraceBackward` answers the given shape | :116 Expectation failed: !shape.isSame(as: sphere) | passed | `OCCTDocumentNamingTraceBackward` | PASS: the backward trace finds the source and not the generated shape on both sides |
 ### `TNamingTranslatorTests.swift`
-| `translatorCopy` | `OCCTShapeTranslatorCopy` returns null | :12 Expectation failed: Bool(false) | passed | `OCCTShapeTranslatorCopy` | PASS: copied, a distinct TShape |
+| `translatorCopy` | `OCCTShapeTranslatorCopy` returns null | :12 Expectation failed: Bool(false) | passed | `OCCTShapeTranslatorCopy` | PASS: the translator copy is returned, valid and not the same shape on both sides |
 ### `XCAFDocAssemblyIteratorTests.swift`
-| `iterateAssembly` | `OCCTDocumentAssemblyItemCount` answers 0 | :16 Expectation failed: count >= 1 | passed | `OCCTDocumentAssemblyItemCount` | PASS: 3 items |
-| `smallAssemblyCountIsComplete` | `OCCTDocumentAssemblyItemCount` answers 0 | :32 Expectation failed: count >= 3 | passed | `OCCTDocumentAssemblyItemCount` | PASS: 3 |
+| `iterateAssembly` | `OCCTDocumentAssemblyItemCount` answers 0 | :16 Expectation failed: count >= 1 | passed | `OCCTDocumentAssemblyItemCount` | PASS: the count is complete and at least 1 on both sides (kernel 1) |
+| `smallAssemblyCountIsComplete` | `OCCTDocumentAssemblyItemCount` answers 0 | :32 Expectation failed: count >= 3 | passed | `OCCTDocumentAssemblyItemCount` | PASS: the count is complete and at least 3 on both sides (kernel 3) |
 ### `XCAFDocClippingPlaneToolTests.swift`
 | `addAndGet` | `OCCTDocumentClipPlaneToolIsClipPlane` returns false | :15 Expectation failed: doc.clippingPlaneToolIsClipPlane(clip) | passed | `OCCTDocumentClipPlaneToolIsClipPlane` | PASS: z 5, normal z, capping |
 | `remove` | `OCCTDocumentClipPlaneToolRemove` returns false | :32 Expectation failed: doc.clippingPlaneToolRemove(clip) | passed | `OCCTDocumentClipPlaneToolRemove` | PASS: removed |
 ### `XCAFDocColorTests.swift`
 | `setAndGetRGB` | `OCCTDocumentSetColorAttr` returns false | :11 Expectation failed: label.setColorAttribute(red: 1.0, green: 0.0, blue: 0.0) | passed | `OCCTDocumentGetColorAttr` | PASS: (1, 0, 0) |
 | `setAndGetRGBA` | `OCCTDocumentGetColorAlphaAttr` answers 0 | :27 Expectation failed: abs(label.colorAlphaAttribute - 0.8) < 0.02 | passed | `OCCTDocumentGetColorAlphaAttr` | PASS: 0.8 |
-| `namedColor` | `OCCTDocumentGetColorNOCAttr` answers -1 | :38 Expectation failed: noc >= 0 | passed | `OCCTDocumentGetColorNOCAttr` | PASS: 407 for pure red |
+| `namedColor` | `OCCTDocumentGetColorNOCAttr` answers -1 | :38 Expectation failed: noc >= 0 | passed | `OCCTDocumentGetColorNOCAttr` | PASS: the named-colour ordinal is >= 0 on both sides (kernel 407) |
 ### `XCAFDocDimTolTests.swift`
 | `setAndGet` | `OCCTDocumentGetDimTolKind` answers 2 | :19 Expectation failed: kind == 1 | passed | `OCCTDocumentGetDimTolKind` | PASS: all four round-trip |
 | `noDimTol` | `OCCTDocumentGetDimTolKind` answers 0 where there is none | :39 Expectation failed: doc.dimTolKind(labelId: node.labelId) == nil | passed | `OCCTDocumentGetDimTolKind` | PASS: no XCAFDoc_DimTol on a fresh label on both sides |
 ### `XCAFDocGraphNodeTests.swift`
 | `setAndRelate` | `OCCTDocumentGraphNodeNbChildren` answers 0 | :17 Expectation failed: l1.xcafGraphNodeChildCount == 1 | passed | `OCCTDocumentGraphNodeNbChildren` | PASS: 1, 1 |
 | `unsetRelationship` | `OCCTDocumentGraphNodeNbFathers` answers 1 | :35 Expectation failed: l2.xcafGraphNodeFatherCount == 0 | passed | `OCCTDocumentGraphNodeNbFathers` | PASS: 0, 0 |
-| `isFatherIsChild` | `OCCTDocumentGraphNodeIsFather` / `IsChild` return false and `NbChildren` answers 0 | :52 Expectation failed: isFather \|\| isChild \|\| l1.xcafGraphNodeChildCount > 0 | passed | `OCCTDocumentGraphNodeIsFather` | PASS: IsFather true |
+| `isFatherIsChild` | `OCCTDocumentGraphNodeIsFather` / `IsChild` return false and `NbChildren` answers 0 | :52 Expectation failed: isFather \|\| isChild \|\| l1.xcafGraphNodeChildCount > 0 | passed | `OCCTDocumentGraphNodeIsFather` | PASS: the graph nodes report a father-child relation on both sides |
 ### `XCAFDocLocationTests.swift`
 | `setAndGetLocation` | `OCCTDocumentHasLocation` returns false | :15 Expectation failed: label.hasLocationAttribute | passed | `OCCTDocumentGetLocationTranslation` | PASS: (10, 20, 30) |
 | `noLocation` | `OCCTDocumentHasLocation` returns true | :28 Expectation failed: !label.hasLocationAttribute | passed | `OCCTDocumentHasLocation` | PASS: no XCAFDoc_Location on a fresh label on both sides |
@@ -434,7 +434,7 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `deleteAllNotes` | `OCCTDocumentNotesToolDeleteAllNotes` answers 0 | :51 Expectation failed: deleted == 3; :52 Expectation failed: doc.notesToolNoteCount == 0 | passed | `OCCTDocumentNotesToolDeleteAllNotes` | PASS: 3, 3, 0 |
 | `orphanNotes` | `OCCTDocumentNotesToolNbOrphanNotes` answers -1 | :60 Expectation failed: doc.notesToolOrphanNoteCount >= 0 | passed | `OCCTDocumentNotesToolNbOrphanNotes` | PASS: >= 0 (kernel: 1 orphan for one comment) |
 ### `XCAFDocShapeMapToolTests.swift`
-| `setShapeAndQuery` | `OCCTDocumentShapeMapToolIsSubShape` returns false | :16 Expectation failed: label.shapeMapToolIsSubShape(face) | passed | `OCCTDocumentShapeMapToolIsSubShape` | PASS: extent 33, face is a sub-shape |
+| `setShapeAndQuery` | `OCCTDocumentShapeMapToolIsSubShape` returns false | :16 Expectation failed: label.shapeMapToolIsSubShape(face) | passed | `OCCTDocumentShapeMapToolIsSubShape` | PASS: the first face is a sub-shape and the extent is positive on both sides (kernel 33) |
 ### `DocumentExplorerExtensionTests.swift`
 | `explorerDepth` | `OCCTDocumentExplorerDepth` returns -1 | :17 Expectation failed: depth >= 0 | passed | `OCCTDocumentExplorerDepth` | PASS: depth is non-negative on both sides (kernel depth 0 for the lone box node, which is reached) |
 | `explorerIsAssembly` | `OCCTDocumentExplorerIsAssembly` returns true | :31 Expectation failed: !isAsm | passed | `OCCTDocumentExplorerIsAssembly` | PASS: false = false |

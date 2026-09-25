@@ -4346,13 +4346,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "invisible_ne_visible": true
+        "invisible_style_equals_visible_copy": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "visible_vs_invisible_equal": false
+        "invisible_style_equals_visible_copy": false
       }
     },
     "comparison": {
@@ -4360,7 +4360,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantity on both sides: whether an invisible style equals a visible copy of it. Bridge: !style.isEqual(to: visible) for a style with surface colour (1, 0, 0), isVisible false, against the same style with isVisible true (OCCTXCAFPrsStyleIsEqual builds two XCAFPrs_Style and returns IsEqual). Kernel: 'invisible red-surface style vs its visible copy: IsEqual=false' (control: the style against itself is equal). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [133].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFPrs_Style Tests::equality",
@@ -4440,13 +4441,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "shininess_differs_unequal": true
+        "shininess_differs_equal": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "equal_05_vs_06": false
+        "shininess_differs_equal": false
       }
     },
     "comparison": {
@@ -4454,7 +4455,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantity on both sides: whether two common materials that differ only in shininess (0.5 and 0.6) are equal. Bridge: !mat.isEqual(to: other) (OCCTVisMaterialCommonIsEqual builds two XCAFDoc_VisMaterialCommon and returns IsEqual). Kernel: 'common material shininess 0.5 vs 0.6: IsEqual=false' (control: the material against itself is equal). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [134].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc_VisMaterialCommon Tests::equality",
@@ -4535,13 +4537,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "roughness_differs_unequal": true
+        "roughness_differs_equal": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "equal_05_vs_06": false
+        "roughness_differs_equal": false
       }
     },
     "comparison": {
@@ -4549,7 +4551,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantity on both sides: whether two PBR materials that differ only in roughness (0.5 and 0.6) are equal. Bridge: !pbr.isEqual(to: other). Kernel: 'PBR material roughness 0.5 vs 0.6: IsEqual=false' (control: the material against itself is equal). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [136].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc_VisMaterialPBR Tests::equality",
@@ -4580,15 +4583,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "rigid": true,
-        "reflection": true,
+        "rigid_added": true,
+        "reflection_added": true,
         "components": 2
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "rotation_added": true,
+        "rigid_added": true,
         "reflection_added": true,
         "components": 2
       }
@@ -4598,7 +4601,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantities on both sides: whether the rigid placement (90 degrees about Z plus a translation) and the reflection placement (mirror in X, det -1) are added as components, and the component count. Bridge: both addComponent(matrix:) calls returned >= 0 and componentCount was 2 (the third call, with a 3-element array, returns -1 from a count check in Swift, which has no kernel counterpart and is not compared). Kernel: XCAFDoc_ShapeTool::AddComponent with the grouped matrices built as the bridge builds them (gp_Trsf::SetValues) returns non-null labels for both, and NbComponents is 2. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [138].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc_AssemblyGraph Tests::createFromDocument",
@@ -4606,15 +4610,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "nonnegative": true
+        "node_count_non_negative": true,
+        "link_count_non_negative": true,
+        "root_count_non_negative": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "nodes": 5,
-        "links": 4,
-        "roots": 1
+        "node_count_non_negative": true,
+        "link_count_non_negative": true,
+        "root_count_non_negative": true
       }
     },
     "comparison": {
@@ -4622,7 +4628,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantities on both sides: whether the assembly graph's node, link and root counts are >= 0, for a document that holds only the label createLabel makes (no shape is added). Bridge: nodeCount, linkCount and rootCount all >= 0. Kernel: XCAFDoc_AssemblyGraph over that document gives nodes=0 links=0 roots=0. The shared probe measured a nested assembly (5, 4, 1), a different document. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [139].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc_AssemblyGraph Tests::nodeTypeMatchesRealOCCTCategories",
@@ -4669,14 +4676,14 @@
       "type": "value",
       "data": {
         "valid": true,
-        "path": 2
+        "path_count": 2
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "null": false,
-        "path": 2
+        "valid": true,
+        "path_count": 2
       }
     },
     "comparison": {
@@ -4684,7 +4691,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantities on both sides: whether the item id built from \"0:1:1:1/0:1:1:2\" is valid, and its path length. Bridge: isValid and pathCount == 2 (OCCTAssemblyItemIdIsValid / PathCount build an XCAFDoc_AssemblyItemId from the string). Kernel: IsNull=false, path size 2. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [140].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc_AssemblyItemId Tests::emptyIsNull",
@@ -4698,7 +4706,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "null": true
+        "valid": false
       }
     },
     "comparison": {
@@ -4706,7 +4714,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantity on both sides: whether the item id built from the empty string is valid. Bridge: !id.isValid. Kernel: XCAFDoc_AssemblyItemId(\"\") has IsNull=true. The shared probe used the default constructor, not the string one. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [141].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc_AssemblyItemId Tests::equality",
@@ -4849,7 +4858,7 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "obj": true
+        "created": true
       }
     },
     "kernel_output": {
@@ -4863,7 +4872,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantity on both sides: whether a note object is created. Bridge: NoteObject() was non-nil. Kernel: a new XCAFNoteObjects_NoteObject is non-null (an allocation, so this comparison is trivial). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [143].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFNoteObjects_NoteObject Tests::initiallyEmpty",
@@ -4897,14 +4907,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "has": true,
-        "x": 1.0
+        "has_plane": true,
+        "origin_x": 1.0
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "x": 1
+        "has_plane": true,
+        "origin_x": 1.0
       }
     },
     "comparison": {
@@ -4912,7 +4923,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantities on both sides: whether the plane is set and its origin x, compared within the test's 1e-6. Bridge: hasPlane and planeOrigin.x within 1e-6 of 1 after setPlane(origin (1, 2, 3), normal (0, 0, 1)). Kernel: SetPlane(gp_Ax2) gives HasPlane=true and origin.x=1 (read at %.17g, exact). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [144].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFNoteObjects_NoteObject Tests::setPoint",
@@ -4920,14 +4932,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "has": true,
-        "x": 10
+        "has_point": true,
+        "x": 10.0
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "x": 10
+        "has_point": true,
+        "x": 10.0
       }
     },
     "comparison": {
@@ -4935,7 +4948,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantities on both sides: whether the point is set and its x, compared within the test's 1e-6. Bridge: hasPoint and point.x within 1e-6 of 10 after setPoint(10, 20, 30). Kernel: SetPoint gives HasPoint=true and point.x=10 (read at %.17g, exact). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [145].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFNoteObjects_NoteObject Tests::setPresentation",
@@ -4989,7 +5003,7 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "view": true
+        "created": true
       }
     },
     "kernel_output": {
@@ -5003,7 +5017,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantity on both sides: whether a view object is created. Bridge: ViewObject() was non-nil. Kernel: a new XCAFView_Object is non-null (an allocation, so this comparison is trivial). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [146].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFView_Object Tests::projectionType",
@@ -5011,19 +5026,21 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "types": [
-          "central",
-          "parallel",
-          "noCamera"
+        "types_read": [
+          2,
+          1,
+          0
         ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "Central": 2,
-        "Parallel": 1,
-        "NoCamera": 0
+        "types_read": [
+          2,
+          1,
+          0
+        ]
       }
     },
     "comparison": {
@@ -5031,7 +5048,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantity on both sides: the projection type ordinals read back after setType(.central), (.parallel), (.noCamera). Bridge: type was .central, .parallel, .noCamera, whose raw values are the kernel's 2, 1 and 0 (the #1574 fix). Kernel: 'SetType(Central) -> 2, SetType(Parallel) -> 1, SetType(NoCamera) -> 0'. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [147].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFView_Object Tests::all three real XCAFView_ProjectionType raw values decode correctly, including NoCamera",
@@ -5039,15 +5057,21 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "raw_round_trip": true
+        "round_tripped_raw_values": [
+          0,
+          1,
+          2
+        ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "Central": 2,
-        "Parallel": 1,
-        "NoCamera": 0
+        "round_tripped_raw_values": [
+          0,
+          1,
+          2
+        ]
       }
     },
     "comparison": {
@@ -5055,7 +5079,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantity on both sides: the raw projection type values that read back unchanged after being written with a bare cast. Bridge: OCCTViewObjectGetType returned the raw value written, for 0, 1 and 2 (the test then decodes each with ProjectionType(rawValue:), a Swift step with no kernel counterpart, not compared). Kernel: XCAFView_Object::SetType((XCAFView_ProjectionType)raw) reads back 0 -> 0, 1 -> 1, 2 -> 2 (NoCamera=0, Parallel=1, Central=2). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [148].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFView_Object Tests::viewDirection",
@@ -5185,7 +5210,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "shapes": 10
+        "count_positive": true
       }
     },
     "comparison": {
@@ -5193,7 +5218,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xde/"
+    "source": "Same quantity on both sides: whether the document's shape count is positive after one box is added. Bridge: shapeCount > 0 (OCCTDocumentGetShapeCount returns GetShapes.Length). Kernel: with one box added by AddShape(box, true), GetShapes=1. The shared probe's 10 came from a document with many shapes. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [149].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XDE ShapeTool Queries::GetFreeShapeCount",
@@ -5207,7 +5233,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "free": 7
+        "count_positive": true
       }
     },
     "comparison": {
@@ -5215,7 +5241,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xde/"
+    "source": "Same quantity on both sides: whether the free shape count is positive after one box is added. Bridge: freeShapeCount > 0. Kernel: GetFreeShapes=1 for that document. The shared probe's 7 came from a document with many shapes. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [150].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XDE ShapeTool Queries::FindShape and SearchShape",
@@ -5230,8 +5257,8 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "find": true,
-        "search": true
+        "found": true,
+        "searched": true
       }
     },
     "comparison": {
@@ -5239,7 +5266,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xde/"
+    "source": "Same quantities on both sides: whether FindShape and SearchShape find the box that was added. Bridge: findShape(box) and searchShape(box) were both >= 0. Kernel: FindShape=true and Search=true with non-null labels, in a document holding that one box. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [151].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XDE ShapeTool Queries::NewShape and RemoveShape",
@@ -5293,13 +5321,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true
+        "xlink_set": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "set": true
+        "xlink_set": true
       }
     },
     "comparison": {
@@ -5307,7 +5335,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xde/"
+    "source": "Same quantity on both sides: whether an XLink attribute is set on the tag-1 label. Bridge: setXLink(at: 1) returned true (OCCTDocumentXLinkSet returns TDocStd_XLink::Set non-null). Kernel: TDocStd_XLink::Set on that label is non-null. The shared probe used tag 2. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [152].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDocStd_XLink Tests::documentEntry",
@@ -5428,13 +5457,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "type": null
+        "constraint_present": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "fresh_has_constraint": false
+        "constraint_present": false
       }
     },
     "comparison": {
@@ -5442,7 +5471,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantity on both sides: whether the created label carries a TDataXtd_Constraint. Bridge: constraintGetType was nil, which OCCTDocumentConstraintGetType returns (-1) when the label has no constraint attribute. Kernel: FindAttribute for TDataXtd_Constraint on the created label is false. The label is the one Document.createLabel() makes, Main().NewChild(), which on an XCAF document is 0:1:1. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [153].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDataXtd Point/Axis/Plane Attributes::Set point attribute",
@@ -5450,13 +5480,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true
+        "attribute_set": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "set_non_null": true
+        "attribute_set": true
       }
     },
     "comparison": {
@@ -5464,7 +5494,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantity on both sides: whether a point attribute is set on the created label. Bridge: setPointAttribute(5, 10, 15) returned true (TDataXtd_Point::Set non-null). Kernel: TDataXtd_Point::Set((5, 10, 15)) is non-null. The label is the one Document.createLabel() makes, Main().NewChild(), which on an XCAF document is 0:1:1. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [154].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDataXtd Point/Axis/Plane Attributes::Set axis attribute",
@@ -5472,13 +5503,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true
+        "attribute_set": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "set_non_null": true
+        "attribute_set": true
       }
     },
     "comparison": {
@@ -5486,7 +5517,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantity on both sides: whether an axis attribute is set on the created label. Bridge: setAxisAttribute(origin (0, 0, 0), direction (0, 0, 1)) returned true (TDataXtd_Axis::Set non-null). Kernel: TDataXtd_Axis::Set on that gp_Lin is non-null. The label is the one Document.createLabel() makes, Main().NewChild(), which on an XCAF document is 0:1:1. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [155].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDataXtd Point/Axis/Plane Attributes::Set plane attribute",
@@ -5494,13 +5526,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true
+        "attribute_set": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "set_non_null": true
+        "attribute_set": true
       }
     },
     "comparison": {
@@ -5508,7 +5540,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantity on both sides: whether a plane attribute is set on the created label. Bridge: setPlaneAttribute(origin (0, 0, 0), normal (0, 0, 1)) returned true (TDataXtd_Plane::Set non-null). Kernel: TDataXtd_Plane::Set on that gp_Pln is non-null. The label is the one Document.createLabel() makes, Main().NewChild(), which on an XCAF document is 0:1:1. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [156].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDataXtd Geometry Attribute::Set and get geometry type",
@@ -5516,19 +5549,23 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "types": [
-          "point",
-          "plane",
-          "cylinder"
+        "attribute_present": true,
+        "types_read": [
+          1,
+          6,
+          7
         ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "POINT": 1,
-        "PLANE": 6,
-        "CYLINDER": 7
+        "attribute_present": true,
+        "types_read": [
+          1,
+          6,
+          7
+        ]
       }
     },
     "comparison": {
@@ -5536,7 +5573,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantities on both sides: whether the label has a geometry attribute, and the type ordinals read back after setting point, plane and cylinder. Bridge: hasGeometryAttribute and geometryType() were .point, .plane, .cylinder, whose raw values are the kernel's 1, 6 and 7. Kernel: 'TDataXtd_Geometry attribute present=true; SetType then GetType: 1 -> 1 6 -> 6 7 -> 7'. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [157].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDataXtd Geometry Attribute::All geometry type values",
@@ -5544,13 +5582,31 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "every_type_round_trips": true
+        "round_tripped_types": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "SetType_GetType_roundtrip": true
+        "round_tripped_types": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
       }
     },
     "comparison": {
@@ -5558,7 +5614,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+    "source": "Same quantity on both sides: the geometry type ordinals that read back unchanged after being set, over all eight types on eight created labels. Bridge: setGeometryType and geometryType() agreed for .anyGeom through .cylinder (raw values 0 to 7, the kernel's ordinals). Kernel: 'SetType then GetType for ordinals 0..7: 0 -> 0 ... 7 -> 7'. The shared probe printed three of the eight. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [158].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Text Label and Point Cloud::Create text label",
@@ -5678,7 +5735,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "Prs3d_TextAspect_default_height": 16
+        "height": 16.0
       }
     },
     "comparison": {
@@ -5686,7 +5743,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "source": "Same quantity on both sides: the default text height, compared within the test's 1e-6. Bridge: OCCTTextLabelGetInfo height within 1e-6 of 16 (it reads AIS_TextLabel's own Attributes()->TextAspect()->Height()). Kernel: a new AIS_TextLabel reads 16 through that call (exact). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [163].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Text Label and Point Cloud::Text label height round-trips through setHeight (#1417)",
@@ -5700,7 +5758,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "height_after_set": 30
+        "height": 30.0
       }
     },
     "comparison": {
@@ -5708,7 +5766,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "source": "Same quantity on both sides: the text height after setHeight(30), compared within the test's 1e-6. Bridge: OCCTTextLabelGetInfo height within 1e-6 of 30 (OCCTTextLabelSetHeight calls AIS_TextLabel::SetHeight). Kernel: after SetHeight(30) the same read gives 30 (exact). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [164].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Text Label and Point Cloud::Create point cloud",
@@ -5934,17 +5993,19 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "statuses": [
-          "notExecuted",
-          "succeeded"
+        "statuses_read": [
+          1,
+          3
         ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "NotExecuted": 1,
-        "Succeeded": 3
+        "statuses_read": [
+          1,
+          3
+        ]
       }
     },
     "comparison": {
@@ -5952,7 +6013,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "source": "Same quantity on both sides: the execution status ordinals read after setting notExecuted and succeeded on a graph node. Bridge: graphNodeStatus() was .notExecuted then .succeeded, whose raw values are the kernel's 1 and 3. Kernel: SetStatus(NotExecuted) reads 1, SetStatus(Succeeded) reads 3. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [169].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TFunction GraphNode::Graph node dependencies",
@@ -5984,13 +6046,25 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "every_status_round_trips": true
+        "round_tripped_statuses": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "SetStatus_GetStatus": true
+        "round_tripped_statuses": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
       }
     },
     "comparison": {
@@ -5998,7 +6072,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "source": "Same quantity on both sides: the execution status ordinals that read back unchanged after being set, over all five statuses on five created labels. Bridge: setGraphNodeStatus and graphNodeStatus() agreed for .wrongDefinition through .failed (raw 0 to 4). Kernel: 'SetStatus then GetStatus for the five statuses: 0 -> 0 1 -> 1 2 -> 2 3 -> 3 4 -> 4'. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [170].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TFunction IFunction Tests::newFunction",
@@ -6110,7 +6185,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "null": false
+        "non_nil": true
       }
     },
     "comparison": {
@@ -6118,6 +6193,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether the TObj application instance exists. Bridge: TObjApplication.shared was non-nil. Kernel: 'TObj_Application::GetInstance null=false'. Kernel value: Scripts/repro/766-xcaf-textlabel-function/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-textlabel-function/"
   },
   {
@@ -6126,14 +6202,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "true_then_false": true
+        "after_set_true": true,
+        "after_set_false": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "verbose_after_true": true,
-        "after_false": false
+        "after_set_true": true,
+        "after_set_false": false
       }
     },
     "comparison": {
@@ -6141,6 +6218,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: the verbose flag read back after setting it true and then false. Bridge: isVerbose was true, then false. Kernel: '#1588: GetInstance null=false verbose after SetVerbose(true)=true, after false=false'. Kernel value: Scripts/repro/766-xcaf-issue1481-1588-173/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
   },
   {
@@ -6149,13 +6227,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "document": true
+        "document_created": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "new_document": true
+        "document_created": true
       }
     },
     "comparison": {
@@ -6163,7 +6241,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue1481-1588-173/"
+    "source": "Same quantity on both sides: whether the TObj application creates a document. Bridge: createDocument() was non-nil (OCCTTObjApplicationCreateDocument calls CreateNewDocument(doc, \"BinOcaf\")). Kernel: 'TObj_Application::CreateNewDocument(doc, \"BinOcaf\")=true, document non-null=true'. The shared probe called NewDocument(\"TObjBin\"), a different call. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [177].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "UAttribute Tests::setAndHas",
@@ -6237,13 +6316,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true
+        "variable_set": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "set": true
+        "variable_set": true
       }
     },
     "comparison": {
@@ -6251,7 +6330,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "source": "Same quantity on both sides: whether a variable attribute is set on the tag-1 label. Bridge: setVariable(at: 1) returned true (TDataStd_Variable::Set non-null). Kernel: TDataStd_Variable::Set on that label is non-null. The shared probe printed no such value. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [178].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TDataStd_Variable Tests::setAndGetName",
@@ -6371,13 +6451,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "label": true
+        "created": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "new_child": true
+        "created": true
       }
     },
     "comparison": {
@@ -6385,7 +6465,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether a label is created on the document. Bridge: createLabel() was non-nil (OCCTDocumentCreateLabel returns Main().NewChild()). Kernel: 'Main().NewChild() null=false'. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [179].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Basic Record and Retrieve::Create child label under parent",
@@ -6393,13 +6474,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "child": true
+        "created": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "new_child": true
+        "created": true
       }
     },
     "comparison": {
@@ -6407,7 +6488,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether a child label is created under a created label. Bridge: createLabel(parent:) was non-nil. Kernel: NewChild() on the created label is non-null. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [180].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Basic Record and Retrieve::Record primitive shape",
@@ -6415,13 +6497,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true
+        "recorded": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "evolution": 0
+        "recorded": true
       }
     },
     "comparison": {
@@ -6429,7 +6511,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether a primitive record succeeds. Bridge: recordNaming(.primitive, newShape: box) returned true (OCCTDocumentNamingRecord calls TNaming_Builder::Generated(newShape)). Kernel: the same builder call leaves a TNaming_NamedShape on the label whose evolution is PRIMITIVE. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [181].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Basic Record and Retrieve::Current shape after primitive",
@@ -6437,13 +6520,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "current": true
+        "current_shape_found": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "current_same_as_box": true
+        "current_shape_found": true
       }
     },
     "comparison": {
@@ -6451,7 +6534,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether a current shape is found after a primitive record. Bridge: currentShape(on:) was non-nil. Kernel: TNaming_Tool::CurrentShape of the NamedShape is non-null and IsSame the box. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [182].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Basic Record and Retrieve::Stored shape matches recorded",
@@ -6459,13 +6543,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "stored": true
+        "stored_shape_found": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "stored_same_as_box": true
+        "stored_shape_found": true
       }
     },
     "comparison": {
@@ -6473,7 +6557,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether a stored shape is found after a primitive record. Bridge: storedShape(on:) was non-nil. Kernel: TNaming_Tool::GetShape of the NamedShape is non-null and IsSame the box. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [183].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Basic Record and Retrieve::Evolution type is primitive",
@@ -6503,13 +6588,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "evolution": null
+        "evolution_readable": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "fresh_has_named_shape": false
+        "evolution_readable": false
       }
     },
     "comparison": {
@@ -6517,7 +6602,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether an evolution can be read from a label with no naming. Bridge: namingEvolution(on:) was nil (OCCTDocumentNamingGetEvolution returns -1 when the label has no TNaming_NamedShape). Kernel: FindAttribute for TNaming_NamedShape on the created label is false, so there is nothing to read. The label is the one Document.createLabel() makes, Main().NewChild(), which on an XCAF document is 0:1:1. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [184].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Basic Record and Retrieve::History count after primitive",
@@ -6525,17 +6611,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "count": 1,
-        "old": false,
-        "new": true
+        "entries": 1,
+        "has_old": false,
+        "has_new": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
         "entries": 1,
-        "old": false,
-        "new": true
+        "has_old": false,
+        "has_new": true
       }
     },
     "comparison": {
@@ -6543,7 +6629,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantities on both sides, after a primitive record: the history entry count and whether the entry has an old and a new shape. Bridge: history.count 1, hasOldShape false, hasNewShape true. Kernel: TNaming_Iterator over the NamedShape gives entries=1 hasOld=false hasNew=true. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [185].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Basic Record and Retrieve::New shape from history entry",
@@ -6576,14 +6663,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "evolution": "modify",
-        "current": true
+        "evolution": "MODIFY",
+        "current_shape_found": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "evolution": 2
+        "evolution": "MODIFY",
+        "current_shape_found": true
       }
     },
     "comparison": {
@@ -6591,7 +6679,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantities on both sides, after primitive(box) then modify(box to sphere) on one label: the evolution by name and whether a current shape is found. Bridge: namingEvolution was .modify and currentShape was non-nil. Kernel: the NamedShape's evolution is MODIFY and CurrentShape is non-null. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [186] [188].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Basic Record and Retrieve::Delete evolution records correctly",
@@ -6621,19 +6710,19 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "evolution": "generated",
-        "count": 1,
-        "old": true,
-        "new": true
+        "evolution": "GENERATED",
+        "entries": 1,
+        "has_old": true,
+        "has_new": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "evolution": 1,
+        "evolution": "GENERATED",
         "entries": 1,
-        "old": true,
-        "new": true
+        "has_old": true,
+        "has_new": true
       }
     },
     "comparison": {
@@ -6641,7 +6730,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantities on both sides, after a generated record with an old and a new shape: the evolution by name, the entry count and whether the entry has both shapes. Bridge: .generated, count 1, hasOldShape and hasNewShape true. Kernel: evolution GENERATED, entries=1 hasOld=true hasNew=true. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [187].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Basic Record and Retrieve::History accumulates multiple entries",
@@ -6649,13 +6739,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "count_at_least": 1
+        "entries_at_least_1": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "entries_after_modify": 1
+        "entries_at_least_1": true
       }
     },
     "comparison": {
@@ -6663,7 +6753,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether the history has at least one entry after primitive then modify on one label. Bridge: history.count >= 1. Kernel: the TNaming_Iterator over the NamedShape counts 1 (the second builder call replaces the first version's content, it does not add an entry). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [186] [188].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming CopyShape::Deep copy a box shape",
@@ -6671,15 +6762,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "valid": true,
-        "distinct": true
+        "copy_returned": true,
+        "copy_valid": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "non_null": true,
-        "is_same": false
+        "copy_returned": true,
+        "copy_valid": true
       }
     },
     "comparison": {
@@ -6687,7 +6778,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantities on both sides: whether a deep copy of a box comes back and is valid. Bridge: deepCopy() was non-nil and copy.isValid (OCCTShapeDeepCopy calls TNaming_CopyShape::CopyTool). The test's `copy !== box` compares two Swift objects, which are always distinct, so it says nothing about the kernel and is not compared. Kernel: the copy is non-null and BRepCheck_Analyzer reports it valid (it is also not IsSame the source). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [189].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming CopyShape::Deep copy a sphere shape",
@@ -6695,13 +6787,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "valid": true
+        "copy_returned": true,
+        "copy_valid": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "non_null": true
+        "copy_returned": true,
+        "copy_valid": true
       }
     },
     "comparison": {
@@ -6709,7 +6803,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantities on both sides: whether a deep copy of a sphere comes back and is valid. Bridge: deepCopy() was non-nil and copy.isValid. Kernel: TNaming_CopyShape gives a non-null copy that BRepCheck_Analyzer reports valid. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [190].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming Extensions Tests::namingIsEmpty",
@@ -6717,13 +6812,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "empty": true
+        "named_shape_present": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "fresh_has_named_shape": false
+        "named_shape_present": false
       }
     },
     "comparison": {
@@ -6731,7 +6826,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether the created label carries a TNaming_NamedShape (the bridge's namingIsEmpty is true when it has none or an empty one). Bridge: namingIsEmpty(on:) was true. Kernel: FindAttribute for TNaming_NamedShape on the created label is false. The label is the one Document.createLabel() makes, Main().NewChild(), which on an XCAF document is 0:1:1. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [191].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming Extensions Tests::namingIsEmptyAfterRecord",
@@ -6785,13 +6881,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "original": null
+        "original_shape_found": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "primitive_has_old": false
+        "original_shape_found": false
       }
     },
     "comparison": {
@@ -6799,7 +6895,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether an original shape is found for a primitive record. Bridge: namingOriginalShape(on:) was nil. Kernel: TNaming_Tool::OriginalShape of the NamedShape is null. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [192].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming Extensions Tests::namingOriginalShapeFromModify",
@@ -6807,13 +6904,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "original": true
+        "original_shape_found": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "original_same_as_box": true
+        "original_shape_found": true
       }
     },
     "comparison": {
@@ -6821,7 +6918,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether an original shape is found for a modify record (box to sphere, recorded on a second label). Bridge: namingOriginalShape(on:) was non-nil. Kernel: OriginalShape is non-null and IsSame the box. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [193].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming Extensions Tests::namingHasLabel",
@@ -6851,13 +6949,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "found": true
+        "label_found": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "found_is_record_label": true
+        "label_found": true
       }
     },
     "comparison": {
@@ -6865,7 +6963,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether a label is found for a recorded shape. Bridge: namingFindLabel(shape:) was non-nil. Kernel: TNaming_Tool::Label(Main, box) is non-null and IsEqual the recording label. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [194].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming Extensions Tests::namingValidUntil",
@@ -6873,13 +6972,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "nonnegative": true
+        "valid_until_non_negative": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "valid_until": 1
+        "valid_until_non_negative": true
       }
     },
     "comparison": {
@@ -6887,7 +6986,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether ValidUntil is >= 0 for a recorded shape. Bridge: namingValidUntil(shape:) >= 0. Kernel: TNaming_Tool::ValidUntil(Main, box)=0 (no transaction is open, so the time is 0; the shared probe's 1 had one). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [195].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming Extensions Tests::sameShapeCount",
@@ -6895,13 +6995,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "count_at_least": 2
+        "count_at_least_2": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "labels": 3
+        "count_at_least_2": true
       }
     },
     "comparison": {
@@ -6909,7 +7009,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether at least two labels hold the same shape, after recording the box on two labels. Bridge: sameShapeCount(shape:) >= 2. Kernel: TNaming_SameShapeIterator counts 2 labels. The shared probe's 3 came from a document with three records of the box. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [196] [197].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming Extensions Tests::sameShapeLabels",
@@ -6917,13 +7018,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "count_at_least": 2
+        "labels_at_least_2": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "labels": 3
+        "labels_at_least_2": true
       }
     },
     "comparison": {
@@ -6931,7 +7032,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether the labels holding the same shape number at least two, after recording the box on two labels. Bridge: sameShapeLabels(shape:).count >= 2. Kernel: TNaming_SameShapeIterator yields 2 labels. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [196] [197].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Forward and Backward Tracing::Trace forward finds generated shape",
@@ -6939,13 +7041,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "count_at_least": 1
+        "forward_count_at_least_1": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "forward": 2
+        "forward_count_at_least_1": true
       }
     },
     "comparison": {
@@ -6953,7 +7055,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether a forward trace from the box finds at least one shape, after primitive(box) and generated(box to sphere). Bridge: tracedForward(from: box, scope: label1).count >= 1. Kernel: TNaming_NewShapeIterator from the box counts 1 (the shared probe's 2 came from a document with more records). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [198] [203].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Forward and Backward Tracing::Trace backward finds source shape",
@@ -6961,13 +7064,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "count_at_least": 1
+        "backward_count_at_least_1": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "backward": 1
+        "backward_count_at_least_1": true
       }
     },
     "comparison": {
@@ -6975,7 +7078,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether a backward trace from the sphere finds at least one shape. Bridge: tracedBackward(from: sphere, scope: label2).count >= 1. Kernel: TNaming_OldShapeIterator from the sphere counts 1. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [199] [204].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Forward and Backward Tracing::Multiple generations from same source",
@@ -6983,13 +7087,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "count_at_least": 2
+        "forward_count_at_least_2": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "forward": 2
+        "forward_count_at_least_2": true
       }
     },
     "comparison": {
@@ -6997,7 +7101,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether a forward trace from the box finds at least two shapes, when the box generates a sphere and a cylinder. Bridge: tracedForward(from: box, scope: label1).count >= 2. Kernel: TNaming_NewShapeIterator counts 2. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [200].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Forward and Backward Tracing::Empty trace for unrelated shape",
@@ -7005,14 +7110,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "empty": true
+        "forward_trace_empty": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "unrelated_in_table": false,
-        "forward": 0
+        "forward_trace_empty": true
       }
     },
     "comparison": {
@@ -7020,7 +7124,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether a forward trace from an unrelated sphere is empty. Bridge: tracedForward(from: unrelated).isEmpty (the bridge's catch returns 0). Kernel: the sphere is not in the used-shape table (HasLabel=false), the iterator throws before yielding anything, and the count is 0. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [201].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Forward and Backward Tracing::Trace through modification chain",
@@ -7028,13 +7133,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "count_at_least": 1
+        "forward_count_at_least_1": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "forward": 2
+        "forward_count_at_least_1": true
       }
     },
     "comparison": {
@@ -7042,7 +7147,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: whether a forward trace from the box finds at least one shape after primitive(box) then modify(box to sphere) on one label. Bridge: tracedForward(from: box, scope: label).count >= 1. Kernel: TNaming_NewShapeIterator counts 1. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [202].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Forward and Backward Tracing::Forward trace does not find source shape",
@@ -7050,13 +7156,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "excludes_source": true
+        "forward_count_at_least_1": true,
+        "source_included": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "includes_source": false
+        "forward_count_at_least_1": true,
+        "source_included": false
       }
     },
     "comparison": {
@@ -7064,7 +7172,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantities on both sides: whether the forward trace from the box finds a shape, and whether the source shape is among them. Bridge: forward.count >= 1 and no traced shape isSame(as: box). Kernel: 1 traced shape and none IsSame the box. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [198] [203].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Forward and Backward Tracing::Backward trace does not find generated shape",
@@ -7072,13 +7181,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "excludes_generated": true
+        "backward_count_at_least_1": true,
+        "generated_included": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "includes_itself": false
+        "backward_count_at_least_1": true,
+        "generated_included": false
       }
     },
     "comparison": {
@@ -7086,7 +7197,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantities on both sides: whether the backward trace from the sphere finds a shape, and whether the sphere itself is among them. Bridge: backward.count >= 1 and no traced shape isSame(as: sphere). Kernel: 1 traced shape and none IsSame the sphere. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [199] [204].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming Translator Tests::translatorCopy",
@@ -7094,15 +7206,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "copy": true,
-        "distinct": true
+        "copy_returned": true,
+        "copy_is_same_as_source": false,
+        "copy_valid": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": true,
-        "is_same": false
+        "copy_returned": true,
+        "copy_is_same_as_source": false,
+        "copy_valid": true
       }
     },
     "comparison": {
@@ -7110,7 +7224,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantities on both sides: whether the translator returns a copy, whether it is the same shape as the source, and whether it is valid. Bridge: translatorCopy() was non-nil, !box.isSame(as: copy) and copy.isValid (isSame is TopoDS_Shape::IsSame). Kernel: TNaming_Translator IsDone, the copy is non-null, IsSame(source) is false, and BRepCheck_Analyzer reports it valid. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [205].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc AssemblyIterator Tests::iterateAssembly",
@@ -7118,13 +7233,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "count_at_least": 1
+        "counted_completely": true,
+        "count_at_least_1": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "items": 3
+        "counted_completely": true,
+        "count_at_least_1": true
       }
     },
     "comparison": {
@@ -7132,7 +7249,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantities on both sides: whether the item count is complete (not truncated at the 100000 bound) and at least 1, for one box added with the default makeAssembly. Bridge: assemblyItemCount() was non-nil and >= 1. Kernel: XCAFDoc_AssemblyIterator counts 1 item, far under the bound. The shared probe walked a nested assembly (3). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [206].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc AssemblyIterator Tests::smallAssemblyCountIsComplete",
@@ -7140,13 +7258,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "count_at_least": 3
+        "counted_completely": true,
+        "count_at_least_3": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "items": 3
+        "counted_completely": true,
+        "count_at_least_3": true
       }
     },
     "comparison": {
@@ -7154,7 +7274,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantities on both sides: whether the item count is complete and at least 3, for three boxes added. Bridge: assemblyItemCount() was non-nil and >= 3. Kernel: XCAFDoc_AssemblyIterator counts 3 items under the bound. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [207].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc_ClippingPlaneTool Tests::addAndGet",
@@ -7264,13 +7385,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "noc_nonnegative": true
+        "noc_non_negative": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "noc": 407
+        "noc_non_negative": true
       }
     },
     "comparison": {
@@ -7278,7 +7399,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantity on both sides: whether the named-colour ordinal of a red colour attribute is >= 0. Bridge: colorNOCAttribute >= 0 after setColorAttribute(1, 0, 0). Kernel: XCAFDoc_Color::Set(red) then GetNOC()=407, which is >= 0. The label is the one Document.createLabel() makes, Main().NewChild(), which on an XCAF document is 0:1:1. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [208].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc DimTol Tests::setAndGet",
@@ -7397,9 +7519,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "is_father": true,
-        "is_child": false,
-        "children": 1
+        "some_relation": true
       }
     },
     "comparison": {
@@ -7407,7 +7527,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantity on both sides: whether the graph nodes report some parent-child relation (the test asserts isFather || isChild || childCount > 0, not which). Bridge: that disjunction was true. Kernel: after n1 SetChild(n2) and n2 SetFather(n1), n1 IsFather(n2) is true, n2 IsChild(n1) is true and n1 has 1 child, so the disjunction is true. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [210].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc_Location Tests::setAndGetLocation",
@@ -7712,15 +7833,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "sub": true,
+        "sub_shape": true,
         "extent_positive": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "sub": true,
-        "extent": 33
+        "sub_shape": true,
+        "extent_positive": true
       }
     },
     "comparison": {
@@ -7728,7 +7849,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantities on both sides: whether the box's first face is a sub-shape of the map, and whether the map's extent is positive. Bridge: shapeMapToolIsSubShape(face) and shapeMapToolExtent > 0 after setShapeMapTool and shapeMapToolSetShape(box). Kernel: XCAFDoc_ShapeMapTool::Set is non-null, IsSubShape(first face)=true, extent=33. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [213].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "DocumentExplorer Extension Tests::explorerDepth",

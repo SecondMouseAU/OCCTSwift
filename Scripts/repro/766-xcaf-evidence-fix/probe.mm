@@ -119,6 +119,39 @@ static const char* tf(bool b) { return b ? "true" : "false"; }
 #include <NCollection_IndexedDataMap.hxx>
 #include <XCAFDoc_Editor.hxx>
 #include <cmath>
+#include <Prs3d_Drawer.hxx>
+#include <Prs3d_TextAspect.hxx>
+#include <TDataStd_Variable.hxx>
+#include <TDataXtd_Axis.hxx>
+#include <TDataXtd_Constraint.hxx>
+#include <TDataXtd_Geometry.hxx>
+#include <TDataXtd_Plane.hxx>
+#include <TDataXtd_Point.hxx>
+#include <TDocStd_XLink.hxx>
+#include <TFunction_GraphNode.hxx>
+#include <TObj_Application.hxx>
+#include <XCAFDoc_AssemblyGraph.hxx>
+#include <XCAFNoteObjects_NoteObject.hxx>
+#include <XCAFPrs_Style.hxx>
+#include <XCAFView_Object.hxx>
+#include <gp_Lin.hxx>
+#include <gp_Pln.hxx>
+#include <BRepCheck_Analyzer.hxx>
+#include <BRepPrimAPI_MakeCylinder.hxx>
+#include <TNaming_CopyShape.hxx>
+#include <TNaming_Iterator.hxx>
+#include <TNaming_NamedShape.hxx>
+#include <TNaming_NewShapeIterator.hxx>
+#include <TNaming_OldShapeIterator.hxx>
+#include <TNaming_SameShapeIterator.hxx>
+#include <TNaming_Tool.hxx>
+#include <TNaming_Translator.hxx>
+#include <TColStd_IndexedDataMapOfTransientTransient.hxx>
+#include <XCAFDoc_AssemblyIterator.hxx>
+#include <XCAFDoc_Color.hxx>
+#include <XCAFDoc_GraphNode.hxx>
+#include <XCAFDoc_ShapeMapTool.hxx>
+#include <climits>
 
 // Kernel measurements for the #1982 evidence correction pass over OCCTXCAFTests. Each section prints lines
 // tagged with the worklist index ([n]) of the parity record it backs, so a record's kernel value can be
@@ -1572,6 +1605,528 @@ static void tri443()
   }
 }
 
+// ---- KEYS group 4: style and material equality, matrices, note and view objects, ShapeTool queries, TDataXtd, TFunction, TObj --------------
+// One document per test, as each test has; Document.createLabel() is Main().NewChild(), which on an XCAF document is 0:1:1.
+static void vis134()
+{
+  {  // [133] the test's style: surface colour red, invisible, against a visible copy
+    XCAFPrs_Style a, b;
+    a.SetColorSurf(Quantity_ColorRGBA(Quantity_Color(1, 0, 0, Quantity_TOC_sRGB), 1.0f));
+    a.SetVisibility(false);
+    b = a;
+    b.SetVisibility(true);
+    printf("[133] invisible red-surface style vs its visible copy: IsEqual=%s (control, the style against itself: %s)\n", tf(a.IsEqual(b)),
+           tf(a.IsEqual(a)));
+  }
+  {  // [134] the test's common material: diffuse red, shininess 0.5, transparency 0.3, against shininess 0.6
+    XCAFDoc_VisMaterialCommon ma;
+    ma.DiffuseColor = Quantity_Color(1, 0, 0, Quantity_TOC_sRGB);
+    ma.Shininess    = 0.5f;
+    ma.Transparency = 0.3f;
+    ma.IsDefined    = true;
+    XCAFDoc_VisMaterialCommon mb = ma;
+    mb.Shininess                 = 0.6f;
+    printf("[134] common material shininess 0.5 vs 0.6: IsEqual=%s (control, the material against itself: %s)\n", tf(ma.IsEqual(mb)),
+           tf(ma.IsEqual(ma)));
+  }
+  {  // [136] the test's PBR material: metallic 0, roughness 0.5, base colour (0.8, 0.2, 0.1), against roughness 0.6
+    XCAFDoc_VisMaterialPBR pa;
+    pa.BaseColor = Quantity_ColorRGBA(Quantity_Color(0.8, 0.2, 0.1, Quantity_TOC_sRGB), 1.0f);
+    pa.Metallic  = 0.0f;
+    pa.Roughness = 0.5f;
+    pa.IsDefined = true;
+    XCAFDoc_VisMaterialPBR pb = pa;
+    pb.Roughness              = 0.6f;
+    printf("[136] PBR material roughness 0.5 vs 0.6: IsEqual=%s (control, the material against itself: %s)\n", tf(pa.IsEqual(pb)),
+           tf(pa.IsEqual(pa)));
+  }
+}
+
+// [138] XCAFComponentMatrixTests: a 4x2x1 part, an assembly made with AddShape(box, true), a rigid and a reflection component placed with the
+// bridge's grouped matrix layout (nine rotation values, then three translations).
+static TopLoc_Location grouped(const double* m)
+{
+  gp_Trsf t;
+  t.SetValues(m[0], m[1], m[2], m[9], m[3], m[4], m[5], m[10], m[6], m[7], m[8], m[11]);
+  return TopLoc_Location(t);
+}
+
+static void matrix138()
+{
+  Handle(TDocStd_Application) app;
+  Handle(TDocStd_Document)    d  = newDoc(app);
+  Handle(XCAFDoc_ShapeTool)   st = XCAFDoc_DocumentTool::ShapeTool(d->Main());
+  TDF_Label                   part = st->AddShape(centredBox(4, 2, 1), false);
+  TDF_Label                   asmL = st->AddShape(centredBox(1, 1, 1), true);
+  const double                rigid[12]   = {0, -1, 0, 1, 0, 0, 0, 0, 1, 10, 20, 30};
+  const double                reflect[12] = {-1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0};
+  TDF_Label                   c1          = st->AddComponent(asmL, part, grouped(rigid));
+  TDF_Label                   c2          = st->AddComponent(asmL, part, grouped(reflect));
+  printf("[138] rigid component null=%s, reflection component null=%s, NbComponents=%d\n", tf(c1.IsNull()), tf(c2.IsNull()),
+         XCAFDoc_ShapeTool::NbComponents(asmL));
+}
+
+// [139] XCAFDocAssemblyGraphTests.createFromDocument: a graph over a document that holds only the label createLabel makes.
+static void graph139()
+{
+  Handle(TDocStd_Application) app;
+  Handle(TDocStd_Document)    d = newDoc(app);
+  d->Main().NewChild();
+  Handle(XCAFDoc_AssemblyGraph) g = new XCAFDoc_AssemblyGraph(d);
+  printf("[139] XCAFDoc_AssemblyGraph over a document with no shape: non-null=%s nodes=%d links=%d roots=%d\n", tf(!g.IsNull()), g->NbNodes(),
+         g->NbLinks(), g->GetRoots().Extent());
+}
+
+// [140] [141] XCAFDocAssemblyItemIdTests, built from a string as OCCTAssemblyItemIdIsValid / PathCount do.
+static void itemId()
+{
+  XCAFDoc_AssemblyItemId a(TCollection_AsciiString("0:1:1:1/0:1:1:2"));
+  XCAFDoc_AssemblyItemId e(TCollection_AsciiString(""));
+  printf("[140] AssemblyItemId(\"0:1:1:1/0:1:1:2\"): IsNull=%s path size=%d\n", tf(a.IsNull()), (int)a.GetPath().Size());
+  printf("[141] AssemblyItemId(\"\"): IsNull=%s\n", tf(e.IsNull()));
+}
+
+// [143]-[148] XCAFNoteObjects_NoteObject and XCAFView_Object, through the calls the bridge makes.
+static void noteView()
+{
+  Handle(XCAFNoteObjects_NoteObject) n = new XCAFNoteObjects_NoteObject();
+  printf("[143] NoteObject created non-null=%s\n", tf(!n.IsNull()));
+  Handle(XCAFNoteObjects_NoteObject) p = new XCAFNoteObjects_NoteObject();
+  p->SetPlane(gp_Ax2(gp_Pnt(1, 2, 3), gp_Dir(0, 0, 1)));
+  printf("[144] SetPlane(origin (1, 2, 3), normal (0, 0, 1)): HasPlane=%s origin.x=%.17g\n", tf(p->HasPlane()), p->GetPlane().Location().X());
+  Handle(XCAFNoteObjects_NoteObject) q = new XCAFNoteObjects_NoteObject();
+  q->SetPoint(gp_Pnt(10, 20, 30));
+  printf("[145] SetPoint(10, 20, 30): HasPoint=%s point.x=%.17g\n", tf(q->HasPoint()), q->GetPoint().X());
+  Handle(XCAFView_Object) v = new XCAFView_Object();
+  printf("[146] ViewObject created non-null=%s\n", tf(!v.IsNull()));
+  printf("[147] SetType(Central) -> %d", (v->SetType(XCAFView_ProjectionType_Central), (int)v->Type()));
+  v->SetType(XCAFView_ProjectionType_Parallel);
+  printf(", SetType(Parallel) -> %d", (int)v->Type());
+  v->SetType(XCAFView_ProjectionType_NoCamera);
+  printf(", SetType(NoCamera) -> %d\n", (int)v->Type());
+  printf("[148] raw values written with a bare cast and read back:");
+  for (int raw : {0, 1, 2})
+  {
+    v->SetType((XCAFView_ProjectionType)raw);
+    printf(" %d -> %d", raw, (int)v->Type());
+  }
+  printf(" (XCAFView_ProjectionType NoCamera=%d Parallel=%d Central=%d)\n", (int)XCAFView_ProjectionType_NoCamera,
+         (int)XCAFView_ProjectionType_Parallel, (int)XCAFView_ProjectionType_Central);
+}
+
+// [149] [150] [151] XDEShapeToolQueryTests: a document holding one box added with AddShape(box, true).
+static void shapeQueries()
+{
+  Handle(TDocStd_Application) app;
+  Handle(TDocStd_Document)    d  = newDoc(app);
+  Handle(XCAFDoc_ShapeTool)   st = XCAFDoc_DocumentTool::ShapeTool(d->Main());
+  TopoDS_Shape                box = centredBox(10, 20, 30);
+  st->AddShape(box, true);
+  TDF_LabelSequence all, freeS;
+  st->GetShapes(all);
+  st->GetFreeShapes(freeS);
+  TDF_Label f1, f2;
+  bool      found = st->FindShape(box, f1), searched = st->Search(box, f2);
+  printf("[149] [150] [151] one box added: GetShapes=%d GetFreeShapes=%d FindShape=%s (label non-null=%s) Search=%s (label non-null=%s)\n",
+         all.Length(), freeS.Length(), tf(found), tf(!f1.IsNull()), tf(searched), tf(!f2.IsNull()));
+}
+
+// [152] [153] [154] [155] [156] [157] [158] [178] TDataXtd and TDocStd attributes on the label the test makes.
+static void xtdAttrs()
+{
+  {  // [152] [178] setXLink(at: 1) and setVariable(at: 1): getLabelForTag(1) is Main().FindChild(1, true)
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    printf("[152] TDocStd_XLink::Set on the tag-1 label: non-null=%s\n", tf(!TDocStd_XLink::Set(tagLabel(d, 1)).IsNull()));
+    Handle(TDocStd_Application) app2;
+    Handle(TDocStd_Document)    d2 = newDoc(app2);
+    printf("[178] TDataStd_Variable::Set on the tag-1 label: non-null=%s\n", tf(!TDataStd_Variable::Set(tagLabel(d2, 1)).IsNull()));
+  }
+  {  // [153]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   l = d->Main().NewChild();
+    Handle(TDataXtd_Constraint) c;
+    printf("[153] created label: TDataXtd_Constraint present=%s\n", tf(l.FindAttribute(TDataXtd_Constraint::GetID(), c)));
+  }
+  {  // [154] [155] [156]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    printf("[154] TDataXtd_Point::Set((5, 10, 15)) non-null=%s\n", tf(!TDataXtd_Point::Set(d->Main().NewChild(), gp_Pnt(5, 10, 15)).IsNull()));
+    Handle(TDocStd_Application) app2;
+    Handle(TDocStd_Document)    d2 = newDoc(app2);
+    printf("[155] TDataXtd_Axis::Set(origin (0, 0, 0), direction (0, 0, 1)) non-null=%s\n",
+           tf(!TDataXtd_Axis::Set(d2->Main().NewChild(), gp_Lin(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1))).IsNull()));
+    Handle(TDocStd_Application) app3;
+    Handle(TDocStd_Document)    d3 = newDoc(app3);
+    printf("[156] TDataXtd_Plane::Set(origin (0, 0, 0), normal (0, 0, 1)) non-null=%s\n",
+           tf(!TDataXtd_Plane::Set(d3->Main().NewChild(), gp_Pln(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1))).IsNull()));
+  }
+  {  // [157]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   l = d->Main().NewChild();
+    Handle(TDataXtd_Geometry)   g = TDataXtd_Geometry::Set(l);
+    Handle(TDataXtd_Geometry)   r;
+    printf("[157] TDataXtd_Geometry attribute present=%s; SetType then GetType:", tf(l.FindAttribute(TDataXtd_Geometry::GetID(), r)));
+    for (TDataXtd_GeometryEnum e : {TDataXtd_POINT, TDataXtd_PLANE, TDataXtd_CYLINDER})
+    {
+      g->SetType(e);
+      l.FindAttribute(TDataXtd_Geometry::GetID(), r);
+      printf(" %d -> %d", (int)e, (int)r->GetType());
+    }
+    printf("\n");
+  }
+  {  // [158] all eight types, each on its own created label of one document
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    printf("[158] TDataXtd_Geometry SetType then GetType for ordinals 0..7:");
+    for (int i = 0; i <= 7; i++)
+    {
+      TDF_Label                 l = d->Main().NewChild();
+      Handle(TDataXtd_Geometry) g = TDataXtd_Geometry::Set(l);
+      g->SetType((TDataXtd_GeometryEnum)i);
+      Handle(TDataXtd_Geometry) r;
+      l.FindAttribute(TDataXtd_Geometry::GetID(), r);
+      printf(" %d -> %d", i, (int)r->GetType());
+    }
+    printf("\n");
+  }
+}
+
+// [163] [164] TextLabelAndPointCloudTests: the height AIS_TextLabel reports, as OCCTTextLabelGetInfo reads it.
+static void textHeight()
+{
+  Handle(AIS_TextLabel) t = new AIS_TextLabel();
+  t->SetText(TCollection_ExtendedString("Test", Standard_True));
+  printf("[163] AIS_TextLabel default Attributes()->TextAspect()->Height()=%.17g\n", t->Attributes()->TextAspect()->Height());
+  t->SetHeight(30.0);
+  printf("[164] after SetHeight(30): Attributes()->TextAspect()->Height()=%.17g\n", t->Attributes()->TextAspect()->Height());
+}
+
+// [169] [170] TFunctionGraphNodeTests: TFunction_GraphNode::Set on the created label, SetStatus, GetStatus.
+static void graphNode()
+{
+  {
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   l = d->Main().NewChild();
+    Handle(TFunction_GraphNode) g = TFunction_GraphNode::Set(l);
+    g->SetStatus(TFunction_ES_NotExecuted);
+    int first = (int)g->GetStatus();
+    g->SetStatus(TFunction_ES_Succeeded);
+    printf("[169] SetStatus(NotExecuted) -> GetStatus=%d, SetStatus(Succeeded) -> GetStatus=%d\n", first, (int)g->GetStatus());
+  }
+  {
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    printf("[170] TFunction_GraphNode SetStatus then GetStatus for the five statuses:");
+    for (TFunction_ExecutionStatus s : {TFunction_ES_WrongDefinition, TFunction_ES_NotExecuted, TFunction_ES_Executing, TFunction_ES_Succeeded,
+                                        TFunction_ES_Failed})
+    {
+      TDF_Label                   l = d->Main().NewChild();
+      Handle(TFunction_GraphNode) g = TFunction_GraphNode::Set(l);
+      g->SetStatus(s);
+      printf(" %d -> %d", (int)s, (int)g->GetStatus());
+    }
+    printf("\n");
+  }
+}
+
+// [177] TObjApplicationTests.createDocument: OCCTTObjApplicationCreateDocument calls CreateNewDocument(doc, "BinOcaf").
+static void tobjDoc()
+{
+  Handle(TObj_Application) a = TObj_Application::GetInstance();
+  Handle(TDocStd_Document) doc;
+  bool ok = a->CreateNewDocument(doc, TCollection_ExtendedString("BinOcaf"));
+  printf("[177] TObj_Application::CreateNewDocument(doc, \"BinOcaf\")=%s, document non-null=%s\n", tf(ok), tf(!doc.IsNull()));
+}
+
+// ---- KEYS group 4b: TNaming, one document per test, records made the way OCCTDocumentNamingRecord makes them (no command open) ------------
+static void nRec(const TDF_Label& l, int evo, const TopoDS_Shape& oldS, const TopoDS_Shape& newS)
+{
+  TNaming_Builder b(l);
+  if (evo == 0)
+    b.Generated(newS);
+  else if (evo == 1)
+    b.Generated(oldS, newS);
+  else
+    b.Modify(oldS, newS);
+}
+
+static const char* evoName(TNaming_Evolution e)
+{
+  switch (e)
+  {
+    case TNaming_PRIMITIVE: return "PRIMITIVE";
+    case TNaming_GENERATED: return "GENERATED";
+    case TNaming_MODIFY: return "MODIFY";
+    case TNaming_DELETE: return "DELETE";
+    case TNaming_SELECTED: return "SELECTED";
+    case TNaming_REPLACE: return "REPLACE";
+  }
+  return "?";
+}
+
+static TopoDS_Shape nSphere(double r) { return BRepPrimAPI_MakeSphere(r).Shape(); }
+
+static void naming179()
+{
+  {  // [179] [180]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   l = d->Main().NewChild();
+    printf("[179] Main().NewChild() null=%s\n", tf(l.IsNull()));
+    Handle(TDocStd_Application) app2;
+    Handle(TDocStd_Document)    d2 = newDoc(app2);
+    TDF_Label                   p  = d2->Main().NewChild();
+    TDF_Label                   c  = p.NewChild();
+    printf("[180] child of a created label: NewChild() null=%s\n", tf(c.IsNull()));
+  }
+  TopoDS_Shape box = centredBox(10, 10, 10);
+  {  // [181] [182] [183] [185] the primitive record
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   l = d->Main().NewChild();
+    nRec(l, 0, TopoDS_Shape(), box);
+    Handle(TNaming_NamedShape) ns;
+    bool                       has = l.FindAttribute(TNaming_NamedShape::GetID(), ns);
+    printf("[181] primitive record: TNaming_NamedShape present=%s evolution=%s\n", tf(has), has ? evoName(ns->Evolution()) : "-");
+    TopoDS_Shape cur = TNaming_Tool::CurrentShape(ns);
+    printf("[182] CurrentShape non-null=%s IsSame(box)=%s\n", tf(!cur.IsNull()), tf(cur.IsSame(box)));
+    TopoDS_Shape st = TNaming_Tool::GetShape(ns);
+    printf("[183] GetShape non-null=%s IsSame(box)=%s\n", tf(!st.IsNull()), tf(st.IsSame(box)));
+    int  h = 0;
+    bool hasOld = false, hasNew = false;
+    for (TNaming_Iterator it(ns); it.More(); it.Next(), h++)
+    {
+      hasOld = !it.OldShape().IsNull();
+      hasNew = !it.NewShape().IsNull();
+    }
+    printf("[185] TNaming_Iterator: entries=%d hasOld=%s hasNew=%s\n", h, tf(hasOld), tf(hasNew));
+  }
+  {  // [184]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   l = d->Main().NewChild();
+    Handle(TNaming_NamedShape)  ns;
+    printf("[184] created label: TNaming_NamedShape present=%s\n", tf(l.FindAttribute(TNaming_NamedShape::GetID(), ns)));
+  }
+  {  // [186] [188] primitive then modify on one label
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   l = d->Main().NewChild();
+    nRec(l, 0, TopoDS_Shape(), box);
+    nRec(l, 2, box, nSphere(5));
+    Handle(TNaming_NamedShape) ns;
+    l.FindAttribute(TNaming_NamedShape::GetID(), ns);
+    TopoDS_Shape cur = TNaming_Tool::CurrentShape(ns);
+    int          h   = 0;
+    for (TNaming_Iterator it(ns); it.More(); it.Next())
+      h++;
+    printf("[186] [188] primitive(box) then modify(box -> sphere): evolution=%s CurrentShape non-null=%s history entries=%d\n",
+           evoName(ns->Evolution()), tf(!cur.IsNull()), h);
+  }
+  {  // [187] generated with an old and a new shape
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   l = d->Main().NewChild();
+    nRec(l, 1, centredBox(1, 1, 1), centredBox(5, 5, 1));
+    Handle(TNaming_NamedShape) ns;
+    l.FindAttribute(TNaming_NamedShape::GetID(), ns);
+    int  h = 0;
+    bool hasOld = false, hasNew = false;
+    for (TNaming_Iterator it(ns); it.More(); it.Next(), h++)
+    {
+      hasOld = !it.OldShape().IsNull();
+      hasNew = !it.NewShape().IsNull();
+    }
+    printf("[187] generated(old, new): evolution=%s entries=%d hasOld=%s hasNew=%s\n", evoName(ns->Evolution()), h, tf(hasOld), tf(hasNew));
+  }
+}
+
+static void naming189()
+{
+  for (int i = 0; i < 2; i++)
+  {
+    TopoDS_Shape s = i == 0 ? centredBox(10, 20, 30) : nSphere(5);
+    TColStd_IndexedDataMapOfTransientTransient map;
+    TopoDS_Shape                               copy;
+    TNaming_CopyShape::CopyTool(s, map, copy);
+    printf("[%d] TNaming_CopyShape of a %s: non-null=%s BRepCheck_Analyzer valid=%s IsSame(source)=%s\n", 189 + i, i == 0 ? "box" : "sphere",
+           tf(!copy.IsNull()), tf(!copy.IsNull() && BRepCheck_Analyzer(copy).IsValid()), tf(!copy.IsNull() && copy.IsSame(s)));
+  }
+  {  // [205]
+    TopoDS_Shape       box = centredBox(10, 20, 30);
+    TNaming_Translator tr;
+    tr.Add(box);
+    tr.Perform();
+    TopoDS_Shape copy = tr.Copied(box);
+    printf("[205] TNaming_Translator: IsDone=%s copy non-null=%s BRepCheck_Analyzer valid=%s IsSame(source)=%s\n", tf(tr.IsDone()),
+           tf(!copy.IsNull()), tf(!copy.IsNull() && BRepCheck_Analyzer(copy).IsValid()), tf(!copy.IsNull() && copy.IsSame(box)));
+  }
+}
+
+static void naming191()
+{
+  TopoDS_Shape box = centredBox(10, 20, 30);
+  {  // [191]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   l = d->Main().NewChild();
+    Handle(TNaming_NamedShape)  ns;
+    printf("[191] created label: TNaming_NamedShape present=%s\n", tf(l.FindAttribute(TNaming_NamedShape::GetID(), ns)));
+  }
+  {  // [192]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   l = d->Main().NewChild();
+    nRec(l, 0, TopoDS_Shape(), box);
+    Handle(TNaming_NamedShape) ns;
+    l.FindAttribute(TNaming_NamedShape::GetID(), ns);
+    printf("[192] primitive: TNaming_Tool::OriginalShape null=%s\n", tf(TNaming_Tool::OriginalShape(ns).IsNull()));
+  }
+  {  // [193]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d  = newDoc(app);
+    TDF_Label                   l1 = d->Main().NewChild(), l2 = d->Main().NewChild();
+    TopoDS_Shape                sp = nSphere(5);
+    nRec(l1, 0, TopoDS_Shape(), box);
+    nRec(l2, 2, box, sp);
+    Handle(TNaming_NamedShape) ns;
+    l2.FindAttribute(TNaming_NamedShape::GetID(), ns);
+    TopoDS_Shape orig = TNaming_Tool::OriginalShape(ns);
+    printf("[193] modify(box -> sphere) on the second label: OriginalShape non-null=%s IsSame(box)=%s\n", tf(!orig.IsNull()),
+           tf(!orig.IsNull() && orig.IsSame(box)));
+  }
+  {  // [194] [195] [196] [197]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d  = newDoc(app);
+    TDF_Label                   l1 = d->Main().NewChild(), l2 = d->Main().NewChild();
+    nRec(l1, 0, TopoDS_Shape(), box);
+    int  order = 0;
+    TDF_Label found = TNaming_Tool::Label(d->Main(), box, order);
+    printf("[194] one primitive record: TNaming_Tool::Label null=%s IsEqual(record label)=%s\n", tf(found.IsNull()),
+           tf(!found.IsNull() && found.IsEqual(l1)));
+    printf("[195] TNaming_Tool::ValidUntil=%d\n", TNaming_Tool::ValidUntil(d->Main(), box));
+    nRec(l2, 0, TopoDS_Shape(), box);
+    int same = 0;
+    for (TNaming_SameShapeIterator it(box, d->Main()); it.More(); it.Next())
+      same++;
+    printf("[196] [197] two primitive records of the box: TNaming_SameShapeIterator labels=%d\n", same);
+  }
+}
+
+static void tracing198()
+{
+  auto count = [](const char* tag, const TopoDS_Shape& from, const TDF_Label& scope, const TopoDS_Shape& other, bool fwd) {
+    int  n = 0;
+    bool includesOther = false, threw = false;
+    try
+    {
+      if (fwd)
+        for (TNaming_NewShapeIterator it(from, scope); it.More(); it.Next(), n++)
+          includesOther = includesOther || it.Shape().IsSame(other);
+      else
+        for (TNaming_OldShapeIterator it(from, scope); it.More(); it.Next(), n++)
+          includesOther = includesOther || it.Shape().IsSame(other);
+    }
+    catch (const Standard_Failure&)
+    {
+      threw = true;
+    }
+    printf("%s: %s trace count=%d includes %s=%s threw=%s\n", tag, fwd ? "forward" : "backward", n, fwd ? "the source" : "itself",
+           tf(includesOther), tf(threw));
+  };
+  TopoDS_Shape box = centredBox(10, 10, 10);
+  {  // [198] [203]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d  = newDoc(app);
+    TDF_Label                   l1 = d->Main().NewChild(), l2 = d->Main().NewChild();
+    TopoDS_Shape                sp = nSphere(5);
+    nRec(l1, 0, TopoDS_Shape(), box);
+    nRec(l2, 1, box, sp);
+    count("[198] [203] primitive(box) + generated(box -> sphere)", box, l1, box, true);
+    count("[199] [204] same document, from the sphere", sp, l2, sp, false);
+  }
+  {  // [200]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d  = newDoc(app);
+    TDF_Label                   l1 = d->Main().NewChild(), l2 = d->Main().NewChild(), l3 = d->Main().NewChild();
+    nRec(l1, 0, TopoDS_Shape(), box);
+    nRec(l2, 1, box, nSphere(5));
+    nRec(l3, 1, box, BRepPrimAPI_MakeCylinder(3, 8).Shape());
+    count("[200] box generating a sphere and a cylinder", box, l1, box, true);
+  }
+  {  // [201]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   l1 = d->Main().NewChild();
+    nRec(l1, 0, TopoDS_Shape(), box);
+    TopoDS_Shape unrelated = nSphere(7);
+    printf("[201] unrelated sphere: TNaming_Tool::HasLabel=%s; ", tf(TNaming_Tool::HasLabel(d->Main(), unrelated)));
+    count("forward from it", unrelated, l1, box, true);
+  }
+  {  // [202]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   l = d->Main().NewChild();
+    nRec(l, 0, TopoDS_Shape(), box);
+    nRec(l, 2, box, nSphere(5));
+    count("[202] primitive(box) then modify(box -> sphere) on one label", box, l, box, true);
+  }
+}
+
+// ---- KEYS group 4c: assembly iterator, colour NOC, graph node, shape map tool -----------------------------------------------------
+// [206] [207] OCCTDocumentAssemblyItemCount: XCAFDoc_AssemblyIterator over the document, bounded at 100000 items.
+static int assemblyItems(int boxes)
+{
+  Handle(TDocStd_Application) app;
+  Handle(TDocStd_Document)    d  = newDoc(app);
+  Handle(XCAFDoc_ShapeTool)   st = XCAFDoc_DocumentTool::ShapeTool(d->Main());
+  for (int i = 1; i <= boxes; i++)
+    st->AddShape(centredBox(boxes == 1 ? 10 : i, 1, 1), true);
+  int count = 0;
+  for (XCAFDoc_AssemblyIterator it(d, INT_MAX); it.More(); it.Next())
+    count++;
+  return count;
+}
+
+static void lastRecords()
+{
+  printf("[206] one box added with AddShape(box, true): XCAFDoc_AssemblyIterator items=%d (limit 100000 not reached=%s)\n", assemblyItems(1),
+         tf(assemblyItems(1) < 100000));
+  printf("[207] three boxes added: XCAFDoc_AssemblyIterator items=%d (limit 100000 not reached=%s)\n", assemblyItems(3),
+         tf(assemblyItems(3) < 100000));
+  {  // [208]
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   l = d->Main().NewChild();
+    Handle(XCAFDoc_Color)       c = XCAFDoc_Color::Set(l, Quantity_Color(1.0, 0.0, 0.0, Quantity_TOC_RGB));
+    printf("[208] XCAFDoc_Color::Set(red) non-null=%s GetNOC=%d\n", tf(!c.IsNull()), (int)c->GetNOC());
+  }
+  {  // [210] the test's calls: l1 SetChild(l2), l2 SetFather(l1), then IsFather(l1 -> l2), IsChild(l2 -> l1) and l1's child count
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d  = newDoc(app);
+    TDF_Label                   l1 = d->Main().NewChild(), l2 = d->Main().NewChild();
+    Handle(XCAFDoc_GraphNode)   n1 = XCAFDoc_GraphNode::Set(l1), n2 = XCAFDoc_GraphNode::Set(l2);
+    n1->SetChild(n2);
+    n2->SetFather(n1);
+    printf("[210] n1 IsFather(n2)=%s, n2 IsChild(n1)=%s, n1 NbChildren=%d\n", tf(n1->IsFather(n2)), tf(n2->IsChild(n1)), n1->NbChildren());
+  }
+  {  // [213] the test's calls: XCAFDoc_ShapeMapTool::Set on the created label, SetShape(box), IsSubShape(first face), extent
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d   = newDoc(app);
+    TDF_Label                   l   = d->Main().NewChild();
+    Handle(XCAFDoc_ShapeMapTool) smt = XCAFDoc_ShapeMapTool::Set(l);
+    TopoDS_Shape                box = centredBox(10, 20, 30);
+    smt->SetShape(box);
+    TopExp_Explorer fe(box, TopAbs_FACE);
+    printf("[213] ShapeMapTool::Set non-null=%s, IsSubShape(first face)=%s, extent=%d\n", tf(!smt.IsNull()), tf(smt->IsSubShape(fe.Current())),
+           smt->GetMap().Extent());
+  }
+}
+
 int main()
 {
   textLabel();
@@ -1594,5 +2149,20 @@ int main()
   tdfMisc();
   txn970();
   tri443();
+  vis134();
+  matrix138();
+  graph139();
+  itemId();
+  noteView();
+  shapeQueries();
+  xtdAttrs();
+  textHeight();
+  graphNode();
+  tobjDoc();
+  naming179();
+  naming189();
+  naming191();
+  tracing198();
+  lastRecords();
   return 0;
 }

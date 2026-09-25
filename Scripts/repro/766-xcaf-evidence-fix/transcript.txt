@@ -14,7 +14,7 @@
 [117] the label Document.createLabel() makes (Main().NewChild(), entry 0:1:1): TDF_Reference present=false
 [32;1mMesh /tmp/766-xcaf-evidence-fix-1508.obj
 [3 nodes] [1 2d elements]
-[read in 0.000314 s][0m
+[read in 0.000563 s][0m
 [135] RWObj_CafReader::Perform=true free shapes=1 common material found=true Shininess=0.300000012 specular=(0.603827357, 0.603827357, 0.603827357) RoughnessFromSpecular=0.699999988 |r-0.7|=1.19209289e-08
 [32;1m
 *******************************************************************
@@ -114,5 +114,60 @@
 [130] merged triangulation of 24 nodes: Node(0) raises=true, Node(1) raises=false, Node(24) raises=false, Node(25) raises=true; label without the attribute has TDataXtd_Triangulation=false, label with it=true
 [32;1mMesh /tmp/766-xcaf-evidence-fix-443.glb
 [168 nodes] [306 2d elements]
-[read in 0.000112 s][0m
+[read in 0.000162 s][0m
 [131] glTF import: Perform=true, faces with a triangulation=1, of which with normals=1, first normal length=1, nodes checked=168 of which the normal points outward (dot > 0.5)=168; the BRepMesh sphere carries normals=false (see the #443 transcript)
+[133] invisible red-surface style vs its visible copy: IsEqual=false (control, the style against itself: true)
+[134] common material shininess 0.5 vs 0.6: IsEqual=false (control, the material against itself: true)
+[136] PBR material roughness 0.5 vs 0.6: IsEqual=false (control, the material against itself: true)
+[138] rigid component null=false, reflection component null=false, NbComponents=2
+[139] XCAFDoc_AssemblyGraph over a document with no shape: non-null=true nodes=0 links=0 roots=0
+[140] AssemblyItemId("0:1:1:1/0:1:1:2"): IsNull=false path size=2
+[141] AssemblyItemId(""): IsNull=true
+[143] NoteObject created non-null=true
+[144] SetPlane(origin (1, 2, 3), normal (0, 0, 1)): HasPlane=true origin.x=1
+[145] SetPoint(10, 20, 30): HasPoint=true point.x=10
+[146] ViewObject created non-null=true
+[147] SetType(Central) -> 2, SetType(Parallel) -> 1, SetType(NoCamera) -> 0
+[148] raw values written with a bare cast and read back: 0 -> 0 1 -> 1 2 -> 2 (XCAFView_ProjectionType NoCamera=0 Parallel=1 Central=2)
+[149] [150] [151] one box added: GetShapes=1 GetFreeShapes=1 FindShape=true (label non-null=true) Search=true (label non-null=true)
+[152] TDocStd_XLink::Set on the tag-1 label: non-null=true
+[178] TDataStd_Variable::Set on the tag-1 label: non-null=true
+[153] created label: TDataXtd_Constraint present=false
+[154] TDataXtd_Point::Set((5, 10, 15)) non-null=true
+[155] TDataXtd_Axis::Set(origin (0, 0, 0), direction (0, 0, 1)) non-null=true
+[156] TDataXtd_Plane::Set(origin (0, 0, 0), normal (0, 0, 1)) non-null=true
+[157] TDataXtd_Geometry attribute present=true; SetType then GetType: 1 -> 1 6 -> 6 7 -> 7
+[158] TDataXtd_Geometry SetType then GetType for ordinals 0..7: 0 -> 0 1 -> 1 2 -> 2 3 -> 3 4 -> 4 5 -> 5 6 -> 6 7 -> 7
+[163] AIS_TextLabel default Attributes()->TextAspect()->Height()=16
+[164] after SetHeight(30): Attributes()->TextAspect()->Height()=30
+[169] SetStatus(NotExecuted) -> GetStatus=1, SetStatus(Succeeded) -> GetStatus=3
+[170] TFunction_GraphNode SetStatus then GetStatus for the five statuses: 0 -> 0 1 -> 1 2 -> 2 3 -> 3 4 -> 4
+[177] TObj_Application::CreateNewDocument(doc, "BinOcaf")=true, document non-null=true
+[179] Main().NewChild() null=false
+[180] child of a created label: NewChild() null=false
+[181] primitive record: TNaming_NamedShape present=true evolution=PRIMITIVE
+[182] CurrentShape non-null=true IsSame(box)=true
+[183] GetShape non-null=true IsSame(box)=true
+[185] TNaming_Iterator: entries=1 hasOld=false hasNew=true
+[184] created label: TNaming_NamedShape present=false
+[186] [188] primitive(box) then modify(box -> sphere): evolution=MODIFY CurrentShape non-null=true history entries=1
+[187] generated(old, new): evolution=GENERATED entries=1 hasOld=true hasNew=true
+[189] TNaming_CopyShape of a box: non-null=true BRepCheck_Analyzer valid=true IsSame(source)=false
+[190] TNaming_CopyShape of a sphere: non-null=true BRepCheck_Analyzer valid=true IsSame(source)=false
+[205] TNaming_Translator: IsDone=true copy non-null=true BRepCheck_Analyzer valid=true IsSame(source)=false
+[191] created label: TNaming_NamedShape present=false
+[192] primitive: TNaming_Tool::OriginalShape null=true
+[193] modify(box -> sphere) on the second label: OriginalShape non-null=true IsSame(box)=true
+[194] one primitive record: TNaming_Tool::Label null=false IsEqual(record label)=true
+[195] TNaming_Tool::ValidUntil=0
+[196] [197] two primitive records of the box: TNaming_SameShapeIterator labels=2
+[198] [203] primitive(box) + generated(box -> sphere): forward trace count=1 includes the source=false threw=false
+[199] [204] same document, from the sphere: backward trace count=1 includes itself=false threw=false
+[200] box generating a sphere and a cylinder: forward trace count=2 includes the source=false threw=false
+[201] unrelated sphere: TNaming_Tool::HasLabel=false; forward from it: forward trace count=0 includes the source=false threw=true
+[202] primitive(box) then modify(box -> sphere) on one label: forward trace count=1 includes the source=false threw=false
+[206] one box added with AddShape(box, true): XCAFDoc_AssemblyIterator items=1 (limit 100000 not reached=true)
+[207] three boxes added: XCAFDoc_AssemblyIterator items=3 (limit 100000 not reached=true)
+[208] XCAFDoc_Color::Set(red) non-null=true GetNOC=407
+[210] n1 IsFather(n2)=true, n2 IsChild(n1)=true, n1 NbChildren=1
+[213] ShapeMapTool::Set non-null=true, IsSubShape(first face)=true, extent=33
