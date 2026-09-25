@@ -126,77 +126,77 @@ struct AdvancedModelingTests {
     // MARK: - Pipe Shell Tests
 
     @Test("Pipe shell with Frenet mode")
-    func pipeShellFrenet() {
+    func pipeShellFrenet() throws {
         // Create a simple S-curve path
-        guard
-            let spine = Wire.bspline([
-                SIMD3(0, 0, 0),
-                SIMD3(10, 0, 0),
-                SIMD3(20, 10, 0),
-                SIMD3(30, 10, 0),
-            ])
-        else {
-            Issue.record("Could not create spine")
-            return
-        }
+        let spine = try #require(
+            Wire.bspline([SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(20, 10, 0), SIMD3(30, 10, 0)]),
+            "Could not create spine")
 
-        // Create circular profile
-        guard let profile = Wire.circle(radius: 2) else {
-            Issue.record("Could not create profile")
-            return
-        }
+        // Create circular profile. #766: it used to lie in the XY plane, which holds the whole
+        // spine, so the sweep was degenerate (mass -6.9e-16) and any non-nil result passed; it
+        // stands across the spine's start now. Kernel values:
+        // Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm
+        let frame = try startFrame(of: spine)
+        let profile = try #require(
+            Wire.circle(origin: frame.origin, normal: frame.tangent, radius: 2),
+            "Could not create profile")
 
-        let pipe = Shape.pipeShell(spine: spine, profile: profile, mode: .frenet)
-        #expect(pipe != nil)
+        let pipe = try #require(Shape.pipeShell(spine: spine, profile: profile, mode: .frenet))
+        #expect(pipe.isValid)
+        #expect(pipe.shapeType == .solid)
+        // Corrected Frenet gives 445.03 here (the section area times the spine's length); Frenet
+        // gives 436.40 because this S-curve has an inflection, so the volume also names the mode.
+        let volume = try #require(pipe.volume)
+        #expect(abs(volume - 436.39600453178826) < 1e-6)
     }
 
     @Test("Pipe shell with corrected Frenet mode")
-    func pipeShellCorrectedFrenet() {
+    func pipeShellCorrectedFrenet() throws {
         // Create a curve that might have inflection points
-        guard
-            let spine = Wire.bspline([
-                SIMD3(0, 0, 0),
-                SIMD3(10, 5, 0),
-                SIMD3(20, -5, 10),
-                SIMD3(30, 0, 10),
-            ])
-        else {
-            Issue.record("Could not create spine")
-            return
-        }
+        let spine = try #require(
+            Wire.bspline([SIMD3(0, 0, 0), SIMD3(10, 5, 0), SIMD3(20, -5, 10), SIMD3(30, 0, 10)]),
+            "Could not create spine")
 
-        guard let profile = Wire.circle(radius: 1.5) else {
-            Issue.record("Could not create profile")
-            return
-        }
+        // #766: the circle used to lie in the XY plane, oblique to this 3D spine's start, and
+        // swept 84.96; the same circle across the spine's start sweeps 299.07. Kernel values:
+        // Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm
+        let frame = try startFrame(of: spine)
+        let profile = try #require(
+            Wire.circle(origin: frame.origin, normal: frame.tangent, radius: 1.5),
+            "Could not create profile")
 
-        let pipe = Shape.pipeShell(spine: spine, profile: profile, mode: .correctedFrenet)
-        #expect(pipe != nil)
+        let pipe = try #require(
+            Shape.pipeShell(spine: spine, profile: profile, mode: .correctedFrenet))
+        #expect(pipe.isValid)
+        #expect(pipe.shapeType == .solid)
+        // Frenet gives 293.01 on the same spine and profile, so the volume also names the mode.
+        let volume = try #require(pipe.volume)
+        #expect(abs(volume - 299.06536887934379) < 1e-6)
     }
 
     @Test("Pipe shell with fixed binormal")
-    func pipeShellFixedBinormal() {
-        // Straight path where we want to control orientation
-        guard
-            let spine = Wire.bspline([
-                SIMD3(0, 0, 0),
-                SIMD3(50, 0, 0),
-            ])
-        else {
-            Issue.record("Could not create spine")
-            return
-        }
+    func pipeShellFixedBinormal() throws {
+        // A 3D path: on a planar one the fixed binormal and the corrected Frenet mode sweep alike
+        let spine = try #require(
+            Wire.bspline([SIMD3(0, 0, 0), SIMD3(10, 5, 0), SIMD3(20, -5, 10), SIMD3(30, 0, 10)]),
+            "Could not create spine")
 
-        // Rectangular profile
-        guard let profile = Wire.rectangle(width: 5, height: 3) else {
-            Issue.record("Could not create profile")
-            return
-        }
+        // Rectangular profile across the spine's start. #766: it used to lie in the XY plane with
+        // a straight spine along X, so the sweep was an invalid solid of mass 0. Kernel values:
+        // Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm
+        let profile = try rectangleAcrossStart(
+            of: spine, width: 5, height: 3)
 
-        // Keep profile vertical (binormal = Z)
-        let pipe = Shape.pipeShell(
-            spine: spine, profile: profile, mode: .fixed(binormal: SIMD3(0, 0, 1)))
-        #expect(pipe != nil)
+        // Keep the binormal fixed at Z
+        let pipe = try #require(
+            Shape.pipeShell(
+                spine: spine, profile: profile, mode: .fixed(binormal: SIMD3(0, 0, 1))))
+        #expect(pipe.isValid)
+        #expect(pipe.shapeType == .solid)
+        // Corrected Frenet gives 634.64 and Frenet 624.29 on the same spine and profile, so the
+        // volume also names the mode.
+        let volume = try #require(pipe.volume)
+        #expect(abs(volume - 508.59380610024181) < 1e-6)
     }
 
     @Test("Pipe shell creates shell when solid=false")
@@ -451,5 +451,33 @@ struct AdvancedModelingTests {
 
         let shelled = box.shelled(thickness: 1.5, openFaces: [faces[0]])
         #expect(shelled != nil)
+    }
+
+    // MARK: - #766 pipe-shell fixtures
+
+    // Kept below every test so that adding them moves none of the line numbers the phase3 injection
+    // matrix cites for the tests above.
+
+    // The spine's start and unit tangent, so a profile can be built across it.
+    private func startFrame(of spine: Wire) throws -> (
+        origin: SIMD3<Double>, tangent: SIMD3<Double>
+    ) {
+        let origin = try #require(spine.point(at: 0), "Could not read the spine's start")
+        let tangent = try #require(spine.tangent(at: 0), "Could not read the spine's tangent")
+        return (origin, tangent)
+    }
+
+    // A width x height rectangle centred on the spine's start, across its tangent: `side` (the
+    // width) is tangent x Z and `up` (the height) is tangent x side, both normalised.
+    private func rectangleAcrossStart(
+        of spine: Wire, width: Double, height: Double
+    ) throws -> Wire {
+        let frame = try startFrame(of: spine)
+        let side = simd_normalize(simd_cross(frame.tangent, SIMD3<Double>(0, 0, 1)))
+        let up = simd_normalize(simd_cross(frame.tangent, side))
+        let corners = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)].map {
+            frame.origin + side * ($0.0 * width / 2) + up * ($0.1 * height / 2)
+        }
+        return try #require(Wire.polygon3D(corners, closed: true), "Could not create profile")
     }
 }

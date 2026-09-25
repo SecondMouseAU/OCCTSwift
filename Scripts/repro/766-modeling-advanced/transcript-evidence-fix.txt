@@ -4,9 +4,9 @@ filletVariableRadius: edges=12 done=true valid=true volume=2990.5237334555886
 edgeHasIndex/faceHasIndex: edges=12 faces=6
 draftVerticalFaces: verticalFaces=4 done=true valid=true volume=12024.71917796442
 removeFeatures: faces=7 nonPlanarFaces=1 done=true valid=true volume=7999.9999999999982
-pipeShellFrenet: done=true irDone=true makeSolid=true type="SOLID" valid=true signedVolume=-6.9450528658274565e-16
-pipeShellCorrectedFrenet: done=true irDone=true makeSolid=true type="SOLID" valid=true signedVolume=84.958174716678485
-pipeShellFixedBinormal: done=true irDone=true makeSolid=true type="SOLID" valid=false signedVolume=0
+pipeShellFrenet: done=true type="SOLID" valid=true volume=436.39600453178826 controlCorrectedFrenetVolume=445.0331455462985
+pipeShellCorrectedFrenet: done=true type="SOLID" valid=true volume=299.06536887934379 controlFrenetVolume=293.00599059417402
+pipeShellFixedBinormal: done=true type="SOLID" valid=true volume=508.59380610024181 controlCorrectedFrenetVolume=634.63610746095401 controlFrenetVolume=624.28964125421749
 pipeShellCreatesShell: done=true irDone=true makeSolid=false type="SHELL" valid=true
 multiSectionFrenetVaryingRadius: done=true irDone=true makeSolid=true type="SOLID" valid=true signedVolume=58.643062441853715
 multiSectionAuxiliarySpine: done=true irDone=true makeSolid=true type="SOLID" valid=true signedVolume=73.30382760882533

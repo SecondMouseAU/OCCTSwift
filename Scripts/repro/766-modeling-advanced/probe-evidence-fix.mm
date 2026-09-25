@@ -5,6 +5,21 @@
 // from this transcript. `done` is the bridge's nil test: IsDone() and, for a solid, MakeSolid().
 // The pipe lines print `signedVolume`, the raw BRepGProp::VolumeProperties mass that
 // Shape.signedVolume reports: Shape.volume is nil for a degenerate or reversed sweep.
+//
+// Silent-pass revision (#766): pipeShellFrenet, pipeShellCorrectedFrenet and pipeShellFixedBinormal
+// built their profile in the XY plane at the origin, and each spine starts in that plane, so the
+// profile lay in the plane holding the spine's start tangent: pipeShellFrenet swept a solid of mass
+// -6.9e-16, pipeShellFixedBinormal an invalid solid of mass 0 and pipeShellCorrectedFrenet 84.96 (the
+// transcript this replaces). Those three lines are now measured on a profile built at the spine's
+// start, perpendicular to the tangent there (Wire.point(at: 0) / Wire.tangent(at: 0):
+// BRepAdaptor_CompCurve at FirstParameter, D1, normalised) and print `volume`, the mass Shape.volume
+// reports for a valid solid, together with the volume the other modes give on the same spine and
+// profile (`control...Volume`), which the test comments cite: the volume also says which mode ran.
+// Frenet and corrected Frenet on the S-curve and fixed binormal (Z) on the 3D spine differ (436.40 /
+// 445.03, and 508.59 / 634.64 / 624.29), so a bridge that swapped or dropped a mode fails.
+// Only those three lines of transcript-evidence-fix.txt were regenerated; the rest are the earlier
+// run's (a rerun against the pinned v4.0.0-kernel.1 asset moves the two shell volumes by one ulp, well
+// inside the records' 1e-9 relative tolerance).
 // Original header follows.
 // Epic #766, Tests/OCCTModelingTests/AdvancedModelingTests.swift: kernel parity for all 28 tests.
 // Same inputs as the Swift tests, straight to the OCCT classes the bridge functions call:
@@ -20,6 +35,7 @@
 #include <BRepAlgoAPI_Defeaturing.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
+#include <BRepBuilderAPI_MakePolygon.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepCheck_Analyzer.hxx>
@@ -47,6 +63,8 @@
 #include <TopoDS.hxx>
 #include <TopAbs.hxx>
 #include <cstdio>
+#include <initializer_list>
+#include <utility>
 #include <gp_Circ.hxx>
 #include <gp_Pln.hxx>
 
@@ -131,6 +149,90 @@ static void pipe(const char* label, const TopoDS_Wire& spine, std::initializer_l
   printf("\n");
 }
 
+// #766: the start frame of a spine as Wire.point(at: 0) and Wire.tangent(at: 0) report it.
+static void startFrame(const TopoDS_Wire& spine, gp_Pnt& p, gp_Vec& t)
+{
+  BRepAdaptor_CompCurve c(spine);
+  gp_Vec                d1;
+  c.D1(c.FirstParameter(), p, d1);
+  t = d1;
+  if (t.Magnitude() > 1e-10)
+    t.Normalize();
+}
+
+static TopoDS_Wire circleAcross(const gp_Pnt& o, const gp_Vec& n, double r)
+{
+  return BRepBuilderAPI_MakeWire(BRepBuilderAPI_MakeEdge(gp_Circ(gp_Ax2(o, gp_Dir(n)), r)));
+}
+
+// A w x h rectangle across the spine's start, as the Swift test builds it: `side` = normalised
+// (tangent x Z) carries w, `up` = normalised (tangent x side) carries h, corners (-,-) (+,-) (+,+)
+// (-,+) of the centre, joined by BRepBuilderAPI_MakePolygon and closed (Wire.polygon3D).
+static TopoDS_Wire rectangleAcross(const gp_Pnt& o, const gp_Vec& t, double w, double h)
+{
+  gp_Vec side = t.Crossed(gp_Vec(0, 0, 1));
+  side.Normalize();
+  gp_Vec up = t.Crossed(side);
+  up.Normalize();
+  auto corner = [&](double sa, double sb) {
+    return gp_Pnt(o.XYZ() + side.XYZ() * (sa * w / 2) + up.XYZ() * (sb * h / 2));
+  };
+  BRepBuilderAPI_MakePolygon poly;
+  poly.Add(corner(-1, -1));
+  poly.Add(corner(1, -1));
+  poly.Add(corner(1, 1));
+  poly.Add(corner(-1, 1));
+  poly.Close();
+  return poly.Wire();
+}
+
+// One sweep as OCCTShapeCreatePipeShellMultiSection runs it (transition Transformed, no contact, no
+// correction, SetIsBuildHistory(false), Build, MakeSolid); mode 0 Frenet, 1 corrected Frenet, 2 fixed
+// binormal Z. Returns the mass and fills done/type/valid.
+static double sweep(const TopoDS_Wire& spine, const TopoDS_Wire& profile, int mode, bool& done,
+                    const char*& type, bool& valid)
+{
+  BRepOffsetAPI_MakePipeShell ps(spine);
+  if (mode == 0)
+    ps.SetMode(Standard_True);
+  else if (mode == 1)
+    ps.SetMode(Standard_False);
+  else
+    ps.SetMode(gp_Dir(0, 0, 1));
+  ps.SetTransitionMode(BRepBuilderAPI_Transformed);
+  ps.Add(profile, Standard_False, Standard_False);
+  ps.SetIsBuildHistory(false);
+  ps.Build();
+  bool made = ps.IsDone() && ps.MakeSolid();
+  done      = ps.IsDone() && made;
+  TopoDS_Shape r = ps.IsDone() ? ps.Shape() : TopoDS_Shape();
+  type           = r.IsNull() ? "NULL" : TopAbs::ShapeTypeToString(r.ShapeType());
+  valid          = !r.IsNull() && BRepCheck_Analyzer(r).IsValid();
+  return r.IsNull() ? 0.0 : volume(r);
+}
+
+// `builder(profile)` makes the profile for a given start frame; the main sweep runs in `mode`, and each
+// entry of `controls` re-sweeps the same spine and profile in another mode and prints its volume.
+static void pipeAcrossStart(const char* label, const TopoDS_Wire& spine, double circleRadius, double rectW,
+                            double rectH, int mode, std::initializer_list<std::pair<const char*, int>> controls)
+{
+  gp_Pnt p;
+  gp_Vec t;
+  startFrame(spine, p, t);
+  auto profile = [&]() { return circleRadius > 0 ? circleAcross(p, t, circleRadius) : rectangleAcross(p, t, rectW, rectH); };
+  bool        done, valid;
+  const char* type;
+  double      v = sweep(spine, profile(), mode, done, type, valid);
+  printf("%s: done=%s type=\"%s\" valid=%s volume=%.17g", label, tf(done), type, tf(valid), v);
+  for (const auto& c : controls)
+  {
+    bool        d, va;
+    const char* ty;
+    printf(" %s=%.17g", c.first, sweep(spine, profile(), c.second, d, ty, va));
+  }
+  printf("\n");
+}
+
 static void filletEdges(const char* label, const TopoDS_Shape& s, int first, int count, double r1, double r2)
 {
   TopTools_IndexedMapOfShape edges;
@@ -200,22 +302,19 @@ int main()
            df.IsDone() ? volume(df.Shape()) : 0.0);
   }
 
-  pipe("pipeShellFrenet", bspline({gp_Pnt(0, 0, 0), gp_Pnt(10, 0, 0), gp_Pnt(20, 10, 0), gp_Pnt(30, 10, 0)}),
-       {circle(gp_Pnt(0, 0, 0), 2)}, 0, nullptr, true);
-  pipe("pipeShellCorrectedFrenet",
-       bspline({gp_Pnt(0, 0, 0), gp_Pnt(10, 5, 0), gp_Pnt(20, -5, 10), gp_Pnt(30, 0, 10)}),
-       {circle(gp_Pnt(0, 0, 0), 1.5)}, 1, nullptr, true);
-  {
-    // Wire.rectangle(5, 3): centred at the origin in the XY plane.
-    BRepBuilderAPI_MakeWire rect;
-    gp_Pnt p1(-2.5, -1.5, 0), p2(2.5, -1.5, 0), p3(2.5, 1.5, 0), p4(-2.5, 1.5, 0);
-    rect.Add(BRepBuilderAPI_MakeEdge(p1, p2));
-    rect.Add(BRepBuilderAPI_MakeEdge(p2, p3));
-    rect.Add(BRepBuilderAPI_MakeEdge(p3, p4));
-    rect.Add(BRepBuilderAPI_MakeEdge(p4, p1));
-    pipe("pipeShellFixedBinormal", bspline({gp_Pnt(0, 0, 0), gp_Pnt(50, 0, 0)}), {rect.Wire()}, 2,
-         nullptr, true);
-  }
+  // #766: the profile stands across the spine's start (see the header). Frenet on the planar S-curve
+  // with an r=2 circle; corrected Frenet on the 3D spine with an r=1.5 circle; fixed binormal Z on the
+  // same 3D spine with a 5 x 3 rectangle. Each line also prints the volume of the other modes on the
+  // same spine and profile, which the test comments cite.
+  pipeAcrossStart("pipeShellFrenet",
+                  bspline({gp_Pnt(0, 0, 0), gp_Pnt(10, 0, 0), gp_Pnt(20, 10, 0), gp_Pnt(30, 10, 0)}), 2, 0, 0, 0,
+                  {{"controlCorrectedFrenetVolume", 1}});
+  pipeAcrossStart("pipeShellCorrectedFrenet",
+                  bspline({gp_Pnt(0, 0, 0), gp_Pnt(10, 5, 0), gp_Pnt(20, -5, 10), gp_Pnt(30, 0, 10)}), 1.5, 0, 0, 1,
+                  {{"controlFrenetVolume", 0}});
+  pipeAcrossStart("pipeShellFixedBinormal",
+                  bspline({gp_Pnt(0, 0, 0), gp_Pnt(10, 5, 0), gp_Pnt(20, -5, 10), gp_Pnt(30, 0, 10)}), 0, 5, 3, 2,
+                  {{"controlCorrectedFrenetVolume", 1}, {"controlFrenetVolume", 0}});
   pipe("pipeShellCreatesShell", line(gp_Pnt(0, 0, 0), gp_Pnt(20, 0, 0)), {circle(gp_Pnt(0, 0, 0), 3)},
        0, nullptr, false);
   pipe("multiSectionFrenetVaryingRadius", line(gp_Pnt(0, 0, 0), gp_Pnt(0, 0, 10)),

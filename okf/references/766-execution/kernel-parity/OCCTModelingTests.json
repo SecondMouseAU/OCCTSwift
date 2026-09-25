@@ -608,7 +608,8 @@
         "done": true,
         "type": "SOLID",
         "valid": true,
-        "signedVolume": -6.945052865827457e-16
+        "volume": 436.39600453178826,
+        "controlCorrectedFrenetVolume": 445.0331455462985
       }
     },
     "kernel_output": {
@@ -617,7 +618,8 @@
         "done": true,
         "type": "SOLID",
         "valid": true,
-        "signedVolume": -6.945052865827457e-16
+        "volume": 436.39600453178826,
+        "controlCorrectedFrenetVolume": 445.0331455462985
       }
     },
     "comparison": {
@@ -625,7 +627,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: done, result type, valid and signedVolume of the sweep (S-curve spine, r=2 circle, Frenet). Bridge: Shape.pipeShell / pipeShellMultiSection non-nil (OCCTShapeCreatePipeShellMultiSection returns nullptr when Build() is not done or, for a solid, when MakeSolid() returns false), shapeType, isValid, Shape.signedVolume. Kernel: BRepOffsetAPI_MakePipeShell with the same mode, transition and Add calls, done = IsDone() and, for a solid, MakeSolid(); TopAbs::ShapeTypeToString, BRepCheck_Analyzer, raw BRepGProp::VolumeProperties mass; pipeShellFrenet line of the transcript at %.17g. signedVolume is used instead of volume because Shape.volume refuses a zero or negative mass. The result is a degenerate sweep: the r=2 circle lies in the XY plane, the plane that holds the whole spine, the mass is -6.9e-16 (Shape.volume is nil for it), and the test asserts only non-nil.Doubles are compared to 1e-9 relative.",
+    "source": "Same quantity on both sides: done, result type, validity and volume of the Frenet sweep of an r=2 circle across the start of the S-curve spine through (0,0,0), (10,0,0), (20,10,0), (30,10,0) (Wire.bspline, a GeomAPI_PointsToBSpline fit), next to the corrected-Frenet volume of the same spine and profile (controlCorrectedFrenetVolume, 445.03, the section area times the spine's length; plain Frenet gives 436.40 because the curve has an inflection). The profile is built at Wire.point(at: 0) with Wire.tangent(at: 0) as its normal. The earlier profile lay in the XY plane (a circle at the origin with the Z normal), which holds the whole spine, so the sweep was degenerate (mass -6.9e-16) and the test asserted only non-nil; it now asserts non-nil, valid, SOLID and the volume within 1e-6. Bridge: Shape.pipeShell(mode: .frenet) non-nil (OCCTShapeCreatePipeShellMultiSection returns nullptr when the sweep is not done or MakeSolid fails), isValid, shapeType and Shape.volume; the control* keys are the same spine and profile in another mode. Kernel: BRepOffsetAPI_MakePipeShell with SetMode(true) (Frenet), SetTransitionMode(Transformed), Add(profile, false, false), SetIsBuildHistory(false), Build, MakeSolid, BRepCheck_Analyzer, BRepGProp::VolumeProperties; the pipeShellFrenet line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
     "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
@@ -637,7 +639,8 @@
         "done": true,
         "type": "SOLID",
         "valid": true,
-        "signedVolume": 84.95817471667849
+        "volume": 299.0653688793438,
+        "controlFrenetVolume": 293.005990594174
       }
     },
     "kernel_output": {
@@ -646,7 +649,8 @@
         "done": true,
         "type": "SOLID",
         "valid": true,
-        "signedVolume": 84.95817471667849
+        "volume": 299.0653688793438,
+        "controlFrenetVolume": 293.005990594174
       }
     },
     "comparison": {
@@ -654,7 +658,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: done, result type, valid and signedVolume of the sweep (curved spine, r=1.5 circle, corrected Frenet). Bridge: Shape.pipeShell / pipeShellMultiSection non-nil (OCCTShapeCreatePipeShellMultiSection returns nullptr when Build() is not done or, for a solid, when MakeSolid() returns false), shapeType, isValid, Shape.signedVolume. Kernel: BRepOffsetAPI_MakePipeShell with the same mode, transition and Add calls, done = IsDone() and, for a solid, MakeSolid(); TopAbs::ShapeTypeToString, BRepCheck_Analyzer, raw BRepGProp::VolumeProperties mass; pipeShellCorrectedFrenet line of the transcript at %.17g. signedVolume is used instead of volume because Shape.volume refuses a zero or negative mass. Doubles are compared to 1e-9 relative.",
+    "source": "Same quantity on both sides: done, result type, validity and volume of the corrected-Frenet sweep of an r=1.5 circle across the start of the 3D spine through (0,0,0), (10,5,0), (20,-5,10), (30,0,10), next to the plain-Frenet volume of the same spine and profile (controlFrenetVolume). The profile is built at Wire.point(at: 0) with Wire.tangent(at: 0) as its normal. The earlier profile lay in the XY plane, oblique to the spine's start, and swept 84.96 where the same circle across the start sweeps 299.07; the test asserted only non-nil and now asserts non-nil, valid, SOLID and the volume within 1e-6. Bridge: Shape.pipeShell(mode: .correctedFrenet) non-nil (OCCTShapeCreatePipeShellMultiSection returns nullptr when the sweep is not done or MakeSolid fails), isValid, shapeType and Shape.volume; the control* keys are the same spine and profile in another mode. Kernel: BRepOffsetAPI_MakePipeShell with SetMode(false) (corrected Frenet), SetTransitionMode(Transformed), Add(profile, false, false), SetIsBuildHistory(false), Build, MakeSolid, BRepCheck_Analyzer, BRepGProp::VolumeProperties; the pipeShellCorrectedFrenet line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
     "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
@@ -665,8 +669,10 @@
       "data": {
         "done": true,
         "type": "SOLID",
-        "valid": false,
-        "signedVolume": 0
+        "valid": true,
+        "volume": 508.593806100242,
+        "controlCorrectedFrenetVolume": 634.6361074609554,
+        "controlFrenetVolume": 624.2896412548378
       }
     },
     "kernel_output": {
@@ -674,8 +680,10 @@
       "data": {
         "done": true,
         "type": "SOLID",
-        "valid": false,
-        "signedVolume": 0
+        "valid": true,
+        "volume": 508.5938061002418,
+        "controlCorrectedFrenetVolume": 634.636107460954,
+        "controlFrenetVolume": 624.2896412542175
       }
     },
     "comparison": {
@@ -683,7 +691,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: done, result type, valid and signedVolume of the sweep (two-point spine, 5x3 rectangle, fixed binormal (0,0,1)). Bridge: Shape.pipeShell / pipeShellMultiSection non-nil (OCCTShapeCreatePipeShellMultiSection returns nullptr when Build() is not done or, for a solid, when MakeSolid() returns false), shapeType, isValid, Shape.signedVolume. Kernel: BRepOffsetAPI_MakePipeShell with the same mode, transition and Add calls, done = IsDone() and, for a solid, MakeSolid(); TopAbs::ShapeTypeToString, BRepCheck_Analyzer, raw BRepGProp::VolumeProperties mass; pipeShellFixedBinormal line of the transcript at %.17g. signedVolume is used instead of volume because Shape.volume refuses a zero or negative mass. The result is an invalid solid of zero mass, and the test asserts only non-nil.Doubles are compared to 1e-9 relative.",
+    "source": "Same quantity on both sides: done, result type, validity and volume of the fixed-binormal (Z) sweep of a 5 x 3 rectangle across the start of the 3D spine through (0,0,0), (10,5,0), (20,-5,10), (30,0,10), next to the corrected-Frenet and plain-Frenet volumes of the same spine and profile (controlCorrectedFrenetVolume 634.64, controlFrenetVolume 624.29): the three modes give three volumes, so the volume names the mode (on a planar spine fixed binormal and corrected Frenet coincide). The rectangle's width runs along tangent x Z and its height along tangent x that, normalised, centred on Wire.point(at: 0) (Wire.polygon3D, closed). The earlier profile was the XY-plane Wire.rectangle(5, 3) on a straight spine along X, which lies in the plane holding the spine, so the sweep was an invalid solid of mass 0 and the test asserted only non-nil; it now asserts non-nil, valid, SOLID and the volume within 1e-6. The rectangle's corners are computed by simd on the bridge side and by gp_Vec in the probe, so the volumes agree to about 1e-12 relative (the plain-Frenet control, which is sensitive to the curve's inflection, the least). Bridge: Shape.pipeShell(mode: .fixed(binormal: Z)) non-nil (OCCTShapeCreatePipeShellMultiSection returns nullptr when the sweep is not done or MakeSolid fails), isValid, shapeType and Shape.volume; the control* keys are the same spine and profile in another mode. Kernel: BRepOffsetAPI_MakePipeShell with SetMode(gp_Dir(0, 0, 1)) (fixed binormal), SetTransitionMode(Transformed), Add(profile, false, false), SetIsBuildHistory(false), Build, MakeSolid, BRepCheck_Analyzer, BRepGProp::VolumeProperties; the pipeShellFixedBinormal line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
     "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
