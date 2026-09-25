@@ -7466,5 +7466,4971 @@
     "green": "passed",
     "probe": "Scripts/repro/766-curve-operations/transcript.txt",
     "note": "Rewritten: tolerance 0.01"
+  },
+  {
+    "test_name": "HelixGeom Build::basicHelixBuild",
+    "test_file": "Tests/OCCTCurveTests/HelixGeomBuildTests.swift",
+    "bridge_function": "OCCTHelixBuild",
+    "bridge_output": {
+      "type": "value",
+      "data": "(10,0,0) -> (10,0,5)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "HelixGeom_BuilderHelix: tolReached 6.76e-4, (10,0,0) -> (10,0,5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pitch x 1.1",
+    "red": "HelixGeomBuildTests.swift:24 simd_distance(end, SIMD3(10, 0, 5)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil and a tolerance bound"
+  },
+  {
+    "test_name": "HelixGeom Build::taperedHelix",
+    "test_file": "Tests/OCCTCurveTests/HelixGeomBuildTests.swift",
+    "bridge_function": "OCCTHelixBuild",
+    "bridge_output": {
+      "type": "value",
+      "data": "end (10.437, 0, 5)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "end (10.437443317629619, -2.7e-15, 5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pitch x 1.1",
+    "red": "HelixGeomBuildTests.swift:37 simd_distance(r.curve.endPoint, SIMD3(10.437443317629619, 0, 5)) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "HelixGeom Build::helixWithCustomPosition",
+    "test_file": "Tests/OCCTCurveTests/HelixGeomBuildTests.swift",
+    "bridge_function": "OCCTHelixBuild",
+    "bridge_output": {
+      "type": "value",
+      "data": "(9,2,3) -> (9,2,7)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "(9, 2, 3) -> (9, 2, 7)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pitch x 1.1",
+    "red": "HelixGeomBuildTests.swift:49 simd_distance(r.curve.endPoint, SIMD3(9, 2, 7)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "HelixGeom Build::coilBuild",
+    "test_file": "Tests/OCCTCurveTests/HelixGeomBuildTests.swift",
+    "bridge_function": "OCCTHelixCoilBuild",
+    "bridge_output": {
+      "type": "value",
+      "data": "end (5,0,12)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "HelixGeom_BuilderHelixCoil: end (5, 5.3e-15, 12)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pitch x 1.1",
+    "red": "HelixGeomBuildTests.swift:58 simd_distance(r.curve.endPoint, SIMD3(5, 0, 12)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Helix Curves::Create basic helix",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "OCCTWireCreateHelix",
+    "bridge_output": {
+      "type": "value",
+      "data": "radius 5, rise 6, length 94.4385"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "HelixBRep_BuilderHelix: (-5,0,0) -> (-5,0,-6), length 94.438520381886207"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: pitch x 1.1 (and, separately, radius x 1.2)",
+    "red": "HelixTests.swift:22 abs(abs(b.z - a.z) - rise) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Helix Curves::Helix with custom origin and axis",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "OCCTWireCreateHelix",
+    "bridge_output": {
+      "type": "value",
+      "data": "start (0,20,30), rise 10, length 126.06"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "(0,20,30) -> (0,20,20), length 126.06094379666393"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: pitch x 1.1 (and, separately, radius x 1.2)",
+    "red": "HelixTests.swift:48 abs(abs(b.z - a.z) - 10) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Helix Curves::Helix clockwise vs counter-clockwise",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "OCCTWireCreateHelix",
+    "bridge_output": {
+      "type": "value",
+      "data": "ccw (-5,0,0) -> z -2; cw (5,0,0) -> z 2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "ccw (-5,0,0) -> (-5,0,-2); cw (5,0,0) -> (5,0,2)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: pitch x 1.1 (and, separately, radius x 1.2)",
+    "red": "HelixTests.swift:65 abs(ae.z - (-2)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil. Finding: the counterclockwise helix descends along its axis"
+  },
+  {
+    "test_name": "Helix Curves::Invalid helix parameters return nil",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "none: Swift guard in Wire.helix",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for all four"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected by the Swift guard before the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: parameters clamped to 0.1 instead of rejected",
+    "red": "HelixTests.swift:71 Wire.helix(radius: 0, pitch: 2, turns: 1) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt"
+  },
+  {
+    "test_name": "Helix Curves::Helix can be used as sweep path",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "OCCTWireCreateHelix",
+    "bridge_output": {
+      "type": "value",
+      "data": "path length 189.0914, sweep valid"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "(-10,0,0) -> (-10,0,-15), length 189.09141569499593"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: pitch x 1.1 (and, separately, radius x 1.2)",
+    "red": "HelixTests.swift:85 abs((helix.length ?? 0) - 189.09141569499593) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: force-unwrap inside #expect; path pinned"
+  },
+  {
+    "test_name": "Helix Curves::Create tapered helix",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "OCCTWireCreateHelixTapered",
+    "bridge_output": {
+      "type": "value",
+      "data": "radius 10 -> 3, rise 16"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "(-10,0,0) -> (-3,0,-16), length 164.40120079758572"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: end radius x 1.1",
+    "red": "HelixTests.swift:108 abs(simd_length(SIMD2(b.x, b.y)) - 3) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Helix Curves::Invalid tapered helix returns nil",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "none: Swift guard in Wire.helixTapered",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected by the Swift guard before the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: radii clamped to 0.1 instead of rejected",
+    "red": "HelixTests.swift:114 Wire.helixTapered(startRadius: 0, endRadius: 5, pitch: 2, turns: 1) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt"
+  },
+  {
+    "test_name": "Helix Curves::Helix with fractional turns",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "OCCTWireCreateHelix",
+    "bridge_output": {
+      "type": "value",
+      "data": "radius 5, rise 5, length 16.4845"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "(-5,0,0) -> (5,0,-5), length 16.484533267150862"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: pitch x 1.1 (and, separately, radius x 1.2)",
+    "red": "HelixTests.swift:22 abs(abs(b.z - a.z) - rise) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Helix Curves::Helix with many turns",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "OCCTWireCreateHelix",
+    "bridge_output": {
+      "type": "value",
+      "data": "radius 5, rise 20, length 628.636"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "(-5,0,0) -> (-5,0,-20), length 628.63641255844379"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: pitch x 1.1 (and, separately, radius x 1.2)",
+    "red": "HelixTests.swift:22 abs(abs(b.z - a.z) - rise) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Issue #211, WireCurve arc-length adaptor::length",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTCompCurveLength",
+    "bridge_output": {
+      "type": "value",
+      "data": "20"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_CompCurve + GCPnts_AbscissaPoint: length 20"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "wclen: length x 1.001",
+    "red": "Issue211WireCurveTests.swift:22 abs(wc.length - 20.0) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt"
+  },
+  {
+    "test_name": "Issue #211, WireCurve arc-length adaptor::pointAtAbscissa",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTCompCurveParamAtAbscissa, OCCTCompCurvePointAtParam",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0) (5,0,0) (10,0,0) (10,5,0) (10,10,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_CompCurve + GCPnts_AbscissaPoint: s 0/5/10/15/20 -> (0,0,0) (5,0,0) (10,0,0) (10,5,0) (10,10,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "absdrift: abscissa x 1.01",
+    "red": "Issue211WireCurveTests.swift:36 near(point(atAbscissa: 5), (5,0,0))",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt"
+  },
+  {
+    "test_name": "Issue #211, WireCurve arc-length adaptor::tangentAcrossCorner",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTCompCurveTangentAtParam",
+    "bridge_output": {
+      "type": "value",
+      "data": "(1,0,0) then (0,1,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_CompCurve + GCPnts_AbscissaPoint: s 5 t (1,0,0), s 15 t (0,1,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "tanflip: tangent negated",
+    "red": "Issue211WireCurveTests.swift:49 t1 == (1,0,0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt"
+  },
+  {
+    "test_name": "Issue #211, WireCurve arc-length adaptor::evenSampling",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTCompCurveParamAtAbscissa",
+    "bridge_output": {
+      "type": "value",
+      "data": "21 points, every chord 1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_CompCurve + GCPnts_AbscissaPoint: abscissa is linear in u (u = s/10), so the 21 samples are 1 apart"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "absdrift; wclen",
+    "red": "Issue211WireCurveTests.swift:72 each chord == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt",
+    "note": "REWRITTEN: count only; now every consecutive chord is pinned to 1"
+  },
+  {
+    "test_name": "Issue #211, WireCurve arc-length adaptor::uniformPoints",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTCompCurveSampleUniform",
+    "bridge_output": {
+      "type": "value",
+      "data": "5 points, corner at index 2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_UniformAbscissa(cc, 5): 5 points"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "sampdrop: last point dropped; sampmin",
+    "red": "Issue211WireCurveTests.swift:83 pts.count == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt",
+    "note": "Force-unwraps in #expect replaced with if-let"
+  },
+  {
+    "test_name": "Issue #211, WireCurve arc-length adaptor::parameterRangeMatchesEndpoints",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTCompCurveParamRange",
+    "bridge_output": {
+      "type": "value",
+      "data": "range [0, 2]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_CompCurve + GCPnts_AbscissaPoint: range [0, 2]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "wcrange: last = midpoint of range",
+    "red": "Issue211WireCurveTests.swift:108 end == (10,10,0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt"
+  },
+  {
+    "test_name": "Issue #211, WireCurve arc-length adaptor::pointsSpacing",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTCompCurveSampleUniform",
+    "bridge_output": {
+      "type": "value",
+      "data": "6 points"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_CompCurve + GCPnts_AbscissaPoint: length 20, spacing 4 -> 6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "sampdrop; spc0: spacing <= 0 gives 2 points",
+    "red": "Issue211WireCurveTests.swift:127 pts.count == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt"
+  },
+  {
+    "test_name": "Issue #211/#212, EdgeCurve arc-length adaptor::lengthAndSampling",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTEdgeCurve*",
+    "bridge_output": {
+      "type": "value",
+      "data": "length 10, mid = midpoint"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_Curve + GCPnts_AbscissaPoint: length 10, s 5 at the midpoint"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "absdrift; sampdrop",
+    "red": "Issue211WireCurveTests.swift:159 |a - b| == 10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt",
+    "note": "REWRITTEN: mid-abscissa point was only checked non-nil; now it must be the midpoint of the ends, which are 10 apart"
+  },
+  {
+    "test_name": "Issue #211/#212, EdgeCurve arc-length adaptor::pointsCountBelowTwoIsEmpty",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "none: Swift Sampling.requested",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected in Swift before the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "sampmin: count clamped to 2",
+    "red": "Issue211WireCurveTests.swift:178 points(count: 1).isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt"
+  },
+  {
+    "test_name": "Issue #211/#212, EdgeCurve arc-length adaptor::parameterRangeMatchesEndpoints",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTEdgeCurve*",
+    "bridge_output": {
+      "type": "value",
+      "data": "range [0, 10]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_Curve + GCPnts_AbscissaPoint: range [0, 10], u = s"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "absdrift",
+    "red": "Issue211WireCurveTests.swift:201 end == point(atAbscissa: length)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt"
+  },
+  {
+    "test_name": "Issue #211/#212, EdgeCurve arc-length adaptor::pointsSpacing",
+    "test_file": "Tests/OCCTCurveTests/Issue211WireCurveTests.swift",
+    "bridge_function": "OCCTEdgeCurve*",
+    "bridge_output": {
+      "type": "value",
+      "data": "3 points, 5 apart"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_Curve + GCPnts_AbscissaPoint: length 10, spacing 5 -> 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "absdrift; sampdrop; spc0",
+    "red": "Issue211WireCurveTests.swift:217 pts.count == 3",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-issue211-wirecurve/transcript.txt",
+    "note": "Force-unwraps in #expect replaced with indices"
+  },
+  {
+    "test_name": "BSpline knot splitting continuity range (#398)::thirdDerivativeOrderReportsInteriorKnots",
+    "test_file": "Tests/OCCTCurveTests/Issue398KnotSplittingTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineKnotSplits",
+    "bridge_output": {
+      "type": "value",
+      "data": "C2 2 splits, C3 8 knots"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_Interpolate + GeomConvert_BSplineCurveKnotSplitting: C2 2, C3 8: 0, 11.180339887498949 ... 90.995437366198999"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cbdrop: last split dropped; cborder: C3 asked as C2",
+    "red": "Issue398KnotSplittingTests.swift:48 atC3.count == kernel.count",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt",
+    "note": "REWRITTEN: atC3.count > atC2.count held for any interior knot; now all 8 knots are pinned"
+  },
+  {
+    "test_name": "BSpline knot splitting continuity range (#398)::largeSplitCountSurvivesTheBuffer",
+    "test_file": "Tests/OCCTCurveTests/Issue398KnotSplittingTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineKnotSplits",
+    "bridge_output": {
+      "type": "value",
+      "data": "400"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_Interpolate + GeomConvert_BSplineCurveKnotSplitting: C3 400 splits"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cbtrunc: no retry past 256",
+    "red": "Issue398KnotSplittingTests.swift:75 splits.count > 256",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt",
+    "note": "Count pinned to 400 alongside the existing > 256"
+  },
+  {
+    "test_name": "BSpline knot splitting continuity range (#398)::higherOrdersAreMonotonic",
+    "test_file": "Tests/OCCTCurveTests/Issue398KnotSplittingTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineKnotSplits",
+    "bridge_output": {
+      "type": "value",
+      "data": "[2, 2, 2, 8]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_Interpolate + GeomConvert_BSplineCurveKnotSplitting: C0..C3: 2, 2, 2, 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cbdrop; cborder",
+    "red": "Issue398KnotSplittingTests.swift:106 counts == [2, 2, 2, 8]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt",
+    "note": "REWRITTEN: sortedness held for any non-decreasing answer; now pinned"
+  },
+  {
+    "test_name": "LawFunction knot splitting parameters (#403)::countMatchesIndexMethod",
+    "test_file": "Tests/OCCTCurveTests/Issue403LawKnotSplitParamsTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitting, OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "[0, 0.5, 1]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: C2 3 splits: 0, 0.5, 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lpdrop; lawnone; lpshift",
+    "red": "Issue403LawKnotSplitParamsTests.swift:34 indices.count == params.count",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt",
+    "note": "REWRITTEN: params.count >= 2 now also pins [0, 0.5, 1]"
+  },
+  {
+    "test_name": "LawFunction knot splitting parameters (#403)::parametersMatchBounds",
+    "test_file": "Tests/OCCTCurveTests/Issue403LawKnotSplitParamsTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "0 ... 1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: 0 ... 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lpshift: params + 1e-6; lpdrop",
+    "red": "Issue403LawKnotSplitParamsTests.swift:52 first == bounds.lower",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt",
+    "note": "An empty result skipped the end checks; now records an issue"
+  },
+  {
+    "test_name": "LawFunction knot splitting parameters (#403)::interiorBreakReported",
+    "test_file": "Tests/OCCTCurveTests/Issue403LawKnotSplitParamsTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "contains 0.5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: C2 includes 0.5 (C1 does not)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lorder: order - 1; lpshift",
+    "red": "Issue403LawKnotSplitParamsTests.swift:70 contains 0.5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt"
+  },
+  {
+    "test_name": "LawFunction knot splitting parameters (#403)::nonBSplineLawReturnsEmpty",
+    "test_file": "Tests/OCCTCurveTests/Issue403LawKnotSplitParamsTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Linear does not DownCast to Law_BSpFunc (Scripts/repro/766-curve-integration-extrema-law)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lpall: non-BSpFunc law answers [0, 1]",
+    "red": "Issue403LawKnotSplitParamsTests.swift:79 isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt"
+  },
+  {
+    "test_name": "Law knot-splitting continuity range (#480)::cubicSimpleKnotsNeedC3",
+    "test_file": "Tests/OCCTCurveTests/Issue480LawKnotSplitContinuityTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitParams, OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "C0..C2 [0, 5], C3 [0...5]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: C0..C2 0 5; C3 0 1 2 3 4 5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lorder; lpshift; lawnone",
+    "red": "Issue480LawKnotSplitContinuityTests.swift:49 .c3 == [0, 1, 2, 3, 4, 5]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt"
+  },
+  {
+    "test_name": "Law knot-splitting continuity range (#480)::defaultFindsGenuineKink",
+    "test_file": "Tests/OCCTCurveTests/Issue480LawKnotSplitContinuityTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "C1 [0, 2, 5], C0 [0, 5]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: C0 0 5; C1 0 2 5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lorder; lpshift; lpdrop",
+    "red": "Issue480LawKnotSplitContinuityTests.swift:57 == [0, 2, 5]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt"
+  },
+  {
+    "test_name": "Law knot-splitting continuity range (#480)::indicesAndParametersAgree",
+    "test_file": "Tests/OCCTCurveTests/Issue480LawKnotSplitContinuityTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitting, OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "2, 2, 2, 6 both ways"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: 2, 2, 2, 6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lorder (params only); lpdrop; lawnone",
+    "red": "Issue480LawKnotSplitContinuityTests.swift:66 counts agree",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-knot-splitting/transcript.txt"
+  },
+  {
+    "test_name": "Issue #479: arc-length sampling rejects counts it cannot allocate::absurdSpacingIsEmpty",
+    "test_file": "Tests/OCCTCurveTests/Issue479SampleCountBoundTests.swift",
+    "bridge_function": "none: Sampling.impliedCount",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the sample-count ceiling is Swift-side (Sampling), rejected before the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "impl2: over-ceiling spacing answers 2",
+    "red": "Issue479SampleCountBoundTests.swift:45 points(spacing: 1e-9).isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sample-bound-law-trunc/transcript.txt"
+  },
+  {
+    "test_name": "Issue #479: arc-length sampling rejects counts it cannot allocate::nonFiniteSpacing",
+    "test_file": "Tests/OCCTCurveTests/Issue479SampleCountBoundTests.swift",
+    "bridge_function": "none: Sampling.impliedCount",
+    "bridge_output": {
+      "type": "value",
+      "data": "NaN/-inf empty, +inf 2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the sample-count ceiling is Swift-side (Sampling), rejected before the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "infnil: infinite spacing rejected; spcoff",
+    "red": "Issue479SampleCountBoundTests.swift:64 points(spacing: .infinity).count == 2",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sample-bound-law-trunc/transcript.txt"
+  },
+  {
+    "test_name": "Issue #479: arc-length sampling rejects counts it cannot allocate::countPastCeilingIsEmpty",
+    "test_file": "Tests/OCCTCurveTests/Issue479SampleCountBoundTests.swift",
+    "bridge_function": "none: Sampling.requested",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the sample-count ceiling is Swift-side (Sampling), rejected before the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "req2: over-ceiling count answers 2",
+    "red": "Issue479SampleCountBoundTests.swift:73 points(count: max + 1).isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sample-bound-law-trunc/transcript.txt"
+  },
+  {
+    "test_name": "Issue #479: arc-length sampling rejects counts it cannot allocate::ceilingValue",
+    "test_file": "Tests/OCCTCurveTests/Issue479SampleCountBoundTests.swift",
+    "bridge_function": "none: Sampling.maximumSampleCount",
+    "bridge_output": {
+      "type": "value",
+      "data": "10_000_000"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the sample-count ceiling is Swift-side (Sampling), rejected before the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "ceilval: ceiling 10_000_001",
+    "red": "Issue479SampleCountBoundTests.swift:83 == 10_000_000",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sample-bound-law-trunc/transcript.txt"
+  },
+  {
+    "test_name": "Issue #479: arc-length sampling rejects counts it cannot allocate::ordinaryCountsStillWork",
+    "test_file": "Tests/OCCTCurveTests/Issue479SampleCountBoundTests.swift",
+    "bridge_function": "OCCTCompCurveSampleUniform, OCCTEdgeCurve*",
+    "bridge_output": {
+      "type": "value",
+      "data": "2, 5, 3, 100000"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_UniformAbscissa on the L wire: 2, 5, 100000 points as requested"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "sampmin: counts below 2 clamped (also crashes the Int.max case)",
+    "red": "Issue479SampleCountBoundTests.swift:98 points(count: 1).isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sample-bound-law-trunc/transcript.txt"
+  },
+  {
+    "test_name": "Issue #479: arc-length sampling rejects counts it cannot allocate::ordinarySpacingStillWorks",
+    "test_file": "Tests/OCCTCurveTests/Issue479SampleCountBoundTests.swift",
+    "bridge_function": "OCCTCompCurveSampleUniform",
+    "bridge_output": {
+      "type": "value",
+      "data": "21, 3, 200001"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "L wire length 200; GCPnts_UniformAbscissa 21 and 200001 points as requested"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "spcoff: implied count + 1",
+    "red": "Issue479SampleCountBoundTests.swift:109 pts.count == 21",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sample-bound-law-trunc/transcript.txt"
+  },
+  {
+    "test_name": "LawFunction knot splitting truncation (#481)::indexAndParameterCountsAgreeWhenLarge",
+    "test_file": "Tests/OCCTCurveTests/Issue481LawKnotSplittingTruncationTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitting, OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "150 both ways"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: 150 knots at C2: 150 splits"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ktrunc: no retry past 100; lawnone",
+    "red": "Issue481LawKnotSplittingTruncationTests.swift:41 indices.count == params.count",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sample-bound-law-trunc/transcript.txt"
+  },
+  {
+    "test_name": "LawFunction knot splitting truncation (#481)::indicesAreAscendingBeyondTheBuffer",
+    "test_file": "Tests/OCCTCurveTests/Issue481LawKnotSplittingTruncationTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "1 ... 150"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: first index 1, last index 150"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ktrunc; lawnone",
+    "red": "Issue481LawKnotSplittingTruncationTests.swift:61 indices.last == 150",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sample-bound-law-trunc/transcript.txt"
+  },
+  {
+    "test_name": "LawFunction knot splitting truncation (#481)::smallLawIsUnaffected",
+    "test_file": "Tests/OCCTCurveTests/Issue481LawKnotSplittingTruncationTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitting, OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "12"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting: 12 knots at C2: 12 splits"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawnone: knot splitting -1",
+    "red": "Issue481LawKnotSplittingTruncationTests.swift:72 indices.count == 12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sample-bound-law-trunc/transcript.txt"
+  },
+  {
+    "test_name": "LawFunction knot splitting truncation (#481)::nonBSplineLawReturnsEmptyIndices",
+    "test_file": "Tests/OCCTCurveTests/Issue481LawKnotSplittingTruncationTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Linear does not DownCast to Law_BSpFunc (Scripts/repro/766-curve-integration-extrema-law)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawall: non-BSpFunc law answers 2 indices",
+    "red": "Issue481LawKnotSplittingTruncationTests.swift:82 isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sample-bound-law-trunc/transcript.txt"
+  },
+  {
+    "test_name": "Issue #495: analysis order selects what is measured::measuredSetPerOrder",
+    "test_file": "Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuity, OCCTLocalAnalysisCurveContinuityFlags",
+    "bridge_output": {
+      "type": "value",
+      "data": "C0 {C0}, G1 {C0,G1}, C1 {C0,C1}, G2 {C0,G1,G2}, C2 {C0,C1,C2}"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocalAnalysis_CurveContinuity on the sharp corner: order C0 answers all five predicates true (IsC2 1 on a 90-degree corner), which is why the bridge's measured set exists"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "measall: every class reported measured",
+    "red": "Issue495AnalysisOrderTests.swift:47 a.measured == want",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Issue #495: analysis order selects what is measured::unmeasuredClassesReportNil",
+    "test_file": "Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuityFlags",
+    "bridge_output": {
+      "type": "value",
+      "data": "unmeasured nil; C1 false at .c1; G1 false at .g1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocalAnalysis_CurveContinuity on the sharp corner: C0: IsG1/IsC1/IsG2/IsC2 all 1 (unmeasured); C1: IsC1 0, IsG1 0; G1: IsG1 0, IsC1 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "measall; flagall",
+    "red": "Issue495AnalysisOrderTests.swift:60 atC0.holds(.g1) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt",
+    "note": "The kernel's raw predicates are the false positives the bridge withholds"
+  },
+  {
+    "test_name": "Issue #495: analysis order selects what is measured::defaultOrderDoesNotMeasureG1",
+    "test_file": "Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "G1 nil at .c2, true at .g1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Smooth junction: order C2 IsG1 1 without computing it; order G1 IsG1 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "measall",
+    "red": "Issue495AnalysisOrderTests.swift:80 measured == [.c0, .c1, .c2]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Issue #495: analysis order selects what is measured::unmeasuredMetricsAreWithheld",
+    "test_file": "Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "-1 for every unmeasured metric; C0Value < 1e-6"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocalAnalysis_CurveContinuity on the sharp corner: C0Value 0 at every order"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "metric0: withheld g1Angle reported as 0",
+    "red": "Issue495AnalysisOrderTests.swift:98 atC0.g1Angle == -1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Issue #495: analysis order selects what is measured::flagsStayInsideMeasured",
+    "test_file": "Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuityFlags",
+    "bridge_output": {
+      "type": "value",
+      "data": "inside measured at each order"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Smooth junction: the kernel's predicates answer 1 for unmeasured classes at every order"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "flagall: all five bits set",
+    "red": "Issue495AnalysisOrderTests.swift:120 flags & ~measured == 0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt",
+    "note": "A silent `continue` on a nil analysis now records an issue"
+  },
+  {
+    "test_name": "Issue #495: analysis order selects what is measured::orderReportsTheEffectiveRequest",
+    "test_file": "Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "c0/g1/c1 echoed; c3/cN saturate to c2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "ContinuityStatus() echoes the constructed order (0..4); the C3/CN saturation is the bridge's"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "aecho; aord",
+    "red": "Issue495AnalysisOrderTests.swift:132 a.order == order",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D nearest-parameter entry points agree (#500)::ordinaryProjection",
+    "test_file": "Tests/OCCTCurveTests/Issue500Curve3DNearestParameterTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": "5, 3, 8"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_ProjectPointOnCurve on [3, 8]: 5, 3, 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npoff: parameter + 1e-3; npend",
+    "red": "Issue500Curve3DNearestParameterTests.swift:26 nearestParameter((5,2,0)) == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D nearest-parameter entry points agree (#500)::pastTheEndAnswersWithTheEnd",
+    "test_file": "Tests/OCCTCurveTests/Issue500Curve3DNearestParameterTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": "8, 3, 3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_ProjectPointOnCurve on [3, 8]: NbPoints 0 past either end; the end-point fallback is the bridge's (#615)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npend: end parameters answer nil; npoff",
+    "red": "Issue500Curve3DNearestParameterTests.swift:40 nearestParameter((100,0,0)) == 8",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D nearest-parameter entry points agree (#500)::circleCentreAnswersAtTheRadius",
+    "test_file": "Tests/OCCTCurveTests/Issue500Curve3DNearestParameterTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter, OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "a point at radius 5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_ProjectPointOnCurve at the circle centre: NbPoints 0; the tied answer is the bridge's (#615)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npend; ppdist: distance x 1.01",
+    "red": "Issue500Curve3DNearestParameterTests.swift:54 projectPoint(.zero).distance == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D nearest-parameter entry points agree (#500)::projectPointAndNearestParameterAgree",
+    "test_file": "Tests/OCCTCurveTests/Issue500Curve3DNearestParameterTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter, OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "8, distance 92"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_ProjectPointOnCurve on [3, 8]: (100,0,0) NbPoints 0; both bridge answers are the end at 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npoff; npend; ppdist",
+    "red": "Issue500Curve3DNearestParameterTests.swift:71 nearestParameter == projected.parameter",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D ranged arc-length contract after the #506 bridge removal::reversedRangeMeasuresTheSpan",
+    "test_file": "Tests/OCCTCurveTests/Issue506ArcLengthBridgeContractTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "173.76 both ways"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length ranged: 173.76262881030638 both directions; pre-bounded adaptor throws on the reversed range"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lenrev: reversed range x 1.01",
+    "red": "Issue506ArcLengthBridgeContractTests.swift:65 reversed == forward",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-contract/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D ranged arc-length contract after the #506 bridge removal::overshootingBothEndsClampsToTheDomain",
+    "test_file": "Tests/OCCTCurveTests/Issue506ArcLengthBridgeContractTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "360.99"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length ranged: 360.98605783984021 (= whole); pre-bounded 8489.6172811772813"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noclamp: out-of-domain range x 2; arclenbetween",
+    "red": "Issue506ArcLengthBridgeContractTests.swift:86 overshot == whole",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-contract/transcript.txt",
+    "note": "The suite's table says 8489.78 for the pre-bounded form; the pinned kernel gives 8489.617"
+  },
+  {
+    "test_name": "Curve3D ranged arc-length contract after the #506 bridge removal::rangeOutsideTheDomainMeasuresZero",
+    "test_file": "Tests/OCCTCurveTests/Issue506ArcLengthBridgeContractTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length ranged: 0; pre-bounded 1.3426120686818346"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "outside1: a wholly outside range answers 1.34",
+    "red": "Issue506ArcLengthBridgeContractTests.swift:101 == 0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-contract/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D ranged arc-length contract after the #506 bridge removal::everySpellingAgreesOnDivergentRanges",
+    "test_file": "Tests/OCCTCurveTests/Issue506ArcLengthBridgeContractTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "equal for all four ranges"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length ranged: one computation under all three spellings"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arcdrift: arcLength(from:to:) x 1.0001",
+    "red": "Issue506ArcLengthBridgeContractTests.swift:126 arcLength == canonical",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-contract/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::the ceiling is declared once and the #479 spelling still resolves to it",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "ceilval: ceiling 10_000_001",
+    "red": "Issue558SamplingCountBoundsTests.swift:57 Sampling.maximumSampleCount == 10_000_000",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::a request is honoured exactly or not at all",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:66 Sampling.requested(1) == nil  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Curve3D request samplers reject a count they cannot serve",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:112 c.drawUniform(pointCount: n).count == 0  (+5 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Curve2D.drawUniform rejects a count it cannot serve",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:122 c.drawUniform(pointCount: n).count == 0  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Edge request samplers reject a count they cannot serve",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:135 e.points(count: n).count == 0  (+5 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Shape.uniformAbscissa rejects a count it cannot serve, both overloads",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:150 edge.uniformAbscissa(pointCount: n) == nil  (+5 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Shape iso-curve evaluators reject a count they cannot serve",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:166 face.uIsoCurvePoints(u: 0.5, count: n).count == 0  (+3 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::BRepGraph.sampleEdgeCurve rejects a count it cannot serve",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:179 graph.sampleEdgeCurve(edgeIndex: 0, count: n).count == 0  (+",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Shape.allEdgePolylines keeps its own lower bound and gains the ceiling",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:189 b.allEdgePolylines(maxPointsPerEdge: n).count == 0  (+2 more",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::MedialAxis fills its buffer exactly, so its maxPoints is a request, not a capacity",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:206 ma.drawArc(at: 1, maxPoints: n).count == 0  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::a capacity is clamped into 0...ceiling rather than rejected",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "capneg: capacity <= 0 answers 2",
+    "red": "Issue558SamplingCountBoundsTests.swift:82 Sampling.capacity(0) == 0  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::a capacity of zero or less yields the entry point's own empty value",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "capneg: capacity <= 0 answers 2",
+    "red": "Issue558SamplingCountBoundsTests.swift:249 c3.drawAdaptive(maxPoints: n).count == 0  (+26 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::an adaptive sampler's capacity is clamped, not rejected: the answer is unchanged",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "capzero: over-ceiling capacity answers 0",
+    "red": "Issue558SamplingCountBoundsTests.swift:230 baseline3D == c3.drawAdaptive(maxPoints: Self.pastInt32).cou",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Shape's own capacity samplers clamp and still answer",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "capzero: over-ceiling capacity answers 0",
+    "red": "Issue558SamplingCountBoundsTests.swift:267 b.edgePolyline(at: 0, maxPoints: Self.pastInt32) != nil  (+2",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::a grid bounds the product and each factor, and cannot overflow into one",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "gridnil: gridTotal always nil",
+    "red": "Issue558SamplingCountBoundsTests.swift:89 Sampling.gridTotal(20, 20) == 400  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Surface.drawMesh bounds the product, and each factor on its own",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "gridnil: gridTotal always nil",
+    "red": "Issue558SamplingCountBoundsTests.swift:296 !s.drawMesh(uCount: 20, vCount: 20).isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Surface.drawGrid bounds the total, and each line count on its own",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "gridnil: gridTotal always nil",
+    "red": "Issue558SamplingCountBoundsTests.swift:313 !s.drawGrid(uLineCount: 4, vLineCount: 4, pointsPerLine: 10)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::BRepGraph.sampleFaceUVGrid bounds the product, and each factor on its own",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "gridnil: gridTotal always nil",
+    "red": "Issue558SamplingCountBoundsTests.swift:329 graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 5, vSamples:",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Shape.coonsAlgPatch bounds the product, and each factor on its own",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "REWRITTEN: every assertion expected nil from a degenerate patch; a real square boundary now has to serve a 3 x 4 grid"
+      ]
+    },
+    "status": "N/A",
+    "injection": "gridnil: gridTotal always nil",
+    "red": "Issue558SamplingCountBoundsTests.swift:353 grid?.count == 12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt",
+    "note": "REWRITTEN: every assertion expected nil from a degenerate patch; a real square boundary now has to serve a 3 x 4 grid"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::Wire.orderedEdgePoints keeps nil for zero and gains it for the ceiling",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "none: Sampling.requested / capacity / gridTotal",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the bound is Swift-side (Sampling), refused before any kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "oepneg: orderedEdgePoints admits a non-positive maxPoints as 2",
+    "red": "Issue558SamplingCountBoundsTests.swift:287 w.orderedEdgePoints(at: 0, maxPoints: n) == nil  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Issue #558: every sampling entry point bounds the count a caller can supply::QuadricIntersection.coneSpherePoints rejects a count it cannot serve",
+    "test_file": "Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift",
+    "bridge_function": "OCCTIntAnaConeSpherePoints",
+    "bridge_output": {
+      "type": "value",
+      "data": "refused (empty / nil) outside the bound; served exactly inside it"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "IntAna_IntQuadQuad: original sphere (0,0,5) NbCurve 0; replacement (5,0,0) NbCurve 2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "reqneg: Sampling.requested answers the minimum for a count below it",
+    "red": "Issue558SamplingCountBoundsTests.swift:220 served.count == 16",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampling-count-bounds/transcript.txt",
+    "note": "REWRITTEN: the fixture sphere met the cone nowhere and curveIndex 0 is below the bridge's 1-based range, so the test could only fail by aborting; now an intersecting pair at curveIndex 1 with a served-count control"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::parameterAtLength(length) still lands on the end of the curve",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:239 abs(end - c.domain.upperBound) < 1e-7  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::The closed forms stay closed forms",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:183 abs(circumference - 2 * .pi * 5) < 1e-12  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A wound range winds an accurate period (#600 preserved)",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:219 abs(two - 2 * one) / two < 1e-9  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::An elliptical edge measures the same as the curve it was built from",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:312 abs(edge.edgeArcLength - curveLength) / truth < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::Accurate sub-ranges stay accurate, and the parts still sum to the whole",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:204 abs(whole - 2 * h) / whole < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A whipping cubic Bezier measures its arc",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:134 abs(measured - truth) / truth < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A short multi-span interpolation gets the accuracy per-span splitting left behind",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:162 abs(measured - truth) / truth < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A whole ellipse measures its own circumference, not 0.3-1.7% more",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: Curve3D whole length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:72 abs(measured - truth) / truth < 1e-9  (+4 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A hyperbola over a wide range measures its arc",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclenbetween: ranged length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:113 abs(measured - truth) / truth < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A parabola over a wide range measures its arc, not 3% less",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclenbetween: ranged length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:95 abs(measured - truth) / truth < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A negative abscissa walks backwards accurately",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pal3: parameterAtLength + 1e-5",
+    "red": "Issue603SingleSpanQuadratureTests.swift:272 abs(arc - total / 4) / total < 1e-8",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A fraction of the length is that fraction of the arc",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pal3: parameterAtLength + 1e-5",
+    "red": "Issue603SingleSpanQuadratureTests.swift:257 abs(arc - total * fraction) / total < 1e-8  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A 2D ellipse measures the same as the 3D one, both spellings",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "c2len: Curve2D length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:288 abs(whole - truth) / truth < 1e-9  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::A wire containing an elliptical edge measures accurately, and so does its adaptor",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "wclen: WireCurve length x 1.001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:352 abs(wc.length - truth) / truth < 1e-9  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "Arc length stops being one quadrature per span (#603)::An EdgeCurve measures accurately and inverts consistently",
+    "test_file": "Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength / GetLengthBetween / ParameterAtLength, Curve2D, edge, wire",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-9 relative of the independent reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length vs 200,000-panel Simpson on the pinned kernel: ellipses 2.3e-15 to 1.5e-13, parabola 8.5e-14, hyperbola 5.8e-15; inverse at the full length lands on 2pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "eclen: EdgeCurve length x 1.0001",
+    "red": "Issue603SingleSpanQuadratureTests.swift:371 abs(ec.length - truth) / truth < 1e-9  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-single-span-quadrature/transcript.txt"
+  },
+  {
+    "test_name": "nearestParameter reports the nearest point over the range (#615)::A point on the circle but off the arc answers with the arc's end",
+    "test_file": "Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "see Scripts/repro/766-curve-nearest-point: brute min on the half circle (0,-6,0) 7.81024968 at 0, (3,-4,0) 4.47213595 at 0; segment ends 8 and 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npoff: nearestParameter + 1e-3",
+    "red": "Issue615NearestParameterRangeTests.swift:67 abs(Self.distance(arc.point(at: parameter), query) - 4.47213",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "nearestParameter reports the nearest point over the range (#615)::A half circle queried from below answers with the near end, not the far side",
+    "test_file": "Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "see Scripts/repro/766-curve-nearest-point: brute min on the half circle (0,-6,0) 7.81024968 at 0, (3,-4,0) 4.47213595 at 0; segment ends 8 and 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npoff: nearestParameter + 1e-3",
+    "red": "Issue615NearestParameterRangeTests.swift:51 abs(parameter - 0) < 1e-9  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "nearestParameter reports the nearest point over the range (#615)::A point past the end is answered, not refused",
+    "test_file": "Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "see Scripts/repro/766-curve-nearest-point: brute min on the half circle (0,-6,0) 7.81024968 at 0, (3,-4,0) 4.47213595 at 0; segment ends 8 and 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npoff: nearestParameter + 1e-3",
+    "red": "Issue615NearestParameterRangeTests.swift:78 segment.nearestParameter(to: SIMD3(100, 0, 0)) == 8  (+2 mor",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "nearestParameter reports the nearest point over the range (#615)::nearestParameter and projectPoint agree on every query",
+    "test_file": "Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "see Scripts/repro/766-curve-nearest-point: brute min on the half circle (0,-6,0) 7.81024968 at 0, (3,-4,0) 4.47213595 at 0; segment ends 8 and 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npoff: nearestParameter + 1e-3",
+    "red": "Issue615NearestParameterRangeTests.swift:110 abs(Self.distance(curve.point(at: parameter), query) - proje",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "nearestParameter reports the nearest point over the range (#615)::The locate-from-a-guess primary search stays local, maxima included",
+    "test_file": "Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Extrema_LocateExtPC on the half circle from pi/2: param pi/2, dist 11, IsMin 0 (a maximum, kept by the primary search)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "locoff: locateNearestPoint parameter + 1e-3",
+    "red": "Issue615NearestParameterRangeTests.swift:166 abs(atFarSide.parameter - .pi / 2) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "nearestParameter reports the nearest point over the range (#615)::The locate-from-a-guess fallback answers over the whole curve, correctly",
+    "test_file": "Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Extrema_LocateExtPC: half circle from 0 finds the far-side maximum (pi/2, 11); segment from 3, 5.5, 8 not done. The (0, 7.81) and (8, 92) answers are the bridge's fallback"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "locoff: locateNearestPoint parameter + 1e-3",
+    "red": "Issue615NearestParameterRangeTests.swift:134 abs(atStart.parameter - 0) < 1e-9  (+3 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Measured continuity encoding after the retirement (#619)::A C1 spline reports C1 as ordinal 2, not 1",
+    "test_file": "Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_Shape ordinals (Scripts/repro/766-curve-continuity-485-486-490): CN 6, C2 4, C1 2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold: the retired hand-mapped encoding",
+    "red": "Issue619ContinuityEncodingTests.swift:70 c1.continuity == 2  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Measured continuity encoding after the retirement (#619)::An analytic curve reports CN as ordinal 6, the old encoding's 99 is unreachable",
+    "test_file": "Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_Shape ordinals (Scripts/repro/766-curve-continuity-485-486-490): CN 6, C2 4, C1 2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold: the retired hand-mapped encoding",
+    "red": "Issue619ContinuityEncodingTests.swift:38 curve.continuity == 6  (+3 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Measured continuity encoding after the retirement (#619)::A raw threshold of 2 now admits a merely-C1 curve; satisfies(.c2) still refuses it",
+    "test_file": "Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_Shape ordinals (Scripts/repro/766-curve-continuity-485-486-490): CN 6, C2 4, C1 2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold: the retired hand-mapped encoding",
+    "red": "Issue619ContinuityEncodingTests.swift:94 c1.continuity >= 2  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Measured continuity encoding after the retirement (#619)::Every measured class round-trips through the raw ordinal",
+    "test_file": "Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_Shape ordinals (Scripts/repro/766-curve-continuity-485-486-490): CN 6, C2 4, C1 2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold: the retired hand-mapped encoding",
+    "red": "Issue619ContinuityEncodingTests.swift:141 curve.continuity == Int(curve.continuityClass.rawValue)  (+4",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Measured continuity encoding after the retirement (#619)::The two vocabularies' constants do not line up, which is why the raw form drifted",
+    "test_file": "Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: Swift enum raw values and satisfies(); no kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "satall: satisfies() always true",
+    "red": "Issue619ContinuityEncodingTests.swift:126 !ContinuityClass.c1.satisfies(.c2)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Measured continuity encoding after the retirement (#619)::The sibling raw-ordinal accessors use the same encoding, so CN is 6 there too",
+    "test_file": "Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_BezierCurve::Continuity() = 6 = GeomAbs_CN"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "bzcont: bezierContinuity - 2",
+    "red": "Issue619ContinuityEncodingTests.swift:55 bezier.bezierContinuity == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Law_Interpolate Tests::interpolateWithParams",
+    "test_file": "Tests/OCCTCurveTests/LawInterpolateTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Interpolate at 0, 0.25 .. 1: 1 at 0.25, 4 at 0.5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawInterpolateTests.swift:28 abs(law.value(at: 0.25) - 1) < 1e-9  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "Law_Interpolate Tests::interpolateValues",
+    "test_file": "Tests/OCCTCurveTests/LawInterpolateTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Interpolate default parameters: domain [0, 8], 4 at the middle"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawInterpolateTests.swift:17 abs(law.value(at: 4) - 4) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "Law_Interpolate Tests::interpolatedEndpoints",
+    "test_file": "Tests/OCCTCurveTests/LawInterpolateTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Interpolate: 0 at both ends"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawInterpolateTests.swift:38 abs(v0) < 1e-4  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "Law_Interpolate Tests::Interpolated law rejects a longer parameters array",
+    "test_file": "Tests/OCCTCurveTests/LawInterpolateTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the parameter-count check is Swift-side"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "lawparm: a mismatched parameters array is replaced by uniform parameters",
+    "red": "LawInterpolateTests.swift:63 law == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "Law_Interpolate Tests::Interpolated law rejects a shorter parameters array",
+    "test_file": "Tests/OCCTCurveTests/LawInterpolateTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the parameter-count check is Swift-side"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "lawparm: a mismatched parameters array is replaced by uniform parameters",
+    "red": "LawInterpolateTests.swift:55 law == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "LocalAnalysis CurveContinuity Tests::smoothJunction",
+    "test_file": "Tests/OCCTCurveTests/LocalAnalysisCurveContinuityTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocalAnalysis_CurveContinuity smooth junction: C0Value 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "c0off: c0Value + 1e-3",
+    "red": "LocalAnalysisCurveContinuityTests.swift:22 analysis.c0Value < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "LocalAnalysis CurveContinuity Tests::sharpCorner",
+    "test_file": "Tests/OCCTCurveTests/LocalAnalysisCurveContinuityTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocalAnalysis_CurveContinuity sharp corner: C0Value 0 (Scripts/repro/766-curve-analysis-order-nearest)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "c0off: c0Value + 1e-3",
+    "red": "LocalAnalysisCurveContinuityTests.swift:58 analysis.c0Value < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "LocalAnalysis CurveContinuity Tests::smoothJunctionIsG1",
+    "test_file": "Tests/OCCTCurveTests/LocalAnalysisCurveContinuityTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocalAnalysis_CurveContinuity at G1: IsG1 1, G1Angle 1.9e-17"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "g1off: g1Angle + 1e-3",
+    "red": "LocalAnalysisCurveContinuityTests.swift:44 analysis.g1Angle < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "LocalAnalysis CurveContinuity Tests::continuityMetrics",
+    "test_file": "Tests/OCCTCurveTests/LocalAnalysisCurveContinuityTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocalAnalysis_CurveContinuity at C2: C1Ratio 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "c1ratio: c1Ratio x 1.1",
+    "red": "LocalAnalysisCurveContinuityTests.swift:75 abs(a.c1Ratio - 1) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "LocOpe CurveShapeIntersector::Line intersects box",
+    "test_file": "Tests/OCCTCurveTests/LocOpeCurveShapeIntersectorTests.swift",
+    "bridge_function": "OCCTLawInterpolate / OCCTLocalAnalysisCurveContinuity / OCCTLocOpeCurveShapeIntersectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocOpe_CurveShapeIntersector: NbPoints 2 at 5 and 15"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "locope: intersection parameters + 1",
+    "red": "LocOpeCurveShapeIntersectorTests.swift:24 params.sorted() == [5, 15]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lawinterp-localanalysis-locope/transcript.txt"
+  },
+  {
+    "test_name": "Geom_OffsetCurve Basis Tests::getBasisCurve",
+    "test_file": "Tests/OCCTCurveTests/OffsetCurveBasisTests.swift",
+    "bridge_function": "OCCTCurve3DOffsetBasis",
+    "bridge_output": {
+      "type": "value",
+      "data": "basis (3,0,0), offset (3,-2,0) at 3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_OffsetCurve: BasisCurve at 3 (3,0,0), Value at 3 (3,-2,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "obfake: offsetBasisCurve answers a different line",
+    "red": "OffsetCurveBasisTests.swift:27 basis.point(at: 3) == (3,0,0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-pointstobspline/transcript.txt",
+    "note": "REWRITTEN: asserted nothing (`_ = basis`); silent guards now record an issue"
+  },
+  {
+    "test_name": "Geom_OffsetCurve Basis Tests::nonOffsetCurveReturnsNil",
+    "test_file": "Tests/OCCTCurveTests/OffsetCurveBasisTests.swift",
+    "bridge_function": "OCCTCurve3DOffsetBasis",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: a Geom_Line has no BasisCurve; the nil is the bridge's DownCast refusal"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "obfake",
+    "red": "OffsetCurveBasisTests.swift:38 offsetBasisCurve == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-pointstobspline/transcript.txt"
+  },
+  {
+    "test_name": "v0.115.0 - PointsToBSpline Expansion::approximate3DWithParams",
+    "test_file": "Tests/OCCTCurveTests/PointsToBSplineExpansionTests.swift",
+    "bridge_function": "OCCTPointsToBSplineWithParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "passes through (0,0,0) and (10,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_PointsToBSpline: start (0,0), end (10,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "fitshift: every point moved 0.01 in y",
+    "red": "PointsToBSplineExpansionTests.swift:20 start == points[0]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-pointstobspline/transcript.txt",
+    "note": "REWRITTEN: was `!= nil`"
+  },
+  {
+    "test_name": "v0.115.0 - PointsToBSpline Expansion::approximate3DWithExplicitParams",
+    "test_file": "Tests/OCCTCurveTests/PointsToBSplineExpansionTests.swift",
+    "bridge_function": "OCCTPointsToBSplineWithParameters",
+    "bridge_output": {
+      "type": "value",
+      "data": "(3,5,0) at 0.3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_PointsToBSpline with parameters: (3,5) at 0.3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "fitshift",
+    "red": "PointsToBSplineExpansionTests.swift:33 point(at: 0.3) == (3,5,0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-pointstobspline/transcript.txt",
+    "note": "REWRITTEN: was `!= nil`"
+  },
+  {
+    "test_name": "v0.115.0 - PointsToBSpline Expansion::approximate2DWithParams",
+    "test_file": "Tests/OCCTCurveTests/PointsToBSplineExpansionTests.swift",
+    "bridge_function": "OCCTPoints2DToBSplineWithParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "passes through both ends"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: 2D fit not probed; same GeomAPI family as the 3D fit, which passes through its ends"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "REWRITTEN: was `!= nil`"
+      ]
+    },
+    "status": "N/A",
+    "injection": "fitshift",
+    "red": "PointsToBSplineExpansionTests.swift:42 start == points[0]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-pointstobspline/transcript.txt",
+    "note": "REWRITTEN: was `!= nil`"
+  },
+  {
+    "test_name": "v0.115.0 - PointsToBSpline Expansion::surfaceFromPointGrid",
+    "test_file": "Tests/OCCTCurveTests/PointsToBSplineExpansionTests.swift",
+    "bridge_function": "OCCTPointsToSurfaceBSpline",
+    "bridge_output": {
+      "type": "value",
+      "data": "passes through the (0,0,0) corner"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: GeomAPI_PointsToBSplineSurface not probed"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "REWRITTEN: was `!= nil`"
+      ]
+    },
+    "status": "N/A",
+    "injection": "fitshift: z + 0.01",
+    "red": "PointsToBSplineExpansionTests.swift:63 corner == points[0]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-offset-pointstobspline/transcript.txt",
+    "note": "REWRITTEN: was `!= nil`"
+  },
+  {
+    "test_name": "GCPnts sampler bounds (#501)::Quasi-uniform sampling never exceeds the requested count",
+    "test_file": "Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift",
+    "bridge_function": "OCCTCurve3DQuasiUniformAbscissa",
+    "bridge_output": {
+      "type": "value",
+      "data": "count == requested for all 16"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_QuasiUniformAbscissa: on the pinned kernel no listed count overshoots: NbPoints == requested, last parameter == end"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one parameter fewer kept",
+    "red": "GCPntsSamplerBoundsTests.swift:29 ellipse.quasiUniformParameters(count: count).count == count",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampler-bounds/transcript.txt"
+  },
+  {
+    "test_name": "GCPnts sampler bounds (#501)::Quasi-uniform sampling still reaches the end of the curve when clamped",
+    "test_file": "Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift",
+    "bridge_function": "OCCTCurve3DQuasiUniformAbscissa",
+    "bridge_output": {
+      "type": "value",
+      "data": "last == end"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "on the pinned kernel no listed count overshoots: NbPoints == requested, last parameter == end"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "last parameter 1e-6 short of the end",
+    "red": "GCPntsSamplerBoundsTests.swift:43 abs(last - end) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampler-bounds/transcript.txt",
+    "note": "Silent `guard ... else { return }` now records an issue. A first injection (index i + 1, the pre-#501 clamp) stayed green because nothing overshoots any more"
+  },
+  {
+    "test_name": "GCPnts sampler bounds (#501)::Quasi-uniform parameters stay ordered when clamped",
+    "test_file": "Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift",
+    "bridge_function": "OCCTCurve3DQuasiUniformAbscissa",
+    "bridge_output": {
+      "type": "value",
+      "data": "strictly increasing"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "on the pinned kernel no listed count overshoots: NbPoints == requested, last parameter == end"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "first two parameters swapped",
+    "red": "GCPntsSamplerBoundsTests.swift:57 params[i] > params[i - 1]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampler-bounds/transcript.txt",
+    "note": "Silent guard now records an issue"
+  },
+  {
+    "test_name": "GCPnts sampler bounds (#501)::Uniform discretization never exceeds the requested count and reaches the end",
+    "test_file": "Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift",
+    "bridge_function": "OCCTCurve3DDrawUniform",
+    "bridge_output": {
+      "type": "value",
+      "data": "count == requested"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_UniformAbscissa: on the pinned kernel no listed count overshoots: NbPoints == requested, last parameter == end"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one point fewer kept",
+    "red": "GCPntsSamplerBoundsTests.swift:71 points.count == count",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampler-bounds/transcript.txt",
+    "note": "Silent guard now records an issue"
+  },
+  {
+    "test_name": "GCPnts sampler bounds (#501)::Sample counts below two are rejected, not passed to OCCT",
+    "test_file": "Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift",
+    "bridge_function": "none: Swift Sampling.requested guard",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty for 0 and 1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected before the kernel (which SIGSEGVs on 0 for a Bezier/BSpline, #487)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A: rejected before the kernel (which SIGSEGVs on 0 for a Bezier/BSpline, #487)",
+    "injection": "Swift: count clamped to 2 instead of rejected",
+    "red": "GCPntsSamplerBoundsTests.swift:96 curve.quasiUniformParameters(count: count).isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampler-bounds/transcript.txt"
+  },
+  {
+    "test_name": "GCPnts sampler bounds (#501)::Edge uniform abscissa rejects counts below two",
+    "test_file": "Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift",
+    "bridge_function": "none: Swift Sampling.requested guard",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for 0 and 1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected before the kernel"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A: rejected before the kernel",
+    "injection": "Swift: count clamped to 2 instead of rejected",
+    "red": "GCPntsSamplerBoundsTests.swift:111 edge.uniformAbscissa(pointCount: count) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampler-bounds/transcript.txt"
+  },
+  {
+    "test_name": "Integration: Geodesic Path Approximation::sphereUVPathLength",
+    "test_file": "Tests/OCCTCurveTests/IntegrationGeodesicPathApproximationTests.swift",
+    "bridge_function": "OCCTSurfaceGetPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "polyline 80.002912490963794, chord 58.094750193111253"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_SphericalSurface::Value: polyline 80.002912490963794, chord 58.094750193111253"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "sphpt: Surface.point scaled by 1.000001",
+    "red": "IntegrationGeodesicPathApproximationTests.swift:50 abs(straightDist - 58.094750193111253) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt",
+    "note": "REWRITTEN: finite / >= chord / < pi*R held for any point near a sphere of this size; now pinned to the probed values"
+  },
+  {
+    "test_name": "Integration: Golden Shape Baseline::boxKnownMeasurements",
+    "test_file": "Tests/OCCTCurveTests/IntegrationGoldenShapeBaselineTests.swift",
+    "bridge_function": "OCCTShapeGetVolume, OCCTShapeGetSurfaceArea",
+    "bridge_output": {
+      "type": "value",
+      "data": "volume 6000, area 2200, 6/12/8"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepGProp: volume 6000, area 2200; TopExp 6 faces 12 edges 8 vertices"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "volnil: Shape.volume returns nil",
+    "red": "IntegrationGoldenShapeBaselineTests.swift:27 Issue recorded (nil volume)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt",
+    "note": "A nil volume or area skipped its check; now records an issue"
+  },
+  {
+    "test_name": "Integration: Involute Gear Approximation::gearWithSlotsAndBore",
+    "test_file": "Tests/OCCTCurveTests/IntegrationInvoluteGearApproximationTests.swift",
+    "bridge_function": "OCCTShapeSubtract, OCCTShapeDrillHole, OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "value",
+      "data": "11060.972450961723 (= 3750pi - 720)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAlgoAPI_Cut x7: 11060.972450961723"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "drillnil: drilled returns nil; volnil",
+    "red": "IntegrationInvoluteGearApproximationTests.swift:47 Issue recorded (bore not drilled)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt",
+    "note": "REWRITTEN: failed cuts and drill were skipped and the only check was volume < hub; now every cut must succeed and the volume is pinned to 3750pi - 720"
+  },
+  {
+    "test_name": "Unbounded elementary curves are not parameter-clipped (#1020)::pointToLineBeyondOldBound",
+    "test_file": "Tests/OCCTCurveTests/Issue1020ExtremaBoundsTests.swift",
+    "bridge_function": "OCCTExtremaExtPElCLin",
+    "bridge_output": {
+      "type": "value",
+      "data": "1 extremum, sq 9, foot x 2e10"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Extrema_ExtPElC full range: sq 9, foot x 2e10; old bound: not done"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "linebound: old -1e10..1e10 range; lineoff",
+    "red": "Issue1020ExtremaBoundsTests.swift:20 results.count == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt"
+  },
+  {
+    "test_name": "Unbounded elementary curves are not parameter-clipped (#1020)::pointToLineInsideOldBound",
+    "test_file": "Tests/OCCTCurveTests/Issue1020ExtremaBoundsTests.swift",
+    "bridge_function": "OCCTExtremaExtPElCLin",
+    "bridge_output": {
+      "type": "value",
+      "data": "sq 16, foot x 7"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "sq 16, foot x 7 (both ranges)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lineoff: line origin moved 1 in y",
+    "red": "Issue1020ExtremaBoundsTests.swift:36 abs(r.squareDistance - 16.0) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt"
+  },
+  {
+    "test_name": "Unbounded elementary curves are not parameter-clipped (#1020)::pointToParabolaBeyondOldBound",
+    "test_file": "Tests/OCCTCurveTests/Issue1020ExtremaBoundsTests.swift",
+    "bridge_function": "OCCTExtremaExtPElCParab",
+    "bridge_output": {
+      "type": "value",
+      "data": "1 extremum, foot (3412957.1013, 3694838.0757)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "1 extremum, sq 51403343067711.656, foot (3412957.1013468201, 3694838.0756654656); old bound: done, 0 extrema"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "parabbound: old -1e6..1e6 range; parabfoc",
+    "red": "Issue1020ExtremaBoundsTests.swift:53 results.count == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt",
+    "note": "REWRITTEN: pinned to the kernel foot instead of |y| > 1e6. The comment put the root at 4.3e6; it is 3.69e6"
+  },
+  {
+    "test_name": "Unbounded elementary curves are not parameter-clipped (#1020)::pointToParabolaInsideOldBound",
+    "test_file": "Tests/OCCTCurveTests/Issue1020ExtremaBoundsTests.swift",
+    "bridge_function": "OCCTExtremaExtPElCParab",
+    "bridge_output": {
+      "type": "value",
+      "data": "3 extrema: sq 64, 64, 100"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "3 extrema: (6, +-6.9282) sq 64, (0, 0) sq 100"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "parabfoc: focal scaled by 1.001",
+    "red": "Issue1020ExtremaBoundsTests.swift:73 squared distances 64, 64, 100",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt",
+    "note": "REWRITTEN: was !results.isEmpty"
+  },
+  {
+    "test_name": "Law knot-splitting factory reach (#1399)::bsplineBackedLawsAreReadable",
+    "test_file": "Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitting, OCCTLawBSplineKnotSplitParams",
+    "bridge_output": {
+      "type": "value",
+      "data": ">= 2 splits for all four factories"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_S DownCasts to Law_BSpFunc, 2 splits at C0..C3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawnone: knot splitting always -1",
+    "red": "Issue1399LawKnotSplitFactoryReachTests.swift:70 indices.count >= 2",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt"
+  },
+  {
+    "test_name": "Law knot-splitting factory reach (#1399)::nonBSplineLawsReportNothing",
+    "test_file": "Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift",
+    "bridge_function": "OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty for constant, linear, composite"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Constant, Law_Linear: DownCast to Law_BSpFunc is null"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawall: non-BSpFunc law reports 2 splits",
+    "red": "Issue1399LawKnotSplitFactoryReachTests.swift:82 knotSplitting(...).isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-integration-extrema-law/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D measured continuity (#485)::knotMultiplicityDrivesMeasuredClass",
+    "test_file": "Tests/OCCTCurveTests/Issue485Curve3DContinuityTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "4, 2, 0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_Shape: C0 0 G1 1 C1 2 G2 3 C2 4 C3 5 CN 6; Geom_BSplineCurve::Continuity follows the interior multiplicity"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold: the retired hand-mapped encoding",
+    "red": "Issue485Curve3DContinuityTests.swift:58 c2.continuity == 4",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt",
+    "note": "Three silent if-let skips now record an issue"
+  },
+  {
+    "test_name": "Curve3D measured continuity (#485)::analyticCurvesReportCN",
+    "test_file": "Tests/OCCTCurveTests/Issue485Curve3DContinuityTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "6, 6"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Line and Geom_Circle Continuity() = 6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold",
+    "red": "Issue485Curve3DContinuityTests.swift:81 line.continuity == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt",
+    "note": "Two silent if-let skips now record an issue"
+  },
+  {
+    "test_name": "Curve3D measured continuity (#485)::g1CurveReportsOrdinalOne",
+    "test_file": "Tests/OCCTCurveTests/Issue485Curve3DContinuityTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_OffsetCurve over the C0 basis: Continuity() = 1 (basis 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold",
+    "red": "Issue485Curve3DContinuityTests.swift:101 g1.continuity == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D measured continuity (#485)::bothPropertiesAgree",
+    "test_file": "Tests/OCCTCurveTests/Issue485Curve3DContinuityTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "agree on all five"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_Shape: C0 0 G1 1 C1 2 G2 3 C2 4 C3 5 CN 6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold",
+    "red": "Issue485Curve3DContinuityTests.swift:125 continuity == continuityClass.rawValue",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D measured continuity (#485)::retiredSentinelValuesAreGone",
+    "test_file": "Tests/OCCTCurveTests/Issue485Curve3DContinuityTests.swift",
+    "bridge_function": "OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "none of 99, -2, -3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_Shape: C0 0 G1 1 C1 2 G2 3 C2 4 C3 5 CN 6 (no negative or 99 ordinal exists)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold",
+    "red": "Issue485Curve3DContinuityTests.swift:139 continuity != 99",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt"
+  },
+  {
+    "test_name": "Issue 486: Curve3D batch-eval spellings agree::emptyParametersGiveEmptyResult",
+    "test_file": "Tests/OCCTCurveTests/Issue486Curve3DBatchTests.swift",
+    "bridge_function": "none: Swift early return",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: empty input returns before the bridge"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A: empty input returns before the bridge",
+    "injection": "gridpad: empty input answers one zero point",
+    "red": "Issue486Curve3DBatchTests.swift:26 evaluateGrid([]).isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt",
+    "note": "A silent `guard ... else { return }` now records an issue"
+  },
+  {
+    "test_name": "Issue #490: continuity vocabulary domains (curves)::approximationDomain",
+    "test_file": "Tests/OCCTCurveTests/Issue490ContinuityDecoderTests.swift",
+    "bridge_function": "OCCTCurve3DApproximate",
+    "bridge_output": {
+      "type": "value",
+      "data": "C0/C1/C2 built, C3 and 99 nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert_ApproxCurve: C0, C1, C2 HasResult; C3 throws"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "approxc3: continuity clamped to 2",
+    "red": "Issue490ContinuityDecoderTests.swift:33 approximated(continuity: 3) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt"
+  },
+  {
+    "test_name": "Issue #490: continuity vocabulary domains (curves)::pointFittingDomain",
+    "test_file": "Tests/OCCTCurveTests/Issue490ContinuityDecoderTests.swift",
+    "bridge_function": "OCCTPointsToBSplineWithParams",
+    "bridge_output": {
+      "type": "value",
+      "data": "built at 0...3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: GeomAPI_PointsToBSpline not probed here; the test is a does-not-fail contract"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A: GeomAPI_PointsToBSpline not probed here; the test is a does-not-fail contract",
+    "injection": "fitfail: continuity 3 answers nil",
+    "red": "Issue490ContinuityDecoderTests.swift:56 approximate(points:, continuity: 3) != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt"
+  },
+  {
+    "test_name": "Issue #490: continuity vocabulary domains (curves)::splitCriterionLadder",
+    "test_file": "Tests/OCCTCurveTests/Issue490ContinuityDecoderTests.swift",
+    "bridge_function": "OCCTSplitCurve3dContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "C2 1, C3 5, CN 5, 99 5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "ShapeUpgrade_SplitCurve3dContinuity: C2 1, C3 5, CN 5 pieces"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "splitcrit: criterion - 1",
+    "red": "Issue490ContinuityDecoderTests.swift:71 atC3 > 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt",
+    "note": "REWRITTEN: > 1 and >= atC3 now also pin 5"
+  },
+  {
+    "test_name": "Issue #490: continuity vocabulary domains (curves)::analysisOrderSaturates",
+    "test_file": "Tests/OCCTCurveTests/Issue490ContinuityDecoderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": ".c2 for both"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the C2 ceiling is the bridge's decoder; LocalAnalysis_CurveContinuity has no predicate above C2"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A: the C2 ceiling is the bridge's decoder; LocalAnalysis_CurveContinuity has no predicate above C2",
+    "injection": "aord: requested order echoed unsaturated",
+    "red": "Issue490ContinuityDecoderTests.swift:106 atC2.order == beyond.order",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt",
+    "note": "A silent return now records an issue"
+  },
+  {
+    "test_name": "Issue #490: continuity vocabulary domains (curves)::analysisOrderIsObservable",
+    "test_file": "Tests/OCCTCurveTests/Issue490ContinuityDecoderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "each order echoed"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the echo is bridge-side; the measured-class half is Issue495's"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A: the echo is bridge-side; the measured-class half is Issue495's",
+    "injection": "aecho: order always reported as .c2",
+    "red": "Issue490ContinuityDecoderTests.swift:128 analysis.order == order",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-continuity-485-486-490/transcript.txt",
+    "note": "A silent return now records an issue"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::pastTheEndProjectsToTheEnd",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "(100,0,0) 92 at 8; origin 3 at 3; (-50,3,0) 53.0848 at 3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "brute min 92 at 8, 3 at 3, 53.0848378 at 3; raw ShapeAnalysis_Curve::Project says 0 at 100, 0 at 0, 3 at -50; GeomAPI none"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist; ppparam; pppt",
+    "red": "Issue539NearestPointOnCurveTests.swift:43 beyond.distance == 92",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::justPastTheEnd",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "0.001 at 8"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "brute min 0.001 at 8; ShapeAnalysis 0 at 8.001"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist; ppparam",
+    "red": "Issue539NearestPointOnCurveTests.swift:65 distance == 0.001",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::onTheCircleButOffTheArc",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "4.47214 at 0; 7.81025"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "brute min 4.47213595 at 0 and 7.81024968; ShapeAnalysis 1.6e-15 and 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist; ppparam",
+    "red": "Issue539NearestPointOnCurveTests.swift:79 distance == sqrt(20)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::inRangeMaximumDoesNotWin",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "19.6023 at 2; 25.4794"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "brute min 19.6022958 at 2 and 25.4793987 at 1; both raw calls 20 and 27 (the in-range maximum)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist; ppparam",
+    "red": "Issue539NearestPointOnCurveTests.swift:103 distance == 19.6023",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::ordinaryProjectionUnchanged",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "2 at 5; arc 1 at pi/2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "all three sources 2 at 5; arc 1 at 1.57079633"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist; ppparam; pppt",
+    "red": "Issue539NearestPointOnCurveTests.swift:123 parameter == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::closedCurveStillAnswers",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint, OCCTCurve3DNearestParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": "5 at the centre, 1 from (6,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "full circle (6,0,0): 1 at 0 from all sources; the centre has no extremum (Scripts/repro/766-curve-analysis-order-nearest)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist; pppt; npend",
+    "red": "Issue539NearestPointOnCurveTests.swift:145 centre.distance == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::unboundedCurveUnchanged",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "7 at 100"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "line (100,7,0): ShapeAnalysis and GeomAPI 7 at 100"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist; ppparam; pppt",
+    "red": "Issue539NearestPointOnCurveTests.swift:158 parameter == 100",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::curveDistanceInheritsTheFix",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "92, 3, 2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "brute min 92, 3, 2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ppdist",
+    "red": "Issue539NearestPointOnCurveTests.swift:168 distance(to:(100,0,0)) == 92",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::edgePastTheEndIsNotNil",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTEdgeProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "92 at (8,0,0); 3 at (3,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_ProjectPointOnCurve none past either end; brute min 92 and 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ednil: nil past distance 7; eddist",
+    "red": "Issue539NearestPointOnCurveTests.swift:191 project(point:(100,0,0)) != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::edgeReportsNearestNotFarthest",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTEdgeProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "7.81025, 5.09902, 1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI lower 11, 6, 1 (the far extremum); brute min 7.81024968, 5.09901951, 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "eddist; ednil",
+    "red": "Issue539NearestPointOnCurveTests.swift:210 below.distance == 7.81025",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::curveAndEdgeAgree",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTEdgeProjectPoint, OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "agree on all six points"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "brute min on the half circle, see transcript"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "eddist; pppt; ppdist",
+    "red": "Issue539NearestPointOnCurveTests.swift:233 distances agree",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "The nearest point is on the curve, not on its basis (#539)::everyEdgeWithACurveAnswers",
+    "test_file": "Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift",
+    "bridge_function": "OCCTEdgeProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "12 of 12 answer, distance > 0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: box edges not probed; the bridge answers from the same candidate set"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "Not compared: the test asserts only that every one of the 12 box edges answers a point projection (an existence check on the bridge's wrapper). The kernel projection values on the same candidate set are compared in the records above, so no kernel value is recorded for this one and no equality is claimed.",
+    "injection": "ednil",
+    "red": "Issue539NearestPointOnCurveTests.swift:247 projected != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-point/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfEllipseRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for (0,0) and (5,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfEllipse (0,0) and (5,0): IsDone 1, a live degenerate arc"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:38 Curve3D.arcOfEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfEllipseRejectsNegativeAndInvertedRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "Swift wrapper",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Elips (5,-3) and (3,5) throw: the kernel rejects these itself, so the bridge guard is not what this test proves"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ellfix: arcOfEllipse sorts and abs()es its radii",
+    "red": "Issue554Conic3dDegenerateTests.swift:51 Curve3D.arcOfEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfEllipseAcceptsValidRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Elips (5,3) and (4,4) valid"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "conicnil: every conic validator returns false",
+    "red": "Issue554Conic3dDegenerateTests.swift:64 Curve3D.arcOfEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfEllipseThroughPointsRejectsZeroMinorRadius",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfEllipse (5,0) two-point: IsDone 1 with a NaN first parameter"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:83 Curve3D.arcOfEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfEllipseThroughPointsAcceptsValidRadiiAndIsNotNaN",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "finite range"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "healthy ellipse: finite parameters"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "conicnil: every conic validator returns false",
+    "red": "Issue554Conic3dDegenerateTests.swift:102 arc != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfHyperbolaRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfHyperbola (5,0): IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:110 Curve3D.arcOfHyperbola(  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfHyperbolaAcceptsMinorLargerThanMajor",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfHyperbola (3,5): IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "conicnil: every conic validator returns false",
+    "red": "Issue554Conic3dDegenerateTests.swift:129 Curve3D.arcOfHyperbola(",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfParabolaRejectsZeroFocalDistance",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfParabola focal 0: IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:139 Curve3D.arcOfParabola(",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::arcOfParabolaAcceptsPositiveFocalDistance",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "focal 2 valid"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "conicnil: every conic validator returns false",
+    "red": "Issue554Conic3dDegenerateTests.swift:146 Curve3D.arcOfParabola(",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::gcEllipseRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil; (5,3) built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeEllipse (5,0): IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:155 Curve3D.gcEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::gcEllipseFromFullAxisRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil; (5,3) built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeEllipse (5,0): IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:170 Curve3D.gcEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::gcHyperbolaRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil; (5,3) built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeHyperbola (0,5): IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:185 Curve3D.gcHyperbola(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::gcThreePointFormsRejectDegeneratePointTriplesWithoutABridgeGuard",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "Swift wrapper",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for degenerate triples; healthy built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeEllipse 3pt coincident 0, S2 on axis 0, healthy 1; GC_MakeHyperbola 3pt coincident 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "gc3fake: three-point gcEllipse answers a circle on failure",
+    "red": "Issue554Conic3dDegenerateTests.swift:204 Curve3D.gcEllipse(s1: origin, s2: origin, center: origin) == nil  (+1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::edgeFromEllipseRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil; (5,3) built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepBuilderAPI_MakeEdge gp_Elips (5,0): IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:217 Shape.edgeFromEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::edgeFromEllipseArcRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil; (5,3) built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepBuilderAPI_MakeEdge gp_Elips (5,0): IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:232 Shape.edgeFromEllipseArc(",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::edgeFromHyperbolaArcRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil; (5,3) built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GC_MakeArcOfHyperbola (5,0) IsDone 1 (edge form not probed separately)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:243 Shape.edgeFromHyperbolaArc(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::edgeFromParabolaArcRejectsZeroFocalLength",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil; focal > 0 built"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepBuilderAPI_MakeEdge gp_Parab focal 0 arc: IsDone 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:258 Shape.edgeFromParabolaArc(",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::pointToEllipseRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A for the value: the refusal is the bridge's occtValidEllipseRadii; the kernel builds gp_Elips (5,0) without complaint"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A for the value: the refusal is the bridge's occtValidEllipseRadii; the kernel builds gp_Elips (5,0) without complaint",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:283 ExtremaPointCurve.pointToEllipse(",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::pointToParabolaRejectsZeroFocalDistance",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A for the value: bridge guard; gp_Parab focal 0 is accepted by the kernel"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A for the value: bridge guard; gp_Parab focal 0 is accepted by the kernel",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:301 ExtremaPointCurve.pointToParabola(",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::lineToEllipseRejectsZeroRadii",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A for the value: bridge guard; gp_Elips (5,0) accepted by the kernel"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A for the value: bridge guard; gp_Elips (5,0) accepted by the kernel",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:318 ExtremaElC.lineToEllipse(  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::ellipseSetMinorRadiusRejectsZero",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "false; radius unchanged"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Ellipse::SetMinorRadius(0) accepted by the kernel"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:348 e.ellipseProperties.setMinorRadius(0) == false  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::ellipseSetMajorRadiusKeepsThePairValid",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "false for 1 and 0; 9 accepted"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Ellipse::SetMajorRadius(1) throws on its own"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "conicnil: every conic validator returns false",
+    "red": "Issue554Conic3dDegenerateTests.swift:358 e != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::hyperbolaSettersRejectZero",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "false; minor 8 accepted"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Hyperbola::SetMajorRadius(0) accepted by the kernel"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:375 h.hyperbolaProperties.setMajorRadius(0) == false  (+3 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::parabolaSetFocalRejectsZero",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "false; 6 accepted"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Parabola::SetFocal(0) accepted by the kernel"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:388 p.parabolaProperties.setFocal(0) == false  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::circleSetRadiusRejectsZero",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "conic validators (OCCTBridge_Internal.h)",
+    "bridge_output": {
+      "type": "value",
+      "data": "false; 7 accepted"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Circle::SetRadius(0) accepted by the kernel"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noconic: every conic validator returns true",
+    "red": "Issue554Conic3dDegenerateTests.swift:398 c.circleProperties.setRadius(0) == false  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "Issue554 3D conic degenerate dimensions::degenerateEllipseStillEvaluatesAndBoundsCorrectly",
+    "test_file": "Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift",
+    "bridge_function": "Swift wrapper",
+    "bridge_output": {
+      "type": "value",
+      "data": "x = 5cos(1); box x [-5, 5], y 0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "ElCLib::Value = (2.7015115293406988, 0, 0); BndLib x [-5, 5], y [0, 0]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "elcx: valueOnEllipse x + 1e-3",
+    "red": "Issue554Conic3dDegenerateTests.swift:417 abs(p.x - 5 * Foundation.cos(1.0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-conic-degenerate/transcript.txt"
+  },
+  {
+    "test_name": "An out-of-domain range measures the curve, not its extrapolation (#600)::A Bezier is not evaluated past its poles",
+    "test_file": "Tests/OCCTCurveTests/Issue600OutOfDomainRangeTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "confined for bounded curves, wound for periodic ones"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "raw GCPnts: whole 122.184728, [f, l+s] 1000.67204, [l+s, l+2s] 3582.8733"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noclamp: out-of-domain Curve3D range x 2",
+    "red": "Issue600OutOfDomainRangeTests.swift:91 bez.length(from: d.lowerBound, to: d.upperBound + span) == w",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-out-of-domain-range/transcript.txt"
+  },
+  {
+    "test_name": "An out-of-domain range measures the curve, not its extrapolation (#600)::An arc stops at its trim, even though its basis circle is periodic",
+    "test_file": "Tests/OCCTCurveTests/Issue600OutOfDomainRangeTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "confined for bounded curves, wound for periodic ones"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "raw GCPnts on the trimmed arc: [f, l+s] 31.4159265 (the whole circle); bridge confines to 15.708"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noclamp: out-of-domain Curve3D range x 2",
+    "red": "Issue600OutOfDomainRangeTests.swift:110 arc.length(from: 0, to: 2 * .pi) == whole",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-out-of-domain-range/transcript.txt"
+  },
+  {
+    "test_name": "An out-of-domain range measures the curve, not its extrapolation (#600)::A multi-span BSpline keeps the behaviour #477 and #506 pinned",
+    "test_file": "Tests/OCCTCurveTests/Issue600OutOfDomainRangeTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "confined for bounded curves, wound for periodic ones"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "see Scripts/repro/766-curve-arclength-contract: ranged GCPnts already clamps on a composite BSpline"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noclamp: out-of-domain Curve3D range x 2",
+    "red": "Issue600OutOfDomainRangeTests.swift:120 c.length(from: d.lowerBound - span, to: d.upperBound + span)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-out-of-domain-range/transcript.txt"
+  },
+  {
+    "test_name": "An out-of-domain range measures the curve, not its extrapolation (#600)::A segment measures its own length past the end, not the line's extension",
+    "test_file": "Tests/OCCTCurveTests/Issue600OutOfDomainRangeTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "confined for bounded curves, wound for periodic ones"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "raw GCPnts: [f, l+s] 20, [l+s, l+2s] 10 (the extension); bridge confines to 10 and 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noclamp: out-of-domain Curve3D range x 2",
+    "red": "Issue600OutOfDomainRangeTests.swift:67 seg.length(from: d.lowerBound, to: d.upperBound + span) == w",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-out-of-domain-range/transcript.txt"
+  },
+  {
+    "test_name": "An out-of-domain range measures the curve, not its extrapolation (#600)::An ellipse winds too, in whole multiples of its own measured length",
+    "test_file": "Tests/OCCTCurveTests/Issue600OutOfDomainRangeTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "confined for bounded curves, wound for periodic ones"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "raw GCPnts ellipse 8x3: whole 36.3668628, two periods 72.7337256"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noclamp: out-of-domain Curve3D range x 2",
+    "red": "Issue600OutOfDomainRangeTests.swift:180 abs(two - 2 * whole) < 1e-6 * whole  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-out-of-domain-range/transcript.txt"
+  },
+  {
+    "test_name": "An out-of-domain range measures the curve, not its extrapolation (#600)::A circle still winds: two periods measure two circumferences",
+    "test_file": "Tests/OCCTCurveTests/Issue600OutOfDomainRangeTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "confined for bounded curves, wound for periodic ones"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "raw GCPnts circle r5: whole 31.4159265, two periods 62.8318531, [l+s, l+2s] 31.4159265"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noclamp: out-of-domain Curve3D range x 2",
+    "red": "Issue600OutOfDomainRangeTests.swift:140 abs(two - 2 * whole) < 1e-6  (+3 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-out-of-domain-range/transcript.txt"
+  },
+  {
+    "test_name": "An out-of-domain range measures the curve, not its extrapolation (#600)::A periodic BSpline no longer stops silently at one period",
+    "test_file": "Tests/OCCTCurveTests/Issue600OutOfDomainRangeTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "confined for bounded curves, wound for periodic ones"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "raw GCPnts: whole 548.507775, [f, f+2s] 548.507775 (stops at one period), [l+s, l+2s] 0; bridge winds"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noclamp: out-of-domain Curve3D range x 2",
+    "red": "Issue600OutOfDomainRangeTests.swift:204 abs(two - 2 * whole) < 1e-6 * whole  (+3 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-out-of-domain-range/transcript.txt"
+  },
+  {
+    "test_name": "An out-of-domain range measures the curve, not its extrapolation (#600)::Curve2D answers an out-of-domain range the way Curve3D does",
+    "test_file": "Tests/OCCTCurveTests/Issue600OutOfDomainRangeTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "confined for bounded curves, wound for periodic ones"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: 2D fixtures not probed here; same GCPnts template (Scripts/repro/766-curve-nonfinite-length covers the 2D adaptor)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A: 2D fixtures not probed here; same GCPnts template (Scripts/repro/766-curve-nonfinite-length covers the 2D adaptor)",
+    "injection": "c2noclamp: out-of-domain Curve2D range x 2",
+    "red": "Issue600OutOfDomainRangeTests.swift:241 seg2.length(from: 0, to: 20) == whole  (+5 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-out-of-domain-range/transcript.txt"
+  },
+  {
+    "test_name": "An out-of-domain range measures the curve, not its extrapolation (#600)::An edge answers the same as the curve it was built from",
+    "test_file": "Tests/OCCTCurveTests/Issue600OutOfDomainRangeTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "confined for bounded curves, wound for periodic ones"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: edge fixtures not probed separately; BRepAdaptor over the same curves"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A: edge fixtures not probed separately; BRepAdaptor over the same curves",
+    "injection": "edext: out-of-domain edge range x 2",
+    "red": "Issue600OutOfDomainRangeTests.swift:281 abs(  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-out-of-domain-range/transcript.txt"
+  },
+  {
+    "test_name": "An out-of-domain range measures the curve, not its extrapolation (#600)::In-domain measurements are untouched",
+    "test_file": "Tests/OCCTCurveTests/Issue600OutOfDomainRangeTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "confined for bounded curves, wound for periodic ones"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "in-domain ranges: raw GCPnts equals the bridge (whole lengths above)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "novalid: occtValidParameterRange bypassed",
+    "red": "Issue600OutOfDomainRangeTests.swift:338 c.length(from: d.lowerBound, to: .nan) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-out-of-domain-range/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D *Properties views keep their parent alive (#965)::a view outliving its parent still reads the right values",
+    "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
+    "bridge_function": "OCCTCurve3DCircleRadius, OCCTCurve3DCircleCenter",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Circle radius 5; SetRadius(8) reads back 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cpradius: CircleProperties.radius x 1.01",
+    "red": "Issue965Curve3DPropertyLifetimeTests.swift:83 result.view.radius == Self.radius",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D *Properties views keep their parent alive (#965)::a setter called through a view is visible on the parent",
+    "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
+    "bridge_function": "OCCTCurve3DCircleSetRadius, OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Circle radius 5; SetRadius(8) reads back 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cpradius: CircleProperties.radius x 1.01",
+    "red": "Issue965Curve3DPropertyLifetimeTests.swift:112 curve.circleProperties.radius == 8",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D *Properties views keep their parent alive (#965)::the chained access the issue reports reads the right radius",
+    "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
+    "bridge_function": "OCCTEdgeGetCurve3D, OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Circle radius 5; SetRadius(8) reads back 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cpradius: CircleProperties.radius x 1.01",
+    "red": "Issue965Curve3DPropertyLifetimeTests.swift:48 edge.curve3D?.circleProperties.radius == Self.radius",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D *Properties views keep their parent alive (#965)::a view outliving its parent survives 400 intervening allocations",
+    "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
+    "bridge_function": "OCCTCurve3DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Circle radius 5; SetRadius(8) reads back 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cpradius: CircleProperties.radius x 1.01",
+    "red": "Issue965Curve3DPropertyLifetimeTests.swift:100 result.view.radius == Self.radius",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D *Properties views keep their parent alive (#965)::every Curve3D *Properties accessor keeps its parent alive",
+    "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
+    "bridge_function": "none: Swift view structs (Curve3D.*Properties(owner:)) retain their parent; the assertion reaches no bridge call",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: parent lifetime is Swift-side (the view's strong owner); no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A: parent lifetime is Swift-side (the view's strong owner); no kernel counterpart",
+    "injection": "cpcopy: lineProperties holds a copy, not its parent",
+    "red": "Issue965Curve3DPropertyLifetimeTests.swift:70 result.parentAlive",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 5, mirror through a plane",
+    "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
+    "bridge_function": "OCCTCurve3DMirrorPlane, OCCTCurve3DTransform, OCCTSurfaceMirrorPlane, OCCTSurfaceTransform (each through occtBuildTrsf3D type 5)",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Trsf on (3,4,5): (3, 4, -3)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trsfid: occtBuildTrsf3D leaves every type as the identity",
+    "red": "Issue995BuildTrsf3DTests.swift:77 abs(got.z - expected.z) < 1e-9  (+3 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 4, mirror through an axis",
+    "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
+    "bridge_function": "OCCTCurve3DMirrorAxis, OCCTCurve3DTransform, OCCTSurfaceMirrorAxis, OCCTSurfaceTransform (each through occtBuildTrsf3D type 4)",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Trsf on (3,4,5): (-1, 0, 5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trsfid: occtBuildTrsf3D leaves every type as the identity",
+    "red": "Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+7 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 1, rotation",
+    "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
+    "bridge_function": "OCCTCurve3DRotate, OCCTCurve3DTransform, OCCTSurfaceRotate, OCCTSurfaceTransform (each through occtBuildTrsf3D type 1)",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Trsf on (3,4,5): (-4, 3, 5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trsfid: occtBuildTrsf3D leaves every type as the identity",
+    "red": "Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+7 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 3, mirror through a point",
+    "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
+    "bridge_function": "OCCTCurve3DMirrorPoint, OCCTCurve3DTransform, OCCTSurfaceMirrorPoint, OCCTSurfaceTransform (each through occtBuildTrsf3D type 3)",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Trsf on (3,4,5): (-1, 0, 1)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trsfid: occtBuildTrsf3D leaves every type as the identity",
+    "red": "Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+11 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 0, translation",
+    "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
+    "bridge_function": "OCCTCurve3DTranslate, OCCTCurve3DTransform, OCCTSurfaceTranslate, OCCTSurfaceTransform (each through occtBuildTrsf3D type 0)",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Trsf on (3,4,5): (13, 24, 35)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trsfid: occtBuildTrsf3D leaves every type as the identity",
+    "red": "Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+11 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 2, scale",
+    "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
+    "bridge_function": "OCCTCurve3DScale, OCCTCurve3DTransform, OCCTSurfaceScale, OCCTSurfaceTransform (each through occtBuildTrsf3D type 2)",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Trsf on (3,4,5): (7, 10, 13)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trsfid: occtBuildTrsf3D leaves every type as the identity",
+    "red": "Issue995BuildTrsf3DTests.swift:75 abs(got.x - expected.x) < 1e-9  (+11 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::The six type codes are six different transforms of the same point",
+    "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
+    "bridge_function": "OCCTCurve3DTranslate, OCCTCurve3DRotate, OCCTCurve3DScale, OCCTCurve3DMirrorPoint, OCCTCurve3DMirrorAxis, OCCTCurve3DMirrorPlane (through occtBuildTrsf3D types 0 to 5)",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "gp_Trsf: the six images are six distinct points (see transcript)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "trsfid: occtBuildTrsf3D leaves every type as the identity",
+    "red": "Issue995BuildTrsf3DTests.swift:197 sqrt(apart.x * apart.x + apart.y * apart.y + apart.z * apart",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-lifetime-trsf/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::Linear law default parameter range 0...1",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Linear 0->10 on [0,1]: 5 at 0.5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawFunctionTests.swift:88 abs(law.value(at: 0.5) - 5) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::S-curve law smooth transition",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_S 0->1: 0, 0.5, 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawFunctionTests.swift:39 abs(law.value(at: 0)) < 1e-6  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::Linear law ramps from start to end",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Linear 1->3 on [0,10]: 1, 2, 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawFunctionTests.swift:30 abs(law.value(at: 0) - 1.0) < 1e-6  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::Interpolated law passes through points",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Interpol: 0, 1, -1.1e-16, 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawFunctionTests.swift:54 abs(law.value(at: 0)) < 1e-3  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::Constant law returns uniform value",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Constant 3.5: 3.5 at 0, 5, 10"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawFunctionTests.swift:14 abs(law.value(at: 0) - 3.5) < 1e-10  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Composite Tests::compositeLaw",
+    "test_file": "Tests/OCCTCurveTests/LawCompositeTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Composite of the two linear pieces: 1, 2, 3, 1 at 0, 0.25, 0.5, 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawCompositeTests.swift:19 abs(comp.value(at: 0.0) - 1.0) < 1e-9  (+3 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::BSpline law creation",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSpline degree 1, poles 1 and 3: 1 at 0, 3 at 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawFunctionTests.swift:77 abs(law.value(at: 0) - 1.0) < 1e-6  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::Constant law bounds",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Constant bounds are what Set() gives: [2, 8]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawbounds: bounds shifted by 0.5",
+    "red": "LawFunctionTests.swift:23 abs(b.lowerBound - 2) < 1e-10  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::BSpline law rejects a shorter multiplicities array",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the multiplicity-count check is Swift-side"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A: the multiplicity-count check is Swift-side",
+    "injection": "lawmult: mismatched multiplicities padded to the knot count",
+    "red": "LawFunctionTests.swift:102 law == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::BSpline law rejects a longer multiplicities array",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the multiplicity-count check is Swift-side"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A: the multiplicity-count check is Swift-side",
+    "injection": "lawmult: mismatched multiplicities padded to the knot count",
+    "red": "LawFunctionTests.swift:110 law == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::Interpolated law needs at least 2 points",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: one point is refused in Swift before Law_Interpol"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "N/A: one point is refused in Swift before Law_Interpol",
+    "injection": "lawinterp1: one point answers a constant law",
+    "red": "LawFunctionTests.swift:63 law == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Composite Tests::bsplineKnotSplitting",
+    "test_file": "Tests/OCCTCurveTests/LawCompositeTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting at C2: 3 splits"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawnone: knot splitting always -1",
+    "red": "LawCompositeTests.swift:42 splits.count == 3",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
   }
 ]
