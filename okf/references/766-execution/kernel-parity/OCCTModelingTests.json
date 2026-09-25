@@ -430,16 +430,18 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "Contour": 1,
-        "NbContours": 1,
-        "NbEdges(1)": 1
+        "contour": 1,
+        "contourCount": 1,
+        "edgeCount": 1
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the contour index of the edge, the number of contours and the number of edges in contour 1, on a fresh FilletBuilder on the 10 mm box centred at the origin with radius 1 on its first edge (BRepFilletAPI_MakeFillet, Add(1, E)). Bridge: FilletBuilder.contour(for:), contourCount and edgeCount(contour: 1) (OCCTFilletBuilderContour, NbContours, NbEdges); the test asserted 1, 1 and 1. Kernel: Contour(E), NbContours() and NbEdges(1); filletContourAccess line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-fillet-builder-completions-v124/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "FilletBuilder Completions v124::filletEdgeVertexQueries",
@@ -447,7 +449,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "edge": "non-nil",
+        "edgeSameAsInput": true,
+        "firstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "lastVertex": [
+          -5,
+          -5,
+          5
+        ],
         "abscissa(first)": 0,
         "relativeAbscissa(first)": 0,
         "abscissa(last)": 10,
@@ -457,28 +469,30 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "Edge(1,1)": "same as input edge",
-        "FirstVertex": [
+        "edgeSameAsInput": true,
+        "firstVertex": [
           -5,
           -5,
           -5
         ],
-        "LastVertex": [
+        "lastVertex": [
           -5,
           -5,
           5
         ],
-        "Abscissa(first)": 0,
-        "RelativeAbscissa(first)": 0,
-        "Abscissa(last)": 10,
-        "RelativeAbscissa(last)": 1
+        "abscissa(first)": 0,
+        "relativeAbscissa(first)": 0,
+        "abscissa(last)": 10,
+        "relativeAbscissa(last)": 1
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether contour 1's first edge is the input edge, the first and last vertex points, and the abscissa and relative abscissa at each end, on a fresh FilletBuilder on the 10 mm box centred at the origin with radius 1 on its first edge (BRepFilletAPI_MakeFillet, Add(1, E)). Bridge: edge(contour: 1, index: 1).isSame(as:) the input edge, firstVertex/lastVertex(contour:).vertexPoint, abscissa(contour:vertex:) and relativeAbscissa(contour:vertex:) (OCCTFilletBuilderEdge, FirstVertex, LastVertex, Abscissa, RelativeAbscissa); the test asserted a non-nil edge, abscissas 0 and 10 and relative abscissas 0 and 1 within 1e-9. Kernel: Edge(1, 1).IsSame(E), BRep_Tool::Pnt of FirstVertex(1) and LastVertex(1), Abscissa(1, V) and RelativeAbscissa(1, V); filletEdgeVertexQueries line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-fillet-builder-completions-v124/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "FilletBuilder Completions v124::filletClosedAndTangent",
@@ -486,22 +500,24 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "isClosed": false,
-        "isClosedAndTangent": false
+        "closed": false,
+        "closedAndTangent": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "Closed": false,
-        "ClosedAndTangent": false
+        "closed": false,
+        "closedAndTangent": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether contour 1 is closed and whether it is closed and tangent, on a fresh FilletBuilder on the 10 mm box centred at the origin with radius 1 on its first edge (BRepFilletAPI_MakeFillet, Add(1, E)). Bridge: isClosed(contour:) and isClosedAndTangent(contour:) (OCCTFilletBuilderClosed, ClosedAndTangent); the test asserted both false. Kernel: Closed(1) and ClosedAndTangent(1); filletClosedAndTangent line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-fillet-builder-completions-v124/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "FilletBuilder Completions v124::filletSurfaces",
@@ -509,22 +525,24 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "built": true,
+        "done": true,
         "surfaceCount": 2
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "IsDone": true,
-        "NbSurfaces": 2
+        "done": true,
+        "surfaceCount": 2
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: done after Build and the number of surfaces, on a fresh FilletBuilder on the 10 mm box centred at the origin with radius 1 on its first edge (BRepFilletAPI_MakeFillet, Add(1, E)). Bridge: build() non-nil (OCCTFilletBuilderBuild returns nullptr when IsDone() is false) and surfaceCount (OCCTFilletBuilderNbSurfaces); the test asserted a non-nil build and 2 surfaces. Kernel: Build(), IsDone() and NbSurfaces(); filletSurfaces line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-fillet-builder-completions-v124/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "FilletBuilder Completions v124::filletSetRadius",
@@ -540,16 +558,18 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "SetRadius(2,1,E)": "no exception",
-        "SetRadius(1,3,1,1)": "no exception",
-        "IsDone": true
+        "setRadius": true,
+        "setTwoRadii": true,
+        "builtAfter": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether SetRadius on the edge and SetRadius with two radii on edge 1 of contour 1 succeed, and done after Build, on a fresh FilletBuilder on the 10 mm box centred at the origin with radius 1 on its first edge (BRepFilletAPI_MakeFillet, Add(1, E)). Bridge: setRadius(2.0, contour:edge:) and setTwoRadii(1.0, 3.0, contour:edgeInContour:) return true when the OCCT call did not throw (OCCTFilletBuilderSetRadiusOnEdge, SetTwoRadii), then build() non-nil; the test asserted both true and a non-nil build. Kernel: SetRadius(2, 1, E) and SetRadius(1, 3, 1, 1) with the Standard_Failure caught, then Build() and IsDone(); filletSetRadius line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-fillet-builder-completions-v124/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "FilletBuilder Completions v124::filletStripeAndFaulty",
@@ -566,17 +586,19 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "StripeStatus": "ChFiDS_Ok (0)",
-        "NbComputedSurfaces": 1,
-        "NbFaultyContours": 0,
-        "NbFaultyVertices": 0
+        "stripeStatus": 0,
+        "computedSurfaceCount": 1,
+        "faultyContours": 0,
+        "faultyVertices": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the stripe status ordinal of contour 1, its computed surface count and the faulty contour and vertex counts, after Build, on a fresh FilletBuilder on the 10 mm box centred at the origin with radius 1 on its first edge (BRepFilletAPI_MakeFillet, Add(1, E)). Bridge: stripeStatus(contour:) (ChFiDS_ErrorStatus ordinal, 0 is ChFiDS_Ok), computedSurfaceCount(contour:), faultyContourCount and faultyVertexCount (OCCTFilletBuilderStripeStatus, NbComputedSurfaces, NbFaultyContours, NbFaultyVertices); the test asserted 0, 1, 0 and 0. Kernel: StripeStatus(1) as an integer, NbComputedSurfaces(1), NbFaultyContours() and NbFaultyVertices() after Build(); filletStripeAndFaulty line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-fillet-builder-completions-v124/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "FilletSurf_Builder Tests::filletSurface",
@@ -586,7 +608,7 @@
       "data": {
         "status": 0,
         "surfaces": 1,
-        "tolerance": "< 1e-6",
+        "tolerance": 1.9536208262849663e-15,
         "firstParameter": 0,
         "lastParameter": 10
       }
@@ -594,17 +616,19 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "IsDone": "FilletSurf_IsOk on all 12 edges",
-        "NbSurface": 1,
-        "TolApp3d": 1.9536208262849663e-15,
-        "FirstParameter": 0,
-        "LastParameter": 10
+        "status": 0,
+        "surfaces": 1,
+        "tolerance": 1.9536208262849663e-15,
+        "firstParameter": 0,
+        "lastParameter": 10
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the FilletSurf_Builder status ordinal (0 is FilletSurf_IsOk), the surface count, the approximation tolerance of surface 1 and the first and last parameter, for the first TopExp::MapShapes edge of the 10 mm box centred at the origin at radius 1. Bridge: Shape.filletSurfaces(edges:radius:) status, surfaces.count, surfaces[0].tolerance, firstParameter and lastParameter (OCCTFilletSurfBuild); the test asserted status 0, one surface, tolerance below 1e-6 and the parameters within 1e-9 of 0 and 10. Kernel: FilletSurf_Builder(box, {E1}, 1.0).Perform(), IsDone() as an integer, NbSurface(), TolApp3d(1), FirstParameter() and LastParameter(); filletSurface line of the transcript at %.17g (the allEdges line of the same transcript shows all 12 edges give status 0 and one surface). Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-fillet-surf-builder/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   }
 ]

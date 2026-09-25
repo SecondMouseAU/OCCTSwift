@@ -1,0 +1,2 @@
+filletSurface: status=0 surfaces=1 tolerance=1.9536208262849663e-15 firstParameter=0 lastParameter=10
+allEdges: edges=12 statusIsOk=12 withOneSurface=12
