@@ -1,0 +1,19 @@
+ellipse 5x3 [0,pi]: degree=2 poles=5 first pole=(5, 0) last pole=(-5, 3.67394039744e-16)
+ellipse 4x4 [0,pi]: degree=2 poles=5 first pole=(4, 0) last pole=(-4, 4.89858719659e-16)
+ellipse 0x0 [0,pi]: degree=2 poles=5 first pole=(0, 0) last pole=(0, 0)
+ellipse 5x0 [0,pi]: degree=2 poles=5 first pole=(5, 0) last pole=(-5, 0)
+ellipse 5x-3: throws gp_Elips2d() - invalid construction parameters
+ellipse 3x5: throws gp_Elips2d() - invalid construction parameters
+hyperbola 3x5 [0,1]: degree=2 poles=3 first pole=(3, 0) last pole=(4.62924190445, 5.87600596822)
+hyperbola 0x0 [0,1]: degree=2 poles=3 first pole=(0, 0) last pole=(0, 0)
+parabola f2 [0,1]: degree=2 poles=3 first pole=(0, 0) last pole=(0.125, 1)
+parabola f0 [0,1]: degree=2 poles=3 first pole=(nan, nan) last pole=(inf, nan)
+circle r3 [0,pi]: degree=2 poles=5 first pole=(3, 0) last pole=(-3, 3.67394039744e-16)
+circle r0 [0,pi]: degree=2 poles=5 first pole=(0, 0) last pole=(0, 0)
+conic circle r5: A=1 B=1 C=0 D=-0 E=-0 F=-25
+conic ellipse 5x3: A=0.04 B=0.111111111111 C=0 D=0 E=-0 F=-1
+conic ellipse 0x0: A=0 B=0 C=0 D=0 E=0 F=0
+conic line (0,0)+x: A=0 B=0 C=0 D=0 E=-1 F=-0
+gp_Dir2d(0,0): throws gp_Dir2d() - input vector has zero norm
+x-axis vs circle r0: done=1 n=1 (0, 0)
+x-axis vs circle r5: done=1 n=2 (5, 0) (-5, 0)

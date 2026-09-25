@@ -714,3 +714,23 @@ Probe: `Scripts/repro/766-geom2d-curve2d-basics/`. Every row was run red with th
 | ProjLib ComputeApproxOnPolarSurface::Project edge onto sphere face | `OCCTProjLibComputeApproxOnPolarSurface` | returns nullptr | ✅ | ✅ | MATCH | "may or may not succeed": nothing asserted on failure |
 | ProjLib_ProjectOnSurface Tests::projectLineOnCylinder | `OCCTProjLibProjectOnSurface` | trim end halved | ✅ | ✅ | MATCH | two `if let`s, `upper > lower`; now domain and start pinned |
 | Geom2dEval TBezier 2D Curve::createAndEval | `OCCTGeom2dEvalTBezierCurveCreate` | alpha + 0.5 | ✅ | ✅ | MATCH | domain signs only |
+### #1979 executed: `Issue514Conic2dDegenerateTests.swift`
+Probe: `Scripts/repro/766-geom2d-conic-degenerate/`. Every row was run red with the injection applied and green after it was reverted.
+| Issue514 2D conic degenerate dimensions::ellipseArcRejectsZeroRadii | `OCCTConvertEllipseToBSpline2D` | every #514 validity guard disabled | ✅ | ✅ | EXPECTED_DIVERGENCE |  |
+| Issue514 2D conic degenerate dimensions::ellipseArcRejectsNegativeAndInvertedRadii | `OCCTConvertEllipseToBSpline2D` | radii swapped before the guard | ✅ | ✅ | MATCH |  |
+| Issue514 2D conic degenerate dimensions::ellipseArcAcceptsValidRadii | `OCCTConvertEllipseToBSpline2D` | radii swapped before the guard | ✅ | ✅ | MATCH | `!= nil`; now endpoints pinned |
+| Issue514 2D conic degenerate dimensions::hyperbolaArcRejectsZeroRadii | `OCCTConvertHyperbolaToBSpline2D` | every #514 validity guard disabled | ✅ | ✅ | EXPECTED_DIVERGENCE |  |
+| Issue514 2D conic degenerate dimensions::hyperbolaArcAcceptsMinorLargerThanMajor | `OCCTConvertHyperbolaToBSpline2D` | ellipse ordering rule applied to the hyperbola | ✅ | ✅ | MATCH | `!= nil`; now endpoints pinned |
+| Issue514 2D conic degenerate dimensions::parabolaArcRejectsZeroFocal | `OCCTConvertParabolaToBSpline2D` | every #514 validity guard disabled | ✅ | ✅ | EXPECTED_DIVERGENCE |  |
+| Issue514 2D conic degenerate dimensions::parabolaArcAcceptsPositiveFocal | `OCCTConvertParabolaToBSpline2D` | focal doubled | ✅ | ✅ | MATCH | `!= nil`; now endpoints pinned |
+| Issue514 2D conic degenerate dimensions::circleArcRejectsZeroRadius | `OCCTConvertCircleToBSpline2D` | every #514 validity guard disabled | ✅ | ✅ | MATCH |  |
+| Issue514 2D conic degenerate dimensions::edge2dEllipseRejectsZeroRadii | `OCCTMakeEdge2dEllipse` | every #514 validity guard disabled | ✅ | ✅ | MATCH |  |
+| Issue514 2D conic degenerate dimensions::edge2dEllipseArcRejectsZeroRadii | `OCCTMakeEdge2dEllipseArc` | every #514 validity guard disabled | ✅ | ✅ | MATCH |  |
+| Issue514 2D conic degenerate dimensions::edge2dFullCircleRejectsZeroRadius | `OCCTMakeEdge2dFullCircle` | every #514 validity guard disabled | ✅ | ✅ | MATCH |  |
+| Issue514 2D conic degenerate dimensions::edge2dConstructorsAcceptValidDimensions | `OCCTMakeEdge2dEllipse` | refuses every ellipse edge | ✅ | ✅ | MATCH |  |
+| Issue514 2D conic degenerate dimensions::conicEllipseRejectsZeroRadii | `OCCTConic2dFromEllipse` | every #514 validity guard disabled | ✅ | ✅ | EXPECTED_DIVERGENCE |  |
+| Issue514 2D conic degenerate dimensions::conicCircleRejectsZeroRadius | `OCCTConic2dFromCircle` | every #514 validity guard disabled | ✅ | ✅ | MATCH |  |
+| Issue514 2D conic degenerate dimensions::conicRejectsZeroDirection | `OCCTConic2dFromCircle / FromLine / FromEllipse` | failure path reports success with zeroed coefficients | ✅ | ✅ | MATCH |  |
+| Issue514 2D conic degenerate dimensions::conicCoefficientOrderIsOCCTs | `occtConic2dCoefficients` | B and C swapped | ✅ | ✅ | MATCH | two `guard` + `Issue.record`; now `#require` |
+| Issue514 2D conic degenerate dimensions::conicLineIsUnchangedForValidInput | `OCCTConic2dFromLine` | line point y + 1 | ✅ | ✅ | MATCH | `magnitude > 0`; now E = -1 and the rest 0 |
+| Issue514 2D conic degenerate dimensions::lineCircleIntersectionRejectsZeroRadius | `OCCTConic2dLineCircleIntersect` | every #514 validity guard disabled | ✅ | ✅ | EXPECTED_DIVERGENCE |  |
