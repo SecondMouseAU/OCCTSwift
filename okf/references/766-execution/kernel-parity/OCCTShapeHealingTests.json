@@ -1,22 +1,5 @@
 [
   {
-    "test_name": "ShapeHealing domain kernel parity",
-    "bridge_function": "OCCTShapeHealingPlaceholder",
-    "bridge_output": {
-      "type": "object",
-      "data": {}
-    },
-    "kernel_output": {
-      "type": "object",
-      "data": {}
-    },
-    "comparison": {
-      "equal": null,
-      "differences": []
-    },
-    "status": "PENDING"
-  },
-  {
     "test_name": "ShapeCustom_BSplineRestriction Advanced::restrictBox",
     "bridge_function": "OCCTShapeBSplineRestrictionAdvanced",
     "bridge_output": {
