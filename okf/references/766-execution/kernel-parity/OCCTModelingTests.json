@@ -423,23 +423,25 @@
       "type": "value",
       "data": {
         "profiles": 8,
-        "loft": "nil"
+        "returned": true,
+        "produced": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "profilesBuilt": 8,
-        "buildReturned": true,
-        "isDone": 0,
-        "isDoneWithoutCompatibility": 0
+        "profiles": 8,
+        "returned": true,
+        "produced": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: how many of the eight #176 profiles were built, whether the loft call came back at all (the regression is a SIGSEGV that kills the process), and whether it produced a shape. Bridge: profiles.count is 8, the call returned (the test reaches its assertion) and Shape.loft is nil, which the test asserts. Kernel: Scripts/repro/766-modeling-loft-polar-method-crash/transcript.txt, from the earlier probe.mm, which repeats OCCTShapeCreateLoft (BRepOffsetAPI_ThruSections(solid) with CheckCompatibility(true), one AddWire per profile, Build): profiles built 8 of 8, Build returned, done=0, so the bridge returns nullptr. The same holds with CheckCompatibility(false) (the transcript's second block).",
+    "probe": "Scripts/repro/766-modeling-loft-polar-method-crash/"
   },
   {
     "test_name": "Loft Vertex Endpoints::coneFromCircle",
@@ -447,26 +449,30 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil",
-        "isValid": true,
-        "volume": "> 0"
+        "produced": true,
+        "type": "solid",
+        "faces": 2,
+        "valid": true,
+        "volume": 261.79938779914943
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": 1,
-        "type": "SOLID",
-        "valid": 1,
-        "volume": 261.7993878,
-        "analytic": 261.7993878
+        "produced": true,
+        "type": "solid",
+        "faces": 2,
+        "valid": true,
+        "volume": 261.79938779914943
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), face count, validity and volume. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-loft-vertex-endpoint/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats OCCTShapeCreateLoftAdvanced (BRepOffsetAPI_ThruSections(solid, ruled), CheckCompatibility(true), AddWire, then AddVertex for the apex, Build) on a circle at the origin with normal Z. Ruled, radius 5, apex (0,0,10); the volume equals the analytic cone volume pi*25*10/3 = 261.79938779914943 in the probe. The test asserts non-nil, isValid and volume > 0.",
+    "probe": "Scripts/repro/766-modeling-loft-vertex-endpoint/"
   },
   {
     "test_name": "Loft Vertex Endpoints::bicone",
@@ -474,24 +480,30 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil"
+        "produced": true,
+        "type": "solid",
+        "faces": 2,
+        "valid": true,
+        "volume": 4188.790204786392
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": 1,
-        "type": "SOLID",
-        "valid": 1,
-        "volume": 4188.790205,
-        "analytic": 4188.790205
+        "produced": true,
+        "type": "solid",
+        "faces": 2,
+        "valid": true,
+        "volume": 4188.790204786392
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), face count, validity and volume. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-loft-vertex-endpoint/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats OCCTShapeCreateLoftAdvanced (BRepOffsetAPI_ThruSections(solid, ruled), CheckCompatibility(true), AddWire, then AddVertex for the apex, Build) on a circle at the origin with normal Z. Ruled, radius 10, apexes (0,0,-20) and (0,0,20); the probe's analytic bicone volume 2*pi*100*20/3 is 4188.7902047863909, within 1e-15 relative. The test asserts only non-nil.",
+    "probe": "Scripts/repro/766-modeling-loft-vertex-endpoint/"
   },
   {
     "test_name": "Loft Vertex Endpoints::smoothCone",
@@ -499,23 +511,30 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil"
+        "produced": true,
+        "type": "solid",
+        "faces": 2,
+        "valid": true,
+        "volume": 261.79938779914943
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": 1,
-        "type": "SOLID",
-        "valid": 1,
-        "volume": 261.7993878
+        "produced": true,
+        "type": "solid",
+        "faces": 2,
+        "valid": true,
+        "volume": 261.79938779914943
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), face count, validity and volume. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-loft-vertex-endpoint/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats OCCTShapeCreateLoftAdvanced (BRepOffsetAPI_ThruSections(solid, ruled), CheckCompatibility(true), AddWire, then AddVertex for the apex, Build) on a circle at the origin with normal Z. Not ruled, radius 5, apex (0,0,10). The test asserts only non-nil.",
+    "probe": "Scripts/repro/766-modeling-loft-vertex-endpoint/"
   },
   {
     "test_name": "Make Connected::connectBoxes",
@@ -523,25 +542,32 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil"
+        "produced": true,
+        "type": "compound",
+        "solids": 2,
+        "faces": 11,
+        "valid": true,
+        "volume": 1999.999999999999
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "hasErrors": 0,
-        "type": "COMPOUND",
+        "produced": true,
+        "type": "compound",
         "solids": 2,
         "faces": 11,
-        "valid": 1,
-        "volume": 2000
+        "valid": true,
+        "volume": 1999.999999999999
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), solid and face counts, validity and volume. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-make-connected/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats OCCTShapeMakeConnected (BOPAlgo_MakeConnected, AddArgument per box, Perform, nothing on HasErrors) on the centred 10 mm box and a copy translated by (10, 0, 0). The test asserts only non-nil.",
+    "probe": "Scripts/repro/766-modeling-make-connected/"
   },
   {
     "test_name": "Shape, Torus, Chamfer, Offset, Scale, Mirror::torusCreation",
@@ -549,23 +575,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "isValid": true,
-        "volume": "within 1% of 1776.528792"
+        "valid": true,
+        "volume": 1776.5287921960844,
+        "analytic": 1776.5287921960846
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "valid": 1,
-        "volume": 1776.528792,
-        "analytic": 1776.528792
+        "valid": true,
+        "volume": 1776.5287921960844,
+        "analytic": 1776.5287921960846
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-missing-shape-ops/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's OCCT calls. Bounds are BRepBndLib::Add with triangulation, as Shape.bounds reads them, so size and centre carry the 1e-7 bounding-box tolerance. Torus (major 10, minor 3): validity, volume and the analytic volume 2 pi^2 R r^2. The test asserts the volume within 1% of the analytic one.",
+    "probe": "Scripts/repro/766-modeling-missing-shape-ops/"
   },
   {
     "test_name": "Shape, Torus, Chamfer, Offset, Scale, Mirror::chamferBox",
@@ -573,24 +602,28 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "isValid": true,
-        "faces": "> 6"
+        "produced": true,
+        "valid": true,
+        "faces": 26,
+        "volume": 945.333333333333
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": 1,
-        "valid": 1,
+        "produced": true,
+        "valid": true,
         "faces": 26,
-        "volume": 945.3333333
+        "volume": 945.333333333333
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-missing-shape-ops/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's OCCT calls. Bounds are BRepBndLib::Add with triangulation, as Shape.bounds reads them, so size and centre carry the 1e-7 bounding-box tolerance. Chamfer of distance 1 on every edge of the centred 10 mm box: validity, face count and volume. The test asserts isValid and more than 6 faces.",
+    "probe": "Scripts/repro/766-modeling-missing-shape-ops/"
   },
   {
     "test_name": "Shape, Torus, Chamfer, Offset, Scale, Mirror::offsetSolid",
@@ -598,23 +631,28 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "isValid": true,
-        "volume": "> 1000"
+        "produced": true,
+        "valid": true,
+        "volume": 1199.9999999999998,
+        "originalVolume": 999.9999999999998
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": 1,
-        "valid": 1,
-        "volume": 1200
+        "produced": true,
+        "valid": true,
+        "volume": 1199.9999999999998,
+        "originalVolume": 999.9999999999998
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-missing-shape-ops/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's OCCT calls. Bounds are BRepBndLib::Add with triangulation, as Shape.bounds reads them, so size and centre carry the 1e-7 bounding-box tolerance. PerformBySimple offset of 1.0 on the centred 10 mm box: validity, volume and the original volume. The test asserts isValid and offset volume > original volume.",
+    "probe": "Scripts/repro/766-modeling-missing-shape-ops/"
   },
   {
     "test_name": "Shape, Torus, Chamfer, Offset, Scale, Mirror::scaleShape",
@@ -622,18 +660,22 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "isValid": true,
-        "size": "(20, 20, 20) within 0.01"
+        "valid": true,
+        "size": [
+          20.0000004,
+          20.0000004,
+          20.0000004
+        ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "valid": 1,
+        "valid": true,
         "size": [
-          20,
-          20,
-          20
+          20.0000004,
+          20.0000004,
+          20.0000004
         ]
       }
     },
@@ -641,7 +683,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-missing-shape-ops/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's OCCT calls. Bounds are BRepBndLib::Add with triangulation, as Shape.bounds reads them, so size and centre carry the 1e-7 bounding-box tolerance. Scale by 2.0 about the origin of the centred 10 mm box: validity and bounding-box size. The test asserts isValid and each size component within 0.01 of 20.",
+    "probe": "Scripts/repro/766-modeling-missing-shape-ops/"
   },
   {
     "test_name": "Shape, Torus, Chamfer, Offset, Scale, Mirror::mirrorShape",
@@ -649,18 +693,22 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "isValid": true,
-        "centre.x": "< 0"
+        "valid": true,
+        "centre": [
+          -10.0,
+          5.0,
+          5.0
+        ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "valid": 1,
+        "valid": true,
         "centre": [
-          -10,
-          5,
-          5
+          -10.0,
+          5.0,
+          5.0
         ]
       }
     },
@@ -668,7 +716,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-missing-shape-ops/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's OCCT calls. Bounds are BRepBndLib::Add with triangulation, as Shape.bounds reads them, so size and centre carry the 1e-7 bounding-box tolerance. Mirror across the plane through the origin with normal (1, 0, 0) of the 10 mm box at (5, 0, 0): validity and bounding-box centre. The test asserts isValid and centre.x < 0.",
+    "probe": "Scripts/repro/766-modeling-missing-shape-ops/"
   },
   {
     "test_name": "Shape, Torus, Chamfer, Offset, Scale, Mirror::sliceAtZ",
@@ -676,32 +726,28 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "isValid": true,
+        "produced": true,
+        "valid": true,
         "edges": 4,
-        "centre.z": 5
+        "centreZ": 5.0
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "z5": {
-          "done": 1,
-          "edges": 4,
-          "valid": 1,
-          "centreZ": 5
-        },
-        "z6": {
-          "done": 1,
-          "edges": 0,
-          "valid": 1
-        }
+        "produced": true,
+        "valid": true,
+        "edges": 4,
+        "centreZ": 5.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-missing-shape-ops/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's OCCT calls. Bounds are BRepBndLib::Add with triangulation, as Shape.bounds reads them, so size and centre carry the 1e-7 bounding-box tolerance. BRepAlgoAPI_Section of the centred 10 mm box with the plane z = 5 (the top face's plane): whether a section came back, validity, edge count and the section's bounding-box centre z. The test asserts isValid, 4 edges and centre z within 1e-6 of 5. The section at z = 6 (off the box), which the earlier record carried, is not observed by the test and is not in the payload.",
+    "probe": "Scripts/repro/766-modeling-missing-shape-ops/"
   },
   {
     "test_name": "Shape, Torus, Chamfer, Offset, Scale, Mirror::sectionWiresAtZ",
@@ -709,24 +755,33 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "wires": "non-empty"
+        "wires": 1,
+        "wireEdges": [
+          4
+        ],
+        "wireClosed": [
+          true
+        ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "z5": {
-          "wires": 1,
-          "edges": 4,
-          "closed": 1
-        },
-        "z6": "no edges, nullptr"
+        "wires": 1,
+        "wireEdges": [
+          4
+        ],
+        "wireClosed": [
+          true
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-missing-shape-ops/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's OCCT calls. Bounds are BRepBndLib::Add with triangulation, as Shape.bounds reads them, so size and centre carry the 1e-7 bounding-box tolerance. The z = 5 section chained by ShapeAnalysis_FreeBounds::ConnectEdgesToWires at 1e-6: the wire count, and each wire's edge count and TopoDS closed flag (Shape.isClosedShape on the wire). The test asserts only that the list is not empty; the earlier record's z = 6 case (no edges, nullptr) is not observed by the test and is not in the payload.",
+    "probe": "Scripts/repro/766-modeling-missing-shape-ops/"
   }
 ]
