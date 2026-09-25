@@ -14,7 +14,7 @@
 [117] the label Document.createLabel() makes (Main().NewChild(), entry 0:1:1): TDF_Reference present=false
 [32;1mMesh /tmp/766-xcaf-evidence-fix-1508.obj
 [3 nodes] [1 2d elements]
-[read in 0.000563 s][0m
+[read in <time> s][0m
 [135] RWObj_CafReader::Perform=true free shapes=1 common material found=true Shininess=0.300000012 specular=(0.603827357, 0.603827357, 0.603827357) RoughnessFromSpecular=0.699999988 |r-0.7|=1.19209289e-08
 [32;1m
 *******************************************************************
@@ -114,7 +114,7 @@
 [130] merged triangulation of 24 nodes: Node(0) raises=true, Node(1) raises=false, Node(24) raises=false, Node(25) raises=true; label without the attribute has TDataXtd_Triangulation=false, label with it=true
 [32;1mMesh /tmp/766-xcaf-evidence-fix-443.glb
 [168 nodes] [306 2d elements]
-[read in 0.000162 s][0m
+[read in <time> s][0m
 [131] glTF import: Perform=true, faces with a triangulation=1, of which with normals=1, first normal length=1, nodes checked=168 of which the normal points outward (dot > 0.5)=168; the BRepMesh sphere carries normals=false (see the #443 transcript)
 [133] invisible red-surface style vs its visible copy: IsEqual=false (control, the style against itself: true)
 [134] common material shininess 0.5 vs 0.6: IsEqual=false (control, the material against itself: true)
@@ -171,3 +171,7 @@
 [208] XCAFDoc_Color::Set(red) non-null=true GetNOC=407
 [210] n1 IsFather(n2)=true, n2 IsChild(n1)=true, n1 NbChildren=1
 [213] ShapeMapTool::Set non-null=true, IsSubShape(first face)=true, extent=33
+[extra datum modifiers] fresh: modifiers=0 modifier with value=0; written [21, 2, 3] and Projected 12.5, read back modifiers=[21, 2, 3] modifier with value=3 value=12.5; valued modifier cleared: modifier with value=0 value=0 modifiers=[21, 2, 3]; sequence cleared: modifiers=0
+[extra rectangle target] placement threw=false; rectangle target number 1 then placement (30, 18), read back: IsDatumTarget=true type=2 number=1 HasDatumTargetParams=true length=30 width=18
+[extra item ref] Set(label, "/0:1:1:1") non-null=true, FindAttribute=true, GetItem().ToString()="0:1:1:1"
+[extra delete evolution] primitive(box) then delete(box) on one label: evolution=DELETE

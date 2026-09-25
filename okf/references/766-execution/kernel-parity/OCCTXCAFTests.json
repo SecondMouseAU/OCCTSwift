@@ -23,7 +23,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantities on both sides. Bridge: after a STEP round trip of a box the test observed rootNodes non-empty, Document.node(at: original.labelId) returning a node with the same labelId, and equal names. A labelId is the bridge's registry handle for a TDF_Label, so 'the same labelId' is 'the same label' at kernel level. Kernel: STEPCAFControl_Reader (the modes OCCTDocumentLoadSTEP sets) gives 1 free shape; fetching the free shapes again returns a root that IsEqual the first, and both read the name \"Open CASCADE STEP translator 8.0 1\". Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [16].",
+    "source": "Same quantities on both sides. Bridge: after a STEP round trip of a box the test observed rootNodes non-empty, Document.node(at: original.labelId) returning a node with the same labelId, and equal names. A labelId is the bridge's registry handle for a TDF_Label, so the same labelId is the same label at kernel level. Kernel: STEPCAFControl_Reader (the modes OCCTDocumentLoadSTEP sets) gives 1 free shape; fetching the free shapes again returns a root that IsEqual the first, and both read the name \"Open CASCADE STEP translator 8.0 1\". Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [16].",
     "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
@@ -46,7 +46,7 @@
       "differences": []
     },
     "status": "N/A",
-    "source": "No kernel counterpart. A labelId is an index into the bridge's own registry of TDF_Labels (OCCTDocumentLabelIsNull checks that registry), so 'no label is registered for Int64.max' is bridge state. OCCT has no label ids to ask. The shared probe's fresh-document free-shape count of 0 measured a different thing.",
+    "source": "No kernel counterpart. A labelId is an index into the bridge's own registry of TDF_Labels (OCCTDocumentLabelIsNull checks that registry), so the absence of a registered label for Int64.max is bridge state. OCCT has no label ids to ask. The shared probe's fresh-document free-shape count of 0 measured a different thing.",
     "probe": "Scripts/repro/766-xcaf-assembly-node-identity/"
   },
   {
@@ -690,7 +690,7 @@
       ]
     },
     "status": "EXPECTED_DIVERGENCE",
-    "source": "Same quantities on both sides: the dimension's value, tolerances and plus/minus flag after setDimensionBounds(10, 12) on a plus/minus dimension (20, -0.3, +0.7). Bridge: the call returned false and the dimension read back value 20 with bounds plusMinus(-0.3, 0.7). Kernel, the same calls without the bridge's guard: 'plus/minus after SetLower/UpperBound(10, 12) (bridge refuses before this): plusMinus=true value=10 lowerTol=12 upperTol=0.7', the corruption the refusal prevents. Kernel value: Scripts/repro/766-xcaf-document-gdt/transcript.txt.",
+    "source": "Same quantities on both sides: the dimension's value, tolerances and plus/minus flag after setDimensionBounds(10, 12) on a plus/minus dimension (20, -0.3, +0.7). Bridge: the call returned false and the dimension read back value 20 with bounds plusMinus(-0.3, 0.7). Kernel, the same calls without the bridge's guard: 'plus/minus after SetLower/UpperBound(10, 12) (bridge refuses before this): range=false plusMinus=true value=10 lowerTol=12 upperTol=0.7', the corruption the refusal prevents. Kernel value: Scripts/repro/766-xcaf-document-gdt/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-gdt/"
   },
   {
@@ -752,7 +752,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantities on both sides. Bridge: createDimension returned index 0, dimensionCount was 1, dim.type was .sizeRadius (Swift raw value 17, the kernel ordinal), the value and both tolerances matched 25, -0.1 and 0.1 within 1e-9, and the bounds were plusMinus. Kernel: 'dimension labels=1 (index of new = 0)', 'radius type ordinal=17', and 'radius 25 -0.1/+0.1: plusMinus=true value=25 lowerTol=-0.1 upperTol=0.1' (printed with %g). Kernel value: Scripts/repro/766-xcaf-document-gdt/transcript.txt.",
+    "source": "Same quantities on both sides. Bridge: createDimension returned index 0, dimensionCount was 1, dim.type was .sizeRadius (Swift raw value 17, the kernel ordinal), the value and both tolerances matched 25, -0.1 and 0.1 within 1e-9, and the bounds were plusMinus. Kernel: 'dimension labels=1 (index of new = 0)', 'radius type ordinal=17', and 'radius 25 -0.1/+0.1: range=false plusMinus=true value=25 lowerTol=-0.1 upperTol=0.1' (printed with %g). Kernel value: Scripts/repro/766-xcaf-document-gdt/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-gdt/"
   },
   {
@@ -898,9 +898,11 @@
     "bridge_output": {
       "type": "qualifier",
       "data": {
-        "fresh": "none",
-        "after_max": "max",
-        "after_none": "none"
+        "fresh": 0,
+        "after_max": 2,
+        "after_none": 0,
+        "value_after_max": 20.0,
+        "simple_after_max": true
       }
     },
     "kernel_output": {
@@ -908,7 +910,9 @@
       "data": {
         "fresh": 0,
         "after_max": 2,
-        "after_none": 0
+        "after_none": 0,
+        "value_after_max": 20.0,
+        "simple_after_max": true
       }
     },
     "comparison": {
@@ -916,6 +920,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides, as kernel ordinals (the Swift raw values none 0, min 1, max 2, avg 3 are the kernel's): the qualifier of a fresh dimension, after a Max write and after a None write, and the value and bounds kept beside it. Bridge: .none, .max, .none, with value 20 and bounds .simple after the Max write. Kernel: 'fresh qualifier=0 angular=0', 'after SetQualifier(Max): qualifier=2 value=20 range=false plusMinus=false', 'after SetQualifier(None): qualifier=0'. Kernel value: Scripts/repro/766-xcaf-gdt-dimension-accessor/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
   },
   {
@@ -924,8 +929,8 @@
     "bridge_output": {
       "type": "qualifier",
       "data": {
-        "qualifier": "min",
-        "angular": "large"
+        "qualifier": 1,
+        "angular": 2
       }
     },
     "kernel_output": {
@@ -940,6 +945,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides, as kernel ordinals: the dimension qualifier and the angular qualifier after writing Min and Large on an angular dimension (Swift raw values min 1, large 2). Bridge: qualifier .min and angularQualifier .large. Kernel: 'angular: qualifier=1 angularQualifier=2'. Kernel value: Scripts/repro/766-xcaf-gdt-dimension-accessor/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
   },
   {
@@ -963,10 +969,7 @@
     "kernel_output": {
       "type": "places",
       "data": {
-        "fresh": [
-          0,
-          0
-        ],
+        "fresh": null,
         "p23": [
           2,
           3
@@ -975,10 +978,7 @@
           0,
           4
         ],
-        "p00": [
-          0,
-          0
-        ]
+        "p00": null
       }
     },
     "comparison": {
@@ -986,6 +986,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: the decimal places of a fresh dimension and after writing (2, 3), (0, 4) and (0, 0), null where neither count is positive (the bridge's own presence test, l > 0 || r > 0). Bridge: nil, (2, 3), (0, 4), nil. Kernel: 'decimal places fresh=(0, 0)', 'set (2, 3) -> (2, 3) ... presence test (l > 0 || r > 0) = true', 'set (0, 4) -> (0, 4); bridge presence test (l > 0 || r > 0) = true', 'set (0, 0) -> (0, 0); bridge presence test (l > 0 || r > 0) = false', so the kernel's (0, 0) reads as absent through that test. Kernel value: Scripts/repro/766-xcaf-gdt-dimension-accessor/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
   },
   {
@@ -1303,35 +1304,42 @@
     "bridge_output": {
       "type": "tolerance",
       "data": {
-        "fresh": "all none",
+        "fresh": {
+          "value_type": 0,
+          "material_requirement": 0,
+          "zone_modifier": 0,
+          "zone_value": null,
+          "max_value": null,
+          "modifier_count": 0
+        },
         "written": {
-          "valueType": "diameter",
-          "material": "m",
-          "zone": "projected",
-          "zoneValue": 15.0,
-          "maxValue": 0.25
+          "value_type": 1,
+          "material_requirement": 1,
+          "zone_modifier": 1,
+          "zone_value": 15.0,
+          "max_value": 0.25
         },
         "value": 0.1,
-        "type": "position"
+        "type": 10
       }
     },
     "kernel_output": {
       "type": "tolerance",
       "data": {
-        "fresh": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
+        "fresh": {
+          "value_type": 0,
+          "material_requirement": 0,
+          "zone_modifier": 0,
+          "zone_value": null,
+          "max_value": null,
+          "modifier_count": 0
+        },
         "written": {
-          "typeOfValue": 1,
-          "material": 1,
-          "zone": 1,
-          "zoneValue": 15,
-          "maxValue": 0.25
+          "value_type": 1,
+          "material_requirement": 1,
+          "zone_modifier": 1,
+          "zone_value": 15.0,
+          "max_value": 0.25
         },
         "value": 0.1,
         "type": 10
@@ -1342,6 +1350,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides, as kernel ordinals (Swift raw values are the kernel's: diameter 1, .m 1, projected 1, position 10): a fresh tolerance's value type, material requirement, zone modifier, zone value, max value and modifier count (a zero zone or max value reads as absent, the bridge's > 0 rule), then the values after the writes, and the tolerance's own value and type. Bridge: all none and nil and empty when fresh; .diameter, .m, .projected, 15.0 and 0.25 after; value 0.1, type .position. Kernel: 'tolerance fresh: typeOfValue=0 material=0 zone=0 zoneValue=0 maxValue=0 modifiers=0' and 'tolerance written: typeOfValue=1 material=1 zone=1 zoneValue=15 maxValue=0.25 value=0.1 type=10'. Kernel value: Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
   },
   {
@@ -1350,17 +1359,19 @@
     "bridge_output": {
       "type": "tolerance",
       "data": {
-        "zoneValue": null,
-        "maxValue": null,
-        "zone": "projected"
+        "zone": 1,
+        "zone_value_before": 15.0,
+        "zone_value": null,
+        "max_value": null
       }
     },
     "kernel_output": {
       "type": "tolerance",
       "data": {
         "zone": 1,
-        "zoneValue": 0,
-        "maxValue": 0
+        "zone_value_before": 15.0,
+        "zone_value": null,
+        "max_value": null
       }
     },
     "comparison": {
@@ -1368,6 +1379,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: the zone modifier ordinal, the zone value before zeroing, and the zone and max values after writing 0, where a zero reads as absent (OCCT stores each only when positive, and the bridge reports only > 0). Bridge: zoneModifierValue 15.0, then nil and nil with .projected kept. Kernel: 'tolerance written: ... zoneValue=15 maxValue=0.25' and 'tolerance zeroed: zone=1 zoneValue=0 maxValue=0 (bridge reports > 0 only)'. Kernel value: Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
   },
   {
@@ -1419,9 +1431,9 @@
     "kernel_output": {
       "type": "position",
       "data": {
-        "fresh": 0,
+        "fresh": null,
         "after_2": 2,
-        "after_0": 0
+        "after_0": null
       }
     },
     "comparison": {
@@ -1429,6 +1441,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: the datum position when fresh, after writing 2 and after writing 0, where 0 reads as absent (positions are 1-based). Bridge: nil, 2, nil. Kernel: 'datum fresh: position=0' and 'datum position 2 -> 2; 0 -> 0', so 0 reads as absent through the bridge's position > 0 rule. Kernel value: Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
   },
   {
@@ -1437,25 +1450,55 @@
     "bridge_output": {
       "type": "datum",
       "data": {
-        "modifiers": [
-          "basic",
-          "contactingFeature"
-        ],
-        "withValue": "projected",
-        "value": 12.5,
-        "cleared": null
+        "fresh": {
+          "modifiers": [],
+          "modifier_with_value": null
+        },
+        "written": {
+          "modifiers": [
+            21,
+            2,
+            3
+          ],
+          "modifier_with_value": 3,
+          "value": 12.5
+        },
+        "valued_cleared": {
+          "modifier_with_value": null,
+          "modifiers": [
+            21,
+            2,
+            3
+          ]
+        },
+        "sequence_cleared_count": 0
       }
     },
     "kernel_output": {
       "type": "datum",
       "data": {
-        "modifiers": [
-          2,
-          3
-        ],
-        "withValue": 3,
-        "value": 12.5,
-        "cleared": 0
+        "fresh": {
+          "modifiers": [],
+          "modifier_with_value": null
+        },
+        "written": {
+          "modifiers": [
+            21,
+            2,
+            3
+          ],
+          "modifier_with_value": 3,
+          "value": 12.5
+        },
+        "valued_cleared": {
+          "modifier_with_value": null,
+          "modifiers": [
+            21,
+            2,
+            3
+          ]
+        },
+        "sequence_cleared_count": 0
       }
     },
     "comparison": {
@@ -1463,7 +1506,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+    "source": "Same quantities on both sides, as kernel ordinals (Swift raw values translation 21, basic 2, contactingFeature 3, projected 3): a fresh datum's modifiers and valued modifier (0 reads as absent), the sequence [translation, basic, contactingFeature] and the valued modifier projected 12.5 after writing, the state after the valued modifier is cleared, and the count after clearing the sequence. Bridge: exactly those. Kernel: 'fresh: modifiers=0 modifier with value=0; written [21, 2, 3] and Projected 12.5, read back modifiers=[21, 2, 3] modifier with value=3 value=12.5; valued modifier cleared: modifier with value=0 value=0 modifiers=[21, 2, 3]; sequence cleared: modifiers=0'. The shared probe wrote [basic, contactingFeature], not the test's three. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [extra datum modifiers].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T tolerance and datum accessors (#1004)::A datum target's length and width follow the target type, not the write",
@@ -1923,10 +1967,10 @@
     "bridge_output": {
       "type": "target",
       "data": {
-        "type": "rectangle",
+        "type": 2,
         "number": 1,
-        "length": 30,
-        "width": 18
+        "length": 30.0,
+        "width": 18.0
       }
     },
     "kernel_output": {
@@ -1934,8 +1978,8 @@
       "data": {
         "type": 2,
         "number": 1,
-        "length": 30,
-        "width": 18
+        "length": 30.0,
+        "width": 18.0
       }
     },
     "comparison": {
@@ -1943,7 +1987,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+    "source": "Same quantities on both sides, as kernel ordinals (rectangle is 2): the target type, number, length and width after marking a rectangle target numbered 1 and then placing it with length 30 and width 18. Bridge: target.type .rectangle, number 1, length 30, width 18. Kernel: the same writes through the attribute read back IsDatumTarget=true type=2 number=1 HasDatumTargetParams=true length=30 width=18. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [extra rectangle target].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Datum target placement states its precondition (#1038)::Clearing the target mark makes a later placement refuse again",
@@ -2138,7 +2183,8 @@
     "bridge_output": {
       "type": "names",
       "data": {
-        "lengths": [
+        "layer_count_positive": true,
+        "name_lengths": [
           6,
           6,
           12
@@ -2148,21 +2194,20 @@
     "kernel_output": {
       "type": "names",
       "data": {
-        "tool_on_main": [
-          "Shapes",
-          "Colors",
-          "VisMaterials"
-        ],
-        "real_layer_table": []
+        "layer_count_positive": false,
+        "name_lengths": []
       }
     },
     "comparison": {
       "equal": false,
       "differences": [
-        "the three names are XCAF tool labels, not layers (#2413); the test never writes its 300-character name"
+        "layer_count_positive, name_lengths: the bridge reads XCAFDoc_LayerTool::Set(Main), which lists the three XCAF tool labels (Shapes, Colors, VisMaterials, name lengths 6, 6 and 12) as layers; the document's own layer table, XCAFDoc_DocumentTool::LayerTool(Main) at 0:1:3, holds 0 layers on a fresh document.",
+        "This is the #2413 defect, which the test asserts (count > 0 and non-empty names). The test's title claims a 300-character name reads back whole, but it never writes one; only the layer-name buffer path over the tool labels is exercised.",
+        "Tracked as #2413; the fix is in Sources/ and is not part of this PR."
       ]
     },
-    "status": "MISMATCH",
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides: whether the fresh document reports any layer, and the length of each name read. Bridge: layerCount > 0 and every OCCTDocumentGetLayerName length read was 6, 6 and 12. Kernel: 'XCAFDoc_LayerTool::Set(Main) ... 3 layer(s)' with those name lengths (the bridge's own call), and 'XCAFDoc_DocumentTool::LayerTool(Main) [what OCCTDocumentSetLayer writes] (tool label 0:1:3): 0 layer(s)' for the document's layer table. Kernel value: Scripts/repro/766-xcaf-issue1078-layer-name-length/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-issue1078-layer-name-length/"
   },
   {
@@ -3424,7 +3469,7 @@
     "bridge_output": {
       "type": "tolerance",
       "data": {
-        "zone": "projected",
+        "zone": 1,
         "value": 15.0
       }
     },
@@ -3432,7 +3477,7 @@
       "type": "tolerance",
       "data": {
         "zone": 1,
-        "value": 15
+        "value": 15.0
       }
     },
     "comparison": {
@@ -3440,7 +3485,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+    "source": "Same quantities on both sides, as kernel ordinals (projected is 1): the zone modifier and its value after writing Projected 15. Bridge: zoneModifier .projected and zoneModifierValue 15.0. Kernel: 'Projected 15 -> zone=1 value=15' read back through the attribute. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [104].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T write paths answer for what the document took (#1056)::The datum sibling reports nothing for a cleared modifier",
@@ -4127,7 +4173,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantities on both sides, for a sphere of radius 10 meshed at deflection 2.0 (coarse) and 0.2 (fine): whether the coarse mesh has triangles, whether the fine one has more, whether both deflections are positive and whether the fine one is smaller. Bridge: all five asserted true. Kernel: 'sphere r10 at 2.0: triangles=306 worstDeflection=0.62736' and 'sphere r10 at 0.2: triangles=516 worstDeflection=0.238182', so 306 > 0, 516 > 306, both positive and 0.238 < 0.627. Kernel value: Scripts/repro/766-xcaf-issue443-triangulation/transcript.txt.",
+    "source": "Same quantities on both sides, for a sphere of radius 10 meshed at deflection 2.0 (coarse) and 0.2 (fine): whether the coarse mesh has triangles, whether the fine one has more, whether both deflections are positive and whether the fine one is smaller. Bridge: all five asserted true. Kernel: 'sphere r10 at 2.0: faces=1 nodes=168 triangles=306 worstDeflection=0.62736' and 'sphere r10 at 0.2: faces=1 nodes=273 triangles=516 worstDeflection=0.238182', so 306 > 0, 516 > 306, both positive and 0.238 < 0.627. Kernel value: Scripts/repro/766-xcaf-issue443-triangulation/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-issue443-triangulation/"
   },
   {
@@ -4266,7 +4312,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantities on both sides: whether a sphere exported to GLB and read back carries node normals, whether the first is unit length, whether every checked normal points outward (dot with the radial direction > 0.5), and whether the same sphere meshed from B-Rep carries normals. Bridge: triangulationNormal(at: 1) was non-nil and unit within 1e-6, every checked node's normal had dot > 0.5, and the B-Rep label's normal was nil. Kernel: RWGltf_CafReader gives 1 face whose triangulation has normals, the first of length 1, and 168 of 168 checked normals point outward once the face orientation and location are applied (the merge's own steps); BRepMesh_IncrementalMesh leaves normals=false ('sphere r10 at 2.0' in the #443 transcript). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [131].",
+    "source": "Same quantities on both sides: whether a sphere exported to GLB and read back carries node normals, whether the first is unit length, whether every checked normal points outward (dot with the radial direction > 0.5), and whether the same sphere meshed from B-Rep carries normals. Bridge: triangulationNormal(at: 1) was non-nil and unit within 1e-6, every checked node's normal had dot > 0.5, and the B-Rep label's normal was nil. Kernel: RWGltf_CafReader gives 1 face whose triangulation has normals, the first of length 1, and 168 of 168 checked normals point outward once the face orientation and location are applied (the merge's own steps); BRepMesh_IncrementalMesh leaves normals=false ('sphere r10 at 2.0: ... normals=false' in Scripts/repro/766-xcaf-issue443-triangulation/transcript.txt). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [131].",
     "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
@@ -4640,11 +4686,11 @@
         "nodes": 5,
         "roots": 1,
         "types": [
-          "assemblyRoot",
-          "occurrence",
-          "subassembly",
-          "occurrence",
-          "part"
+          1,
+          3,
+          2,
+          3,
+          4
         ]
       }
     },
@@ -4667,6 +4713,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides, as kernel ordinals (AssemblyRoot 1, Subassembly 2, Occurrence 3, Part 4): the node and root counts and the node types of a part inside a sub-assembly inside a top assembly. Bridge: 5 nodes, 1 root, and .assemblyRoot, .occurrence, .subassembly, .occurrence, .part, whose raw values are 1, 3, 2, 3, 4 (#1568). Kernel: 'AssemblyGraph (part in sub in top): nodes=5 links=4 roots=1 types: 1 3 2 3 4'. Kernel value: Scripts/repro/766-xcaf-xcafdoc-vis/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
   },
   {
@@ -4767,13 +4814,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "path": true
+        "path_found": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "path": "0:1:1:1"
+        "path_found": true
       }
     },
     "comparison": {
@@ -4781,7 +4828,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "source": "Same quantity on both sides: whether a path can be read back from an item ref set with \"/0:1:1:1\". Bridge: assemblyItemRefPath(labelId:) was non-nil (OCCTDocumentGetAssemblyItemRef returns the ref's GetItem().ToString()). Kernel: XCAFDoc_AssemblyItemRef::Set with that path is found on the label and its GetItem().ToString() reads \"0:1:1:1\" (the leading slash is not kept); the test asserts only that a path exists. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [extra item ref].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc AssemblyItemRef Tests::subshapeIndex",
@@ -4849,7 +4897,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: orphan, for a ref set to the path \"/99:99:99\", which names no label. Bridge: assemblyItemRefIsOrphan was true (OCCTDocumentAssemblyItemRefIsOrphan returns IsOrphan of the XCAFDoc_AssemblyItemRef). Kernel: XCAFDoc_AssemblyItemRef::Set on a fresh label with that path gives a non-null ref whose IsOrphan is true. The shared probe's false was for a resolvable path, a different scenario. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [142].",
+    "source": "Same quantity on both sides: orphan, for a ref set to the path \"/99:99:99\", which names no label. Bridge: assemblyItemRefIsOrphan was true (OCCTDocumentAssemblyItemRefIsOrphan returns IsOrphan of the XCAFDoc_AssemblyItemRef). Kernel: XCAFDoc_AssemblyItemRef::Set on the label createLabel makes (Main().NewChild(), which on an XCAF document is the existing label 0:1:1) with that path gives a non-null ref whose IsOrphan is true. The shared probe's false was for a resolvable path, a different scenario. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [142].",
     "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
@@ -6095,7 +6143,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: whether a TFunction_Function attribute exists on the label after newFunction. Bridge: newFunction returned true (OCCTDocumentNewFunction returns whether the label then has a TFunction_Function attribute, not what NewFunction returns). Kernel: after TFunction_IFunction::NewFunction on a fresh child label the attribute is present. NewFunction itself returned false in the probe, which the bridge ignores. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [171].",
+    "source": "Same quantity on both sides: whether a TFunction_Function attribute exists on the label after newFunction. Bridge: newFunction returned true (OCCTDocumentNewFunction returns whether the label then has a TFunction_Function attribute, not what NewFunction returns). Kernel: after TFunction_IFunction::NewFunction on the label createLabel makes (Main().NewChild(), which on an XCAF document is the existing label 0:1:1), in a document of its own, the attribute is present. NewFunction itself returned false in the probe, which the bridge ignores. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [171].",
     "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
@@ -6118,7 +6166,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: whether DeleteFunction reports success on a label that has a function. Bridge: deleteFunction returned true (OCCTDocumentDeleteFunction returns TFunction_IFunction::DeleteFunction). Kernel: NewFunction then DeleteFunction returned true. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [172].",
+    "source": "Same quantity on both sides: whether DeleteFunction reports success on a label that has a function. Bridge: deleteFunction returned true (OCCTDocumentDeleteFunction returns TFunction_IFunction::DeleteFunction). Kernel: on the label createLabel makes (Main().NewChild(), which on an XCAF document is the existing label 0:1:1), NewFunction then DeleteFunction returned true. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [172].",
     "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
@@ -6147,7 +6195,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: the execution status read before and after setting Succeeded, by TFunction_ExecutionStatus name. Bridge: functionExecStatus was .wrongDefinition on a fresh function and .succeeded after setFunctionExecStatus(.succeeded); the Swift raw values 0 and 3 are the kernel's ordinals, and the bridge casts them straight to TFunction_ExecutionStatus. Kernel: a fresh TFunction_IFunction reads 0 (WrongDefinition), and 3 (Succeeded) after SetStatus. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [173].",
+    "source": "Same quantity on both sides: the execution status read before and after setting Succeeded, by TFunction_ExecutionStatus name. Bridge: functionExecStatus was .wrongDefinition on a fresh function and .succeeded after setFunctionExecStatus(.succeeded); the Swift raw values 0 and 3 are the kernel's ordinals, and the bridge casts them straight to TFunction_ExecutionStatus. Kernel: a new function on the label createLabel makes (Main().NewChild(), which on an XCAF document is the existing label 0:1:1) reads 0 (WrongDefinition), and 3 (Succeeded) after SetStatus. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [173].",
     "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
@@ -6170,7 +6218,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: whether an execution status can be read from a label that never had NewFunction. Bridge: functionExecStatus was nil (OCCTDocumentFunctionGetExecStatus returns -1 when the label has no TFunction_Function attribute). Kernel: a fresh child label has no TFunction_Function attribute, so there is nothing to read a status from. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [174].",
+    "source": "Same quantity on both sides: whether an execution status can be read from a label that never had NewFunction. Bridge: functionExecStatus was nil (OCCTDocumentFunctionGetExecStatus returns -1 when the label has no TFunction_Function attribute). Kernel: the label createLabel makes (Main().NewChild(), which on an XCAF document is the existing label 0:1:1) has no TFunction_Function attribute, so there is nothing to read a status from. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [174].",
     "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
@@ -6566,13 +6614,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "evolution": "primitive"
+        "evolution": "PRIMITIVE"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "evolution": 0
+        "evolution": "PRIMITIVE"
       }
     },
     "comparison": {
@@ -6580,7 +6628,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: the evolution, by name (the bridge's enum maps TNaming_Evolution by a switch and its ordinals differ from the kernel's for SELECTED, so names are compared). Bridge: namingEvolution(on:) was .primitive after a primitive record. Kernel: the NamedShape's evolution is PRIMITIVE. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [181].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Basic Record and Retrieve::No evolution on empty label",
@@ -6688,13 +6737,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "evolution": "delete"
+        "evolution": "DELETE"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "evolution": 3
+        "evolution": "DELETE"
       }
     },
     "comparison": {
@@ -6702,7 +6751,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tnaming/"
+    "source": "Same quantity on both sides: the evolution, by name. Bridge: namingEvolution(on:) was .delete after primitive(box) then delete(old: box) on one label. Kernel: the same two builder calls on one label leave a NamedShape whose evolution is DELETE. The shared probe deleted a different shape on a label with no earlier record. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [extra delete evolution].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TNaming, Basic Record and Retrieve::Generated evolution with old and new shapes",
@@ -7456,7 +7506,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: whether the label carries an XCAFDoc_DimTol attribute. Bridge: dimTolKind was nil (OCCTDocumentGetDimTolKind returns -1 exactly when FindAttribute for XCAFDoc_DimTol fails). Kernel: a fresh child label has no XCAFDoc_DimTol attribute. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [209].",
+    "source": "Same quantity on both sides: whether the label carries an XCAFDoc_DimTol attribute. Bridge: dimTolKind was nil (OCCTDocumentGetDimTolKind returns -1 exactly when FindAttribute for XCAFDoc_DimTol fails). Kernel: the label createLabel makes (Main().NewChild(), which on an XCAF document is the existing label 0:1:1) has no XCAFDoc_DimTol attribute. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [209].",
     "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
@@ -7580,7 +7630,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: whether the label carries an XCAFDoc_Location attribute. Bridge: hasLocationAttribute was false and locationTranslation nil (OCCTDocumentHasLocation returns FindAttribute for XCAFDoc_Location). Kernel: a fresh child label has no XCAFDoc_Location attribute. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [211].",
+    "source": "Same quantity on both sides: whether the label carries an XCAFDoc_Location attribute. Bridge: hasLocationAttribute was false and locationTranslation nil (OCCTDocumentHasLocation returns FindAttribute for XCAFDoc_Location). Kernel: the label createLabel makes (Main().NewChild(), which on an XCAF document is the existing label 0:1:1) has no XCAFDoc_Location attribute. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [211].",
     "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
@@ -7629,7 +7679,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: whether the label carries an XCAFDoc_Material attribute. Bridge: hasMaterialAttribute was false and materialAttributeName nil (OCCTDocumentHasMaterialAttr returns FindAttribute for XCAFDoc_Material). Kernel: a fresh child label has no XCAFDoc_Material attribute. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [212].",
+    "source": "Same quantity on both sides: whether the label carries an XCAFDoc_Material attribute. Bridge: hasMaterialAttribute was false and materialAttributeName nil (OCCTDocumentHasMaterialAttr returns FindAttribute for XCAFDoc_Material). Kernel: the label createLabel makes (Main().NewChild(), which on an XCAF document is the existing label 0:1:1) has no XCAFDoc_Material attribute. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [212].",
     "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {

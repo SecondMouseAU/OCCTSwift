@@ -155,7 +155,11 @@ static const char* tf(bool b) { return b ? "true" : "false"; }
 
 // Kernel measurements for the #1982 evidence correction pass over OCCTXCAFTests. Each section prints lines
 // tagged with the worklist index ([n]) of the parity record it backs, so a record's kernel value can be
-// traced to a line of transcript.txt. Every section calls the OCCT API the bridge function calls.
+// traced to a line of transcript.txt. Every section calls the OCCT API the bridge function calls, on one
+// fresh document per test, with the label Document.createLabel() makes (Main().NewChild(), which on an XCAF
+// document is the existing label 0:1:1). Lines tagged [extra ...] back records outside the worklist.
+// Build line: the CLAUDE.md "Compile a Ground Truth C++ Test" line (-std=c++17). OCCT's own "[read in N s]"
+// timing messages vary from run to run and are normalised to "<time>" in transcript.txt.
 
 static const char* ascii(const TCollection_ExtendedString& e)
 {
@@ -2127,6 +2131,94 @@ static void lastRecords()
   }
 }
 
+// ---- extras: records outside the worklist whose two sides used different spellings of one value ------------------------------------------
+// [datum modifiers] GDTToleranceDatumAccessorTests.datumModifiersRoundTrip: the test writes [translation, basic, contactingFeature], a valued
+// modifier projected 12.5, clears the valued modifier, then the sequence.
+static std::string modOrdinals(const NCollection_Sequence<XCAFDimTolObjects_DatumSingleModif>& s)
+{
+  std::string out = "[";
+  for (int i = 1; i <= s.Length(); i++)
+    out += (i > 1 ? ", " : "") + std::to_string((int)s.Value(i));
+  return out + "]";
+}
+
+static void extras()
+{
+  {
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Datum) d = gdtAddDatum(g, "A");
+    XCAFDimTolObjects_DatumModifWithValue m = XCAFDimTolObjects_DatumModifWithValue_Spherical;
+    double                                v = -1;
+    d->GetObject()->GetModifierWithValue(m, v);
+    printf("[extra datum modifiers] fresh: modifiers=%d modifier with value=%d", d->GetObject()->GetModifiers().Length(), (int)m);
+    {
+      Handle(XCAFDimTolObjects_DatumObject)                    o = d->GetObject();
+      NCollection_Sequence<XCAFDimTolObjects_DatumSingleModif> s;
+      s.Append((XCAFDimTolObjects_DatumSingleModif)21);
+      s.Append((XCAFDimTolObjects_DatumSingleModif)2);
+      s.Append((XCAFDimTolObjects_DatumSingleModif)3);
+      o->SetModifiers(s);
+      d->SetObject(o);
+    }
+    {
+      Handle(XCAFDimTolObjects_DatumObject) o = d->GetObject();
+      o->SetModifierWithValue(XCAFDimTolObjects_DatumModifWithValue_Projected, 12.5);
+      d->SetObject(o);
+    }
+    d->GetObject()->GetModifierWithValue(m, v);
+    printf("; written [21, 2, 3] and Projected 12.5, read back modifiers=%s modifier with value=%d value=%g", modOrdinals(d->GetObject()->GetModifiers()).c_str(),
+           (int)m, v);
+    {
+      Handle(XCAFDimTolObjects_DatumObject) o = d->GetObject();
+      o->SetModifierWithValue(XCAFDimTolObjects_DatumModifWithValue_None, 0.0);
+      d->SetObject(o);
+    }
+    d->GetObject()->GetModifierWithValue(m, v);
+    printf("; valued modifier cleared: modifier with value=%d value=%g modifiers=%s", (int)m, v, modOrdinals(d->GetObject()->GetModifiers()).c_str());
+    {
+      Handle(XCAFDimTolObjects_DatumObject) o = d->GetObject();
+      o->SetModifiers(NCollection_Sequence<XCAFDimTolObjects_DatumSingleModif>());
+      d->SetObject(o);
+    }
+    printf("; sequence cleared: modifiers=%d\n", d->GetObject()->GetModifiers().Length());
+  }
+  {  // [extra rectangle target] Issue1038DatumTargetPlacementTests.placementOnARectangleTargetStillWorks: target first (number 1), then (30, 18)
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Datum) da = gdtAddDatum(g, "A");
+    datumSetTarget(da, XCAFDimTolObjects_DatumTargetType_Rectangle, 1);
+    bool threw = datumPlace(da, 30.0, 18.0);
+    printf("[extra rectangle target] placement threw=%s; ", tf(threw));
+    datumState("rectangle target number 1 then placement (30, 18), read back", da);
+  }
+  {  // [extra item ref] XCAFDocAssemblyItemRefTests.setAndGet: the ref set with the path "/0:1:1:1", read back as OCCTDocumentGetAssemblyItemRef reads it
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d     = newDoc(app);
+    TDF_Label                   label = d->Main().NewChild();
+    XCAFDoc_AssemblyItemId      id(TCollection_AsciiString("/0:1:1:1"));
+    Handle(XCAFDoc_AssemblyItemRef) ref = XCAFDoc_AssemblyItemRef::Set(label, id);
+    Handle(XCAFDoc_AssemblyItemRef) found;
+    bool                            has = label.FindAttribute(XCAFDoc_AssemblyItemRef::GetID(), found);
+    printf("[extra item ref] Set(label, \"/0:1:1:1\") non-null=%s, FindAttribute=%s, GetItem().ToString()=\"%s\"\n", tf(!ref.IsNull()), tf(has),
+           has ? found->GetItem().ToString().ToCString() : "-");
+  }
+  {  // [extra delete evolution] TNamingBasicTests.deleteEvolution: primitive(box), then delete(box) on the same label
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d = newDoc(app);
+    TDF_Label                   l = d->Main().NewChild();
+    TopoDS_Shape                box = centredBox(10, 10, 10);
+    nRec(l, 0, TopoDS_Shape(), box);
+    {
+      TNaming_Builder b(l);
+      b.Delete(box);
+    }
+    Handle(TNaming_NamedShape) ns;
+    l.FindAttribute(TNaming_NamedShape::GetID(), ns);
+    printf("[extra delete evolution] primitive(box) then delete(box) on one label: evolution=%s\n", evoName(ns->Evolution()));
+  }
+}
+
 int main()
 {
   textLabel();
@@ -2164,5 +2256,6 @@ int main()
   naming191();
   tracing198();
   lastRecords();
+  extras();
   return 0;
 }
