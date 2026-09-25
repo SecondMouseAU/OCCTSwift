@@ -651,7 +651,7 @@
     },
     "kernel_output": null,
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
@@ -688,7 +688,7 @@
     },
     "kernel_output": null,
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
@@ -1099,7 +1099,7 @@
       "data": {}
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
