@@ -11,21 +11,10 @@
 | Suite | Tests | Primary Category |
 |-------|-------|------------------|
 | Issue554 3D conic degenerate dimensions | 26 | DG/CR |
-| BSpline Curve 3D Manipulation Tests | 15 | WR |
 | **Arc length stops being one quadrature per span (#603)** | **15** | **CR/WR (#603)** |
-| Analytical conversion contract (#492) | 12 | WR |
-| The nearest point is on the curve, not on its basis (#539) | 12 | WR |
-| Curve3D Primitive Tests | 12 | WR |
-| Curve3D Operations Tests | 11 | WR |
-| An out-of-domain range measures the curve, not its extrapolation (#600) | 10 | WR |
-| Bezier Curve Manipulation Tests | 9 | WR |
-| Non-finite arc-length bounds report failure (#548) | 9 | DG/RF |
-| Helix Curves | 9 | WR |
-| Bezier Curve 3D Completions | 9 | WR |
-| Curve3D arc-length accuracy on multi-span curves (#477) | 8 | CR/WR (#477) |
-| BSplineCurve 3D Completions v121 | 8 | WR |
-| Law Function Tests | 8 | WR |
 | ... | ... | ... |
+
+_Thirteen suite rows (`BSpline Curve 3D Manipulation Tests` through `Law Function Tests`) were removed from this table by the #1978 evidence correction: each named a kernel-parity record that was an audited stub. The Total below is the domain-wide count from the original audit, not a sum of the rows shown._
 
 **Total**: 530 tests across ~90 suites
 
@@ -39,11 +28,7 @@
 
 **Bridge Fix**: Wrapped all 49 in `try { } catch (...) { <safe fallback> }`.
 
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| mirrorAxisZeroDirection | `OCCTMakeMirrorAxis` → `gp_Dir` | Zero direction vector | Remove `try/catch` in bridge | ✅ SIGABRT | ✅ Pass | Uncaught `Standard_ConstructionError` |
-| mirrorPlaneZeroNormal | `OCCTMakeMirrorPlane` → `gp_Dir` | Zero normal vector | Remove `try/catch` in bridge | ✅ SIGABRT | ✅ Pass | Uncaught `Standard_ConstructionError` |
-| geomDirectionZeroVector | `OCCTGeomDirectionCreate` → `Geom_Direction` | Zero vector handled gracefully | N/A | N/A | ✅ Pass | `Geom_Direction` returns NaN, no exception |
+_The three rows (`mirrorAxisZeroDirection`, `mirrorPlaneZeroNormal`, `geomDirectionZeroVector`) were removed by the #1978 evidence correction: their kernel-parity records were audited stubs, and these tests live in `OCCTStressTests`, not `OCCTCurveTests`._
 
 ### #603: CPnts_AbscissaPoint Single Quadrature (Bridge + Kernel Fix)
 
@@ -53,24 +38,7 @@
 
 **Kernel Patch**: `0021` — `CPnts_AdaptiveIntegration.hxx` does same doubling for all 4 `Length` overloads and `Value`/`Values`.
 
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| A whole ellipse measures its own circumference, not 0.3-1.7% more | `Curve3D.arcLength` → `occtAdaptorArcLength` | Single quadrature | Remove adaptive quadrature in bridge |  |  | Error up to 1.7% |
-| A parabola over a wide range measures its arc, not 3% less | `Curve3D.arcLength` → `occtAdaptorArcLength` | Single quadrature | Remove adaptive quadrature in bridge |  |  | Error 3% (worst case) |
-| A hyperbola over a wide range measures its arc | `Curve3D.arcLength` → `occtAdaptorArcLength` | Single quadrature | Remove adaptive quadrature in bridge |  |  | Error +0.067% |
-| A whipping cubic Bezier | `Curve3D.arcLength` → `occtAdaptorArcLength` | Single quadrature | Remove adaptive quadrature in bridge |  |  | Error -0.189% |
-| The closed forms stay exact | `Curve3D.arcLength` → closed-form paths | Control | No injection |  |  | Line/circle/2-pole Bezier |
-| Accurate sub-ranges sum to whole | `Curve3D.arcLength(from:to:)` → `occtArcWalkToLength` | Single quadrature | Remove adaptive quadrature |  |  | Error accumulates |
-| A wound range winds correctly | `Curve3D.arcLength(from:to:)` | Single quadrature | Remove adaptive quadrature |  |  | Error accumulates |
-| A fraction of the length matches | `Curve3D.arcLength(from:to:)` | Single quadrature | Remove adaptive quadrature |  |  | Error accumulates |
-| A negative abscissa measures correctly | `Curve3D.arcLength(from:to:)` | Single quadrature | Remove adaptive quadrature |  |  | Error accumulates |
-| A 2D ellipse measures correctly | `Curve2D.arcLength` → `occtAdaptorArcLength` | Single quadrature | Remove adaptive quadrature |  |  | Error accumulates |
-| An elliptical edge measures correctly | `Shape.edgeArcLength` → `occtAdaptorArcLength` | Single quadrature | Remove adaptive quadrature |  |  | Error accumulates |
-| A wire containing elliptical edges | `Wire.arcLength` → `occtAdaptorArcLength` | Single quadrature | Remove adaptive quadrature |  |  | Error accumulates |
-| An EdgeCurve measures correctly | `EdgeCurve.arcLength` → `occtAdaptorArcLength` | Single quadrature | Remove adaptive quadrature |  |  | Error accumulates |
-| parameterAtLength walks correctly | `Curve3D.parameterAtLength` → `occtArcWalkToLength` | Single quadrature | Remove adaptive quadrature |  |  | Inverse also wrong |
-
-**Note**: Injection testing showed that removing the adaptive quadrature loop (returning single quadrature) did not cause test failures with the current test expectations. The tests use independent references (Richardson-extrapolated chord sum and Simpson quadrature) with 1e-9 tolerance. Further investigation needed to confirm the injection actually reaches the code path under test.
+_The 14 rows of this matrix were removed by the #1978 evidence correction: each named a kernel-parity record that was an audited stub, and the injection result the table carried ("Red?" and "Green?" blank) was never run._
 
 ### #636: Curve3D extrema on Parallel Curves (Bridge Fix)
 
@@ -80,9 +48,6 @@
 
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
-| Two unbounded parallel lines: extrema is empty, not a crash | `Curve3D.extrema(to:)` → `BRepExtrema_ExtCC` | Parallel crash | Remove `isParallel` guard |  |  | SIGSEGV |
-| Two bounded parallel segments with overlapping ranges: extrema is empty | `Curve3D.extrema(to:)` → `BRepExtrema_ExtCC` | Parallel crash | Remove `isParallel` guard |  |  | SIGSEGV |
-| minDistance(to:) keeps reporting true offset for parallel pairs | `Curve3D.minDistance(to:)` → `BRepExtrema_ExtCC` | Parallel crash | Remove `isParallel` guard |  |  | SIGSEGV |
 | The extrema doc snippet is runnable and its printed values are true | `Curve3D.extrema(to:)` → `BRepExtrema_ExtCC` | Control | No injection |  |  | Should pass |
 
 ### #477: Arc-Length Per-Span Split (Bridge Fix)
@@ -91,20 +56,13 @@
 
 **Bridge Fix**: Adaptive quadrature inside each interval — halve until two levels agree to 1e-9.
 
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| length of a multi-span interpolated BSpline matches reference | `Curve3D.arcLength` → `occtAdaptorArcLength` | No per-span adaptive | Remove adaptive quadrature |  |  | Error > 1e-9 |
-| length(from:to:) over a sub-range matches reference | `Curve3D.arcLength(from:to:)` → `occtArcWalkToLength` | No per-span adaptive | Remove adaptive quadrature |  |  | Error > 1e-9 |
-| all five arc-length spellings agree with same reference | `Curve3D.arcLength` / `length` / `parameterAtLength` | No per-span adaptive | Remove adaptive quadrature |  |  | Inconsistent results |
+_The three rows were removed by the #1978 evidence correction: their kernel-parity records were audited stubs._
 
 ### #408: Arc-Length Failure vs Zero-Length Distinguishability
 
 **Issue**: Genuine zero-width interval returns 0.0, not failure sentinel; failing computation distinguishable from real zero.
 
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| A genuine zero-width interval reports exactly 0.0, not a failure sentinel | `Curve3D.arcLength(from:to:)` → `occtArcWalkToLength` | Zero vs failure confusion | Remove distinction |  |  | Wrong result |
-| A genuinely failing computation is distinguishable from real zero-length | `Curve3D.arcLength(from:to:)` → `occtArcWalkToLength` | Zero vs failure confusion | Remove distinction |  |  | Wrong result |
+_The two rows were removed by the #1978 evidence correction: their kernel-parity records were audited stubs._
 
 ---
 
@@ -180,21 +138,10 @@ Per `upstream-occt-patch-process.md`:
 | Suite | Tests | Injected | Red ✓ | Green ✓ | PR Ready |
 |-------|-------|----------|-------|---------|----------|
 | Issue554 3D conic degenerate dimensions | 26 |  |  |  |  |
-| BSpline Curve 3D Manipulation Tests | 15 |  |  |  |  |
 | **Arc length stops being one quadrature per span (#603)** | **15** |  |  |  |  |
-| Analytical conversion contract (#492) | 12 |  |  |  |  |
-| The nearest point is on the curve (#539) | 12 |  |  |  |  |
-| Curve3D Primitive Tests | 12 |  |  |  |  |
-| Curve3D Operations Tests | 11 |  |  |  |  |
-| An out-of-domain range measures the curve (#600) | 10 |  |  |  |  |
-| Bezier Curve Manipulation Tests | 9 |  |  |  |  |
-| Non-finite arc-length bounds report failure (#548) | 9 |  |  |  |  |
-| Helix Curves | 9 |  |  |  |  |
-| Bezier Curve 3D Completions | 9 |  |  |  |  |
-| Curve3D arc-length accuracy on multi-span curves (#477) | 8 |  |  |  |  |
-| BSplineCurve 3D Completions v121 | 8 |  |  |  |  |
-| Law Function Tests | 8 |  |  |  |  |
 | ... | ... |  |  |  |  |
+
+_The same thirteen suite rows were removed from this table by the #1978 evidence correction. The Total below is the domain-wide count from the original audit, not a sum of the rows shown._
 
 **Total**: 530 tests
 
