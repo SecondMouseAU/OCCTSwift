@@ -41,8 +41,10 @@ struct NewtonMinimumTests {
         }
         #expect(result != nil)
         if let r = result {
-            #expect(abs(r.point[0] - 1.0) < 0.1)
-            #expect(abs(r.point[1] - 1.0) < 0.1)
+            // math_NewtonMinimum reaches (1, 1) exactly from (0, 0) (probe); 0.1 passed a
+            // location off by 0.05.
+            #expect(abs(r.point[0] - 1.0) < 1e-6)
+            #expect(abs(r.point[1] - 1.0) < 1e-6)
         }
     }
 }

@@ -1,0 +1,6 @@
+distanceToWire (circle r=1 at (20,0,0)): done=1 n=1 value=14.000000000000 p1=(5, 0, 0) p2=(19, 1.2246468e-16, 0) intersects(1e-6)=0
+intersectsWire (circle r=1 at (20,0,0)): done=1 n=1 value=14.000000000000 p1=(5, 0, 0) p2=(19, 1.2246468e-16, 0) intersects(1e-6)=0
+intersectsWire (circle r=1 at origin, inside box): done=1 n=1 value=0.000000000000 p1=(1, 0, 0) p2=(1, 0, 0) intersects(1e-6)=1
+intersectsWire (circle r=10 at origin, crossing the box): done=1 n=4 value=2.928932188135 p1=(-5, -5, 0) p2=(-7.07106781, -7.07106781, 0) intersects(1e-6)=0
+distanceToEdge (box edges()[0]): done=1 n=2 value=0.000000000000 p1=(-5, -5, 5) p2=(-5, -5, 5) intersects(1e-6)=1
+distanceToFace (box2 faces()[0]): done=1 n=1 value=0.000000000000 p1=(-2.5, -2.5, 2.5) p2=(-2.5, -2.5, 2.5) intersects(1e-6)=1

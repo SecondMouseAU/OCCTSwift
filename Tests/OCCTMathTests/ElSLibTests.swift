@@ -32,6 +32,13 @@ struct ElSLibTests {
             u: 0, v: 0, origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
             majorRadius: 20.0, minorRadius: 5.0)
         #expect(abs(p.x - 25.0) < 1e-10)
+        // At (0, 0) the point is major + minor, which is the same with the radii swapped. At
+        // v = pi/2 it is (major, 0, minor). Kernel value (20, 0, 5) from
+        // Scripts/repro/766-math-elclib-elslib/transcript.txt.
+        let q = ElSLib.valueOnTorus(
+            u: 0, v: .pi / 2, origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
+            majorRadius: 20.0, minorRadius: 5.0)
+        #expect(simd_length(q - SIMD3(20, 0, 5)) < 1e-10)
     }
 
     @Test func parametersOnSphere() {
