@@ -19,8 +19,11 @@ name: Kernel Integration
 # cache save is no longer hostage to the test job's runtime, and each job gets a timeout sized for
 # what it actually does.
 
+# A draft PR is parked: both macOS jobs skip it, and `ready_for_review` starts them when the
+# PR is marked ready (see ci.yml).
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'Scripts/patches/**'
       - 'Scripts/build-occt.sh'
@@ -40,6 +43,7 @@ concurrency:
 jobs:
   build-kernel:
     name: build patched OCCT.xcframework (macOS)
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: macos-15
     # Measured 79 min for a cache-miss build (#727). 120 leaves a ~50% margin without also
     # masking a genuine hang the way a much larger number would.
@@ -109,6 +113,7 @@ jobs:
   swift-test:
     name: swift test against patched kernel (macOS)
     needs: build-kernel
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: macos-15
     # The equivalent suite takes 7-13 min in ci.yml, which downloads a prebuilt kernel rather than
     # restoring this job's cache; 30 min covers that plus checkout/restore overhead with margin,
