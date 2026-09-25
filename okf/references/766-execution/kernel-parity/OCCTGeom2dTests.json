@@ -263,20 +263,19 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "max x": 13.439,
-        "z": [
-          6.685,
-          6.731
-        ]
+        "bounds_max_x": 13.4392023242,
+        "bounds_min_x": -13.4392023242,
+        "bounds_min_z": 6.68540947326,
+        "bounds_max_z": 6.73099839174
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "radial projection": {
-          "r": 13.4164,
-          "z": 6.7082
-        }
+        "bounds_max_x": 13.4392023242,
+        "bounds_min_x": -13.4392023242,
+        "bounds_min_z": 6.68540947326,
+        "bounds_max_z": 6.73099839174
       }
     },
     "comparison": {
@@ -290,7 +289,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
       "rewritten": "\"may or may not succeed\": nothing asserted on failure"
-    }
+    },
+    "source": "Same quantity on both sides: the bounding box (x extent, and the z range) of the edge that results from projecting the half circle of radius 10 at z = 5 onto the radius-15 sphere, the four values the test bounds. Bridge: Shape.projectOntoPolarSurface(_:) then Shape.bounds. Kernel: the same sequence in the probe, ProjLib_ComputeApproxOnPolarSurface (tolerance 1e-3), BRepBuilderAPI_MakeEdge on the resulting 2D curve, BRepBndLib::Add with triangulation as OCCTShapeGetBounds does. Values at 12 significant digits. The analytic radial projection the test's 0.05 tolerance is centred on (radius 13.416407865, height 6.7082039325) is printed in the probe transcript; it is a reference, not a kernel output, and is not part of the record.",
+    "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/"
   },
   {
     "test_name": "ProjLib_ProjectOnSurface Tests::projectLineOnCylinder",
@@ -312,18 +313,15 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "value(5)": [
+        "domain": [
           0,
-          0,
-          0
+          10
         ],
-        "value(10)": [
-          0,
-          0,
-          0
-        ],
-        "poles": 17,
-        "degree": 8
+        "start": [
+          4.08248290464,
+          2.88675134595,
+          3.53553390593
+        ]
       }
     },
     "comparison": {
@@ -337,7 +335,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
       "rewritten": "two `if let`s, `upper > lower`; now domain and start pinned"
-    }
+    },
+    "source": "Same quantity on both sides: the parameter domain and the first point of the curve that results from projecting the line (5,0,0) + t (0,1,1), t in [0, 10], onto the radius-5 cylinder. Bridge: Curve3D.projectOnSurface(_:range:), domain and point(at: lower bound). Kernel: ProjLib_ProjectOnSurface (tolerance 1e-3) on the same trimmed line and cylinder, BSpline domain and Value(first), from the probe. Values at 12 significant digits. Not asserted and not part of the record: the kernel's B-spline evaluates to (0, 0, 0) from mid-domain on (value(5) in the transcript), so the result does not stay on the cylinder.",
+    "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/"
   },
   {
     "test_name": "Geom2dEval TBezier 2D Curve::createAndEval",
