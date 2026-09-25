@@ -79,26 +79,11 @@
 
 ## Injection Matrix: Critical Crash-Related Tests First
 
-### #345: gp_Dir Zero Vector Crash (Stress: Invalid Parameters)
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| mirrorAxisZeroDirection | `OCCTMakeMirrorAxis` → `gp_Dir` ctor | Zero direction vector | Remove `try/catch` in bridge | ✅ SIGABRT | ✅ Pass | Uncaught `Standard_ConstructionError` |
-| mirrorPlaneZeroNormal | `OCCTMakeMirrorPlane` → `gp_Dir` ctor | Zero normal vector | Remove `try/catch` in bridge | ✅ SIGABRT | ✅ Pass | Uncaught `Standard_ConstructionError` |
-| geomDirectionZeroVector | `OCCTGeomDirectionCreate` → `Geom_Direction` ctor | Zero vector handled gracefully | N/A (no crash) | N/A | ✅ Pass | `Geom_Direction` returns NaN, no exception |
-
 ### #348: evalAndUpdateTolerance Null PCurve (Bridge Fix)
 
 **Issue**: `OCCTBRepToolsEvalAndUpdateTol` calls `BRep_Tool::CurveOnSurface` which returns null pcurve on non-planar faces → `BRepTools::EvalAndUpdateTol` dereferences unconditionally → SIGSEGV.
 
 **Bridge Fix**: Guard with `if (c3d.IsNull() || c2d.IsNull() || surf.IsNull()) return BRep_Tool::Tolerance(e);`
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| edgePairedWithUnrelatedCylindricalFaceDoesNotCrash | `OCCTBRepToolsEvalAndUpdateTol` → `BRep_Tool::CurveOnSurface` | Null pcurve on non-planar face | Remove null guard | ✅ SIGSEGV | ✅ Pass | SIGSEGV on cylindrical face |
-| edgePairedWithAnUnrelatedPlanarFaceDoesNotCrash | `OCCTBRepToolsEvalAndUpdateTol` → `BRep_Tool::CurveOnPlane` | Null pcurve on planar face (OCCT 8.0.1+) | Remove null guard | ✅ SIGSEGV | ✅ Pass | SIGSEGV on planar face (OCCT 8.0.1+) |
-
-**Finding**: Both tests confirmed SIGSEGV when null guard removed. The bridge fix correctly handles null pcurves on both non-planar (cylinder) and planar (OCCT 8.0.1+) faces by returning edge's own tolerance.
 
 ### #344: CDF_Directory Race (Stress: Concurrent Document Creation)
 
@@ -264,11 +249,9 @@ swift build --target OCCTStressTests
 | Stress: Nil Propagation | 7 |  |  |  |  |
 | Stress: Zero-Dimension Shapes | 7 |  |  |  |  |
 | Stress: Empty Containers | 6 |  |  |  |  |
-| Stress: Invalid Parameters | 14 | 3 | 3 | 3 | ✅ |
+| Stress: Invalid Parameters | 14 |  |  |  |  |
 | Stress: Post-Operation State | 5 |  |  |  |  |
 | Stress: Unusual Input Combinations | 10 |  |  |  |  |
-| Stress: UnifySameDomain Null PCurve | 1 | 1 | 1 | 1 | ✅ |
-| Stress: evalAndUpdateTol Null PCurve | 2 | 2 | 2 | 2 | ✅ |
 | Stress: Micro/Macro/Mixed Scale | 17 |  |  |  |  |
 | Stress: Coincident Geometry | 8 |  |  |  |  |
 | Stress: Degenerate Operations | 11 |  |  |  |  |
