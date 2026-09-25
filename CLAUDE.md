@@ -264,6 +264,13 @@ the reproducer). What a bridge author needs without opening it:
 - `BRepOffsetAPI_ThruSections` takes `CreateRuled` for exactly two sections and `CreateSmoothed`
   for three or more, so a two-section test never reaches #913's array. `MakeSolid` cannot cap a
   non-planar section (#905); loft the wall, cap with `Shape.fill`, sew.
+- **`BRepCheck_Analyzer` is not crash-safe on a shape it did not build.** Its `Perform()` calls
+  `BRepCheck_Edge::InContext(face)`, which raises an uncatchable SIGSEGV on a non-degenerated edge
+  that has no valid 3D curve but does have a pcurve (#2746). `Minimum()` reports `NoError` first,
+  only one of the two owning faces faults, and a `.brep` file round-trips the state, so any of the
+  19 bridge `BRepCheck_Analyzer` sites can take the process down on an imported shape. Nothing is
+  carried and nothing is guarded yet; the guard is #2750 and the predicate it must use is in the
+  reference row.
 - `BRepAlgoAPI_BuilderAlgo` is General Fuse, a compound of split parts, not `BRepAlgoAPI_Fuse`'s
   merged solid; comparing the two is #367's mistake, not a kernel bug.
 - `GeomPlate_MakeApprox::ApproxError()` and `MakeFilling::G0Error()` are not gates for "accepted
