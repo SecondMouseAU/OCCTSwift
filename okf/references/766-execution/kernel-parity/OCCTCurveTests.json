@@ -7524,10 +7524,9 @@
       "data": "N/A: a null TopoDS_Shape has no BRepAdaptor_Curve (the kernel SIGSEGVs, #1513); the guard is bridge-only"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": [],
+      "reason": "no kernel counterpart: a null TopoDS_Shape has no BRepAdaptor_Curve (the kernel SIGSEGVs, #1513); the nil answer is the bridge guard"
     },
     "status": "N/A",
     "injection": "udnullok: null shape answers one point",
@@ -7548,10 +7547,9 @@
       "data": "N/A: as above"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": [],
+      "reason": "no kernel counterpart: a null TopoDS_Shape has no BRepAdaptor_Curve (the kernel SIGSEGVs, #1513); the nil answer is the bridge guard"
     },
     "status": "N/A",
     "injection": "udnullok",
