@@ -605,3 +605,18 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `getLayers` | `OCCTDocumentGetLabelLayers` answers 0 | :38 Expectation failed: layers.count == 1 | passed | `OCCTDocumentGetLabelLayers` | PASS: 1, TestLayer |
 | `findAndVisibility` | `OCCTDocumentGetLayerVisibility` returns true | :62 Expectation failed: !doc.layerVisibility(layerLabelId: layerLabelId) | passed | `OCCTDocumentGetLayerVisibility` | PASS: found; false, true |
 | `getLayersBeyondBufferCap` | `OCCTDocumentGetLabelLayers` answers 0 | :86 Expectation failed: layers.count == extraCount | passed | `OCCTDocumentGetLabelLayers` | PASS: 19 layers set and 19 reported on both sides (no 16-entry cap) |
+### `OCAFFormatRegistrationTests.swift`
+| `registerFormats` | `OCCTDocumentReadingFormats` returns 0 | :16 Expectation failed: formats.count >= 4 | passed | `OCCTDocumentReadingFormats` | PASS: 6 reading formats after defineAllFormats, so at least 4, on both sides (0 before) |
+| `readWriteFormats` | `OCCTDocumentReadingFormats` returns 0 | :25 Expectation failed: !reading.isEmpty | passed | `OCCTDocumentReadingFormats` | PASS: 6 reading and 6 writing formats, both non-empty, on both sides |
+### `OCAFSaveInPlaceTests.swift`
+| `saveInPlace` | `OCCTDocumentSaveOCAFInPlace` answers Failure (3) | :24 Expectation failed: status2 == .ok | passed | `OCCTDocumentSaveOCAFInPlace` | PASS: OK, OK |
+| `saveInPlaceFailsWithoutSave` | `OCCTDocumentSaveOCAFInPlace` answers OK | :33 Expectation failed: status != .ok | passed | `OCCTDocumentSaveOCAFInPlace` | PASS: an in-place save before any save is not OK on both sides (the kernel's own status is 3) |
+### `OCAFSaveLoadBinaryTests.swift`
+| `saveLoadBinOcaf` | `OCCTDocumentLoadOCAF` answers OpenError (3) | :24 Expectation failed: readStatus == .ok | passed | `OCCTDocumentLoadOCAF` | PASS: save 0, saved, read 0 and the loaded document keeps its storage format BinOcaf, on both sides |
+| `saveLoadBinXCAF` | `OCCTDocumentLoadOCAF` answers OpenError (3) | :46 Expectation failed: readStatus == .ok; :47 Expectation failed: loaded != nil | passed | `OCCTDocumentLoadOCAF` | PASS: save 0, read 0 and a document loads, on both sides (the label is the ShapeTool's 0:1:1) |
+### `OCAFSaveLoadXmlTests.swift`
+| `saveLoadXmlOcaf` | `OCCTDocumentLoadOCAF` answers OpenError (3) | :23 Expectation failed: readStatus == .ok; :24 Expectation failed: loaded != nil | passed | `OCCTDocumentLoadOCAF` | PASS: save 0, read 0 and a document loads, on both sides |
+### `PCDMStatusEnumTests.swift`
+| `storeStatusValues` | a compile-time change of `StoreStatus.driverFailure` to 111 and `ReaderStatus.openError` to 113; reverted and rebuilt for green | :14 Expectation failed: StoreStatus.driverFailure.rawValue == 1 | passed | `OCCTDocumentSaveOCAF` | PASS: ok 0, driver failure 1, write failure 2, failure 3 on both sides |
+| `readerStatusValues` | a compile-time change of `StoreStatus.driverFailure` to 111 and `ReaderStatus.openError` to 113; reverted and rebuilt for green | :23 Expectation failed: ReaderStatus.openError.rawValue == 3 | passed | `OCCTDocumentLoadOCAF` | PASS: ok 0, no driver 1, open error 3, unrecognized file format 12 on both sides |
+| `loadNonexistent` | `OCCTDocumentLoadOCAF` answers OK with no document | :31 Expectation failed: status != .ok | passed | `OCCTDocumentLoadOCAF` | PASS: no document and a read status other than OK (18) on both sides |
