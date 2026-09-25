@@ -661,4 +661,4 @@ Probe: `Scripts/repro/766-geom2d-transform-vector/`. Every row was run red with 
 | Transform2D Creation::rotation | `OCCTTransform2DCreateRotation` | angle negated | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
 | Transform2D Creation::scale | `OCCTTransform2DCreateScale` | factor + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
 | Transform2D Creation::mirrorPoint | `OCCTTransform2DCreateMirrorPoint` | mirror point x + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
-| Transform2D Creation::mirrorAxis | `OCCTTransform2DCreateMirrorAxis` | rotation by 0.1 instead of the mirror | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Creation::mirrorAxis | `OCCTTransform2DCreateMirrorAxis` | rotation by 0.1 instead of the mirror; factory returns nullptr | ✅ | ✅ | MATCH | multi-line `guard ... else { return }` missed in the first pass, so a nil result passed silently; now `try #require`, red at the `#require` (line 46) for nil and at `t.isNegative == true` (line 50) for the rotation |

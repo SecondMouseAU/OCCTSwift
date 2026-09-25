@@ -16252,11 +16252,11 @@
     },
     "status": "PASS",
     "evidence": {
-      "injection": "rotation by 0.1 instead of the mirror",
-      "red": "Transform2DCreationTests.swift:50:9: Expectation failed: t.isNegative == true",
+      "injection": "rotation by 0.1 instead of the mirror; and the factory returns nullptr (a nil result)",
+      "red": "nil injection: Transform2DCreationTests.swift:46:21: Expectation failed: Transform2D.mirrorAxis(origin: SIMD2(0, 0), direction: SIMD2(1, 0)) (the `#require`); rotation injection: Transform2DCreationTests.swift:50:9: Expectation failed: t.isNegative == true",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-transform-vector/",
-      "rewritten": "`guard ... else { return }`; now `#require`"
+      "rewritten": "the multi-line `guard let t = ... else { return }` was missed in the first pass, so a nil factory result passed silently (verified: with the factory returning nullptr the old test stayed green); now `throws` and `try #require`, every assertion kept"
     }
   }
 ]

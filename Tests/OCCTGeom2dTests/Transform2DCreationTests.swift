@@ -41,12 +41,12 @@ struct Transform2DCreationTests {
         #expect(abs(result.y + 2.0) < 1e-10)
     }
 
-    @Test func mirrorAxis() {
-        guard
-            let t = Transform2D.mirrorAxis(
+    @Test func mirrorAxis() throws {
+        // #1979: was `guard ... else { return }`, so a nil factory result passed silently.
+        let t = try #require(
+            Transform2D.mirrorAxis(
                 origin: SIMD2(0, 0),
-                direction: SIMD2(1, 0))
-        else { return }
+                direction: SIMD2(1, 0)))
         #expect(t.isNegative == true)
         let result = t.apply(to: SIMD2(1, 2))
         #expect(abs(result.x - 1.0) < 1e-10)
