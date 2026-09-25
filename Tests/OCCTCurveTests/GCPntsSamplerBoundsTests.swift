@@ -32,7 +32,10 @@ struct GCPntsSamplerBoundsTests {
 
     @Test("Quasi-uniform sampling still reaches the end of the curve when clamped")
     func quasiUniformKeepsCurveEnd() {
-        guard let ellipse = overshootingEllipse() else { return }
+        guard let ellipse = overshootingEllipse() else {
+            Issue.record("could not build the high-aspect-ratio ellipse")  // was a silent return (#766)
+            return
+        }
         let end = ellipse.domain.upperBound
         for count in overshootingCounts {
             let params = ellipse.quasiUniformParameters(count: count)
@@ -44,7 +47,10 @@ struct GCPntsSamplerBoundsTests {
 
     @Test("Quasi-uniform parameters stay ordered when clamped")
     func quasiUniformStaysOrdered() {
-        guard let ellipse = overshootingEllipse() else { return }
+        guard let ellipse = overshootingEllipse() else {
+            Issue.record("could not build the high-aspect-ratio ellipse")  // was a silent return (#766)
+            return
+        }
         for count in overshootingCounts {
             let params = ellipse.quasiUniformParameters(count: count)
             for i in 1..<params.count {
@@ -55,7 +61,10 @@ struct GCPntsSamplerBoundsTests {
 
     @Test("Uniform discretization never exceeds the requested count and reaches the end")
     func drawUniformRespectsCount() {
-        guard let ellipse = overshootingEllipse() else { return }
+        guard let ellipse = overshootingEllipse() else {
+            Issue.record("could not build the high-aspect-ratio ellipse")  // was a silent return (#766)
+            return
+        }
         let endPoint = ellipse.point(at: ellipse.domain.upperBound)
         for count in overshootingCounts {
             let points = ellipse.drawUniform(pointCount: count)
