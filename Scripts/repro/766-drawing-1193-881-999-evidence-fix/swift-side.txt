@@ -1,0 +1,19 @@
+# Swift-side values the #2499 Issue1193, Issue881 and Issue999 tests observe, printed by a temporary print-only test
+# (Tests/OCCTDrawingTests/ZZEvidenceDump2.swift, never committed) that replays each test's scene.
+# One EV|key|value line per quantity.
+EV|basis.right|[0.0, 0.9777876596251666, -0.20959793101254465]
+EV|basis.up|[-0.987868702146798, 0.03254876181607849, 0.1518420410263285]
+EV|basis.projectDirection|right=[1.0, 0.0] up=[0.0, 1.0000000000000002]
+EV|basis.projectPoint|right=[1.0, 0.0] up=[0.0, 1.0000000000000002]
+EV|basis.projectAxis|p1=[-100.0, 0.0] p2=[100.0, 0.0]
+EV|cutting.trace|start=[-30.0, 0.0] end=[30.0, 0.0] arrow=[0.0, 1.0]
+EV|proj999.ortho|[50.0000001, 25.0000001]
+EV|proj999.persp50|[71.42857152857144, 35.71428581428572]
+EV|proj999.focus20|[200.00000010000002, 100.0000001]
+EV|proj999.focus50|[71.42857152857144, 35.71428581428572]
+EV|proj999.focus200|[54.05405415405406, 27.027027127027026]
+EV|proj999.focus1000|[50.76142141979695, 25.38071075989848]
+EV|proj999.focus0.nil|true
+EV|proj999.focusNeg100.nil|true
+EV|proj999.focusNaN.nil|true
+EV|proj999.fast|[50.0000001, 25.0000001]

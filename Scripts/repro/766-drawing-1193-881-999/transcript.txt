@@ -1,0 +1,11 @@
+gp_Ax2 XDirection = (3.5687617788059096e-18, 0.97778765962516667, -0.20959793101254467)
+gp_Ax2 YDirection = (-0.98786870214679789, 0.032548761816078492, 0.15184204102632851)
+fixture expectedRight = (0.0, 0.9777876596251666, -0.20959793101254465)
+fixture expectedUp    = (-0.987868702146798, 0.03254876181607849, 0.1518420410263285)
+orthographic: half extent (50.0000001, 25.0000001)
+perspective focus 20 (expected x 200): half extent (200.0000001, 100.0000001)
+perspective focus 50 (expected x 71.4285714286): half extent (71.4285715286, 35.7142858143)
+perspective focus 200 (expected x 54.0540540541): half extent (54.0540541541, 27.027027127)
+perspective focus 1000 (expected x 50.7614213198): half extent (50.7614214198, 25.3807107599)
+nonPositiveFocus: !(0 > 0)=1 !(-100 > 0)=1 !(nan > 0)=1
+projectFast (PolyAlgo, deflection 0.01): half extent (50.0000001, 25.0000001)
