@@ -422,24 +422,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil",
-        "count": ">=1"
+        "produced": true,
+        "count": 1,
+        "totalArea": 99.99999999999999
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "edges": 4,
-        "hasErrors": false,
-        "areas": 1,
-        "totalArea": 100
+        "produced": true,
+        "count": 1,
+        "totalArea": 99.99999999999999
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-builder-face/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_BuilderFace on the 10 x 10 plane face rebuilt from its own 4 edges: whether a result came back, how many faces Areas() holds, and their total area. The test asserts non-nil and count >= 1.",
+    "probe": "Scripts/repro/766-modeling-bopalgo-builder-face/"
   },
   {
     "test_name": "BOPAlgo_BuilderSolid Tests::buildSolidFromFaces",
@@ -447,26 +449,28 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil",
-        "count": ">=1",
-        "firstValid": true
+        "produced": true,
+        "count": 1,
+        "firstValid": true,
+        "firstVolume": 999.9999999999998
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "faces": 6,
-        "hasErrors": false,
-        "areas": 1,
+        "produced": true,
+        "count": 1,
         "firstValid": true,
-        "firstVolume": 1000
+        "firstVolume": 999.9999999999998
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-builder-solid/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_BuilderSolid on the six faces of the centred 10 mm box: whether a result came back, how many solids Areas() holds and the first one's validity and volume. The test asserts non-nil, count >= 1 and the first solid valid.",
+    "probe": "Scripts/repro/766-modeling-bopalgo-builder-solid/"
   },
   {
     "test_name": "BOPAlgo CellsBuilder::createCellsBuilder",
@@ -474,20 +478,22 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "builder": "non-nil"
+        "produced": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "hasErrors": false
+        "produced": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-cells-builder/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_CellsBuilder with the two 20 mm boxes as arguments: whether Perform finished without errors, which is what CellsBuilder(shapes:) returns non-nil for. The test asserts non-nil.",
+    "probe": "Scripts/repro/766-modeling-bopalgo-cells-builder/"
   },
   {
     "test_name": "BOPAlgo CellsBuilder::addRemoveAll",
@@ -498,10 +504,12 @@
         "afterAddAll": {
           "valid": true,
           "solids": 2,
-          "volume": 16000
+          "volume": 16000.000000000002
         },
         "afterRemoveAll": {
-          "solids": 0
+          "valid": true,
+          "solids": 0,
+          "volume": 0.0
         }
       }
     },
@@ -511,11 +519,12 @@
         "afterAddAll": {
           "valid": true,
           "solids": 2,
-          "volume": 16000
+          "volume": 15999.999999999996
         },
         "afterRemoveAll": {
+          "valid": true,
           "solids": 0,
-          "volume": 0
+          "volume": 0.0
         }
       }
     },
@@ -523,7 +532,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-cells-builder/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. The result after AddAllToResult(0) and after RemoveAllFromResult: validity, solid count and volume. The bridge side is Shape.volume for the first stage (16000.000000000002, the test asserts it within 1e-6 of 16000) and Shape.signedVolume for the empty stage, because Shape.volume is nil for a compound with no closed shell where the kernel's BRepGProp mass is 0; the two volume measures differ by 4e-16 relative on the first stage. The earlier bridge side lacked the empty stage's volume, so the two sides had different keys.",
+    "probe": "Scripts/repro/766-modeling-bopalgo-cells-builder/"
   },
   {
     "test_name": "BOPAlgo CellsBuilder::removeInternalBoundaries",
@@ -532,12 +543,14 @@
       "type": "value",
       "data": {
         "before": {
-          "solids": 2
+          "valid": true,
+          "solids": 2,
+          "volume": 16000.000000000002
         },
         "after": {
           "valid": true,
           "solids": 1,
-          "volume": 16000
+          "volume": 15999.999999999996
         }
       }
     },
@@ -545,15 +558,14 @@
       "type": "value",
       "data": {
         "before": {
-          "solids": 2
+          "valid": true,
+          "solids": 2,
+          "volume": 15999.999999999996
         },
         "after": {
           "valid": true,
           "solids": 1,
-          "volume": 16000
-        },
-        "addAllToResultUpdateTrue": {
-          "solidsBeforeRemove": 1
+          "volume": 15999.999999999996
         }
       }
     },
@@ -561,7 +573,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-cells-builder/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. The result after adding each box separately with update: false, and after RemoveInternalBoundaries merges the two solids: validity, solid count and volume. Bridge volumes are Shape.volume (the test asserts the final one within 1e-6 of 16000); the kernel's are the raw BRepGProp mass, 4e-16 relative apart. The kernel's earlier addAllToResultUpdateTrue entry (AddAllToResult with update = true is already one solid) is not what the test observes and is not in the payload.",
+    "probe": "Scripts/repro/766-modeling-bopalgo-cells-builder/"
   },
   {
     "test_name": "BOPAlgo Section::sectionBoxSphere",
@@ -569,14 +583,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "edges": 7
+        "produced": true,
+        "type": "compound",
+        "edges": 7,
+        "vertices": 7
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "hasErrors": false,
-        "type": "COMPOUND",
+        "produced": true,
+        "type": "compound",
         "edges": 7,
         "vertices": 7
       }
@@ -585,7 +602,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-section/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_Section of the centred 10 mm box and a sphere of radius 6. Whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), and its edge and vertex counts. The test asserts the edge count.",
+    "probe": "Scripts/repro/766-modeling-bopalgo-section/"
   },
   {
     "test_name": "BOPAlgo Section::sectionTwoBoxes",
@@ -593,15 +612,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "shapeType": "compound",
-        "edges": 1
+        "produced": true,
+        "type": "compound",
+        "edges": 1,
+        "vertices": 2
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "hasErrors": false,
-        "type": "COMPOUND",
+        "produced": true,
+        "type": "compound",
         "edges": 1,
         "vertices": 2
       }
@@ -610,7 +631,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-section/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_Section of the centred 10 mm box and a second box at (5, 5, 0), which only touches along x = y = 5. Whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), and its edge and vertex counts. The test asserts the edge count and that the type is compound.",
+    "probe": "Scripts/repro/766-modeling-bopalgo-section/"
   },
   {
     "test_name": "BOPAlgo Section::staticSection",
@@ -618,14 +641,17 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "edges": 7
+        "produced": true,
+        "type": "compound",
+        "edges": 7,
+        "vertices": 7
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "hasErrors": false,
-        "type": "COMPOUND",
+        "produced": true,
+        "type": "compound",
         "edges": 7,
         "vertices": 7
       }
@@ -634,7 +660,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-section/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_Section of the centred 10 mm box and a sphere of radius 7, through the static Shape.section(shapes:). Whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), and its edge and vertex counts. The test asserts the edge count.",
+    "probe": "Scripts/repro/766-modeling-bopalgo-section/"
   },
   {
     "test_name": "BOPAlgo_ShellSplitter Tests::splitSingleShell",
@@ -642,6 +670,7 @@
     "bridge_output": {
       "type": "value",
       "data": {
+        "produced": true,
         "shells": 1,
         "firstFaces": 6
       }
@@ -649,7 +678,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "hasErrors": false,
+        "produced": true,
         "shells": 1,
         "firstFaces": 6
       }
@@ -658,7 +687,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-shell-splitter/transcript.txt, from the earlier probe.mm, which repeats the bridge's call. BOPAlgo_ShellSplitter on the box's shell: whether a result came back, how many shells, and the first one's face count. The test asserts 1 shell of 6 faces. All values are integers, so the earlier probe's transcript is cited.",
+    "probe": "Scripts/repro/766-modeling-bopalgo-shell-splitter/"
   },
   {
     "test_name": "BOPAlgo Splitter::splitBoxes",
@@ -666,24 +697,28 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "isValid": true,
-        "solidCount": 1
+        "produced": true,
+        "valid": true,
+        "solids": 1,
+        "volume": 7999.999999999999
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "hasErrors": false,
+        "produced": true,
         "valid": true,
         "solids": 1,
-        "volume": 8000
+        "volume": 7999.999999999999
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-splitter/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_Splitter of the 20 mm box by a box sharing only the face x = 10: whether a result came back, validity, solid count and volume. The test asserts valid and 1 solid.",
+    "probe": "Scripts/repro/766-modeling-bopalgo-splitter/"
   },
   {
     "test_name": "BOPAlgo Splitter::splitProducesMultipleSolids",
@@ -691,23 +726,28 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "solidCount": 2
+        "produced": true,
+        "valid": true,
+        "solids": 2,
+        "volume": 7999.999999999996
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "hasErrors": false,
+        "produced": true,
         "valid": true,
         "solids": 2,
-        "volume": 8000
+        "volume": 7999.999999999998
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-splitter/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_Splitter of the 20 mm box by an overlapping box: whether a result came back, validity, solid count and volume; the two volumes differ by 2e-15 relative. The test asserts 2 solids.",
+    "probe": "Scripts/repro/766-modeling-bopalgo-splitter/"
   },
   {
     "test_name": "BOPAlgo_Tools Tests::edgesToWires",
@@ -715,14 +755,14 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil",
-        "wires": ">=1"
+        "produced": true,
+        "wires": 1
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "status": 0,
+        "produced": true,
         "wires": 1
       }
     },
@@ -730,7 +770,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-tools/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_Tools::EdgesToWires on the four edges of the 10 x 10 rectangle (a result only when the status is 0): whether a result came back and how many wires it holds. The test asserts non-nil and wires >= 1.",
+    "probe": "Scripts/repro/766-modeling-bopalgo-tools/"
   },
   {
     "test_name": "BOPAlgo_Tools Tests::wiresToFaces",
@@ -738,22 +780,25 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil",
-        "faces": ">=1"
+        "produced": true,
+        "faces": 1,
+        "area": 99.99999999999999
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "ok": true,
+        "produced": true,
         "faces": 1,
-        "area": 100
+        "area": 99.99999999999999
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-tools/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_Tools::WiresToFaces on that wire (a result only when it returns true): whether a result came back, its face count and area. The test asserts non-nil and faces >= 1.",
+    "probe": "Scripts/repro/766-modeling-bopalgo-tools/"
   }
 ]
