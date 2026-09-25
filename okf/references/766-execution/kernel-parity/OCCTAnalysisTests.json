@@ -5842,28 +5842,23 @@
     "bridge_output": {
       "type": "points",
       "data": {
-        "observed": {
-          "count": 1,
-          "point": [
-            0,
-            0,
-            0
-          ]
-        },
-        "asserted_within": 1e-10
+        "count": 1,
+        "point": [
+          0,
+          0,
+          0
+        ]
       }
     },
     "kernel_output": {
       "type": "points",
       "data": {
-        "value": {
-          "count": 1,
-          "point": [
-            0,
-            0,
-            0
-          ]
-        }
+        "count": 1,
+        "point": [
+          0,
+          0,
+          0
+        ]
       }
     },
     "comparison": {
@@ -5871,6 +5866,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: how many intersection points a line meets a plane in, and the point. Bridge: IntAna.linePlane (OCCTIntAnaLineQuad) for the line through (0, 0, -5) along +Z and the plane z = 0; a temporary print in the test (never committed) observed one point (0, 0, 0) at parameter 5. The test asserts one point and only its z within 1e-10 of 0. Kernel: IntAna_IntConicQuad(gp_Lin, gp_Pln, Precision::Angular()) printed nbPoints=1 point1=(0, 0, 0) param=5 (transcript.txt, linePlaneIntersection line).",
     "probe": "Scripts/repro/766-intana-planes-quadrics/"
   },
   {
@@ -5879,20 +5875,15 @@
     "bridge_output": {
       "type": "flags",
       "data": {
-        "observed": {
-          "isParallel": true,
-          "isInQuadric": false
-        },
-        "asserted_within": "exact"
+        "isParallel": true,
+        "isInQuadric": false
       }
     },
     "kernel_output": {
       "type": "flags",
       "data": {
-        "value": {
-          "isParallel": true,
-          "isInQuadric": false
-        }
+        "isParallel": true,
+        "isInQuadric": false
       }
     },
     "comparison": {
@@ -5900,6 +5891,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the parallel and embedded flags for a line parallel to, and disjoint from, a plane. Bridge: IntAna.linePlane (OCCTIntAnaLineQuad) for the line through (0, 0, 5) along +X and the plane z = 0; a temporary print in the test (never committed) observed isParallel true and isInQuadric false (empty points and params); the test asserts both flags. Kernel: IntAna_IntConicQuad::IsParallel() and IsInQuadric() printed parallel=1 inQuadric=0 (transcript.txt, parallelLineAndPlane line).",
     "probe": "Scripts/repro/766-intana-planes-quadrics/"
   },
   {
@@ -5908,22 +5900,17 @@
     "bridge_output": {
       "type": "flags",
       "data": {
-        "observed": {
-          "isParallel": true,
-          "isInQuadric": true,
-          "points": 0
-        },
-        "asserted_within": "exact"
+        "isParallel": true,
+        "isInQuadric": true,
+        "points": 0
       }
     },
     "kernel_output": {
       "type": "flags",
       "data": {
-        "value": {
-          "isParallel": true,
-          "isInQuadric": true,
-          "points": 0
-        }
+        "isParallel": true,
+        "isInQuadric": true,
+        "points": 0
       }
     },
     "comparison": {
@@ -5931,6 +5918,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the parallel and embedded flags for a line lying in the plane, and the number of intersection points the bridge exposes. Bridge: IntAna.linePlane (OCCTIntAnaLineQuad) for the line through (1, 2, 0) along +X and the plane z = 0; a temporary print in the test (never committed) observed isParallel true, isInQuadric true, empty points and params (points 0); the test asserts all four. Kernel: IntAna_IntConicQuad printed parallel=1 inQuadric=1 and NbPoints() raised Standard_Failure (transcript.txt, embeddedLineLiesInPlane line); the kernel returns no count for a parallel pair, and the bridge reads NbPoints() inside its try after storing the flags, so its count stays at the 0 it starts from (probe.mm comment). The kernel's 'points: 0' is therefore the bridge-visible outcome of that exception, not a value NbPoints() returned.",
     "probe": "Scripts/repro/766-intana-planes-quadrics/"
   },
   {
@@ -5939,18 +5927,13 @@
     "bridge_output": {
       "type": "count",
       "data": {
-        "observed": {
-          "count": 1
-        },
-        "asserted_within": "count >= 1"
+        "count": 1
       }
     },
     "kernel_output": {
       "type": "count",
       "data": {
-        "value": {
-          "count": 1
-        }
+        "count": 1
       }
     },
     "comparison": {
@@ -5958,6 +5941,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the number of solutions for two intersecting planes (z = 0 and y = 0). Bridge: IntAna.planePlane (OCCTIntAnaPlanePlane) count; a temporary print in the test (never committed) observed 1; the test asserts only count >= 1, so this record pins the observed value where the test would accept any positive count. Kernel: IntAna_QuadQuadGeo(gp_Pln, gp_Pln, Precision::Angular(), Precision::Confusion())::NbSolutions() printed nbSolutions=1 (transcript.txt, planePlane line).",
     "probe": "Scripts/repro/766-intana-planes-quadrics/"
   },
   {
@@ -5966,36 +5950,31 @@
     "bridge_output": {
       "type": "line",
       "data": {
-        "observed": {
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "direction": [
-            -1,
-            0,
-            0
-          ]
-        },
-        "asserted_within": 1e-12
+        "origin": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          -1,
+          0,
+          0
+        ]
       }
     },
     "kernel_output": {
       "type": "line",
       "data": {
-        "value": {
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "direction": [
-            -1,
-            0,
-            0
-          ]
-        }
+        "origin": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          -1,
+          0,
+          0
+        ]
       }
     },
     "comparison": {
@@ -6003,6 +5982,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the intersection line of the planes z = 0 and y = 0, origin and direction. Bridge: IntAna.planePlane (OCCTIntAnaPlanePlane) first line; a temporary print in the test (never committed) observed origin (0, 0, 0) and direction (-1, 0, 0); the test asserts one line, the origin within 1e-12 of 0 and the direction within 1e-12. Kernel: IntAna_QuadQuadGeo::Line(1) printed origin=(0, 0, 0) direction=(-1, 0, 0) (transcript.txt, planePlane line).",
     "probe": "Scripts/repro/766-intana-planes-quadrics/"
   },
   {
@@ -6011,18 +5991,13 @@
     "bridge_output": {
       "type": "count",
       "data": {
-        "observed": {
-          "curves": 2
-        },
-        "asserted_within": "exact"
+        "curves": 2
       }
     },
     "kernel_output": {
       "type": "count",
       "data": {
-        "value": {
-          "curves": 2
-        }
+        "curves": 2
       }
     },
     "comparison": {
@@ -6030,6 +6005,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the number of intersection curves of a radius-3 cylinder and a radius-5 sphere (a common axis). Bridge: QuadricIntersection.cylinderSphere (OCCTIntAnaCylinderSphere); a temporary print in the test (never committed) observed 2; the test asserts it is non-nil and equal to 2. Kernel: IntAna_IntQuadQuad(gp_Cylinder, IntAna_Quadric(gp_Sphere), 1e-6)::NbCurve() printed nbCurve=2 (transcript.txt, cylinderSphere line).",
     "probe": "Scripts/repro/766-intana-planes-quadrics/"
   },
   {
@@ -6038,18 +6014,13 @@
     "bridge_output": {
       "type": "flag",
       "data": {
-        "observed": {
-          "identical": false
-        },
-        "asserted_within": "exact"
+        "identical": false
       }
     },
     "kernel_output": {
       "type": "flag",
       "data": {
-        "value": {
-          "identical": false
-        }
+        "identical": false
       }
     },
     "comparison": {
@@ -6057,6 +6028,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether the cylinder and the sphere are reported as identical elements. Bridge: QuadricIntersection.cylinderSphereIdentical (OCCTIntAnaCylinderSphereIdentical); a temporary print in the test (never committed) observed false; the test asserts it is false. Kernel: IntAna_IntQuadQuad::IdenticalElements() printed identical=0 (transcript.txt, cylinderSphere line).",
     "probe": "Scripts/repro/766-intana-planes-quadrics/"
   },
   {
@@ -6065,26 +6037,21 @@
     "bridge_output": {
       "type": "point",
       "data": {
-        "observed": {
-          "point": [
-            0,
-            0,
-            0
-          ]
-        },
-        "asserted_within": 1e-10
+        "point": [
+          0,
+          0,
+          0
+        ]
       }
     },
     "kernel_output": {
       "type": "point",
       "data": {
-        "value": {
-          "point": [
-            0,
-            0,
-            0
-          ]
-        }
+        "point": [
+          0,
+          0,
+          0
+        ]
       }
     },
     "comparison": {
@@ -6092,6 +6059,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the common point of the planes x = 0, y = 0, z = 0. Bridge: IntAna.threePlanes (OCCTIntAna3Planes); a temporary print in the test (never committed) observed (0, 0, 0); the test asserts it non-nil and each component within 1e-10 of 0. Kernel: IntAna_Int3Pln::Value() printed point=(0, 0, 0) with IsEmpty()=0 (transcript.txt, threePlanesAtOrigin line).",
     "probe": "Scripts/repro/766-intana-planes-quadrics/"
   },
   {
@@ -6100,26 +6068,21 @@
     "bridge_output": {
       "type": "point",
       "data": {
-        "observed": {
-          "point": [
-            1,
-            2,
-            3
-          ]
-        },
-        "asserted_within": 1e-10
+        "point": [
+          1,
+          2,
+          3
+        ]
       }
     },
     "kernel_output": {
       "type": "point",
       "data": {
-        "value": {
-          "point": [
-            1,
-            2,
-            3
-          ]
-        }
+        "point": [
+          1,
+          2,
+          3
+        ]
       }
     },
     "comparison": {
@@ -6127,6 +6090,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the common point of the planes x = 1, y = 2, z = 3. Bridge: IntAna.threePlanes (OCCTIntAna3Planes); a temporary print in the test (never committed) observed (1, 2, 3); the test asserts it non-nil and each component within 1e-10. Kernel: IntAna_Int3Pln::Value() printed point=(1, 2, 3) with IsEmpty()=0 (transcript.txt, offsetPlanes line).",
     "probe": "Scripts/repro/766-intana-planes-quadrics/"
   }
 ]
