@@ -862,8 +862,7 @@
     "bridge_output": {
       "type": "mapping",
       "data": {
-        "sameInstanceID": true,
-        "faces": [
+        "resolved_face_index": [
           0,
           1,
           2,
@@ -876,8 +875,7 @@
     "kernel_output": {
       "type": "mapping",
       "data": {
-        "copyOk": true,
-        "faces": [
+        "resolved_face_index": [
           0,
           1,
           2,
@@ -891,7 +889,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the face index in the copy that each source face UID resolves to. Bridge: BRepGraph.copy() then node(forUID:) on the box 10x20x30 graph. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_Copy::Perform then UIDs().NodeIdFrom(source.UIDs().Of(face i)), printed as \"0->0 ... 5->5\" in the probe transcript. The old sameInstanceID / copyOk keys are not compared: sameInstanceID is the Swift instanceID the bridge copies from the source graph (no kernel counterpart, asserted by the test) and copyOk is the boolean the Perform call returns.",
+    "probe": "Scripts/repro/766-brepgraph-durable-uid/"
   },
   {
     "test_name": "BRepGraph Durable UID::uidSurvivesATranslationAndNamesTheSameFace",
@@ -899,8 +899,7 @@
     "bridge_output": {
       "type": "mapping",
       "data": {
-        "sameInstanceID": true,
-        "faces": [
+        "resolved_face_index": [
           0,
           1,
           2,
@@ -913,8 +912,7 @@
     "kernel_output": {
       "type": "mapping",
       "data": {
-        "transformOk": true,
-        "faces": [
+        "resolved_face_index": [
           0,
           1,
           2,
@@ -928,7 +926,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the face index in the translated graph that each source face UID resolves to. Bridge: BRepGraph.translated(dx:dy:dz:) then node(forUID:) on the box 10x20x30 graph. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_Transform::Perform then UIDs().NodeIdFrom(source.UIDs().Of(face i)), printed as \"0->0 ... 5->5\" in the probe transcript. sameInstanceID and transformOk are not compared (Swift instanceID with no kernel counterpart, and the boolean the Perform call returns).",
+    "probe": "Scripts/repro/766-brepgraph-durable-uid/"
   },
   {
     "test_name": "BRepGraph Durable UID::uidDoesNotCrossACopiedOutFace",
@@ -1614,8 +1614,12 @@
     "bridge_output": {
       "type": "placement",
       "data": {
-        "origin_x": 5,
-        "zAxis": [
+        "origin": [
+          5,
+          0,
+          0
+        ],
+        "z_axis": [
           1,
           0,
           0
@@ -1625,12 +1629,12 @@
     "kernel_output": {
       "type": "placement",
       "data": {
-        "vertex1": [
+        "origin": [
           5,
           0,
           0
         ],
-        "normal_at_vertex1": [
+        "z_axis": [
           1,
           0,
           0
@@ -1641,7 +1645,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the tangent plane placement at seam vertex 1 of a radius-5 height-10 cylinder (origin on the face, z axis the face normal there). Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: the vertex position (5, 0, 0) and the face normal at (u=0, v=0) = (1, 0, 0), both printed in the probe transcript. Swift-side projection is what makes the resolver use the vertex's own local normal rather than the UV midpoint; the kernel values are its inputs.",
+    "probe": "Scripts/repro/766-brepgraph-construction/"
   },
   {
     "test_name": "v0.142 ConstructionPlane resolution::tangentToFaceConeApexFallsBackToNormal",
@@ -1769,7 +1775,80 @@
     "bridge_function": "none (pure Swift: perpendicularBasis(to:))",
     "bridge_output": {
       "type": "basis_table",
-      "data": "six fixtures as listed in the test"
+      "data": {
+        "+X": {
+          "x": [
+            0,
+            0,
+            1
+          ],
+          "y": [
+            0,
+            -1,
+            0
+          ]
+        },
+        "-X": {
+          "x": [
+            0,
+            0,
+            -1
+          ],
+          "y": [
+            0,
+            -1,
+            0
+          ]
+        },
+        "+Y": {
+          "x": [
+            0,
+            0,
+            1
+          ],
+          "y": [
+            1,
+            0,
+            0
+          ]
+        },
+        "-Y": {
+          "x": [
+            0,
+            0,
+            -1
+          ],
+          "y": [
+            1,
+            0,
+            0
+          ]
+        },
+        "+Z": {
+          "x": [
+            1,
+            0,
+            0
+          ],
+          "y": [
+            0,
+            1,
+            0
+          ]
+        },
+        "-Z": {
+          "x": [
+            -1,
+            0,
+            0
+          ],
+          "y": [
+            0,
+            1,
+            0
+          ]
+        }
+      }
     },
     "kernel_output": {
       "type": "basis_table",
@@ -1852,7 +1931,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the canonical X and Y axes for each world-axis-aligned normal. Bridge side: Placement(origin:normal:) is pure Swift (perpendicularBasis(to:)), so there is no bridge call; its axes are printed from the test run. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: gp_Ax2(origin, N) XDirection and YDirection for the same six normals, printed as the gp_Ax2 lines in the probe transcript (signed zeros written as 0). This is the OCCT reference the test pins the Swift helper to.",
+    "probe": "Scripts/repro/766-brepgraph-construction/"
   },
   {
     "test_name": "BRepGraph Edge Queries::edgeFaceCount",
@@ -2270,15 +2351,19 @@
     "bridge_output": {
       "type": "node",
       "data": {
-        "kind": "face",
-        "index": 0
+        "children": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
       }
     },
     "kernel_output": {
       "type": "node",
       "data": {
-        "kind": "face",
-        "index": 0,
         "children": [
           0,
           1,
@@ -2293,27 +2378,32 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the face indices under solid 0 of a 10x10x10 box, in visit order. Bridge: childIndices(rootKind: .solid, rootIndex: 0, targetKind: .face), which is what .containedIn resolves through. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_ChildExplorer(solid 0, Face), printed as \"childIndices(solid 0, face): 0 1 2 3 4 5 (count 6)\" in the probe transcript. The test's occurrence 0 selects children[0] = face 0 by Swift indexing (the resolved node printed as face, index 0).",
+    "probe": "Scripts/repro/766-brepgraph-construction/"
   },
   {
     "test_name": "v0.142 .containedIn now resolves::faceInSolidOOB",
     "bridge_function": "OCCTBRepGraphChildIndices",
     "bridge_output": {
       "type": "result",
-      "data": "occurrenceOutOfRange"
+      "data": {
+        "available": 6
+      }
     },
     "kernel_output": {
       "type": "result",
       "data": {
-        "faces_of_solid_0": 6,
-        "requested": 999
+        "available": 6
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: how many faces solid 0 offers to an occurrence request. Bridge: the available count in the .occurrenceOutOfRange error the resolver returns for occurrence 999 (printed as available: 6, requested: 999). Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: the ChildExplorer(solid 0, Face) count, \"count 6\" in the probe transcript. requested: 999 is the test's own input, not a measurement, so it is not compared.",
+    "probe": "Scripts/repro/766-brepgraph-construction/"
   },
   {
     "test_name": "v0.142 .containedIn now resolves::ancestorMissing",
@@ -2740,15 +2830,17 @@
     "kernel_output": {
       "type": "bools",
       "data": {
-        "boxNbWires": 1,
-        "sphereNbWires": 1
+        "box": false,
+        "sphere": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: is_natural_restriction of face 0 of a box and of a sphere. Bridge: isFaceNaturalRestriction(0), which the bridge computes as NbWires == 0. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: Tool::Face::NbWires is 1 for both (probe transcript: box \"wires=1 ... natural=0\", sphere \"sphere face0: wires=1 natural=0\", where natural is NbWires == 0), so is_natural_restriction is false.",
+    "probe": "Scripts/repro/766-brepgraph-edge-wires-explorer-face/"
   },
   {
     "test_name": "BRepGraph Face Geometry::faceHasTriangulation",
@@ -2856,13 +2948,13 @@
     "test_name": "Graph history absorb (#290)::createdByMatchesLabel",
     "bridge_function": "OCCTBRepGraphHistoryGetRecordInfo",
     "bridge_output": {
-      "type": "int",
+      "type": "counts",
       "data": {
-        "resolves": true
+        "records_labelled_channel_cut": 11
       }
     },
     "kernel_output": {
-      "type": "int",
+      "type": "counts",
       "data": {
         "records_labelled_channel_cut": 11
       }
@@ -2871,7 +2963,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: how many history records carry the operation label \"channel-cut\" after the absorb of a box-minus-bar cut. Bridge: graph.historyRecords filtered on operationName (each label read through OCCTBRepGraphHistoryGetRecordInfo). Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_LayerHistory::Record(i).OperationName == \"channel-cut\" over AddWithHistory, \"absorb: records labelled channel-cut=11\" in the probe transcript. That the resolver then finds the label (and rejects an unrecorded one) is Swift logic over these records and is asserted by the test.",
+    "probe": "Scripts/repro/766-brepgraph-history/"
   },
   {
     "test_name": "Graph history absorb (#290)::withoutAbsorbNothingResolves",
@@ -2919,19 +3013,19 @@
     "bridge_output": {
       "type": "counts",
       "data": {
-        "hop1_grows": true,
-        "hop2_grows": true,
-        "v2_lt_v1": true
+        "records_after_hop1": 14,
+        "records_after_hop2": 28,
+        "volumes": [
+          5999,
+          5991
+        ]
       }
     },
     "kernel_output": {
       "type": "counts",
       "data": {
-        "records": [
-          0,
-          14,
-          28
-        ],
+        "records_after_hop1": 14,
+        "records_after_hop2": 28,
         "volumes": [
           5999,
           5991
@@ -2942,7 +3036,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: history records after each hop and the volume before and after the second cut. Bridge: historyRecordCount after add(_:absorbing:) for hop1 and hop2 and Shape.volume of out1 and out2. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). The test asserts only that the count grows and the volume shrinks; the exact values are what it observes. Kernel: \"336 chained: after hop1 records=14\" and \"volumes 5999.000 -> 5991.000, hop2 records 14 -> 28\" in the probe transcript.",
+    "probe": "Scripts/repro/766-brepgraph-history/"
   },
   {
     "test_name": "Chained WithFullHistory absorb (#336)::nonIntersectingSecondCutAbsorbsNothing",
@@ -2951,8 +3047,11 @@
       "type": "counts",
       "data": {
         "hop2_records_added": 0,
-        "volume_unchanged": true,
-        "findDerivedOrSelf": "self"
+        "volumes": [
+          5973,
+          5973
+        ],
+        "find_derived_size": 0
       }
     },
     "kernel_output": {
@@ -2963,14 +3062,16 @@
           5973,
           5973
         ],
-        "FindDerived_size": 0
+        "find_derived_size": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: records the second (non-intersecting) cut adds, the two volumes, and how many nodes FindDerived returns for the first hop's solid. Bridge: historyRecordCount before and after the second add (1 and 1), Shape.volume of out1 and out2, and findDerived(of: root1).count. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: \"336 non-intersecting: volumes 5973.000 -> 5973.000, hop2 records 1 -> 1, FindDerived(root1).Size()=0\" in the probe transcript. The test's findDerivedOrSelf == [root1] is the Swift fallback for a node FindDerived leaves empty and is not part of the kernel comparison.",
+    "probe": "Scripts/repro/766-brepgraph-history/"
   },
   {
     "test_name": "BRepGraph history record operation name at any length (#1078)::opNameLengthReported",
@@ -3130,8 +3231,7 @@
     "bridge_output": {
       "type": "counts",
       "data": {
-        "available": 1,
-        "requested": 5
+        "replacements_recorded": 1
       }
     },
     "kernel_output": {
@@ -3144,7 +3244,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: how many replacements the \"Op\" record holds for the sentinel original. Bridge: the available count in the .occurrenceOutOfRange error (printed available: 1, requested: 5), which is the number of face replacements the resolver found through OCCTBRepGraphHistoryGetRecordMapping. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_LayerHistory::Record(0).Mapping[sentinel] holds 1 node, \"createdByOutOfRange: record 0 Mapping[(0,-1)] size=1\" in the probe transcript. requested: 5 is the test's input, not a measurement.",
+    "probe": "Scripts/repro/766-brepgraph-evidence-fix/"
   },
   {
     "test_name": "v0.141 TopologyRef resolver::createdByForwardWalk",
@@ -3152,14 +3254,18 @@
     "bridge_output": {
       "type": "node",
       "data": {
-        "kind": "face",
-        "index": 11
+        "find_derived_of_face10": [
+          [
+            "face",
+            11
+          ]
+        ]
       }
     },
     "kernel_output": {
       "type": "node",
       "data": {
-        "FindDerived_face10": [
+        "find_derived_of_face10": [
           [
             "face",
             11
@@ -3171,22 +3277,32 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the forward-walk result for face 10 (Create sentinel -> face 10, Modify face 10 -> face 11). Bridge: findDerived(of: face 10), the call the resolver walks forward with; the resolved node is the same face 11. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_LayerHistory::FindDerived(face 10), \"topologyref forward walk: FindDerived(face 10) size=1 first=(2,11)\" in the probe transcript, where kind 2 is Face.",
+    "probe": "Scripts/repro/766-brepgraph-history/"
   },
   {
     "test_name": "v0.141 TopologyRef resolver::splitOf",
-    "bridge_function": "OCCTBRepGraphHistoryGetRecordMapping",
+    "bridge_function": "OCCTBRepGraphHistoryFindDerived",
     "bridge_output": {
       "type": "node",
       "data": {
-        "kind": "edge",
-        "index": 31
+        "find_derived_of_edge3": [
+          [
+            "edge",
+            30
+          ],
+          [
+            "edge",
+            31
+          ]
+        ]
       }
     },
     "kernel_output": {
       "type": "node",
       "data": {
-        "FindDerived_edge3": [
+        "find_derived_of_edge3": [
           [
             "edge",
             30
@@ -3202,7 +3318,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the replacements of edge 3 after the SplitEdge record. Bridge: findDerived(of: edge 3), which the resolver reads its occurrence from (occurrence 1 selects edge 31 by Swift indexing, the resolved node printed as edge, index 31). Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_LayerHistory::FindDerived(edge 3), \"topologyref splitOf: FindDerived(edge 3) size=2 [0] = (4,30) [1] = (4,31)\" in the probe transcript, where kind 4 is Edge. The record's own Mapping also holds [(4,30), (4,31)] (\"splitOf: record 0 Mapping[(4,3)] size=2\" in Scripts/repro/766-brepgraph-evidence-fix/transcript.txt).",
+    "probe": "Scripts/repro/766-brepgraph-history/"
   },
   {
     "test_name": "v0.141 TopologyRef resolver::splitOfOutOfRange",
@@ -3210,8 +3328,7 @@
     "bridge_output": {
       "type": "counts",
       "data": {
-        "available": 2,
-        "requested": 5
+        "replacements_recorded": 2
       }
     },
     "kernel_output": {
@@ -3224,7 +3341,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: how many replacements the SplitEdge record holds for edge 3. Bridge: the available count in the .occurrenceOutOfRange error (printed available: 2, requested: 5), the length of the mapping read through OCCTBRepGraphHistoryGetRecordMapping. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: Record(0).Mapping[edge 3] holds 2 nodes, \"splitOf: record 0 Mapping[(4,3)] size=2\" in the probe transcript. requested: 5 is the test's input, not a measurement.",
+    "probe": "Scripts/repro/766-brepgraph-evidence-fix/"
   },
   {
     "test_name": "v0.141 TopologyRef resolver::ancestorMissing",
@@ -3510,21 +3629,26 @@
       "data": {
         "face0": false,
         "shell0": false,
-        "face0AfterRemove": true
+        "remove_face0_returned": true,
+        "face0_after_remove": true
       }
     },
     "kernel_output": {
       "type": "bools",
       "data": {
         "face0": false,
-        "shell0": false
+        "shell0": false,
+        "remove_face0_returned": true,
+        "face0_after_remove": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: is-removed for face ref 0 and shell ref 0 on a fresh box, whether removing face ref 0 succeeds, and is-removed for face ref 0 afterwards. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: Refs().Gen().IsRemoved and Editor().Gen().RemoveRef, \"refNotRemoved: face0=0 shell0=0 RemoveRef(face0)=1 face0 after=1\" in the probe transcript.",
+    "probe": "Scripts/repro/766-brepgraph-evidence-fix/"
   },
   {
     "test_name": "BRepGraph Ref Entry Queries::refOrientation",
@@ -3562,25 +3686,29 @@
     "bridge_function": "OCCTBRepGraphRootNodes",
     "bridge_output": {
       "type": "roots",
-      "data": [
-        [
-          "product",
+      "data": {
+        "count": 1,
+        "root_product_indices": [
           0
         ]
-      ]
+      }
     },
     "kernel_output": {
       "type": "roots",
       "data": {
         "count": 1,
-        "index": 0
+        "root_product_indices": [
+          0
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the graph roots after linking the box's solid into a product. Bridge: rootNodes (count 1, the one root reported as kind product, index 0; the bridge reports every root as a product). Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: RootProductIds() holds 1 product id after Products().Add + AppendDocumentRoot, index 0, \"hasRoots: roots before=0 after=1 root[0]=product 0\" in the probe transcript.",
+    "probe": "Scripts/repro/766-brepgraph-evidence-fix/"
   },
   {
     "test_name": "BRepGraph SameDomain::boxNoSameDomain",
@@ -4307,7 +4435,6 @@
     "kernel_output": {
       "type": "state",
       "data": {
-        "layer": true,
         "enabled": true,
         "records": 0
       }
@@ -4316,7 +4443,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether history recording is on and how many records a fresh graph holds. Bridge: isHistoryEnabled and historyRecordCount. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_LayerHistory IsEnabled() and NbRecords() on the layer the graph constructor registers, \"historyDefaults: layer=1 enabled=1 records=0\" in the probe transcript (layer=1 is the layer being present, which the bridge FindLayer relies on).",
+    "probe": "Scripts/repro/766-brepgraph-face-history/"
   },
   {
     "test_name": "BRepGraph History::historyToggle",
@@ -4394,47 +4523,88 @@
     "bridge_function": "OCCTBRepGraphHistoryRecord",
     "bridge_output": {
       "type": "mapping",
-      "data": "edge 3 -> [edge 100, 101, 102]"
+      "data": {
+        "original": [
+          4,
+          3
+        ],
+        "replacements": [
+          [
+            4,
+            100
+          ],
+          [
+            4,
+            101
+          ],
+          [
+            4,
+            102
+          ]
+        ]
+      }
     },
     "kernel_output": {
-      "type": "derived",
-      "data": [
-        [
+      "type": "mapping",
+      "data": {
+        "original": [
           4,
-          100
+          3
         ],
-        [
-          4,
-          101
-        ],
-        [
-          4,
-          102
+        "replacements": [
+          [
+            4,
+            100
+          ],
+          [
+            4,
+            101
+          ],
+          [
+            4,
+            102
+          ]
         ]
-      ]
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the replacements the record stores for edge 3 after a 1-to-3 split (kind ordinal 4 = Edge). Bridge: historyRecord(at: 0).mapping[edge 3], read back through OCCTBRepGraphHistoryGetRecordMapping. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_LayerHistory::Record(0).Mapping[edge 3], \"splitMapping: record 0 Mapping[(4,3)] size=3 [ (4,100) (4,101) (4,102) ]\" in the probe transcript.",
+    "probe": "Scripts/repro/766-brepgraph-evidence-fix/"
   },
   {
     "test_name": "v0.141 BRepGraph history record readback::deletionMapping",
     "bridge_function": "OCCTBRepGraphHistoryRecord",
     "bridge_output": {
       "type": "mapping",
-      "data": "face 5 -> []"
+      "data": {
+        "original": [
+          2,
+          5
+        ],
+        "replacements": []
+      }
     },
     "kernel_output": {
-      "type": "derived",
-      "data": []
+      "type": "mapping",
+      "data": {
+        "original": [
+          2,
+          5
+        ],
+        "replacements": []
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the replacements the record stores for face 5 after a deletion (kind ordinal 2 = Face), an empty list that is still bound to the key. Bridge: historyRecord(at: 0).mapping[face 5], printed Optional([]) (bound and empty). Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: Record(0).Mapping[face 5] is bound with size 0, \"deletionMapping: record 0 Mapping[(2,5)] size=0 [ ]\" in the probe transcript.",
+    "probe": "Scripts/repro/766-brepgraph-evidence-fix/"
   },
   {
     "test_name": "v0.141 BRepGraph history record readback::findDerivedWalksForward",
@@ -4487,18 +4657,26 @@
       "data": {
         "modified": true,
         "deleted": true,
-        "untouched": false
+        "untouched": false,
+        "records": 2
       }
     },
     "kernel_output": {
-      "type": "records",
-      "data": 2
+      "type": "bools",
+      "data": {
+        "modified": true,
+        "deleted": true,
+        "untouched": false,
+        "records": 2
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether each of three faces is a key in any record's mapping (face 0 modified, face 1 deleted, face 2 untouched), and the record count. Bridge: hasHistoryRecord(for:), a Swift scan of the records' originals (OCCTBRepGraphHistoryGetRecordOriginals). Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: Record(i).Mapping.Seek over both records, \"hasHistoryRecord: records=2 modified(face 0)=1 deleted(face 1)=1 untouched(face 2)=0\" in the probe transcript.",
+    "probe": "Scripts/repro/766-brepgraph-evidence-fix/"
   },
   {
     "test_name": "v0.141 BRepGraph history record readback::findDerivedOrSelfDisambiguates",
