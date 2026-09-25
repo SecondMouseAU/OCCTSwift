@@ -306,7 +306,7 @@
   {
     "test_name": "Curve3D *Properties views keep their parent alive (#965)::a view outliving its parent still reads the right values",
     "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
-    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_function": "OCCTCurve3DCircleRadius, OCCTCurve3DCircleCenter",
     "bridge_output": {
       "type": "value",
       "data": "as pinned in the test"
@@ -328,7 +328,7 @@
   {
     "test_name": "Curve3D *Properties views keep their parent alive (#965)::a setter called through a view is visible on the parent",
     "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
-    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_function": "OCCTCurve3DCircleSetRadius, OCCTCurve3DCircleRadius",
     "bridge_output": {
       "type": "value",
       "data": "as pinned in the test"
@@ -350,7 +350,7 @@
   {
     "test_name": "Curve3D *Properties views keep their parent alive (#965)::the chained access the issue reports reads the right radius",
     "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
-    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_function": "OCCTEdgeGetCurve3D, OCCTCurve3DCircleRadius",
     "bridge_output": {
       "type": "value",
       "data": "as pinned in the test"
@@ -372,7 +372,7 @@
   {
     "test_name": "Curve3D *Properties views keep their parent alive (#965)::a view outliving its parent survives 400 intervening allocations",
     "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
-    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_function": "OCCTCurve3DCircleRadius",
     "bridge_output": {
       "type": "value",
       "data": "as pinned in the test"
@@ -394,7 +394,7 @@
   {
     "test_name": "Curve3D *Properties views keep their parent alive (#965)::every Curve3D *Properties accessor keeps its parent alive",
     "test_file": "Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift",
-    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_function": "none: Swift view structs (Curve3D.*Properties(owner:)) retain their parent; the assertion reaches no bridge call",
     "bridge_output": {
       "type": "value",
       "data": "as pinned in the test"
@@ -404,12 +404,11 @@
       "data": "N/A: parent lifetime is Swift-side (the view's strong owner); no kernel counterpart"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: parent lifetime is Swift-side (the view's strong owner); no kernel counterpart",
     "injection": "cpcopy: lineProperties holds a copy, not its parent",
     "red": "Issue965Curve3DPropertyLifetimeTests.swift:70 result.parentAlive",
     "green": "passed",
@@ -418,7 +417,7 @@
   {
     "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 5, mirror through a plane",
     "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
-    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_function": "OCCTCurve3DMirrorPlane, OCCTCurve3DTransform, OCCTSurfaceMirrorPlane, OCCTSurfaceTransform (each through occtBuildTrsf3D type 5)",
     "bridge_output": {
       "type": "value",
       "data": "as pinned in the test"
@@ -440,7 +439,7 @@
   {
     "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 4, mirror through an axis",
     "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
-    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_function": "OCCTCurve3DMirrorAxis, OCCTCurve3DTransform, OCCTSurfaceMirrorAxis, OCCTSurfaceTransform (each through occtBuildTrsf3D type 4)",
     "bridge_output": {
       "type": "value",
       "data": "as pinned in the test"
@@ -462,7 +461,7 @@
   {
     "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 1, rotation",
     "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
-    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_function": "OCCTCurve3DRotate, OCCTCurve3DTransform, OCCTSurfaceRotate, OCCTSurfaceTransform (each through occtBuildTrsf3D type 1)",
     "bridge_output": {
       "type": "value",
       "data": "as pinned in the test"
@@ -484,7 +483,7 @@
   {
     "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 3, mirror through a point",
     "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
-    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_function": "OCCTCurve3DMirrorPoint, OCCTCurve3DTransform, OCCTSurfaceMirrorPoint, OCCTSurfaceTransform (each through occtBuildTrsf3D type 3)",
     "bridge_output": {
       "type": "value",
       "data": "as pinned in the test"
@@ -506,7 +505,7 @@
   {
     "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 0, translation",
     "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
-    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_function": "OCCTCurve3DTranslate, OCCTCurve3DTransform, OCCTSurfaceTranslate, OCCTSurfaceTransform (each through occtBuildTrsf3D type 0)",
     "bridge_output": {
       "type": "value",
       "data": "as pinned in the test"
@@ -528,7 +527,7 @@
   {
     "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::type 2, scale",
     "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
-    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_function": "OCCTCurve3DScale, OCCTCurve3DTransform, OCCTSurfaceScale, OCCTSurfaceTransform (each through occtBuildTrsf3D type 2)",
     "bridge_output": {
       "type": "value",
       "data": "as pinned in the test"
@@ -550,7 +549,7 @@
   {
     "test_name": "3D transforms: one discriminated gp_Trsf builder (#995)::The six type codes are six different transforms of the same point",
     "test_file": "Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift",
-    "bridge_function": "occtBuildTrsf3D (OCCTBridge_Internal.h) / OCCTCurve3DCircleRadius",
+    "bridge_function": "OCCTCurve3DTranslate, OCCTCurve3DRotate, OCCTCurve3DScale, OCCTCurve3DMirrorPoint, OCCTCurve3DMirrorAxis, OCCTCurve3DMirrorPlane (through occtBuildTrsf3D types 0 to 5)",
     "bridge_output": {
       "type": "value",
       "data": "as pinned in the test"
