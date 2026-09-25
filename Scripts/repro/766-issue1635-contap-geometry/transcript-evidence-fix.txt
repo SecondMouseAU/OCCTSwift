@@ -1,0 +1,2 @@
+cylinder r5 h20 along +X, face 0, line 1: TypeContour is Contap_Lin (1), Contap_Restriction is 3
+  Arc() on the Contap_Lin line threw Standard_DomainError: ''

@@ -6086,14 +6086,13 @@
     "bridge_output": {
       "type": "refusal",
       "data": {
-        "arcRange_on_line": "nil"
+        "arc_refused_on_line_contour": true
       }
     },
     "kernel_output": {
       "type": "refusal",
       "data": {
-        "line1_type": "Contap_Lin",
-        "Arc()": "valid only on Contap_Restriction"
+        "arc_refused_on_line_contour": true
       }
     },
     "comparison": {
@@ -6101,6 +6100,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether the arc of a .line contour (the cylinder r5 h20 viewed along +X, first line of its first face with one) can be read; both refuse. The earlier record carried {arcRange_on_line: 'nil'} on the bridge side against {line1_type, 'Arc()': 'valid only on Contap_Restriction'} on the kernel side, and that second string was a description, not a result: probe.mm never called Arc() on a Contap_Lin line. Bridge: ContapContourResult.arcRange(line: 1) and arcPoint(line: 1, parameter: 0) (OCCTContapContourLineArcRange / OCCTContapContourLineArcPoint); a temporary print in the test (never committed) observed nil for both. The bridge refuses a non-restriction line itself, before reading Contap_Line::Arc(). Kernel: probe-evidence-fix.mm makes the call the bridge does not make, Contap_Line::Arc() on that Contap_Lin line, and it threw Standard_DomainError (transcript-evidence-fix.txt), so OCCT refuses it too. The test also asserts out-of-range line and vertex indices return nil or 0 and that a box's .restriction contour reports .restriction geometry; those checks are not part of this record.",
     "probe": "Scripts/repro/766-issue1635-contap-geometry/"
   }
 ]
