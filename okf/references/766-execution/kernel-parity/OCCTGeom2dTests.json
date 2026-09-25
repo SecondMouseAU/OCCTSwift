@@ -16332,10 +16332,8 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "ChFi2d_Builder": {
-          "edges": 5,
-          "length": 29.4142135624
-        }
+        "edges": 5,
+        "length": 29.4142135624
       }
     },
     "comparison": {
@@ -16349,7 +16347,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
       "rewritten": "`!= nil` only"
-    }
+    },
+    "source": "Same quantity on both sides: the edge count and the perimeter of the 10 x 5 rectangle wire after a 1 x 1 chamfer at the first vertex. Bridge: Wire.chamfered2D(vertexIndex: 0, distance1: 1, distance2: 1) (OCCTWireChamfer2D), edge count and Wire.length in the test run. Kernel: ChFi2d_Builder on the same rectangle face, edge count and summed edge length, transcript line \"ChFi2d_Builder chamfer 1x1 on one corner of the 10x5 rectangle: status=5 edges=5 length=29.4142135624\" in Scripts/repro/766-geom2d-projlib-wire-tbezier/transcript.txt (the #2626 probe). Values at 12 significant digits.",
+    "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/"
   },
   {
     "test_name": "Wire 2D Chamfer Tests::Chamfer all vertices of rectangle",
@@ -16452,10 +16452,8 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "ChFi2d_Builder": {
-          "edges": 5,
-          "length": 29.5707963268
-        }
+        "edges": 5,
+        "length": 29.5707963268
       }
     },
     "comparison": {
@@ -16469,7 +16467,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
       "rewritten": "`!= nil` only"
-    }
+    },
+    "source": "Same quantity on both sides: the edge count and the perimeter of the 10 x 5 rectangle wire after a radius-1 fillet at the first vertex. Bridge: Wire.filleted2D(vertexIndex: 0, radius: 1) (OCCTWireFillet2D), edge count and Wire.length in the test run. Kernel: ChFi2d_Builder on the same rectangle face, edge count and summed edge length, transcript line \"ChFi2d_Builder fillet r1 on one corner of the 10x5 rectangle: status=5 edges=5 length=29.5707963268\" in Scripts/repro/766-geom2d-projlib-wire-tbezier/transcript.txt (the #2626 probe). Values at 12 significant digits.",
+    "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/"
   },
   {
     "test_name": "Wire 2D Fillet Tests::Fillet all vertices of rectangle",
