@@ -9779,15 +9779,52 @@
       "type": "counts",
       "data": {
         "dimensions": 1,
-        "tolerances": 1,
+        "geom_tolerances": 1,
         "datums": 1,
-        "dim_type": "sizeDiameter"
+        "readable_dimensions": 1,
+        "readable_geom_tolerances": 1,
+        "readable_datums": 1,
+        "dimension": {
+          "index": 0,
+          "type": 15,
+          "entries_equal": true
+        },
+        "geom_tolerance": {
+          "index": 0,
+          "type": 9,
+          "entries_equal": true
+        },
+        "datum": {
+          "index": 0,
+          "name": "A",
+          "entries_equal": true
+        }
       }
     },
     "kernel_output": {
-      "type": "ordinal",
+      "type": "counts",
       "data": {
-        "size_diameter": 15
+        "dimensions": 1,
+        "geom_tolerances": 1,
+        "datums": 1,
+        "readable_dimensions": 1,
+        "readable_geom_tolerances": 1,
+        "readable_datums": 1,
+        "dimension": {
+          "index": 0,
+          "type": 15,
+          "entries_equal": true
+        },
+        "geom_tolerance": {
+          "index": 0,
+          "type": 9,
+          "entries_equal": true
+        },
+        "datum": {
+          "index": 0,
+          "name": "A",
+          "entries_equal": true
+        }
       }
     },
     "comparison": {
@@ -9795,7 +9832,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+    "source": "Same quantities on both sides, for a box carrying one Size_Diameter dimension (20, -0.3/+0.7), one perpendicularity tolerance (0.05) and one datum A: the three counts, how many entries each plural accessor returns, and for entry 0 of each kind its index, its type ordinal (Swift raw values are the kernel's: sizeDiameter 15, perpendicularity 9), the datum name and whether two reads of it agree. Bridge: dimensionCount, geomToleranceCount and datumCount 1, each plural accessor's count equal to its count, single == first for all three, index 0, type .sizeDiameter and .perpendicularity, name \"A\". Kernel: '[populated] labels: dimensions=1 geom tolerances=1 datums=1', '[populated] readable entries: dimensions=1 geom tolerances=1 datums=1', and the three 'entry 0' lines with index=0, type=15, type=9, name=\"A\" and 'all fields equal=true'. The plural accessors are (0..<count).compactMap of the singular one, so the kernel counterpart of an entry the plural returns is a label whose attribute and object read back, and of single == first is two independent reads of label 1 agreeing on every field the Swift value carries. Kernel value: Scripts/repro/766-xcaf-gdt-unified-read-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read-evidence/"
   },
   {
     "test_name": "GD&T unified read surface (#996)::A 10..12 range dimension reads back as a range, not as a plain 10",
@@ -9803,19 +9841,25 @@
     "bridge_output": {
       "type": "dimension",
       "data": {
-        "bounds": "range(10, 12)",
+        "is_range": true,
+        "is_plus_minus": false,
         "value": 11.0,
-        "tolerances": null
+        "lower_bound": 10.0,
+        "upper_bound": 12.0,
+        "lower_tolerance": null,
+        "upper_tolerance": null
       }
     },
     "kernel_output": {
       "type": "dimension",
       "data": {
-        "range": true,
-        "first_slot": 10,
-        "value": 11,
-        "lower": 10,
-        "upper": 12
+        "is_range": true,
+        "is_plus_minus": false,
+        "value": 11.0,
+        "lower_bound": 10.0,
+        "upper_bound": 12.0,
+        "lower_tolerance": null,
+        "upper_tolerance": null
       }
     },
     "comparison": {
@@ -9823,7 +9867,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+    "source": "Same quantities on both sides, for a Size_Diameter dimension created with value 10 and then given bounds 10 and 12: whether it is a range, whether it is plus/minus, the value, the bounds and the tolerances, where a tolerance reads as absent unless the dimension is plus/minus (the bridge's rule, which the Swift accessors state as nil). Bridge: bounds == .range(10, 12), lowerBound 10, upperBound 12, value 11 within 1e-9, lowerTolerance and upperTolerance nil. Kernel: '[range] 10..12: type=15 range=true plusMinus=false values=2 value=11 lowerBound=10 upperBound=12 lowerTol=0 upperTol=0 class=false', so the kernel's tolerance 0 reads as absent through plusMinus=false. Kernel value: Scripts/repro/766-xcaf-gdt-unified-read-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read-evidence/"
   },
   {
     "test_name": "GD&T unified read surface (#996)::A plus/minus dimension keeps lower and upper tolerance the right way round",
@@ -9831,17 +9876,25 @@
     "bridge_output": {
       "type": "dimension",
       "data": {
-        "lowerTol": -0.3,
-        "upperTol": 0.7,
-        "value": 20.0
+        "is_range": false,
+        "is_plus_minus": true,
+        "value": 20.0,
+        "lower_bound": null,
+        "upper_bound": null,
+        "lower_tolerance": -0.3,
+        "upper_tolerance": 0.7
       }
     },
     "kernel_output": {
       "type": "dimension",
       "data": {
-        "lowerTol": -0.3,
-        "upperTol": 0.7,
-        "value": 20
+        "is_range": false,
+        "is_plus_minus": true,
+        "value": 20.0,
+        "lower_bound": null,
+        "upper_bound": null,
+        "lower_tolerance": -0.3,
+        "upper_tolerance": 0.7
       }
     },
     "comparison": {
@@ -9849,7 +9902,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+    "source": "Same quantities on both sides, for a Size_Radius dimension created as 20 with tolerances -0.3 and +0.7: whether it is a range, whether it is plus/minus, the value, the bounds and the tolerances, where a bound reads as absent unless the dimension is a range. Bridge: bounds == .plusMinus(-0.3, 0.7), lowerTolerance -0.3, upperTolerance 0.7, value 20 within 1e-9, lowerBound and upperBound nil. Kernel: '[plus/minus] 20 -0.3/+0.7: type=17 range=false plusMinus=true values=3 value=20 lowerBound=0 upperBound=0 lowerTol=-0.3 upperTol=0.7 class=false', so the kernel's bounds 0 read as absent through range=false, and the tolerances come out the right way round. Kernel value: Scripts/repro/766-xcaf-gdt-unified-read-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read-evidence/"
   },
   {
     "test_name": "GD&T unified read surface (#996)::A simple dimension reports .simple and no bounds or tolerances",
@@ -9857,18 +9911,27 @@
     "bridge_output": {
       "type": "dimension",
       "data": {
-        "bounds": "simple",
-        "value": 3.5
+        "is_range": false,
+        "is_plus_minus": false,
+        "value": 3.5,
+        "lower_bound": null,
+        "upper_bound": null,
+        "lower_tolerance": null,
+        "upper_tolerance": null,
+        "has_class": false
       }
     },
     "kernel_output": {
       "type": "dimension",
       "data": {
-        "range": false,
-        "plusMinus": false,
-        "nvals": 1,
+        "is_range": false,
+        "is_plus_minus": false,
         "value": 3.5,
-        "class_": false
+        "lower_bound": null,
+        "upper_bound": null,
+        "lower_tolerance": null,
+        "upper_tolerance": null,
+        "has_class": false
       }
     },
     "comparison": {
@@ -9876,7 +9939,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+    "source": "Same quantities on both sides, for a Size_Thickness dimension created as 3.5: whether it is a range, whether it is plus/minus, the value, the bounds, the tolerances and whether it carries a class of tolerance, where the bounds and tolerances read as absent because the dimension is neither. Bridge: bounds == .simple, value 3.5 within 1e-9, lowerBound, upperBound, lowerTolerance, upperTolerance and classOfTolerance all nil. Kernel: '[simple] thickness 3.5: type=27 range=false plusMinus=false values=1 value=3.5 lowerBound=0 upperBound=0 lowerTol=0 upperTol=0 class=false', so the kernel's zeros read as absent through the two predicates. Kernel value: Scripts/repro/766-xcaf-gdt-unified-read-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read-evidence/"
   },
   {
     "test_name": "GD&T unified read surface (#996)::An H7 hole dimension reports its ISO 286 class of tolerance",
@@ -9884,17 +9948,25 @@
     "bridge_output": {
       "type": "class",
       "data": {
-        "isHole": true,
-        "formVariance": "h",
-        "grade": "it7"
+        "has_class": true,
+        "is_hole": true,
+        "form_variance": 11,
+        "grade": 8,
+        "is_range": false,
+        "lower_bound": null,
+        "upper_bound": null
       }
     },
     "kernel_output": {
       "type": "class",
       "data": {
-        "isHole": true,
-        "formVariance": 11,
-        "grade": 8
+        "has_class": true,
+        "is_hole": true,
+        "form_variance": 11,
+        "grade": 8,
+        "is_range": false,
+        "lower_bound": null,
+        "upper_bound": null
       }
     },
     "comparison": {
@@ -9902,7 +9974,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+    "source": "Same quantities on both sides, as kernel ordinals (the Swift raw values are the kernel's: form variance .h 11, grade .it7 8), for a Size_Diameter dimension of 20 given the class H7 as a hole: whether it has a class, hole or shaft, the form variance, the grade, and whether it is a range with bounds. Bridge: classOfTolerance non-nil with isHole true, formVariance .h, grade .it7, and bounds == .simple, so no range and no bounds. Kernel: '[class h7] after: type=15 range=false plusMinus=false values=1 value=20 lowerBound=0 upperBound=0 lowerTol=0 upperTol=0 class=true isHole=true formVariance=11 grade=8 (GetClassOfTolerance=true)'. Kernel value: Scripts/repro/766-xcaf-gdt-unified-read-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read-evidence/"
   },
   {
     "test_name": "GD&T unified read surface (#996)::A range dimension can also carry a class of tolerance",
@@ -9910,19 +9983,25 @@
     "bridge_output": {
       "type": "class",
       "data": {
-        "isHole": false,
-        "formVariance": "js",
-        "grade": "it9",
-        "bounds": "range(10, 12)"
+        "has_class": true,
+        "is_hole": false,
+        "form_variance": 12,
+        "grade": 10,
+        "is_range": true,
+        "lower_bound": 10.0,
+        "upper_bound": 12.0
       }
     },
     "kernel_output": {
       "type": "class",
       "data": {
-        "isHole": false,
-        "formVariance": 12,
+        "has_class": true,
+        "is_hole": false,
+        "form_variance": 12,
         "grade": 10,
-        "range": true
+        "is_range": true,
+        "lower_bound": 10.0,
+        "upper_bound": 12.0
       }
     },
     "comparison": {
@@ -9930,7 +10009,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+    "source": "Same quantities on both sides, as kernel ordinals (Swift raw values .js 12, .it9 10), for a Size_Diameter dimension given the bounds 10 and 12 and then the class js9 as a shaft: whether it has a class, hole or shaft, the form variance, the grade, whether it is a range and its bounds. Bridge: bounds == .range(10, 12), classOfTolerance isHole false, formVariance .js, grade .it9. Kernel: '[class range] after: type=15 range=true plusMinus=false values=2 value=11 lowerBound=10 upperBound=12 lowerTol=0 upperTol=0 class=true isHole=false formVariance=12 grade=10 (GetClassOfTolerance=true)'. Kernel value: Scripts/repro/766-xcaf-gdt-unified-read-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read-evidence/"
   },
   {
     "test_name": "GD&T unified read surface (#996)::Setting a tolerance on a range dimension is refused, not silently ignored",
@@ -9938,16 +10018,19 @@
     "bridge_output": {
       "type": "bool",
       "data": {
-        "refused": true,
-        "bounds": "range(10, 12)"
+        "applied": false,
+        "is_range_after": true,
+        "lower_bound_after": 10.0,
+        "upper_bound_after": 12.0
       }
     },
     "kernel_output": {
       "type": "bool",
       "data": {
-        "SetLowerTolValue": false,
-        "SetUpperTolValue": false,
-        "range_kept": true
+        "applied": false,
+        "is_range_after": true,
+        "lower_bound_after": 10.0,
+        "upper_bound_after": 12.0
       }
     },
     "comparison": {
@@ -9955,7 +10038,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+    "source": "Same quantities on both sides, for a range dimension 10..12 offered the tolerances -0.3 and +0.7: whether the write is applied, and whether the dimension is still a range with the same bounds when read afresh. Bridge: setDimensionTolerance(at:lower:upper:) returned false and dimension(at:)?.bounds was still .range(10, 12). Kernel: 'SetLowerTolValue=false SetUpperTolValue=false readback matches=false -> applied=false' (the bridge's own applied test on the two returns and the readback), then '[refused] after a fresh read: type=15 range=true plusMinus=false values=2 value=11 lowerBound=10 upperBound=12'. Kernel value: Scripts/repro/766-xcaf-gdt-unified-read-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read-evidence/"
   },
   {
     "test_name": "GD&T unified read surface (#996)::The dimension mutators reject an out-of-range index",
@@ -9963,14 +10047,19 @@
     "bridge_output": {
       "type": "refused",
       "data": {
-        "index": 0,
-        "dimensions": 0
+        "tolerance_at_0_refused": true,
+        "bounds_at_0_refused": true,
+        "class_at_0_refused": true,
+        "bounds_at_minus_1_refused": true
       }
     },
     "kernel_output": {
-      "type": "count",
+      "type": "refused",
       "data": {
-        "dimensions": 0
+        "tolerance_at_0_refused": true,
+        "bounds_at_0_refused": true,
+        "class_at_0_refused": true,
+        "bounds_at_minus_1_refused": true
       }
     },
     "comparison": {
@@ -9978,7 +10067,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
+    "source": "Same quantities on both sides, for a document with no dimension: whether a write at index 0 (tolerance, bounds, class of tolerance) and a bounds write at index -1 is refused. Bridge: the four mutators returned false. Kernel: '[out of range] dimension labels=0: Value(1) (index 0) raises Standard_OutOfRange=true, Value(0) (index -1) raises=true' and '[out of range] an entry exists to write to: index 0=false, index -1=false', so there is no object to write to and nothing can be applied; the guard is what turns the kernel's Standard_OutOfRange into a refusal. Kernel value: Scripts/repro/766-xcaf-gdt-unified-read-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read-evidence/"
   },
   {
     "test_name": "GD&T unified read surface (#996)::DimensionFormVariance enum covers all 29 cases",
@@ -9992,8 +10082,7 @@
     "kernel_output": {
       "type": "count",
       "data": {
-        "cases": 29,
-        "last": "XCAFDimTolObjects_DimensionFormVariance_ZC"
+        "cases": 29
       }
     },
     "comparison": {
@@ -10001,7 +10090,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+    "source": "Same quantity on both sides: the number of ISO 286 form variances. Bridge: Document.DimensionFormVariance.allCases.count was 29. Kernel: 'XCAFDimTolObjects_DimensionFormVariance: first=None (0) last=ZC (28) cases=29', the last enumerator ZC (28) plus 1, the header listing 29 enumerators from None to ZC with no explicit values. Kernel value: Scripts/repro/766-xcaf-gdt-unified-read-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read-evidence/"
   },
   {
     "test_name": "GD&T unified read surface (#996)::DimensionGrade enum covers all 20 cases",
@@ -10015,8 +10105,7 @@
     "kernel_output": {
       "type": "count",
       "data": {
-        "cases": 20,
-        "last": "XCAFDimTolObjects_DimensionGrade_IT18"
+        "cases": 20
       }
     },
     "comparison": {
@@ -10024,6 +10113,7 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+    "source": "Same quantity on both sides: the number of ISO 286 grades. Bridge: Document.DimensionGrade.allCases.count was 20. Kernel: 'XCAFDimTolObjects_DimensionGrade: first=IT01 (0) last=IT18 (19) cases=20', the last enumerator IT18 (19) plus 1, the header listing 20 enumerators from IT01 to IT18 with no explicit values. Kernel value: Scripts/repro/766-xcaf-gdt-unified-read-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read-evidence/"
   }
 ]
