@@ -5,23 +5,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "isValid": true,
-        "volume": "> 1000"
+        "valid": true,
+        "volume": 1698.436569847848,
+        "input_volume": 999.9999999999998
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": 1,
-        "valid": 1,
-        "volume": 1698.43657
+        "valid": true,
+        "volume": 1698.4365698478473,
+        "input_volume": 999.9999999999998
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: validity, volume and input volume of the 10-box offset outward by 1 with an arc join. Bridge: Shape.offset(by:joinType:) result, isValid true and volume 1698.436569847848 (temporary print in the test process). Kernel: Scripts/repro/766-modeling-evidence-fix/transcript.txt line `offsetArc (+1): done=1 valid=1 volume=1698.4365698478473 input=999.99999999999977` (BRepOffsetAPI_MakeOffsetShape::PerformByJoin, BRepCheck_Analyzer valid); volumes are BRepGProp::VolumeProperties with OnlyClosed true, as OCCTShapeGetVolume computes them. The two volumes differ by 6.8e-13 (4e-16 relative, three ulps), so equal is meant to that tolerance.",
+    "probe": "Scripts/repro/766-modeling-evidence-fix/"
   },
   {
     "test_name": "Offset by Join::offsetInward",
@@ -29,23 +32,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "isValid": true,
-        "volume": "< 1000"
+        "valid": true,
+        "volume": 511.9999999999999,
+        "input_volume": 999.9999999999998
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": 1,
-        "valid": 1,
-        "volume": 512
+        "valid": true,
+        "volume": 511.9999999999999,
+        "input_volume": 999.9999999999998
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: validity, volume and input volume of the 10-box offset inward by 1. Bridge: Shape.offset(by:joinType:) result, isValid true and volume 511.9999999999999 (temporary print in the test process). Kernel: Scripts/repro/766-modeling-evidence-fix/transcript.txt line `offsetInward (-1): done=1 valid=1 volume=511.99999999999989 input=999.99999999999977` (BRepOffsetAPI_MakeOffsetShape::PerformByJoin, BRepCheck_Analyzer valid); volumes are BRepGProp::VolumeProperties with OnlyClosed true, as OCCTShapeGetVolume computes them. The two volumes are the same double.",
+    "probe": "Scripts/repro/766-modeling-evidence-fix/"
   },
   {
     "test_name": "Offset by Join::offsetIntersection",
@@ -53,23 +59,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil",
-        "isValid": true
+        "valid": true,
+        "volume": 1728.0,
+        "input_volume": 999.9999999999998
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": 1,
-        "valid": 1,
-        "volume": 1728
+        "valid": true,
+        "volume": 1728.0,
+        "input_volume": 999.9999999999998
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: validity, volume and input volume of the 10-box offset outward by 1 with an intersection join. Bridge: Shape.offset(by:joinType:) result, isValid true and volume 1728.0 (temporary print in the test process). Kernel: Scripts/repro/766-modeling-evidence-fix/transcript.txt line `offsetIntersection (+1): done=1 valid=1 volume=1728 input=999.99999999999977` (BRepOffsetAPI_MakeOffsetShape::PerformByJoin, BRepCheck_Analyzer valid); volumes are BRepGProp::VolumeProperties with OnlyClosed true, as OCCTShapeGetVolume computes them. The two volumes are the same double.",
+    "probe": "Scripts/repro/766-modeling-evidence-fix/"
   },
   {
     "test_name": "Offset by Join::offsetCylinder",
@@ -77,22 +86,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil"
+        "valid": true,
+        "volume": 1341.589800182048,
+        "input_volume": 785.3981633974482
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": 1,
-        "valid": 1,
-        "volume": 1341.5898
+        "valid": true,
+        "volume": 1341.589800182048,
+        "input_volume": 785.3981633974482
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: validity, volume and input volume of the r = 5, h = 10 cylinder offset outward by 1 (the test asserts only that a result exists; validity and volume are the bridge's own values). Bridge: Shape.offset(by:joinType:) result, isValid true and volume 1341.589800182048 (temporary print in the test process). Kernel: Scripts/repro/766-modeling-evidence-fix/transcript.txt line `offsetCylinder (+1): done=1 valid=1 volume=1341.5898001820481 input=785.39816339744823` (BRepOffsetAPI_MakeOffsetShape::PerformByJoin, BRepCheck_Analyzer valid); volumes are BRepGProp::VolumeProperties with OnlyClosed true, as OCCTShapeGetVolume computes them. The two volumes are the same double.",
+    "probe": "Scripts/repro/766-modeling-evidence-fix/"
   },
   {
     "test_name": "v0.114.0 - Offset Wire/Face::offsetWire",
@@ -100,21 +113,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil"
+        "wire_lengths": [
+          52.56637061435917
+        ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": 1,
-        "wireLength": 52.56637061
+        "wire_lengths": [
+          52.56637061435917
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the lengths of the wires of the 10x10 rectangle offset by 2 with an arc join (40 + 4 pi). Bridge: Shape.offsetWireOnPlane(distance: 2.0) has one wire, Wire.length 52.56637061435917 (temporary print). Kernel: Scripts/repro/766-modeling-evidence-fix/transcript.txt `offsetWire (arc, 2): done=1 wire length=52.566370614359172` (BRepOffsetAPI_MakeOffset, GCPnts_AbscissaPoint on the wire); the same double.",
+    "probe": "Scripts/repro/766-modeling-evidence-fix/"
   },
   {
     "test_name": "v0.114.0 - Offset Wire/Face::offsetWireIntersection",
@@ -122,21 +140,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil"
+        "wire_lengths": [
+          48.0
+        ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": 1,
-        "wireLength": 48
+        "wire_lengths": [
+          48.0
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the lengths of the wires of the 10x10 rectangle offset by 1 with an intersection join (a 12x12 square). Bridge: Shape.offsetWireOnPlane(distance: 1.0, joinType: .intersection) has one wire, Wire.length 48.0 (temporary print). Kernel: Scripts/repro/766-modeling-evidence-fix/transcript.txt `offsetWireIntersection (1): done=1 wire length=48`.",
+    "probe": "Scripts/repro/766-modeling-evidence-fix/"
   },
   {
     "test_name": "v0.114.0 - Offset Wire/Face::offsetFace",
@@ -144,22 +167,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil"
+        "is_null": false,
+        "area": 399.99999999999994,
+        "centre_z": 2.0
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "null": 0,
-        "area": 400,
-        "centreZ": 2
+        "is_null": false,
+        "area": 399.99999999999994,
+        "centre_z": 2.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the offset face exists, its area, and the z of its centre of mass, for the 20x20 face offset by 2. Bridge: Shape.offsetFace(distance: 2.0) is non-nil; surfaceArea 399.99999999999994 and surfaceInertia.centerOfMass.z 2.0 (temporary print; the x and y components are 1e-16 noise). Kernel: Scripts/repro/766-modeling-evidence-fix/transcript.txt `offsetFace (2): null=0 area=399.99999999999994 centre z=2` (BRepOffset_Offset(face, 2, false, Arc).Face(), BRepGProp::SurfaceProperties).",
+    "probe": "Scripts/repro/766-modeling-evidence-fix/"
   },
   {
     "test_name": "Multi-Edge Blend Tests::blendMultipleEdges",
@@ -167,24 +194,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil",
-        "isValid": true
+        "valid": true,
+        "faces": 9,
+        "volume": 7969.6283004954985
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": 1,
-        "valid": 1,
+        "valid": true,
         "faces": 9,
-        "volume": 7969.6283
+        "volume": 7969.6283004954985
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: validity, face count and volume of the 20-box with edges 0, 1, 2 filleted at radii 1, 2 and 1.5. Bridge: Shape.blendedEdges(...) isValid true, 9 faces, volume 7969.6283004954985 (temporary print). Kernel: Scripts/repro/766-modeling-evidence-fix/transcript.txt `blendMultipleEdges: done=1 valid=1 faces=9 volume=7969.6283004954985` (BRepFilletAPI_MakeFillet).",
+    "probe": "Scripts/repro/766-modeling-evidence-fix/"
   },
   {
     "test_name": "Multi-Edge Blend Tests::blendSingleEdge",
@@ -192,24 +221,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil",
-        "isValid": true
+        "valid": true,
+        "faces": 7,
+        "volume": 997.8539816339743
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": 1,
-        "valid": 1,
+        "valid": true,
         "faces": 7,
-        "volume": 997.8539816
+        "volume": 997.8539816339743
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: validity, face count and volume of the 10-box with edge 0 filleted at radius 1. Bridge: Shape.blendedEdges([(0, 1.0)]) isValid true, 7 faces, volume 997.8539816339743 (temporary print). Kernel: Scripts/repro/766-modeling-evidence-fix/transcript.txt `blendSingleEdge: done=1 valid=1 faces=7 volume=997.85398163397429`.",
+    "probe": "Scripts/repro/766-modeling-evidence-fix/"
   },
   {
     "test_name": "Multi-Edge Blend Tests::blendEmptyArray",
@@ -238,22 +269,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "volume": "1000 < v < 3000"
+        "shape_type": "COMPOUND",
+        "solids": 6,
+        "volume": 1999.9999999999984
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "type": "COMPOUND",
+        "shape_type": "COMPOUND",
         "solids": 6,
-        "volume": 2000
+        "volume": 1999.9999999999984
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: shape type, solid count and volume of Shape.fuseAll over three 10-boxes offset by (0,0,0), (5,0,0) and (0,5,0). The result is a General Fuse compound of the split parts, not a merged solid (#367). Bridge: shapeType Compound, subShapes(ofType: .solid).count and volume (temporary print). Kernel: Scripts/repro/766-modeling-evidence-fix/transcript.txt `fuseThreeBoxes: type=0 solids=6 volume=1999.9999999999984` (BRepAlgoAPI_BuilderAlgo, type=0 is TopAbs_COMPOUND; volume with OnlyClosed true as OCCTShapeGetVolume computes it).",
+    "probe": "Scripts/repro/766-modeling-evidence-fix/"
   },
   {
     "test_name": "Multi-Tool Boolean Fuse::fuseFourSpheres",
@@ -261,22 +296,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "volume": "> 0"
+        "shape_type": "COMPOUND",
+        "solids": 13,
+        "volume": 1269.5229087135415
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "type": "COMPOUND",
+        "shape_type": "COMPOUND",
         "solids": 13,
-        "volume": 1269.522908
+        "volume": 1269.5229087135415
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: shape type, solid count and volume of Shape.fuseAll over four r = 5 spheres at (0,0,0), (4,0,0), (0,4,0) and (4,4,0). The result is a General Fuse compound of the split parts, not a merged solid (#367). Bridge: shapeType Compound, subShapes(ofType: .solid).count and volume (temporary print). Kernel: Scripts/repro/766-modeling-evidence-fix/transcript.txt `fuseFourSpheres: type=0 solids=13 volume=1269.5229087135415` (BRepAlgoAPI_BuilderAlgo, type=0 is TopAbs_COMPOUND; volume with OnlyClosed true as OCCTShapeGetVolume computes it).",
+    "probe": "Scripts/repro/766-modeling-evidence-fix/"
   },
   {
     "test_name": "Multi-Tool Boolean Fuse::fuseTooFew",
@@ -305,22 +344,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "volume": "within 1 of 250"
+        "shape_type": "COMPOUND",
+        "solids": 2,
+        "volume": 249.9999999999999
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "type": "COMPOUND",
+        "shape_type": "COMPOUND",
         "solids": 2,
-        "volume": 250
+        "volume": 249.9999999999999
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: shape type, solid count and volume of Shape.fuseAll over two 5-boxes 20 apart in each axis. The result is a General Fuse compound of the split parts, not a merged solid (#367). Bridge: shapeType Compound, subShapes(ofType: .solid).count and volume (temporary print). Kernel: Scripts/repro/766-modeling-evidence-fix/transcript.txt `fuseNonOverlapping: type=0 solids=2 volume=249.99999999999989` (BRepAlgoAPI_BuilderAlgo, type=0 is TopAbs_COMPOUND; volume with OnlyClosed true as OCCTShapeGetVolume computes it).",
+    "probe": "Scripts/repro/766-modeling-evidence-fix/"
   },
   {
     "test_name": "Multi-Offset Wire::multipleInwardOffsets",
@@ -328,8 +371,12 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "wires": ">= 3",
-        "lengths": "strictly decreasing"
+        "wires": 3,
+        "lengths": [
+          72.0,
+          64.0,
+          56.0
+        ]
       }
     },
     "kernel_output": {
@@ -337,9 +384,9 @@
       "data": {
         "wires": 3,
         "lengths": [
-          72,
-          64,
-          56
+          72.0,
+          64.0,
+          56.0
         ]
       }
     },
@@ -347,7 +394,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the wires returned for offsets -1, -2 and -3 of the 20x20 face, and their lengths (80 - 8, 80 - 16, 80 - 24). Bridge: Shape.multiOffsetWires(offsets: [-1.0, -2.0, -3.0]) returned 3 wires of length 72.0, 64.0 and 56.0 (temporary print; the test asserts only wires.count >= 3 and strictly decreasing lengths). Kernel: Scripts/repro/766-modeling-evidence-fix/transcript.txt `multipleInwardOffsets: [offset -1: wire length 72] [offset -2: wire length 64] [offset -3: wire length 56] total wires=3`.",
+    "probe": "Scripts/repro/766-modeling-evidence-fix/"
   },
   {
     "test_name": "Multi-Offset Wire::outwardOffset",
@@ -355,7 +404,11 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "wires": ">= 2"
+        "wires": 2,
+        "lengths": [
+          46.28318530717959,
+          52.56637061435917
+        ]
       }
     },
     "kernel_output": {
@@ -363,8 +416,8 @@
       "data": {
         "wires": 2,
         "lengths": [
-          46.28318531,
-          52.56637061
+          46.28318530717959,
+          52.56637061435917
         ]
       }
     },
@@ -372,7 +425,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the wires returned for offsets 1 and 2 of the 10x10 face, and their lengths (40 + 2 pi and 40 + 4 pi). Bridge: Shape.multiOffsetWires(offsets: [1.0, 2.0]) returned 2 wires, Wire.length 46.28318530717959 and 52.56637061435917 (temporary print). Kernel: Scripts/repro/766-modeling-evidence-fix/transcript.txt `outwardOffset: [offset 1: wire length 46.283185307179593] [offset 2: wire length 52.566370614359172] total wires=2`.",
+    "probe": "Scripts/repro/766-modeling-evidence-fix/"
   },
   {
     "test_name": "Multi-Offset Wire::emptyOffsets",
