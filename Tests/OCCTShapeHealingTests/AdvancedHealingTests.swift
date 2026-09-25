@@ -22,12 +22,25 @@ private func surfaceKinds(_ shape: Shape) -> [Surface.SurfaceType: Int] {
 @Suite("Advanced Healing Tests")
 struct AdvancedHealingTests {
 
+    // #766: `divided(at:)` answers nil for two different reasons, `Perform()` returning false ("no
+    // divisions needed") and a bridge failure (a caught OCCT exception, or a bridge that returns
+    // nothing), so `== nil` on its own could not tell the kernel's answer from a failure. Two
+    // things separate them. No exception was caught while the cylinder call ran, so its nil is not
+    // an error. And the same call on a face that does need dividing, the C0 B-spline face of
+    // Issue #438 (4 faces at C1, measured against the kernel in
+    // Scripts/repro/766-healing-advanced/), returns a shape, so nil is not what the bridge says to
+    // everything.
     @Test("Divide cylinder at C1")
     func divideCylinder() throws {
         // ShapeUpgrade_ShapeDivideContinuity finds nothing below C1 on a primitive cylinder:
         // Perform() returns false, which the bridge reports as nil ("no divisions needed").
         let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
-        #expect(cyl.divided(at: .c1) == nil)
+        let (divided, diagnostics) = OCCTDiagnostics.capturing { cyl.divided(at: .c1) }
+        #expect(divided == nil)
+        #expect(diagnostics.isEmpty, "the nil must be Perform() false, not a caught exception")
+        let kinked = try #require(kinkedSurfaceFace())
+        let control = try #require(kinked.divided(at: .c1, tolerance: 1e-4))
+        #expect(control.faceCount == 4)
     }
 
     @Test("Direct faces on box")
@@ -94,5 +107,38 @@ struct AdvancedHealingTests {
         #expect(upgraded.isValid)
         #expect(upgraded.shapeType == .solid)
         #expect(abs((upgraded.volume ?? 0) - 1000) < 1e-9)
+    }
+
+    /// The fixture of `Issue438DivideContinuityUnificationTests.kinkedSurfaceFace`: a cubic B-spline
+    /// surface with a multiplicity-3 interior knot in both U and V, so it is genuinely C0 there and
+    /// a C1 divider has something to divide.
+    private func kinkedSurfaceFace() -> Shape? {
+        let degree = 3
+        let interiorKnots = 4
+        let bumpAt = 2
+        let bumpMult = 3
+        var knots: [Double] = [0]
+        var mults: [Int32] = [Int32(degree + 1)]
+        for i in 1...interiorKnots {
+            knots.append(Double(i))
+            mults.append(Int32(i == bumpAt ? bumpMult : 1))
+        }
+        knots.append(Double(interiorKnots + 1))
+        mults.append(Int32(degree + 1))
+        let poleCount = Int(mults.reduce(0, +)) - degree - 1
+        guard
+            let surface = Surface.bspline(
+                poles: (0..<poleCount).map { u in
+                    (0..<poleCount).map { v in
+                        SIMD3<Double>(Double(u), Double(v), Double((u + v) % 3) * 0.5)
+                    }
+                },
+                knotsU: knots, multiplicitiesU: mults,
+                knotsV: knots, multiplicitiesV: mults,
+                degreeU: degree, degreeV: degree)
+        else { return nil }
+        let bounds = surface.domain
+        return Shape.face(
+            from: surface, uRange: bounds.uMin...bounds.uMax, vRange: bounds.vMin...bounds.vMax)
     }
 }

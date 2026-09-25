@@ -4,6 +4,9 @@
 // bridge's own calls (Sewing, then MakeSolid on a closed shell) so the sewFaces record can carry the
 // shape type, face count, volume and validity on both sides. It also reprints the two analytical-
 // conversion points at %.17g (probe.mm printed nine decimals).
+// Also (PR #2289 test fix): the divideCylinder positive control below, the kinked B-spline face of
+// Issue438DivideContinuityUnificationTests divided at C1, which the kernel must divide.
+#include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakeSolid.hxx>
 #include <BRepBuilderAPI_Sewing.hxx>
 #include <BRepCheck_Analyzer.hxx>
@@ -11,6 +14,10 @@
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <GProp_GProps.hxx>
 #include <GeomConvert.hxx>
+#include <ShapeUpgrade_ShapeDivideContinuity.hxx>
+#include <TColStd_Array1OfInteger.hxx>
+#include <TColStd_Array1OfReal.hxx>
+#include <TColgp_Array2OfPnt.hxx>
 #include <GeomConvert_CurveToAnaCurve.hxx>
 #include <GeomConvert_SurfToAnaSurf.hxx>
 #include <Geom_BSplineCurve.hxx>
@@ -85,6 +92,49 @@ int main()
     Handle(Geom_CylindricalSurface)        rc  = Handle(Geom_CylindricalSurface)::DownCast(res);
     gp_Pnt                                 p   = res->Value(0, 0);
     printf("surfaceConversion infiniteThrew=%d isCylinder=%d value(0,0)=(%.17g, %.17g, %.17g)\n", (int)threw, (int)!rc.IsNull(), p.X(), p.Y(), p.Z());
+  }
+  // divideCylinder control: the fixture of Issue438DivideContinuityUnificationTests.kinkedSurfaceFace, a
+  // cubic B-spline surface with a multiplicity-3 interior knot in U and V (genuinely C0 there), trimmed to its
+  // whole domain. Shape.divided(at: .c1, tolerance: 1e-4) is OCCTShapeDivide: ShapeUpgrade_ShapeDivideContinuity
+  // with boundary, pcurve and surface criteria C1, tolerance 1e-4 and SetSurfaceSegmentMode(true). The cylinder
+  // above answers Perform() false (no division needed); this face must be divided, or "nil" would be what the
+  // bridge says to everything.
+  {
+    const int degree = 3;
+    // knots 0..5, multiplicities 4,1,3,1,1,4 (the bump is at knot 2), 14 in total: 14 - 3 - 1 = 10 poles per side
+    TColStd_Array1OfReal    knots(1, 6);
+    TColStd_Array1OfInteger mults(1, 6);
+    const int               m[6] = {4, 1, 3, 1, 1, 4};
+    for (int i = 0; i < 6; i++)
+    {
+      knots.SetValue(i + 1, (double)i);
+      mults.SetValue(i + 1, m[i]);
+    }
+    const int         n = 10;
+    TColgp_Array2OfPnt poles(1, n, 1, n);
+    for (int u = 0; u < n; u++)
+      for (int v = 0; v < n; v++)
+        poles.SetValue(u + 1, v + 1, gp_Pnt(u, v, ((u + v) % 3) * 0.5));
+    Handle(Geom_BSplineSurface) surface = new Geom_BSplineSurface(poles, knots, knots, mults, mults, degree, degree);
+    double u1, u2, v1, v2;
+    surface->Bounds(u1, u2, v1, v2);
+    BRepBuilderAPI_MakeFace maker(surface, u1, u2, v1, v2, 1e-6);
+    TopoDS_Shape            face = maker.Face();
+    ShapeUpgrade_ShapeDivideContinuity divider(face);
+    divider.SetBoundaryCriterion(GeomAbs_C1);
+    divider.SetPCurveCriterion(GeomAbs_C1);
+    divider.SetSurfaceCriterion(GeomAbs_C1);
+    divider.SetTolerance(1e-4);
+    divider.SetSurfaceSegmentMode(Standard_True);
+    bool performed = divider.Perform();
+    int  faces     = 0;
+    if (performed && !divider.Result().IsNull())
+    {
+      TopTools_IndexedMapOfShape fm;
+      TopExp::MapShapes(divider.Result(), TopAbs_FACE, fm);
+      faces = fm.Extent();
+    }
+    printf("divideCylinder control (kinked B-spline face, C1, 1e-4): Perform=%d resultFaces=%d\n", (int)performed, faces);
   }
   return 0;
 }

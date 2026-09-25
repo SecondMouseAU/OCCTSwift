@@ -2,3 +2,4 @@ sewFaces SewedShape type=3 closed=1
 sewFaces as the bridge returns it: type=2 (2 = solid) valid=1 faces=6 volume=999.99999999999977
 bsplineCircle isCircle=1 radius=10 value(0)=(10, 0, 0)
 surfaceConversion infiniteThrew=1 isCylinder=1 value(0,0)=(5, -2.2266116722237509e-16, 0)
+divideCylinder control (kinked B-spline face, C1, 1e-4): Perform=1 resultFaces=4

@@ -9545,13 +9545,15 @@
     "bridge_output": {
       "type": "object",
       "data": {
-        "divisions_performed": false
+        "cylinder_divisions_performed": false,
+        "kinked_face_c1_faces": 4
       }
     },
     "kernel_output": {
       "type": "object",
       "data": {
-        "divisions_performed": false
+        "cylinder_divisions_performed": false,
+        "kinked_face_c1_faces": 4
       }
     },
     "comparison": {
@@ -9559,8 +9561,8 @@
       "differences": []
     },
     "status": "PASS",
-    "kernel_probe": "Scripts/repro/766-healing-advanced/probe.mm",
-    "source": "Same quantity on both sides: whether dividing the cylinder at C1 performed any division. Bridge: Shape.divided(at: .c1) (OCCTShapeDivide) returned nil, which the bridge reports when Perform() is false (no divisions needed); a temporary print in the test observed nil (divisions_performed false). Kernel: ShapeUpgrade_ShapeDivideContinuity::Perform() returned false ('divide C1 Perform=0' in Scripts/repro/766-healing-advanced/transcript.txt). The probe also printed the untouched result shape (3 faces, 'divide C1 result'), which the bridge does not return when Perform() is false, so it is not a compared key."
+    "kernel_probe": "Scripts/repro/766-healing-advanced/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether dividing the cylinder at C1 performed any division, and, as a positive control, how many faces the same call divides a face that does need it into. Bridge: Shape.divided(at: .c1) (OCCTShapeDivide) returned nil for the cylinder, with no exception caught while it ran (OCCTDiagnostics.capturing was empty), and Shape.divided(at: .c1, tolerance: 1e-4) returned a shape of 4 faces for the C0 B-spline face of Issue #438; both are asserted by the test, whose passing run is the observation. Kernel: ShapeUpgrade_ShapeDivideContinuity::Perform() returned false on the cylinder ('divide C1 Perform=0' in Scripts/repro/766-healing-advanced/transcript.txt), and on the kinked face the same divider at C1 and 1e-4 returned true with 4 faces ('divideCylinder control (kinked B-spline face, C1, 1e-4): Perform=1 resultFaces=4' in Scripts/repro/766-healing-advanced/transcript-evidence-fix.txt). The control is what makes the cylinder's nil the kernel's answer and not a bridge that returns nil for everything. The probe also printed the untouched result shape of the cylinder (3 faces), which the bridge does not return when Perform() is false, so it is not a compared key."
   },
   {
     "test_name": "Advanced Healing Tests::directFacesBox",
