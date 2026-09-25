@@ -1823,7 +1823,7 @@
     "kernel_output": {
       "type": "groove_measurement",
       "data": {
-        "gp_Ax2_YDirection_per_axis": {
+        "datum_per_axis": {
           "+X": [
             0,
             -1,
@@ -1855,11 +1855,11 @@
             0
           ]
         },
-        "groove_degrees_all_axes": -1.868502,
-        "groove_fraction_all_axes": 0.555556,
-        "blank_volume": 1130.973355292,
-        "threaded_volume": 1003.146692111,
-        "removed_volume": 127.826663181
+        "groove_degrees_all_axes": -1.8685017585032249,
+        "groove_fraction_all_axes": 0.5555555555555556,
+        "blank_volume": 1130.9733552923262,
+        "threaded_volume": 1003.1466921110973,
+        "removed_volume": 127.82666318122892
       }
     },
     "comparison": {
@@ -1867,7 +1867,8 @@
       "differences": []
     },
     "status": "PASS",
-    "note": "Kernel side is Scripts/repro/766-thread-784-991/probe.mm: gp_Ax2 datum for the six axes, then the same 72-point BRepClass3d_SolidClassifier ring and BRepGProp volumes on the solids the Swift run exported to BREP. The threaded solid itself is built by Swift composition (buildThreadedRodDirect), so parity covers the datum and the measurement, not a C++ rebuild of the thread. Datum signs of zero differ in print only. bridge_output threaded_volume and removed_volume are the +X, -X, +Z and -Z Swift measurements (1003.1466921110966 and 127.82666318122892); the +Y and -Y runs measured 1003.1466921110967 and 127.82666318122881, a last-digit difference that vanishes at the 9 decimals the probe prints, where all six axes agree (threaded 1003.146692111, removed 127.826663181)."
+    "kernel_probe": "Scripts/repro/766-thread-784-991/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the thread datum for each of the six world axes, and the groove measurement of the threaded rod. Bridge: the datum is perpendicularBasis(to: axis).1 (the thread's clocking datum); a temporary print in the test observed it, and the groove angle -1.8685017585032249 degrees, groove fraction 0.5555555555555556 (40 of 72 ring samples), blank volume 1130.9733552923256, threaded volume 1003.1466921110966 and removed volume 127.82666318122892 for +X, -X, +Z and -Z (the +Y and -Y runs measured threaded 1003.1466921110967 and removed 127.82666318122881); angle and fraction were identical on all six axes. Kernel: the datum is gp_Ax2(origin, axis).YDirection() (transcript Part 1, signs of zero differ in print only); the measurement is Scripts/repro/766-thread-784-991/probe-evidence-fix.mm, transcript-evidence-fix.txt, run at %.17g on the BREP files that instrumented run wrote (the same 72-point BRepClass3d_SolidClassifier ring and BRepGProp volumes on the very solids Swift built): degrees -1.8685017585032249, fraction 0.55555555555555558, and for +X blank 1130.9733552923262, threaded 1003.1466921110973, removed 127.82666318122892 (+Z and -Z: threaded 1003.1466921110972, removed 127.82666318122904). The two sides agree to within 1e-12 absolute. The threaded solid is built by Swift composition (buildThreadedRodDirect), so parity covers the datum and the measurement, not a C++ rebuild of the thread. The earlier kernel side printed six decimals and named the datum gp_Ax2_YDirection_per_axis."
   },
   {
     "test_name": "Issue #991: the profile owns its own flat widths::flat widths match each form's standard",
