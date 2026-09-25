@@ -3481,5 +3481,312 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Equation roundtrip",
+    "bridge_function": "OCCTClipPlaneCreate",
+    "bridge_output": {
+      "equation": [
+        0,
+        0,
+        1,
+        -5
+      ]
+    },
+    "kernel_output": {
+      "equation": [
+        0,
+        0,
+        1,
+        -5
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Create from normal and distance",
+    "bridge_function": "OCCTClipPlaneCreate",
+    "bridge_output": {
+      "equation": [
+        1,
+        0,
+        0,
+        -3
+      ]
+    },
+    "kernel_output": {
+      "equation": [
+        1,
+        0,
+        0,
+        -3
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Set equation updates values",
+    "bridge_function": "OCCTClipPlaneSetEquation",
+    "bridge_output": {
+      "equation": [
+        0,
+        1,
+        0,
+        -2
+      ]
+    },
+    "kernel_output": {
+      "equation": [
+        0,
+        1,
+        0,
+        -2
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Reversed equation is negated",
+    "bridge_function": "OCCTClipPlaneGetReversedEquation",
+    "bridge_output": {
+      "reversed": [
+        -0.0,
+        -0.0,
+        -1,
+        5
+      ]
+    },
+    "kernel_output": {
+      "reversed": [
+        -0.0,
+        -0.0,
+        -1,
+        5
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Enable and disable",
+    "bridge_function": "OCCTClipPlaneSetOn",
+    "bridge_output": {
+      "default": true,
+      "off": false,
+      "on": true
+    },
+    "kernel_output": {
+      "default": true,
+      "off": false,
+      "on": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Capping on/off",
+    "bridge_function": "OCCTClipPlaneSetCapping",
+    "bridge_output": {
+      "default": false,
+      "set": true
+    },
+    "kernel_output": {
+      "default": false,
+      "set": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Capping color",
+    "bridge_function": "OCCTClipPlaneSetCappingColor",
+    "bridge_output": {
+      "color": [
+        1.0,
+        0.0,
+        0.5
+      ]
+    },
+    "kernel_output": {
+      "color": [
+        1.0,
+        0.0,
+        0.5
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously floats on the bridge side and ints on the kernel side): the capping colour (r, g, b) read back after setting (1.0, 0.0, 0.5). Bridge: ClipPlane.cappingColor (Scripts/repro/766-drawing-clipplane-evidence-fix/swift-side.txt, clip.cappingColor). Kernel: Graphic3d_ClipPlane CappingAspect()->InteriorColor() Red, Green, Blue (Scripts/repro/766-drawing-clipplane/transcript.txt, cappingColor).",
+    "probe": "Scripts/repro/766-drawing-clipplane/, Scripts/repro/766-drawing-clipplane-evidence-fix/"
+  },
+  {
+    "test_name": "Clip Plane::Hatch style",
+    "bridge_function": "OCCTClipPlaneSetCappingHatch",
+    "bridge_output": {
+      "style": 5,
+      "hatchOn": true,
+      "hatchOff": false
+    },
+    "kernel_output": {
+      "style": 5,
+      "hatchOn": true,
+      "hatchOff": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Probe point: inside half-space",
+    "bridge_function": "OCCTClipPlaneProbePoint",
+    "bridge_output": {
+      "state": 1
+    },
+    "kernel_output": {
+      "state": 1
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously the string in / out / on on the bridge side and the raw int on the kernel side): the Graphic3d_ClipState ordinal (Out = 0, In = 1, On = 2), which the Swift ClipState raw values restate, for point (0,0,5) against the plane z = 0. Bridge: ClipPlane.probe(point:) .rawValue (Scripts/repro/766-drawing-clipplane-evidence-fix/swift-side.txt, clip.probePoint.inside); the test asserts the case (.in / .out / .on). Kernel: Graphic3d_ClipPlane ProbePointHalfspace, walked over the chain as OCCTClipPlaneProbePoint does, printed 1 (Scripts/repro/766-drawing-clipplane/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-clipplane/, Scripts/repro/766-drawing-clipplane-evidence-fix/"
+  },
+  {
+    "test_name": "Clip Plane::Probe point: outside half-space",
+    "bridge_function": "OCCTClipPlaneProbePoint",
+    "bridge_output": {
+      "state": 0
+    },
+    "kernel_output": {
+      "state": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously the string in / out / on on the bridge side and the raw int on the kernel side): the Graphic3d_ClipState ordinal (Out = 0, In = 1, On = 2), which the Swift ClipState raw values restate, for point (0,0,-5) against the plane z = 0. Bridge: ClipPlane.probe(point:) .rawValue (Scripts/repro/766-drawing-clipplane-evidence-fix/swift-side.txt, clip.probePoint.outside); the test asserts the case (.in / .out / .on). Kernel: Graphic3d_ClipPlane ProbePointHalfspace, walked over the chain as OCCTClipPlaneProbePoint does, printed 0 (Scripts/repro/766-drawing-clipplane/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-clipplane/, Scripts/repro/766-drawing-clipplane-evidence-fix/"
+  },
+  {
+    "test_name": "Clip Plane::Probe bounding box: fully inside",
+    "bridge_function": "OCCTClipPlaneProbeBox",
+    "bridge_output": {
+      "state": 1
+    },
+    "kernel_output": {
+      "state": 1
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously the string in / out / on on the bridge side and the raw int on the kernel side): the Graphic3d_ClipState ordinal (Out = 0, In = 1, On = 2), which the Swift ClipState raw values restate, for box (0,0,1)..(5,5,10) against the plane z = 0. Bridge: ClipPlane.probe(box:) .rawValue (Scripts/repro/766-drawing-clipplane-evidence-fix/swift-side.txt, clip.probeBox.inside); the test asserts the case (.in / .out / .on). Kernel: Graphic3d_ClipPlane ProbeBoxHalfspace, printed 1 (Scripts/repro/766-drawing-clipplane/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-clipplane/, Scripts/repro/766-drawing-clipplane-evidence-fix/"
+  },
+  {
+    "test_name": "Clip Plane::Probe bounding box: partially clipped",
+    "bridge_function": "OCCTClipPlaneProbeBox",
+    "bridge_output": {
+      "state": 2
+    },
+    "kernel_output": {
+      "state": 2
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously the string in / out / on on the bridge side and the raw int on the kernel side): the Graphic3d_ClipState ordinal (Out = 0, In = 1, On = 2), which the Swift ClipState raw values restate, for box (-5,-5,-5)..(5,5,5) against the plane z = 0. Bridge: ClipPlane.probe(box:) .rawValue (Scripts/repro/766-drawing-clipplane-evidence-fix/swift-side.txt, clip.probeBox.partial); the test asserts the case (.in / .out / .on). Kernel: Graphic3d_ClipPlane ProbeBoxHalfspace, printed 2 (Scripts/repro/766-drawing-clipplane/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-clipplane/, Scripts/repro/766-drawing-clipplane-evidence-fix/"
+  },
+  {
+    "test_name": "Clip Plane::Probe bounding box: fully outside",
+    "bridge_function": "OCCTClipPlaneProbeBox",
+    "bridge_output": {
+      "state": 0
+    },
+    "kernel_output": {
+      "state": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously the string in / out / on on the bridge side and the raw int on the kernel side): the Graphic3d_ClipState ordinal (Out = 0, In = 1, On = 2), which the Swift ClipState raw values restate, for box (0,0,-10)..(5,5,-1) against the plane z = 0. Bridge: ClipPlane.probe(box:) .rawValue (Scripts/repro/766-drawing-clipplane-evidence-fix/swift-side.txt, clip.probeBox.outside); the test asserts the case (.in / .out / .on). Kernel: Graphic3d_ClipPlane ProbeBoxHalfspace, printed 0 (Scripts/repro/766-drawing-clipplane/transcript.txt).",
+    "probe": "Scripts/repro/766-drawing-clipplane/, Scripts/repro/766-drawing-clipplane-evidence-fix/"
+  },
+  {
+    "test_name": "Clip Plane::Chain two planes",
+    "bridge_function": "OCCTClipPlaneSetChainNext",
+    "bridge_output": {
+      "length": [
+        1,
+        2
+      ],
+      "in": 1,
+      "out": 0
+    },
+    "kernel_output": {
+      "length": [
+        1,
+        2
+      ],
+      "in": 1,
+      "out": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides (previously the states were the strings in / out on the bridge side and the raw ints 1 / 0 on the kernel side): the chain length before and after chaining the plane x = 0 onto z = 0, and the clip state ordinal (the Graphic3d_ClipState ordinal (Out = 0, In = 1, On = 2), which the Swift ClipState raw values restate) of (5,0,5) and (-5,0,5) against the chain. Bridge: ClipPlane.chainLength before and after chainNext, and probe(point:).rawValue (Scripts/repro/766-drawing-clipplane-evidence-fix/swift-side.txt, clip.chain lines). Kernel: NbChainNextPlanes() before and after SetChainNextPlane, and the chain walk of ProbePointHalfspace (Scripts/repro/766-drawing-clipplane/transcript.txt, chainPlanes).",
+    "probe": "Scripts/repro/766-drawing-clipplane/, Scripts/repro/766-drawing-clipplane-evidence-fix/"
+  },
+  {
+    "test_name": "Clip Plane::Clear chain",
+    "bridge_function": "OCCTClipPlaneSetChainNext",
+    "bridge_output": {
+      "lengthAfterClear": 1
+    },
+    "kernel_output": {
+      "lengthAfterClear": 1
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
