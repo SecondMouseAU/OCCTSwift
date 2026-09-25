@@ -2561,6 +2561,21 @@ public final class Shape: @unchecked Sendable {
     /// case .none:        print("deadline hit, treat as unknown, not clean")
     /// }
     /// ```
+    // NOT AVAILABLE ON WASI, and not because Dispatch happens to be missing (#2175).
+    //
+    // This entry point's whole contract is a HARD wall-clock deadline: a second thread runs the
+    // check while this one waits on a semaphore, so the caller gets an answer at `hardTimeout`
+    // whether or not OCCT has reached a checkpoint. `wasm32-unknown-wasip1` in the non-threads
+    // configuration this package targets has one thread and one linear memory. There is no
+    // second thread to run the check on, so no implementation of this signature can honour it:
+    // a wasm version would have to become the cooperative `isSelfIntersecting(timeout:)` that
+    // already exists beside it, under a name that promises something stronger.
+    //
+    // So it is removed rather than weakened. A caller who needs a bound on wasm calls
+    // ``isSelfIntersecting(timeout:)``, whose bound is cooperative and says so. Whether the wasm
+    // surface should instead carry this name with the cooperative behaviour is an API decision
+    // for Phase 2 and is filed as its own issue, not settled here by a `#if`.
+    #if !os(WASI)
     public func isSelfIntersecting(hardTimeout: Double) -> Bool? {
         final class SelfIntersectResultBox: @unchecked Sendable {
             var rawResult: Int32 = -1
@@ -2593,6 +2608,7 @@ public final class Shape: @unchecked Sendable {
         default: return nil
         }
     }
+    #endif
 
     /// Detailed self-intersection check with progress information (BOPAlgo-based).
     ///

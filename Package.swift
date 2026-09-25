@@ -523,6 +523,36 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
             ]
         )
 
+// The `simd` module, on WASI only (#2175).
+//
+// 196 of the 230 files in Sources/OCCTSwift open with `import simd`, and on
+// wasm32-unknown-wasip1 that is `error: no such module 'simd'`, which stops the entire Swift
+// layer before any of it is type-checked. Apple's simd is part of the Apple SDKs and there is no
+// wasm build of it.
+//
+// A target NAMED `simd`, reachable only when isWASI, answers that without editing any of the 196
+// files and without changing a single byte of what an Apple build compiles: `import simd` still
+// resolves to Apple's there, because this target is not in the graph at all. The alternative,
+// 196 `#if canImport(simd)` edits, is a mechanical diff through nearly every file in the package
+// and would still need the definitions this module carries.
+//
+// What it defines is what Sources/OCCTSwift measurably uses and no more; see the file's own
+// header for the counts and for the one behavioural difference from Apple's module
+// (`simd_normalize` of a zero vector).
+let wasiCompatTargets: [Target] =
+    isWASI
+    ? [
+        .target(
+            name: "simd",
+            path: "Sources/WASICompat/simd",
+            swiftSettings: [.swiftLanguageMode(.v6)]
+        )
+    ]
+    : []
+
+let swiftLayerDependencies: [Target.Dependency] =
+    isWASI ? ["OCCTBridge", "OCCT", "simd"] : ["OCCTBridge", "OCCT"]
+
 let package = Package(
     name: "OCCTSwift",
     platforms: [
@@ -574,7 +604,7 @@ let package = Package(
         // build and into theirs. Transcript and reasoning in Scripts/repro/967-consumer-compile/.
         .target(
             name: "OCCTSwift",
-            dependencies: ["OCCTBridge", "OCCT"],
+            dependencies: swiftLayerDependencies,
             path: "Sources/OCCTSwift",
             swiftSettings: [
                 .swiftLanguageMode(.v6)
@@ -690,6 +720,6 @@ let package = Package(
                 .swiftLanguageMode(.v6)
             ]
         ),
-    ],
+    ] + wasiCompatTargets,
     cxxLanguageStandard: .cxx17
 )
