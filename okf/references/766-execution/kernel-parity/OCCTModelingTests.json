@@ -422,7 +422,9 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "section": "non-nil"
+        "done": true,
+        "edges": 0,
+        "vertices": 1
       }
     },
     "kernel_output": {
@@ -437,7 +439,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: done and the distinct edge and vertex counts of the section between the centred 10 mm cube and the 10 mm cube at (5,5,5), fuzzy 0.001. The cubes meet at one corner, so the section is a single vertex and no edge; the test asserts only that the result is non-nil. Bridge: Shape.section(with:tolerance:) non-nil (OCCTBooleanSectionWithTolerance) and subShapes(ofType: .edge/.vertex).count. Kernel: BRepAlgoAPI_Section with SetFuzzyValue(0.001) and Build, IsDone, TopExp::MapShapes edge and vertex counts; sectionWithTolerance line of the transcript.",
+    "probe": "Scripts/repro/766-modeling-boolean-expansion/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "v0.115.0 - Boolean Expansion::splitMulti",
@@ -445,7 +449,9 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "split": "non-nil"
+        "done": true,
+        "solids": 2,
+        "volume": 8000
       }
     },
     "kernel_output": {
@@ -453,14 +459,16 @@
       "data": {
         "done": true,
         "solids": 2,
-        "volume": 8000
+        "volume": 7999.999999999999
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, solid count and volume of the 20 mm cube split by the 10 mm tool cube at (5,5,5). Bridge: Shape.split(tools:) non-nil (OCCTBooleanSplitMulti), subShapes(ofType: .solid).count and Shape.volume; the test asserted only non-nil. Kernel: BRepAlgoAPI_Splitter with one argument and one tool, IsDone, TopExp::MapShapes solid count, BRepGProp::VolumeProperties; splitMulti line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-expansion/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "v0.115.0 - Boolean Expansion::cutWithHistory",
@@ -468,8 +476,12 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil",
-        "isValid": true
+        "done": true,
+        "valid": true,
+        "volume": 7875.000000000002,
+        "hasDeleted": true,
+        "hasModified": true,
+        "hasGenerated": true
       }
     },
     "kernel_output": {
@@ -477,7 +489,7 @@
       "data": {
         "done": true,
         "valid": true,
-        "volume": 7875,
+        "volume": 7875.000000000002,
         "hasDeleted": true,
         "hasModified": true,
         "hasGenerated": true
@@ -487,7 +499,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, volume and the three history flags of the 20 mm cube minus the 10 mm tool cube at (5,5,5). Bridge: Shape.subtractedWithHistory non-nil (OCCTBooleanCutWithHistory), shape.isValid, shape.volume, hasDeleted, hasModified, hasGenerated; the test asserted non-nil and valid and discards the three flags. Kernel: BRepAlgoAPI_Cut with SetArguments/SetTools and Build, IsDone, BRepCheck_Analyzer, BRepGProp, HasDeleted, HasModified, HasGenerated; cutWithHistory line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-expansion/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "v0.115.0 - Boolean Expansion::defeature",
@@ -497,8 +511,8 @@
       "data": {
         "filletedFaces": 26,
         "resultFaces": 25,
-        "isValid": true,
-        "volumeDelta": "1.791585 +- 1e-4"
+        "valid": true,
+        "volumeDelta": 1.7915849460268873
       }
     },
     "kernel_output": {
@@ -507,14 +521,16 @@
         "filletedFaces": 26,
         "resultFaces": 25,
         "valid": true,
-        "volumeDelta": 1.791584946
+        "volumeDelta": 1.7915849460268873
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the face count of the r=2 filleted 20 mm cube, then the face count, validity and volume growth after defeaturing face ordinals 6 and 7. Bridge: subShapes(ofType: .face).count, Shape.defeature(faces:) result isValid and Shape.volume after minus before; the test asserted 26, 25, valid and the delta within 1e-4 of 1.791585. Kernel: BRepFilletAPI_MakeFillet on every edge, TopExp::MapShapes faces, BRepAlgoAPI_Defeaturing of faces(7) and faces(8), BRepCheck_Analyzer, BRepGProp volume difference; defeature line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-expansion/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "Boolean with History::fuseWithHistory",
@@ -522,22 +538,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "volume": ">0",
-        "modifiedFaces": ">0"
+        "done": true,
+        "volume": 1499.9999999999993,
+        "modifiedFaces": 8
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "volume": 1500,
-        "modifiedFacesOfShape1": 8
+        "done": true,
+        "volume": 1499.9999999999993,
+        "modifiedFaces": 8
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, the fused volume and the number of modified shapes over shape 1's faces, for two overlapping 10 mm cubes offset 5 in x. Bridge: Shape.fuseWithHistory non-nil (OCCTShapeFuseWithHistory), result.shape.volume (Swift takes the fused shape from a separate union call, the history from the fuse) and modifiedFaces.count, the summed length of BRepAlgoAPI_Fuse::Modified(face) over shape 1's TopExp_Explorer faces; the test asserted positive volume and a positive count. Kernel: the same fuse, IsDone, BRepGProp, and the same summed Modified() list lengths; fuseWithHistory line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-history/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "Boolean with History::fuseNonOverlappingHistory",
@@ -545,21 +565,26 @@
     "bridge_output": {
       "type": "value",
       "data": {
+        "done": true,
+        "volume": 249.9999999999999,
         "modifiedFaces": 0
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "volume": 250,
-        "modifiedFacesOfShape1": 0
+        "done": true,
+        "volume": 249.9999999999999,
+        "modifiedFaces": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, the fused volume and the number of modified shapes over shape 1's faces, for two 5 mm cubes 20 apart. Bridge: Shape.fuseWithHistory non-nil, result.shape.volume and modifiedFaces.count; the test asserted 0 modified faces. Kernel: BRepAlgoAPI_Fuse, IsDone, BRepGProp and the summed Modified() list lengths over shape 1's faces; fuseNonOverlappingHistory line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-history/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "v0.143 FeatureSpec.Boolean named-shape registry::unionNamedRevolves",
@@ -567,28 +592,28 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "fulfilled": [
-          "a",
-          "b",
-          "u"
-        ],
-        "shape": "non-nil"
+        "revolveA": 261.79938779914943,
+        "revolveB": 1047.197551196598,
+        "unionDone": true,
+        "unionVolume": 1308.996938995747
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "revolveA": 261.7993878,
-        "revolveB": 1047.197551,
+        "revolveA": 261.79938779914943,
+        "revolveB": 1047.197551196598,
         "unionDone": true,
-        "unionVolume": 1308.996939
+        "unionVolume": 1308.9969389957473
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the volume of each of the two revolved triangles, and done and volume of their union. Bridge: FeatureReconstructor.build over [.revolve(a)] and over [.revolve(b)] alone (the test builds all three specs together and exposes only the final shape) give revolveA and revolveB as shape.volume; the combined build gives unionDone (fulfilled contains \"u\" and the shape is non-nil) and unionVolume; the test asserted fulfilled a, b, u and a non-nil shape. Kernel: BRepPrimAPI_MakeRevol of each triangle about z, BRepAlgoAPI_Fuse IsDone and BRepGProp; unionNamedRevolves line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-boolean-registry/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "v0.143 FeatureSpec.Boolean named-shape registry::missingLeftRef",
