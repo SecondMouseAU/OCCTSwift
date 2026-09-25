@@ -890,7 +890,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: the face index in the copy that each source face UID resolves to. Bridge: BRepGraph.copy() then node(forUID:) on the box 10x20x30 graph. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_Copy::Perform then UIDs().NodeIdFrom(source.UIDs().Of(face i)), printed as \"0->0 ... 5->5\" in the probe transcript. The old sameInstanceID / copyOk keys are not compared: sameInstanceID is the Swift instanceID the bridge copies from the source graph (no kernel counterpart, asserted by the test) and copyOk is the boolean the Perform call returns.",
+    "source": "Same quantity on both sides: the face index in the copy that each source face UID resolves to. Bridge: BRepGraph.copy() then node(forUID:) on the box 10x20x30 graph. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_Copy::Perform then UIDs().NodeIdFrom(source.UIDs().Of(face i)), printed as \"uidSurvivesAFullCopy: ok=1 0->0 1->1 2->2 3->3 4->4 5->5\" in the probe transcript. The old sameInstanceID / copyOk keys are not compared: sameInstanceID is the Swift instanceID the bridge copies from the source graph (no kernel counterpart, asserted by the test) and copyOk is the boolean the Perform call returns.",
     "probe": "Scripts/repro/766-brepgraph-durable-uid/"
   },
   {
@@ -927,7 +927,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: the face index in the translated graph that each source face UID resolves to. Bridge: BRepGraph.translated(dx:dy:dz:) then node(forUID:) on the box 10x20x30 graph. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_Transform::Perform then UIDs().NodeIdFrom(source.UIDs().Of(face i)), printed as \"0->0 ... 5->5\" in the probe transcript. sameInstanceID and transformOk are not compared (Swift instanceID with no kernel counterpart, and the boolean the Perform call returns).",
+    "source": "Same quantity on both sides: the face index in the translated graph that each source face UID resolves to. Bridge: BRepGraph.translated(dx:dy:dz:) then node(forUID:) on the box 10x20x30 graph. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_Transform::Perform then UIDs().NodeIdFrom(source.UIDs().Of(face i)), printed as \"uidSurvivesATranslation: ok=1 0->0 1->1 2->2 3->3 4->4 5->5\" in the probe transcript. sameInstanceID and transformOk are not compared (Swift instanceID with no kernel counterpart, and the boolean the Perform call returns).",
     "probe": "Scripts/repro/766-brepgraph-durable-uid/"
   },
   {
@@ -2387,7 +2387,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: the face indices under solid 0 of a 10x10x10 box, in visit order. Bridge: childIndices(rootKind: .solid, rootIndex: 0, targetKind: .face), which is what .containedIn resolves through. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_ChildExplorer(solid 0, Face), printed as \"childIndices(solid 0, face): 0 1 2 3 4 5 (count 6)\" in the probe transcript. The test's occurrence 0 selects children[0] = face 0 by Swift indexing (the resolved node printed as face, index 0).",
+    "source": "Same quantity on both sides: the face indices under solid 0 of a 10x10x10 box, in visit order. Bridge: childIndices(rootKind: .solid, rootIndex: 0, targetKind: .face), which is what .containedIn resolves through. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_ChildExplorer(solid 0, Face), printed as \"childIndices(solid 0, face): 0 1 2 3 4 5\" and \"(count 6)\" in the probe transcript. The test's occurrence 0 selects children[0] = face 0 by Swift indexing (the resolved node printed as face, index 0).",
     "probe": "Scripts/repro/766-brepgraph-construction/"
   },
   {
@@ -2847,7 +2847,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: is_natural_restriction of face 0 of a box and of a sphere. Bridge: isFaceNaturalRestriction(0), which the bridge computes as NbWires == 0. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: Tool::Face::NbWires is 1 for both (probe transcript: box \"wires=1 ... natural=0\", sphere \"sphere face0: wires=1 natural=0\", where natural is NbWires == 0), so is_natural_restriction is false.",
+    "source": "Same quantity on both sides: is_natural_restriction of face 0 of a box and of a sphere. Bridge: isFaceNaturalRestriction(0), which the bridge computes as NbWires == 0. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: Tool::Face::NbWires is 1 for both (probe transcript: every box face reads \"wires=1\" with \"natural=0\" on its faces line, and the sphere reads \"sphere face0: wires=1 natural=0\", where natural is NbWires == 0), so is_natural_restriction is false.",
     "probe": "Scripts/repro/766-brepgraph-edge-wires-explorer-face/"
   },
   {
@@ -3327,7 +3327,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: the replacements of edge 3 after the SplitEdge record. Bridge: findDerived(of: edge 3), which the resolver reads its occurrence from (occurrence 1 selects edge 31 by Swift indexing, the resolved node printed as edge, index 31). Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_LayerHistory::FindDerived(edge 3), \"topologyref splitOf: FindDerived(edge 3) size=2 [0] = (4,30) [1] = (4,31)\" in the probe transcript, where kind 4 is Edge. The record's own Mapping also holds [(4,30), (4,31)] (\"splitOf: record 0 Mapping[(4,3)] size=2\" in Scripts/repro/766-brepgraph-evidence-fix/transcript.txt).",
+    "source": "Same quantity on both sides: the replacements of edge 3 after the SplitEdge record. Bridge: findDerived(of: edge 3), which the resolver reads its occurrence from (occurrence 1 selects edge 31 by Swift indexing, the resolved node printed as edge, index 31). Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_LayerHistory::FindDerived(edge 3), \"topologyref splitOf: FindDerived(edge 3) size=2\" followed by the entries \"(4,30)\" and \"(4,31)\" in the probe transcript, where kind 4 is Edge. The record's own Mapping also holds [(4,30), (4,31)] (\"splitOf: record 0 Mapping[(4,3)] size=2\" in Scripts/repro/766-brepgraph-evidence-fix/transcript.txt).",
     "probe": "Scripts/repro/766-brepgraph-history/"
   },
   {
@@ -4724,7 +4724,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: FindDerived for a modified face (face 0 -> face 100), a deleted face (face 1, mapped to nothing) and an untouched face (face 2), as [kind ordinal, index] lists. Bridge: findDerived(of:) for each. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_LayerHistory::FindDerived, \"modified: FindDerived(kind 2, 0) = [ (2,100) ]\", \"deleted: ... = [ ]\" and \"untouched: ... = [ ]\" in the probe transcript. The test's findDerivedOrSelf turns the untouched empty result into [self] (printed [(2, 2)]) and keeps the deleted one empty; that disambiguation is Swift logic with no kernel counterpart. The old record put that [self] result on the bridge side against the kernel's empty list while claiming equal.",
+    "source": "Same quantity on both sides: FindDerived for a modified face (face 0 -> face 100), a deleted face (face 1, mapped to nothing) and an untouched face (face 2), as [kind ordinal, index] lists. Bridge: findDerived(of:) for each. Bridge values come from Scripts/repro/766-brepgraph-evidence-fix/bridge-observed.txt (temporary prints in a passing test run, not committed). Kernel: BRepGraph_LayerHistory::FindDerived, \"modified: FindDerived(kind 2, 0) = [ (2,100) ]\", \"deleted: FindDerived(kind 2, 1) = [ ]\" and \"untouched: FindDerived(kind 2, 2) = [ ]\" in the probe transcript. The test's findDerivedOrSelf turns the untouched empty result into [self] (printed [(2, 2)]) and keeps the deleted one empty; that disambiguation is Swift logic with no kernel counterpart. The old record put that [self] result on the bridge side against the kernel's empty list while claiming equal.",
     "probe": "Scripts/repro/766-brepgraph-face-history/"
   },
   {
