@@ -2123,28 +2123,35 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": null
+        "nb_poles": null,
+        "nb_knots": null
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "poles": 122,
-        "knots": 61
+        "nb_poles": 122,
+        "nb_knots": 61
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: By design, the 3D converter's #1441 pattern: OCCTConvertCompBezier2dToBSpline2d has 100-pole and 50-knot output buffers and returns false when the kernel result is larger, rather than report a count against a truncated prefix. The kernel has no such limit and builds the full curve.",
+        "nb_poles: bridge null, kernel 122",
+        "nb_knots: bridge null, kernel 61"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "report success with the counts clamped to the 100-pole/50-knot buffers",
       "red": "CompBezier2dToBSpline2dTests.swift:65:9: Expectation failed: result == nil",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-chfi2d-compbezier/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: the pole and knot counts of the B-spline built from 60 chained cubic Bezier segments (segment i runs x = 3i to 3i+3). Bridge: CompBezierConverter.toBSpline2d returned nil, recorded as null. Kernel: Convert_CompBezierCurves2dToBSplineCurve2d given the same 60 AddCurve calls, then Perform; NbPoles and NbKnots from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Curve2D Approximated Overload Parity Tests::Both overloads succeed on the same curve using only their own implicit defaults",
@@ -2194,13 +2201,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "max_sampled_deviation_range": "(1e-5, 5e-3)"
+        "max_sampled_deviation": 0.000550267508857,
+        "kernel_max_error": 0.000889338266956
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "maxError": 0.000889
+        "max_sampled_deviation": 0.000550267508856,
+        "kernel_max_error": 0.000889338266956
       }
     },
     "comparison": {
@@ -2214,7 +2223,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-approx-arclength-arctypes/",
       "rewritten": ""
-    }
+    },
+    "source": "Same two quantities on both sides. max_sampled_deviation: the largest distance between the 60-point zigzag interpolant and its approximation over 301 equally spaced parameters of the interpolant's domain (the test's own helper; the probe samples the same parameters with Geom2d_BSplineCurve::Value). kernel_max_error: Geom2dConvert_ApproxCurve::MaxError for the same fit (tolerance 1e-3, C2, 100 segments, degree 8); the bridge side is Curve2D.approxWithDetails().maxError, which reads the same call through occtApproxCurve2D. Values at 12 significant digits, compared with relative tolerance 1e-9.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Curve2D Approximated Overload Parity Tests::Ranged overload's implicit default tolerance produces a near-exact fit",
@@ -3298,30 +3309,43 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "radius 0": null,
-        "radius -1": null,
-        "radius -5": null
+        "direct_r0": false,
+        "direct_rm1": false,
+        "direct_rm5": false,
+        "gce_r0": false,
+        "gce_rm1": false,
+        "gce_rm5": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "gce_MakeCirc2d radius 0 IsDone": true,
-        "radius -1 IsDone": false
+        "direct_r0": true,
+        "direct_rm1": false,
+        "direct_rm5": false,
+        "gce_r0": true,
+        "gce_rm1": false,
+        "gce_rm5": false
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #411: both Curve2D factories share one radius > 0 precondition (occtValidCircleRadius) in the bridge. The kernel does not: Geom2d_Circle(ax, 0) constructs and gce_MakeCirc2d(center, 0) reports IsDone, so radius 0 gives a degenerate live circle unless the bridge refuses it. A negative radius is refused by both.",
+        "direct_r0: bridge false, kernel true",
+        "gce_r0: bridge false, kernel true"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "skip the radius precondition",
       "red": "Curve2DCircleFactoryParityTests.swift:21:13: Expectation failed: Curve2D.circleFromCenterRadius(center: .zero, radius: radius) == nil",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-conic-factory-parity/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_circle, whether a circle is obtained for radius 0, -1 and -5, per factory. Bridge: Curve2D.circle (OCCTCurve2DCreateCircle) for direct_* and Curve2D.circleFromCenterRadius (OCCTGceMakeCirc2dFromCenterRadius) for gce_*, true when the result is not nil. Kernel: the construction each one wraps, Geom2d_Circle(ax, r) for direct_* and gce_MakeCirc2d(center, r).IsDone() for gce_*, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Curve2D circle factories agree (#411)::Both factories build the identical circle for a valid radius",
@@ -3645,13 +3669,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": null
+        "yields_curve": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "Geom2dEval_CircleInvoluteCurve radius 0": "constructor raises"
+        "yields_curve": false
       }
     },
     "comparison": {
@@ -3665,7 +3689,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-circle-involute/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_curve, whether a circle involute is obtained for radius 0. Bridge: Curve2D.circleInvolute returned nil; the refusal is the Swift wrapper's `guard radius > 0`, taken before any bridge call. Kernel: the Geom2dEval_CircleInvoluteCurve constructor raised for radius 0, so no curve exists, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Curve2D — Circle Involute::createCircleInvoluteRejectsNegativeRadius",
@@ -3673,13 +3699,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": null
+        "yields_curve": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "Geom2dEval_CircleInvoluteCurve radius -1": "constructor raises"
+        "yields_curve": false
       }
     },
     "comparison": {
@@ -3693,7 +3719,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-circle-involute/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_curve, whether a circle involute is obtained for radius -1. Bridge: Curve2D.circleInvolute returned nil; the refusal is the Swift wrapper's `guard radius > 0`, taken before any bridge call. Kernel: the Geom2dEval_CircleInvoluteCurve constructor raised for radius -1, so no curve exists, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Curve2D — Circle Involute::circleInvolutePointAtZero",
@@ -4217,8 +4245,7 @@
       "type": "value",
       "data": {
         "degree": 7,
-        "poles": 13,
-        "maxError": 0.000338
+        "poles": 13
       }
     },
     "comparison": {
@@ -4232,7 +4259,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-continuity-convert/",
       "rewritten": "`degree != nil`; now pins degree 7 and 13 poles"
-    }
+    },
+    "source": "Same quantity on both sides: degree and pole count of the approximation of a radius-5 circle at tolerance 1e-3 (continuity C2, 100 segments, degree 8, the Swift defaults). Bridge: Curve2D.approximated(tolerance: 1e-3) read back through degree and poleCount. Kernel: Geom2dConvert_ApproxCurve with the same arguments, from the probe. The kernel's MaxError is not observed by this test and is not part of the record.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Curve2D Convert Extras Tests::Split BSpline at discontinuities",
@@ -9140,13 +9169,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "nil"
+        "yields_point": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "constructor": "throws: amplitude must be > 0"
+        "yields_point": false
       }
     },
     "comparison": {
@@ -9160,7 +9189,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_point, whether the evaluator returns a finite point for amplitude 0. Bridge: Geom2dEval.sineWaveD0 returned nil (the bridge catches the constructor's raise). Kernel: the Geom2dEval_* constructor raised, so there was no EvalD0 to call, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue #1407, 2D evaluator guards::A zero-radius circle involute does not abort",
@@ -9168,13 +9199,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "nil"
+        "yields_point": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "constructor": "throws: radius must be > 0"
+        "yields_point": false
       }
     },
     "comparison": {
@@ -9188,7 +9219,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_point, whether the evaluator returns a finite point for radius 0. Bridge: Geom2dEval.circleInvoluteD0 returned nil (the bridge catches the constructor's raise). Kernel: the Geom2dEval_* constructor raised, so there was no EvalD0 to call, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue #1407, 2D evaluator guards::A zero-growth Archimedean spiral does not abort",
@@ -9196,13 +9229,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "nil"
+        "yields_point": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "constructor": "throws: growth rate must be > 0"
+        "yields_point": false
       }
     },
     "comparison": {
@@ -9216,7 +9249,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_point, whether the evaluator returns a finite point for growth rate 0. Bridge: Geom2dEval.archimedeanSpiralD0 returned nil (the bridge catches the constructor's raise). Kernel: the Geom2dEval_* constructor raised, so there was no EvalD0 to call, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Curve2D.approxWithDetails surfaces MaxError (#1474)::approxWithDetails reports the true maxError for a starved (over-tolerance) fit",
@@ -9318,30 +9353,32 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "nil"
+        "yields_curve": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "Add": [
-          true,
-          false
-        ]
+        "yields_curve": true
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #1477: OCCTCurve2DJoinToBSpline returns nullptr at the first Add that returns false (it used to discard that result). The raw joiner does not stop: after the failed Add it still holds the curves already attached and BSplineCurve() returns that partial join.",
+        "yields_curve: bridge false, kernel true"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "failed Add ignored",
       "red": "Issue1477Geom2dCurvesTests.swift:98:9: Expectation failed: joined == nil",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_curve, whether joining the gapped pair gives a curve. Bridge: Curve2D.join(..., tolerance: 1e-6) returned nil. Kernel: the same Geom2dConvert_CompCurveToBSplineCurve::Add calls (Add results [true, false]); the probe then reads BSplineCurve() and it is not null (2 poles).",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "#1477: Geom2d_Curves.mm buffer-count and silent-drop fixes::join fails when curves are out of order and don't chain end-to-end",
@@ -9349,31 +9386,32 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "nil"
+        "yields_curve": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "Add": [
-          true,
-          false,
-          true
-        ]
+        "yields_curve": true
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #1477: OCCTCurve2DJoinToBSpline returns nullptr at the first Add that returns false (it used to discard that result). The raw joiner does not stop: after the failed Add it still holds the curves already attached and BSplineCurve() returns that partial join.",
+        "yields_curve: bridge false, kernel true"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "failed Add ignored",
       "red": "Issue1477Geom2dCurvesTests.swift:110:9: Expectation failed: joined == nil",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_curve, whether joining the out-of-order triple a, c, b gives a curve. Bridge: Curve2D.join(..., tolerance: 1e-6) returned nil. Kernel: the same Geom2dConvert_CompCurveToBSplineCurve::Add calls (Add results [true, false, true]); the probe then reads BSplineCurve() and it is not null (3 poles).",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "#1477: Geom2d_Curves.mm buffer-count and silent-drop fixes::join still succeeds for genuinely continuous curves",
@@ -9423,14 +9461,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "type": 8
+        "curve_type_ordinal": 8
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "GeomAbs_OffsetCurve": 7,
-        "GeomAbs_OtherCurve": 8
+        "curve_type_ordinal": 8
       }
     },
     "comparison": {
@@ -9444,7 +9481,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-issue-regressions-a/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: the ordinal of the curve type reported for a null handle. Bridge: OCCTCurve2DCurveType called with a null OCCTCurve2DRef returned 8. Kernel: no OCCT call takes a null handle, so the kernel side is (int)GeomAbs_OtherCurve, the enum constant the fallback must spell, printed by the probe (GeomAbs_OffsetCurve, the wrong value #1511 removed, is 7).",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue #1511 Finding 2: OCCTCurve2DCurveType OtherCurve fallback::an ordinary line's curve type is unaffected (Line = 0)",
@@ -9692,13 +9731,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "a_eq_b": "no_points",
+        "a_eq_b_and_c_eq_d": "no_points"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "Bisector_Bisec": "gp_Vec2d::Normalize() throws: vector has zero norm"
+        "a_eq_b": "no_points",
+        "a_eq_b_and_c_eq_d": "no_points"
       }
     },
     "comparison": {
@@ -9712,7 +9753,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: outcome of the point-point bisector intersection when the first pair, or both pairs, are coincident points; \"no_points\" means the call returned with an empty result. Bridge: bisectorIntersections returned []. Kernel: the probe replays OCCTBisectorInterPointPoint's OCCT sequence in a forked child on the same input; the sequence raises at its first step (gp_Vec2d::Normalize() - vector has zero norm, printed by the probe) and the bridge's catch(...) turns that into 0 points.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue1050BisectorDomainTests.swift (free function)::Coincident bisectors report intersection segment endpoints",
@@ -9786,13 +9829,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "a_x": "no_points",
+        "a_y": "no_points"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "unguarded kernel on this input": "Bisector_Bisec throws (bridge catch returns 0)"
+        "a_x": "no_points",
+        "a_y": "no_points"
       }
     },
     "comparison": {
@@ -9806,7 +9851,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: outcome of the point-point bisector intersection when the first point has a NaN coordinate (other coordinates a=(0,0), b=(0,10), c=(-55,0), d=(-45,0)), one key per coordinate; \"no_points\" means the call returned with an empty result. Bridge: bisectorIntersections returned []; its Swift guard refuses a non-finite coordinate before any OCCT call. Kernel: the probe replays OCCTBisectorInterPointPoint's OCCT sequence unguarded in a forked child on the same input; NaN makes it raise, which the bridge's catch(...) turns into 0 points, and it does not hang.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue1085 bisector non-finite coordinates::NaN in second point returns empty",
@@ -9814,13 +9861,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "b_x": "no_points",
+        "b_y": "no_points"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "unguarded kernel on this input": "Bisector_Bisec throws (bridge catch returns 0)"
+        "b_x": "no_points",
+        "b_y": "no_points"
       }
     },
     "comparison": {
@@ -9834,7 +9883,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: outcome of the point-point bisector intersection when the second point has a NaN coordinate (other coordinates a=(0,0), b=(0,10), c=(-55,0), d=(-45,0)), one key per coordinate; \"no_points\" means the call returned with an empty result. Bridge: bisectorIntersections returned []; its Swift guard refuses a non-finite coordinate before any OCCT call. Kernel: the probe replays OCCTBisectorInterPointPoint's OCCT sequence unguarded in a forked child on the same input; NaN makes it raise, which the bridge's catch(...) turns into 0 points, and it does not hang.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue1085 bisector non-finite coordinates::NaN in third point returns empty",
@@ -9842,13 +9893,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "c_x": "no_points",
+        "c_y": "no_points"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "unguarded kernel on this input": "Bisector_Bisec throws (bridge catch returns 0)"
+        "c_x": "no_points",
+        "c_y": "no_points"
       }
     },
     "comparison": {
@@ -9862,7 +9915,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: outcome of the point-point bisector intersection when the third point has a NaN coordinate (other coordinates a=(0,0), b=(0,10), c=(-55,0), d=(-45,0)), one key per coordinate; \"no_points\" means the call returned with an empty result. Bridge: bisectorIntersections returned []; its Swift guard refuses a non-finite coordinate before any OCCT call. Kernel: the probe replays OCCTBisectorInterPointPoint's OCCT sequence unguarded in a forked child on the same input; NaN makes it raise, which the bridge's catch(...) turns into 0 points, and it does not hang.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue1085 bisector non-finite coordinates::NaN in fourth point returns empty",
@@ -9870,13 +9925,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "d_x": "no_points",
+        "d_y": "no_points"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "unguarded kernel on this input": "Bisector_Bisec throws (bridge catch returns 0)"
+        "d_x": "no_points",
+        "d_y": "no_points"
       }
     },
     "comparison": {
@@ -9890,7 +9947,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: outcome of the point-point bisector intersection when the fourth point has a NaN coordinate (other coordinates a=(0,0), b=(0,10), c=(-55,0), d=(-45,0)), one key per coordinate; \"no_points\" means the call returned with an empty result. Bridge: bisectorIntersections returned []; its Swift guard refuses a non-finite coordinate before any OCCT call. Kernel: the probe replays OCCTBisectorInterPointPoint's OCCT sequence unguarded in a forked child on the same input; NaN makes it raise, which the bridge's catch(...) turns into 0 points, and it does not hang.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue1085 bisector non-finite coordinates::Positive infinity in first point returns empty",
@@ -9898,27 +9957,35 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "a_x": "no_points",
+        "a_y": "no_points"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "unguarded kernel on this input": "hangs (20 s alarm)"
+        "a_x": "hang",
+        "a_y": "hang"
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #1085: the Swift guard in bisectorIntersections exists because the unguarded OCCT sequence does not return for an infinite coordinate. The bridge side is the guarded result, the kernel side is the raw sequence.",
+        "a_x: bridge \"no_points\", kernel \"hang\"",
+        "a_y: bridge \"no_points\", kernel \"hang\""
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
       "red": "Issue1050BisectorDomainTests.swift:196:9: Expectation failed: bisectorIntersections(a: (Double.infinity, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: outcome of the point-point bisector intersection when the first point has a positive infinity coordinate (other coordinates a=(0,0), b=(0,10), c=(-55,0), d=(-45,0)), one key per coordinate; \"no_points\" means the call returned with an empty result, \"hang\" that it never returned. Bridge: bisectorIntersections returned []; its Swift guard refuses a non-finite coordinate before any OCCT call. Kernel: the probe replays OCCTBisectorInterPointPoint's OCCT sequence unguarded in a forked child on the same input; the child did not return and the 10 second alarm killed it.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue1085 bisector non-finite coordinates::Positive infinity in second point returns empty",
@@ -9926,27 +9993,35 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "b_x": "no_points",
+        "b_y": "no_points"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "unguarded kernel on this input": "hangs (20 s alarm)"
+        "b_x": "hang",
+        "b_y": "hang"
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #1085: the Swift guard in bisectorIntersections exists because the unguarded OCCT sequence does not return for an infinite coordinate. The bridge side is the guarded result, the kernel side is the raw sequence.",
+        "b_x: bridge \"no_points\", kernel \"hang\"",
+        "b_y: bridge \"no_points\", kernel \"hang\""
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
       "red": "Issue1050BisectorDomainTests.swift:202:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (Double.infinity, 10), c: (-55, 0), d: (-45, 0)).isEmpty",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: outcome of the point-point bisector intersection when the second point has a positive infinity coordinate (other coordinates a=(0,0), b=(0,10), c=(-55,0), d=(-45,0)), one key per coordinate; \"no_points\" means the call returned with an empty result, \"hang\" that it never returned. Bridge: bisectorIntersections returned []; its Swift guard refuses a non-finite coordinate before any OCCT call. Kernel: the probe replays OCCTBisectorInterPointPoint's OCCT sequence unguarded in a forked child on the same input; the child did not return and the 10 second alarm killed it.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue1085 bisector non-finite coordinates::Positive infinity in third point returns empty",
@@ -9954,27 +10029,35 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "c_x": "no_points",
+        "c_y": "no_points"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "unguarded kernel on this input": "hangs (20 s alarm)"
+        "c_x": "hang",
+        "c_y": "hang"
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #1085: the Swift guard in bisectorIntersections exists because the unguarded OCCT sequence does not return for an infinite coordinate. The bridge side is the guarded result, the kernel side is the raw sequence.",
+        "c_x: bridge \"no_points\", kernel \"hang\"",
+        "c_y: bridge \"no_points\", kernel \"hang\""
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
       "red": "Issue1050BisectorDomainTests.swift:209:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, Double.infinity), d: (-45, 0)).isEmpty",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: outcome of the point-point bisector intersection when the third point has a positive infinity coordinate (other coordinates a=(0,0), b=(0,10), c=(-55,0), d=(-45,0)), one key per coordinate; \"no_points\" means the call returned with an empty result, \"hang\" that it never returned. Bridge: bisectorIntersections returned []; its Swift guard refuses a non-finite coordinate before any OCCT call. Kernel: the probe replays OCCTBisectorInterPointPoint's OCCT sequence unguarded in a forked child on the same input; the child did not return and the 10 second alarm killed it.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue1085 bisector non-finite coordinates::Positive infinity in fourth point returns empty",
@@ -9982,27 +10065,35 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "d_x": "no_points",
+        "d_y": "no_points"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "unguarded kernel on this input": "hangs (20 s alarm)"
+        "d_x": "hang",
+        "d_y": "hang"
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #1085: the Swift guard in bisectorIntersections exists because the unguarded OCCT sequence does not return for an infinite coordinate. The bridge side is the guarded result, the kernel side is the raw sequence.",
+        "d_x: bridge \"no_points\", kernel \"hang\"",
+        "d_y: bridge \"no_points\", kernel \"hang\""
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
       "red": "Issue1050BisectorDomainTests.swift:214:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (Double.infinity, 0)).isEmpty",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: outcome of the point-point bisector intersection when the fourth point has a positive infinity coordinate (other coordinates a=(0,0), b=(0,10), c=(-55,0), d=(-45,0)), one key per coordinate; \"no_points\" means the call returned with an empty result, \"hang\" that it never returned. Bridge: bisectorIntersections returned []; its Swift guard refuses a non-finite coordinate before any OCCT call. Kernel: the probe replays OCCTBisectorInterPointPoint's OCCT sequence unguarded in a forked child on the same input; the child did not return and the 10 second alarm killed it.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue1085 bisector non-finite coordinates::Negative infinity in first point returns empty",
@@ -10010,27 +10101,35 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "a_x": "no_points",
+        "a_y": "no_points"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "unguarded kernel on this input": "hangs (20 s alarm)"
+        "a_x": "hang",
+        "a_y": "hang"
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #1085: the Swift guard in bisectorIntersections exists because the unguarded OCCT sequence does not return for an infinite coordinate. The bridge side is the guarded result, the kernel side is the raw sequence.",
+        "a_x: bridge \"no_points\", kernel \"hang\"",
+        "a_y: bridge \"no_points\", kernel \"hang\""
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
       "red": "Issue1050BisectorDomainTests.swift:221:9: Expectation failed: bisectorIntersections(a: (-Double.infinity, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: outcome of the point-point bisector intersection when the first point has a negative infinity coordinate (other coordinates a=(0,0), b=(0,10), c=(-55,0), d=(-45,0)), one key per coordinate; \"no_points\" means the call returned with an empty result, \"hang\" that it never returned. Bridge: bisectorIntersections returned []; its Swift guard refuses a non-finite coordinate before any OCCT call. Kernel: the probe replays OCCTBisectorInterPointPoint's OCCT sequence unguarded in a forked child on the same input; the child did not return and the 10 second alarm killed it.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue1085 bisector non-finite coordinates::Negative infinity in second point returns empty",
@@ -10038,27 +10137,35 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "b_x": "no_points",
+        "b_y": "no_points"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "unguarded kernel on this input": "hangs (20 s alarm)"
+        "b_x": "hang",
+        "b_y": "hang"
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #1085: the Swift guard in bisectorIntersections exists because the unguarded OCCT sequence does not return for an infinite coordinate. The bridge side is the guarded result, the kernel side is the raw sequence.",
+        "b_x: bridge \"no_points\", kernel \"hang\"",
+        "b_y: bridge \"no_points\", kernel \"hang\""
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
       "red": "Issue1050BisectorDomainTests.swift:227:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (-Double.infinity, 10), c: (-55, 0), d: (-45, 0)).isEmpty",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: outcome of the point-point bisector intersection when the second point has a negative infinity coordinate (other coordinates a=(0,0), b=(0,10), c=(-55,0), d=(-45,0)), one key per coordinate; \"no_points\" means the call returned with an empty result, \"hang\" that it never returned. Bridge: bisectorIntersections returned []; its Swift guard refuses a non-finite coordinate before any OCCT call. Kernel: the probe replays OCCTBisectorInterPointPoint's OCCT sequence unguarded in a forked child on the same input; the child did not return and the 10 second alarm killed it.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue1085 bisector non-finite coordinates::Negative infinity in third point returns empty",
@@ -10066,27 +10173,35 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "c_x": "no_points",
+        "c_y": "no_points"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "unguarded kernel on this input": "hangs (20 s alarm)"
+        "c_x": "hang",
+        "c_y": "hang"
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #1085: the Swift guard in bisectorIntersections exists because the unguarded OCCT sequence does not return for an infinite coordinate. The bridge side is the guarded result, the kernel side is the raw sequence.",
+        "c_x: bridge \"no_points\", kernel \"hang\"",
+        "c_y: bridge \"no_points\", kernel \"hang\""
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
       "red": "Issue1050BisectorDomainTests.swift:234:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, -Double.infinity), d: (-45, 0)).isEmpty",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: outcome of the point-point bisector intersection when the third point has a negative infinity coordinate (other coordinates a=(0,0), b=(0,10), c=(-55,0), d=(-45,0)), one key per coordinate; \"no_points\" means the call returned with an empty result, \"hang\" that it never returned. Bridge: bisectorIntersections returned []; its Swift guard refuses a non-finite coordinate before any OCCT call. Kernel: the probe replays OCCTBisectorInterPointPoint's OCCT sequence unguarded in a forked child on the same input; the child did not return and the 10 second alarm killed it.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue1085 bisector non-finite coordinates::Negative infinity in fourth point returns empty",
@@ -10094,27 +10209,35 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "d_x": "no_points",
+        "d_y": "no_points"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "unguarded kernel on this input": "hangs (20 s alarm)"
+        "d_x": "hang",
+        "d_y": "hang"
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #1085: the Swift guard in bisectorIntersections exists because the unguarded OCCT sequence does not return for an infinite coordinate. The bridge side is the guarded result, the kernel side is the raw sequence.",
+        "d_x: bridge \"no_points\", kernel \"hang\"",
+        "d_y: bridge \"no_points\", kernel \"hang\""
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
       "red": "Issue1050BisectorDomainTests.swift:239:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-Double.infinity, 0)).isEmpty",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: outcome of the point-point bisector intersection when the fourth point has a negative infinity coordinate (other coordinates a=(0,0), b=(0,10), c=(-55,0), d=(-45,0)), one key per coordinate; \"no_points\" means the call returned with an empty result, \"hang\" that it never returned. Bridge: bisectorIntersections returned []; its Swift guard refuses a non-finite coordinate before any OCCT call. Kernel: the probe replays OCCTBisectorInterPointPoint's OCCT sequence unguarded in a forked child on the same input; the child did not return and the 10 second alarm killed it.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue1085 bisector non-finite coordinates::Large finite coordinates exceeding 1e150 return empty",
@@ -10122,27 +10245,59 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "a_x": "no_points",
+        "a_y": "no_points",
+        "b_x": "no_points",
+        "b_y": "no_points",
+        "c_x": "no_points",
+        "c_y": "no_points",
+        "d_x": "no_points",
+        "d_y": "no_points",
+        "neg_a_x": "no_points",
+        "neg_a_y": "no_points"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "unguarded kernel on this input": "hangs (20 s alarm)"
+        "a_x": "hang",
+        "a_y": "hang",
+        "b_x": "hang",
+        "b_y": "hang",
+        "c_x": "hang",
+        "c_y": "hang",
+        "d_x": "hang",
+        "d_y": "hang",
+        "neg_a_x": "hang",
+        "neg_a_y": "hang"
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #1085: the Swift guard in bisectorIntersections exists because the unguarded OCCT sequence does not return for coordinates this large. The bridge side is the guarded result, the kernel side is the raw sequence.",
+        "a_x: bridge \"no_points\", kernel \"hang\"",
+        "a_y: bridge \"no_points\", kernel \"hang\"",
+        "b_x: bridge \"no_points\", kernel \"hang\"",
+        "b_y: bridge \"no_points\", kernel \"hang\"",
+        "c_x: bridge \"no_points\", kernel \"hang\"",
+        "c_y: bridge \"no_points\", kernel \"hang\"",
+        "d_x: bridge \"no_points\", kernel \"hang\"",
+        "d_y: bridge \"no_points\", kernel \"hang\"",
+        "neg_a_x: bridge \"no_points\", kernel \"hang\"",
+        "neg_a_y: bridge \"no_points\", kernel \"hang\""
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
       "red": "Issue1050BisectorDomainTests.swift:250:9: Expectation failed: bisectorIntersections(a: (large, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: outcome of the point-point bisector intersection when one coordinate is 1e200 (each of the eight in turn, then -1e200 for a.x and a.y), other coordinates a=(0,0), b=(0,10), c=(-55,0), d=(-45,0); \"no_points\" means the call returned with an empty result, \"hang\" that it never returned. Bridge: bisectorIntersections returned []; its Swift guard refuses any coordinate above 1e150 in magnitude before any OCCT call. Kernel: the probe replays OCCTBisectorInterPointPoint's OCCT sequence unguarded in a forked child on the same input; every child did not return and the 10 second alarm killed it.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue1085 bisector non-finite coordinates::Coordinates near but below threshold still work",
@@ -10188,13 +10343,25 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "nil x7"
+        "sine_amplitude_0": true,
+        "sine_omega_0": true,
+        "involute_radius_0": true,
+        "archimedean_growth_0": true,
+        "archimedean_initial_radius_minus1": true,
+        "log_scale_0": true,
+        "log_growth_0": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "constructors": "all seven throw Standard_ConstructionError"
+        "sine_amplitude_0": true,
+        "sine_omega_0": true,
+        "involute_radius_0": true,
+        "archimedean_growth_0": true,
+        "archimedean_initial_radius_minus1": true,
+        "log_scale_0": true,
+        "log_growth_0": true
       }
     },
     "comparison": {
@@ -10208,7 +10375,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-evaluator-contract/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: refused, true when no point is obtained for these seven argument sets that the OCCT constructors reject. Bridge: each Geom2dEval.*D0 call returned nil (the bridge catches the constructor's raise). Kernel: the Geom2dEval_* constructor raised in every case, from the probe (a raise, or a non-finite EvalD0, counts as refused).",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue #1646, 2D evaluator contract::Every D1 evaluator refuses the argument its OCCT constructor rejects",
@@ -10344,27 +10513,50 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "nil x7"
+        "sine_amplitude_nan": "nil",
+        "sine_omega_nan": "nil",
+        "sine_amplitude_inf": "nil",
+        "involute_radius_nan": "nil",
+        "archimedean_initial_radius_nan": "nil",
+        "log_scale_nan": "nil",
+        "sine_d1_amplitude_nan": "nil"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "EvalD0": "(nan, nan) / (nan, inf)"
+        "sine_amplitude_nan": "(nan, nan)",
+        "sine_omega_nan": "(nan, nan)",
+        "sine_amplitude_inf": "(nan, inf)",
+        "involute_radius_nan": "(nan, nan)",
+        "archimedean_initial_radius_nan": "(nan, nan)",
+        "log_scale_nan": "(nan, nan)",
+        "sine_d1_amplitude_nan": "(nan, nan) (nan, nan)"
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #1646, by design: the kernel answers a non-finite argument with a non-finite point and does not raise; the bridge writers (occtEval2dWriteD0/D1) refuse any non-finite output, so the Swift call returns nil.",
+        "sine_amplitude_nan: bridge \"nil\", kernel \"(nan, nan)\"",
+        "sine_omega_nan: bridge \"nil\", kernel \"(nan, nan)\"",
+        "sine_amplitude_inf: bridge \"nil\", kernel \"(nan, inf)\"",
+        "involute_radius_nan: bridge \"nil\", kernel \"(nan, nan)\"",
+        "archimedean_initial_radius_nan: bridge \"nil\", kernel \"(nan, nan)\"",
+        "log_scale_nan: bridge \"nil\", kernel \"(nan, nan)\"",
+        "sine_d1_amplitude_nan: bridge \"nil\", kernel \"(nan, nan) (nan, nan)\""
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "finite-output check skipped",
       "red": "Issue1646EvaluatorContractTests.swift:89:9: Expectation failed: Geom2dEval.sineWaveD0(amplitude: .nan, omega: 1, phase: 0, u: 0.5) == nil",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-evaluator-contract/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: returned_value, what evaluating at u = 0.5 returns for a NaN or infinite constructor argument, as text: \"nil\", or \"(x, y)\" at 12 significant digits (a D1 case is \"point derivative\"). Bridge: the Geom2dEval Swift call. Kernel: Geom2dEval_*::EvalD0/EvalD1 on the same arguments, which the constructors accept (NaN passes every \"<= 0\" check), from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue #1646, 2D evaluator contract::A NaN parameter is refused, and EvalD0 never raises on one",
@@ -10372,27 +10564,38 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "nil x3"
+        "sine_u_nan": "nil",
+        "sine_u_inf": "nil",
+        "involute_d1_u_nan": "nil"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "EvalD0": "(nan, nan)"
+        "sine_u_nan": "(nan, nan)",
+        "sine_u_inf": "(nan, nan)",
+        "involute_d1_u_nan": "(nan, nan) (nan, nan)"
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #1646, by design: the kernel evaluates a non-finite parameter to a non-finite point and does not raise; the bridge writers (occtEval2dWriteD0/D1) refuse any non-finite output, so the Swift call returns nil.",
+        "sine_u_nan: bridge \"nil\", kernel \"(nan, nan)\"",
+        "sine_u_inf: bridge \"nil\", kernel \"(nan, nan)\"",
+        "involute_d1_u_nan: bridge \"nil\", kernel \"(nan, nan) (nan, nan)\""
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "finite-output check skipped",
       "red": "Issue1646EvaluatorContractTests.swift:101:9: Expectation failed: Geom2dEval.sineWaveD0(amplitude: 1, omega: 1, phase: 0, u: .nan) == nil",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-evaluator-contract/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: returned_value, what evaluating returns for a NaN or infinite parameter, as text: \"nil\", or \"(x, y)\" at 12 significant digits (the D1 case is \"point derivative\"). Bridge: the Geom2dEval Swift call. Kernel: Geom2dEval_*::EvalD0/EvalD1 at that parameter, which does not raise, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue #1646, 2D evaluator contract::A finite argument whose evaluation overflows is refused",
@@ -10400,8 +10603,8 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "u=1000": "nil",
-        "u=1": [
+        "log_spiral_u1000": "nil",
+        "log_spiral_u1": [
           1.46869393992,
           2.28735528718
         ]
@@ -10410,25 +10613,30 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "EvalD0(1000)": "(nan, nan)",
-        "EvalD0(1)": [
+        "log_spiral_u1000": "(nan, nan)",
+        "log_spiral_u1": [
           1.46869393992,
           2.28735528718
         ]
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #1646, by design: exp(1000) overflows, the kernel returns (nan, nan) without raising, and the bridge writer refuses the non-finite output, so the Swift call returns nil. The finite neighbour (u = 1) agrees.",
+        "log_spiral_u1000: bridge \"nil\", kernel \"(nan, nan)\""
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "finite-output check skipped",
       "red": "Issue1646EvaluatorContractTests.swift:113:9: Expectation failed: Geom2dEval.logarithmicSpiralD0(scale: 1, growthExponent: 1, u: 1000) == nil",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-evaluator-contract/",
       "rewritten": "neighbour was `isFinite`; now pinned"
-    }
+    },
+    "source": "Same quantity on both sides: the logarithmic spiral with scale 1 and growth exponent 1 evaluated at u = 1000 (text: \"nil\" or \"(x, y)\") and at u = 1 (the point). Bridge: Geom2dEval.logarithmicSpiralD0. Kernel: Geom2dEval_LogarithmicSpiralCurve::EvalD0 on the same arguments, from the probe. Values at 12 significant digits.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue #1646, 2D evaluator contract::The placement overloads refuse a bad radius, direction, or non-finite argument",
@@ -11288,27 +11496,29 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty"
+        "points_returned": 0
       }
     },
     "kernel_output": {
-      "type": "value",
-      "data": {
-        "OCCT": "not called for an empty grid"
-      }
+      "type": "n/a",
+      "data": null
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": null,
+      "differences": [
+        "N/A, no kernel counterpart: Curve2D.evaluateGrid returns [] from its Swift guard (`guard !parameters.isEmpty`) before any bridge or OCCT call, and the test checks exactly that guard. There is no OCCT call to compare against."
+      ]
     },
-    "status": "PASS",
+    "status": "N/A",
     "evidence": {
       "injection": "empty input returns one zero point",
       "red": "Issue486Curve2DBatchTests.swift:23:9: Expectation failed: curve.evaluateGrid([]).isEmpty",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-transform-split-continuity/",
       "rewritten": "`guard ... else { return }`; now `#require`"
-    }
+    },
+    "source": "N/A. Bridge side: Curve2D.evaluateGrid([]) returned 0 points in the test run; the empty-input guard is in Swift, so no OCCT function is reached and the kernel is not called.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Curve2D ranged arc-length contract after the #549 bridge removal::A reversed in-domain range measures the span, not the failure sentinel",
@@ -11378,8 +11588,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "clamped": 353.507365698,
-        "pre-bounded": 8082.24153603
+        "length": 353.507365698
       }
     },
     "comparison": {
@@ -11393,7 +11602,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: the length of the multi-span interpolant through (0,0), (10,40), (20,0), (200,5), (210,60) over the range [first - span, last + span], span being the domain width 318.433243004. Bridge: Curve2D.arcLength(from:to:). Kernel: GCPnts_AbscissaPoint::Length over the full-curve Geom2dAdaptor_Curve with those bounds, which clamps to the domain. The pre-bounded adaptor Geom2dAdaptor_Curve(c, lo, hi), the defect #549 removed, gives 8082.24153603 for the same range (probe line). Values at 12 significant digits.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Curve2D ranged arc-length contract after the #549 bridge removal::A range wholly outside the domain measures zero, not a fragment of the extrapolation",
@@ -11407,8 +11618,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "clamped": 0,
-        "pre-bounded": 1.25897863731
+        "length": 0
       }
     },
     "comparison": {
@@ -11422,7 +11632,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: the length of the same multi-span interpolant over [last + 1, last + 2], a range wholly outside the domain. Bridge: Curve2D.arcLength(from:to:). Kernel: GCPnts_AbscissaPoint::Length over the full-curve Geom2dAdaptor_Curve with those bounds. The pre-bounded adaptor, the defect #549 removed, gives 1.25897863731 for the same range (probe line).",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Curve2D ranged arc-length contract after the #549 bridge removal::Equal parameters are still a genuine zero, not the failure sentinel",
@@ -11644,7 +11856,8 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "distances": [
+        "nb_extrema": 4,
+        "distances_sorted": [
           10,
           20,
           20,
@@ -11655,12 +11868,12 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "NbExtrema": 4,
-        "distances": [
-          20,
+        "nb_extrema": 4,
+        "distances_sorted": [
           10,
-          30,
-          20
+          20,
+          20,
+          30
         ]
       }
     },
@@ -11675,7 +11888,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
       "rewritten": "min/max inside `if let`, 0.1 slack; now all four pinned"
-    }
+    },
+    "source": "Same quantity on both sides: the number of extrema between the two radius-5 circles with centres 20 apart, and their distances in ascending order (the bridge side sorts the results the test reads; the probe sorts the kernel's). Bridge: Curve2D.allExtrema(with:). Kernel: Geom2dAPI_ExtremaCurveCurve over [0, 2 pi] on both. The kernel gives four extrema (10, 20, 20, 30), not only the \"nearest and farthest pair\" the test title names. Values at 12 significant digits, relative tolerance 1e-9.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Curve2D Extrema and Self-Intersection (#815)::Self-intersections of a looped cubic Bezier curve",
@@ -11749,14 +11964,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "(-5e-7, 5)": "onBoundary"
+        "state_at_default_tolerance": "ON"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "tol 1e-6": "ON",
-        "tol 1e-7": "OUT"
+        "state_at_default_tolerance": "ON"
       }
     },
     "comparison": {
@@ -11770,7 +11984,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: the state of the point (-5e-7, 5) on the 10 x 10 plane face at the default tolerance 1e-6, as the TopAbs_State name. Bridge: Shape.classifyPoint2d(u:v:), whose bridge call OCCTIntToolsFClass2dPerform returns 1, mapped to .onBoundary, which is TopAbs_ON. Kernel: IntTools_FClass2d(face, 1e-6).Perform, from the probe. The test's other two entry points (Face.classify, classifyPoint2D) use other classifiers and are not part of this record.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue #840: classifyPoint2d default tolerance alignment::well-inside point is unaffected by the tolerance change",
@@ -11837,7 +12053,7 @@
         "u": [
           0,
           0.9777876596251666,
-          -0.20959793101254465
+          -0.2095979310125446
         ],
         "v": [
           -0.987868702146798,
@@ -11849,12 +12065,12 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "gp_Ax2 X": [
+        "u": [
           3.56876177880591e-18,
           0.9777876596251667,
           -0.2095979310125447
         ],
-        "gp_Ax2 Y": [
+        "v": [
           -0.9878687021467979,
           0.03254876181607849,
           0.1518420410263285
@@ -11872,7 +12088,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: the (u, v) basis of the plane whose normal is (sin15 * 0.6, sin15 * 0.8, cos15). Bridge: Shape.sectionPlaneBasis(normal:explicitU: nil), pure Swift (perpendicularBasis(to:)), read at 16 significant digits. Kernel: the XDirection and YDirection of gp_Ax2 for the same normal, the reference the test compares against. Compared with tolerance 1e-9, the test's own; the two agree to about 1e-16, and the x component of u is 0 in Swift and 3.6e-18 in gp_Ax2.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "perpendicularBasis unification: Section2D (#881)::sectionPlaneBasis with an explicitU is unaffected by the unification",
@@ -12126,15 +12344,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "tangentHalfAngle1": "nil",
-        "tangentHalfAngle2": "nil"
+        "tangentHalfAngle1_yields_curve": false,
+        "tangentHalfAngle2_yields_curve": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "TgtThetaOver2_1": "throws",
-        "TgtThetaOver2_2": "throws"
+        "tangentHalfAngle1_yields_curve": false,
+        "tangentHalfAngle2_yields_curve": false
       }
     },
     "comparison": {
@@ -12148,7 +12366,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_curve, whether a full circle of radius 5 converts to a B-spline with the parameterisation that covers less than a full turn. Bridge: Curve2D.toBSpline(.tangentHalfAngle1 / .tangentHalfAngle2) returned nil. Kernel: Geom2dConvert::CurveToBSplineCurve(circle, Convert_TgtThetaOver2_1 / _2) raised, from the probe (the Swift raw values 1 and 2 map to those enum values in the bridge).",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Curve2D conversion and bisector parameters are live (#999)::The trimming distance bounds the bisector, and a longer one extends it",
@@ -12156,18 +12376,21 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "spans": "strictly increasing",
-        "maxDistance 1": "nil"
+        "span_maxDistance_10": 15.9999999992,
+        "span_maxDistance_100": 56.0000000009,
+        "span_maxDistance_500": 126.237870704,
+        "span_maxDistance_5000": 399.919991999,
+        "maxDistance_1_yields_curve": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "span 10": 15.9999999992,
-        "span 100": 56.0000000009,
-        "span 500": 126.237870704,
-        "span 5000": 399.919991999,
-        "1": "empty"
+        "span_maxDistance_10": 15.9999999992,
+        "span_maxDistance_100": 56.0000000009,
+        "span_maxDistance_500": 126.237870704,
+        "span_maxDistance_5000": 399.919991999,
+        "maxDistance_1_yields_curve": false
       }
     },
     "comparison": {
@@ -12181,7 +12404,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: the parameter span (last - first) of the bisector of the x-axis and the point (0, 4) trimmed at maxDistance 10, 100, 500 and 5000, and whether a bisector exists at maxDistance 1. Bridge: Curve2D.bisector(withPoint:maxDistance:), domain span or nil. Kernel: Bisector_BisecPC::Perform with the same arguments, LastParameter - FirstParameter or IsEmpty, from the probe. Values at 12 significant digits.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Point2D Creation::createPoint",
@@ -14709,27 +14934,38 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty x3"
+        "r0_r2": 0,
+        "r3_r0": 0,
+        "r0_r0": 0
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "r0/r2 NbSolutions": 4
+        "r0_r2": 4,
+        "r3_r0": 4,
+        "r0_r0": 3
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #553: the bridge refuses a circle of radius 0 (occtValidCircleRadius); the kernel does not, and answers with 4, 4 and 3 solutions.",
+        "r0_r2: bridge 0, kernel 4",
+        "r3_r0: bridge 0, kernel 4",
+        "r0_r0: bridge 0, kernel 3"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
       "red": "Issue553GccZeroRadiusTests.swift:28:9: Expectation failed: GccAnaBisector.ofCircles(",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: the number of bisector solutions for two circles centred (0,0) and (10,0), radii in the key. Bridge: GccAnaBisector.ofCircles. Kernel: GccAna_Circ2dBisec(circle, circle) NbSolutions, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue553 zero-radius circle solver arguments::circleBisectorAcceptsValidRadii",
@@ -14737,13 +14973,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "count": 4
+        "r3_r2": 4
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "r3/r2 NbSolutions": 4
+        "r3_r2": 4
       }
     },
     "comparison": {
@@ -14757,7 +14993,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: the number of bisector solutions for two circles centred (0,0) and (10,0) with radii 3 and 2. Bridge: GccAnaBisector.ofCircles. Kernel: GccAna_Circ2dBisec(circle, circle) NbSolutions, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue553 zero-radius circle solver arguments::pointBisectorAnswersWhatZeroRadiusCannot",
@@ -14765,28 +15003,36 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "r0": "empty",
-        "point bisector x": 3
+        "circle_r0_point_solutions": 0,
+        "point_bisector_line_x": 3,
+        "point_bisector_direction_x": 0
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "r0 NbSolutions": 2
+        "circle_r0_point_solutions": 2,
+        "point_bisector_line_x": 3,
+        "point_bisector_direction_x": 0
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #553: the bridge refuses a circle of radius 0; the kernel does not, and answers with 2 solutions. The point/point question is asked through ofPoints instead, which gives the line x = 3 on both sides.",
+        "circle_r0_point_solutions: bridge 0, kernel 2"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
       "red": "Issue553GccZeroRadiusTests.swift:56:9: Expectation failed: GccAnaBisector.ofCircleAndPoint(",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
       "rewritten": "`if let` + `Issue.record`; now `#require`"
-    }
+    },
+    "source": "Same quantities on both sides. circle_r0_point_solutions: the number of bisector solutions for a radius-0 circle at (0,0) and the point (6,0). point_bisector_line_x and point_bisector_direction_x: location x and direction x of the perpendicular bisector line of (0,0) and (6,0); a direction x of -0 is recorded as 0 on both sides. Bridge: GccAnaBisector.ofCircleAndPoint and .ofPoints. Kernel: GccAna_CircPnt2dBisec NbSolutions and GccAna_Pnt2dBisec::ThisSolution, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue553 zero-radius circle solver arguments::circlePointBisectorAcceptsValidRadius",
@@ -14942,29 +15188,34 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "r0": "empty",
-        "r2": 8
+        "r0_r2_r2": 0,
+        "r2_r2_r2": 8
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "r0 NbSolutions": 8,
-        "r2 NbSolutions": 8
+        "r0_r2_r2": 8,
+        "r2_r2_r2": 8
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #553: the bridge refuses a circle of radius 0; the kernel does not, and answers with 8 solutions.",
+        "r0_r2_r2: bridge 0, kernel 8"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
       "red": "Issue553GccZeroRadiusTests.swift:142:9: Expectation failed: Shape.circleTangent3Circles(",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: the number of circles tangent to three circles (centres (0,0), (10,0), (5,8); radii r, 2, 2), the first radius in the key. Bridge: Shape.circleTangent3Circles. Kernel: GccAna_Circ2d3Tan with three unqualified circles, tolerance 1e-6, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue553 zero-radius circle solver arguments::circleTangentToTwoCirclesAndPointRejectsZeroRadius",
@@ -15002,14 +15253,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "r0": "empty",
-        "r2": "non-empty"
+        "r0": 0,
+        "r2": 2
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "r0": "no solution (the zero-radius half cannot discriminate, as the file says)"
+        "r0": 0,
+        "r2": 2
       }
     },
     "comparison": {
@@ -15023,7 +15275,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: the number of circles tangent to a circle at (0,0) with the radius in the key and passing through (10,0) and (5,8). Bridge: Shape.circleTangentCircle2Points. Kernel: GccAna_Circ2d3Tan(circle, point, point), tolerance 1e-6, from the probe. OCCT itself finds no solution for the zero-radius circle here, so the zero half of the test cannot tell the guard from the kernel (as the test's own comment says); only the radius-2 half discriminates.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue553 zero-radius circle solver arguments::lineCircleIntersectionRejectsZeroRadius",
@@ -15031,28 +15285,36 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "r0": "empty",
-        "r3": 2
+        "r0_points": 0,
+        "r3_points": 2,
+        "r3_param2_all_finite": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "r0": "1 point (0, 0), ParamOnSecond raises Standard_DomainError"
+        "r0_points": 1,
+        "r3_points": 2,
+        "r3_param2_all_finite": true
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #553: the bridge refuses a circle of radius 0; the kernel does not, and reports 1 point. ParamOnSecond() on that point raises Standard_DomainError in the probe ('ParamOnSecond raises: 1' in the transcript).",
+        "r0_points: bridge 0, kernel 1"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
       "red": "Issue553GccZeroRadiusTests.swift:200:9: Expectation failed: IntAna2d.intersectLineCircle(",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantities on both sides: the number of intersection points of the x-axis with a circle centred (0,0) of the radius in the key, and whether every param2 of the radius-3 result is finite. Bridge: IntAna2d.intersectLineCircle. Kernel: IntAna2d_AnaIntersection(line, circle) NbPoints and ParamOnSecond, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue553 zero-radius circle solver arguments::circleCircleIntersectionRejectsZeroRadius",
@@ -15060,28 +15322,34 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "r0": "empty",
-        "r3/r3": 2
+        "r0_r3_points": 0,
+        "r3_r3_points": 2
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "r3 at 0 vs r3 at 4": 2
+        "r0_r3_points": 1,
+        "r3_r3_points": 2
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #553: the bridge refuses a circle of radius 0; the kernel does not, and reports 1 intersection point.",
+        "r0_r3_points: bridge 0, kernel 1"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
       "red": "Issue553GccZeroRadiusTests.swift:213:9: Expectation failed: IntAna2d.intersectCircles(",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: the number of intersection points of two circles, (0,0) radius r with (3,0) radius 3 for r0_r3, and (0,0) radius 3 with (4,0) radius 3 for r3_r3. Bridge: IntAna2d.intersectCircles. Kernel: IntAna2d_AnaIntersection(circle, circle) NbPoints, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue553 zero-radius circle solver arguments::lineCircleExtremaRejectZeroRadius",
@@ -15119,15 +15387,15 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "r0": "empty",
-        "r3": 2
+        "r0_extrema": 0,
+        "r3_extrema": 2
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "r0 NbExt": 0,
-        "r3 NbExt": 2
+        "r0_extrema": 0,
+        "r3_extrema": 2
       }
     },
     "comparison": {
@@ -15141,7 +15409,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: the number of extrema from the point (0,10) to a circle centred (0,0) of the radius in the key. Bridge: Extrema2d.distanceFromPointToCircle. Kernel: Extrema_ExtPElC2d(point, circle, 1e-6, 0, 2 pi) NbExt, from the probe. The kernel already returns no extremum for radius 0, so the zero-radius half of the test cannot tell the guard from the kernel (as the test's own comment says); only the radius-3 half discriminates.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue553 zero-radius circle solver arguments::requestedRadiusOfZeroIsRejected",
@@ -15265,28 +15535,39 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "r0": "nil",
-        "r3": "non-nil"
+        "center_r0": false,
+        "center_r3": true,
+        "axis_r0": false,
+        "axis_r3": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "GC_MakeCircle2d r0 IsDone": 1
+        "center_r0": true,
+        "center_r3": true,
+        "axis_r0": true,
+        "axis_r3": true
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #553: the bridge refuses radius 0 (occtValidCircleRadius); GC_MakeCircle2d does not, and reports IsDone for radius 0, so without the guard a zero-radius circle is built.",
+        "center_r0: bridge false, kernel true",
+        "axis_r0: bridge false, kernel true"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
       "red": "Issue553GccZeroRadiusTests.swift:326:9: Expectation failed: Curve2D.gceCircle(center: SIMD2(0, 0), radius: 0) == nil",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: yields_circle, whether a circle is obtained for the radius in the key, from a centre or from a centre and axis. Bridge: Curve2D.gceCircle(center:radius:) and .gceCircle(axisCenter:axisDirection:radius:), true when not nil. Kernel: GC_MakeCircle2d(point, r).IsDone() for center_* and GC_MakeCircle2d(axis, r).IsDone() for axis_*, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue553 zero-radius circle solver arguments::parallelCircleRejectsCollapsingOffset",
@@ -15294,31 +15575,40 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "-5": "nil",
-        "-6": "nil",
-        "-2 radius": 3
+        "r0_d3": null,
+        "r5_dm5": null,
+        "r5_dm6": null,
+        "r5_dm2": 3
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "-5 radius": 0,
-        "-6 radius": 1,
-        "-2 radius": 3
+        "r0_d3": 3,
+        "r5_dm5": 0,
+        "r5_dm6": 1,
+        "r5_dm2": 3
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE: #553: the bridge refuses a base radius of 0 and any offset that reaches or passes the centre (radius + offset must stay > 0). GC_MakeCircle2d refuses none of these: an offset of -5 on radius 5 gives radius 0, an offset of -6 gives radius 1, and radius 0 with offset 3 gives radius 3.",
+        "r0_d3: bridge null, kernel 3",
+        "r5_dm5: bridge null, kernel 0",
+        "r5_dm6: bridge null, kernel 1"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "evidence": {
       "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
       "red": "Issue553GccZeroRadiusTests.swift:343:9: Expectation failed: Curve2D.gceCircleParallel(",
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
       "rewritten": "`if let` + `Issue.record`; now `#require`"
-    }
+    },
+    "source": "Same quantity on both sides: the radius of the circle parallel to a base circle centred (0,0), radius and offset in the key (r5_dm5 is radius 5, offset -5), or null when no circle is obtained. Bridge: Curve2D.gceCircleParallel, radius from circleProperties. Kernel: GC_MakeCircle2d(circle, distance), Value()->Radius() when IsDone, from the probe.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Issue553 zero-radius circle solver arguments::negativeRadiusWasAlreadyRejected",
@@ -15326,13 +15616,21 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "empty/nil x5"
+        "circle_bisector": true,
+        "circle_circle_intersection": true,
+        "point_circle_extrema": true,
+        "gce_circle": true,
+        "edge2d_from_circle": true
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "gp_Circ2d r-1": "throws: radius should be positive number"
+        "circle_bisector": true,
+        "circle_circle_intersection": true,
+        "point_circle_extrema": true,
+        "gce_circle": true,
+        "edge2d_from_circle": true
       }
     },
     "comparison": {
@@ -15346,7 +15644,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
       "rewritten": ""
-    }
+    },
+    "source": "Same quantity on both sides: refused, true when a circle of radius -1 yields no result in each of the five operations. Bridge: GccAnaBisector.ofCircles, IntAna2d.intersectCircles, Extrema2d.distanceFromPointToCircle (empty), Curve2D.gceCircle and Shape.edge2dFromCircle (nil). Kernel: the operation each one reaches (GccAna_Circ2dBisec, IntAna2d_AnaIntersection, Extrema_ExtPElC2d, GC_MakeCircle2d, BRepBuilderAPI_MakeEdge2d) on a radius -1 circle. Each was run separately in the probe: the first three and the edge raise (gp_Circ2d rejects a negative radius), GC_MakeCircle2d reports not done.",
+    "probe": "Scripts/repro/766-geom2d-evidence-fix/"
   },
   {
     "test_name": "Curve2D knot-splitting duplicates (#562)::A curve with more splits than the first-pass buffer reports all of them",
