@@ -5842,26 +5842,21 @@
     "bridge_output": {
       "type": "direction",
       "data": {
-        "observed": {
-          "direction": [
-            1,
-            0,
-            0
-          ]
-        },
-        "asserted_within": 1e-06
+        "direction": [
+          1,
+          0,
+          0
+        ]
       }
     },
     "kernel_output": {
       "type": "direction",
       "data": {
-        "value": {
-          "direction": [
-            1,
-            0,
-            0
-          ]
-        }
+        "direction": [
+          1,
+          0,
+          0
+        ]
       }
     },
     "comparison": {
@@ -5869,6 +5864,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the line's direction. Bridge: l.lineProperties.direction (OCCTCurve3DLineDirection) on Curve3D.line(through: (1, 2, 3), direction: +X); a temporary print in the test (never committed) observed (1, 0, 0); the test asserts only x within 1e-6 of 1 (a unit direction, so y and z follow). Kernel: Geom_Line::Lin().Direction() printed direction=(1, 0, 0) (transcript.txt, lineDirection line).",
     "probe": "Scripts/repro/766-geom-line-3d/"
   },
   {
@@ -5877,26 +5873,21 @@
     "bridge_output": {
       "type": "point",
       "data": {
-        "observed": {
-          "location": [
-            1,
-            2,
-            3
-          ]
-        },
-        "asserted_within": 1e-06
+        "location": [
+          1,
+          2,
+          3
+        ]
       }
     },
     "kernel_output": {
       "type": "point",
       "data": {
-        "value": {
-          "location": [
-            1,
-            2,
-            3
-          ]
-        }
+        "location": [
+          1,
+          2,
+          3
+        ]
       }
     },
     "comparison": {
@@ -5904,6 +5895,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the line's location point. Bridge: l.lineProperties.location (OCCTCurve3DLineLocation) on Curve3D.line(through: (1, 2, 3), direction: +X); a temporary print in the test (never committed) observed (1, 2, 3); the test asserts each component within 1e-6. Kernel: Geom_Line::Lin().Location() printed location=(1, 2, 3) (transcript.txt, lineLocation line).",
     "probe": "Scripts/repro/766-geom-line-3d/"
   },
   {
@@ -5912,26 +5904,21 @@
     "bridge_output": {
       "type": "direction",
       "data": {
-        "observed": {
-          "direction_after_set": [
-            0,
-            1,
-            0
-          ]
-        },
-        "asserted_within": 1e-06
+        "direction_after_set": [
+          0,
+          1,
+          0
+        ]
       }
     },
     "kernel_output": {
       "type": "direction",
       "data": {
-        "value": {
-          "direction_after_set": [
-            0,
-            1,
-            0
-          ]
-        }
+        "direction_after_set": [
+          0,
+          1,
+          0
+        ]
       }
     },
     "comparison": {
@@ -5939,6 +5926,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the line's direction after SetDirection(0, 1, 0). Bridge: l.lineProperties.setDirection((0, 1, 0)) (OCCTCurve3DLineSetDirection, returned true) then l.lineProperties.direction on Curve3D.line(through: (1, 2, 3), direction: +X); a temporary print in the test (never committed) observed (0, 1, 0); the test asserts y within 1e-6 of 1 (a unit direction, so x and z follow). Kernel: Geom_Line::SetDirection(0, 1, 0) then Lin().Direction() printed (0, 1, 0) (transcript.txt, lineSetDirection line).",
     "probe": "Scripts/repro/766-geom-line-3d/"
   },
   {
@@ -5947,26 +5935,21 @@
     "bridge_output": {
       "type": "point",
       "data": {
-        "observed": {
-          "location_after_set": [
-            5,
-            5,
-            5
-          ]
-        },
-        "asserted_within": 1e-06
+        "location_after_set": [
+          5,
+          5,
+          5
+        ]
       }
     },
     "kernel_output": {
       "type": "point",
       "data": {
-        "value": {
-          "location_after_set": [
-            5,
-            5,
-            5
-          ]
-        }
+        "location_after_set": [
+          5,
+          5,
+          5
+        ]
       }
     },
     "comparison": {
@@ -5974,6 +5957,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the line's location after SetLocation(5, 5, 5). Bridge: l.lineProperties.setLocation((5, 5, 5)) (OCCTCurve3DLineSetLocation, returned true) then l.lineProperties.location on Curve3D.line(through: (1, 2, 3), direction: +X); a temporary print in the test (never committed) observed (5, 5, 5); the test asserts only x within 1e-6 of 5. Kernel: Geom_Line::SetLocation(5, 5, 5) then Lin().Location() printed (5, 5, 5) (transcript.txt, lineSetLocation line).",
     "probe": "Scripts/repro/766-geom-line-3d/"
   },
   {
@@ -5982,36 +5966,31 @@
     "bridge_output": {
       "type": "axis",
       "data": {
-        "observed": {
-          "location": [
-            1,
-            2,
-            3
-          ],
-          "direction": [
-            1,
-            0,
-            0
-          ]
-        },
-        "asserted_within": 1e-06
+        "location": [
+          1,
+          2,
+          3
+        ],
+        "direction": [
+          1,
+          0,
+          0
+        ]
       }
     },
     "kernel_output": {
       "type": "axis",
       "data": {
-        "value": {
-          "location": [
-            1,
-            2,
-            3
-          ],
-          "direction": [
-            1,
-            0,
-            0
-          ]
-        }
+        "location": [
+          1,
+          2,
+          3
+        ],
+        "direction": [
+          1,
+          0,
+          0
+        ]
       }
     },
     "comparison": {
@@ -6019,6 +5998,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the line's axis placement, location and direction. Bridge: l.lineProperties.position (OCCTCurve3DLinePosition) on Curve3D.line(through: (1, 2, 3), direction: +X); a temporary print in the test (never committed) observed location (1, 2, 3) and direction (1, 0, 0); the test asserts direction.x and the location components within 1e-6. Kernel: Geom_Line::Position() printed location=(1, 2, 3) direction=(1, 0, 0) (transcript.txt, linePosition line).",
     "probe": "Scripts/repro/766-geom-line-3d/"
   },
   {
@@ -6027,36 +6007,31 @@
     "bridge_output": {
       "type": "axis",
       "data": {
-        "observed": {
-          "location": [
-            1,
-            2,
-            3
-          ],
-          "direction": [
-            1,
-            0,
-            0
-          ]
-        },
-        "asserted_within": 1e-06
+        "location": [
+          1,
+          2,
+          3
+        ],
+        "direction": [
+          1,
+          0,
+          0
+        ]
       }
     },
     "kernel_output": {
       "type": "axis",
       "data": {
-        "value": {
-          "location": [
-            1,
-            2,
-            3
-          ],
-          "direction": [
-            1,
-            0,
-            0
-          ]
-        }
+        "location": [
+          1,
+          2,
+          3
+        ],
+        "direction": [
+          1,
+          0,
+          0
+        ]
       }
     },
     "comparison": {
@@ -6064,6 +6039,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the gp_Lin of the line, location and direction. Bridge: l.lineProperties.lin (OCCTCurve3DLineLin) on Curve3D.line(through: (1, 2, 3), direction: +X); a temporary print in the test (never committed) observed location (1, 2, 3) and direction (1, 0, 0); the test asserts only the location components within 1e-6. Kernel: Geom_Line::Lin() printed location=(1, 2, 3) direction=(1, 0, 0) (transcript.txt, lineLin line).",
     "probe": "Scripts/repro/766-geom-line-3d/"
   }
 ]
