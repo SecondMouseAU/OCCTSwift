@@ -422,23 +422,30 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "drafted": null
+        "faces=[foreign]": {
+          "produced": false,
+          "volume": null
+        }
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "draftWithNoFaces": {
-          "IsDone": 1,
+        "faces=[foreign]": {
+          "produced": true,
           "volume": 12000.0
         }
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE (#568): the bridge refuses a draft naming only a face this shape does not have and returns nil. The kernel has no such check: with the foreign face dropped, BRepOffsetAPI_DraftAngle receives no Add() call, reports IsDone 1 and returns the input unchanged (volume 12000, the box's own). That silent success is what the refusal prevents."
+      ]
     },
-    "status": "PASS"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides: whether the call produced a shape and its measured value (volume, or edge count for the 2D operations). Bridge values are what the test observed, read from a temporary print of the shape each request returned (%.17g, run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue568-index-skip/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's own calls (Shape.box is centred on the origin; BRepOffsetAPI_DraftAngle, MakeThickSolidByJoin(1e-6), BRepFilletAPI_MakeChamfer, MakeFillet2d) with the bridge's settings. For a Rejects test the two sides answer different questions on purpose: the bridge refuses the request (occtUseSubShapesByIndex, #568) and returns nil, while the kernel side is what the kernel does with the request once the unresolvable index is dropped, which is what the bridge did before #568. Kernel request: Shape.box(20, 20, 30), no face added, pull +Z, 3 degrees, neutral plane z = 0.",
+    "probe": "Scripts/repro/766-modeling-issue568-index-skip/"
   },
   {
     "test_name": "Sub-Shape Index Skipping (#568)::draftRejectsPartiallyForeignFaceList",
@@ -446,23 +453,30 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "drafted": null
+        "faces=[own, foreign]": {
+          "produced": false,
+          "volume": null
+        }
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "draftWithTheOneOwnFace": {
-          "IsDone": 1,
+        "faces=[own, foreign]": {
+          "produced": true,
           "volume": 12000.0
         }
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE (#568): the bridge refuses a draft naming one real vertical face and one foreign face and returns nil. The kernel side is the request with the foreign face dropped: the one own face drafts (IsDone 1) to volume 12000, indistinguishable by volume from no draft, so the partial result would have passed for a full one."
+      ]
     },
-    "status": "PASS"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides: whether the call produced a shape and its measured value (volume, or edge count for the 2D operations). Bridge values are what the test observed, read from a temporary print of the shape each request returned (%.17g, run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue568-index-skip/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's own calls (Shape.box is centred on the origin; BRepOffsetAPI_DraftAngle, MakeThickSolidByJoin(1e-6), BRepFilletAPI_MakeChamfer, MakeFillet2d) with the bridge's settings. For a Rejects test the two sides answer different questions on purpose: the bridge refuses the request (occtUseSubShapesByIndex, #568) and returns nil, while the kernel side is what the kernel does with the request once the unresolvable index is dropped, which is what the bridge did before #568. Kernel request: the first vertical face of Shape.box(20, 20, 30) alone, 3 degrees, neutral plane z = 0.",
+    "probe": "Scripts/repro/766-modeling-issue568-index-skip/"
   },
   {
     "test_name": "Sub-Shape Index Skipping (#568)::draftAcceptsOwnFaces",
@@ -471,23 +485,25 @@
       "type": "value",
       "data": {
         "vertical": 4,
-        "drafted": "non-nil",
-        "volume": "> 12000"
+        "produced": true,
+        "volume": 12024.71917796442
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
         "vertical": 4,
-        "IsDone": 1,
-        "volume": 12024.719178
+        "produced": true,
+        "volume": 12024.71917796442
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether the call produced a shape and its measured value (volume, or edge count for the 2D operations). Bridge values are what the test observed, read from a temporary print of the shape each request returned (%.17g, run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue568-index-skip/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's own calls (Shape.box is centred on the origin; BRepOffsetAPI_DraftAngle, MakeThickSolidByJoin(1e-6), BRepFilletAPI_MakeChamfer, MakeFillet2d) with the bridge's settings. Test asserts non-nil and volume > 20 * 20 * 30; the measured volume is 12024.71917796442 on both sides. Kernel request: the 4 vertical faces of Shape.box(20, 20, 30), pull +Z, 3 degrees, neutral plane z = 0.",
+    "probe": "Scripts/repro/766-modeling-issue568-index-skip/"
   },
   {
     "test_name": "Sub-Shape Index Skipping (#568)::shellRejectsPartiallyForeignFaceList",
@@ -495,23 +511,38 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ownPlusForeign": null,
-        "foreignOnly": null
+        "openFaces=[own, foreign]": {
+          "produced": false,
+          "volume": null
+        },
+        "openFaces=[foreign]": {
+          "produced": false,
+          "volume": null
+        }
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "noOpenFace": {
-          "IsDone": 1
+        "openFaces=[own, foreign]": {
+          "produced": true,
+          "volume": 4519.409985301006
+        },
+        "openFaces=[foreign]": {
+          "produced": true,
+          "volume": -13587.492558290329
         }
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE (#568): the bridge refuses both requests and returns nil. The kernel side is each request with the foreign face dropped: [own, foreign] shells with the top open (IsDone 1, volume 4519.4099853010057), the same as a request that named only the top, and [foreign] reaches MakeThickSolidByJoin with an empty open-face list, which also reports IsDone 1 (valid, volume -13587.492558290329, a closed offset solid with no opening). Neither reflects what the caller asked for."
+      ]
     },
-    "status": "PASS"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides: whether the call produced a shape and its measured value (volume, or edge count for the 2D operations). Bridge values are what the test observed, read from a temporary print of the shape each request returned (%.17g, run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue568-index-skip/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's own calls (Shape.box is centred on the origin; BRepOffsetAPI_DraftAngle, MakeThickSolidByJoin(1e-6), BRepFilletAPI_MakeChamfer, MakeFillet2d) with the bridge's settings. For a Rejects test the two sides answer different questions on purpose: the bridge refuses the request (occtUseSubShapesByIndex, #568) and returns nil, while the kernel side is what the kernel does with the request once the unresolvable index is dropped, which is what the bridge did before #568. Kernel request: Shape.box(20, 20, 20), thickness 2.0, open faces = the upward face, and the empty list.",
+    "probe": "Scripts/repro/766-modeling-issue568-index-skip/"
   },
   {
     "test_name": "Sub-Shape Index Skipping (#568)::shellAcceptsOwnFaces",
@@ -519,24 +550,28 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "shelled": "non-nil",
-        "isValid": true
+        "upward": 1,
+        "produced": true,
+        "valid": true,
+        "volume": 4519.409985301006
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
         "upward": 1,
-        "IsDone": 1,
-        "valid": 1,
-        "volume": 4519.409985
+        "produced": true,
+        "valid": true,
+        "volume": 4519.409985301006
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether the call produced a shape and its measured value (volume, or edge count for the 2D operations). Bridge values are what the test observed, read from a temporary print of the shape each request returned (%.17g, run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue568-index-skip/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's own calls (Shape.box is centred on the origin; BRepOffsetAPI_DraftAngle, MakeThickSolidByJoin(1e-6), BRepFilletAPI_MakeChamfer, MakeFillet2d) with the bridge's settings. Test asserts non-nil and isValid; the volume is measured as well, 4519.4099853010057 on both sides. Kernel request: Shape.box(20, 20, 20), thickness 2.0, the upward face open.",
+    "probe": "Scripts/repro/766-modeling-issue568-index-skip/"
   },
   {
     "test_name": "Sub-Shape Index Skipping (#568)::historyChamferRejectsOutOfRangeIndex",
@@ -544,38 +579,54 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "[0, 99999]": null,
-        "[-1]": null
+        "edges=[0, 99999]": {
+          "produced": false,
+          "volume": null
+        },
+        "edges=[-1]": {
+          "produced": false,
+          "volume": null
+        }
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "edges": 12,
-        "chamferOfEdge0Alone": {
-          "IsDone": 1,
+        "edges=[0, 99999]": {
+          "produced": true,
           "volume": 7990.0
         },
-        "noEdge": "throws: There are no suitable edges for chamfer or fillet"
+        "edges=[-1]": {
+          "produced": false,
+          "volume": null
+        }
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE (#568) for edges=[0, 99999]: the bridge refuses and returns nil; with index 99999 dropped the kernel chamfers edge 0 alone (IsDone 1, volume 7990), a one-edge chamfer reported as the two-edge request it was not.",
+        "edges=[-1] agrees: with the index dropped no edge remains and BRepFilletAPI_MakeChamfer::Build throws \"There are no suitable edges for chamfer or fillet\", which the bridge's catch turns into nil, so neither side produces a shape."
+      ]
     },
-    "status": "PASS"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides: whether the call produced a shape and its measured value (volume, or edge count for the 2D operations). Bridge values are what the test observed, read from a temporary print of the shape each request returned (%.17g, run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue568-index-skip/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's own calls (Shape.box is centred on the origin; BRepOffsetAPI_DraftAngle, MakeThickSolidByJoin(1e-6), BRepFilletAPI_MakeChamfer, MakeFillet2d) with the bridge's settings. For a Rejects test the two sides answer different questions on purpose: the bridge refuses the request (occtUseSubShapesByIndex, #568) and returns nil, while the kernel side is what the kernel does with the request once the unresolvable index is dropped, which is what the bridge did before #568. Kernel request: Shape.box(20, 20, 20) (12 edges), distance 1.0, edge 0 alone, and no edge.",
+    "probe": "Scripts/repro/766-modeling-issue568-index-skip/"
   },
   {
     "test_name": "Sub-Shape Index Skipping (#568)::historyChamferAcceptsResolvableIndices",
     "bridge_function": "OCCTShapeHistoryFromChamferEdges",
     "bridge_output": {
       "type": "value",
-      "data": "bothVolume < oneVolume"
+      "data": {
+        "both": 7980.333333333334,
+        "one": 7990.0
+      }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "both": 7980.333333,
+        "both": 7980.333333333334,
         "one": 7990.0
       }
     },
@@ -583,7 +634,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether the call produced a shape and its measured value (volume, or edge count for the 2D operations). Bridge values are what the test observed, read from a temporary print of the shape each request returned (%.17g, run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue568-index-skip/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's own calls (Shape.box is centred on the origin; BRepOffsetAPI_DraftAngle, MakeThickSolidByJoin(1e-6), BRepFilletAPI_MakeChamfer, MakeFillet2d) with the bridge's settings. Volumes of the chamfer of edges [0, 1] and of edge [0] on Shape.box(20, 20, 20), distance 1.0; the test asserts both < one, and both values are equal on the two sides.",
+    "probe": "Scripts/repro/766-modeling-issue568-index-skip/"
   },
   {
     "test_name": "Sub-Shape Index Skipping (#568)::fillet2DRejectsOutOfRangeVertex",
@@ -591,25 +644,39 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "[0, 99999]": null,
-        "[-1]": null
+        "vertices=[0, 99999]": {
+          "produced": false,
+          "edges": null
+        },
+        "vertices=[-1]": {
+          "produced": false,
+          "edges": null
+        }
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "vertices": 4,
-        "vertex0Alone": {
-          "IsDone": 1,
+        "vertices=[0, 99999]": {
+          "produced": true,
           "edges": 5
+        },
+        "vertices=[-1]": {
+          "produced": false,
+          "edges": null
         }
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE (#568) for vertices=[0, 99999]: the bridge refuses and returns nil; with vertex 99999 dropped the kernel rounds vertex 0 alone (IsDone 1, 5 edges) and reports success for a request that named two vertices.",
+        "vertices=[-1] agrees: with the index dropped MakeFillet2d has no fillet to build and Build reports IsDone 0, so neither side produces a shape."
+      ]
     },
-    "status": "PASS"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides: whether the call produced a shape and its measured value (volume, or edge count for the 2D operations). Bridge values are what the test observed, read from a temporary print of the shape each request returned (%.17g, run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue568-index-skip/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's own calls (Shape.box is centred on the origin; BRepOffsetAPI_DraftAngle, MakeThickSolidByJoin(1e-6), BRepFilletAPI_MakeChamfer, MakeFillet2d) with the bridge's settings. For a Rejects test the two sides answer different questions on purpose: the bridge refuses the request (occtUseSubShapesByIndex, #568) and returns nil, while the kernel side is what the kernel does with the request once the unresolvable index is dropped, which is what the bridge did before #568. Kernel request: the 20 x 20 rectangle face, radius 3.0 on vertex 0 alone, and no fillet.",
+    "probe": "Scripts/repro/766-modeling-issue568-index-skip/"
   },
   {
     "test_name": "Sub-Shape Index Skipping (#568)::fillet2DAcceptsResolvableVertices",
@@ -617,13 +684,14 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "edgeCount": 8
+        "produced": true,
+        "edges": 8
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "IsDone": 1,
+        "produced": true,
         "edges": 8
       }
     },
@@ -631,7 +699,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether the call produced a shape and its measured value (volume, or edge count for the 2D operations). Bridge values are what the test observed, read from a temporary print of the shape each request returned (%.17g, run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue568-index-skip/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's own calls (Shape.box is centred on the origin; BRepOffsetAPI_DraftAngle, MakeThickSolidByJoin(1e-6), BRepFilletAPI_MakeChamfer, MakeFillet2d) with the bridge's settings. Kernel request: the 20 x 20 rectangle face, radius 2.0 on all 4 vertices.",
+    "probe": "Scripts/repro/766-modeling-issue568-index-skip/"
   },
   {
     "test_name": "Sub-Shape Index Skipping (#568)::chamfer2DRejectsOutOfRangePairMember",
@@ -639,24 +709,47 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "all three requests": null
+        "pairs=[(0,1),(2,99999)]": {
+          "produced": false,
+          "edges": null
+        },
+        "pairs=[(0,1),(99999,3)]": {
+          "produced": false,
+          "edges": null
+        },
+        "pairs=[(-1,1)]": {
+          "produced": false,
+          "edges": null
+        }
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "edges": 4,
-        "pair(0,1)Alone": {
-          "IsDone": 1,
+        "pairs=[(0,1),(2,99999)]": {
+          "produced": true,
           "edges": 5
+        },
+        "pairs=[(0,1),(99999,3)]": {
+          "produced": true,
+          "edges": 5
+        },
+        "pairs=[(-1,1)]": {
+          "produced": false,
+          "edges": null
         }
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE (#568) for the first two requests: the bridge refuses and returns nil; with the unresolvable pair dropped the kernel chamfers pair (0,1) alone (IsDone 1, 5 edges) and reports success for a request that named two pairs.",
+        "pairs=[(-1,1)] agrees: with the pair dropped MakeFillet2d has no chamfer to build and Build reports IsDone 0, so neither side produces a shape."
+      ]
     },
-    "status": "PASS"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides: whether the call produced a shape and its measured value (volume, or edge count for the 2D operations). Bridge values are what the test observed, read from a temporary print of the shape each request returned (%.17g, run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue568-index-skip/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's own calls (Shape.box is centred on the origin; BRepOffsetAPI_DraftAngle, MakeThickSolidByJoin(1e-6), BRepFilletAPI_MakeChamfer, MakeFillet2d) with the bridge's settings. For a Rejects test the two sides answer different questions on purpose: the bridge refuses the request (occtUseSubShapesByIndex, #568) and returns nil, while the kernel side is what the kernel does with the request once the unresolvable index is dropped, which is what the bridge did before #568. Kernel request: the 20 x 20 rectangle face, distance 2.0 on pair (0,1) alone, and no chamfer.",
+    "probe": "Scripts/repro/766-modeling-issue568-index-skip/"
   },
   {
     "test_name": "Sub-Shape Index Skipping (#568)::chamfer2DAcceptsResolvablePairs",
@@ -664,13 +757,14 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "edgeCount": 6
+        "produced": true,
+        "edges": 6
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "IsDone": 1,
+        "produced": true,
         "edges": 6
       }
     },
@@ -678,7 +772,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether the call produced a shape and its measured value (volume, or edge count for the 2D operations). Bridge values are what the test observed, read from a temporary print of the shape each request returned (%.17g, run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue568-index-skip/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's own calls (Shape.box is centred on the origin; BRepOffsetAPI_DraftAngle, MakeThickSolidByJoin(1e-6), BRepFilletAPI_MakeChamfer, MakeFillet2d) with the bridge's settings. Kernel request: the 20 x 20 rectangle face, distance 2.0 on pairs (0,1) and (2,3).",
+    "probe": "Scripts/repro/766-modeling-issue568-index-skip/"
   },
   {
     "test_name": "Sub-Shape Index Skipping (#568)::chamfer2DRejectsDuplicatePair",
@@ -686,16 +782,34 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "all three requests": null
+        "pairs=[(0,1),(0,1)]": {
+          "produced": false,
+          "edges": null
+        },
+        "pairs=[(0,1),(1,0)]": {
+          "produced": false,
+          "edges": null
+        },
+        "pairs=[(0,1),(0,1),(0,1)]": {
+          "produced": false,
+          "edges": null
+        }
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "duplicatePair": {
-          "crash": false,
-          "status": 7,
-          "IsDone": 0
+        "pairs=[(0,1),(0,1)]": {
+          "produced": false,
+          "edges": null
+        },
+        "pairs=[(0,1),(1,0)]": {
+          "produced": false,
+          "edges": null
+        },
+        "pairs=[(0,1),(0,1),(0,1)]": {
+          "produced": false,
+          "edges": null
         }
       }
     },
@@ -703,7 +817,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether the call produced a shape and its measured value (volume, or edge count for the 2D operations). Bridge values are what the test observed, read from a temporary print of the shape each request returned (%.17g, run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue568-index-skip/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's own calls (Shape.box is centred on the origin; BRepOffsetAPI_DraftAngle, MakeThickSolidByJoin(1e-6), BRepFilletAPI_MakeChamfer, MakeFillet2d) with the bridge's settings. The bridge refuses a repeated pair before any kernel call (its own duplicate guard, #705). The kernel side passes the three requests through unguarded, each in a forked child: the pinned kernel (patch 0022) no longer crashes and every request ends IsDone 0 with ChFi2d_ConnexionError (status 7), no signal, so both sides produce no shape.",
+    "probe": "Scripts/repro/766-modeling-issue568-index-skip/"
   },
   {
     "test_name": "Sub-Shape Index Skipping (#568)::chamfer2DAcceptsSharedEdgeAcrossDifferentPairs",
@@ -711,13 +827,14 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "edgeCount": 8
+        "produced": true,
+        "edges": 8
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "IsDone": 1,
+        "produced": true,
         "edges": 8
       }
     },
@@ -725,6 +842,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether the call produced a shape and its measured value (volume, or edge count for the 2D operations). Bridge values are what the test observed, read from a temporary print of the shape each request returned (%.17g, run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-issue568-index-skip/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's own calls (Shape.box is centred on the origin; BRepOffsetAPI_DraftAngle, MakeThickSolidByJoin(1e-6), BRepFilletAPI_MakeChamfer, MakeFillet2d) with the bridge's settings. Kernel request: the 20 x 20 rectangle face, distance 1.0 on pairs (0,1), (1,2), (2,3), (3,0).",
+    "probe": "Scripts/repro/766-modeling-issue568-index-skip/"
   }
 ]
