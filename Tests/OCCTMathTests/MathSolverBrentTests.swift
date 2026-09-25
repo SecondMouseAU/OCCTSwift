@@ -11,8 +11,9 @@ struct MathSolverBrentTests {
         if let result = MathSolver.minimizeBrent(ax: -1.0, bx: 1.0, cx: 5.0) { x in
             (value: x * x - 4, derivative: 2 * x)
         } {
-            #expect(abs(result.location) < 0.1)
-            #expect(abs(result.minimum + 4.0) < 0.1)
+            // math_BrentMinimum at tolerance 1e-8 lands within 1e-8 of 0 (probe: -1e-8).
+            #expect(abs(result.location) < 1e-6)
+            #expect(abs(result.minimum + 4.0) < 1e-9)
         }
     }
 
@@ -22,8 +23,9 @@ struct MathSolverBrentTests {
         if let result = MathSolver.minimizeBrent(ax: 3.0, bx: 5.0, cx: 6.0) { x in
             (value: sin(x), derivative: cos(x))
         } {
-            #expect(abs(result.location - 3 * Double.pi / 2) < 0.1)
-            #expect(abs(result.minimum + 1.0) < 0.1)
+            // Probe: location 4.7123889804110037, 3e-11 from 3*pi/2; minimum -1.
+            #expect(abs(result.location - 3 * Double.pi / 2) < 1e-6)
+            #expect(abs(result.minimum + 1.0) < 1e-9)
         }
     }
 }

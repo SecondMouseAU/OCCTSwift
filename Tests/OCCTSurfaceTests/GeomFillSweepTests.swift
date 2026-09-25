@@ -14,9 +14,16 @@ struct GeomFillSweepTests {
         // Create a circle section edge
         let sectionEdge = Shape.edgeFromCircle(
             center: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 3, p1: 0, p2: 2 * .pi)
+        // #766: the guard returned silently and only non-nil was checked; a sweep along half the
+        // path passed. GeomFill_Sweep's face here is the 2 pi r h = 376.99 cylinder wall with
+        // ErrorOnSurface 0, see Scripts/repro/766-geomfill-d/.
+        #expect(pathEdge != nil && sectionEdge != nil)
         guard let path = pathEdge, let section = sectionEdge else { return }
         let result = Shape.geomFillSweep(path: path, section: section)
         #expect(result != nil)
+        if let result {
+            #expect(abs((result.surfaceArea ?? 0) - 376.991118431) < 1e-6)
+        }
     }
 
     @Test("Rejects a sweep that misses its own tolerance instead of reporting it as done (#597)")
