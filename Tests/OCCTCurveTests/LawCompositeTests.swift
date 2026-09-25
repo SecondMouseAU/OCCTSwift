@@ -37,7 +37,6 @@ struct LawCompositeTests {
             return
         }
         let splits = law.knotSplitting(continuityOrder: .c2)
-        #expect(splits.count >= 2)
         // #766: `>= 2` held for the two end knots alone. The multiplicity-2 knot at 0.5 is only
         // C1, so Law_BSplineKnotSplitting at C2 reports three splits.
         #expect(splits.count == 3)

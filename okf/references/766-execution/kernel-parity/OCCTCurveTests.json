@@ -321,7 +321,7 @@
     },
     "status": "PASS",
     "injection": "lawval: LawFunction.value + 1e-3",
-    "red": "LawFunctionTests.swift:89 abs(law.value(at: 0.5) - 5) < 1e-6",
+    "red": "LawFunctionTests.swift:88 abs(law.value(at: 0.5) - 5) < 1e-6",
     "green": "passed",
     "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
   },
@@ -387,7 +387,7 @@
     },
     "status": "PASS",
     "injection": "lawval: LawFunction.value + 1e-3",
-    "red": "LawFunctionTests.swift:55 abs(law.value(at: 0)) < 1e-3  (+1 more)",
+    "red": "LawFunctionTests.swift:54 abs(law.value(at: 0)) < 1e-3  (+1 more)",
     "green": "passed",
     "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
   },
@@ -453,7 +453,7 @@
     },
     "status": "PASS",
     "injection": "lawval: LawFunction.value + 1e-3",
-    "red": "LawFunctionTests.swift:78 abs(law.value(at: 0) - 1.0) < 1e-6  (+1 more)",
+    "red": "LawFunctionTests.swift:77 abs(law.value(at: 0) - 1.0) < 1e-6  (+1 more)",
     "green": "passed",
     "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
   },
@@ -492,14 +492,13 @@
       "data": "N/A: the multiplicity-count check is Swift-side"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: the multiplicity-count check is Swift-side",
     "injection": "lawmult: mismatched multiplicities padded to the knot count",
-    "red": "LawFunctionTests.swift:103 law == nil",
+    "red": "LawFunctionTests.swift:102 law == nil",
     "green": "passed",
     "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
   },
@@ -516,14 +515,13 @@
       "data": "N/A: the multiplicity-count check is Swift-side"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: the multiplicity-count check is Swift-side",
     "injection": "lawmult: mismatched multiplicities padded to the knot count",
-    "red": "LawFunctionTests.swift:111 law == nil",
+    "red": "LawFunctionTests.swift:110 law == nil",
     "green": "passed",
     "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
   },
@@ -540,14 +538,13 @@
       "data": "N/A: one point is refused in Swift before Law_Interpol"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: one point is refused in Swift before Law_Interpol",
     "injection": "lawinterp1: one point answers a constant law",
-    "red": "LawFunctionTests.swift:64 law == nil",
+    "red": "LawFunctionTests.swift:63 law == nil",
     "green": "passed",
     "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
   },
@@ -569,7 +566,7 @@
     },
     "status": "PASS",
     "injection": "lawnone: knot splitting always -1",
-    "red": "LawCompositeTests.swift:40 splits.count >= 2  (+1 more)",
+    "red": "LawCompositeTests.swift:42 splits.count == 3",
     "green": "passed",
     "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
   }
