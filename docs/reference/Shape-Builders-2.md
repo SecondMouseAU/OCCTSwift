@@ -673,12 +673,29 @@ public func convertCurves3dToBezier(lineMode: Bool = true, circleMode: Bool = tr
                                      conicMode: Bool = true) -> Shape?
 ```
 
-- **Parameters:** `lineMode`, convert line segments. `circleMode`, convert circles. `conicMode`, convert other conics.
+- **Parameters:** `lineMode`, convert line segments. `circleMode`, convert circles, but only
+  together with `conicMode` (see below). `conicMode`, convert conics, including circles.
 - **Returns:** Shape with Bezier curves, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ShapeConvertToBezier` with 3D-curve conversion enabled
+- **`circleMode` and `conicMode` are not independent selectors (#2748).** `ShapeUpgrade_ConvertCurve3dToBezier::Compute()`
+  (`Scripts/repro/2748-bezier-circle-mode/probe.mm` reads it from a same-tag `V8_0_1` `occt-src`
+  checkout, per `okf/policies/context-first.md`) skips a curve when
+  `(IsKind(Geom_Conic) && !myConicMode) || (IsKind(Geom_Circle) && !myCircleMode)`. `Geom_Circle`
+  is a subtype of `Geom_Conic`, so for a circle the first clause is already true whenever
+  `conicMode` is false, whatever `circleMode` says. A circle converts only when **both** modes are
+  true; `circleMode: true, conicMode: false` (the natural reading of "convert circles, not other
+  conics") converts nothing, on a cylinder or any other shape, and returns the input shape
+  unchanged rather than `nil`. This is `ShapeUpgrade`'s own behavior, not a bridge defect: the
+  bridge passes both flags to their matching setters exactly as named, and every fixture this was
+  checked against ran against the pinned kernel via the bridge, not a rebuilt one.
+  `circleMode: false` still works as a pure exclusion within an enabled `conicMode: true` pass
+  (skip circles, convert other conics).
 - **Example:**
   ```swift
   if let bez = shape.convertCurves3dToBezier(lineMode: false) { }
+  // Circles convert only with BOTH modes true (#2748):
+  if let circlesOnly = shape.convertCurves3dToBezier(
+      lineMode: false, circleMode: true, conicMode: true) { }
   ```
 
 ---
