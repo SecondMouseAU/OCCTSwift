@@ -9771,5 +9771,296 @@
     "status": "PASS",
     "source": "Same quantities on both sides. Bridge: after setting 16 + 3 layers on the node the test observed layers.count == 19 (OCCTDocumentGetLabelLayers reports the true total even past its 16-entry buffer, #1563). Kernel: XCAFDoc_LayerTool::GetLayers of the label returned a sequence of 19. Kernel values are from the supplementary probe, which runs the test's own scenario through the XCAFDoc_ColorTool / XCAFDoc_LayerTool calls the bridge makes.",
     "probe": "Scripts/repro/766-xcaf-xde-color-layer-parity/"
+  },
+  {
+    "test_name": "TDataStd AsciiString Attribute::Set and get ASCII string",
+    "bridge_function": "OCCTDocumentGetAsciiStringAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "s": "hello"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "s": "hello"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd AsciiString Attribute::Change ASCII string",
+    "bridge_function": "OCCTDocumentSetAsciiStringAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "s": "world"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "s": "world"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "BooleanArray Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetBooleanArray",
+    "bridge_output": {
+      "type": "array",
+      "data": {
+        "set": true,
+        "count": 5,
+        "v": [
+          true,
+          false,
+          true
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "array",
+      "data": {
+        "set": true,
+        "count": 5,
+        "v": [
+          true,
+          false,
+          true
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for the array [true, false, true, false, true] set on tag 300: whether the set is accepted, the element count, and the first three values. Bridge: setBooleanArray returned true, then booleanArray had count 5 and elements 0, 1, 2 were true, false, true. Kernel: '[boolean array set/get] tag 300, Set(1, 5): found=true Length=5 Lower=1 values(1..3)=1 0 1', where the set is accepted because the attribute is then found, and 1 and 0 are the kernel's true and false. Kernel value: Scripts/repro/766-xcaf-tdatastd-a-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-a-evidence/"
+  },
+  {
+    "test_name": "BooleanArray Tests::hasBooleanArray",
+    "bridge_function": "OCCTDocumentHasBooleanArray",
+    "bridge_output": {
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for tag 301: whether the boolean array attribute is present before and after setBooleanArray(tag: 301, values: [true]). Bridge: hasBooleanArray was false, then true. Kernel: '[boolean array has] tag 301: FindAttribute before Set=false, after setBooleanArray([true])=true'. Kernel value: Scripts/repro/766-xcaf-tdatastd-a-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-a-evidence/"
+  },
+  {
+    "test_name": "BooleanArray Tests::emptyArrayReturnsNil",
+    "bridge_function": "OCCTDocumentGetBooleanArray",
+    "bridge_output": {
+      "type": "array",
+      "data": {
+        "present": false
+      }
+    },
+    "kernel_output": {
+      "type": "array",
+      "data": {
+        "present": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether an array is found on tag 302 where none was set. Bridge: booleanArray(tag: 302) was nil, so not present. Kernel: '[boolean array empty] tag 302, nothing set: FindAttribute=false (the bridge returns -1, which Swift reads as nil)'. Kernel value: Scripts/repro/766-xcaf-tdatastd-a-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-a-evidence/"
+  },
+  {
+    "test_name": "BooleanList Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetBooleanList",
+    "bridge_output": {
+      "type": "list",
+      "data": {
+        "set": true,
+        "count": 3,
+        "v": [
+          true,
+          false
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "list",
+      "data": {
+        "set": true,
+        "count": 3,
+        "v": [
+          true,
+          false
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for the list [true, false, true] set on tag 310: whether the set is accepted, the element count and the first two values. Bridge: setBooleanList returned true, then booleanList had count 3 and elements 0 and 1 were true and false. Kernel: '[boolean list set/get] tag 310: found=true Extent=3 values(1..2)=1 0', where the set is accepted because the attribute is then found. Kernel value: Scripts/repro/766-xcaf-tdatastd-a-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-a-evidence/"
+  },
+  {
+    "test_name": "BooleanList Tests::appendAndClear",
+    "bridge_function": "OCCTDocumentBooleanListClear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "after_append": 2,
+        "after_clear": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "after_append": 2,
+        "after_clear": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "BooleanList Tests::hasBooleanList",
+    "bridge_function": "OCCTDocumentHasBooleanList",
+    "bridge_output": {
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for tag 312: whether the boolean list attribute is present before and after setBooleanList(tag: 312, values: [true]). Bridge: hasBooleanList was false, then true. Kernel: '[boolean list has] tag 312: FindAttribute before Set=false, after setBooleanList([true])=true'. Kernel value: Scripts/repro/766-xcaf-tdatastd-a-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-a-evidence/"
+  },
+  {
+    "test_name": "ByteArray Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetByteArray",
+    "bridge_output": {
+      "type": "array",
+      "data": {
+        "set": true,
+        "count": 4,
+        "v": {
+          "0": 42,
+          "1": 255,
+          "3": 128
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "array",
+      "data": {
+        "set": true,
+        "count": 4,
+        "v": {
+          "0": 42,
+          "1": 255,
+          "3": 128
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for the bytes [42, 255, 0, 128] set on tag 320: whether the set is accepted, the element count, and the elements at positions 0, 1 and 3 that the test reads. Bridge: setByteArray returned true, then byteArray had count 4 and elements 0, 1 and 3 were 42, 255 and 128. Kernel: '[byte array set/get] tag 320, Set(0, 3): found=true Length=4 Lower=0 values(0..3)=42 255 0 128', with the bridge's 0-based bounds. Kernel value: Scripts/repro/766-xcaf-tdatastd-a-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-a-evidence/"
+  },
+  {
+    "test_name": "ByteArray Tests::hasByteArray",
+    "bridge_function": "OCCTDocumentHasByteArray",
+    "bridge_output": {
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for tag 321: whether the byte array attribute is present before and after setByteArray(tag: 321, values: [1, 2, 3]). Bridge: hasByteArray was false, then true. Kernel: '[byte array has] tag 321: FindAttribute before Set=false, after setByteArray([1, 2, 3])=true'. Kernel value: Scripts/repro/766-xcaf-tdatastd-a-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-a-evidence/"
+  },
+  {
+    "test_name": "TDataStd Comment Attribute::Set and get comment",
+    "bridge_function": "OCCTDocumentGetCommentAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "s": "my comment"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "s": "my comment"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
   }
 ]

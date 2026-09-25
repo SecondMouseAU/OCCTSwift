@@ -605,3 +605,19 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `getLayers` | `OCCTDocumentGetLabelLayers` answers 0 | :38 Expectation failed: layers.count == 1 | passed | `OCCTDocumentGetLabelLayers` | PASS: 1, TestLayer |
 | `findAndVisibility` | `OCCTDocumentGetLayerVisibility` returns true | :62 Expectation failed: !doc.layerVisibility(layerLabelId: layerLabelId) | passed | `OCCTDocumentGetLayerVisibility` | PASS: found; false, true |
 | `getLayersBeyondBufferCap` | `OCCTDocumentGetLabelLayers` answers 0 | :86 Expectation failed: layers.count == extraCount | passed | `OCCTDocumentGetLabelLayers` | PASS: 19 layers set and 19 reported on both sides (no 16-entry cap) |
+### `TDataStdAsciiStringTests.swift`
+| `setGetAsciiString` | `OCCTDocumentGetAsciiStringAttr` returns null | :15 Expectation failed: label.asciiString == "hello" | passed | `OCCTDocumentGetAsciiStringAttr` | PASS: hello |
+| `changeAsciiString` | `OCCTDocumentSetAsciiStringAttr` returns true without storing | :24 Expectation failed: label.asciiString == "world" | passed | `OCCTDocumentSetAsciiStringAttr` | PASS: world after the second Set |
+### `TDataStdBooleanArrayTests.swift`
+| `setAndGet` | `OCCTDocumentSetBooleanArray` stores the first value inverted | :16 Expectation failed: result[0] == true | passed | `OCCTDocumentGetBooleanArray` | PASS: set, 5 elements, first three true, false, true, on both sides |
+| `hasBooleanArray` | `OCCTDocumentHasBooleanArray` returns true | :24 Expectation failed: !doc.hasBooleanArray(tag: 301) | passed | `OCCTDocumentHasBooleanArray` | PASS: absent before the set and present after, on both sides |
+| `emptyArrayReturnsNil` | `OCCTDocumentGetBooleanArray` reports one value where there is no array | :31 Expectation failed: doc.booleanArray(tag: 302) == nil | passed | `OCCTDocumentGetBooleanArray` | PASS: no array on a label that never had one, on both sides |
+### `TDataStdBooleanListTests.swift`
+| `setAndGet` | `OCCTDocumentSetBooleanList` stores the first value inverted | :14 Expectation failed: result[0] == true | passed | `OCCTDocumentGetBooleanList` | PASS: set, 3 elements, first two true and false, on both sides |
+| `appendAndClear` | `OCCTDocumentBooleanListClear` returns true without clearing | :29 Expectation failed: result.count == 0 | passed | `OCCTDocumentBooleanListClear` | PASS: 2, then 0 |
+| `hasBooleanList` | `OCCTDocumentHasBooleanList` returns true | :35 Expectation failed: !doc.hasBooleanList(tag: 312) | passed | `OCCTDocumentHasBooleanList` | PASS: absent before the set and present after, on both sides |
+### `TDataStdByteArrayTests.swift`
+| `setAndGet` | `OCCTDocumentSetByteArray` stores the first byte with its low bit flipped | :13 Expectation failed: result[0] == 42 | passed | `OCCTDocumentGetByteArray` | PASS: set, 4 elements, positions 0, 1, 3 read 42, 255, 128, on both sides |
+| `hasByteArray` | `OCCTDocumentHasByteArray` returns true | :21 Expectation failed: !doc.hasByteArray(tag: 321) | passed | `OCCTDocumentHasByteArray` | PASS: absent before the set and present after, on both sides |
+### `TDataStdCommentTests.swift`
+| `setGetComment` | `OCCTDocumentGetCommentAttr` returns null | :15 Expectation failed: label.comment == "my comment" | passed | `OCCTDocumentGetCommentAttr` | PASS: my comment |
