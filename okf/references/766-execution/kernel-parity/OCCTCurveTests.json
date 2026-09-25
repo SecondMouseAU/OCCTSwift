@@ -470,12 +470,11 @@
       "data": "N/A: 2D fixtures not probed here; same GCPnts template (Scripts/repro/766-curve-nonfinite-length covers the 2D adaptor)"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: 2D fixtures not probed here; same GCPnts template (Scripts/repro/766-curve-nonfinite-length covers the 2D adaptor)",
     "injection": "c2noclamp: out-of-domain Curve2D range x 2",
     "red": "Issue600OutOfDomainRangeTests.swift:241 seg2.length(from: 0, to: 20) == whole  (+5 more)",
     "green": "passed",
@@ -494,12 +493,11 @@
       "data": "N/A: edge fixtures not probed separately; BRepAdaptor over the same curves"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A: edge fixtures not probed separately; BRepAdaptor over the same curves",
     "injection": "edext: out-of-domain edge range x 2",
     "red": "Issue600OutOfDomainRangeTests.swift:281 abs(  (+2 more)",
     "green": "passed",
