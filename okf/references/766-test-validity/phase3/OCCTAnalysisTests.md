@@ -481,12 +481,12 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
-| sweptDirection | OCCTSurfaceSweptDirection | Geom_SweptSurface | negate dz | ✅ | ✅ | Fixtures now #require'd |
+| sweptDirection | OCCTSurfaceSweptDirection | Geom_SweptSurface | negate dz | ✅ | ✅ | Fixtures now #require'd. Tightened: it asserted z only; x and y are asserted too. Red at `GeomSwept3DTests.swift:15` with dx + 0.5 and at `:16` with dy + 0.5 |
 | sweptBasisCurve | OCCTSurfaceSweptBasisCurve | Geom_SweptSurface | return nullptr | ✅ | ✅ | Rewritten: asserted nothing, a nil basis passed |
 | torusRadii | OCCTSurfaceTorusMajorRadius / OCCTSurfaceTorusMinorRadius | Geom_ToroidalSurface | each + 1 | ✅ | ✅ | Fixture now #require'd |
 | torusSetRadii | OCCTSurfaceTorusSetMajorRadius / OCCTSurfaceTorusSetMinorRadius | Geom_ToroidalSurface setters | skip both setters | ✅ | ✅ | Fixture now #require'd |
-| torusArea | OCCTSurfaceTorusArea | Geom_ToroidalSurface | Area() * 2 | ✅ | ✅ | Fixture now #require'd |
-| torusVolume | OCCTSurfaceTorusVolume | Geom_ToroidalSurface | Volume() * 2 | ✅ | ✅ | Fixture now #require'd |
+| torusArea | OCCTSurfaceTorusArea | Geom_ToroidalSurface | Area() * 2 | ✅ | ✅ | Fixture now #require'd. Tolerance tightened from 1.0 to 1e-9 (the kernel returns 789.5683520871487, the closed form to the last digit). Area() * 1.001, 0.79 off, passed the old tolerance and is red at `GeomTorus3DTests.swift:35` now, as is Area() * 1.000001 |
+| torusVolume | OCCTSurfaceTorusVolume | Geom_ToroidalSurface | Volume() * 2 | ✅ | ✅ | Fixture now #require'd. Tolerance tightened from 1.0 to 1e-9 (the kernel is within 1.2e-13 of the closed form). Volume() * 1.001 passed the old tolerance and is red at `:42` now, as is Volume() * 1.000001 |
 
 ---
 

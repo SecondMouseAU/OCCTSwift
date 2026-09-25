@@ -30,12 +30,15 @@ struct GeomTorus3DTests {
     @Test func torusArea() throws {
         let t = try makeTorus()
         let area = t.torusProperties.area
-        #expect(abs(area - 4 * Double.pi * Double.pi * 10 * 2) < 1.0)
+        // 4 pi^2 R r = 789.5683520871487; the kernel returns it to the last digit
+        // (Scripts/repro/766-geom-swept-torus/transcript.txt), and 1.0 let a 0.1 percent error by.
+        #expect(abs(area - 4 * Double.pi * Double.pi * 10 * 2) < 1e-9)
     }
 
     @Test func torusVolume() throws {
         let t = try makeTorus()
         let vol = t.torusProperties.volume
-        #expect(abs(vol - 2 * Double.pi * Double.pi * 10 * 4) < 1.0)
+        // 2 pi^2 R r^2 = 789.5683520871487; the kernel is within 1.2e-13 of it (same transcript).
+        #expect(abs(vol - 2 * Double.pi * Double.pi * 10 * 4) < 1e-9)
     }
 }

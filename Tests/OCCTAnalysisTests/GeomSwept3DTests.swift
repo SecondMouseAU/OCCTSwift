@@ -12,6 +12,8 @@ struct GeomSwept3DTests {
         let line = try #require(Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)))
         let ext = try #require(Surface.extrusion(profile: line, direction: SIMD3(0, 0, 1)))
         let d = ext.sweptProperties.direction
+        #expect(abs(d.x) < 1e-12)
+        #expect(abs(d.y) < 1e-12)
         #expect(abs(d.z - 1) < 1e-6)
     }
 
