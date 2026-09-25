@@ -1447,7 +1447,9 @@ extension Shape {
     ///     kernel path.
     ///   - conicMode: Convert conics to Bezier (default: true), including circles; see
     ///     `circleMode` above
-    /// - Returns: Shape with Bezier curves, or nil on failure
+    /// - Returns: Shape with Bezier curves, or nil on failure. The result can report `isValid ==
+    ///   false`: this converts curve geometry only, without re-deriving the affected edges'
+    ///   `SameRange`/pcurve consistency, which is `ShapeFix`'s job, not `ShapeUpgrade`'s.
     public func convertCurves3dToBezier(
         lineMode: Bool = true, circleMode: Bool = true,
         conicMode: Bool = true
@@ -1470,7 +1472,10 @@ extension Shape {
     ///   - revolutionMode: Convert surfaces of revolution (default: true)
     ///   - extrusionMode: Convert extrusion surfaces (default: true)
     ///   - bsplineMode: Convert BSpline surfaces (default: true)
-    /// - Returns: Shape with Bezier surfaces, or nil on failure
+    /// - Returns: Shape with Bezier surfaces, or nil on failure. The result can report `isValid
+    ///   == false` when a converted face's edges border another face: this converts surface
+    ///   geometry only, without re-deriving pcurve consistency, which is `ShapeFix`'s job, not
+    ///   `ShapeUpgrade`'s.
     public func convertSurfacesToBezier(
         planeMode: Bool = true, revolutionMode: Bool = true,
         extrusionMode: Bool = true, bsplineMode: Bool = true
