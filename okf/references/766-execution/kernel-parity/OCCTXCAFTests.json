@@ -9776,16 +9776,15 @@
     "test_name": "OCAF Format Registration::Register all format drivers",
     "bridge_function": "OCCTDocumentReadingFormats",
     "bridge_output": {
-      "type": "value",
+      "type": "formats",
       "data": {
-        "reading_at_least": 4
+        "reading_at_least_4": true
       }
     },
     "kernel_output": {
-      "type": "value",
+      "type": "formats",
       "data": {
-        "reading": 6,
-        "writing": 6
+        "reading_at_least_4": true
       }
     },
     "comparison": {
@@ -9793,23 +9792,24 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+    "source": "Same quantity on both sides: whether the reading formats number at least 4 after defineAllFormats on a document from Document.create(). Bridge: readingFormats.count >= 4. Kernel: '[formats] after defineAllFormats (Bin, BinL, Xml, XmlL, BinXCAF, XmlXCAF): reading=6 writing=6 reading >= 4=true', from a document that had none before ('reading=0 writing=0'). Kernel value: Scripts/repro/766-xcaf-ocaf-saveload-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-ocaf-saveload-evidence/"
   },
   {
     "test_name": "OCAF Format Registration::Reading and writing formats",
     "bridge_function": "OCCTDocumentReadingFormats",
     "bridge_output": {
-      "type": "value",
+      "type": "formats",
       "data": {
         "reading_nonempty": true,
         "writing_nonempty": true
       }
     },
     "kernel_output": {
-      "type": "value",
+      "type": "formats",
       "data": {
-        "reading": 6,
-        "writing": 6
+        "reading_nonempty": true,
+        "writing_nonempty": true
       }
     },
     "comparison": {
@@ -9817,7 +9817,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+    "source": "Same quantities on both sides: whether the reading list and the writing list are non-empty after defineAllFormats. Bridge: readingFormats and writingFormats both non-empty. Kernel: '[formats] after defineAllFormats (Bin, BinL, Xml, XmlL, BinXCAF, XmlXCAF): reading=6 writing=6 reading >= 4=true reading not empty=true writing not empty=true'. Kernel value: Scripts/repro/766-xcaf-ocaf-saveload-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-ocaf-saveload-evidence/"
   },
   {
     "test_name": "OCAF Save In-Place::Save in-place after initial save",
@@ -9847,15 +9848,15 @@
     "test_name": "OCAF Save In-Place::Save in-place fails without prior save",
     "bridge_function": "OCCTDocumentSaveOCAFInPlace",
     "bridge_output": {
-      "type": "value",
+      "type": "status",
       "data": {
         "status_not_ok": true
       }
     },
     "kernel_output": {
-      "type": "value",
+      "type": "status",
       "data": {
-        "status": 3
+        "status_not_ok": true
       }
     },
     "comparison": {
@@ -9863,25 +9864,28 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+    "source": "Same quantity on both sides: whether an in-place save of a document never saved is not OK. Bridge: saveOCAFInPlace() != .ok, the bridge refusing with -1 before calling the kernel because IsSaved() is false, which Swift reads as .failure. Kernel: '[in place, no save] Document.create(format: \"BinOcaf\"): IsSaved=false, so the bridge guard returns -1 (Swift reads it as .failure = 3)' and 'Save before any SaveAs: status=3 (ok=0) status not ok=true', so the kernel refuses too. Kernel value: Scripts/repro/766-xcaf-ocaf-saveload-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-ocaf-saveload-evidence/"
   },
   {
     "test_name": "OCAF Save/Load Binary::Save and load BinOcaf document",
     "bridge_function": "OCCTDocumentLoadOCAF",
     "bridge_output": {
-      "type": "value",
+      "type": "saveload",
       "data": {
         "save": 0,
         "saved": true,
-        "read": 0
+        "read": 0,
+        "loaded_storage_format_present": true
       }
     },
     "kernel_output": {
-      "type": "value",
+      "type": "saveload",
       "data": {
         "save": 0,
         "saved": true,
-        "open": 0
+        "read": 0,
+        "loaded_storage_format_present": true
       }
     },
     "comparison": {
@@ -9889,23 +9893,26 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+    "source": "Same quantities on both sides, for a BinOcaf document with a name and an integer on its first child label: the save status (ordinal 0 is OK), whether the document then reports itself saved, the read status, and whether the loaded document has a storage format. Bridge: saveOCAF == .ok, isSaved, loadOCAF status == .ok, loaded.storageFormat != nil. Kernel: '[bin ocaf] label 0:1:1: SaveAs status=0 IsSaved=true; load: Open status=0 document returned=true storage format=\"BinOcaf\" (present=true)'. Kernel value: Scripts/repro/766-xcaf-ocaf-saveload-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-ocaf-saveload-evidence/"
   },
   {
     "test_name": "OCAF Save/Load Binary::Save and load BinXCAF with shapes",
     "bridge_function": "OCCTDocumentLoadOCAF",
     "bridge_output": {
-      "type": "value",
+      "type": "saveload",
       "data": {
         "save": 0,
-        "read": 0
+        "read": 0,
+        "loaded": true
       }
     },
     "kernel_output": {
-      "type": "value",
+      "type": "saveload",
       "data": {
         "save": 0,
-        "open": 0
+        "read": 0,
+        "loaded": true
       }
     },
     "comparison": {
@@ -9913,23 +9920,26 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+    "source": "Same quantities on both sides, for a BinXCAF document given a name and a box shape attribute on the label createLabel() returns: the save status, the read status and whether a document loads. Bridge: saveOCAF == .ok, loadOCAF status == .ok and the document non-nil. Kernel: '[bin xcaf] label 0:1:1: SaveAs status=0; load: Open status=0 document returned=true storage format=\"BinXCAF\"'. On an XCAF document the first NewChild is the existing ShapeTool label 0:1:1, so the name and shape go on that label, and the save and load still succeed. Kernel value: Scripts/repro/766-xcaf-ocaf-saveload-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-ocaf-saveload-evidence/"
   },
   {
     "test_name": "OCAF Save/Load XML::Save and load XmlOcaf document",
     "bridge_function": "OCCTDocumentLoadOCAF",
     "bridge_output": {
-      "type": "value",
+      "type": "saveload",
       "data": {
         "save": 0,
-        "read": 0
+        "read": 0,
+        "loaded": true
       }
     },
     "kernel_output": {
-      "type": "value",
+      "type": "saveload",
       "data": {
         "save": 0,
-        "open": 0
+        "read": 0,
+        "loaded": true
       }
     },
     "comparison": {
@@ -9937,13 +9947,14 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+    "source": "Same quantities on both sides, for an XmlOcaf document with a name and a real on its first child label: the save status, the read status and whether a document loads. Bridge: saveOCAF == .ok, loadOCAF status == .ok and the document non-nil. Kernel: '[xml ocaf] label 0:1:1: SaveAs status=0; load: Open status=0 document returned=true storage format=\"XmlOcaf\"'. Kernel value: Scripts/repro/766-xcaf-ocaf-saveload-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-ocaf-saveload-evidence/"
   },
   {
     "test_name": "PCDM Status Enums::StoreStatus values",
     "bridge_function": "OCCTDocumentSaveOCAF",
     "bridge_output": {
-      "type": "value",
+      "type": "enum",
       "data": {
         "ok": 0,
         "driverFailure": 1,
@@ -9952,12 +9963,12 @@
       }
     },
     "kernel_output": {
-      "type": "value",
+      "type": "enum",
       "data": {
-        "PCDM_SS_OK": 0,
-        "DriverFailure": 1,
-        "WriteFailure": 2,
-        "Failure": 3
+        "ok": 0,
+        "driverFailure": 1,
+        "writeFailure": 2,
+        "failure": 3
       }
     },
     "comparison": {
@@ -9965,13 +9976,14 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+    "source": "Same quantities on both sides: the ordinals of the four store statuses the tests pin. Bridge: StoreStatus.ok, .driverFailure, .writeFailure and .failure have raw values 0, 1, 2 and 3. Kernel: '[status enums] PCDM_StoreStatus: OK=0 DriverFailure=1 WriteFailure=2 Failure=3', keyed here by the Swift case names. Kernel value: Scripts/repro/766-xcaf-ocaf-saveload-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-ocaf-saveload-evidence/"
   },
   {
     "test_name": "PCDM Status Enums::ReaderStatus values",
     "bridge_function": "OCCTDocumentLoadOCAF",
     "bridge_output": {
-      "type": "value",
+      "type": "enum",
       "data": {
         "ok": 0,
         "noDriver": 1,
@@ -9980,12 +9992,12 @@
       }
     },
     "kernel_output": {
-      "type": "value",
+      "type": "enum",
       "data": {
-        "PCDM_RS_OK": 0,
-        "NoDriver": 1,
-        "OpenError": 3,
-        "UnrecognizedFileFormat": 12
+        "ok": 0,
+        "noDriver": 1,
+        "openError": 3,
+        "unrecognizedFileFormat": 12
       }
     },
     "comparison": {
@@ -9993,23 +10005,24 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+    "source": "Same quantities on both sides: the ordinals of the four reader statuses the tests pin. Bridge: ReaderStatus.ok, .noDriver, .openError and .unrecognizedFileFormat have raw values 0, 1, 3 and 12. Kernel: '[status enums] PCDM_ReaderStatus: OK=0 NoDriver=1 OpenError=3 UnrecognizedFileFormat=12', keyed here by the Swift case names. Kernel value: Scripts/repro/766-xcaf-ocaf-saveload-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-ocaf-saveload-evidence/"
   },
   {
     "test_name": "PCDM Status Enums::Load nonexistent file returns error",
     "bridge_function": "OCCTDocumentLoadOCAF",
     "bridge_output": {
-      "type": "value",
+      "type": "load",
       "data": {
         "document": null,
         "status_not_ok": true
       }
     },
     "kernel_output": {
-      "type": "value",
+      "type": "load",
       "data": {
-        "status": 18,
-        "loaded": false
+        "document": null,
+        "status_not_ok": true
       }
     },
     "comparison": {
@@ -10017,6 +10030,7 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+    "source": "Same quantities on both sides: the document returned and whether the read status is not OK, for a path that does not exist. Bridge: loadOCAF(from: \"/nonexistent/file.cbf\") returned no document and a status != .ok. Kernel: '[nonexistent] Open /nonexistent/file.cbf: status=18 (ok=0) document returned=false status not ok=true', so no document comes back and the status is 18, not OK. Kernel value: Scripts/repro/766-xcaf-ocaf-saveload-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-ocaf-saveload-evidence/"
   }
 ]
