@@ -18,12 +18,14 @@ struct MedialAxisVariousShapesTests {
             Issue.record("Failed to compute medial axis for square")
             return
         }
-        // Square should have arcs and nodes
+        // Square should have arcs and nodes: four arcs and five nodes (transcript)
         #expect(ma.arcCount > 0)
         #expect(ma.nodeCount > 0)
-        // Min thickness = half of side = 3.0
+        #expect(ma.arcCount == 4)
+        #expect(ma.nodeCount == 5)
+        // Min thickness = half of side = 3.0, exact
         let minT = ma.minThickness
-        #expect(abs(minT - 3.0) < 0.1, "Expected min thickness ~3.0 for 6x6 square, got \(minT)")
+        #expect(abs(minT - 3.0) < 1e-9, "Expected min thickness 3.0 for 6x6 square, got \(minT)")
     }
 
     @Test("L-shaped polygon produces medial axis")
@@ -72,7 +74,7 @@ struct MedialAxisVariousShapesTests {
         }
         let minT = ma.minThickness
         #expect(minT > 0)
-        #expect(abs(minT - 0.5) < 0.1, "Expected min thickness ~0.5 for 20x1 rect, got \(minT)")
+        #expect(abs(minT - 0.5) < 1e-9, "Expected min thickness 0.5 for 20x1 rect, got \(minT)")
     }
 
     @Test("Triangle produces medial axis")
@@ -136,20 +138,24 @@ struct MedialAxisVariousShapesTests {
     }
 
     @Test("Medial axis nodes lie inside the shape boundary")
-    func nodesInsideBoundary() {
+    func nodesInsideBoundary() throws {
         let wire = Wire.rectangle(width: 10, height: 4)!
         let face = Shape.face(from: wire)!
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis")
             return
         }
-        // Rectangle is centered at origin: x in [-5, 5], y in [-2, 2]
-        for node in ma.nodes {
+        // Rectangle is centered at origin: x in [-5, 5], y in [-2, 2]. Six nodes, so the loop
+        // does not run over nothing; the corner nodes sit exactly on the boundary, so the 0.1
+        // slack this used to allow is 1e-9 now.
+        let nodes = ma.nodes
+        try #require(nodes.count == 6)
+        for node in nodes {
             #expect(
-                node.position.x >= -5.1 && node.position.x <= 5.1,
+                node.position.x >= -5 - 1e-9 && node.position.x <= 5 + 1e-9,
                 "Node x=\(node.position.x) outside rectangle bounds")
             #expect(
-                node.position.y >= -2.1 && node.position.y <= 2.1,
+                node.position.y >= -2 - 1e-9 && node.position.y <= 2 + 1e-9,
                 "Node y=\(node.position.y) outside rectangle bounds")
         }
     }
