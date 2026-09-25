@@ -1396,7 +1396,7 @@ struct ThreadSafetyTests {
     // then on no other thread can be in the way, so the nested acquire of a recursive lock is
     // immediate and only that step gets a tight timeout. Waiting for the outer lock is a wait
     // behind other suites and is not bounded tightly (see `contended`).
-    @Test func serialLockReentrant() {
+    @Test func serialLockReentrant() throws {
         let state = SerialLockProbeState()
         let outerHeld = DispatchSemaphore(value: 0)
         let innerHeld = DispatchSemaphore(value: 0)
@@ -1412,12 +1412,11 @@ struct ThreadSafetyTests {
             done.signal()
         }
         let gotOuter = outerHeld.wait(timeout: .now() + Self.contended) == .success
-        #expect(gotOuter)
-        guard gotOuter else { return }
+        try #require(gotOuter)
         let gotInner = innerHeld.wait(timeout: .now() + 30) == .success
-        #expect(gotInner)
-        // A worker stuck on its own nested acquire never finishes; there is nothing left to check.
-        guard gotInner else { return }
+        // A worker stuck on its own nested acquire never finishes; there is nothing left to check,
+        // so this stops the test at the failure instead of passing it early.
+        try #require(gotInner)
         let finished = done.wait(timeout: .now() + Self.contended) == .success
         #expect(finished)
         #expect(abs((state.volume(0) ?? -1) - 125) < 1e-6)
@@ -1427,14 +1426,9 @@ struct ThreadSafetyTests {
     // one handing back the original shape, passed. A copy made for another thread must share no
     // TShape with the original (TNaming_CopyShape::CopyTool gives IsSame false) and keep its
     // volume.
-    @Test func deepCopyForParallel() {
-        guard let orig = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box nil")
-            return
-        }
-        let copy = orig.deepCopy()
-        #expect(copy != nil)
-        guard let copy else { return }
+    @Test func deepCopyForParallel() throws {
+        let orig = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let copy = try #require(orig.deepCopy())
         #expect(!copy.isSame(as: orig))
         #expect(abs((orig.volume ?? -1) - 1000) < 1e-6)
         #expect(abs((copy.volume ?? -1) - 1000) < 1e-6)
