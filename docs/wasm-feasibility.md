@@ -216,8 +216,16 @@ its siblings write to.
 - **4 GB single-heap ceiling** (wasm32; Swift does not target wasm64) caps model size.
 - **Size is the real API-surface problem, and it is Foundation's rather than OCCT's.**
   A SwiftWasm module that does nothing but print a path is 13.11 MB brotli, 37.6 MB of
-  it internationalisation **data**, against a 5 MB target. Moving files to
-  `FoundationEssentials` is the first lever; #2761 holds the numbers.
+  it internationalisation **data**. The full stack is 27.0 MB brotli, so the bridge and
+  OCCT add about 13.9 MB on top of Foundation. Moving files to `FoundationEssentials`
+  is the first lever; #2761 holds the numbers.
+
+  **There is no size budget.** #1689 originally asked for 5 MB gzipped, that was
+  downgraded to a target on 2026-09-23 and withdrawn on 2026-09-25. It was never
+  like-for-like with the `occt-wasm` figure it was set against (that one is brotli,
+  OCCT alone, Emscripten), and Foundation exceeds it before any OCCT is present, so it
+  constrained the wrong component. #2761 measures and reports rather than passing or
+  failing against a number chosen before anything was built.
 
 ## Three paths to one wasm module
 
@@ -370,7 +378,7 @@ bridge, over OCCT, in one module, including two that must fail and do. See
 What remains open is now a short list rather than the shape of the thing: nothing has
 run in a browser (#2052), no test target has been built for wasm, there is no
 numerical parity check against the Apple kernel, and the module is 26.98 MB brotli
-against a 5 MB target (#2761).
+and there is no size budget: #1689's 5 MB was withdrawn on 2026-09-25 (#2761).
 
 The measurement logs are
 [`Scripts/repro/2169/README.md`](../Scripts/repro/2169/README.md),
@@ -520,7 +528,7 @@ with no diagnostic anywhere. So:
   capture stays empty**. That is OCCT's internal handlers still working, which is the half that
   disappears silently if the exception flags miss a file.
 
-#### Module size, against the 5 MB target
+#### Module size, measured (there is no budget)
 
 The target is a target and not a gate, and it did not change the verdict. The figures carry the
 Swift runtime, Foundation, the Swift layer, the bridge and whatever of OCCT six calls reach.
