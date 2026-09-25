@@ -714,3 +714,16 @@ Probe: `Scripts/repro/766-geom2d-curve2d-basics/`. Every row was run red with th
 | ProjLib ComputeApproxOnPolarSurface::Project edge onto sphere face | `OCCTProjLibComputeApproxOnPolarSurface` | returns nullptr | ✅ | ✅ | MATCH | "may or may not succeed": nothing asserted on failure |
 | ProjLib_ProjectOnSurface Tests::projectLineOnCylinder | `OCCTProjLibProjectOnSurface` | trim end halved | ✅ | ✅ | MATCH | two `if let`s, `upper > lower`; now domain and start pinned |
 | Geom2dEval TBezier 2D Curve::createAndEval | `OCCTGeom2dEvalTBezierCurveCreate` | alpha + 0.5 | ✅ | ✅ | MATCH | domain signs only |
+### #1979 executed: `Transform2DCompositionTests.swift`, `Transform2DCreationTests.swift`
+Probe: `Scripts/repro/766-geom2d-transform-vector/`. Every row was run red with the injection applied and green after it was reverted.
+| Transform2D Composition::inverted | `OCCTTransform2DInverted` | returns a copy, not the inverse | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Composition::composed | `OCCTTransform2DComposed` | composes with itself | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Composition::powered | `OCCTTransform2DPowered` | power n - 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Composition::matrixValues | `OCCTTransform2DGetValues` | a12 + 1e-3 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Composition::applyToCurve | `OCCTTransform2DApplyToCurve` | transform not applied to the copy | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require`; far end now pinned |
+| Transform2D Creation::identity | `OCCTTransform2DCreateIdentity` | scale 2 instead of identity | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Creation::translation | `OCCTTransform2DCreateTranslation` | dx + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Creation::rotation | `OCCTTransform2DCreateRotation` | angle negated | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Creation::scale | `OCCTTransform2DCreateScale` | factor + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Creation::mirrorPoint | `OCCTTransform2DCreateMirrorPoint` | mirror point x + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Transform2D Creation::mirrorAxis | `OCCTTransform2DCreateMirrorAxis` | rotation by 0.1 instead of the mirror; factory returns nullptr | ✅ | ✅ | MATCH | multi-line `guard ... else { return }` missed in the first pass, so a nil result passed silently; now `try #require`, red at the `#require` (line 46) for nil and at `t.isNegative == true` (line 50) for the rotation |
