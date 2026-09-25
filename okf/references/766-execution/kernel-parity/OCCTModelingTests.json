@@ -2,9 +2,18 @@
   {
     "test_name": "Modeling domain kernel parity",
     "bridge_function": "OCCTModelingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
   },
   {
@@ -406,5 +415,204 @@
       "differences": []
     },
     "status": "N/A"
+  },
+  {
+    "test_name": "Issue532 cylindrical hole part selection::untilEndAndRangeDrillEveryBody",
+    "bridge_function": "OCCTBRepFeatCylindricalHole",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "untilEnd": "removed within 1.0 of 3141.59, 2 solids, valid",
+        "range(0,70)": "removed within 1.0 of 3141.59, 2 solids, valid"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "untilEnd": {
+          "removed": 3141.592654,
+          "solids": 2,
+          "valid": true
+        },
+        "range(0,70)": {
+          "removed": 3141.592654,
+          "solids": 2,
+          "valid": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue532 cylindrical hole part selection::blindDrillsIntoAStack",
+    "bridge_function": "OCCTBRepFeatCylindricalHole",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "removed": 1178.0972450961563,
+        "solids": 2,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "removed": 1178.0972450961708,
+        "solids": 2,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the volume removed by a blind r=5 hole, depth 20 from z=15, in the two-plate stack, the solid count of the result and its validity. Bridge: Shape.volume before minus after cylindricalHole(extent: .blind(depth: 20)), subShapes(ofType: .solid).count and isValid (OCCTBRepFeatCylindricalHole); the test asserted the removed volume within 1.0 of pi*25*15 and valid. Kernel: BRepFeat_MakeCylindricalHole PerformBlind(5, 20) on the same compound, Build, BRepGProp volume difference, a TopExp_Explorer solid count and BRepCheck_Analyzer, against the pinned kernel with patch 0020; blindDrillsIntoAStack line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-issue532-cylindrical-hole-part-selection/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Issue532 cylindrical hole part selection::threePlateStack",
+    "bridge_function": "OCCTBRepFeatCylindricalHole",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "untilEnd": 4712.388980384683,
+        "range(0,70)": 3141.592653589789
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "untilEnd": 4712.388980384654,
+        "range(0,70)": 3141.5926535897306
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the volume removed from the three-plate stack by an r=5 hole with the untilEnd extent and with the range(0,70) extent (two of the three plates), under the extent names as keys. Bridge: Shape.volume before minus after cylindricalHole(extent:) (OCCTBRepFeatCylindricalHole); the test asserted 3 * bore and 2 * bore within 1.0. Kernel: BRepFeat_MakeCylindricalHole PerformUntilEnd(5) and Perform(5, 0, 70), Build, BRepGProp volume difference; the two threePlateStack lines of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-issue532-cylindrical-hole-part-selection/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Issue532 cylindrical hole part selection::singleSolidSeveredByItsOwnBore",
+    "bridge_function": "OCCTBRepFeatCylindricalHole",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "untilEnd": 1407.2952180016182,
+        "thruNext": 1407.2952180016182,
+        "range(0,30)": 1407.2952180016182,
+        "solids": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "untilEnd": 1407.2952180016182,
+        "thruNext": 1407.2952180016182,
+        "range(0,30)": 1407.2952180016182,
+        "solids": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the volume removed from the 8 mm bar by an r=5 hole under the untilEnd, thruNext and range(0,30) extents, and the solid count of the result (the same for all three, so one key). Bridge: Shape.volume before minus after cylindricalHole(extent:) and subShapes(ofType: .solid).count; the test asserted the removed volume within 1.0 of 1407.295 and 2 solids for each. Kernel: PerformUntilEnd, PerformThruNext and Perform(5, 0, 30), Build, BRepGProp volume difference, a TopExp_Explorer solid count; the three singleSolid lines of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-issue532-cylindrical-hole-part-selection/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Issue532 cylindrical hole part selection::singlePlateUnchanged",
+    "bridge_function": "OCCTBRepFeatCylindricalHole",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "throughAll": 1570.7963267948944,
+        "untilEnd": 1570.7963267948944,
+        "thruNext": 1570.7963267948944,
+        "range(0,30)": 1570.7963267948944,
+        "range(10,20)": 1570.7963267948944,
+        "blind(20)": 1178.0972450961635,
+        "solids": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "throughAll": 1570.7963267948944,
+        "untilEnd": 1570.7963267948944,
+        "thruNext": 1570.7963267948944,
+        "range(0,30)": 1570.7963267948944,
+        "range(10,20)": 1570.7963267948944,
+        "blind(20)": 1178.0972450961635,
+        "solids": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the volume removed from the single 50x50x20 plate by an r=5 hole under throughAll, untilEnd, thruNext, range(0,30), range(10,20) and blind(20), and the solid count of the result (1 for every extent, so one key). Bridge: Shape.volume before minus after cylindricalHole(extent:) and subShapes(ofType: .solid).count; the test asserted each removed volume within 1.0 of the bore (blind: 15 mm of it) and 1 solid. Kernel: Perform(5), PerformUntilEnd, PerformThruNext, Perform(5, from, to) and PerformBlind, Build, BRepGProp volume difference and a solid count; the six singlePlate lines of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-issue532-cylindrical-hole-part-selection/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Issue532 cylindrical hole part selection::hollowBoxDrillsBothWalls",
+    "bridge_function": "OCCTBRepFeatCylindricalHole",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "throughAll": 785.398163397469,
+        "untilEnd": 785.398163397469,
+        "range(0,60)": 785.398163397469,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "throughAll": 785.398163397469,
+        "untilEnd": 785.398163397469,
+        "range(0,60)": 785.398163397469,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the volume removed from the hollow 50 mm box by an r=5 hole from z=30 under throughAll, untilEnd and range(0,60), and the validity of the result (true for all three, so one key). Bridge: Shape.volume before minus after cylindricalHole(extent:) and isValid; the test asserted each removed volume within 1.0 of two 5 mm walls and valid. Kernel: Perform(5), PerformUntilEnd and Perform(5, 0, 60), Build, BRepGProp volume difference and BRepCheck_Analyzer; the three hollowBox lines of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-issue532-cylindrical-hole-part-selection/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Issue532 cylindrical hole part selection::rangeOverTheGapIsStillRefused",
+    "bridge_function": "OCCTBRepFeatCylindricalHoleStatus",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "status": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "status": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the BRepFeat_Status ordinal of an r=5 hole over the range(26,44) gap between the two plates, 1 = BRepFeat_InvalidPlacement. Bridge: Shape.cylindricalHoleStatus(extent: .range(from: 26, to: 44)).rawValue (OCCTBRepFeatCylindricalHoleStatus), .invalidPlacement is 1; the test also asserted that cylindricalHole returns nil for the same request, and the run printed nil. Kernel: BRepFeat_MakeCylindricalHole Perform(5, 26, 44) then Status() as an integer, no Build because the status is not NoError; rangeOverTheGap line of the transcript.",
+    "probe": "Scripts/repro/766-modeling-issue532-cylindrical-hole-part-selection/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   }
 ]
