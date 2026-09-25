@@ -279,3 +279,11 @@ Probe: `Scripts/repro/766-modeling-multi-offset-wire/`.
 | multipleInwardOffsets | `OCCTWireMultiOffset` returns 0 wires | `:15 Expectation failed: wires.count >= 3` | pass | `OCCTWireMultiOffset` | PASS |
 | outwardOffset | `OCCTWireMultiOffset` returns 0 wires | `:32 Expectation failed: wires.count >= 2` | pass | `OCCTWireMultiOffset` | PASS |
 | emptyOffsets | `Shape.multiOffsetWires` treats an empty offset list as a single 0 offset | `:39 Expectation failed: wires.isEmpty` | pass | `OCCTWireMultiOffset` | N/A: an empty list is refused in Swift and in the bridge before any kernel call |
+### `AAGTests.swift` (6 tests)
+Probe: `Scripts/repro/766-modeling-aag/`.
+| boxAAG | `countOrCollectSharedEdges` (behind `OCCTFaceGetSharedEdgeSummary`) reports no shared edge for any face pair | `:16 Expectation failed: aag.edges.count == 12` | pass | `OCCTFaceGetSharedEdgeSummary` | PASS |
+| aagNodeNormals | `OCCTFaceGetNormal` returns false (no normal) | `:24 Expectation failed: node.normal != nil` | pass | `OCCTFaceGetNormal` | PASS |
+| aagNeighbors | `countOrCollectSharedEdges` (behind `OCCTFaceGetSharedEdgeSummary`) reports no shared edge for any face pair | `:36 Expectation failed: nbrs.count == 4` | pass | `OCCTFaceGetSharedEdgeSummary` | PASS |
+| aagEdgeBetween | `countOrCollectSharedEdges` (behind `OCCTFaceGetSharedEdgeSummary`) reports no shared edge for any face pair | `:46 Issue recorded` | pass | `OCCTFaceGetSharedEdgeSummary` | PASS |
+| detectPocket | `OCCTEdgeGetConvexity` reports a concave `ChFi3d::DefineConnectType` result as convex | `:89 Expectation failed: pockets.count >= 1` | pass | `OCCTEdgeGetConvexity` | PASS |
+| convexConcaveNeighbors | `OCCTEdgeGetConvexity` reports a tangential `ChFi3d::DefineConnectType` result as convex | `:116 Expectation failed: aag.edges.allSatisfy { $0.convexity == .smooth }`, `:117 Expectation failed: (0..<aag.nodes.count).allSatisfy { aag.convexNeighbors(of: $0).isEmpty }` | pass | `OCCTEdgeGetConvexity` | PASS: rewritten: the old final assertion `hasAnyNeighbors || aag.nodes.count > 6` held on the node count alone |

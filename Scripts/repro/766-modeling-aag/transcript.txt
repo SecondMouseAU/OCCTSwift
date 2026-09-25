@@ -1,0 +1,11 @@
+box10: faces=6 adjacentPairs=12 convex=12 concave=0 smooth=0 other=0 degrees=[4,4,4,4,4,4]
+box10 face 0: planar=1 normalDefined=1 normal=(-1, -0, 0)
+box10 face 1: planar=1 normalDefined=1 normal=(1, 0, -0)
+box10 face 2: planar=1 normalDefined=1 normal=(0, -1, -0)
+box10 face 3: planar=1 normalDefined=1 normal=(-0, 1, 0)
+box10 face 4: planar=1 normalDefined=1 normal=(-0, -0, -1)
+box10 face 5: planar=1 normalDefined=1 normal=(0, 0, 1)
+pocket: done=1 boxVolume=8000 resultVolume=7000
+pocket: faces=11 adjacentPairs=24 convex=16 concave=8 smooth=0 other=0 degrees=[4,4,8,4,4,4,4,4,4,4,4]
+fillet: done=1
+filleted: faces=26 adjacentPairs=48 convex=0 concave=0 smooth=48 other=0 degrees=[4,4,4,4,4,3,3,4,4,3,4,3,4,4,4,4,4,4,4,4,4,3,3,4,3,3]
