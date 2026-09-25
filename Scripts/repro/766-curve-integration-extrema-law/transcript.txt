@@ -1,0 +1,17 @@
+sphere domain u [0, 6.2831853071795862] v [-1.5707963267948966, 1.5707963267948966]
+sphere polyline length 80.002912490963794 chord 58.094750193111253
+box volume 6000 area 2200 faces 6 edges 12 vertices 8
+gear hub 12566.370614359172 after slots 11846.370614359172 final 11060.972450961723 analytic 11060.972450961724
+line p.x=2e+10 full: done 1 n 1 sq 9 foot.x 20000000000 | old bound: done 0 n -1
+line p.x=7 full: done 1 n 1 sq 16 foot.x 7 | old bound: done 1 n 1
+parabola F=1e+06 p=(0,1e+07) full: done 1 n 1
+  ext 1 sq 51403343067711.656 foot (3412957.1013468201, 3694838.0756654656, 0) u 3694838.0756654656
+  old bound: done 1 n 0
+parabola F=2 p=(10,0) full: done 1 n 3
+  ext 1 sq 64 foot (5.9999999999999991, 6.9282032302755088, 0) u 6.9282032302755088
+  ext 2 sq 64 foot (5.9999999999999991, -6.9282032302755088, 0) u -6.9282032302755088
+  ext 3 sq 100 foot (0, 0, 0) u 0
+  old bound: done 1 n 3
+Law_S is Law_BSpFunc: 1 | C0 splits 2 | C1 splits 2 | C2 splits 2 | C3 splits 2
+Law_Constant is Law_BSpFunc: 0
+Law_Linear is Law_BSpFunc: 0

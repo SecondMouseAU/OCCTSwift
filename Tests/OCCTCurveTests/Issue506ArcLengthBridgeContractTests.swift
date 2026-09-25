@@ -45,7 +45,10 @@ struct Issue506ArcLengthBridgeContractTests {
 
     @Test("A reversed in-domain range measures the span, not zero")
     func reversedRangeMeasuresTheSpan() {
-        guard let c = multiSpanCurve() else { return }
+        guard let c = multiSpanCurve() else {
+            Issue.record("could not build the multi-span curve")  // #766: was a silent return
+            return
+        }
         let d = c.domain
         let lo = d.lowerBound + 0.1 * (d.upperBound - d.lowerBound)
         let hi = d.lowerBound + 0.6 * (d.upperBound - d.lowerBound)
@@ -66,7 +69,10 @@ struct Issue506ArcLengthBridgeContractTests {
 
     @Test("Parameters past both ends clamp to the domain instead of extrapolating")
     func overshootingBothEndsClampsToTheDomain() {
-        guard let c = multiSpanCurve(), let whole = c.length else { return }
+        guard let c = multiSpanCurve(), let whole = c.length else {
+            Issue.record("could not build or measure the multi-span curve")  // #766: was silent
+            return
+        }
         let d = c.domain
         let span = d.upperBound - d.lowerBound
 
@@ -84,7 +90,10 @@ struct Issue506ArcLengthBridgeContractTests {
 
     @Test("A range wholly outside the domain measures zero")
     func rangeOutsideTheDomainMeasuresZero() {
-        guard let c = multiSpanCurve() else { return }
+        guard let c = multiSpanCurve() else {
+            Issue.record("could not build the multi-span curve")  // #766: was a silent return
+            return
+        }
         let d = c.domain
 
         // Clamping both bounds to upperBound leaves an empty interval. The pre-bounded adaptor
@@ -94,7 +103,10 @@ struct Issue506ArcLengthBridgeContractTests {
 
     @Test("All three Swift spellings agree on the ranges that used to diverge")
     func everySpellingAgreesOnDivergentRanges() {
-        guard let c = multiSpanCurve() else { return }
+        guard let c = multiSpanCurve() else {
+            Issue.record("could not build the multi-span curve")  // #766: was a silent return
+            return
+        }
         let d = c.domain
         let span = d.upperBound - d.lowerBound
         let cases: [(String, Double, Double)] = [
