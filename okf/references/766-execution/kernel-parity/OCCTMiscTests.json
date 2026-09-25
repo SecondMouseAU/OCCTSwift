@@ -6,50 +6,30 @@
     "bridge_output": {
       "type": "bbox_shift",
       "data": {
-        "min": [
-          5,
-          6,
-          7
+        "shift_min": [
+          5.0,
+          6.0,
+          7.0
         ],
-        "max": [
-          5,
-          6,
-          7
-        ],
-        "tolerance": 1e-09
+        "shift_max": [
+          4.999999999999999,
+          5.999999999999999,
+          6.999999999999999
+        ]
       }
     },
     "kernel_output": {
-      "type": "bbox",
+      "type": "bbox_shift",
       "data": {
-        "before": {
-          "min": [
-            -5.0000001,
-            -5.0000001,
-            -5.0000001
-          ],
-          "max": [
-            5.0000001,
-            5.0000001,
-            5.0000001
-          ]
-        },
-        "after": {
-          "min": [
-            -1e-07,
-            0.9999999,
-            1.9999999
-          ],
-          "max": [
-            10.0000001,
-            11.0000001,
-            12.0000001
-          ]
-        },
-        "shift": [
+        "shift_min": [
           5,
           6,
           7
+        ],
+        "shift_max": [
+          4.999999999999999,
+          5.999999999999999,
+          6.999999999999999
         ]
       }
     },
@@ -57,54 +37,71 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: how far the transformed box's bounding box moved along each axis (after minus before, for the min and the max corner). Bridge: Shape.transformed(matrix:) -> OCCTShapeTransformed on the centred 10x10x10 box with the GROUPED translation (5, 6, 7), read back through Shape.boundingBox (OCCTShapeBoundingBox); the test asserts each component is 5, 6, 7 within 1e-9. Kernel: BRepBuilderAPI_Transform with gp_Trsf::SetValues in the GROUPED permutation, bounding boxes by BRepBndLib::Add with triangulation, shift taken the same way. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "One GROUPED 12-double reader, shared by all three call sites (#1009)::A GROUPED matrix agrees with the same transform written INTERLEAVED",
     "test_file": "Tests/OCCTMiscTests/Issue1009Matrix12GroupedTests.swift",
     "bridge_function": "OCCTShapeTransformed / OCCTShapeTransformFromMatrix",
     "bridge_output": {
-      "type": "bbox_agreement",
+      "type": "bbox",
       "data": {
-        "groupedEqualsInterleaved": true,
-        "tolerance": 1e-09,
-        "minXMovedOffPureTranslation": true
+        "grouped_min": [
+          -1.8301271189221937,
+          -0.8301271189221936,
+          1.9999999
+        ],
+        "grouped_max": [
+          11.830127118922192,
+          12.830127118922194,
+          12.0000001
+        ],
+        "interleaved_min": [
+          -1.8301271189221937,
+          -0.8301271189221936,
+          1.9999999
+        ],
+        "interleaved_max": [
+          11.830127118922192,
+          12.830127118922194,
+          12.0000001
+        ]
       }
     },
     "kernel_output": {
       "type": "bbox",
       "data": {
-        "grouped": {
-          "min": [
-            -1.83012711892,
-            -0.830127118922,
-            1.9999999
-          ],
-          "max": [
-            11.8301271189,
-            12.8301271189,
-            12.0000001
-          ]
-        },
-        "interleaved": {
-          "min": [
-            -1.83012711892,
-            -0.830127118922,
-            1.9999999
-          ],
-          "max": [
-            11.8301271189,
-            12.8301271189,
-            12.0000001
-          ]
-        }
+        "grouped_min": [
+          -1.8301271189221937,
+          -0.8301271189221936,
+          1.9999999
+        ],
+        "grouped_max": [
+          11.830127118922192,
+          12.830127118922194,
+          12.0000001
+        ],
+        "interleaved_min": [
+          -1.8301271189221937,
+          -0.8301271189221936,
+          1.9999999
+        ],
+        "interleaved_max": [
+          11.830127118922192,
+          12.830127118922194,
+          12.0000001
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the bounding box (min and max corner) of the centred box after the rotate-30-about-Z-and-translate (5, 6, 7) transform, read through the GROUPED reader and through the INTERLEAVED one. Bridge: Shape.transformed(matrix:) -> OCCTShapeTransformed against Shape.transformed(byMatrix: grouped.interleaved) -> OCCTShapeTransformFromMatrix; the test asserts the two boxes agree within 1e-9. Kernel: the same two gp_Trsf::SetValues orderings applied with BRepBuilderAPI_Transform. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "One GROUPED 12-double reader, shared by all three call sites (#1009)::Curve3D.parametricTransformation reads the rotation from the GROUPED slots",
@@ -147,31 +144,17 @@
     "bridge_output": {
       "type": "bbox_shift",
       "data": {
-        "min": [
-          5,
-          6,
-          7
-        ],
-        "tolerance": 1e-09
+        "shift_min": [
+          5.0,
+          6.0,
+          7.0
+        ]
       }
     },
     "kernel_output": {
-      "type": "bbox",
+      "type": "bbox_shift",
       "data": {
-        "note": "TopoDS_Shape::Moved(TopLoc_Location(grouped translate567)), the placement an XCAF component carries",
-        "after": {
-          "min": [
-            -1e-07,
-            0.9999999,
-            1.9999999
-          ],
-          "max": [
-            10.0000001,
-            11.0000001,
-            12.0000001
-          ]
-        },
-        "shift": [
+        "shift_min": [
           5,
           6,
           7
@@ -182,7 +165,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: how far the placed component's bounding-box min corner moved from the part's own (after minus before). Bridge: Document.addComponent(matrix:) -> OCCTDocumentAddComponentMatrix, then AssemblyNode.shape.boundingBox; the test asserts 5, 6, 7 within 1e-9. Kernel: the placement an XCAF component carries is TopLoc_Location(gp_Trsf), so the probe applies TopoDS_Shape::Moved(TopLoc_Location(GROUPED trsf)) to the same box and takes the same bounding box. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "One GROUPED 12-double reader, shared by all three call sites (#1009)::Document.addComponent(matrix:) accepts a reflection and actually reflects",
@@ -191,37 +176,24 @@
     "bridge_output": {
       "type": "bbox_x",
       "data": {
-        "componentId>=0": true,
-        "minX": -11,
-        "maxX": -1,
-        "tolerance": 1e-06
+        "min_x": -11.0000001,
+        "max_x": -0.9999999
       }
     },
     "kernel_output": {
-      "type": "bbox",
+      "type": "bbox_x",
       "data": {
-        "SetValues_accepted": true,
-        "IsNegative": true,
-        "ScaleFactor": -1,
-        "after": {
-          "min": [
-            -11.0000001,
-            -1e-07,
-            -1e-07
-          ],
-          "max": [
-            -0.9999999,
-            10.0000001,
-            10.0000001
-          ]
-        }
+        "min_x": -11.0000001,
+        "max_x": -0.9999999
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the x extent of the mirrored box's bounding box (the box spans x in [1, 11] before). Bridge: Document.addComponent(matrix:) with the mirror-in-X matrix -> OCCTDocumentAddComponentMatrix, then AssemblyNode.shape.boundingBox; the test asserts min x -11 and max x -1 within 1e-6, and that the add returned a component id >= 0. Kernel: TopLoc_Location(gp_Trsf::SetValues in the GROUPED permutation) applied with TopoDS_Shape::Moved and bounded with BRepBndLib::Add. That SetValues accepts a reflection (IsNegative, ScaleFactor -1) is measured in Scripts/repro/766-issue1009-matrix12-grouped/transcript.txt. Compared within 1e-6, the test's own tolerance.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "Issue972 2D-to-3D lifting::lift maps a 2D point through the placement's own basis",
@@ -229,17 +201,18 @@
     "bridge_function": "Placement.lift (Swift)",
     "bridge_output": {
       "type": "point",
-      "data": [
-        5,
-        7,
-        3
-      ]
+      "data": {
+        "point": [
+          5.0,
+          7.0,
+          3.0
+        ]
+      }
     },
     "kernel_output": {
       "type": "point",
       "data": {
-        "via": "gp_Ax3((1,2,3), Z, X) -> world, (4,5,0)",
-        "value": [
+        "point": [
           5,
           7,
           3
@@ -250,7 +223,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the world point for the 2D point (4, 5) on a frame with origin (1, 2, 3) and identity axes. Bridge: Placement.lift (Swift, no bridge call). Kernel: gp_Ax3 for the frame and gp_Trsf::SetTransformation into the world applied to (4, 5, 0), the kernel's own way of the same lift. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "Issue972 2D-to-3D lifting::lift respects a rotated basis",
@@ -258,17 +233,18 @@
     "bridge_function": "Placement.lift (Swift)",
     "bridge_output": {
       "type": "point",
-      "data": [
-        0.7071067811865476,
-        0.7071067811865476,
-        0
-      ]
+      "data": {
+        "point": [
+          0.7071067811865476,
+          0.7071067811865476,
+          0.0
+        ]
+      }
     },
     "kernel_output": {
       "type": "point",
       "data": {
-        "via": "gp_Ax3(origin, Z, (s2,s2,0)) -> world, (1,0,0)",
-        "value": [
+        "point": [
           0.7071067811865476,
           0.7071067811865476,
           0
@@ -279,7 +255,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the world point for the 2D point (1, 0) on a frame whose x axis is (s2, s2, 0) with s2 = sqrt(2)/2. Bridge: Placement.lift (Swift). Kernel: gp_Ax3 with that x direction and gp_Trsf::SetTransformation applied to (1, 0, 0). Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "Issue972 2D-to-3D lifting::Flange.normal and Flange.placement.zAxis agree for a non-unit normal",
@@ -288,22 +266,17 @@
     "bridge_output": {
       "type": "vector",
       "data": {
-        "normal": [
-          0,
-          0,
-          1
-        ],
-        "placementZ": [
-          0,
-          0,
-          1
+        "normalised": [
+          0.0,
+          0.0,
+          1.0
         ]
       }
     },
     "kernel_output": {
       "type": "vector",
       "data": {
-        "gp_Dir(0,0,7)": [
+        "normalised": [
           0,
           0,
           1
@@ -314,7 +287,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the unit direction obtained from the non-unit vector (0, 0, 7). Bridge: SheetMetal.Flange.init normalises it with Vector3DMath.normalize into Flange.normal (Swift, no bridge call); the test also asserts Flange.placement.zAxis equals it, and the run observed (0, 0, 1) for both. Kernel: gp_Dir(0, 0, 7), the kernel's own normalisation of the same vector. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Shape.raycast clamps maxHits instead of allocating ~880 GB and trapping",
@@ -322,20 +297,23 @@
     "bridge_function": "OCCTShapeRaycast",
     "bridge_output": {
       "type": "count",
-      "data": 2
+      "data": {
+        "count": 2
+      }
     },
     "kernel_output": {
       "type": "count",
       "data": {
-        "value": 2,
-        "via": "IntCurvesFace_ShapeIntersector::NbPnt, ray (0,0,20) -Z through the centred box"
+        "count": 2
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of hits a ray from (0, 0, 20) along -Z makes with the centred 10x10x10 box at default capacity. Bridge: Shape.raycast -> OCCTShapeRaycast. Kernel: IntCurvesFace_ShapeIntersector::NbPnt for the same ray. The test asserts the clamped call returns this count.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Curve3D extrema/intersection/split capacities clamp rather than trap",
@@ -346,22 +324,24 @@
       "data": {
         "extrema": 1,
         "intersections": 1,
-        "splitAtContinuity": 1
+        "split_pieces": 1
       }
     },
     "kernel_output": {
       "type": "counts",
       "data": {
-        "GeomAPI_ExtremaCurveCurve.NbExtrema": 1,
-        "GeomAPI_IntCS.NbPoints": 1,
-        "BSpline NbKnots (one piece)": 2
+        "extrema": 1,
+        "intersections": 1,
+        "split_pieces": 1
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of results each call returns at its default capacity. Bridge: Curve3D.extrema(with:) -> OCCTCurve3DExtrema, Curve3D.intersections(with:) -> OCCTCurve3DIntersectSurface, Curve3D.splitAtContinuity() -> OCCTCurve3DSplitAtContinuity (segments returned). Kernel: GeomAPI_ExtremaCurveCurve::NbExtrema, GeomAPI_IntCS::NbPoints, and for the split the array length of GeomConvert::C0BSplineToArrayOfC1BSplineCurve over GeomConvert::CurveToBSplineCurve, the calls the split bridge function makes (an earlier record compared the piece count with the knot count, two different quantities). The test asserts the clamped call returns this same count.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Curve2D.splitAtContinuity clamps maxSegments rather than trapping",
@@ -369,19 +349,23 @@
     "bridge_function": "OCCTCurve2DSplitAtContinuity",
     "bridge_output": {
       "type": "count",
-      "data": 1
+      "data": {
+        "split_pieces": 1
+      }
     },
     "kernel_output": {
       "type": "count",
       "data": {
-        "Geom2d BSpline NbKnots (one piece)": 2
+        "split_pieces": 1
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of segments the split returns at its default capacity. Bridge: Curve2D.splitAtContinuity() -> OCCTCurve2DSplitAtContinuity. Kernel: the array length of Geom2dConvert::C0BSplineToArrayOfC1BSplineCurve over Geom2dConvert::CurveToBSplineCurve, the calls that bridge function makes (an earlier record put the knot count against the piece count).",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Surface.intersections clamps maxCurves rather than trapping",
@@ -389,20 +373,23 @@
     "bridge_function": "OCCTSurfaceIntersect",
     "bridge_output": {
       "type": "count",
-      "data": 1
+      "data": {
+        "count": 1
+      }
     },
     "kernel_output": {
       "type": "count",
       "data": {
-        "value": 1,
-        "via": "GeomAPI_IntSS::NbLines, planes z=0 and y=0"
+        "count": 1
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of intersection curves of the planes z = 0 and y = 0 at default capacity. Bridge: Surface.intersections(with:) -> OCCTSurfaceIntersect. Kernel: GeomAPI_IntSS::NbLines.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::point projection capacities clamp rather than trap",
@@ -418,15 +405,17 @@
     "kernel_output": {
       "type": "counts",
       "data": {
-        "GeomAPI_ProjectPointOnCurve.NbPoints": 1,
-        "GeomAPI_ProjectPointOnSurf.NbPoints": 1
+        "curve": 1,
+        "surface": 1
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (keys normalised): the number of projections of a point onto the segment and onto the plane at default capacity. Bridge: Curve3D.projectPointAll and Surface.projectPointAll -> OCCTExtremaPointCurve / OCCTExtremaPointSurface. Kernel: GeomAPI_ProjectPointOnCurve::NbPoints and GeomAPI_ProjectPointOnSurf::NbPoints.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Shape.allDistanceSolutions clamps maxSolutions rather than trapping",
@@ -434,20 +423,23 @@
     "bridge_function": "OCCTShapeAllDistanceSolutions",
     "bridge_output": {
       "type": "count",
-      "data": 3
+      "data": {
+        "count": 3
+      }
     },
     "kernel_output": {
       "type": "count",
       "data": {
-        "value": 3,
-        "via": "BRepExtrema_DistShapeShape::NbSolution, box and inscribed sphere, distance 0"
+        "count": 3
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of distance solutions between the centred box and the sphere of radius 5 at default capacity. Bridge: Shape.allDistanceSolutions(to:) -> OCCTShapeAllDistanceSolutions. Kernel: BRepExtrema_DistShapeShape::NbSolution.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Shape.selfIntersectionPairs clamps maxPairs rather than trapping",
@@ -455,20 +447,23 @@
     "bridge_function": "OCCTShapeSelfIntersectionPairs",
     "bridge_output": {
       "type": "count",
-      "data": 0
+      "data": {
+        "count": 0
+      }
     },
     "kernel_output": {
       "type": "count",
       "data": {
-        "value": 0,
-        "via": "BRepExtrema_SelfIntersection overlap entries on the box"
+        "count": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of overlapping face pairs the box reports at default capacity. Bridge: Shape.selfIntersectionPairs() -> OCCTShapeSelfIntersectionPairs. Kernel: the entries BRepExtrema_SelfIntersection::OverlapElements holds after BRepMesh_IncrementalMesh at deflection 0.1. Zero on both sides, so this test can only fail by trapping (noted in its PR).",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::KDTree search capacities clamp rather than trap",
@@ -485,16 +480,18 @@
     "kernel_output": {
       "type": "counts",
       "data": {
-        "NCollection_KDTree.KNearestPoints": 3,
-        "RangeSearch": 3,
-        "BoxSearch": 3
+        "kNearest": 3,
+        "range": 3,
+        "box": 3
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (keys normalised): the counts kNearest(k: 3), rangeSearch(radius 10) and boxSearch(+-9) return over the three points (0,0,0), (1,1,1), (2,2,2). Bridge: KDTree -> OCCTKDTreeKNearest / OCCTKDTreeRangeSearch / OCCTKDTreeBoxSearch. Kernel: NCollection_KDTree<gp_Pnt, 3>::KNearestPoints / RangeSearch / BoxSearch on the same points.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::all three Selector.pick overloads clamp maxResults rather than trapping",
@@ -538,45 +535,49 @@
     "bridge_function": "OCCTUnicodeConvertFromUnicode",
     "bridge_output": {
       "type": "string",
-      "data": "hello"
+      "data": {
+        "string": "hello"
+      }
     },
     "kernel_output": {
       "type": "string",
       "data": {
-        "Resource_Unicode::ConvertUnicodeToFormat": "hello",
-        "ok": true
+        "string": "hello"
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the converted text for \"hello\" at the default buffer size. Bridge: UnicodeUtils.convertFromUnicode -> OCCTUnicodeConvertFromUnicode. Kernel: Resource_Unicode::ConvertUnicodeToFormat over TCollection_ExtendedString(\"hello\").",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::directory and file listing clamp maxCount rather than trapping",
     "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
     "bridge_function": "OCCTFileList / OCCTDirectoryList",
     "bridge_output": {
-      "type": "count",
+      "type": "counts",
       "data": {
-        "files": 7
+        "files": 7,
+        "directories": 2
       }
     },
     "kernel_output": {
-      "type": "count",
+      "type": "counts",
       "data": {
-        "OSD_FileIterator": 7,
-        "OSD_DirectoryIterator": 2
+        "files": 7,
+        "directories": 2
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [
-        "Directories are compared only against the same call's own baseline in the test; the kernel iterator reports 2 entries in a directory holding only files, which reads as '.' and '..'."
-      ]
+      "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of files and of directory entries listed for a directory holding seven files. Bridge: FileIterator.list -> OCCTFileList and DirectoryIterator.list -> OCCTDirectoryList (maxCount 1000). Kernel: OSD_FileIterator and OSD_DirectoryIterator over the same layout. The test asserts files == 7 and compares the directory count only with its own baseline. Both sides report two directory entries, and the names printed on both sides are '.' and '..', so the earlier note that this was an unexplained difference is withdrawn: the counts are equal.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::LogSample.sample fills its buffer exactly, so its count is a request, not a capacity",
@@ -585,24 +586,28 @@
     "bridge_output": {
       "type": "samples",
       "data": {
-        "count": 16,
-        "first": 1.0,
-        "last": 100.0
+        "count_for_16": 16,
+        "first_of_16": 1.0,
+        "last_of_16": 100.0,
+        "count_for_1": 1
       }
     },
     "kernel_output": {
       "type": "samples",
       "data": {
-        "GeomLib_LogSample.NbPoints": 16,
-        "first": 1,
-        "last": 100
+        "count_for_16": 16,
+        "first_of_16": 1,
+        "last_of_16": 100,
+        "count_for_1": 1
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (keys normalised): the number of samples for count 16 and for count 1, and the first and last of the 16. Bridge: LogSample.sample(from: 1, to: 100, count:) -> OCCTLogSample. Kernel: GeomLib_LogSample(1, 100, n) NbPoints and GetParameter(1) / GetParameter(16). The rejection cases the test also asserts (count -1, 0, past the ceiling) are Swift-side and have no kernel value.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.115.0 - Interpolation Expansion 3D::interpolateWithEndpointTangents()",
@@ -612,66 +617,59 @@
       "type": "curve",
       "data": {
         "start": [
-          0,
-          0,
-          0
+          0.0,
+          0.0,
+          0.0
         ],
         "end": [
-          10,
-          0,
-          0
+          10.0,
+          0.0,
+          0.0
         ],
-        "unitStartTangent": [
+        "unit_start_tangent": [
           0.7071067811865476,
           0.7071067811865476,
-          0
+          0.0
         ],
-        "unitEndTangent": [
-          0.7071067811865476,
+        "unit_end_tangent": [
+          0.7071067811865475,
           -0.7071067811865476,
-          0
+          0.0
         ]
       }
     },
     "kernel_output": {
       "type": "curve",
       "data": {
-        "GeomAPI_Interpolate+Load": {
-          "start": [
-            0,
-            0,
-            0
-          ],
-          "end": [
-            10,
-            0,
-            0
-          ],
-          "unitStartTangent": [
-            0.707106781187,
-            0.707106781187,
-            0
-          ],
-          "unitEndTangent": [
-            0.707106781187,
-            -0.707106781187,
-            0
-          ]
-        },
-        "without Load": {
-          "unitStartTangent": [
-            0.4472135955,
-            0.894427191,
-            0
-          ]
-        }
+        "start": [
+          0,
+          0,
+          0
+        ],
+        "end": [
+          10,
+          -7.0737501979897e-16,
+          0
+        ],
+        "unit_start_tangent": [
+          0.7071067811865476,
+          0.7071067811865476,
+          0
+        ],
+        "unit_end_tangent": [
+          0.7071067811865475,
+          -0.7071067811865476,
+          0
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the start and end points and the unit tangents at the two ends of the interpolated curve through (0,0,0), (5,5,0), (10,0,0) with end tangents (1,1,0) and (1,-1,0). Bridge: Curve3D.interpolate(points:startTangent:endTangent:) -> OCCTCurve3DInterpolateWithTangents, read with startPoint, endPoint and d1(at:) at the domain ends. Kernel: GeomAPI_Interpolate::Load(start, end) then Perform, the same reads. Without Load the kernel's start tangent is (0.447, 0.894, 0), which is what the test distinguishes. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.115.0 - Interpolation Expansion 3D::interpolateWithAllTangents()",
@@ -680,29 +678,29 @@
     "bridge_output": {
       "type": "curve",
       "data": {
-        "unitStartTangent": [
+        "unit_start_tangent": [
           0.7071067811865476,
           0.7071067811865476,
-          0
+          0.0
         ],
-        "unitEndTangent": [
-          0.7071067811865476,
+        "unit_end_tangent": [
+          0.7071067811865475,
           -0.7071067811865476,
-          0
+          0.0
         ]
       }
     },
     "kernel_output": {
       "type": "curve",
       "data": {
-        "unitStartTangent": [
-          0.707106781187,
-          0.707106781187,
+        "unit_start_tangent": [
+          0.7071067811865476,
+          0.7071067811865476,
           0
         ],
-        "unitEndTangent": [
-          0.707106781187,
-          -0.707106781187,
+        "unit_end_tangent": [
+          0.7071067811865475,
+          -0.7071067811865476,
           0
         ]
       }
@@ -711,7 +709,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the unit tangents at the two ends of the interpolated curve when only the first and last tangents are constrained. Bridge: Curve3D.interpolate(points:tangents:tangentFlags:) -> OCCTInterpolateWithAllTangents, tangent from d1(at:) at the domain ends (the earlier record's bridge values were the expected constants, not the observed ones). Kernel: GeomAPI_Interpolate::Load(tangents, flags) then Perform. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.115.0 - Interpolation Expansion 3D::interpolateWithParameters()",
@@ -721,13 +721,13 @@
       "type": "curve",
       "data": {
         "domain": [
-          0,
-          1
+          0.0,
+          1.0
         ],
-        "pointAt0.5": [
-          5,
-          5,
-          0
+        "point_at_half": [
+          5.0,
+          5.0,
+          0.0
         ]
       }
     },
@@ -738,14 +738,10 @@
           0,
           1
         ],
-        "pointAt0.5": [
+        "point_at_half": [
           5,
           5,
           0
-        ],
-        "without parameters: domain": [
-          0,
-          14.1421356237
         ]
       }
     },
@@ -753,7 +749,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the curve's parameter domain and its point at parameter 0.5 when the parameters (0, 0.5, 1) are supplied. Bridge: Curve3D.interpolate(points:parameters:) -> OCCTInterpolateWithParameters. Kernel: GeomAPI_Interpolate built with the parameter array. Without parameters the kernel's domain is [0, 14.142] (the chord length), which is what the test distinguishes. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.115.0 - Interpolation Expansion 3D::interpolatePeriodic()",
@@ -762,28 +760,25 @@
     "bridge_output": {
       "type": "curve",
       "data": {
-        "isPeriodic": true,
-        "isClosed": true,
-        "domainLength": 40,
+        "is_periodic": true,
+        "is_closed": true,
+        "domain_length": 40.0,
         "start": [
-          0,
-          0,
-          0
+          0.0,
+          0.0,
+          0.0
         ]
       }
     },
     "kernel_output": {
       "type": "curve",
       "data": {
-        "IsPeriodic": true,
-        "IsClosed": true,
-        "domain": [
-          0,
-          40
-        ],
+        "is_periodic": true,
+        "is_closed": true,
+        "domain_length": 40,
         "start": [
           0,
-          -1.1e-16,
+          0,
           0
         ]
       }
@@ -792,7 +787,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (keys normalised): whether the curve interpolated through the four square corners is periodic and closed, its domain length and its start point. Bridge: Curve3D.interpolatePeriodic(points:) -> OCCTCurve3DInterpolate with closed true. Kernel: GeomAPI_Interpolate with the periodic flag. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.142 ConstructionContext::Add and retrieve entities by ID",
@@ -1088,20 +1085,23 @@
     "bridge_function": "Sketch.buildProfile -> Wire.polygon3D (OCCTWireCreatePolygon3D), OCCTWireGetLength",
     "bridge_output": {
       "type": "length",
-      "data": 40
+      "data": {
+        "length": 40.0
+      }
     },
     "kernel_output": {
       "type": "length",
       "data": {
-        "closed 10x10 polygon": 40,
-        "with the diagonal": 54.1421356237
+        "length": 40
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the length of the closed four-line 10 x 10 square profile with the construction diagonal excluded. Bridge: Sketch.buildProfile -> Wire.polygon3D (OCCTWireCreateFastPolygon), Wire.length (OCCTWireGetLength). Kernel: BRepGProp::LinearProperties of the same closed polygon; with the diagonal left in it would be 54.142 (the probe prints that too, as the value the test distinguishes). Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.142 Sketch buildProfile::buildProfile returns nil if no profile elements present",
@@ -1145,19 +1145,23 @@
     "bridge_function": "Edge.angle -> OCCTEdgeGetTangent3D",
     "bridge_output": {
       "type": "angle",
-      "data": 1.5707963267948966
+      "data": {
+        "angle": 1.5707963267948966
+      }
     },
     "kernel_output": {
       "type": "angle",
       "data": {
-        "gp_Vec::Angle, TopExp edges 1 and 2": 1.57079632679
+        "angle": 1.5707963267948966
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the angle between the tangents at the mid-parameter of the first two box edges. Bridge: Edge.angle(to:) -> OCCTEdgeGetTangent3D then unsignedAngle (acos, Swift). Kernel: the same tangent (BRep_Tool::Curve, GeomLProp_CLProps::Tangent) and gp_Vec::Angle. Printed at full precision this time; the earlier record held the kernel value at 12 digits. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.143 Angle helpers::Box face pairs parallel-or-perpendicular",
@@ -1166,16 +1170,18 @@
     "bridge_output": {
       "type": "histogram",
       "data": {
+        "0": 0,
         "pi/2": 12,
-        "pi": 3
+        "pi": 3,
+        "other": 0
       }
     },
     "kernel_output": {
       "type": "histogram",
       "data": {
+        "0": 0,
         "pi/2": 12,
         "pi": 3,
-        "0": 0,
         "other": 0
       }
     },
@@ -1183,7 +1189,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: how many of the 15 face pairs of the centred box have a UV-midpoint normal angle of 0, pi/2, pi or something else (thresholds 1e-3 as the test uses). Bridge: Face.angle(to:), which reads OCCTFaceGetNormalAtUV; the earlier bridge record omitted the zero-count keys the kernel side carried. Kernel: the same normals (BRep_Tool::Surface, GeomLProp_SLProps, orientation reversal, UV midpoint from BRepTools::UVBounds) and gp_Vec::Angle, classified the same way.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.143 Angle helpers::unsignedAngle between parallel vectors == 0",
@@ -1191,19 +1199,23 @@
     "bridge_function": "unsignedAngle (Swift)",
     "bridge_output": {
       "type": "angle",
-      "data": 0.0
+      "data": {
+        "angle": 0.0
+      }
     },
     "kernel_output": {
       "type": "angle",
       "data": {
-        "gp_Vec(1,0,0).Angle(gp_Vec(2,0,0))": 0
+        "angle": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the angle between (1,0,0) and (2,0,0). Bridge: unsignedAngle(between:and:) (Swift, acos of the normalised dot product). Kernel: gp_Vec::Angle. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.143 Angle helpers::unsignedAngle between antiparallel vectors == π",
@@ -1211,39 +1223,47 @@
     "bridge_function": "unsignedAngle (Swift)",
     "bridge_output": {
       "type": "angle",
-      "data": 3.141592653589793
+      "data": {
+        "angle": 3.141592653589793
+      }
     },
     "kernel_output": {
       "type": "angle",
       "data": {
-        "gp_Vec(1,0,0).Angle(gp_Vec(-1,0,0))": 3.141592653589793
+        "angle": 3.141592653589793
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the angle between (1,0,0) and (-1,0,0). Bridge: unsignedAngle(between:and:) (Swift). Kernel: gp_Vec::Angle. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.143 Angle helpers::unsignedAngle returns nil for degenerate (near-zero-length) input (PR #897 review, finding 5)",
     "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
     "bridge_function": "unsignedAngle (Swift)",
     "bridge_output": {
-      "type": "value",
-      "data": null
+      "type": "refusal",
+      "data": {
+        "refused": true
+      }
     },
     "kernel_output": {
-      "type": "exception",
+      "type": "refusal",
       "data": {
-        "gp_Vec(0,0,0).Angle": "throws gp_VectorWithNullMagnitude"
+        "refused": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether a zero-length vector is refused (for a zero vector against (1,0,0) and against itself). Bridge: unsignedAngle returns nil for both. Kernel: gp_Vec::Angle throws gp_VectorWithNullMagnitude for both. The mechanism differs, nil against an exception, which is by design: the Swift function guards before acos. The earlier record compared the value nil with the exception text as if they were one quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.143 Angle helpers::ConstructionAxis angle between resolved axes",
@@ -1251,19 +1271,23 @@
     "bridge_function": "ConstructionAxis.angle (Swift)",
     "bridge_output": {
       "type": "angle",
-      "data": 1.5707963267948966
+      "data": {
+        "angle": 1.5707963267948966
+      }
     },
     "kernel_output": {
       "type": "angle",
       "data": {
-        "gp_Dir(1,0,0).Angle(gp_Dir(0,1,0))": 1.5707963267948966
+        "angle": 1.5707963267948966
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the angle between the axis directions (1,0,0) and (0,1,0). Bridge: ConstructionAxis.angle(to:in:) (Swift, over unsignedAngle). Kernel: gp_Dir::Angle. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.143 Angle helpers::ConstructionPlane angle between normals",
@@ -1271,72 +1295,77 @@
     "bridge_function": "ConstructionPlane.angle (Swift)",
     "bridge_output": {
       "type": "angle",
-      "data": 1.5707963267948966
+      "data": {
+        "angle": 1.5707963267948966
+      }
     },
     "kernel_output": {
       "type": "angle",
       "data": {
-        "gp_Dir(0,0,1).Angle(gp_Dir(0,1,0))": 1.5707963267948966
+        "angle": 1.5707963267948966
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the angle between the plane normals (0,0,1) and (0,1,0). Bridge: ConstructionPlane.angle(to:in:) (Swift, over unsignedAngle). Kernel: gp_Dir::Angle. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "#888 Edge.parameterByLinearFraction(_:)::parameterByLinearFraction(_:) maps 0/0.5/1 to bounds.first/mid/last",
     "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
     "bridge_function": "Edge.parameterByLinearFraction -> OCCTEdgeGetParameterBounds",
     "bridge_output": {
-      "type": "range",
+      "type": "parameters",
       "data": {
-        "first": 0,
-        "last": 10
+        "p0": 0.0,
+        "p_mid": 5.0,
+        "p1": 10.0
       }
     },
     "kernel_output": {
-      "type": "range",
+      "type": "parameters",
       "data": {
-        "BRep_Tool::Range edge 1": [
-          0,
-          10
-        ],
-        "midpoint": 5
+        "p0": 0,
+        "p_mid": 5,
+        "p1": 10
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the parameter at fractions 0, 0.5 and 1 of the first box edge's parameter range. Bridge: Edge.parameterByLinearFraction (Swift interpolation over OCCTEdgeGetParameterBounds). Kernel: first + (last - first) * f over the range BRep_Tool::Curve reports for the same edge, the very expression the test asserts. The mapping is Swift; the kernel supplies the range it maps over.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "#888 Edge.parameterByLinearFraction(_:)::parameterByLinearFraction(_:) clamps out-of-range fractions to [0, 1]",
     "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
     "bridge_function": "Edge.parameterByLinearFraction (Swift clamp)",
     "bridge_output": {
-      "type": "range",
+      "type": "parameters",
       "data": {
-        "first": 0,
-        "last": 10
+        "p_below": 0.0,
+        "p_above": 10.0
       }
     },
     "kernel_output": {
-      "type": "range",
+      "type": "parameters",
       "data": {
-        "BRep_Tool::Range edge 1": [
-          0,
-          10
-        ]
+        "p_below": 0,
+        "p_above": 10
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the parameter returned for fractions -5 and 5 on the first box edge. Bridge: Edge.parameterByLinearFraction(-5) and (5); the clamp to [0, 1] is Swift. Kernel: OCCT has no fraction API, so the kernel value is the parameter range's own first and last (BRep_Tool::Curve), which is what the test asserts the clamp must return.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "#889 Face.uvMidpointSample()::uvMidpointSample matches point/normal at the manual UV midpoint",
@@ -1391,40 +1420,48 @@
     "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
     "bridge_function": "Face.isCoplanar (Swift)",
     "bridge_output": {
-      "type": "bool",
-      "data": true
+      "type": "coplanar",
+      "data": {
+        "coplanar": true
+      }
     },
     "kernel_output": {
-      "type": "distance",
+      "type": "coplanar",
       "data": {
-        "face to itself": 0
+        "coplanar": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether a box face is coplanar with itself. Bridge: Face.isCoplanar(with:) (Swift, over OCCTFaceEvaluateAtUV and OCCTFaceGetNormalAtUV). Kernel: OCCT has no face-coplanarity call, so the probe applies the rule Face.isCoplanar states (normals parallel within 1e-4 rad and separation along the normal below 1e-6) to the kernel's own face point and normal at the UV midpoint. The earlier record put a bool against a distance.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "#889 Face.uvMidpointSample()::isCoplanar: parallel but offset faces are not coplanar",
     "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
     "bridge_function": "Face.isCoplanar (Swift)",
     "bridge_output": {
-      "type": "bool",
-      "data": false
+      "type": "coplanar",
+      "data": {
+        "coplanar": false
+      }
     },
     "kernel_output": {
-      "type": "distance",
+      "type": "coplanar",
       "data": {
-        "opposite box faces separation": 10
+        "coplanar": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the first parallel pair of opposite box faces (pair 0,1 in the test's iteration, faces 1 and 2 in TopExp order) is coplanar. Bridge: Face.isCoplanar(with:). Kernel: the same rule applied to the kernel's face geometry; the separation along the normal the probe measures is 10, far above the 1e-6 tolerance. The earlier record put a bool against that distance.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "#889 Face.uvMidpointSample()::revolutionProperties on a cone matches primaryAxis and has positive radius",
@@ -1432,20 +1469,23 @@
     "bridge_function": "Face.revolutionProperties",
     "bridge_output": {
       "type": "radius",
-      "data": 2.4999999999999996
+      "data": {
+        "radius": 2.4999999999999996
+      }
     },
     "kernel_output": {
       "type": "radius",
       "data": {
-        "at UV midpoint": 2.5,
-        "distance to axis origin": 5.59016994375
+        "radius": 2.4999999999999996
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the radius Face.revolutionProperties reports for the cone face of a cone (radius 5, apex, height 10): the distance from the axis line to the surface point at the UV midpoint. Bridge: Face.revolutionProperties (Swift over OCCTFaceEvaluateAtUV and the primary axis). Kernel: BRepAdaptor_Surface point at the UV midpoint measured from the cone's axis. The test asserts 2.5; the distance to the axis origin (5.59) is the wrong measurement it guards against. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "#889 Face.uvMidpointSample()::revolutionProperties on a trimmed spherical cap reports the true constant radius, not an axis-relative radial component (PR #897 review, finding 1)",
@@ -1453,20 +1493,23 @@
     "bridge_function": "Face.revolutionProperties",
     "bridge_output": {
       "type": "radius",
-      "data": 5.0
+      "data": {
+        "radius": 5.0
+      }
     },
     "kernel_output": {
       "type": "radius",
       "data": {
-        "distance to centre": 5,
-        "radial component (the old bug)": 0.849835714501
+        "radius": 5
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the radius of a spherical cap trimmed to v in [1.3, 1.5] on a sphere of radius 5, i.e. the distance from the centre to the surface point at the UV midpoint. Bridge: Face.revolutionProperties (sphere branch). Kernel: BRepAdaptor_Surface point at the UV midpoint measured from the sphere centre; the axis-relative radial component the old code returned is 0.85, which the test guards against. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.143 Multi-leaf createdBy::leafOccurrence picks among split descendants",
@@ -1624,41 +1667,48 @@
     "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
     "bridge_function": "ConstructionContext.planeShape -> Wire.polygon3D",
     "bridge_output": {
-      "type": "failure",
-      "data": "planeShapeFailed"
+      "type": "shape_built",
+      "data": {
+        "shape_built": false
+      }
     },
     "kernel_output": {
-      "type": "is_done",
+      "type": "shape_built",
       "data": {
-        "BRepBuilderAPI_MakePolygon of a 2e-9 square": false
+        "shape_built": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the plane's shape is built for planeHalfSize 1e-9. Bridge: ConstructionContext.materialize reports one planeShapeFailed and no materialized shape, so no shape is built. Kernel: BRepBuilderAPI_MakePolygon Add, Close and IsDone as OCCTWireCreateFastPolygon does it inside its try; the probe's mechanism note records that OCCT throws StdFail_NotDone on the 2e-9 square, which the bridge's catch turns into the same refusal.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.143 Construction layer persistence::materialize reports planeShapeFailed, not non-finite geometry, for a zero-length normal (#880)",
     "test_file": "Tests/OCCTMiscTests/OCCTMiscTests.swift",
     "bridge_function": "ConstructionContext.planeShape -> Shape.face(from:)",
     "bridge_output": {
-      "type": "failure",
-      "data": "planeShapeFailed"
+      "type": "shape_built",
+      "data": {
+        "shape_built": false
+      }
     },
     "kernel_output": {
-      "type": "is_done",
+      "type": "shape_built",
       "data": {
-        "MakePolygon on NaN vertices": true,
-        "MakeFace on that wire": false
+        "shape_built": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the plane's shape is built when the plane's normal is zero-length (Placement normalises it to NaN). Bridge: ConstructionContext.materialize reports one planeShapeFailed and no materialized shape. Kernel: the NaN polygon is built by BRepBuilderAPI_MakePolygon (IsDone) but BRepBuilderAPI_MakeFace on that wire is not done, which is the step OCCTShapeCreateFaceFromWire refuses at; the probe's mechanism note records it.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.143 Construction layer persistence::materializeOne reports an add failure instead of a bogus success (PR #898 review)",
@@ -2032,19 +2082,23 @@
     "bridge_function": "SheetMetal.Builder.build -> Shape.extrude, Shape.union",
     "bridge_output": {
       "type": "volume",
-      "data": 599.9999999999999
+      "data": {
+        "volume": 599.9999999999999
+      }
     },
     "kernel_output": {
       "type": "volume",
       "data": {
-        "MakePrism x2 + BRepAlgoAPI_Fuse": 600
+        "volume": 599.9999999999999
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the volume of the fused solid of two unbent flanges (20 x 10 x 2 and 10 x 10 x 2 touching along a face). Bridge: SheetMetal.Builder.build, which extrudes each flange (Shape.extrude) and fuses them (Shape.union); volume from Shape.volume. Kernel: BRepPrimAPI_MakePrism of each planar face, BRepAlgoAPI_Fuse, BRepGProp::VolumeProperties. Both are 600 to rounding. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.151 SheetMetal, flange + bend composition::Single flange with no bends returns a plain extrusion",
@@ -2052,19 +2106,23 @@
     "bridge_function": "SheetMetal.Builder.build -> Shape.extrude",
     "bridge_output": {
       "type": "volume",
-      "data": 3750.0
+      "data": {
+        "volume": 3750.0
+      }
     },
     "kernel_output": {
       "type": "volume",
       "data": {
-        "MakePrism 50x25x3": 3750
+        "volume": 3750
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the volume of a single 50 x 25 x 3 flange. Bridge: SheetMetal.Builder.build (Shape.extrude), Shape.volume. Kernel: BRepPrimAPI_MakePrism of the planar face, BRepGProp::VolumeProperties. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.151 SheetMetal, flange + bend composition::Zero thickness is rejected",
@@ -2144,19 +2202,23 @@
     "bridge_function": "SheetMetal.Builder.build -> Shape.extrude",
     "bridge_output": {
       "type": "volume",
-      "data": "2000 (within 0.5, as asserted)"
+      "data": {
+        "volume": 1999.9999999999995
+      }
     },
     "kernel_output": {
       "type": "volume",
       "data": {
-        "MakePrism 40x20x2.5": 2000
+        "volume": 1999.9999999999995
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the volume of a single 40 x 20 x 2.5 flange (the earlier bridge value was a string, '2000 (within 0.5, as asserted)', now the observed number). Bridge: SheetMetal.Builder.build (Shape.extrude), Shape.volume. Kernel: BRepPrimAPI_MakePrism, BRepGProp::VolumeProperties. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.151 SheetMetal, flange + bend composition::Fused two-flange volume subtracts the overlap",
@@ -2164,19 +2226,23 @@
     "bridge_function": "SheetMetal.Builder.build -> Shape.extrude, Shape.union",
     "bridge_output": {
       "type": "volume",
-      "data": "13260 (within 1, as asserted)"
+      "data": {
+        "volume": 13259.999999999996
+      }
     },
     "kernel_output": {
       "type": "volume",
       "data": {
-        "MakePrism x2 + BRepAlgoAPI_Fuse": 13260
+        "volume": 13259.999999999996
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the volume of the fused base (65 x 28 x 3) and upright (65 x 40 x 3) flanges (the earlier bridge value was a string, '13260 (within 1, as asserted)', now the observed number). Bridge: SheetMetal.Builder.build (Shape.extrude, Shape.union), Shape.volume. Kernel: BRepPrimAPI_MakePrism of each, BRepAlgoAPI_Fuse, BRepGProp::VolumeProperties. Compared within 1e-9, the tolerance the test itself uses for this quantity.",
+    "probe": "Scripts/repro/766-misc-evidence-fix/"
   },
   {
     "test_name": "v0.151 SheetMetal, flange + bend composition::Stepped seam (narrow upright over wider base) succeeds in v0.153",
