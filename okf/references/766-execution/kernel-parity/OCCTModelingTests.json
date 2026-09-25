@@ -423,16 +423,20 @@
       "type": "value",
       "data": {
         "done": true,
-        "edges": 0,
-        "vertices": 1
+        "edges": 4,
+        "vertices": 4,
+        "controlEdges": 0,
+        "controlVertices": 0
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
         "done": true,
-        "edges": 0,
-        "vertices": 1
+        "edges": 4,
+        "vertices": 4,
+        "controlEdges": 0,
+        "controlVertices": 0
       }
     },
     "comparison": {
@@ -440,7 +444,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: done and the distinct edge and vertex counts of the section between the centred 10 mm cube and the 10 mm cube at (5,5,5), fuzzy 0.001. The cubes meet at one corner, so the section is a single vertex and no edge; the test asserts only that the result is non-nil. Bridge: Shape.section(with:tolerance:) non-nil (OCCTBooleanSectionWithTolerance) and subShapes(ofType: .edge/.vertex).count. Kernel: BRepAlgoAPI_Section with SetFuzzyValue(0.001) and Build, IsDone, TopExp::MapShapes edge and vertex counts; sectionWithTolerance line of the transcript.",
+    "source": "Same quantity on both sides: done and the distinct edge and vertex counts of the section between a 10 mm cube (0..10) and a second 10 mm cube at origin (10.001,0,0), a 0.001 gap between coincident-plane faces, at fuzzy 0.01, next to the same section at tolerance 0 (control* keys). At tolerance 0 the gap stands and the section is empty (no edge, no vertex); at 0.01 the two facing faces count as touching and their shared outline is the section, 4 edges and 4 vertices. The test asserts both. The earlier fixture (a centred first cube, the second at (5,5,5)) met at one corner and gave a single vertex and no edge, and the test asserted only a non-nil result. Bridge: Shape.section(with:tolerance:) non-nil (OCCTBooleanSectionWithTolerance) and subShapes(ofType: .edge/.vertex).count, each run on freshly built boxes. Kernel: BRepAlgoAPI_Section with SetFuzzyValue and Build, IsDone, TopExp::MapShapes edge and vertex counts; the sectionWithTolerance line of the transcript.",
     "probe": "Scripts/repro/766-modeling-boolean-expansion/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
@@ -451,7 +455,9 @@
       "data": {
         "done": true,
         "solids": 2,
-        "volume": 8000
+        "volume": 8000,
+        "smallSolidVolume": 124.99999999999997,
+        "largeSolidVolume": 7875.000000000002
       }
     },
     "kernel_output": {
@@ -459,7 +465,9 @@
       "data": {
         "done": true,
         "solids": 2,
-        "volume": 7999.999999999999
+        "volume": 7999.999999999999,
+        "smallSolidVolume": 124.99999999999997,
+        "largeSolidVolume": 7875.000000000002
       }
     },
     "comparison": {
@@ -467,7 +475,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: done, solid count and volume of the 20 mm cube split by the 10 mm tool cube at (5,5,5). Bridge: Shape.split(tools:) non-nil (OCCTBooleanSplitMulti), subShapes(ofType: .solid).count and Shape.volume; the test asserted only non-nil. Kernel: BRepAlgoAPI_Splitter with one argument and one tool, IsDone, TopExp::MapShapes solid count, BRepGProp::VolumeProperties; splitMulti line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "source": "Same quantity on both sides: done, solid count, total volume and the volumes of the smallest and the largest solid of the 20 mm cube (-10..10) split by the 10 mm tool cube at (5,5,5), which overlaps the cube's corner in a 5 x 5 x 5 block: two solids, the 125 block and the 7875 remainder. Bridge: Shape.split(tools:) non-nil (OCCTBooleanSplitMulti), subShapes(ofType: .solid).count, Shape.volume of the result and of each solid; the test asserts the solid count and the two solid volumes within 1e-6 (it asserted only non-nil before). Kernel: BRepAlgoAPI_Splitter with one argument and one tool, IsDone, TopExp::MapShapes solid count, BRepGProp::VolumeProperties of the result and of each TopExp_Explorer solid; the splitMulti line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
     "probe": "Scripts/repro/766-modeling-boolean-expansion/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
@@ -476,23 +484,59 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "done": true,
-        "valid": true,
-        "volume": 7875.000000000002,
-        "hasDeleted": true,
-        "hasModified": true,
-        "hasGenerated": true
+        "overlap": {
+          "done": true,
+          "valid": true,
+          "volume": 7875.000000000002,
+          "hasDeleted": true,
+          "hasModified": true,
+          "hasGenerated": true
+        },
+        "clear": {
+          "done": true,
+          "valid": true,
+          "volume": 7999.999999999998,
+          "hasDeleted": true,
+          "hasModified": false,
+          "hasGenerated": false
+        },
+        "buried": {
+          "done": true,
+          "valid": true,
+          "volume": 7935.999999999996,
+          "hasDeleted": true,
+          "hasModified": true,
+          "hasGenerated": false
+        }
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "done": true,
-        "valid": true,
-        "volume": 7875.000000000002,
-        "hasDeleted": true,
-        "hasModified": true,
-        "hasGenerated": true
+        "overlap": {
+          "done": true,
+          "valid": true,
+          "volume": 7875.000000000002,
+          "hasDeleted": true,
+          "hasModified": true,
+          "hasGenerated": true
+        },
+        "clear": {
+          "done": true,
+          "valid": true,
+          "volume": 7999.999999999998,
+          "hasDeleted": true,
+          "hasModified": false,
+          "hasGenerated": false
+        },
+        "buried": {
+          "done": true,
+          "valid": true,
+          "volume": 7935.999999999996,
+          "hasDeleted": true,
+          "hasModified": true,
+          "hasGenerated": false
+        }
       }
     },
     "comparison": {
@@ -500,7 +544,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: done, valid, volume and the three history flags of the 20 mm cube minus the 10 mm tool cube at (5,5,5). Bridge: Shape.subtractedWithHistory non-nil (OCCTBooleanCutWithHistory), shape.isValid, shape.volume, hasDeleted, hasModified, hasGenerated; the test asserted non-nil and valid and discards the three flags. Kernel: BRepAlgoAPI_Cut with SetArguments/SetTools and Build, IsDone, BRepCheck_Analyzer, BRepGProp, HasDeleted, HasModified, HasGenerated; cutWithHistory line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "source": "Same quantity on both sides: done, valid, volume and the three history flags of the 20 mm cube (-10..10) cut by three tool cubes: overlap (10 mm at (5,5,5): deleted, modified and generated), clear (10 mm at (100,0,0): the tool is deleted, nothing of the cube is modified or generated) and buried (4 mm at (-2,-2,-2): the cube's faces are modified, none is generated). The one fixture the test used before is the overlap, which sets all three flags, so a bridge that reported true for everything passed it; the test now asserts every flag on all three tools, each on freshly built boxes. Bridge: Shape.subtractedWithHistory non-nil (OCCTBooleanCutWithHistory), shape.isValid, shape.volume, hasDeleted, hasModified, hasGenerated. Kernel: BRepAlgoAPI_Cut with SetArguments/SetTools and Build, IsDone, BRepCheck_Analyzer, BRepGProp, HasDeleted, HasModified, HasGenerated; the three cutWithHistory lines of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
     "probe": "Scripts/repro/766-modeling-boolean-expansion/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {

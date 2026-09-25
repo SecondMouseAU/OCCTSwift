@@ -279,12 +279,18 @@ Probe: `Scripts/repro/766-modeling-multi-offset-wire/`.
 | multipleInwardOffsets | `OCCTWireMultiOffset` returns 0 wires | `:15 Expectation failed: wires.count >= 3` | pass | `OCCTWireMultiOffset` | PASS |
 | outwardOffset | `OCCTWireMultiOffset` returns 0 wires | `:32 Expectation failed: wires.count >= 2` | pass | `OCCTWireMultiOffset` | PASS |
 | emptyOffsets | `Shape.multiOffsetWires` treats an empty offset list as a single 0 offset | `:39 Expectation failed: wires.isEmpty` | pass | `OCCTWireMultiOffset` | N/A: an empty list is refused in Swift and in the bridge before any kernel call |
+
 ### `BooleanExpansionTests.swift` (4 tests)
-Probe: `Scripts/repro/766-modeling-boolean-expansion/`.
-| sectionWithTolerance | `OCCTBooleanSectionWithTolerance` returns its failure value (nullptr / false / -1) | `:14 Expectation failed: sec != nil` | pass | `OCCTBooleanSectionWithTolerance` | PASS: the two boxes touch only at the corner (5,5,5), so the section is a single vertex |
-| splitMulti | `OCCTBooleanSplitMulti` returns its failure value (nullptr / false / -1) | `:23 Expectation failed: split != nil` | pass | `OCCTBooleanSplitMulti` | PASS |
-| cutWithHistory | `OCCTBooleanCutWithHistory` returns its failure value (nullptr / false / -1) | `:32 Expectation failed: result != nil` | pass | `OCCTBooleanCutWithHistory` | PASS |
-| defeature | `OCCTShapeDefeature` returns its failure value (nullptr / false / -1) | `:62 Issue recorded` | pass | `OCCTShapeDefeature` | PASS: rewritten: every assertion sat inside if-let of the result |
+
+Probe: `Scripts/repro/766-modeling-boolean-expansion/`. Rewritten under #766 (silent pass): `sectionWithTolerance`, `splitMulti` and `cutWithHistory` nested every assertion inside an `if let` on their fixture boxes, so a box that failed to build skipped the test and it passed, and `defeature` returned silently from `guard faces.count > 7`. Fixture boxes now come through `try #require` (injection: `OCCTShapeCreateBox` and `OCCTShapeCreateBoxAt` return nullptr; the three tests fail at `:19`, the `#require` in the fixture helper, and `defeature` at `:115`). `sectionWithTolerance` measured a corner touch (one vertex, no edge) and asserted only non-nil, `splitMulti` asserted only non-nil, and `cutWithHistory` read the three history flags into `let _` on the one fixture that sets all three.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| sectionWithTolerance | `OCCTBooleanSectionWithTolerance` skips `SetFuzzyValue` | `:47 Expectation failed: section.subShapes(ofType: .edge).count == 4` (also `:48`) | pass | `OCCTBooleanSectionWithTolerance` | PASS: cubes 0.001 apart, fuzzy 0.01 turns the empty section into a 4-edge outline; the tolerance-0 control is empty |
+| splitMulti | `OCCTBooleanSplitMulti` returns its unsplit argument | `:59 Expectation failed: solids.count == 2` | pass | `OCCTBooleanSplitMulti` | PASS: two solids, 125 and 7875 |
+| cutWithHistory | `OCCTBooleanCutWithHistory` reports deleted false and swaps modified with generated | `:86 Expectation failed: overlap.hasDeleted` (also `:94`, `:102`, `:103`, `:104`); reporting true for all three fails `:95`, `:96`, `:104` | pass | `OCCTBooleanCutWithHistory` | PASS: three tools, three flag patterns (deleted, modified, generated) / (deleted) / (deleted, modified) |
+| defeature | `OCCTShapeDefeature` returns nullptr | `:121 Expectation failed: f.defeature(faces: filletFaces)`; `OCCTShapeFillet` returning its input fails `:118` and `:119`, the `try #require(faces.count > 7)` that used to return silently | pass | `OCCTShapeDefeature` | PASS: rewritten: every assertion sat inside if-let of the result |
+
 ### `BooleanHistoryTests.swift` (2 tests)
 Probe: `Scripts/repro/766-modeling-boolean-history/`.
 | fuseWithHistory | `OCCTShapeFuseWithHistory` skips collecting Modified() for every face | `:17 Expectation failed: r.modifiedFaces.count > 0` | pass | `OCCTShapeFuseWithHistory` | PASS |
