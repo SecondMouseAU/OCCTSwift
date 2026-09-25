@@ -6812,10 +6812,10 @@
     "comparison": {
       "equal": false,
       "differences": [
-        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertCurves3dToBezier sets the per-kind modes but never the master Set3dConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on, the kernel returns the converted cube: 12 edges, all Bezier, volume 1000 (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 13). Recorded by the test with withKnownIssue as the #766 finding; the test fails with `Known issue was not recorded` once the bridge sets the flag."
+        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertCurves3dToBezier sets the per-kind modes but never the master Set3dConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on, the kernel returns the converted cube: 12 edges, all Bezier, volume 1000 (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 13). A known defect, cited as the #766 finding (epic #766; no separate issue is filed): the test records it with withKnownIssue and fails with `Known issue was not recorded` once the bridge sets the flag."
       ]
     },
-    "status": "MISMATCH",
+    "status": "EXPECTED_DIVERGENCE",
     "source": "Bridge: box.convertCurves3dToBezier() on a 10 mm cube: whether the result is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 13 (with Set3dConversion(true): curves->Bezier(box, T,T,T) Perform=1, a shape returned), ShapeUpgrade_ShapeConvertToBezier with the master mode on; the same call as the bridge drives it (line 7) returns null. The kernel side is the configuration the test's own assertions describe, so this is a bridge defect, not a kernel one."
   },
   {
@@ -6836,10 +6836,10 @@
     "comparison": {
       "equal": false,
       "differences": [
-        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertCurves3dToBezier sets the per-kind modes but never the master Set3dConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on, the kernel returns the converted cylinder: 17 edges, all Bezier, volume 785.398163 (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 14). Recorded by the test with withKnownIssue as the #766 finding; the test fails with `Known issue was not recorded` once the bridge sets the flag."
+        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertCurves3dToBezier sets the per-kind modes but never the master Set3dConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on, the kernel returns the converted cylinder: 17 edges, all Bezier, volume 785.398163 (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 14). A known defect, cited as the #766 finding (epic #766; no separate issue is filed): the test records it with withKnownIssue and fails with `Known issue was not recorded` once the bridge sets the flag."
       ]
     },
-    "status": "MISMATCH",
+    "status": "EXPECTED_DIVERGENCE",
     "source": "Bridge: cylinder.convertCurves3dToBezier(lineMode: true, circleMode: true, conicMode: true): whether the result is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 14 (with Set3dConversion(true): curves->Bezier(cyl, T,T,T) Perform=1, a shape returned), ShapeUpgrade_ShapeConvertToBezier with the master mode on; the same call as the bridge drives it (line 8) returns null. The kernel side is the configuration the test's own assertions describe, so this is a bridge defect, not a kernel one."
   },
   {
@@ -6860,10 +6860,10 @@
     "comparison": {
       "equal": false,
       "differences": [
-        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertCurves3dToBezier sets the per-kind modes but never the master Set3dConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on and circles only, the kernel returns the cylinder unchanged: 3 edges, none Bezier (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 15). Recorded by the test with withKnownIssue as the #766 finding; the test fails with `Known issue was not recorded` once the bridge sets the flag."
+        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertCurves3dToBezier sets the per-kind modes but never the master Set3dConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on and circles only, the kernel returns the cylinder unchanged: 3 edges, none Bezier (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 15). A known defect, cited as the #766 finding (epic #766; no separate issue is filed): the test records it with withKnownIssue and fails with `Known issue was not recorded` once the bridge sets the flag."
       ]
     },
-    "status": "MISMATCH",
+    "status": "EXPECTED_DIVERGENCE",
     "source": "Bridge: cylinder.convertCurves3dToBezier(lineMode: false, circleMode: true, conicMode: false): whether the result is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 15 (with Set3dConversion(true): curves->Bezier(cyl, F,T,F) Perform=0, a shape returned with 3 edges), ShapeUpgrade_ShapeConvertToBezier with the master mode on; the same call as the bridge drives it (line 9) returns null. The kernel side is the configuration the test's own assertions describe, so this is a bridge defect, not a kernel one."
   },
   {
@@ -6884,10 +6884,10 @@
     "comparison": {
       "equal": false,
       "differences": [
-        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertSurfaceToBezier sets the per-kind modes but never the master SetSurfaceConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on, the kernel returns the cylinder with its two planar caps as Bezier faces: 3 faces, 2 Bezier, volume 785.398163 (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 16). Recorded by the test with withKnownIssue as the #766 finding; the test fails with `Known issue was not recorded` once the bridge sets the flag."
+        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertSurfaceToBezier sets the per-kind modes but never the master SetSurfaceConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on, the kernel returns the cylinder with its two planar caps as Bezier faces: 3 faces, 2 Bezier, volume 785.398163 (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 16). A known defect, cited as the #766 finding (epic #766; no separate issue is filed): the test records it with withKnownIssue and fails with `Known issue was not recorded` once the bridge sets the flag."
       ]
     },
-    "status": "MISMATCH",
+    "status": "EXPECTED_DIVERGENCE",
     "source": "Bridge: cylinder.convertSurfacesToBezier(): whether the result is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 16 (with SetSurfaceConversion(true): surfaces->Bezier(cyl, T,T,T,T) Perform=1, a shape returned), ShapeUpgrade_ShapeConvertToBezier with the master mode on; the same call as the bridge drives it (line 10) returns null. The kernel side is the configuration the test's own assertions describe, so this is a bridge defect, not a kernel one."
   },
   {
@@ -6908,10 +6908,10 @@
     "comparison": {
       "equal": false,
       "differences": [
-        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertSurfaceToBezier sets the per-kind modes but never the master SetSurfaceConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on and revolution only, the kernel returns the cylinder unchanged: 3 faces, none Bezier (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 17). Recorded by the test with withKnownIssue as the #766 finding; the test fails with `Known issue was not recorded` once the bridge sets the flag."
+        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertSurfaceToBezier sets the per-kind modes but never the master SetSurfaceConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on and revolution only, the kernel returns the cylinder unchanged: 3 faces, none Bezier (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 17). A known defect, cited as the #766 finding (epic #766; no separate issue is filed): the test records it with withKnownIssue and fails with `Known issue was not recorded` once the bridge sets the flag."
       ]
     },
-    "status": "MISMATCH",
+    "status": "EXPECTED_DIVERGENCE",
     "source": "Bridge: cylinder.convertSurfacesToBezier(planeMode: false, revolutionMode: true, extrusionMode: false, bsplineMode: false): whether the result is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 17 (with SetSurfaceConversion(true): surfaces->Bezier(cyl, F,T,F,F) Perform=0, a shape returned with 3 faces), ShapeUpgrade_ShapeConvertToBezier with the master mode on; the same call as the bridge drives it (line 11) returns null. The kernel side is the configuration the test's own assertions describe, so this is a bridge defect, not a kernel one."
   },
   {
@@ -6932,10 +6932,10 @@
     "comparison": {
       "equal": false,
       "differences": [
-        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertSurfaceToBezier sets the per-kind modes but never the master SetSurfaceConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on and planes only, the kernel returns the cube with all 6 faces Bezier, volume 1000 (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 18). Recorded by the test with withKnownIssue as the #766 finding; the test fails with `Known issue was not recorded` once the bridge sets the flag."
+        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertSurfaceToBezier sets the per-kind modes but never the master SetSurfaceConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on and planes only, the kernel returns the cube with all 6 faces Bezier, volume 1000 (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 18). A known defect, cited as the #766 finding (epic #766; no separate issue is filed): the test records it with withKnownIssue and fails with `Known issue was not recorded` once the bridge sets the flag."
       ]
     },
-    "status": "MISMATCH",
+    "status": "EXPECTED_DIVERGENCE",
     "source": "Bridge: box.convertSurfacesToBezier(planeMode: true, revolutionMode: false, extrusionMode: false, bsplineMode: false): whether the result is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 18 (with SetSurfaceConversion(true): surfaces->Bezier(box, T,F,F,F) Perform=1, a shape returned), ShapeUpgrade_ShapeConvertToBezier with the master mode on; the same call as the bridge drives it (line 12) returns null. The kernel side is the configuration the test's own assertions describe, so this is a bridge defect, not a kernel one."
   },
   {
