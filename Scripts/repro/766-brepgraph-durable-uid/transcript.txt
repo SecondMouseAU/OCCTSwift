@@ -1,0 +1,11 @@
+nodeUIDRoundTrip: [face 0 kind=2 counter=1 -> kind=2 index=0] [face 1 kind=2 counter=2 -> kind=2 index=1] [face 2 kind=2 counter=3 -> kind=2 index=2] [face 3 kind=2 counter=4 -> kind=2 index=3] [face 4 kind=2 counter=5 -> kind=2 index=4] [face 5 kind=2 counter=6 -> kind=2 index=5]
+uidFromAnotherGraph (kernel, no provenance): boxFace2 counter=3 cylFaces=3 resolvesInCyl=1 cylIndex=2 cylHas=1
+uidDoesNotCrossIdenticallyBuiltGraphs (kernel): face1 counter=2 resolvesInTwin=1 twinIndex=1
+uidSurvivesAFullCopy: ok=1 0->0 1->1 2->2 3->3 4->4 5->5
+uidSurvivesATranslation: ok=1 0->0 1->1 2->2 3->3 4->4 5->5
+uidDoesNotCrossACopiedOutFace (kernel): liftedFaces=1 face0Counter=1 resolvesInLifted=1 liftedIndex=0
+outOfRangeCounter: has999999=0 resolves=0 zeroValid=0 hasZero=0
+uidSurvivesCompaction: counter=4 has=1 index=3
+refUID: kind=1 counter=1 resolvesInBox=1 boxIndex=0 resolvesInCyl(kernel)=1
+itemUID face2: domain=1 kind=2 counter=3 -> domain=1 kind=2 index=2 resolvesInCyl(kernel)=1
+itemUIDOfNode face0: domain=1 kind=2 counter=1 -> domain=1 kind=2 index=0

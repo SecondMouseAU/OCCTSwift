@@ -1,0 +1,26 @@
+Completions, poles (0,0,0) (1,2,0) (2,0,0):
+  StartPoint=(0, 0, 0) EndPoint=(2, 0, 0)
+  non-rational: degree=2 nbPoles=3 rational=0 poles: (0, 0, 0) (1, 2, 0) (2, 0, 0)
+    weights: nullptr
+  IsClosed=0 IsPeriodic=0 Continuity=6 IsCN(0)=1 IsCN(1)=1 IsCN(10)=1
+  rational weights 1,2,1: degree=2 nbPoles=3 rational=1 poles: (0, 0, 0) (1, 2, 0) (2, 0, 0)
+    weights: 1 2 1
+  closed poles: IsClosed=1
+Manipulation, poles (0,0,0) (3,5,0) (7,5,0) (10,0,0):
+  as built: degree=3 nbPoles=4 rational=0 poles: (0, 0, 0) (3, 5, 0) (7, 5, 0) (10, 0, 0)
+    weights: nullptr
+  SetPole(2, (3,8,0)): degree=3 nbPoles=4 rational=0 poles: (0, 0, 0) (3, 8, 0) (7, 5, 0) (10, 0, 0)
+    weights: nullptr
+  Segment(0.25, 0.75): degree=3 nbPoles=4 rational=0 poles: (2.40625, 2.8125, 0) (4.09375, 4.0625, 0) (5.90625, 4.0625, 0) (7.59375, 2.8125, 0)
+    weights: nullptr
+    original C(0.25)=(2.40625, 2.8125) C(0.5)=(5, 3.75) C(0.75)=(7.59375, 2.8125)
+    segment  S(0)=(2.40625, 2.8125) S(0.5)=(5, 3.75) S(1)=(7.59375, 2.8125)
+  Increase(5): degree=5 nbPoles=6 rational=0 poles: (0, 0, 0) (1.8, 3, 0) (3.8999999999999999, 4.5, 0) (6.0999999999999996, 4.5, 0) (8.1999999999999993, 3, 0) (10, 0, 0)
+    weights: nullptr
+    C(0.3) before=(2.9160000000000004, 3.1500000000000004) after=(2.9160000000000008, 3.1499999999999999)
+  InsertPoleAfter(2, (5,6,0)): degree=4 nbPoles=5 rational=0 poles: (0, 0, 0) (3, 5, 0) (5, 6, 0) (7, 5, 0) (10, 0, 0)
+    weights: nullptr
+  5 poles, RemovePole(3): degree=3 nbPoles=4 rational=0 poles: (0, 0, 0) (3, 5, 0) (7, 5, 0) (10, 0, 0)
+    weights: nullptr
+  SetWeight(2, 2.0): degree=3 nbPoles=4 rational=1 poles: (0, 0, 0) (3, 5, 0) (7, 5, 0) (10, 0, 0)
+    weights: 1 2 1 1
