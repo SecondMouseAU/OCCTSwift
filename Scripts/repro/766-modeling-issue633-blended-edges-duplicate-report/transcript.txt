@@ -1,0 +1,6 @@
+duplicated edge 0 (2 then 5): volume=946.349540849; edge 0 at 5 only: 946.349540849; at 2 only: 991.415926536
+triple edge 0 (2, 3, 5): volume=946.349540849
+distinct (0,1),(1,2),(2,0.5): done=1 declined=0
+open shell: edges=12 declined=[6,9,10,11] area=465.097335529
+duplicate accepted edge 0 + the declined ones: declined=[6,9,10,11]
+closed box, all 12 edges r=1: done=1 declined=0

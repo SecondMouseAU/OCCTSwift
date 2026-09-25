@@ -1,0 +1,10 @@
+t1 duplicated edge 0 (2 then 5): produced=1 declined=[] volume=946.34954084936203
+t1 edge 0 at 5 only: produced=1 declined=[] volume=946.34954084936203
+t1 edge 0 at 2 only: produced=1 declined=[] volume=991.41592653589782
+t2 triple edge 0 (2, 3, 5): produced=1 declined=[] volume=946.34954084936203
+t3 distinct (0,1), (1,2), (2,0.5): produced=1 declined=[] volume=989.06248847565553
+open shell: edges=12
+t4 open shell, every edge r=1: produced=1 declined=[6,9,10,11] area=465.09733552923257
+t5 accepted edge index=0
+t5 accepted edge twice + the declined ones: produced=1 declined=[6,9,10,11] area=489.69911184307745
+t7 closed box, every edge r=1: produced=1 declined=[] volume=975.58701389094142
