@@ -1,0 +1,8 @@
+ellipse 8 x 3: GCPnts 36.3668627832 Simpson 36.3668627832 relative 2.34e-15
+ellipse 8 x 7: GCPnts 47.176264242 Simpson 47.176264242 relative 1.48e-14
+ellipse 10 x 1: GCPnts 40.639741801 Simpson 40.639741801 relative 1.52e-13
+ellipse 100 x 30: GCPnts 438.591006957 Simpson 438.591006957 relative 2.4e-14
+ellipse 1 x 0.05: GCPnts 4.01942561915 Simpson 4.01942561915 relative 7.36e-14
+parabola F3 [-100, 100]: GCPnts 1690.70871162 Simpson 1690.70871162 relative 8.47e-14
+hyperbola 5x2 [-4, 4]: GCPnts 285.479768689 Simpson 285.479768689 relative 5.77e-15
+ellipse 10 x 1 inverse at full length: 6.28318530718 (domain end 6.28318530718)

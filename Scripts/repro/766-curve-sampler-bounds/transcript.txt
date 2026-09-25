@@ -1,0 +1,16 @@
+count  4: quasi NbPoints=4 last-end=0 | uniform NbPoints=4 last-end=0
+count  5: quasi NbPoints=5 last-end=0 | uniform NbPoints=5 last-end=0
+count  8: quasi NbPoints=8 last-end=0 | uniform NbPoints=8 last-end=0
+count 12: quasi NbPoints=12 last-end=0 | uniform NbPoints=12 last-end=0
+count 14: quasi NbPoints=14 last-end=0 | uniform NbPoints=14 last-end=0
+count 18: quasi NbPoints=18 last-end=0 | uniform NbPoints=18 last-end=0
+count 20: quasi NbPoints=20 last-end=0 | uniform NbPoints=20 last-end=0
+count 22: quasi NbPoints=22 last-end=0 | uniform NbPoints=22 last-end=0
+count 25: quasi NbPoints=25 last-end=0 | uniform NbPoints=25 last-end=0
+count 26: quasi NbPoints=26 last-end=0 | uniform NbPoints=26 last-end=0
+count 31: quasi NbPoints=31 last-end=0 | uniform NbPoints=31 last-end=0
+count 33: quasi NbPoints=33 last-end=0 | uniform NbPoints=33 last-end=0
+count 34: quasi NbPoints=34 last-end=0 | uniform NbPoints=34 last-end=0
+count 35: quasi NbPoints=35 last-end=0 | uniform NbPoints=35 last-end=0
+count 39: quasi NbPoints=39 last-end=0 | uniform NbPoints=39 last-end=0
+count 40: quasi NbPoints=40 last-end=0 | uniform NbPoints=40 last-end=0

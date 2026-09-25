@@ -416,6 +416,20 @@
 | **Vector3DMath** | dot | `OCCTXYZDot` | z term dropped | red | green | PASS |
 | **Vector3DMath** | dotCross | `OCCTXYZDotCross` | b and c swapped in the triple product | red | green | PASS |
 | **Vector3DMath** | normalize | `OCCTXYZNormalize` | normalized x and y swapped | red | green | PASS |
+### 766-math-newton-nonuniformscale (#1983, measured)
+| **math_NewtonMinimum Tests** | minimizeQuadratic | `OCCTMathNewtonMinimum` | location + 0.05 in every coordinate | red | green | PASS |
+| **math_NewtonMinimum Tests** | minimizeRosenbrock | `OCCTMathNewtonMinimum` | location + 0.05 in every coordinate | red | green | PASS |
+| **NewtonRoot** | findRoot | `OCCTMathNewtonFunctionRoot` | Root() + 0.5 | red | green | PASS |
+| **Non-Uniform Scale** | Scale box non-uniformly | `OCCTShapeNonUniformScale` | drop sz (scale z by 1) | red | green | PASS |
+| **Non-Uniform Scale** | Non-uniform scale preserves volume ratio | `OCCTShapeNonUniformScale` | drop sz (scale z by 1) | red | green | PASS |
+### 766-math-transform-expansion (#1983, measured)
+| **v0.115.0 - Transform Expansion** | generalTransform | `OCCTShapeTransformed` | the three GROUPED translation entries read as zero | red | green | PASS |
+| **v0.115.0 - Transform Expansion** | nonUniformScale | `OCCTShapeGTransformed` | gp_GTrsf (3,3) set from matrix12[5] (the Y scale) instead of matrix12[10] | red | green | PASS |
+| **v0.115.0 - Transform Expansion** | generalTransformGroupedLayoutTranslatesAsDocumented | `OCCTShapeTransformed` | GROUPED translation entries read as zero | red | green | PASS |
+| **v0.115.0 - Transform Expansion** | nonUniformScaleInterleavedLayoutScalesAsDocumented | `OCCTShapeGTransformed` | gp_GTrsf (3,3) from the Y scale | red | green | PASS |
+| **v0.115.0 - Transform Expansion** | groupedInterleavedConversionRoundTripsTheSameTransform | `OCCTShapeTransformed and OCCTShapeTransformFromMatrix` | GROUPED translation entries read as zero, so the grouped path disagrees with the interleaved one | red | green | PASS |
+| **v0.115.0 - Transform Expansion** | deprecatedArrayOverloadsStillWork | `OCCTShapeTransformed, OCCTShapeGTransformed, OCCTShapeTransformFromMatrix` | GROUPED translation entries read as zero | red | green | PASS |
+| **v0.115.0 - Transform Expansion** | typedInitializersReturnNilRatherThanTrapOnWrongCount | `none (pure Swift: validated12 in Sources/OCCTSwift/TransformFactory.swift)` | Swift injection: the count check in validated12 bypassed. RUN THIS TOKEN WITH A FILTER ON THIS ONE TEST ONLY: with it set, deprecatedArrayOverloadsStillWork hands a 3-element array to a bridge that reads 12 | red | green | N/A |
 ### 766-math-geomlib-interp-planar-tool (#1983, measured)
 | **GeomLib Interpolate Tests** | polynomial interpolation | `OCCTGeomLibInterpolate` | first and middle input points shifted +0.5 in Y before GeomLib_Interpolate | red | green | PASS |
 | **GeomLib Interpolate Tests** | interpolated curve endpoints | `OCCTGeomLibInterpolate` | first and middle input points shifted +0.5 in Y | red | green | PASS |
