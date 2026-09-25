@@ -8,8 +8,9 @@ import simd
 // target: copy it into Tests/OCCTThreadTests/ and run `swift test --filter ZZ766DumpC` to
 // reproduce. It prints the values the tests observe (the BRIDGE rows of transcript.txt) and
 // writes each shape to BREP (no triangles, written before any measurement) for probe.mm.
-// dumpDir is the session scratch directory it was run from; point it anywhere writable.
-private let dumpDir = FileManager.default.temporaryDirectory.appendingPathComponent("OCCTSwift_766_Thread_C_breps").path
+// dumpDir is a directory under the system temporary directory; point it anywhere writable. It
+// must end in "/": every call site builds a path as dumpDir + name.
+private let dumpDir = FileManager.default.temporaryDirectory.appendingPathComponent("OCCTSwift_766_Thread_C_breps").path + "/"
 
 private func out(_ s: String) { print("DUMP " + s) }
 
@@ -83,18 +84,6 @@ private func measure(_ s: Shape?, _ name: String) {
         measure(wshank.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), spec: wspec, length: 15), "189_worm")
     }
 
-    @Test func dump3() throws {
-        // 196 fine: the HLR count from the BREP the probe read, and twice from fresh builds.
-        let loaded = try Shape.loadBREP(from: URL(fileURLWithPath: dumpDir + "196_fine.brep"))
-        out("196_fine_fromBREP edges=\(loaded.hlrPolyEdges(direction: SIMD3(1, 0, 0), category: .visibleSharp, deflection: 0.05).map { String($0.subShapes(ofType: .edge).count) } ?? "nil")")
-        let sh = Shape.cylinder(radius: 5, height: 50)!
-        let s = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.0)
-        for i in 0..<2 {
-            let t = sh.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), spec: s, length: 26, runout: .none)
-            out("196_fine_fresh\(i) edges=\(t?.hlrPolyEdges(direction: SIMD3(1, 0, 0), category: .visibleSharp, deflection: 0.05).map { String($0.subShapes(ofType: .edge).count) } ?? "nil")")
-        }
-    }
-
     @Test func dump2() throws {
         // 193
         let sh = Shape.cylinder(radius: 5, height: 50)!
@@ -108,6 +97,15 @@ private func measure(_ s: Shape?, _ name: String) {
             save(t, "196_\(tag)")
             let e = t?.hlrPolyEdges(direction: SIMD3(1, 0, 0), category: .visibleSharp, deflection: d)
             out("196_\(tag) defl=\(d) edges=\(e.map { String($0.subShapes(ofType: .edge).count) } ?? "nil")")
+        }
+        // 196 fine, round trip: the HLR count from the BREP the loop above just wrote (the file the
+        // probe reads), and twice from fresh builds. It lives in this test, after the write, so the
+        // read cannot run before the file exists (it used to be a separate test with no ordering).
+        let loaded = try Shape.loadBREP(from: URL(fileURLWithPath: dumpDir + "196_fine.brep"))
+        out("196_fine_fromBREP edges=\(loaded.hlrPolyEdges(direction: SIMD3(1, 0, 0), category: .visibleSharp, deflection: 0.05).map { String($0.subShapes(ofType: .edge).count) } ?? "nil")")
+        for i in 0..<2 {
+            let t = sh.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), spec: s, length: 26, runout: .none)
+            out("196_fine_fresh\(i) edges=\(t?.hlrPolyEdges(direction: SIMD3(1, 0, 0), category: .visibleSharp, deflection: 0.05).map { String($0.subShapes(ofType: .edge).count) } ?? "nil")")
         }
         // 213
         let shaft = Shape.cylinder(radius: 5, height: 20)!
