@@ -422,6 +422,7 @@
     "bridge_output": {
       "type": "value",
       "data": {
+        "getBounds": true,
         "first": -5,
         "last": 15
       }
@@ -429,7 +430,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "GetBounds": true,
+        "getBounds": true,
         "first": -5,
         "last": 15
       }
@@ -438,7 +439,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether GetBounds succeeds for contour 1 and the first and last parameter bounds, for a builder with an evolving radius 0.5 to 2.0 on the 10 mm box centred at the origin, first TopExp::MapShapes edge, after Build. Bridge: FilletBuilder.getBounds(contour: 1, edge:) non-nil (OCCTFilletBuilderGetBounds) with .first and .last; the test asserted first < last and both within 1e-9 of -5 and 15. Kernel: BRepFilletAPI_MakeFillet on the same input, GetBounds(1, E, first, last) as a flag with first and last; getBoundsForEvolvingRadius line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-fillet-builder-history/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "v0.127.0, FilletBuilder History Queries::getLawForEvolvingRadius",
@@ -446,7 +449,9 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "law": "non-nil"
+        "lawNull": false,
+        "law(first)": 0.5,
+        "law(last)": 2
       }
     },
     "kernel_output": {
@@ -461,7 +466,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the radius law is absent and its value at the first and last bound, for a builder with an evolving radius 0.5 to 2.0 on the 10 mm box centred at the origin, first TopExp::MapShapes edge, after Build. Bridge: FilletBuilder.getLaw(contour: 1, edge:) nil test (OCCTFilletBuilderGetLaw) and LawFunction.value(at:) at the getBounds first and last; the test asserted a non-nil law. Kernel: BRepFilletAPI_MakeFillet on the same input, GetLaw(1, E).IsNull() and Law_Function::Value at the GetBounds first and last; getLawForEvolvingRadius line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-fillet-builder-history/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "v0.127.0, FilletBuilder History Queries::generated",
@@ -475,14 +482,16 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "Generated(edge).Size": 1
+        "generatedFromEdge": 1
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of shapes generated from the filleted edge, for a builder with radius 1 on the 10 mm box centred at the origin, first TopExp::MapShapes edge, after Build. Bridge: FilletBuilder.generated(from: edge shape).count (OCCTFilletBuilderGenerated); the test asserted a count of 1. Kernel: BRepFilletAPI_MakeFillet on the same input, Generated(E).Size(); generated line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-fillet-builder-history/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "v0.127.0, FilletBuilder History Queries::modified",
@@ -497,6 +506,7 @@
     "kernel_output": {
       "type": "value",
       "data": {
+        "faces": 6,
         "facesWithModified": 4
       }
     },
@@ -504,7 +514,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of faces of the box and how many of them have a modified shape, for a builder with radius 1 on the 10 mm box centred at the origin, first TopExp::MapShapes edge, after Build. Bridge: the count of box.subShapes(ofType: .face) and how many give FilletBuilder.modified(from:).count > 0 (OCCTFilletBuilderModified); the test asserted 6 faces and 4 modified. Kernel: BRepFilletAPI_MakeFillet on the same input, TopExp_Explorer over the box faces and the count with Modified(face).Size() > 0; modified line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-fillet-builder-history/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "v0.127.0, FilletBuilder History Queries::isDeleted",
@@ -518,13 +530,15 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "IsDeleted(edge)": true
+        "isDeleted": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the filleted edge is reported deleted, for a builder with radius 1 on the 10 mm box centred at the origin, first TopExp::MapShapes edge, after Build. Bridge: FilletBuilder.isDeleted(edge shape) (OCCTFilletBuilderIsDeleted); the test asserted true. Kernel: BRepFilletAPI_MakeFillet on the same input, IsDeleted(E); isDeleted line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-fillet-builder-history/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   }
 ]
