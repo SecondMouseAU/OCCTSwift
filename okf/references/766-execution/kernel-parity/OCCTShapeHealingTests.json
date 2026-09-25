@@ -9538,5 +9538,776 @@
     },
     "status": "PASS",
     "source": "Same quantity on both sides: whether the 10x10x10 box self-intersects, as a boolean. Bridge: analyze(tolerance: 0.001, selfIntersectionTimeout: 5).hasSelfIntersection, asserted == false (the timeout value does not enter the answer). Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 7 ('#772 self-intersection: box=0 overlapping compound=1'); the probe's selfInter() returns 1 when BOPAlgo_ArgumentAnalyzer (SelfInterMode, StopOnFirstFaulty) reports BOPAlgo_SelfIntersect and 0 otherwise, so 0 is false and 1 is true."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeHasCurve3d",
+    "bridge_function": "OCCTEdgeHasCurve3dSA",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "has_curve3d": true
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "has_curve3d": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether E0 has a 3D curve. Bridge: EdgeAnalysis.hasCurve3d; a temporary print in SAEdgeAnalysisTests (reverted) observed true. Kernel: 'HasCurve3d(e0)=1' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeIsClosed3d",
+    "bridge_function": "OCCTEdgeIsClosed3dSA",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "is_closed_3d": false
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "is_closed_3d": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether E0's 3D curve is closed. Bridge: EdgeAnalysis.isClosed3d; a temporary print in SAEdgeAnalysisTests (reverted) observed false. Kernel: 'IsClosed3d(e0)=0' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeHasPCurve",
+    "bridge_function": "OCCTEdgeHasPCurveSA",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "has_pcurve_on_face": true
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "has_pcurve_on_face": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether E0 has a pcurve on F0. Bridge: EdgeAnalysis.hasPCurve(edge, face:); a temporary print in SAEdgeAnalysisTests (reverted) observed true. Kernel: 'HasPCurve(e0,f0)=1' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeIsSeam",
+    "bridge_function": "OCCTEdgeIsSeamSA",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "is_seam": false
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "is_seam": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether E0 is a seam edge of F0. Bridge: EdgeAnalysis.isSeam(edge, face:); a temporary print in SAEdgeAnalysisTests (reverted) observed false. Kernel: 'IsSeam(e0,f0)=0' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeSameParameter",
+    "bridge_function": "OCCTEdgeCheckSameParameter",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "check_same_parameter": false,
+        "max_deviation": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "check_same_parameter": false,
+        "max_deviation": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether CheckSameParameter reports a problem on E0 and the maximum deviation it reads back. Bridge: EdgeAnalysis.checkSameParameter; a temporary print in SAEdgeAnalysisTests (reverted) observed ok false, maxDeviation 0.0. Kernel: 'CheckSameParameter(e0)=0 maxdev=0' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeVerticesWithCurve3d",
+    "bridge_function": "OCCTEdgeCheckVerticesWithCurve3d",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "check_vertices_with_curve3d": false
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "check_vertices_with_curve3d": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether E0's vertices disagree with its 3D curve, at the default sentinel precision (each vertex against its own tolerance). Bridge: EdgeAnalysis.checkVerticesWithCurve3d(edge); a temporary print in SAEdgeAnalysisTests (reverted) observed false. Kernel: 'CheckVerticesWithCurve3d(e0, -1)=0' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeVerticesWithCurve3dSentinelDefaultUsesOwnVertexTolerance",
+    "bridge_function": "OCCTEdgeCheckVerticesWithCurve3d",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "wire_edge_count": 2,
+        "fixed_1e-6": [
+          true,
+          true
+        ],
+        "sentinel": [
+          false,
+          false
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "wire_edge_count": 2,
+        "fixed_1e-6": [
+          true,
+          true
+        ],
+        "sentinel": [
+          false,
+          false
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: for the two straight edges 0.005 apart with tolerances loosened to 0.01 and joined into a wire (#1577): the wire's edge count, and per edge whether CheckVerticesWithCurve3d reports a problem at a fixed 1e-6 and at the sentinel default. Bridge: EdgeAnalysis.checkVerticesWithCurve3d(edge, precision: 1e-6) and (edge); a temporary print in SAEdgeAnalysisTests (reverted) observed 2 edges, [(true, false), (true, false)]. Kernel: '#1577 wire done=1: edge1: fixed1e-6=1 sentinel=0; edge2: fixed1e-6=1 sentinel=0;' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeVerticesWithPCurve",
+    "bridge_function": "OCCTEdgeCheckVerticesWithPCurve",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "check_vertices_with_pcurve": false
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "check_vertices_with_pcurve": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether E0's vertices disagree with its pcurve on F0, at the default sentinel precision. Bridge: EdgeAnalysis.checkVerticesWithPCurve(edge, face:); a temporary print in SAEdgeAnalysisTests (reverted) observed false. Kernel: 'CheckVerticesWithPCurve(e0, f0, -1)=0' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeCurve3dWithPCurve",
+    "bridge_function": "OCCTEdgeCheckCurve3dWithPCurve",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "check_curve3d_with_pcurve": false
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "check_curve3d_with_pcurve": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether E0's 3D curve disagrees with its pcurve on F0. Bridge: EdgeAnalysis.checkCurve3dWithPCurve(edge, face:); a temporary print in SAEdgeAnalysisTests (reverted) observed false. Kernel: 'CheckCurve3dWithPCurve(e0, f0)=0' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeFirstLastVertex",
+    "bridge_function": "OCCTEdgeFirstVertexSA, OCCTEdgeLastVertexSA",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "first_vertex": [
+          -5.0,
+          -5.0,
+          -5.0
+        ],
+        "last_vertex": [
+          -5.0,
+          -5.0,
+          5.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "first_vertex": [
+          -5.0,
+          -5.0,
+          -5.0
+        ],
+        "last_vertex": [
+          -5.0,
+          -5.0,
+          5.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the coordinates of E0's first and last vertex. Bridge: EdgeAnalysis.firstVertex and lastVertex; a temporary print in SAEdgeAnalysisTests (reverted) observed (-5, -5, -5) and (-5, -5, 5). Kernel: 'FirstVertex(e0)=(-5, -5, -5) LastVertex(e0)=(-5, -5, 5)' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeVertexTolerance",
+    "bridge_function": "OCCTEdgeCheckVertexTolerance",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "check_vertex_tolerance": false,
+        "toler1": 1e-07,
+        "toler2": 1e-07
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "check_vertex_tolerance": false,
+        "toler1": 1e-07,
+        "toler2": 1e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether CheckVertexTolerance asks to raise a vertex tolerance on E0 against F0, and the two tolerances it reads back. Bridge: EdgeAnalysis.checkVertexTolerance(edge, face:); a temporary print in SAEdgeAnalysisTests (reverted) observed ok false, toler1 1e-07, toler2 1e-07. Kernel: 'CheckVertexTolerance(e0, f0)=0 toler1=9.9999999999999995e-08 toler2=9.9999999999999995e-08' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeCheckOverlapping",
+    "bridge_function": "OCCTEdgeCheckOverlapping",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "overlapping": false
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "overlapping": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether E0 overlaps the box's second mapped edge E1 (CheckOverlapping, tolerance 1e-7). Bridge: EdgeAnalysis.checkOverlapping(edges[0], edges[1]); a temporary print in SAEdgeAnalysisTests (reverted) observed overlapping false. Kernel: 'CheckOverlapping(e0, e1, 1e-7)=0' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeCheckOverlappingDetectsRealOverlap",
+    "bridge_function": "OCCTEdgeCheckOverlapping",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "overlapping": true,
+        "tolerance": 1e-07
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "overlapping": true,
+        "tolerance": 1e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether E0 overlaps itself (it must, #1438) and the tolerance CheckOverlapping reads back. Bridge: EdgeAnalysis.checkOverlapping(edge, edge); a temporary print in SAEdgeAnalysisTests (reverted) observed overlapping true, tolerance 1e-07. Kernel: 'CheckOverlapping(e0, e0, 1e-7)=1 tol=9.9999999999999995e-08' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeBoundUV",
+    "bridge_function": "OCCTEdgeBoundUV",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "found": true,
+        "first_uv": [
+          0.0,
+          0.0
+        ],
+        "last_uv": [
+          10.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "found": true,
+        "first_uv": [
+          0.0,
+          0.0
+        ],
+        "last_uv": [
+          10.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether BoundUV finds F0's first edge FE on F0 and the (u, v) of its first and last point. Bridge: EdgeAnalysis.boundUV(edge, face:); a temporary print in SAEdgeAnalysisTests (reverted) observed found, first (0, 0), last (10, 0). Kernel: 'BoundUV(fe, f0)=1 first=(0, 0) last=(10, 0)' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeEndTangent2d",
+    "bridge_function": "OCCTEdgeGetEndTangent2d",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "found": true,
+        "position": [
+          0.0,
+          0.0
+        ],
+        "tangent": [
+          1.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "found": true,
+        "position": [
+          0.0,
+          0.0
+        ],
+        "tangent": [
+          1.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether GetEndTangent2d finds FE's start tangent on F0, and the pcurve position and tangent there. Bridge: EdgeAnalysis.endTangent2d(edge, face:, atEnd: false); a temporary print in SAEdgeAnalysisTests (reverted) observed found, position (0, 0), tangent (1, 0). Kernel: 'GetEndTangent2d(fe, f0, start)=1 pos=(0, 0) tangent=(1, 0)' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgePCurveRange",
+    "bridge_function": "OCCTEdgeCheckPCurveRange",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "check_pcurve_range_0_10": true
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "check_pcurve_range_0_10": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether the range [0, 10] lies within FE's pcurve on F0. Bridge: EdgeAnalysis.checkPCurveRange(edge, face:, first: 0, last: 10); a temporary print in SAEdgeAnalysisTests (reverted) observed true. Kernel: 'CheckPCurveRange(fe, f0, 0, 10)=1' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgePCurveRangeChecksPCurveDomainNotEdgeTrim",
+    "bridge_function": "OCCTEdgeCheckPCurveRange",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": {
+        "range_0_to_pi": true,
+        "range_0_to_2pi_plus_0.5": false
+      }
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "range_0_to_pi": true,
+        "range_0_to_2pi_plus_0.5": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-saedge/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: for the circle pcurve (centre (0, 5), r 3) on the cylinder r 5, edge trimmed to [0, pi/2] (#1438): whether [0, pi] and [0, 2 pi + 0.5] lie within the pcurve's own geometric domain. Bridge: EdgeAnalysis.checkPCurveRange(edge, face:, first:, last:); a temporary print in SAEdgeAnalysisTests (reverted) observed [0, pi] true, [0, 2 pi + 0.5] false. Kernel: '#1438 CheckPCurveRange(0, pi)=1 CheckPCurveRange(0, 2pi+0.5)=0' (Scripts/repro/766-healing-saedge/transcript-evidence-fix.txt). E0 is the first edge and F0 the first face in TopExp::MapShapes order of the centred 10 x 10 x 10 box (the edge from (-5,-5,-5) to (-5,-5,5) on the face x = -5), and FE is F0's own first edge, the same edge as E0 (transcript 'box edge0 == face0 edge0: 1'); ShapeAnalysis_Edge is called the way the bridge function calls it. A true result means the property holds (Has*, Is*) or a problem was found (Check*), as in OCCT."
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::basicWireChecks",
+    "bridge_function": "OCCTWireCheckOrder / CheckConnected / CheckSmall / CheckDegenerated / CheckClosed / CheckGaps3d",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": {
+        "check_order": true,
+        "check_connected": false,
+        "check_small": false,
+        "check_degenerated": false,
+        "check_closed": false,
+        "check_gaps3d": true
+      }
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "check_order": true,
+        "check_connected": false,
+        "check_small": false,
+        "check_degenerated": false,
+        "check_closed": false,
+        "check_gaps3d": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-sawire-263/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the six wire checks CheckOrder, CheckConnected, CheckSmall, CheckDegenerated, CheckClosed and CheckGaps3d. Bridge: SAWireAnalysis.checkOrder, checkConnected, checkSmall, checkDegenerated, checkClosed, checkGaps3d; a temporary print in SAWireAnalysisTests (reverted) observed true false false false false true. Kernel: 'CheckOrder=1 CheckConnected=0 CheckSmall=0 CheckDegenerated=0 CheckClosed=0 CheckGaps3d=1' (Scripts/repro/766-healing-sawire-263/transcript-evidence-fix.txt). The wire is the first wire of the box's first mapped face, at precision 1e-6, each check on a freshly initialised ShapeAnalysis_Wire as each bridge function does. True means a problem was found, as in OCCT. The box face is healthy, so the true results (order, 3D and 2D gaps, edge curves, the gap at edge 1) are the kernel's own answer on this wire, pinned as measured and flagged in the PR as a finding to understand, not asserted as correct behaviour."
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::wireEdgeCount",
+    "bridge_function": "OCCTWireEdgeCount",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": {
+        "edge_count": 4
+      }
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "edge_count": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-sawire-263/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the wire's edge count. Bridge: SAWireAnalysis.edgeCount; a temporary print in SAWireAnalysisTests (reverted) observed 4. Kernel: 'IsReady=1 NbEdges=4' (Scripts/repro/766-healing-sawire-263/transcript-evidence-fix.txt). The wire is the first wire of the box's first mapped face, at precision 1e-6, each check on a freshly initialised ShapeAnalysis_Wire as each bridge function does. True means a problem was found, as in OCCT. The box face is healthy, so the true results (order, 3D and 2D gaps, edge curves, the gap at edge 1) are the kernel's own answer on this wire, pinned as measured and flagged in the PR as a finding to understand, not asserted as correct behaviour."
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::wireDistance3d",
+    "bridge_function": "OCCTWireMinDistance3d, OCCTWireMaxDistance3d",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": {
+        "min_distance_3d": 14.142135623730951,
+        "max_distance_3d": 14.142135623730951
+      }
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "min_distance_3d": 14.142135623730951,
+        "max_distance_3d": 14.142135623730951
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-sawire-263/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the minimum and maximum 3D gap distance, read after CheckGaps3d. Bridge: SAWireAnalysis.minDistance3d and maxDistance3d; a temporary print in SAWireAnalysisTests (reverted) observed 14.142135623730951 and 14.142135623730951. Kernel: 'MinDistance3d=14.142135623730951 MaxDistance3d=14.142135623730951' (Scripts/repro/766-healing-sawire-263/transcript-evidence-fix.txt). The wire is the first wire of the box's first mapped face, at precision 1e-6, each check on a freshly initialised ShapeAnalysis_Wire as each bridge function does. True means a problem was found, as in OCCT. The box face is healthy, so the true results (order, 3D and 2D gaps, edge curves, the gap at edge 1) are the kernel's own answer on this wire, pinned as measured and flagged in the PR as a finding to understand, not asserted as correct behaviour."
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::wireDistance2d",
+    "bridge_function": "OCCTWireMinDistance2d, OCCTWireMaxDistance2d",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": {
+        "min_distance_2d": 14.142135623730951,
+        "max_distance_2d": 14.142135623730951
+      }
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "min_distance_2d": 14.142135623730951,
+        "max_distance_2d": 14.142135623730951
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-sawire-263/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the minimum and maximum 2D gap distance, read after CheckGaps2d. Bridge: SAWireAnalysis.minDistance2d and maxDistance2d; a temporary print in SAWireAnalysisTests (reverted) observed 14.142135623730951 and 14.142135623730951. Kernel: 'MinDistance2d=14.142135623730951 MaxDistance2d=14.142135623730951' (Scripts/repro/766-healing-sawire-263/transcript-evidence-fix.txt). The wire is the first wire of the box's first mapped face, at precision 1e-6, each check on a freshly initialised ShapeAnalysis_Wire as each bridge function does. True means a problem was found, as in OCCT. The box face is healthy, so the true results (order, 3D and 2D gaps, edge curves, the gap at edge 1) are the kernel's own answer on this wire, pinned as measured and flagged in the PR as a finding to understand, not asserted as correct behaviour."
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::wireSelfIntersection",
+    "bridge_function": "OCCTWireCheckSelfIntersection",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": {
+        "check_self_intersection": false
+      }
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "check_self_intersection": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-sawire-263/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether CheckSelfIntersection finds a self-intersection. Bridge: SAWireAnalysis.checkSelfIntersection; a temporary print in SAWireAnalysisTests (reverted) observed false. Kernel: 'CheckSelfIntersection=0' (Scripts/repro/766-healing-sawire-263/transcript-evidence-fix.txt). The wire is the first wire of the box's first mapped face, at precision 1e-6, each check on a freshly initialised ShapeAnalysis_Wire as each bridge function does. True means a problem was found, as in OCCT. The box face is healthy, so the true results (order, 3D and 2D gaps, edge curves, the gap at edge 1) are the kernel's own answer on this wire, pinned as measured and flagged in the PR as a finding to understand, not asserted as correct behaviour."
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::wireEdgeCurves",
+    "bridge_function": "OCCTWireCheckEdgeCurves, OCCTWireCheckLacking",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": {
+        "check_edge_curves": true,
+        "check_lacking": false
+      }
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "check_edge_curves": true,
+        "check_lacking": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-sawire-263/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: CheckEdgeCurves and CheckLacking. Bridge: SAWireAnalysis.checkEdgeCurves and checkLacking; a temporary print in SAWireAnalysisTests (reverted) observed true false. Kernel: 'CheckEdgeCurves=1 CheckLacking=0' (Scripts/repro/766-healing-sawire-263/transcript-evidence-fix.txt). The wire is the first wire of the box's first mapped face, at precision 1e-6, each check on a freshly initialised ShapeAnalysis_Wire as each bridge function does. True means a problem was found, as in OCCT. The box face is healthy, so the true results (order, 3D and 2D gaps, edge curves, the gap at edge 1) are the kernel's own answer on this wire, pinned as measured and flagged in the PR as a finding to understand, not asserted as correct behaviour."
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::wirePerEdgeChecks",
+    "bridge_function": "OCCTWireCheckConnectedEdge / CheckSmallEdge / CheckDegeneratedEdge / CheckGap3dEdge",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": {
+        "edge1_check_connected": false,
+        "edge1_check_small": false,
+        "edge1_check_degenerated": false,
+        "edge1_check_gap3d": true
+      }
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "edge1_check_connected": false,
+        "edge1_check_small": false,
+        "edge1_check_degenerated": false,
+        "edge1_check_gap3d": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-sawire-263/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: the four per-edge checks at edge index 1: CheckConnected, CheckSmall, CheckDegenerated and CheckGap3d. Bridge: SAWireAnalysis.checkConnectedEdge, checkSmallEdge, checkDegeneratedEdge, checkGap3dEdge (edgeIndex 1); a temporary print in SAWireAnalysisTests (reverted) observed false false false true. Kernel: 'edge 1: CheckConnected=0 CheckSmall=0 CheckDegenerated=0 CheckGap3d=1' (Scripts/repro/766-healing-sawire-263/transcript-evidence-fix.txt). The wire is the first wire of the box's first mapped face, at precision 1e-6, each check on a freshly initialised ShapeAnalysis_Wire as each bridge function does. True means a problem was found, as in OCCT. The box face is healthy, so the true results (order, 3D and 2D gaps, edge curves, the gap at edge 1) are the kernel's own answer on this wire, pinned as measured and flagged in the PR as a finding to understand, not asserted as correct behaviour."
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::wireGaps2d",
+    "bridge_function": "OCCTWireCheckGaps2d",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": {
+        "check_gaps2d": true
+      }
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "check_gaps2d": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-sawire-263/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: CheckGaps2d. Bridge: SAWireAnalysis.checkGaps2d; a temporary print in SAWireAnalysisTests (reverted) observed true. Kernel: 'CheckGaps2d=1' (Scripts/repro/766-healing-sawire-263/transcript-evidence-fix.txt). The wire is the first wire of the box's first mapped face, at precision 1e-6, each check on a freshly initialised ShapeAnalysis_Wire as each bridge function does. True means a problem was found, as in OCCT. The box face is healthy, so the true results (order, 3D and 2D gaps, edge curves, the gap at edge 1) are the kernel's own answer on this wire, pinned as measured and flagged in the PR as a finding to understand, not asserted as correct behaviour."
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::outerBound",
+    "bridge_function": "OCCTWireCheckOuterBound",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": {
+        "check_outer_bound": false
+      }
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "check_outer_bound": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-sawire-263/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether CheckOuterBound finds a problem (false means the wire is F0's outer bound, #999; the wrapper's nil means the check could not run, #1058). Bridge: SAWireAnalysis.checkOuterBound; a temporary print in SAWireAnalysisTests (reverted) observed Optional(false). Kernel: 'CheckOuterBound=0' (Scripts/repro/766-healing-sawire-263/transcript-evidence-fix.txt). The wire is the first wire of the box's first mapped face, at precision 1e-6, each check on a freshly initialised ShapeAnalysis_Wire as each bridge function does. True means a problem was found, as in OCCT. The box face is healthy, so the true results (order, 3D and 2D gaps, edge curves, the gap at edge 1) are the kernel's own answer on this wire, pinned as measured and flagged in the PR as a finding to understand, not asserted as correct behaviour."
+  },
+  {
+    "test_name": "Self-Intersecting Profile Crash Guard (#263)::extrudeRefusesSelfIntersecting",
+    "bridge_function": "OCCTShapeCreateExtrusion (occtHasSelfIntersectingWire)",
+    "bridge_output": {
+      "type": "guard",
+      "data": {
+        "profile_refused": true
+      }
+    },
+    "kernel_output": {
+      "type": "guard",
+      "data": {
+        "profile_refused": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-sawire-263/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether extruding the bowtie profile (0,0)-(1,1)-(1,0)-(0,1) is refused. Bridge: Shape.extrude(profile:direction:length:); a temporary print in SelfIntersectingProfileGuard263 (reverted) observed the result is nil (refused). Kernel: '#263 bowtie extrude: guardFlagged=1'. The kernel itself does not refuse a bowtie profile: extruding and healing it corrupts the heap and aborts the process (#263, upstream OCCT), which cannot be run in-process. What the kernel supplies is the condition the bridge refuses on, BRepCheck_SelfIntersectingWire on the profile's face, so the kernel value of profile_refused is that condition (guardFlagged, the same BRepCheck_Analyzer scan occtHasSelfIntersectingWire performs), and the bridge value is the observed refusal. Transcript: Scripts/repro/766-healing-sawire-263/transcript-evidence-fix.txt ('#263 bowtie profile as a planar face: valid=0 selfIntersectingWire=1' and the bridge-mirroring lines below it)."
+  },
+  {
+    "test_name": "Self-Intersecting Profile Crash Guard (#263)::healRefusesSelfIntersecting",
+    "bridge_function": "OCCTShapeHeal (occtHasSelfIntersectingWire)",
+    "bridge_output": {
+      "type": "guard",
+      "data": {
+        "profile_refused": true
+      }
+    },
+    "kernel_output": {
+      "type": "guard",
+      "data": {
+        "profile_refused": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-sawire-263/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether healing the bowtie profile's planar face is refused. Bridge: Shape.healed() on Shape.face(from: wire, planar: true); a temporary print in SelfIntersectingProfileGuard263 (reverted) observed the result is nil (refused). Kernel: '#263 bowtie heal of the planar face: guardFlagged=1'. The kernel itself does not refuse a bowtie profile: extruding and healing it corrupts the heap and aborts the process (#263, upstream OCCT), which cannot be run in-process. What the kernel supplies is the condition the bridge refuses on, BRepCheck_SelfIntersectingWire on the profile's face, so the kernel value of profile_refused is that condition (guardFlagged, the same BRepCheck_Analyzer scan occtHasSelfIntersectingWire performs), and the bridge value is the observed refusal. Transcript: Scripts/repro/766-healing-sawire-263/transcript-evidence-fix.txt ('#263 bowtie profile as a planar face: valid=0 selfIntersectingWire=1' and the bridge-mirroring lines below it)."
+  },
+  {
+    "test_name": "Self-Intersecting Profile Crash Guard (#263)::cleanProfileStillWorks",
+    "bridge_function": "OCCTShapeCreateExtrusion, OCCTShapeIsValidSolid, OCCTShapeGetVolume, OCCTShapeHeal",
+    "bridge_output": {
+      "type": "guard",
+      "data": {
+        "profile_refused": false,
+        "is_valid_solid": true,
+        "volume": 0.9999999999999998,
+        "healed_non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "guard",
+      "data": {
+        "profile_refused": false,
+        "is_valid_solid": true,
+        "volume": 0.9999999999999998,
+        "healed_non_nil": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-sawire-263/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: for the clean unit-square profile: whether extruding it is refused, whether the result is a valid solid, its volume, and whether healing it returns a shape. Bridge: Shape.extrude(profile:direction:length:), isValidSolid, volume, healed(); a temporary print in SelfIntersectingProfileGuard263 (reverted) observed extrusion not refused, isValidSolid true, volume 0.9999999999999998, healed() non-nil. Kernel: '#263 square extrude: guardFlagged=0 (extrude returns nil when 1) isValidSolid=1 volume=0.99999999999999978 healedGuardFlagged=0 healedNonNull=1'. The kernel itself does not refuse a bowtie profile: extruding and healing it corrupts the heap and aborts the process (#263, upstream OCCT), which cannot be run in-process. What the kernel supplies is the condition the bridge refuses on, BRepCheck_SelfIntersectingWire on the profile's face, so the kernel value of profile_refused is that condition (guardFlagged, the same BRepCheck_Analyzer scan occtHasSelfIntersectingWire performs), and the bridge value is the observed refusal. Transcript: Scripts/repro/766-healing-sawire-263/transcript-evidence-fix.txt ('#263 bowtie profile as a planar face: valid=0 selfIntersectingWire=1' and the bridge-mirroring lines below it)."
   }
 ]
