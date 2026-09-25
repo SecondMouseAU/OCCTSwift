@@ -445,10 +445,11 @@
       }
     },
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
+    "source": "No kernel counterpart. NodeAttributeStore is a pure Swift store keyed by BRepGraph node references; the test's annotatedNodeCount == 3 is a Swift-side count, so there is no OCCT call to compare against.",
     "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
   },
   {
@@ -467,10 +468,11 @@
       }
     },
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
+    "source": "No kernel counterpart. Clearing the last attribute on a node is NodeAttributeStore logic in Swift (the entry is dropped from a Swift dictionary); the test's annotatedNodeCount == 0 has no OCCT call behind it.",
     "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
   },
   {
@@ -514,10 +516,11 @@
       }
     },
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
+    "source": "No kernel counterpart. The encoded bytes are the Swift Codable output of NodeAttributeStore under the canonical (.sortedKeys) encoder; OCCT is not involved.",
     "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
   },
   {
@@ -561,10 +564,11 @@
       }
     },
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
+    "source": "No kernel counterpart. The format-version guard in BRepGraph(snapshot:) is Swift code that throws unsupportedFormatVersion before any OCCT call.",
     "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
   },
   {
@@ -1885,10 +1889,11 @@
       }
     },
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
+    "source": "No kernel counterpart. The refusal of a negative length, or of a null buffer with a positive length, is argument validation in OCCTDocumentGetDatumName; it returns -1 before any OCCT call is made.",
     "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
   },
   {
@@ -2018,10 +2023,11 @@
       }
     },
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
+    "source": "No kernel counterpart. The refusal of a negative length, or of a null buffer with a positive length, is argument validation in OCCTDocumentGetLayerName; it returns -1 before any OCCT call is made.",
     "probe": "Scripts/repro/766-xcaf-issue1078-layer-name-length/"
   },
   {
@@ -4151,19 +4157,22 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "roughness": 0.7
+        "roughness_within_0_01_of_0_7": true
       }
     },
     "kernel_output": {
       "type": "value",
-      "data": {}
+      "data": {
+        "roughness_within_0_01_of_0_7": true
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "N/A",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the common-material roughness is within 0.01 of 0.7. Bridge: the test observed abs(material.roughness - 0.7) < 0.01 after an OBJ/MTL import with Ns 300. The bridge fallback is Graphic3d_PBRMaterial::RoughnessFromSpecular(specular, shininess) (OCCTMaterialRoughnessFromSpecular). Kernel: the same OBJ/MTL through RWObj_CafReader gives a common material with Shininess 0.300000012 and specular 0.603827357 (grey), and RoughnessFromSpecular of those is 0.699999988, |r - 0.7| = 1.19e-8, so the predicate is true. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [135].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc_VisMaterialPBR Tests::defaultValues",
@@ -4226,14 +4235,17 @@
     },
     "kernel_output": {
       "type": "value",
-      "data": {}
+      "data": {
+        "equal": true
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "N/A",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether two PBR materials with the same fields compare equal. Bridge: p1.isEqual(to: p2) was true (OCCTVisMaterialPBRIsEqual builds two XCAFDoc_VisMaterialPBR and returns pa.IsEqual(pb)). Kernel: XCAFDoc_VisMaterialPBR::IsEqual on two structs with the same metallic 0, roughness 0.5 and base colour returned true. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [137].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAF full-matrix component placement (#174)::Full 4x4 places components (rotation + reflection) under an assembly",
@@ -4493,15 +4505,16 @@
     "kernel_output": {
       "type": "value",
       "data": {
-        "orphan_for_existing_path": false
+        "orphan": true
       }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "N/A",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "status": "PASS",
+    "source": "Same quantity on both sides: orphan, for a ref set to the path \"/99:99:99\", which names no label. Bridge: assemblyItemRefIsOrphan was true (OCCTDocumentAssemblyItemRefIsOrphan returns IsOrphan of the XCAFDoc_AssemblyItemRef). Kernel: XCAFDoc_AssemblyItemRef::Set on a fresh label with that path gives a non-null ref whose IsOrphan is true. The shared probe's false was for a resolvable path, a different scenario. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [142].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFNoteObjects_NoteObject Tests::create",
@@ -5231,14 +5244,17 @@
     },
     "kernel_output": {
       "type": "value",
-      "data": {}
+      "data": {
+        "text": "Hello"
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "N/A",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the label text. Bridge: TextLabel(text: \"Hello\").text was \"Hello\" (OCCTTextLabelGetInfo reads AIS_TextLabel::Text). Kernel: AIS_TextLabel::SetText(\"Hello\") then Text() read back \"Hello\". Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [159].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Text Label and Point Cloud::Text label position",
@@ -5255,14 +5271,21 @@
     },
     "kernel_output": {
       "type": "value",
-      "data": {}
+      "data": {
+        "p": [
+          10,
+          20,
+          30
+        ]
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "N/A",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the label position, compared within the test's 1e-6. Bridge: position.x, y and z were each within 1e-6 of 10, 20 and 30 (OCCTTextLabelGetInfo reads AIS_TextLabel::Position). Kernel: AIS_TextLabel::SetPosition(10, 20, 30) then Position() read back (10, 20, 30) exactly at %.17g. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [160].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Text Label and Point Cloud::Update text label text",
@@ -5275,14 +5298,17 @@
     },
     "kernel_output": {
       "type": "value",
-      "data": {}
+      "data": {
+        "text": "Updated"
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "N/A",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the label text after an update. Bridge: label.text was \"Updated\" after assigning it over \"Original\" (OCCTTextLabelSetText calls AIS_TextLabel::SetText). Kernel: SetText(\"Original\") then SetText(\"Updated\") and Text() read back \"Updated\". Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [161].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Text Label and Point Cloud::Update text label position",
@@ -5298,14 +5324,20 @@
     },
     "kernel_output": {
       "type": "value",
-      "data": {}
+      "data": {
+        "p": [
+          5,
+          10
+        ]
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "N/A",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the label x and y position after an update, compared within the test's 1e-6 (the test asserts x and y only). Bridge: position.x and y were within 1e-6 of 5 and 10 after assigning SIMD3(5, 10, 15) (OCCTTextLabelSetPosition calls AIS_TextLabel::SetPosition). Kernel: SetPosition(0, 0, 0) then SetPosition(5, 10, 15) and Position() read back (5, 10, 15) exactly at %.17g; z is not compared because the test does not assert it. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [162].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Text Label and Point Cloud::Text label default height matches OCCT's own default (#1417)",
@@ -5419,14 +5451,17 @@
       }
     },
     "kernel_output": {
-      "type": "value",
-      "data": {}
+      "type": "n/a",
+      "data": {
+        "reason": "OCCTPointCloud is a bridge-side struct holding a std::vector of coordinates; no OCCT class is involved"
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
+    "source": "No kernel counterpart. OCCTPointCloudCreate copies the coordinates into a bridge-side std::vector and OCCTPointCloudGetPoints copies them back with memcpy; the retrieved count of 2 is the bridge's own storage.",
     "probe": "Scripts/repro/766-xcaf-textlabel-function/"
   },
   {
@@ -5439,14 +5474,17 @@
       }
     },
     "kernel_output": {
-      "type": "value",
-      "data": {}
+      "type": "n/a",
+      "data": {
+        "reason": "OCCTPointCloud is a bridge-side struct holding std::vectors of coordinates and colours; no OCCT class is involved"
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
+    "source": "No kernel counterpart. OCCTPointCloudGetColors memcpy's the bridge-held colour vector; the count of 2 is the bridge's own storage.",
     "probe": "Scripts/repro/766-xcaf-textlabel-function/"
   },
   {
@@ -5459,14 +5497,17 @@
       }
     },
     "kernel_output": {
-      "type": "value",
-      "data": {}
+      "type": "n/a",
+      "data": {
+        "reason": "OCCTPointCloudCreate returns nullptr for an empty point list before any OCCT call"
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
+    "source": "No kernel counterpart. OCCTPointCloudCreate refuses count <= 0 (returns nullptr) before any OCCT call, so there is no kernel value for an empty cloud.",
     "probe": "Scripts/repro/766-xcaf-textlabel-function/"
   },
   {
@@ -5501,14 +5542,17 @@
       }
     },
     "kernel_output": {
-      "type": "value",
-      "data": {}
+      "type": "n/a",
+      "data": {
+        "reason": "the test asserts nothing (a no-crash check); Clear() returns void, so there is no value to compare"
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": null,
       "differences": []
     },
     "status": "N/A",
+    "source": "No comparable quantity. The test calls FunctionDriverTable.clear() and asserts nothing (\"Just verify no crash\"). The bridge calls TFunction_DriverTable::Get()->Clear(), which returns void, so there is no kernel value to set beside the bridge's returned flag.",
     "probe": "Scripts/repro/766-xcaf-textlabel-function/"
   },
   {
@@ -5635,19 +5679,22 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true
+        "created": true
       }
     },
     "kernel_output": {
       "type": "value",
-      "data": {}
+      "data": {
+        "created": true
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "N/A",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether a TFunction_Function attribute exists on the label after newFunction. Bridge: newFunction returned true (OCCTDocumentNewFunction returns whether the label then has a TFunction_Function attribute, not what NewFunction returns). Kernel: after TFunction_IFunction::NewFunction on a fresh child label the attribute is present. NewFunction itself returned false in the probe, which the bridge ignores. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [171].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TFunction IFunction Tests::deleteFunction",
@@ -5655,19 +5702,22 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "ok": true
+        "deleted": true
       }
     },
     "kernel_output": {
       "type": "value",
-      "data": {}
+      "data": {
+        "deleted": true
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "N/A",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether DeleteFunction reports success on a label that has a function. Bridge: deleteFunction returned true (OCCTDocumentDeleteFunction returns TFunction_IFunction::DeleteFunction). Kernel: NewFunction then DeleteFunction returned true. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [172].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TFunction IFunction Tests::functionExecStatus",
@@ -5676,21 +5726,27 @@
       "type": "value",
       "data": {
         "statuses": [
-          "wrongDefinition",
-          "succeeded"
+          "WrongDefinition",
+          "Succeeded"
         ]
       }
     },
     "kernel_output": {
       "type": "value",
-      "data": {}
+      "data": {
+        "statuses": [
+          "WrongDefinition",
+          "Succeeded"
+        ]
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "N/A",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the execution status read before and after setting Succeeded, by TFunction_ExecutionStatus name. Bridge: functionExecStatus was .wrongDefinition on a fresh function and .succeeded after setFunctionExecStatus(.succeeded); the Swift raw values 0 and 3 are the kernel's ordinals, and the bridge casts them straight to TFunction_ExecutionStatus. Kernel: a fresh TFunction_IFunction reads 0 (WrongDefinition), and 3 (Succeeded) after SetStatus. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [173].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TFunction IFunction Tests::noFunction",
@@ -5698,19 +5754,22 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "status": null
+        "status_readable": false
       }
     },
     "kernel_output": {
       "type": "value",
-      "data": {}
+      "data": {
+        "status_readable": false
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "N/A",
-    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether an execution status can be read from a label that never had NewFunction. Bridge: functionExecStatus was nil (OCCTDocumentFunctionGetExecStatus returns -1 when the label has no TFunction_Function attribute). Kernel: a fresh child label has no TFunction_Function attribute, so there is nothing to read a status from. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [174].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "TObj_Application Tests::getInstance",
@@ -6934,19 +6993,22 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "kind": null
+        "dim_tol_present": false
       }
     },
     "kernel_output": {
       "type": "value",
-      "data": {}
+      "data": {
+        "dim_tol_present": false
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "N/A",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the label carries an XCAFDoc_DimTol attribute. Bridge: dimTolKind was nil (OCCTDocumentGetDimTolKind returns -1 exactly when FindAttribute for XCAFDoc_DimTol fails). Kernel: a fresh child label has no XCAFDoc_DimTol attribute. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [209].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc_GraphNode Tests::setAndRelate",
@@ -7056,19 +7118,22 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "has": false
+        "location_present": false
       }
     },
     "kernel_output": {
       "type": "value",
-      "data": {}
+      "data": {
+        "location_present": false
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "N/A",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the label carries an XCAFDoc_Location attribute. Bridge: hasLocationAttribute was false and locationTranslation nil (OCCTDocumentHasLocation returns FindAttribute for XCAFDoc_Location). Kernel: a fresh child label has no XCAFDoc_Location attribute. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [211].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc_Material Tests::setAndGet",
@@ -7102,19 +7167,22 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "has": false
+        "material_present": false
       }
     },
     "kernel_output": {
       "type": "value",
-      "data": {}
+      "data": {
+        "material_present": false
+      }
     },
     "comparison": {
-      "equal": false,
+      "equal": true,
       "differences": []
     },
-    "status": "N/A",
-    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the label carries an XCAFDoc_Material attribute. Bridge: hasMaterialAttribute was false and materialAttributeName nil (OCCTDocumentHasMaterialAttr returns FindAttribute for XCAFDoc_Material). Kernel: a fresh child label has no XCAFDoc_Material attribute. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [212].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "XCAFDoc_NoteBalloon Tests::setAndGet",

@@ -260,11 +260,11 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `defaultValues` | `OCCTVisMaterialCommonDefault` returns a zeroed material | :10 Expectation failed: mat.isDefined; :11 Expectation failed: abs(mat.diffuseColor.red - 0.8) < 0.02 | passed | `OCCTVisMaterialCommonDefault` | PASS: 0.8 |
 | `setProperties` | `OCCTVisMaterialCommonIsEqual` returns true | `!mat.isEqual(to: other)` (rewritten; reading back stored properties could not fail) | passed | `OCCTVisMaterialCommonIsEqual` | PASS: unequal |
 | `equality` | `OCCTVisMaterialCommonIsEqual` returns false | :37 Expectation failed: m1.isEqual(to: m2) | passed | `OCCTVisMaterialCommonIsEqual` | PASS: equal |
-| `commonMaterialRoughnessFromShininess` | `OCCTMaterialRoughnessFromSpecular` answers 0.1 | :105 Expectation failed: abs(material.roughness - 0.7) < 0.01 | passed | `OCCTDocumentGetLabelMaterial` | N/A: bridge-side conversion (`OCCTMaterialRoughnessFromSpecular`); no kernel roughness exists for a common material |
+| `commonMaterialRoughnessFromShininess` | `OCCTMaterialRoughnessFromSpecular` answers 0.1 | :105 Expectation failed: abs(material.roughness - 0.7) < 0.01 | passed | `OCCTDocumentGetLabelMaterial` | PASS: roughness within 0.01 of 0.7 on both sides (kernel RoughnessFromSpecular 0.699999988 for Shininess 0.3) |
 ### `VisMaterialPBRTests.swift`
 | `defaultValues` | `OCCTVisMaterialPBRDefault` returns a zeroed material | :10 Expectation failed: pbr.isDefined; :11 Expectation failed: abs(pbr.metallic - 1.0) < 1e-6 | passed | `OCCTVisMaterialPBRDefault` | PASS: 1, 1, 1.5 |
 | `setProperties` | `OCCTVisMaterialPBRIsEqual` returns true | `!pbr.isEqual(to: other)` (rewritten; reading back stored properties could not fail) | passed | `OCCTVisMaterialPBRIsEqual` | PASS: unequal |
-| `equality` | `OCCTVisMaterialPBRIsEqual` returns false | :39 Expectation failed: p1.isEqual(to: p2) | passed | `OCCTVisMaterialPBRIsEqual` | N/A: same values compare equal (see common) |
+| `equality` | `OCCTVisMaterialPBRIsEqual` returns false | :39 Expectation failed: p1.isEqual(to: p2) | passed | `OCCTVisMaterialPBRIsEqual` | PASS: equal materials compare equal on both sides |
 ### `XCAFComponentMatrixTests.swift`
 | `matrixComponentPlacement` | `OCCTDocumentAddComponentMatrix` returns -1 without adding | :20 Expectation failed: doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: rigid) >= 0; :24 Expectation failed: doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: reflect) >= 0 | passed | `OCCTDocumentAddComponentMatrix` | PASS: both added, 2 components |
 ### `XCAFDocAssemblyGraphTests.swift`
@@ -279,7 +279,7 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `setAndGet` | `OCCTDocumentGetAssemblyItemRef` returns null | :18 Expectation failed: path != nil | passed | `OCCTDocumentGetAssemblyItemRef` | PASS: path kept |
 | `subshapeIndex` | `OCCTDocumentAssemblyItemRefHasExtra` returns false | :28 Expectation failed: doc.assemblyItemRefHasExtra(labelId: node.labelId) | passed | `OCCTDocumentAssemblyItemRefHasExtra` | PASS: 3 |
 | `clearExtra` | `OCCTDocumentAssemblyItemRefClearExtra` returns true without clearing | :42 Expectation failed: !doc.assemblyItemRefHasExtra(labelId: node.labelId) | passed | `OCCTDocumentAssemblyItemRefClearExtra` | PASS: cleared |
-| `isOrphan` | `OCCTDocumentAssemblyItemRefIsOrphan` returns false | :51 Expectation failed: doc.assemblyItemRefIsOrphan(labelId: node.labelId) | passed | `OCCTDocumentAssemblyItemRefIsOrphan` | N/A: the test's path names no label, so it is orphan; the probe's resolvable path is not |
+| `isOrphan` | `OCCTDocumentAssemblyItemRefIsOrphan` returns false | :51 Expectation failed: doc.assemblyItemRefIsOrphan(labelId: node.labelId) | passed | `OCCTDocumentAssemblyItemRefIsOrphan` | PASS: a ref to a path that names no label is orphan on both sides |
 ### `XCAFNoteObjectsTests.swift`
 | `create` | `OCCTNoteObjectCreate` returns null | :10 Expectation failed: obj != nil | passed | `OCCTNoteObjectCreate` | PASS: created |
 | `initiallyEmpty` | `OCCTNoteObjectHasPlane` returns true | :15 Expectation failed: !obj.hasPlane | passed | `OCCTNoteObjectHasPlane` | PASS: all false |
@@ -319,20 +319,20 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `setGetGeometryType` | `OCCTDocumentGetGeometryType` answers 0 | :18 Expectation failed: label.geometryType() == .point; :21 Expectation failed: label.geometryType() == .plane | passed | `OCCTDocumentGetGeometryType` | PASS: 1, 6, 7 |
 | `allGeometryTypes` | `OCCTDocumentGetGeometryType` answers 0 | :36 Expectation failed: label.geometryType() == type; :36 Expectation failed: label.geometryType() == type | passed | `OCCTDocumentGetGeometryType` | PASS: each type reads back |
 ### `TextLabelAndPointCloudTests.swift`
-| `createTextLabel` | `OCCTTextLabelGetInfo` returns false | :15 Expectation failed: label!.text == "Hello" | passed | `OCCTTextLabelGetInfo` | N/A: the text is the bridge's own record |
-| `textLabelPosition` | `OCCTTextLabelGetInfo` returns false | :22 Expectation failed: abs(pos.x - 10) < 1e-6; :23 Expectation failed: abs(pos.y - 20) < 1e-6 | passed | `OCCTTextLabelGetInfo` | N/A: position is the bridge's own record |
-| `updateText` | `OCCTTextLabelSetText` returns without setting | :31 Expectation failed: label.text == "Updated" | passed | `OCCTTextLabelSetText` | N/A: bridge-held |
-| `updatePosition` | `OCCTTextLabelSetPosition` returns without setting | :39 Expectation failed: abs(pos.x - 5) < 1e-6; :40 Expectation failed: abs(pos.y - 10) < 1e-6 | passed | `OCCTTextLabelSetPosition` | N/A: bridge-held |
+| `createTextLabel` | `OCCTTextLabelGetInfo` returns false | :15 Expectation failed: label!.text == "Hello" | passed | `OCCTTextLabelGetInfo` | PASS: text "Hello" on both sides (AIS_TextLabel is the kernel object) |
+| `textLabelPosition` | `OCCTTextLabelGetInfo` returns false | :22 Expectation failed: abs(pos.x - 10) < 1e-6; :23 Expectation failed: abs(pos.y - 20) < 1e-6 | passed | `OCCTTextLabelGetInfo` | PASS: position (10, 20, 30) on both sides (kernel exact) |
+| `updateText` | `OCCTTextLabelSetText` returns without setting | :31 Expectation failed: label.text == "Updated" | passed | `OCCTTextLabelSetText` | PASS: updated text "Updated" on both sides |
+| `updatePosition` | `OCCTTextLabelSetPosition` returns without setting | :39 Expectation failed: abs(pos.x - 5) < 1e-6; :40 Expectation failed: abs(pos.y - 10) < 1e-6 | passed | `OCCTTextLabelSetPosition` | PASS: position x, y = (5, 10) on both sides after the update (kernel z 15, not asserted) |
 | `textLabelDefaultHeightMatchesOCCT` | `OCCTTextLabelGetInfo` returns false | :49 Expectation failed: OCCTTextLabelGetInfo(label.handle, &info); :50 Expectation failed: abs(info.height - 16.0) < 1e-6 | passed | `OCCTTextLabelGetInfo` | PASS: 16 = 16 |
 | `textLabelHeightRoundTrips` | `OCCTTextLabelSetHeight` returns without setting | :59 Expectation failed: abs(info.height - 30.0) < 1e-6 | passed | `OCCTTextLabelSetHeight` | PASS: 30 |
 | `createPointCloud` | `OCCTPointCloudGetCount` answers 0 | :67 Expectation failed: cloud!.count == 3 | passed | `OCCTPointCloudGetCount` | PASS: 3 |
 | `pointCloudBounds` | `OCCTPointCloudGetBounds` returns false | :75 Expectation failed: bounds != nil | passed | `OCCTPointCloudGetBounds` | PASS: x -1..4, y 0..5 |
-| `pointCloudRetrieval` | `OCCTPointCloudGetPoints` answers 0 | :89 Expectation failed: retrieved.count == 2 | passed | `OCCTPointCloudGetPoints` | N/A: points are the bridge's copy |
-| `coloredPointCloud` | `OCCTPointCloudGetColors` answers 0 | :102 Expectation failed: retrievedColors.count == 2 | passed | `OCCTPointCloudGetColors` | N/A: colours are the bridge's copy |
+| `pointCloudRetrieval` | `OCCTPointCloudGetPoints` answers 0 | :89 Expectation failed: retrieved.count == 2 | passed | `OCCTPointCloudGetPoints` | N/A: the points are the bridge's own copy (no OCCT class) |
+| `coloredPointCloud` | `OCCTPointCloudGetColors` answers 0 | :102 Expectation failed: retrievedColors.count == 2 | passed | `OCCTPointCloudGetColors` | N/A: the colours are the bridge's own copy (no OCCT class) |
 | `emptyPointCloud` | `OCCTPointCloudCreate` builds a one-point cloud from zero points | :110 Expectation failed: cloud == nil | passed | `OCCTPointCloudCreate` | N/A: refused before any OCCT call |
 ### `TFunctionDriverTableTests.swift`
 | `hasDriverUnknown` | `OCCTFunctionDriverTableHasDriver` returns true | :11 Expectation failed: !has | passed | `OCCTFunctionDriverTableHasDriver` | PASS: false |
-| `clear` | `OCCTFunctionDriverTableClear` calls `abort()` | process crash (the test has no expectation) | passed | `OCCTFunctionDriverTableClear` | N/A: no expectation; crash-only |
+| `clear` | `OCCTFunctionDriverTableClear` calls `abort()` | process crash (the test has no expectation) | passed | `OCCTFunctionDriverTableClear` | N/A: no expectation; the test is a no-crash check and Clear() returns void |
 ### `TFunctionFunctionAttrTests.swift`
 | `createFunction` | `OCCTDocumentFunctionIsFailed` returns true | :18 Expectation failed: !label.functionIsFailed | passed | `OCCTDocumentFunctionIsFailed` | PASS: false |
 | `functionFailure` | `OCCTDocumentFunctionGetFailure` answers 0 | :30 Expectation failed: failure == 1 | passed | `OCCTDocumentFunctionGetFailure` | PASS: 1 |
@@ -341,10 +341,10 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `graphNodeDeps` | `OCCTDocumentGraphNodeAddNext` returns false | :34 Expectation failed: node1.graphNodeAddNext(tag: node2.tag) | passed | `OCCTDocumentGraphNodeAddNext` | PASS: true, true |
 | `allStatuses` | `OCCTDocumentGraphNodeGetStatus` answers 99 | :52 Expectation failed: label.graphNodeStatus() == status; :52 Expectation failed: label.graphNodeStatus() == status | passed | `OCCTDocumentGraphNodeGetStatus` | PASS: round-trips |
 ### `TFunctionIFunctionTests.swift`
-| `newFunction` | `OCCTDocumentNewFunction` returns false | :16 Expectation failed: ok | passed | `OCCTDocumentNewFunction` | N/A: TFunction_IFunction::NewFunction; not probed in this pass, so no kernel value is claimed |
-| `deleteFunction` | `OCCTDocumentDeleteFunction` returns false | :26 Expectation failed: deleted | passed | `OCCTDocumentDeleteFunction` | N/A: TFunction_IFunction::DeleteFunction; not probed in this pass, so no kernel value is claimed |
-| `functionExecStatus` | `OCCTDocumentFunctionSetExecStatus` returns true without setting | :41 Expectation failed: status == .succeeded | passed | `OCCTDocumentFunctionSetExecStatus` | N/A: status round-trip; not probed in this pass, so no kernel value is claimed |
-| `noFunction` | `OCCTDocumentFunctionGetExecStatus` answers 0 | :50 Expectation failed: status == nil | passed | `OCCTDocumentFunctionGetExecStatus` | N/A: no function on a fresh label; not probed in this pass, so no kernel value is claimed |
+| `newFunction` | `OCCTDocumentNewFunction` returns false | :16 Expectation failed: ok | passed | `OCCTDocumentNewFunction` | PASS: the function attribute exists after NewFunction on both sides (NewFunction's own return is false, unused) |
+| `deleteFunction` | `OCCTDocumentDeleteFunction` returns false | :26 Expectation failed: deleted | passed | `OCCTDocumentDeleteFunction` | PASS: DeleteFunction succeeds on both sides |
+| `functionExecStatus` | `OCCTDocumentFunctionSetExecStatus` returns true without setting | :41 Expectation failed: status == .succeeded | passed | `OCCTDocumentFunctionSetExecStatus` | PASS: status WrongDefinition then Succeeded on both sides |
+| `noFunction` | `OCCTDocumentFunctionGetExecStatus` answers 0 | :50 Expectation failed: status == nil | passed | `OCCTDocumentFunctionGetExecStatus` | PASS: no function attribute on a fresh label, so no status is readable on both sides |
 ### `TObjApplicationTests.swift`
 | `getInstance` | `OCCTTObjApplicationGetInstance` returns null | :10 Expectation failed: app != nil | passed | `OCCTTObjApplicationGetInstance` | PASS: non-null |
 | `verboseFlag` | `OCCTTObjApplicationIsVerbose` returns false | :21 Expectation failed: app.isVerbose | passed | `OCCTTObjApplicationIsVerbose` | PASS: true, false |
@@ -410,17 +410,17 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `namedColor` | `OCCTDocumentGetColorNOCAttr` answers -1 | :38 Expectation failed: noc >= 0 | passed | `OCCTDocumentGetColorNOCAttr` | PASS: 407 for pure red |
 ### `XCAFDocDimTolTests.swift`
 | `setAndGet` | `OCCTDocumentGetDimTolKind` answers 2 | :19 Expectation failed: kind == 1 | passed | `OCCTDocumentGetDimTolKind` | PASS: all four round-trip |
-| `noDimTol` | `OCCTDocumentGetDimTolKind` answers 0 where there is none | :39 Expectation failed: doc.dimTolKind(labelId: node.labelId) == nil | passed | `OCCTDocumentGetDimTolKind` | N/A: none on a fresh label |
+| `noDimTol` | `OCCTDocumentGetDimTolKind` answers 0 where there is none | :39 Expectation failed: doc.dimTolKind(labelId: node.labelId) == nil | passed | `OCCTDocumentGetDimTolKind` | PASS: no XCAFDoc_DimTol on a fresh label on both sides |
 ### `XCAFDocGraphNodeTests.swift`
 | `setAndRelate` | `OCCTDocumentGraphNodeNbChildren` answers 0 | :17 Expectation failed: l1.xcafGraphNodeChildCount == 1 | passed | `OCCTDocumentGraphNodeNbChildren` | PASS: 1, 1 |
 | `unsetRelationship` | `OCCTDocumentGraphNodeNbFathers` answers 1 | :35 Expectation failed: l2.xcafGraphNodeFatherCount == 0 | passed | `OCCTDocumentGraphNodeNbFathers` | PASS: 0, 0 |
 | `isFatherIsChild` | `OCCTDocumentGraphNodeIsFather` / `IsChild` return false and `NbChildren` answers 0 | :52 Expectation failed: isFather \|\| isChild \|\| l1.xcafGraphNodeChildCount > 0 | passed | `OCCTDocumentGraphNodeIsFather` | PASS: IsFather true |
 ### `XCAFDocLocationTests.swift`
 | `setAndGetLocation` | `OCCTDocumentHasLocation` returns false | :15 Expectation failed: label.hasLocationAttribute | passed | `OCCTDocumentGetLocationTranslation` | PASS: (10, 20, 30) |
-| `noLocation` | `OCCTDocumentHasLocation` returns true | :28 Expectation failed: !label.hasLocationAttribute | passed | `OCCTDocumentHasLocation` | N/A: none on a fresh label |
+| `noLocation` | `OCCTDocumentHasLocation` returns true | :28 Expectation failed: !label.hasLocationAttribute | passed | `OCCTDocumentHasLocation` | PASS: no XCAFDoc_Location on a fresh label on both sides |
 ### `XCAFDocMaterialTests.swift`
 | `setAndGet` | `OCCTDocumentGetMaterialAttrName` returns null | :17 Expectation failed: label.materialAttributeName == "Steel" | passed | `OCCTDocumentGetMaterialAttrName` | PASS: Steel, Carbon steel, 7850 |
-| `noMaterial` | `OCCTDocumentHasMaterialAttr` returns true | :29 Expectation failed: !label.hasMaterialAttribute | passed | `OCCTDocumentHasMaterialAttr` | N/A: none on a fresh label |
+| `noMaterial` | `OCCTDocumentHasMaterialAttr` returns true | :29 Expectation failed: !label.hasMaterialAttribute | passed | `OCCTDocumentHasMaterialAttr` | PASS: no XCAFDoc_Material on a fresh label on both sides |
 ### `XCAFDocNoteBalloonTests.swift`
 | `setAndGet` | `OCCTDocumentSetNoteBalloon` returns false | :11 Expectation failed: label.setNoteBalloon(userName: "User", timeStamp: "2026-03-14", comment: "Balloon text") | passed | `OCCTDocumentSetNoteBalloon` | PASS: Set non-null |
 ### `XCAFDocNoteBinDataTests.swift`

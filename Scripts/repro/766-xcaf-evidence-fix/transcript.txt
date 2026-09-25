@@ -1,0 +1,17 @@
+[159] AIS_TextLabel SetText("Hello") Text="Hello"
+[160] AIS_TextLabel SetPosition(10, 20, 30) Position=(10, 20, 30)
+[161] AIS_TextLabel SetText("Original") then SetText("Updated") Text="Updated"
+[162] AIS_TextLabel SetPosition(0, 0, 0) then SetPosition(5, 10, 15) Position=(5, 10, 15)
+[137] XCAFDoc_VisMaterialPBR same fields (metallic 0, roughness 0.5, base colour 0.8/0.2/0.1): IsEqual=true
+[142] XCAFDoc_AssemblyItemRef::Set(label, "/99:99:99") non-null=true IsOrphan=true
+[171] NewFunction on a fresh label: returned=false TFunction_Function attribute present=true
+[172] NewFunction then DeleteFunction: DeleteFunction returned=true
+[173] fresh function GetStatus=0 (WrongDefinition=0 NotExecuted=1 Succeeded=3), after SetStatus(Succeeded) GetStatus=3
+[174] fresh label without NewFunction: TFunction_Function attribute present=false
+[209] fresh label: XCAFDoc_DimTol present=false
+[211] fresh label: XCAFDoc_Location present=false
+[212] fresh label: XCAFDoc_Material present=false
+[32;1mMesh /tmp/766-xcaf-evidence-fix-1508.obj
+[3 nodes] [1 2d elements]
+[read in 0.00035 s][0m
+[135] RWObj_CafReader::Perform=true free shapes=1 common material found=true Shininess=0.300000012 specular=(0.603827357, 0.603827357, 0.603827357) RoughnessFromSpecular=0.699999988 |r-0.7|=1.19209289e-08
