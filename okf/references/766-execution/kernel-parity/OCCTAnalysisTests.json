@@ -5842,18 +5842,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "focal": 3
-        },
-        "asserted_within": 1e-06
+        "focal": 3
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "focal": 3
-        }
+        "focal": 3
       }
     },
     "comparison": {
@@ -5861,6 +5856,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the parabola's focal distance. Bridge: p.parabolaProperties.focal (OCCTCurve3DParabolaFocal) on Curve3D.parabola(center: .zero, normal: +Z, focal: 3); a temporary print in the test (never committed) observed 3; the test asserts it within 1e-6 of 3. Kernel: Geom_Parabola::Focal() on Geom_Parabola(gp_Ax2(origin, +Z), 3) printed focal=3 (transcript.txt, parabolaFocal line).",
     "probe": "Scripts/repro/766-geom-parabola-3d/"
   },
   {
@@ -5869,18 +5865,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "focal_after_set": 5
-        },
-        "asserted_within": 1e-06
+        "focal_after_set": 5
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "focal_after_set": 5
-        }
+        "focal_after_set": 5
       }
     },
     "comparison": {
@@ -5888,6 +5879,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the focal distance after SetFocal(5). Bridge: p.parabolaProperties.setFocal(5) (OCCTCurve3DParabolaSetFocal, returned true) then p.parabolaProperties.focal on Curve3D.parabola(center: .zero, normal: +Z, focal: 3); a temporary print in the test (never committed) observed 5; the test asserts it within 1e-6 of 5. Kernel: Geom_Parabola::SetFocal(5) then Focal() printed 5 (transcript.txt, parabolaSetFocal line).",
     "probe": "Scripts/repro/766-geom-parabola-3d/"
   },
   {
@@ -5896,22 +5888,21 @@
     "bridge_output": {
       "type": "point",
       "data": {
-        "observed": {
-          "focus_x": 3
-        },
-        "asserted_within": 1e-06
+        "focus": [
+          3,
+          0,
+          0
+        ]
       }
     },
     "kernel_output": {
       "type": "point",
       "data": {
-        "value": {
-          "focus": [
-            3,
-            0,
-            0
-          ]
-        }
+        "focus": [
+          3,
+          0,
+          0
+        ]
       }
     },
     "comparison": {
@@ -5919,6 +5910,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the focus point, (x, y, z). The earlier record carried only focus_x on the bridge side (the one component the test asserts) against the full point on the kernel side; both now carry the point. Bridge: p.parabolaProperties.focus (OCCTCurve3DParabolaFocus) on Curve3D.parabola(center: .zero, normal: +Z, focal: 3); a temporary print in the test (never committed) observed (3, 0, 0); the test asserts only x within 1e-6 of 3. Kernel: Geom_Parabola::Focus() printed focus=(3, 0, 0) (transcript.txt, parabolaFocus line).",
     "probe": "Scripts/repro/766-geom-parabola-3d/"
   },
   {
@@ -5927,18 +5919,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "eccentricity": 1
-        },
-        "asserted_within": 1e-06
+        "eccentricity": 1
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "eccentricity": 1
-        }
+        "eccentricity": 1
       }
     },
     "comparison": {
@@ -5946,6 +5933,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the eccentricity, 1 for any parabola. Bridge: p.parabolaProperties.eccentricity (OCCTCurve3DParabolaEccentricity) on Curve3D.parabola(center: .zero, normal: +Z, focal: 3); a temporary print in the test (never committed) observed 1; the test asserts it within 1e-6 of 1. Kernel: Geom_Parabola::Eccentricity() printed eccentricity=1 (transcript.txt, parabolaEccentricity line).",
     "probe": "Scripts/repro/766-geom-parabola-3d/"
   },
   {
@@ -5954,18 +5942,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "parameter": 6
-        },
-        "asserted_within": 1e-06
+        "parameter": 6
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "parameter": 6
-        }
+        "parameter": 6
       }
     },
     "comparison": {
@@ -5973,6 +5956,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the parabola's parameter, twice the focal distance. Bridge: p.parabolaProperties.parameter (OCCTCurve3DParabolaParameter) on Curve3D.parabola(center: .zero, normal: +Z, focal: 3); a temporary print in the test (never committed) observed 6; the test asserts it within 1e-6 of 6. Kernel: Geom_Parabola::Parameter() printed parameter=6 (transcript.txt, parabolaParameter line).",
     "probe": "Scripts/repro/766-geom-parabola-3d/"
   },
   {
@@ -5981,36 +5965,31 @@
     "bridge_output": {
       "type": "axis",
       "data": {
-        "observed": {
-          "position": [
-            -3,
-            0,
-            0
-          ],
-          "direction": [
-            0,
-            1,
-            0
-          ]
-        },
-        "asserted_within": 1e-06
+        "position": [
+          -3,
+          0,
+          0
+        ],
+        "direction": [
+          0,
+          1,
+          0
+        ]
       }
     },
     "kernel_output": {
       "type": "axis",
       "data": {
-        "value": {
-          "position": [
-            -3,
-            0,
-            0
-          ],
-          "direction": [
-            0,
-            1,
-            0
-          ]
-        }
+        "position": [
+          -3,
+          0,
+          0
+        ],
+        "direction": [
+          0,
+          1,
+          0
+        ]
       }
     },
     "comparison": {
@@ -6018,6 +5997,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the directrix as an axis, position and direction. Bridge: p.parabolaProperties.directrix (OCCTCurve3DParabolaDirectrix) on Curve3D.parabola(center: .zero, normal: +Z, focal: 3); a temporary print in the test (never committed) observed position (-3, 0, 0) and direction (-0, 1, 0), a printed -0 being written 0 here; the test asserts each component within 1e-6. Kernel: Geom_Parabola::Directrix() printed position=(-3, 0, 0) direction=(-0, 1, 0) (transcript.txt, parabolaDirectrix line), -0 again written 0.",
     "probe": "Scripts/repro/766-geom-parabola-3d/"
   }
 ]
