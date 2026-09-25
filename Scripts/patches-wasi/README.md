@@ -3,15 +3,20 @@
 These are **not** carried upstream-bound patches. They are WASI-specific source changes that only
 `Scripts/build-occt-wasm.sh` applies, on top of everything in [`../patches/`](../patches/README.md).
 
-`Scripts/patches-wasi/` holds ten patches, one per OCCT source file, and the table below has one
-row per file. Both the count and the table are checked against the directory by
+`Scripts/patches-wasi/` holds eleven patches, one per OCCT source file, and the table below has
+one row per file. Both the count and the table are checked against the directory by
 `Scripts/check-inventory-prose.py`, so adding or removing a patch without editing this page fails
 `gate-scripts`.
 
-Eight of the ten close the platform gaps [#2172](https://github.com/SecondMouseAU/OCCTSwift/issues/2172)
+Eight of the eleven close the platform gaps [#2172](https://github.com/SecondMouseAU/OCCTSwift/issues/2172)
 measured by compiling every one of `TKernel`'s 127 source files, and with them that toolkit builds
-127 of 127. Every one of those eight carries, in its own header, what its WASI branch returns and
-why that value is safe for each of its in-tree callers.
+127 of 127. `wasi-stepconstruct-ap203context.patch` closes the single gap
+[#2174](https://github.com/SecondMouseAU/OCCTSwift/issues/2174) found across the other 48 toolkits,
+in `TKDESTEP`, and with it the whole 49-toolkit set builds 5,488 of 5,488 and the build goes on to
+install, combine and copy headers, which its census had been gating
+([#2266](https://github.com/SecondMouseAU/OCCTSwift/issues/2266)). Each of those nine carries, in
+its own header, what its WASI branch returns and why that value is safe for each of its in-tree
+callers.
 
 | Patch | What it does |
 |---|---|
@@ -25,6 +30,7 @@ why that value is safe for each of its in-tree callers.
 | `wasi-osd-signal.patch` | `OSD_signal.cxx`: no signal delivery, so nothing is installed |
 | `wasi-standard-mmgropt.patch` | `Standard_MMgrOpt.cxx`: no `mmap()`, so the malloc path is the only one |
 | `wasi-standard-stacktrace.patch` | `Standard_StackTrace.cxx`: no `<execinfo.h>`, so `StackTrace()` returns false |
+| `wasi-stepconstruct-ap203context.patch` | `STEPConstruct_AP203Context.cxx`: no `<pwd.h>` and no `timezone`, so the AP203 person is unnamed and the zone is UTC |
 
 ## The threading class is handled by a shim, and never by a patch here
 
@@ -104,8 +110,8 @@ Applies-After: 0033-Interface_Static-thread-safety-mutex-1157.patch
 That is the record that the diff was regenerated in the patched state, and it is what fails loudly
 at the next kernel repin rather than quietly: a retired or renumbered carried patch leaves the
 trailer unresolvable, and the WASI patch gets re-verified instead of sitting on a state that no
-longer exists. No file here collides today: #2173 added eight patches and not one of their ten target files is
-touched by any of the twenty-nine carried patches, so no `Applies-After:` trailer is needed yet.
+longer exists. No file here collides today: not one of the eleven target files is touched by any of the
+twenty-nine carried patches, so no `Applies-After:` trailer is needed yet.
 `check-wasi-patch-base.py` reports that as `0 shared target file(s)`, and the day it stops saying
 zero is the day the trailer becomes mandatory.
 

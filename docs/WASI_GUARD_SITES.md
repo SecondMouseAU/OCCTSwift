@@ -115,11 +115,24 @@ libc++'s sanctioned extension point for a platform with no threads is
 sysroot's `include/c++/v1` is searched ahead of any user `-I`, so taking that route would mean
 editing the installed SDK, which is out of scope. Measured in #2170.
 
+### The shim is a consumer requirement too, not only OCCT's
+
+`Scripts/build-occt-wasm.sh` force-includes the shim into OCCT's own compile. #2174 measured that
+anything which merely **includes** OCCT needs it as well: **40 of the 7,160 files OCCT installs as
+headers** name one of the eight, among them `Poly_Triangulation.hxx`, `GeomAdaptor_Curve.hxx`,
+`BSplCLib_Cache.hxx`, `NCollection_IncAllocator.hxx` and `Message_ProgressIndicator.hxx`, which are
+not obscure. A translation unit that includes `Poly_Triangulation.hxx` and no shim is eight errors,
+measured, and `Scripts/repro/2174/run.sh libs` runs that as one of its negative cases.
+
+That is a requirement on the **consumer's** build, which for this repo means `Package.swift`'s
+`OCCTBridge` target and belongs to #2048. Nothing on the OCCT side needs to change for it.
+
 ## What is patched today
 
-Ten patches, one per file, all under `src/FoundationClasses/TKernel/`. The last column is what the
-WASI branch does; each patch's own header says why that is safe for every in-tree caller, names
-them, and says whether it extended a condition that was already there or had to add one.
+Eleven patches, one per file: ten under `src/FoundationClasses/TKernel/` and one under
+`src/DataExchange/TKDESTEP/`. The last column is what the WASI branch does; each patch's own header
+says why that is safe for every in-tree caller, names them, and says whether it extended a condition
+that was already there or had to add one.
 
 | File | Gap in wasi-libc | What the WASI branch does | Patch |
 |---|---|---|---|
@@ -133,6 +146,7 @@ them, and says whether it extended a condition that was already there or had to 
 | `OSD/OSD_signal.cxx` | `<signal.h>`, `sigaction`, `sigemptyset`, `sigaddset`, `sigprocmask` | a third top-level arm installs no handler; `SetSignal()` leaves `OSD::SignalMode()` at `OSD_SignalMode_AsIs` and `ControlBreak()` never raises | `wasi-osd-signal.patch` |
 | `Standard/Standard_MMgrOpt.cxx` | `<sys/mman.h>`, `mmap()`, `munmap()` | `Initialize()` leaves `myMMap` at 0, so `AllocMemory()`/`FreeMemory()` take the malloc/free path the class already implements | `wasi-standard-mmgropt.patch` |
 | `Standard/Standard_StackTrace.cxx` | `<execinfo.h>`, `backtrace()` | joins the arm `OCCT_UWP` and iOS already take: a `Message_Trace` and `false` | `wasi-standard-stacktrace.patch` |
+| `STEPConstruct/STEPConstruct_AP203Context.cxx` | `<pwd.h>`, `getpwnam()`, and `timezone` | the AP203 person is built from an empty `OSD_Process::UserName()` with no gecos lookup, as on Emscripten, so the record carries an empty name; the UTC offset is exactly zero, matching the `localtime()` that supplies the timestamp beside it | `wasi-stepconstruct-ap203context.patch` |
 
 **`TKernel` builds 127 of 127 with these applied**, which is the whole of the toolkit and not a
 sample; `Scripts/build-occt-wasm.sh --toolkit TKernel --require-complete` is the command that says
@@ -206,16 +220,24 @@ large block whenever `MMGT_OPT=1` is set. `wasi-standard-mmgropt.patch` leaves `
 instead, which is a state the class already supports, and the build still passes no emulation
 define and links no emulation library.
 
-`_WASI_EMULATED_GETPID` remains genuinely open, with two concrete sites now rather than one:
-`OSD_Directory::BuildTemporary()` and `OSD_Process::ProcessId()`. Both compile without it. Nothing
-should be added to the build script on the strength of this page.
+`_WASI_EMULATED_GETPID`'s **library** half is settled by #2174 and the answer is that
+`-lwasi-emulated-getpid` is required as soon as a caller reaches one of the two sites,
+`OSD_Directory::BuildTemporary()` or `OSD_Process::ProcessId()`. Both still compile without the
+define, which is why this section's rule is unchanged; what is new is that a probe calling
+`OSD_Process::ProcessId()` fails to link with `undefined symbol: getpid` and links and runs with the
+library. A probe that reaches neither site links clean without it, which is why nothing before
+#2174 could tell. The library goes on the link line of anything that reaches those sites; the
+define still goes nowhere.
 
 What the script **does** pass, since #2172, is the exception and setjmp flags: `WASM_CXX_EH_FLAGS`
 from `Scripts/wasm-toolchain-versions.txt` plus `-mllvm -wasm-enable-sjlj`, in `CMAKE_CXX_FLAGS`,
 reaching every translation unit. Those are not emulation defines and this section's rule does not
 cover them. They are there because #2171 measured that their absence is silent, and because 44 of
 the 119 `TKernel` objects that compile carry a compiled catch handler and 6 carry a lowered `setjmp`
-pair. A preflight asserts they produce a handler before CMake starts.
+pair. A preflight asserts they produce a handler before CMake starts, and #2174's link settles the
+other half: without `-lsetjmp` the module fails on `__wasm_setjmp`, `__wasm_longjmp` and
+`__c_longjmp`, and without wasi-sdk's `eh` `libc++abi` and `libunwind` it fails on
+`__cxa_allocate_exception`, `__cxa_begin_catch` and `__cxa_end_catch`.
 
 ## Gaps that are closed, and what is left
 
@@ -260,10 +282,53 @@ from #2173 onwards a regression would otherwise hand a reader the same status a 
 does. `Scripts/repro/2173/run.sh negative` proves the flag by hiding one patch and rebuilding:
 126 of 127 and exit 1.
 
-**The modules beyond `TKernel` have not been compiled.** `FoundationClasses` beyond `TKernel`,
-`ModelingData`, `ModelingAlgorithms` and `DataExchange` are all still unmeasured, and their gaps
-are #2174's to enumerate the same way, by compiling rather than by reading. Nothing on this page
-predicts how many there are.
+**The rest of the module set is closed too, and it took one more file.**
+[#2174](https://github.com/SecondMouseAU/OCCTSwift/issues/2174) compiled all 49 toolkits in one
+`-k` pass and got 5,487 of 5,488 source files, with one gap, in `TKDESTEP`:
+
+| Toolkit | File | Gap | Closed by |
+|---|---|---|---|
+| `TKDESTEP` | `STEPConstruct/STEPConstruct_AP203Context.cxx` | `<pwd.h>` at `:64`, `getpwnam()` at `:181`, `timezone` at `:125` | `wasi-stepconstruct-ap203context.patch` ([#2266](https://github.com/SecondMouseAU/OCCTSwift/issues/2266)) |
+
+**With it the 49-toolkit build is 5,488 of 5,488, 0 missing, 0 unruled**, and
+`Scripts/build-occt-wasm.sh` goes on to install, combine and copy headers, which its census had
+been gating.
+
+The file repeated #2173's shape exactly: a missing header is a fatal diagnostic, so one error was
+one include and not one site. Closing `<pwd.h>` uncovered `getpwnam()` in
+`DefaultPersonAndOrganization()`, and closing that uncovered `timezone` in `DefaultDateAndTime()`,
+which wasi-libc keeps inside `__wasilibc_unmodified_upstream` under the comment "WASI has no
+timezone tables". Three sites in one file, found one error at a time, which is why the gap list
+#2174 produced was complete for the file it named and not for the sites inside it.
+
+Two of the three extended the condition that was already there, the shared
+`#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__)` that upstream spells at
+the include and at the only use. The third joined `DefaultDateAndTime()`'s existing
+`#if`/`#elif`/`#else` chain as a new `#elif defined(__wasi__)` arm, inside that one structure: no
+arm in the chain fits WASI, since `_MSC_VER` is Windows, the `__FreeBSD__` arm is gated on a version
+macro upstream will retire, and the `#else` reads the `timezone` that is not there.
+
+**What a STEP file written from wasm carries**, which is the part worth deciding rather than
+inheriting. The person record is built from `OSD_Process::UserName()` with no gecos lookup, exactly
+as on Windows, Android and Emscripten, and on WASI that name is empty
+(`wasi-osd-process.patch`), as is `OSD_Host::InternetAddress()` (`wasi-osd-host.patch`). So the file
+carries ORGANIZATION `IP`/`Unspecified` and a PERSON with id `IP,` and an empty name. The `"Unknown"`
+in the `else` arm two lines below was considered and not taken: it is inside the block WASI now
+skips, so keeping it would mean nesting a second condition in a block WASI does not enter, and it
+would diverge from Emscripten, where an empty user name already yields an empty name. The UTC offset
+is exactly zero, which is not a fallback either: `OSD_Process::SystemDate()` supplies the timestamp
+beside it from `localtime()`, which wasi-libc resolves to UTC for the same reason, so the two agree.
+
+**It was not an incidental file.** `STEPConstruct_ContextTool` references it unconditionally and the
+STEP writer pulls that, so before this patch a module that writes STEP did not link: 20 undefined
+symbols, measured in [`Scripts/repro/2174/README.md`](../Scripts/repro/2174/README.md).
+`Scripts/repro/2174/run.sh link` now links `probe-step.wasm`, runs it under `wasmkit` and requires
+an AP203 file carrying a PERSON, an ORGANIZATION and a COORDINATED_UNIVERSAL_TIME_OFFSET, and
+`run.sh step-negative` is the negative case for that assertion.
+
+The other 48 toolkits, 5,487 files, needed nothing. That includes the 682 files of
+`ApplicationFramework` and `Visualization` that OCCT's CMake pulls in behind `DataExchange`, which
+had the most platform surface on paper and needed no guard in practice.
 
 ## How a new guard is written
 
