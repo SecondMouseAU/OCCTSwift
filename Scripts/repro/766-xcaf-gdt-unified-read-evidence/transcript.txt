@@ -1,0 +1,25 @@
+  creation tolerance: SetLowerTolValue=true SetUpperTolValue=true readback=(-0.3, 0.7)
+[populated] labels: dimensions=1 geom tolerances=1 datums=1
+[populated] readable entries: dimensions=1 geom tolerances=1 datums=1
+[populated] dimension entry 0: index=0 type=15 value=20 (read twice, all fields equal=true)
+[populated] geom tolerance entry 0: index=0 type=9 value=0.05 (read twice, all fields equal=true)
+[populated] datum entry 0: index=0 name="A" position=0 (read twice, all fields equal=true)
+[range] created at index 0, SetLowerBound(10) SetUpperBound(12) accepted=true
+[range] 10..12: type=15 range=true plusMinus=false values=2 value=11 lowerBound=10 upperBound=12 lowerTol=0 upperTol=0 class=false
+  creation tolerance: SetLowerTolValue=true SetUpperTolValue=true readback=(-0.3, 0.7)
+[plus/minus] 20 -0.3/+0.7: type=17 range=false plusMinus=true values=3 value=20 lowerBound=0 upperBound=0 lowerTol=-0.3 upperTol=0.7 class=false
+[simple] thickness 3.5: type=27 range=false plusMinus=false values=1 value=3.5 lowerBound=0 upperBound=0 lowerTol=0 upperTol=0 class=false
+[class h7] SetClassOfTolerance(hole, H, IT7) accepted=true
+[class h7] after: type=15 range=false plusMinus=false values=1 value=20 lowerBound=0 upperBound=0 lowerTol=0 upperTol=0 class=true isHole=true formVariance=11 grade=8 (GetClassOfTolerance=true)
+[class range] bounds accepted=true, SetClassOfTolerance(shaft, JS, IT9) accepted=true
+[class range] after: type=15 range=true plusMinus=false values=2 value=11 lowerBound=10 upperBound=12 lowerTol=0 upperTol=0 class=true isHole=false formVariance=12 grade=10 (GetClassOfTolerance=true)
+[refused] range 10..12 built, accepted=true
+[refused] before: type=15 range=true plusMinus=false values=2 value=11 lowerBound=10 upperBound=12 lowerTol=0 upperTol=0 class=false
+  SetLowerTolValue=false SetUpperTolValue=false readback matches=false -> applied=false
+[refused] tolerance -0.3/+0.7 on the range: returned=false
+[refused] after a fresh read: type=15 range=true plusMinus=false values=2 value=11 lowerBound=10 upperBound=12 lowerTol=0 upperTol=0 class=false
+[out of range] dimension labels=0: Value(1) (index 0) raises Standard_OutOfRange=true, Value(0) (index -1) raises=true
+[out of range] an entry exists to write to: index 0=false, index -1=false
+[out of range] the bridge's lookup at index 0: false, at index -1: false
+XCAFDimTolObjects_DimensionFormVariance: first=None (0) last=ZC (28) cases=29
+XCAFDimTolObjects_DimensionGrade: first=IT01 (0) last=IT18 (19) cases=20
