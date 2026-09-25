@@ -7593,10 +7593,9 @@
       "data": "N/A: the zero-width short-circuit is the bridge's own (occtAdaptorLengthBetween)"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": [],
+      "reason": "no kernel counterpart: the zero-width short-circuit (u1 == u2 answers 0) is the bridge's own, in occtAdaptorLengthBetween"
     },
     "status": "N/A",
     "injection": "zerolen: u1 == u2 answers -1",
