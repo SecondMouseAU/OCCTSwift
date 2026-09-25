@@ -440,7 +440,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-builder-face/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_BuilderFace on the 10 x 10 plane face rebuilt from its own 4 edges: whether a result came back, how many faces Areas() holds, and their total area. The test asserts non-nil and count >= 1.",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-builder-face/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_BuilderFace on the 10 x 10 plane face rebuilt from its own 4 edges: whether a result came back, how many faces Areas() holds, and their total area. The test asserts non-nil, count >= 1 and, since #766, exactly 1 face of area 100 within 1e-6, with every fixture required instead of nested in `if let`.",
     "probe": "Scripts/repro/766-modeling-bopalgo-builder-face/"
   },
   {
@@ -469,7 +469,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-builder-solid/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_BuilderSolid on the six faces of the centred 10 mm box: whether a result came back, how many solids Areas() holds and the first one's validity and volume. The test asserts non-nil, count >= 1 and the first solid valid.",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-builder-solid/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_BuilderSolid on the six faces of the centred 10 mm box: whether a result came back, how many solids Areas() holds and the first one's validity and volume. The test asserts non-nil, count >= 1 and, since #766, exactly 1 solid, valid, of volume 1000 within 1e-6, with every fixture required instead of nested in `if let`.",
     "probe": "Scripts/repro/766-modeling-bopalgo-builder-solid/"
   },
   {
@@ -771,7 +771,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-tools/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_Tools::EdgesToWires on the four edges of the 10 x 10 rectangle (a result only when the status is 0): whether a result came back and how many wires it holds. The test asserts non-nil and wires >= 1.",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-tools/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_Tools::EdgesToWires on the four edges of the 10 x 10 rectangle (a result only when the status is 0): whether a result came back and how many wires it holds. The test asserts non-nil, wires >= 1 and, since #766, exactly 1 wire, with every fixture required instead of nested in `if let`.",
     "probe": "Scripts/repro/766-modeling-bopalgo-tools/"
   },
   {
@@ -798,7 +798,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-tools/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_Tools::WiresToFaces on that wire (a result only when it returns true): whether a result came back, its face count and area. The test asserts non-nil and faces >= 1.",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed; numbers at %.17g). Kernel values are from Scripts/repro/766-modeling-bopalgo-tools/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call. BOPAlgo_Tools::WiresToFaces on that wire (a result only when it returns true): whether a result came back, its face count and area. The test asserts non-nil, faces >= 1 and, since #766, exactly 1 face of area 100 within 1e-6, with every fixture required instead of nested in `if let`.",
     "probe": "Scripts/repro/766-modeling-bopalgo-tools/"
   }
 ]
