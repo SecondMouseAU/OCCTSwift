@@ -1114,7 +1114,9 @@ extension Shape {
     /// - Parameters:
     ///   - type: Type of sub-shape to check
     ///   - index: 0-based index of the sub-shape
-    /// - Returns: true if the sub-shape is valid
+    /// - Returns: true if the sub-shape is valid. False is also the answer when the parent shape
+    ///   cannot be handed to `BRepCheck_Analyzer` at all (#2750), which is a property of the
+    ///   parent rather than of the sub-shape named here. Tracked as #2755.
     public func isSubShapeValid(type: ShapeType, at index: Int) -> Bool {
         OCCTBRepCheckSubShapeValid(handle, Int32(type.rawValue), Int32(index))
     }
@@ -2743,17 +2745,19 @@ extension Shape {
 
     /// Check status of a face within this shape.
     ///
-    /// Returns BRepCheck_Status (0=NoError).
+    /// Returns a `BRepCheck_Status` value (0 = no error), or -1 when the check could not be run:
+    /// a null input, no result for that sub-shape, or a shape carrying the edge state that
+    /// crashes `BRepCheck_Analyzer` (#2750).
     public func checkFaceStatus(face: Shape) -> Int {
         Int(OCCTCheckFaceStatus(handle, face.handle))
     }
 
-    /// Check status of an edge within this shape.
+    /// Check status of an edge within this shape, or -1 when the check could not be run.
     public func checkEdgeStatus(edge: Shape) -> Int {
         Int(OCCTCheckEdgeStatus(handle, edge.handle))
     }
 
-    /// Check status of a vertex within this shape.
+    /// Check status of a vertex within this shape, or -1 when the check could not be run.
     public func checkVertexStatus(vertex: Shape) -> Int {
         Int(OCCTCheckVertexStatus(handle, vertex.handle))
     }
