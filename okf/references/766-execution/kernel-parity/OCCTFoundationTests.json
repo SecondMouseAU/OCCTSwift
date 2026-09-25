@@ -45,23 +45,24 @@
     "test_name": "UnicodeUtils.convertFromUnicode at any length (#1078)::shortBufferReportsTheFullLength",
     "bridge_function": "OCCTUnicodeConvertFromUnicode",
     "bridge_output": {
-      "type": "length",
+      "type": "value",
       "data": {
-        "reported": 5000,
-        "prefixBytes": 7
+        "converted_length": 5000
       }
     },
     "kernel_output": {
-      "type": "length",
+      "type": "value",
       "data": {
-        "convertedLength": 5000
+        "converted_length": 5000
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: converted_length, the length of the whole 5000-character test string after conversion to ANSI. Bridge: OCCTUnicodeConvertFromUnicode called with an 8-byte buffer returns the full length, not the copied prefix; the replay observed 5000. Kernel: Resource_Unicode::ConvertUnicodeToFormat over TCollection_ExtendedString(5000 x U+6F22, multi-byte) printed strlen 5000. The 7-character prefix the test also asserts is the bridge's own memcpy of min(length, maxSize - 1) bytes, which OCCT has no counterpart for, so it is not compared. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id 1078-short.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "UnicodeUtils.convertFromUnicode at any length (#1078)::malformedBufferArgumentsAreRefused",
@@ -86,88 +87,91 @@
     "test_name": "UnicodeUtils.convertFromUnicode at any length (#1078)::swiftAPIReturnsFullString",
     "bridge_function": "OCCTUnicodeConvertFromUnicode",
     "bridge_output": {
-      "type": "length",
+      "type": "value",
       "data": {
-        "count": 5000
+        "converted_length": 5000
       }
     },
     "kernel_output": {
-      "type": "length",
+      "type": "value",
       "data": {
-        "convertedLength": 5000
+        "converted_length": 5000
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: converted_length. Bridge: UnicodeUtils.convertFromUnicode(longString, maxSize: 10000) returned a String of 5000 Characters; ANSI maps U+6F22 to 0x20, so 5000 bytes are 5000 Characters. Kernel: the same Resource_Unicode::ConvertUnicodeToFormat length, 5000. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id 1078-swiftfull.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "UnicodeUtils.convertFromUnicode at any length (#1078)::swiftAPIRespectsMaxSize",
     "bridge_function": "OCCTUnicodeConvertFromUnicode",
     "bridge_output": {
-      "type": "length",
+      "type": "value",
       "data": {
-        "count": "<= 9 (asserted bound)"
+        "result_character_count": 9
       }
     },
-    "kernel_output": {
-      "type": "length",
-      "data": {
-        "convertedLength": 5000,
-        "copied": "maxSize - 1 = 9 bytes"
-      }
-    },
+    "kernel_output": null,
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": null,
+      "differences": [],
+      "reason": "the truncation to maxSize - 1 is done by the Swift wrapper and the bridge's memcpy, not by OCCT; the kernel is only asked for the full conversion"
     },
-    "status": "PASS"
+    "status": "N/A",
+    "source": "The check lives in the Swift wrapper and the bridge, not in OCCT: UnicodeUtils.convertFromUnicode sizes its buffer as min(length + 1, maxSize) and OCCTUnicodeConvertFromUnicode copies min(length, maxSize - 1) bytes, so with maxSize 10 the replay observed 9 Characters. Resource_Unicode::ConvertUnicodeToFormat is only asked for the full conversion (5000, see shortBufferReportsTheFullLength), so there is no kernel value for the clamp. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id 1078-maxsize.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::diskSizeMatchesStatvfsInKB",
     "bridge_function": "OCCTDiskSize",
     "bridge_output": {
-      "type": "kilobytes",
+      "type": "value",
       "data": {
-        "equals": "statvfs f_blocks * (f_frsize/512) / 2 exactly"
+        "size_kb": 971350180,
+        "statvfs_size_kb": 971350180
       }
     },
     "kernel_output": {
-      "type": "kilobytes",
+      "type": "value",
       "data": {
-        "OSD_Disk(\"/\").DiskSize()/2": 971350180,
-        "statvfs totalKB": 971350180
+        "size_kb": 971350180,
+        "statvfs_size_kb": 971350180
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: size_kb, the size of the volume holding / in KB, and statvfs_size_kb, the figure it must equal (f_blocks * (f_frsize / 512) / 2). Bridge: DiskInfo.size(path: \"/\") = OCCTDiskSize = OSD_Disk(path).DiskSize() / 2; the replay observed 971350180 against statvfs 971350180. Kernel: OSD_Disk(\"/\").DiskSize() / 2 printed 971350180 against statvfs 971350180. The size does not change between the two reads, so the values are compared exactly. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id 1442-size.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::diskFreeMatchesStatvfsInKB",
     "bridge_function": "OCCTDiskFree",
     "bridge_output": {
-      "type": "kilobytes",
+      "type": "value",
       "data": {
-        "within": "10% of statvfs f_bavail KB"
+        "free_kb_within_tolerance_of_statvfs": true
       }
     },
     "kernel_output": {
-      "type": "kilobytes",
+      "type": "value",
       "data": {
-        "OSD_Disk(\"/\").DiskFree()/2": 116267292,
-        "statvfs freeKB": 116267292
+        "free_kb_within_tolerance_of_statvfs": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: free_kb_within_tolerance_of_statvfs, whether the reported free space is within max(statvfs free / 10, 1024) KB of a statvfs computation (the test's own bound). Free space moves with disk activity, so the two sides are compared as this predicate and not as raw numbers. Bridge: DiskInfo.freeSpace(path: \"/\") = OSD_Disk(path).DiskFree() / 2 observed 13302696 KB against statvfs 13302696. Kernel: OSD_Disk(\"/\").DiskFree() / 2 printed 13302024 KB against statvfs 13302024. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id 1442-free.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::twoByteRangeCodeUnitIsUTF8Encoded",
@@ -219,43 +223,47 @@
     "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::diskIsValidAcceptsRealPath",
     "bridge_function": "OCCTDiskIsValid",
     "bridge_output": {
-      "type": "bool",
+      "type": "value",
       "data": {
-        "/": true
+        "valid": true
       }
     },
     "kernel_output": {
-      "type": "bool",
+      "type": "value",
       "data": {
-        "OSD_Disk(\"/\").Failed()": false
+        "valid": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: valid, whether the disk path is usable. Bridge: DiskInfo.isValid(path: \"/\") = OCCTDiskIsValid = !OSD_Disk(path).Failed() after DiskSize(); observed true. Kernel: OSD_Disk(\"/\").DiskSize() then !Failed() printed true. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id 1442-valid-real.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::diskIsValidRejectsNonexistentPath",
     "bridge_function": "OCCTDiskIsValid",
     "bridge_output": {
-      "type": "bool",
+      "type": "value",
       "data": {
-        "nonexistent": false
+        "valid": false
       }
     },
     "kernel_output": {
-      "type": "bool",
+      "type": "value",
       "data": {
-        "OSD_Disk(nonexistent).Failed()": true
+        "valid": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: valid. Bridge: DiskInfo.isValid on a nonexistent path observed false (OCCTDiskIsValid = !OSD_Disk(path).Failed() after DiskSize()). Kernel: OSD_Disk on a nonexistent path, DiskSize() then !Failed(), printed false. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id 1442-valid-bogus.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "Color Tests::Create color with RGBA components",
@@ -379,24 +387,26 @@
     "test_name": "OCCT signal handling (#175)::Degenerate loft returns nil, does not crash",
     "bridge_function": "OCCTShapeCreateLoft",
     "bridge_output": {
-      "type": "loft",
+      "type": "value",
       "data": {
-        "loft": null,
-        "boxMeshTriangles": 12
+        "loft_is_nil": true,
+        "box_mesh_triangles": 12
       }
     },
     "kernel_output": {
-      "type": "loft",
+      "type": "value",
       "data": {
-        "ThruSections.IsDone": false,
-        "boxMeshTriangles": 12
+        "loft_is_nil": true,
+        "box_mesh_triangles": 12
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: loft_is_nil, whether lofting the square and the collinear polygon yields no shape, and box_mesh_triangles, the triangle count of the unit box meshed at 0.01 / 0.5. Bridge: Shape.loft(profiles:) == nil and Mesh.triangleCount, observed True and 12. Kernel: BRepOffsetAPI_ThruSections IsDone() is false for this pair, which is what makes OCCTShapeCreateLoft return nullptr (loft_is_nil = !IsDone), and BRepMesh_IncrementalMesh over BRepPrimAPI_MakeBox(1,1,1) printed 12 triangles. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id signal-loft.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "Color OCCT Operations Tests::fromName",
@@ -708,14 +718,15 @@
     "test_name": "Color OCCT Operations Tests::hlsConversion",
     "bridge_function": "OCCTColorToHLS",
     "bridge_output": {
-      "type": "hls",
+      "type": "value",
       "data": {
-        "lightness": ">0.9",
-        "saturation": ">0.9"
+        "hue": 0,
+        "lightness": 0.9999999403953552,
+        "saturation": 1
       }
     },
     "kernel_output": {
-      "type": "hls",
+      "type": "value",
       "data": {
         "hue": 0,
         "lightness": 0.9999999403953552,
@@ -726,7 +737,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the HLS components of pure red. Bridge: Color(red: 1, green: 0, blue: 0).hls = OCCTColorToHLS, which reads Quantity_Color Hue(), Light(), Saturation(); the replay observed hue 0, lightness 1, saturation 1. Kernel: the same three accessors on Quantity_Color(1, 0, 0) printed hue 0, lightness 1, saturation 1. The test bounds lightness and saturation above 0.9; the exact values are compared here. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id color-hls.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "Color OCCT Operations Tests::fromHLSRoundtrip",
@@ -1264,26 +1277,28 @@
     "test_name": "Material OCCT Operations Tests::predefinedMaterialByIndex",
     "bridge_function": "OCCTMaterialFromIndex",
     "bridge_output": {
-      "type": "index1",
+      "type": "value",
       "data": {
-        "equals": "Brass",
-        "shininess": 0.649999976,
-        "pbrRoughness": 0.212132037
+        "same_as_brass_by_name": true,
+        "shininess": 0.65,
+        "pbr_normalized_roughness": 0.21213204
       }
     },
     "kernel_output": {
-      "type": "enum0",
+      "type": "value",
       "data": {
-        "name": "Brass",
-        "shininess": 0.649999976,
-        "pbrNormalizedRoughness": 0.212132037
+        "same_as_brass_by_name": true,
+        "shininess": 0.65,
+        "pbr_normalized_roughness": 0.21213204
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: same_as_brass_by_name, whether material index 1 has every field of the material named Brass, plus its shininess and normalized PBR roughness (float32). Bridge: Material.predefinedMaterial(at: 1) == Material.predefinedMaterial(named: \"Brass\") and the shininess and pbrRoughness fields (pbrRoughness is NormalizedRoughness, #1419), observed True, 0.65, 0.212132. Kernel: Graphic3d_MaterialAspect(enum 0) (OCCTMaterialFromIndex builds Graphic3d_NameOfMaterial(index - 1)) against the aspect MaterialFromName(\"Brass\") finds, comparing the fields the bridge copies, printed True, 0.65, 0.212132. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id material-byIndex.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "Material OCCT Operations Tests::predefinedMaterialByIndexOutOfRange",
@@ -1331,26 +1346,28 @@
     "test_name": "Material OCCT Operations Tests::predefinedMaterialPBR",
     "bridge_function": "OCCTMaterialFromName",
     "bridge_output": {
-      "type": "copper",
+      "type": "value",
       "data": {
-        "pbrMetallic": 1,
-        "pbrRoughness": 0.212132037,
-        "pbrIOR": 1.5
+        "pbr_metallic": 1.0,
+        "pbr_normalized_roughness": 0.21213204,
+        "pbr_ior": 1.5
       }
     },
     "kernel_output": {
-      "type": "copper",
+      "type": "value",
       "data": {
-        "pbrMetallic": 1,
-        "pbrNormalizedRoughness": 0.212132037,
-        "pbrIOR": 1.5
+        "pbr_metallic": 1.0,
+        "pbr_normalized_roughness": 0.21213204,
+        "pbr_ior": 1.5
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides (float32): pbr_metallic, pbr_normalized_roughness and pbr_ior of Copper; only the key spelling differed before. Bridge: Material.predefinedMaterial(named: \"Copper\") fields pbrMetallic, pbrRoughness (which reads Graphic3d_PBRMaterial::NormalizedRoughness, #1419) and pbrIOR, observed 1, 0.212132, 1.5. Kernel: Graphic3d_PBRMaterial Metallic(), NormalizedRoughness(), IOR() on the Copper aspect printed 1, 0.212132, 1.5. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id material-pbr.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "Material OCCT Operations Tests::minRoughness",
@@ -1373,45 +1390,49 @@
     "test_name": "Material OCCT Operations Tests::predefinedMaterialRoughnessIsAuthoredValueNotRemap",
     "bridge_function": "OCCTMaterialFromName",
     "bridge_output": {
-      "type": "water",
+      "type": "value",
       "data": {
-        "pbrRoughness": 0
+        "pbr_normalized_roughness": 0.0,
+        "min_roughness": 0.01
       }
     },
     "kernel_output": {
-      "type": "water",
+      "type": "value",
       "data": {
-        "pbrNormalizedRoughness": 0,
-        "pbrRoughness(remapped)": 0.00999999978
+        "pbr_normalized_roughness": 0.0,
+        "min_roughness": 0.01
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides (float32): pbr_normalized_roughness of Water and min_roughness, the two the test compares. Bridge: Material.predefinedMaterial(named: \"Water\").pbrRoughness (NormalizedRoughness, #1419) and Material.minRoughness, observed 0 and 0.01. Kernel: Graphic3d_PBRMaterial::NormalizedRoughness() on the Water aspect and MinRoughness() printed 0 and 0.01. The remapped Roughness() the #1419 defect would have read is 0.00999999978 for Water (transcript of Scripts/repro/766-foundation-material-date), which is what the test's below-minRoughness assertion excludes. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id material-water.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "Material OCCT Operations Tests::predefinedMaterialRoughnessMatchesNormalizedNotRemappedMetallic",
     "bridge_function": "OCCTMaterialFromName",
     "bridge_output": {
-      "type": "brass",
+      "type": "value",
       "data": {
-        "pbrRoughness": 0.212132037
+        "pbr_normalized_roughness": 0.21213204
       }
     },
     "kernel_output": {
-      "type": "brass",
+      "type": "value",
       "data": {
-        "pbrNormalizedRoughness": 0.212132037,
-        "pbrRoughness(remapped)": 0.220010713
+        "pbr_normalized_roughness": 0.21213204
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (float32): pbr_normalized_roughness of Brass. Bridge: Material.predefinedMaterial(named: \"Brass\").pbrRoughness (NormalizedRoughness, #1419), observed 0.212132. Kernel: Graphic3d_PBRMaterial::NormalizedRoughness() on the Brass aspect printed 0.212132. The remapped Roughness() the #1419 defect would have read is 0.220010713 (transcript of Scripts/repro/766-foundation-material-date), which the test's second assertion excludes. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id material-brass.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "Material OCCT Operations Tests::roughnessFromSpecular",
@@ -1570,24 +1591,26 @@
     "test_name": "OCCTDate Tests::comparison",
     "bridge_function": "OCCTDateCompare",
     "bridge_output": {
-      "type": "ordering",
+      "type": "value",
       "data": {
-        "d1<d2": true,
-        "d2>d1": true
+        "d1_earlier_than_d2": true,
+        "d2_later_than_d1": true
       }
     },
     "kernel_output": {
-      "type": "ordering",
+      "type": "value",
       "data": {
-        "IsEarlier": true,
-        "IsLater": true
+        "d1_earlier_than_d2": true,
+        "d2_later_than_d1": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether 1/1/2000 is earlier than 1/2/2000 and 1/2/2000 later than 1/1/2000. Bridge: OCCTDate < and > use OCCTDateCompare, which compares the (sec, usec) epoch offsets itself and does not call Quantity_Date, so the kernel side is the oracle for the ordering; the replay observed true and true. Kernel: Quantity_Date::IsEarlier and IsLater printed true and true. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id date-comparison.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "OCCTDate Tests::operatorPlus",
@@ -1700,45 +1723,51 @@
     "test_name": "FontManager Tests::initDatabase",
     "bridge_function": "OCCTFontMgrInitDatabase",
     "bridge_output": {
-      "type": "fonts",
+      "type": "value",
       "data": {
-        "fontCount": 0,
-        "allFontNames": []
+        "font_count": 0,
+        "font_names": []
       }
     },
     "kernel_output": {
-      "type": "fonts",
+      "type": "value",
       "data": {
-        "GetAvailableFonts.Size": 0
+        "font_count": 0,
+        "font_names": []
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: font_count and font_names after InitFontDataBase(). Bridge: FontManager.initDatabase() then fontCount and allFontNames; observed 0 and []. Kernel: Font_FontMgr::GetInstance()->InitFontDataBase() then GetAvailableFonts() printed size 0 and names []. The pinned kernel is built with USE_FREETYPE=OFF, so no font is ever registered. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id font-initDatabase.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "FontManager Tests::fontCount",
     "bridge_function": "OCCTFontMgrFontCount",
     "bridge_output": {
-      "type": "fonts",
+      "type": "value",
       "data": {
-        "fontCount": 0,
-        "fontName(0)": null
+        "font_count": 0,
+        "font_name_at_0": null
       }
     },
     "kernel_output": {
-      "type": "fonts",
+      "type": "value",
       "data": {
-        "GetAvailableFonts.Size": 0
+        "font_count": 0,
+        "font_name_at_0": null
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: font_count and the name of the font at index 0. Bridge: FontManager.fontCount and fontName(at: 0) (OCCTFontMgrFontName walks the same list); observed 0 and null. Kernel: GetAvailableFonts() size 0, and no element at index 0, so null. The kernel has USE_FREETYPE=OFF, so the list is empty. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id font-fontCount.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "FontManager Tests::aspectToString",
@@ -2170,24 +2199,26 @@
     "test_name": "OSD Environment Tests::setGetRemove",
     "bridge_function": "OCCTEnvironmentGet",
     "bridge_output": {
-      "type": "string",
+      "type": "value",
       "data": {
         "after_set": "hello",
-        "after_remove": null
+        "after_remove_is_empty": true
       }
     },
     "kernel_output": {
-      "type": "string",
+      "type": "value",
       "data": {
         "after_set": "hello",
-        "after_remove_length": 0
+        "after_remove_is_empty": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: after_set, the value read back after setting OCCT_SWIFT_TEST to \"hello\", and after_remove_is_empty, whether the value is empty after Remove. Bridge: Environment.get returns nil when OSD_Environment::Value() is empty (OCCTEnvironmentGet returns nullptr for length 0), so nil is recorded as after_remove_is_empty = true; observed \"hello\" and True. Kernel: OSD_Environment(name, value).Build(), Value(), Remove() printed \"hello\" and an empty value (True). Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id env-setGetRemove.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "OSD Environment Tests::readHome",
