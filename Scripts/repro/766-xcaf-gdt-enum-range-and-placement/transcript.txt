@@ -1,0 +1,11 @@
+DimensionModif range 0..23 (so 24 names no enumerator)
+GeomToleranceModif range 0..16 (so 17 names none)
+DatumSingleModif range 0..21 (so 22 names none)
+FormVariance range 0..28, Grade range 0..19; H=11 IT6=7
+dimension modifiers 2, 19 = StatisticalTolerance(2), AnyCrossSection(19)
+datum modifiers 2, 3 = Basic(2), ContactingFeature(3)
+datum modifiers cleared with an empty sequence: 0
+fresh datum IsDatumTarget=false (placement needs a non-Area target)
+rectangle target: type=2 number=1 length=30 width=18
+Area target type ordinal=4
+after IsDatumTarget(false): IsDatumTarget=false

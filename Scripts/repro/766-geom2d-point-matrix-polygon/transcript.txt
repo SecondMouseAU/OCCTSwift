@@ -1,0 +1,16 @@
+identity: [1, 0, 0, 1] det=1
+rotation(pi/2): [6.12323399573677e-17, -1, 1, 6.12323399573677e-17] det=1
+scale(3): [3, 0, 0, 3] det=9
+rot(pi/4) * rot(-pi/4): [1, -1.01465363575695e-17, -1.01465363575695e-17, 1] det=1
+transpose of [1,5,0,1]: [1, 0, 5, 1] det=1
+inverse of rot(pi/3): [0.5, 0.866025403784439, -0.866025403784439, 0.5] det=1
+rot(pi/3) * inverse: [1, -1.48741681433375e-17, -1.48741681433375e-17, 1] det=1
+distance (0,0)-(3,4) = 5, square = 25
+(0,5) to r3 circle: 2
+translate (3,4) (1, 2) -> (4, 6)
+rotate pi/2 about origin (1, 0) -> (6.12323399573677e-17, 1)
+scale 2 about origin (2, 3) -> (4, 6)
+mirror through origin (1, 0) -> (-1, 0)
+mirror across x-axis (1, 1) -> (1, -1)
+translate (5,3) (1, 0) -> (6, 3)
+Poly_Polygon2D square: NbNodes=4 node(2)=(10, 0) deflection=0.5

@@ -56,14 +56,20 @@ struct Issue485Curve3DContinuityTests {
         if let c2 = bspline(interiorMultiplicity: 1) {
             #expect(c2.continuityClass == .c2)
             #expect(c2.continuity == 4)
+        } else {
+            Issue.record("could not build the multiplicity-1 fixture")  // #766: was a silent skip
         }
         if let c1 = bspline(interiorMultiplicity: 2) {
             #expect(c1.continuityClass == .c1)
             #expect(c1.continuity == 2)
+        } else {
+            Issue.record("could not build the multiplicity-2 fixture")  // #766: was a silent skip
         }
         if let c0 = bspline(interiorMultiplicity: 3) {
             #expect(c0.continuityClass == .c0)
             #expect(c0.continuity == 0)
+        } else {
+            Issue.record("could not build the multiplicity-3 fixture")  // #766: was a silent skip
         }
     }
 
@@ -73,10 +79,14 @@ struct Issue485Curve3DContinuityTests {
         if let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)) {
             #expect(line.continuityClass == .cN)
             #expect(line.continuity == 6)
+        } else {
+            Issue.record("could not build the line")  // #766: was a silent skip
         }
         if let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10) {
             #expect(circle.continuityClass == .cN)
             #expect(circle.continuity == 6)
+        } else {
+            Issue.record("could not build the circle")
         }
     }
 

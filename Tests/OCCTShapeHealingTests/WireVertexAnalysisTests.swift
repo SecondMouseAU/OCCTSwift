@@ -4,6 +4,9 @@ import simd
 
 @testable import OCCTSwift
 
+// #766: expected values are ShapeAnalysis_WireVertex's own answers on the same wire, from
+// Scripts/repro/766-healing-small-files/probe.mm. Before #766 the status check was
+// `status != .unknown`, which six of the eight cases satisfy.
 @Suite("ShapeAnalysis_WireVertex")
 struct WireVertexAnalysisTests {
     @Test("Analyze wire vertices")
@@ -17,7 +20,8 @@ struct WireVertexAnalysisTests {
         let analysis = shape.wireVertexAnalysis(precision: 0.01)
         #expect(analysis.isDone)
         #expect(analysis.edgeCount == 2)
-        let status = shape.wireVertexStatus(precision: 0.01, index: 0)
-        #expect(status != .unknown)
+        // Kernel: Status(1) = 1 (same coordinates), Status(2) = -1 (disjoined: the open end).
+        #expect(shape.wireVertexStatus(precision: 0.01, index: 0) == .sameCoords)
+        #expect(shape.wireVertexStatus(precision: 0.01, index: 1) == .disjoined)
     }
 }
