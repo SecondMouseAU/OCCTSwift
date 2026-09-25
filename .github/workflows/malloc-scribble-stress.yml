@@ -67,13 +67,18 @@ jobs:
           ITERATIONS: ${{ inputs.iterations }}
         run: |
           set +e
+          # Reject anything that is not a whole number, and then zero: `seq 1 0` prints
+          # nothing, so a zero count would run no iterations and report a green "0 passed, 0
+          # failed" job, which reads as evidence the stress loop found nothing when it never ran.
           case "$ITERATIONS" in
-            ''|*[!0-9]*)
-              echo "::error::iterations must be a positive whole number, got '$ITERATIONS'"
-              echo "fail_count=1" >> "$GITHUB_OUTPUT"
-              exit 0
-              ;;
+            ''|*[!0-9]*) valid=no ;;
+            *) [ "$ITERATIONS" -gt 0 ] && valid=yes || valid=no ;;
           esac
+          if [ "$valid" != yes ]; then
+            echo "::error::iterations must be a positive whole number, got '$ITERATIONS'"
+            echo "fail_count=1" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           mkdir -p crash-evidence
           pass=0
@@ -98,7 +103,7 @@ jobs:
             else
               fail=$((fail + 1))
               note="exit $status"
-              if grep -qE 'no catch was found|unexpected signal code' "$log" && ! grep -q '✔' "$log"; then
+              if grep -qE 'no catch was found|unexpected signal code' "$log" && ! grep -qE '✔|✘' "$log"; then
                 note="$note, matches #2714's signature"
               fi
               echo "| $i | FAIL | $note |" >> "$GITHUB_STEP_SUMMARY"

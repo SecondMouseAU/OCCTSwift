@@ -362,14 +362,14 @@ jobs:
           set +e
           log=swift-test-output.log
           if [ -f "$log" ] && grep -qE 'no catch was found|unexpected signal code' "$log" \
-              && ! grep -q '✔' "$log"; then
+              && ! grep -qE '✔|✘' "$log"; then
             {
               echo '## #2714 startup-crash signature detected'
               echo
               echo 'This run matches the pattern tracked in'
               echo '[#2714](https://github.com/SecondMouseAU/OCCTSwift/issues/2714): an uncatchable'
               echo 'SIGSEGV/SIGBUS ("no catch was found" or "unexpected signal code") with zero'
-              echo '`✔` lines, meaning zero tests finished before the process died.'
+              echo '`✔`/`✘` lines, meaning zero tests finished before the process died.'
               echo
               echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
               echo "Commit: ${GITHUB_SHA}"
