@@ -4120,10 +4120,7 @@
         "parts": [
           {
             "type": "vertex",
-            "range1": [
-              4.99999985,
-              5.00000015
-            ],
+            "param1": 5.0,
             "point": [
               -5.0,
               1.0,
@@ -4137,7 +4134,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the common parts of the edge (-10,1,2)-(0,1,2) against faces()[0] of the 10-box, with the parameter the bridge reports for a vertex part. Bridge: Shape.edgeFaceIntersection returned one vertex part, param1Range (5.0, 5.0) and point (-5, 1, 2) (temporary print). Kernel: Scripts/repro/766-analysis-evidence-fix/transcript.txt `edge (-10,1,2)-(0,1,2) vs faces()[0]: IsDone=1 NbCommonParts=1` / `part 1: type=VERTEX VertexParameter1=5 ... midpoint=(-5, 1, 2)`. fillCommonPart reports IntTools_CommonPrt::VertexParameter1() for a vertex part, so that is the kernel quantity compared; the kernel's Range1() (4.99999985, 5.00000015) is the tolerance interval around it and is not what the bridge returns.",
+    "probe": "Scripts/repro/766-analysis-evidence-fix/"
   },
   {
     "test_name": "Extrema_ExtPElC Point-Circle::pointToCircle",

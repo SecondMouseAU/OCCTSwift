@@ -4,11 +4,19 @@
 // Face.surfaceInertia -> OCCTBRepGPropSinert (BRepGProp_Face + BRepGProp_Sinert at origin).
 // IntCurvesFace Intersection::Line-face intersection and ::Line parallel to a face: Shape.intersectLine
 // -> OCCTLocOpeCSIntersectLine (LocOpe_CSIntersector over one face, one gp_Lin).
+// IntTools_EdgeFace Tests::Edge crossing face produces intersection: Shape.edgeFaceIntersection ->
+// OCCTIntToolsEdgeFace (IntTools_EdgeFace with SetRange, #1631); for a VERTEX part the bridge reports
+// IntTools_CommonPrt::VertexParameter1() as the parameter, not Range1() (fillCommonPart).
 // Faces are taken in TopExp::MapShapes order, the order OCCTShapeGetFaces uses for Shape.faces().
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepGProp.hxx>
 #include <BRepGProp_Face.hxx>
 #include <BRepGProp_Sinert.hxx>
+#include <BRepLib_MakeEdge.hxx>
+#include <BRep_Tool.hxx>
+#include <IntTools_CommonPrt.hxx>
+#include <IntTools_EdgeFace.hxx>
+#include <IntTools_Range.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <LocOpe_CSIntersector.hxx>
@@ -88,6 +96,30 @@ int main()
     // faces()[4] is the z = -15 cap, faces()[0] the x = -5 plane (IntCurvesFaceTests.swift).
     intersect("z cap faces()[4], +Z ray from (0, 0, -50)", faces(5), gp_Pnt(0, 0, -50), gp_Dir(0, 0, 1));
     intersect("x cap faces()[0], +Z ray from (0, 0, -50)", faces(1), gp_Pnt(0, 0, -50), gp_Dir(0, 0, 1));
+
+    // IntToolsEdgeFaceTests.edgeFaceIntersection: the 10-box (centred), the edge (-10,1,2)-(0,1,2) against faces()[0].
+    TopoDS_Shape box10 = BRepPrimAPI_MakeBox(gp_Pnt(-5, -5, -5), 10, 10, 10).Shape();
+    TopTools_IndexedMapOfShape faces10;
+    TopExp::MapShapes(box10, TopAbs_FACE, faces10);
+    TopoDS_Edge       edge = BRepLib_MakeEdge(gp_Pnt(-10, 1, 2), gp_Pnt(0, 1, 2)).Edge();
+    IntTools_EdgeFace ef;
+    ef.SetEdge(edge);
+    ef.SetFace(TopoDS::Face(faces10(1)));
+    double first = 0, last = 0;
+    BRep_Tool::Range(edge, first, last);
+    ef.SetRange(IntTools_Range(first, last));
+    ef.Perform();
+    printf("edge (-10,1,2)-(0,1,2) vs faces()[0]: IsDone=%d NbCommonParts=%d\n", ef.IsDone() ? 1 : 0,
+           ef.CommonParts().Length());
+    for (int k = 1; k <= ef.CommonParts().Length(); k++)
+    {
+      const IntTools_CommonPrt& cp = ef.CommonParts()(k);
+      gp_Pnt                    p1, p2;
+      cp.BoundingPoints(p1, p2);
+      printf("  part %d: type=%s VertexParameter1=%.17g range1=(%.17g, %.17g) midpoint=(%.17g, %.17g, %.17g)\n",
+             k, cp.Type() == TopAbs_VERTEX ? "VERTEX" : "EDGE", cp.VertexParameter1(), cp.Range1().First(),
+             cp.Range1().Last(), (p1.X() + p2.X()) / 2, (p1.Y() + p2.Y()) / 2, (p1.Z() + p2.Z()) / 2);
+    }
   }
   return 0;
 }
