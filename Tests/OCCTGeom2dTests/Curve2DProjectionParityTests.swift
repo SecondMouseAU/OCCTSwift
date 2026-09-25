@@ -21,13 +21,16 @@ struct Curve2DProjectionParityTests {
 
     @Test("All five entry points agree for an ordinary projection")
     func successAgreesAcrossAllFive() {
-        let cases: [(Curve2D, SIMD2<Double>)] = [
-            (Self.segment, SIMD2(5, 3)),
-            (Self.segment, SIMD2(0.5, -2)),
-            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(10, 0)),
-            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(3, 4)),
+        // #1979: the five spellings share one bridge path, so comparing them with each other
+        // passed a wrong projection they all returned. Each case now also carries the
+        // Geom2dAPI_ProjectPointOnCurve answer (Scripts/repro/766-geom2d-projection-simplify-transform/).
+        let cases: [(Curve2D, SIMD2<Double>, Double, Double)] = [
+            (Self.segment, SIMD2(5, 3), 5, 3),
+            (Self.segment, SIMD2(0.5, -2), 0.5, 2),
+            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(10, 0), 0, 5),
+            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(3, 4), atan2(4.0, 3.0), 0),
         ]
-        for (curve, p) in cases {
+        for (curve, p, param, dist) in cases {
             guard let point2D = Point2D(x: p.x, y: p.y) else { continue }
             let comment: Comment = "\(p)"
 
@@ -42,6 +45,8 @@ struct Curve2DProjectionParityTests {
             #expect(scalar != nil, comment)
             guard let nearest, let asTuple else { continue }
 
+            #expect(abs(nearest.parameter - param) < 1e-9, comment)
+            #expect(abs(nearest.distance - dist) < 1e-9, comment)
             #expect(nearest.parameter == asTuple.parameter, comment)
             #expect(nearest.distance == asTuple.distance, comment)
             #expect(nearest.distance == distance, comment)
@@ -99,14 +104,12 @@ struct Curve2DProjectionParityTests {
     /// through the parameter alone. Projecting a segment's own start point onto it returns
     /// exactly 0 at distance 0.
     @Test("Parameter zero is a success, not a failure signal")
-    func parameterZeroIsASuccess() {
-        guard let start = Point2D(x: 0, y: 0) else { return }
-        let asTuple = Self.segment.project(start)
-        #expect(asTuple != nil)
-        if let asTuple {
-            #expect(asTuple.parameter == 0)
-            #expect(asTuple.distance == 0)
-        }
+    func parameterZeroIsASuccess() throws {
+        // #1979: `guard ... else { return }` and `if let` let a nil pass; now required.
+        let start = try #require(Point2D(x: 0, y: 0))
+        let asTuple = try #require(Self.segment.project(start))
+        #expect(asTuple.parameter == 0)
+        #expect(asTuple.distance == 0)
         let nearest = Self.segment.project(point: SIMD2(0, 0))
         #expect(nearest?.parameter == 0)
         #expect(nearest?.distance == 0)

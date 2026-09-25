@@ -33,7 +33,9 @@ struct AutoCentermarksTests {
         let result = front.addAutoCentermarks(from: cyl, viewDirection: SIMD3(0, 1, 0))
         // Side view: both circular edges are edge-on → both skipped.
         #expect(result.added.isEmpty)
-        #expect(result.skipped.count >= 1)
+        // #766: pinned to the kernel's count, the cylinder's two circular edges (top and bottom),
+        // both edge-on down +Y; `>= 1` would have passed with one of them wrongly kept.
+        #expect(result.skipped.count == 2)
     }
 
     @Test("minRadius filters small holes")

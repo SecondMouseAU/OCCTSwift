@@ -27,6 +27,8 @@ struct Issue486SurfaceGridTests {
         let grid = sphere.evaluateGridD1(uParameters: u, vParameters: v)
         #expect(grid.uCount == u.count)
         #expect(grid.vCount == v.count)
+        // #766: the guard below returned silently on an empty grid.
+        #expect(!grid.isEmpty)
         guard !grid.isEmpty else { return }
 
         for iu in 0..<u.count {
@@ -49,6 +51,7 @@ struct Issue486SurfaceGridTests {
         let d1 = sphere.evaluateGridD1(uParameters: u, vParameters: v)
         #expect(d0.uCount == d1.uCount)
         #expect(d0.vCount == d1.vCount)
+        #expect(!d0.isEmpty && !d1.isEmpty)  // #766: the guard below returned silently
         guard !d0.isEmpty, !d1.isEmpty else { return }
 
         for iu in 0..<u.count {
@@ -74,6 +77,7 @@ struct Issue486SurfaceGridTests {
         let v = (0..<vCount).map { vMin + (vMax - vMin) * Double($0) / Double(vCount - 1) }
 
         let d1 = sphere.evaluateGridD1(uParameters: u, vParameters: v)
+        #expect(!mesh.isEmpty && !d1.isEmpty)  // #766: the guard below returned silently
         guard !mesh.isEmpty, !d1.isEmpty else { return }
         for iu in 0..<uCount {
             for iv in 0..<vCount {

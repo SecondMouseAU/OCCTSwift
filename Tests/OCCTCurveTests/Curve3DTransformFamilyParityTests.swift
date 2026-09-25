@@ -43,6 +43,8 @@ struct Curve3DTransformFamilyParityTests {
         if let copy = copy {
             assertMatch(base, copy)
         }
+        // Absolute check too: parity alone passes if both families share one defect (#766).
+        #expect(simd_distance(base.startPoint, SIMD3(3, -2, 1.5)) < 1e-12)
     }
 
     @Test("rotate vs rotated")
@@ -58,6 +60,8 @@ struct Curve3DTransformFamilyParityTests {
         if let copy = copy {
             assertMatch(base, copy)
         }
+        // Geom_Curve::Transform: (5, 0, 0) turned pi/3 about Z.
+        #expect(simd_distance(base.startPoint, SIMD3(2.5000000000000004, 4.3301270189221928, 0)) < 1e-12)
     }
 
     @Test("scale vs scaled")
