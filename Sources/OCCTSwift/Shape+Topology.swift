@@ -1227,7 +1227,9 @@ extension Shape {
         )
     }
 
-    /// Check the structural validity of a vertex by index. Cannot report an error, for any input.
+    /// Check the structural validity of a vertex by index.
+    ///
+    /// Cannot report an error, for any input.
     ///
     /// Runs `BRepCheck_Vertex::Minimum()`, whose entire body is `Append(BRepCheck_NoError)` with
     /// no condition at all (Libraries/occt-src's `BRepCheck_Vertex.cxx`, unpatched in this build).
