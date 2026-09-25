@@ -294,23 +294,25 @@
       "type": "cap_centroids",
       "data": {
         "cap_count": 2,
-        "max_abs_x": 0.0,
-        "max_abs_y": 0.0
+        "max_abs_x": 5.551115123125783e-17,
+        "max_abs_y": 5.551115123125783e-17
       }
     },
     "kernel_output": {
       "type": "cap_centroids",
       "data": {
         "cap_count": 2,
-        "max_abs_x": 0.0,
-        "max_abs_y": 0.0
+        "max_abs_x": 5.551115123125783e-17,
+        "max_abs_y": 5.551115123125783e-17
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Both sides measured. Bridge: Shape.cylinder(radius: 5, height: 10).measure(): two faces have area within 1e-3 of pi*25, and their centroids (Face.surfaceInertia, OCCTBRepGPropSinert) have max |x| = max |y| = 5.551115123125783e-17 (temporary print). Kernel: Scripts/repro/766-analysis-evidence-fix/transcript.txt, `cap faces (|area - pi*25| < 1e-3): 2, max |centroid x| = 5.5511151231257827e-17, max |centroid y| = 5.5511151231257827e-17`, BRepGProp::SurfaceProperties for the area and BRepGProp_Sinert at the origin for the centroid.",
+    "probe": "Scripts/repro/766-analysis-evidence-fix/"
   },
   {
     "test_name": "IntCurvesFace Intersection::Line-face intersection",
@@ -343,7 +345,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Both sides measured. Bridge: Shape.fromFace(box.faces()[4]).intersectLine(origin (0,0,-50), direction +Z) on the 10x20x30 box: one hit at (0, 0, -15), parameter 35 (temporary print). Kernel: Scripts/repro/766-analysis-evidence-fix/transcript.txt, `z cap faces()[4], +Z ray from (0, 0, -50): NbPoints=1` / `[1] point=(0, 0, -15) parameter=35` (LocOpe_CSIntersector over the same face and gp_Lin).",
+    "probe": "Scripts/repro/766-analysis-evidence-fix/"
   },
   {
     "test_name": "IntCurvesFace Intersection::Line parallel to a face does not intersect it",
@@ -364,7 +368,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Both sides measured. Bridge: Shape.fromFace(box.faces()[0]).intersectLine with the same +Z ray, which runs in the x = -5 plane: zero hits (temporary print). Kernel: Scripts/repro/766-analysis-evidence-fix/transcript.txt, `x cap faces()[0], +Z ray from (0, 0, -50): NbPoints=0`.",
+    "probe": "Scripts/repro/766-analysis-evidence-fix/"
   },
   {
     "test_name": "ShapeRayIntersection Tests::hit face access",
@@ -417,7 +423,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Both sides measured and equal. Bridge: Curve3D.circle(radius 5).curvature(at: 0) = 0.2 printed in the test process. Kernel: Scripts/repro/766-curve3d-local-properties/transcript.txt, line `circleRadius: tangentDefined=1 curvature=0.20000000000000001`.",
+    "probe": "Scripts/repro/766-curve3d-local-properties/"
   },
   {
     "test_name": "Curve3D Local Properties Tests::Curvature of line is zero",
@@ -438,7 +446,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Both sides measured and equal. Bridge: Curve3D.segment((0,0,0),(10,0,0)).curvature(at: 5) = 0.0 printed in the test process. Kernel: Scripts/repro/766-curve3d-local-properties/transcript.txt, line `lineCurvature: domain=[0, 10] u=5 tangentDefined=1 curvature=0`.",
+    "probe": "Scripts/repro/766-curve3d-local-properties/"
   },
   {
     "test_name": "Curve3D Local Properties Tests::Tangent of X-axis segment is (1,0,0)",
@@ -447,9 +457,9 @@
       "type": "direction",
       "data": {
         "tangent": [
-          1,
-          0,
-          0
+          1.0,
+          0.0,
+          0.0
         ]
       }
     },
@@ -457,9 +467,9 @@
       "type": "direction",
       "data": {
         "tangent": [
-          1,
-          0,
-          0
+          1.0,
+          0.0,
+          0.0
         ]
       }
     },
@@ -467,7 +477,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Both sides measured and equal. Bridge: the same segment's tangentDirection(at: 5) = (1, 0, 0) printed in the test process. Kernel: Scripts/repro/766-curve3d-local-properties/transcript.txt, line `segmentTangent: tangent=(1, 0, 0)`.",
+    "probe": "Scripts/repro/766-curve3d-local-properties/"
   },
   {
     "test_name": "Curve3D Local Properties Tests::Normal of circle points inward",
@@ -476,9 +488,9 @@
       "type": "direction",
       "data": {
         "normal": [
-          -1,
-          0,
-          0
+          -1.0,
+          0.0,
+          0.0
         ]
       }
     },
@@ -486,9 +498,9 @@
       "type": "direction",
       "data": {
         "normal": [
-          -1,
-          0,
-          0
+          -1.0,
+          0.0,
+          0.0
         ]
       }
     },
@@ -496,7 +508,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Both sides measured and equal. Bridge: Curve3D.circle(radius 5).normal(at: 0) = (-1, -0, 0) printed in the test process. Kernel: Scripts/repro/766-curve3d-local-properties/transcript.txt, line `circleNormal: point=(5, 0, 0) normal=(-1, -0, 0)`.",
+    "probe": "Scripts/repro/766-curve3d-local-properties/"
   },
   {
     "test_name": "Curve3D Local Properties Tests::Center of curvature of circle is at origin",
@@ -505,9 +519,9 @@
       "type": "point",
       "data": {
         "centre": [
-          0,
-          0,
-          0
+          0.0,
+          0.0,
+          0.0
         ]
       }
     },
@@ -515,9 +529,9 @@
       "type": "point",
       "data": {
         "centre": [
-          0,
-          0,
-          0
+          0.0,
+          0.0,
+          0.0
         ]
       }
     },
@@ -525,7 +539,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Both sides measured and equal. Bridge: the circle's centerOfCurvature(at: 0) = (0, 0, 0) printed in the test process. Kernel: Scripts/repro/766-curve3d-local-properties/transcript.txt, line `circleCenterOfCurvature: centre=(0, 0, 0)`.",
+    "probe": "Scripts/repro/766-curve3d-local-properties/"
   },
   {
     "test_name": "Curve3D Local Properties Tests::Torsion of planar circle is zero",
@@ -546,7 +562,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Both sides measured and equal. Bridge: the circle's torsion(at: 0.5) = 0.0 printed in the test process. Kernel: Scripts/repro/766-curve3d-local-properties/transcript.txt, line `circularTorsion: |d1 x d2|^2=625.00000000000023 torsion=0`.",
+    "probe": "Scripts/repro/766-curve3d-local-properties/"
   },
   {
     "test_name": "Curve3D Local Properties Tests::Bounding box of segment",
@@ -585,7 +603,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Both sides measured and equal. Bridge: Curve3D.segment((1,2,3),(10,8,6)).boundingBox = min (0.99, 1.99, 2.99), max (10.01, 8.01, 6.01) printed in the test process. Kernel: Scripts/repro/766-curve3d-local-properties/transcript.txt, line `segmentBoundingBox: min=(0.98999999999999999, 1.99, 2.9900000000000002) max=(10.01, 8.0099999999999998, 6.0099999999999998)`.",
+    "probe": "Scripts/repro/766-curve3d-local-properties/"
   },
   {
     "test_name": "Measurement Tests::Volume of box",
