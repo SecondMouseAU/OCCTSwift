@@ -6014,14 +6014,15 @@
     "bridge_output": {
       "type": "refusal",
       "data": {
-        "is_parallel": false,
+        "refused": true,
         "square_distance": null
       }
     },
     "kernel_output": {
       "type": "refusal",
       "data": {
-        "gp_Dir": "throws Standard_ConstructionError (zero norm)"
+        "refused": true,
+        "square_distance": null
       }
     },
     "comparison": {
@@ -6029,7 +6030,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/"
+    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/",
+    "source": "Same quantities on both sides: refused, whether a plane with a zero-length normal yields no extremum, and square_distance, the distance reported (null: none). Bridge: ExtremaElSS.planeToPlane with plane1Normal (0, 0, 0) returns (isParallel false, squareDistance nil) through OCCTExtremaElSSPlanePlane, which catches the gp_Dir throw; the test asserts !isParallel and squareDistance == nil. Kernel: gp_Dir(0, 0, 0) throws Standard_ConstructionError (input vector has zero norm) before any Extrema_ExtElSS is built, so no distance is produced (transcript.txt, the degenerateNormalIsRefused line). The mechanism differs, a return value on the bridge side and an exception on the kernel side, by design: an exception reaching the Swift boundary is uncatchable (#345), so the bridge turns the throw into a refusal."
   },
   {
     "test_name": "Issue #1463: OCCTExtremaElSSPlanePlane writes its out-param only when it has an answer::parallel planes: returns 1 and writes the square distance",
@@ -6065,7 +6067,7 @@
       "data": {
         "n": 0,
         "is_parallel": false,
-        "square_distance": "untouched (-999 sentinel)"
+        "square_distance": null
       }
     },
     "kernel_output": {
@@ -6073,7 +6075,7 @@
       "data": {
         "n": 0,
         "is_parallel": false,
-        "nb_ext": 0
+        "square_distance": null
       }
     },
     "comparison": {
@@ -6081,7 +6083,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/"
+    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/",
+    "source": "Same quantities on both sides: n, the number of square distances the call reports (0 or 1), is_parallel, and square_distance (null: none reported). Bridge: OCCTExtremaElSSPlanePlane on the planes z = 0 (normal Z) and x = 0 (normal X); the test asserts n == 0, isParallel false, and that the out-param still holds its -999 sentinel, so no square distance was written (null). Kernel: Extrema_ExtElSS on the same planes printed IsDone=1 IsParallel=0 NbExt=0 (transcript.txt, the Issue1463 crossingPlanes line); the bridge returns 0 exactly when !IsParallel() or NbExt() < 1, so n is 0, and with no extremum there is no square distance to report (null). The kernel has no out-parameter, so that the bridge leaves its own untouched is not compared."
   },
   {
     "test_name": "Issue #1463: OCCTExtremaElSSPlanePlane writes its out-param only when it has an answer::a refused input: returns -1 and leaves the out-param untouched",
@@ -6089,15 +6092,15 @@
     "bridge_output": {
       "type": "refusal",
       "data": {
-        "n": -1,
-        "is_parallel": false,
-        "square_distance": "untouched (-999 sentinel)"
+        "refused": true,
+        "square_distance": null
       }
     },
     "kernel_output": {
       "type": "refusal",
       "data": {
-        "gp_Dir": "throws Standard_ConstructionError (zero norm)"
+        "refused": true,
+        "square_distance": null
       }
     },
     "comparison": {
@@ -6105,6 +6108,7 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/"
+    "probe": "Scripts/repro/766-extrema-elc-elcs-elss/",
+    "source": "Same quantities on both sides: refused, whether a plane with a zero-length normal yields no extremum, and square_distance (null: nothing produced or written). Bridge: OCCTExtremaElSSPlanePlane with plane 1 normal (0, 0, 0); the test asserts n == -1 (the bridge's refusal code), isParallel false and that the out-param still holds its -999 sentinel, so nothing was written (null). Kernel: gp_Dir(0, 0, 0) throws Standard_ConstructionError (input vector has zero norm) before any Extrema_ExtElSS is built, so the kernel produces no distance (transcript.txt, the Issue1463 refusedInput line). The return code -1 and the untouched out-param are the bridge's translation of that caught throw (#345) and are not compared."
   }
 ]
