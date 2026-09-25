@@ -6124,15 +6124,18 @@
       "type": "curve_props",
       "data": {
         "curvature": "RealLast",
-        "raw_CentreOfCurvature": "(nan, inf, nan), or Standard_ConstructionError at spacing 0"
+        "centre": "raw CentreOfCurvature: Standard_ConstructionError at spacing 0; (nan, inf, nan) at spacing 1e-14, 1e-12, 1e-11"
       }
     },
     "comparison": {
       "equal": false,
-      "differences": []
+      "differences": [
+        "centre: the bridge returns no centre (nil) where the kernel's CentreOfCurvature at the same cusp throws Standard_ConstructionError (spacing 0) or returns the non-finite point (nan, inf, nan) as if it had computed one (spacing 1e-14, 1e-12, 1e-11). The refusal is the bridge's by design (#494); curvature is RealLast on both sides."
+      ]
     },
-    "status": "MISMATCH",
-    "probe": "Scripts/repro/766-local-props-parity/"
+    "status": "EXPECTED_DIVERGENCE",
+    "probe": "Scripts/repro/766-local-props-parity/",
+    "source": "Same quantities on both sides: curvature and centre at parameter 0 of a cubic Bezier cusp (first two poles spacing apart) at spacing 0, 1e-14, 1e-12, 1e-11. Bridge: Curve3D.curvature(at: 0) == greatestFiniteMagnitude (OCCT's RealLast) and both Curve3D.centerOfCurvature(at: 0) and localCentreOfCurvature(at: 0) == nil at every spacing, as the test asserts. Kernel: GeomLProp_CLProps at Precision::Confusion() printed curvature RealLast for all four and a raw CentreOfCurvature that raises Standard_ConstructionError at spacing 0 and is (nan, inf, nan) at 1e-14, 1e-12 and 1e-11 (transcript.txt, the res=1e-07 lines of the cusp section). The two differ by design: the bridge refuses a centre that is not a real point (#494)."
   },
   {
     "test_name": "Local* local-properties parity (#494)::No local-properties entry point returns a non-finite number",
@@ -6146,15 +6149,17 @@
     "kernel_output": {
       "type": "finiteness",
       "data": {
-        "cusp_raw_centre_finite": false,
-        "cusp_curvature": "RealLast"
+        "all_returned_values_finite": false
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "all_returned_values_finite: bridge true (every value an entry point returns is finite; nil means undefined) versus kernel false (the raw GeomLProp_CLProps::CentreOfCurvature at a cusp returns (nan, inf, nan) at spacing 1e-12 and 1e-8, and raises Standard_ConstructionError at spacing 0). The filter is the bridge's by design (#494)."
+      ]
     },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-local-props-parity/"
+    "status": "EXPECTED_DIVERGENCE",
+    "probe": "Scripts/repro/766-local-props-parity/",
+    "source": "Same quantity on both sides: all_returned_values_finite, whether every number the entry points hand back is finite. Bridge: the test sweeps Curve3D.curvature, centerOfCurvature, localCentreOfCurvature, normal, localNormal, tangentDirection and localTangent over the cusp (spacing 0, 1e-12, 1e-8), circle and line at u in 0, 1e-9, 0.5, 1, and Surface.localCurvatures and localCurvatureDirections over an apex cone and a sphere, and expects every returned value finite; it passes, so true. Kernel: the raw GeomLProp_CLProps::CentreOfCurvature on the same cusp printed (nan, inf, nan) at spacing 1e-12 and 1e-8 with curvature RealLast, and raises Standard_ConstructionError at spacing 0 (transcript.txt, the res=1e-07 lines of the cusp section), so the kernel's answers are not all finite: false. The bridge's guard is what makes the two differ (#494)."
   }
 ]
