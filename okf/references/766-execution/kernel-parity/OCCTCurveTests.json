@@ -7641,8 +7641,9 @@
       "data": "N/A: pure-Swift tessellation, no OCCT call"
     },
     "comparison": {
-      "equal": false,
-      "differences": []
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: SketchElement.CurveKind.tessellate2D, no OCCT call"
     },
     "status": "N/A",
     "injection": "sk (Swift): radius scaled by 1.000001 in tessellate2D",
@@ -7664,8 +7665,9 @@
       "data": "N/A: pure-Swift tessellation, no OCCT call"
     },
     "comparison": {
-      "equal": false,
-      "differences": []
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: SketchElement.CurveKind.tessellate2D, no OCCT call"
     },
     "status": "N/A",
     "injection": "sk",
