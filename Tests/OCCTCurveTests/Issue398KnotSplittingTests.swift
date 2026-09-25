@@ -37,6 +37,18 @@ struct Issue398KnotSplittingTests {
         if let atC2, let atC3 {
             #expect(atC2.count == 2)
             #expect(atC3.count > atC2.count)
+            // #766: "more than at C2" held for any interior knot at all. GeomAPI_Interpolate
+            // through these 8 points gives 8 chord-length knots, and
+            // GeomConvert_BSplineCurveKnotSplitting at C3 returns every one of them
+            // (Scripts/repro/766-curve-knot-splitting).
+            let kernel = [
+                0, 11.180339887498949, 25.3224755112299, 39.464611134960847,
+                53.606746758691799, 67.74888238242275, 80.555130857288447, 90.995437366198999,
+            ]
+            #expect(atC3.count == kernel.count)
+            if atC3.count == kernel.count {
+                #expect(zip(atC3, kernel).allSatisfy { abs($0 - $1) < 1e-9 }, "\(atC3)")
+            }
         }
     }
 
@@ -61,6 +73,8 @@ struct Issue398KnotSplittingTests {
             return
         }
         #expect(splits.count > 256)
+        // #766: the kernel reports every one of the 400 knots at C3.
+        #expect(splits.count == 400)
 
         // The retry must return the whole set, not a second truncated window. Count alone
         // cannot tell those apart; the end parameters can, since a truncated result stops
@@ -88,6 +102,8 @@ struct Issue398KnotSplittingTests {
         }
         #expect(counts.count == ParametricContinuity.allCases.count)
         #expect(counts == counts.sorted())
+        // #766: sortedness held for any non-decreasing answer; the kernel's is 2, 2, 2, 8.
+        #expect(counts == [2, 2, 2, 8])
         // Every order at least brackets the curve with its own end knots.
         #expect(counts.allSatisfy { $0 >= 2 })
     }

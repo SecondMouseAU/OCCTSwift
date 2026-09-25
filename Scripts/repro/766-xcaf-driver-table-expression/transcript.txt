@@ -1,0 +1,5 @@
+DriverTable::Get null=false
+InitStandardDrivers + Clear returned; Get null afterwards=false
+Expression::Set null=false
+GetExpression="x^2 + y^2"
+Name()="a + b"
