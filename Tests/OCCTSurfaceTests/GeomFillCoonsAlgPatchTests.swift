@@ -6,31 +6,24 @@ import simd
 @Suite("GeomFill CoonsAlgPatch")
 struct GeomFillCoonsAlgPatchTests {
     @Test("Coons algorithmic patch from edges")
-    func coonsAlgPatch() {
+    func coonsAlgPatch() throws {
         // #766: both guards returned silently, and only the grid size was checked. Shape.box is
         // centred on the origin; edges 0-3 bound the x = -5 face, and the patch spans it from
         // (-5, -5, -5) to (-5, 5, 5), see Scripts/repro/766-geomfill-a/.
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        #expect(box != nil)
-        guard let box else { return }
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edges = box.subShapes(ofType: .edge)
-        #expect(edges.count == 12)
-        guard edges.count >= 4 else { return }
-        let result = Shape.coonsAlgPatch(
-            edge1: edges[0], edge2: edges[1],
-            edge3: edges[2], edge4: edges[3],
-            evalU: 5, evalV: 5
-        )
-        #expect(result != nil)
-        if let result = result {
-            #expect(result.count == 25)  // 5x5 grid
-            if result.count == 25 {
-                #expect(simd_length(result[0] - SIMD3(-5, -5, -5)) < 1e-9)
-                #expect(simd_length(result[12] - SIMD3(-5, 0, 0)) < 1e-9)
-                #expect(simd_length(result[24] - SIMD3(-5, 5, 5)) < 1e-9)
-                #expect(simd_length(result[5] - SIMD3(-5, -5, -2.5)) < 1e-9)
-            }
-        }
+        try #require(edges.count == 12)
+        let result = try #require(
+            Shape.coonsAlgPatch(
+                edge1: edges[0], edge2: edges[1],
+                edge3: edges[2], edge4: edges[3],
+                evalU: 5, evalV: 5
+            ))
+        try #require(result.count == 25)  // 5x5 grid
+        #expect(simd_length(result[0] - SIMD3(-5, -5, -5)) < 1e-9)
+        #expect(simd_length(result[12] - SIMD3(-5, 0, 0)) < 1e-9)
+        #expect(simd_length(result[24] - SIMD3(-5, 5, 5)) < 1e-9)
+        #expect(simd_length(result[5] - SIMD3(-5, -5, -2.5)) < 1e-9)
     }
 
     /// #1499: `OCCTGeomFillCoonsAlgPatchEval` never called `GeomFill_SimpleBound::Reparametrize()`
