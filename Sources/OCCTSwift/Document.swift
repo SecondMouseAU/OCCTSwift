@@ -196,6 +196,9 @@ extension Document {
 
     /// Create a new label for naming history tracking.
     ///
+    /// On the document root the label is guaranteed genuinely new and empty, never one of
+    /// XCAFDoc_DocumentTool's own labels (#2730; see docs/reference/Document.md).
+    ///
     /// - Parameter parent: Parent node (nil for document root).
     /// - Returns: Assembly node representing the new label, or nil on failure
     public func createLabel(parent: AssemblyNode? = nil) -> AssemblyNode? {
