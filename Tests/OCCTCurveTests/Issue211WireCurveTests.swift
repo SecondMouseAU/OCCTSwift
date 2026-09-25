@@ -66,6 +66,11 @@ struct Issue211WireCurve {
         let n = 20
         let pts = (0...n).compactMap { wc.point(atAbscissa: wc.length * Double($0) / Double(n)) }
         #expect(pts.count == n + 1)
+        // #766: the count alone held for any abscissa mapping that returned a point. The corner
+        // sits on sample 10, so every consecutive chord is exactly one twentieth of the length.
+        for i in 1..<pts.count {
+            #expect(abs(simd_distance(pts[i - 1], pts[i]) - 1.0) < 1e-6, "chord \(i)")
+        }
     }
 
     @Test("points(count:) returns equally-spaced points incl. endpoints")
@@ -76,10 +81,10 @@ struct Issue211WireCurve {
         }
         let pts = wc.points(count: 5)  // abscissae 0,5,10,15,20 on a length-20 wire
         #expect(pts.count == 5)
-        if pts.count == 5 {
-            #expect(simd_distance(pts.first!, SIMD3(0, 0, 0)) < 1e-6)
+        if pts.count == 5, let first = pts.first, let last = pts.last {
+            #expect(simd_distance(first, SIMD3(0, 0, 0)) < 1e-6)
             #expect(simd_distance(pts[2], SIMD3(10, 0, 0)) < 1e-6)  // the corner
-            #expect(simd_distance(pts.last!, SIMD3(10, 10, 0)) < 1e-6)
+            #expect(simd_distance(last, SIMD3(10, 10, 0)) < 1e-6)
         }
         #expect(wc.points(count: 1).isEmpty)  // need >= 2
     }
@@ -145,8 +150,16 @@ struct Issue211EdgeCurve {
         #expect(abs(ec.length - 10.0) < 1e-6)  // box side
         let pts = ec.points(count: 3)
         #expect(pts.count == 3)
-        // mid-abscissa point lies on the edge
-        #expect(ec.point(atAbscissa: ec.length / 2) != nil)
+        // mid-abscissa point is the midpoint of the straight edge. #766: this only checked
+        // non-nil, which held for any abscissa mapping.
+        if let mid = ec.point(atAbscissa: ec.length / 2), let a = ec.point(atAbscissa: 0),
+            let b = ec.point(atAbscissa: ec.length)
+        {
+            #expect(simd_distance(mid, (a + b) / 2) < 1e-6, "mid \(mid)")
+            #expect(abs(simd_distance(a, b) - 10.0) < 1e-6)
+        } else {
+            Issue.record("point(atAbscissa:) nil")
+        }
         // unit tangent
         if let t = ec.tangent(atAbscissa: ec.length / 2) {
             #expect(abs(simd_length(t) - 1.0) < 1e-6)
@@ -205,8 +218,8 @@ struct Issue211EdgeCurve {
         if pts.count == 3, let abscissaStart = ec.point(atAbscissa: 0),
             let abscissaEnd = ec.point(atAbscissa: ec.length)
         {
-            #expect(simd_distance(pts.first!, abscissaStart) < 1e-6)
-            #expect(simd_distance(pts.last!, abscissaEnd) < 1e-6)
+            #expect(simd_distance(pts[0], abscissaStart) < 1e-6)
+            #expect(simd_distance(pts[2], abscissaEnd) < 1e-6)
             #expect(abs(simd_distance(pts[0], pts[1]) - 5.0) < 1e-6)
         }
         #expect(ec.points(spacing: 0).isEmpty)  // spacing must be > 0

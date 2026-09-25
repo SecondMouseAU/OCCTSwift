@@ -1,0 +1,5 @@
+domain [0, 325.97443126829188] whole 360.98605783984021
+forward [0.1, 0.6]: pre-bounded 173.76262881030638 | ranged unclamped 173.76262881030638 | ranged clamped 173.76262881030638
+reversed [0.6, 0.1]: pre-bounded throws | ranged unclamped 173.76262881030638 | ranged clamped 173.76262881030638
+overshoot both ends: pre-bounded 8489.6172811772813 | ranged unclamped 360.98605783984021 | ranged clamped 360.98605783984021
+wholly outside: pre-bounded 1.3426120686818346 | ranged unclamped 0 | ranged clamped 0
