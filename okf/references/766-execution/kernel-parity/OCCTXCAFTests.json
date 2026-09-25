@@ -9771,5 +9771,288 @@
     "status": "PASS",
     "source": "Same quantities on both sides. Bridge: after setting 16 + 3 layers on the node the test observed layers.count == 19 (OCCTDocumentGetLabelLayers reports the true total even past its 16-entry buffer, #1563). Kernel: XCAFDoc_LayerTool::GetLayers of the label returned a sequence of 19. Kernel values are from the supplementary probe, which runs the test's own scenario through the XCAFDoc_ColorTool / XCAFDoc_LayerTool calls the bridge makes.",
     "probe": "Scripts/repro/766-xcaf-xde-color-layer-parity/"
+  },
+  {
+    "test_name": "TDataStd Real Attribute::Set and get real",
+    "bridge_function": "OCCTDocumentGetRealAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 3.14
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 3.14
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd Real Attribute::Change real value",
+    "bridge_function": "OCCTDocumentGetRealAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 2.718
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 2.718
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "ReferenceArray Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetReferenceArray",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "tags": [
+          400,
+          401,
+          402
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tags": [
+          400,
+          401,
+          402
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "ReferenceArray Tests::hasReferenceArray",
+    "bridge_function": "OCCTDocumentHasReferenceArray",
+    "bridge_output": {
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for tag 371: whether the reference array attribute is present before and after setReferenceArray(tag: 371, refTags: [500]). Bridge: hasReferenceArray was false, then true. Kernel: '[reference array has] tag 371: FindAttribute before Set=false, after setReferenceArray([500])=true'. Kernel value: Scripts/repro/766-xcaf-tdatastd-e-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-e-evidence/"
+  },
+  {
+    "test_name": "ReferenceList Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetReferenceList",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "tags": [
+          410,
+          411
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tags": [
+          410,
+          411
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "ReferenceList Tests::appendAndClear",
+    "bridge_function": "OCCTDocumentReferenceListClear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "after_clear": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "after_clear": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "ReferenceList Tests::hasReferenceList",
+    "bridge_function": "OCCTDocumentHasReferenceList",
+    "bridge_output": {
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for tag 382: whether the reference list attribute is present before and after setReferenceList(tag: 382, refTags: [500]). Bridge: hasReferenceList was false, then true. Kernel: '[reference list has] tag 382: FindAttribute before Set=false, after setReferenceList([500])=true'. Kernel value: Scripts/repro/766-xcaf-tdatastd-e-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-e-evidence/"
+  },
+  {
+    "test_name": "Relation Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetRelation",
+    "bridge_output": {
+      "type": "relation",
+      "data": {
+        "set": true,
+        "s": "x + y = z"
+      }
+    },
+    "kernel_output": {
+      "type": "relation",
+      "data": {
+        "set": true,
+        "s": "x + y = z"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for the relation \"x + y = z\" set on tag 390: whether the set is accepted and the string read back. Bridge: setRelation returned true and relation(tag: 390) was \"x + y = z\". Kernel: '[relation set/get] tag 390: found=true relation=\"x + y = z\"', where the set is accepted because the attribute is then found. The earlier record carried \"a = b\" on both sides, the string the has-relation test uses, not the one this test sets. Kernel value: Scripts/repro/766-xcaf-tdatastd-e-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-e-evidence/"
+  },
+  {
+    "test_name": "Relation Tests::hasRelation",
+    "bridge_function": "OCCTDocumentHasRelation",
+    "bridge_output": {
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for tag 391: whether the relation attribute is present before and after setRelation(tag: 391, relation: \"a = b\"). Bridge: hasRelation was false, then true. Kernel: '[relation has] tag 391: FindAttribute before Set=false, after setRelation(\"a = b\")=true'. Kernel value: Scripts/repro/766-xcaf-tdatastd-e-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-e-evidence/"
+  },
+  {
+    "test_name": "TDataStd TreeNode::Create tree node",
+    "bridge_function": "OCCTDocumentTreeNodeDepth",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has_father": false,
+        "depth": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "has_father": false,
+        "depth": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd TreeNode::Parent-child tree structure",
+    "bridge_function": "OCCTDocumentTreeNodeNbChildren",
+    "bridge_output": {
+      "type": "tree",
+      "data": {
+        "child1_has_father": true,
+        "child1_depth": 1,
+        "root_children": 2,
+        "child1_father_is_root": true,
+        "root_first_is_child1": true,
+        "child1_next_is_child2": true,
+        "child2_next_null": true
+      }
+    },
+    "kernel_output": {
+      "type": "tree",
+      "data": {
+        "child1_has_father": true,
+        "child1_depth": 1,
+        "root_children": 2,
+        "child1_father_is_root": true,
+        "root_first_is_child1": true,
+        "child1_next_is_child2": true,
+        "child2_next_null": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for a root and two children made with three createLabel() calls, each given a tree node, with the root appending child1 then child2: whether child1 has a father and its depth, the root's child count, whether child1's father is the root, whether the root's first child is child1, whether child1's next is child2, and whether child2 has no next. Bridge: child1.treeNodeHasFather, treeNodeDepth == 1, root.treeNodeChildCount == 2, the father, first and next label ids matching, and child2.treeNodeNext == nil. Kernel: '[tree node parent-child] labels root=0:1:1 child1=0:1:2 child2=0:1:3; Append(child1)=true Append(child2)=true' and '[tree node parent-child] child1 HasFather=true Depth=1 root NbChildren=2 child1 father is root=true root first is child1=true child1 next is child2=true child2 HasNext=false', so child2 has no next. On a fresh document the first two createLabel() calls return the existing ShapeTool and ColorTool labels, and the tree still builds on them. Kernel value: Scripts/repro/766-xcaf-tdatastd-e-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-e-evidence/"
   }
 ]
