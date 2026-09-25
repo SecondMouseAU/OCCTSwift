@@ -1078,41 +1078,45 @@
     "test_name": "ShapeAnalysis_FreeBounds Simplified Tests::freeBoundsOnOpenShell",
     "bridge_function": "OCCTShapeFreeBoundsClosedCount",
     "bridge_output": {
-      "type": "count",
-      "data": 0
+      "type": "free_bounds",
+      "data": {
+        "closedWires": 0
+      }
     },
     "kernel_output": {
-      "type": "count",
+      "type": "free_bounds",
       "data": {
-        "sewing": 0,
-        "nonSewing": 1
+        "closedWires": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.freeBoundsClosedCount(tolerance: 1e-6) on a box's first face, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-freebounds-props/transcript.txt line 8 (box first face, tol 1e-6: closed wires=0), the sewing-based ShapeAnalysis_FreeBounds constructor the bridge uses. The non-sewing constructor reports 1 closed wire for the same face (line 9); the bridge does not use it, so that number is not part of this record."
   },
   {
     "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::cylinderAnswersForItsOwnWire",
     "bridge_function": "OCCTWireCheckOuterBound",
     "bridge_output": {
       "type": "tri_state",
-      "data": 0
+      "data": {
+        "verdict": false
+      }
     },
     "kernel_output": {
       "type": "tri_state",
       "data": {
-        "CheckOuterBound": false,
-        "TotCross2D": 125.7
+        "verdict": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: SAWireAnalysis.checkOuterBound(wire:face:) on the cylinder's own wire and lateral face: the Bool? verdict (false = the wire is the outer bound, nil = the check was refused), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1058-outer-bound/transcript.txt line 2 (IsReady=1 CheckOuterBound=0 TotCross2D=125.7). verdict is the kernel's CheckOuterBound read as a boolean. TotCross2D is a diagnostic the bridge does not return and is left out."
   },
   {
     "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::wireNotOnTheFaceIsRefused",
@@ -1173,19 +1177,22 @@
     "bridge_function": "OCCTWireCheckOuterBound",
     "bridge_output": {
       "type": "tri_state",
-      "data": -1
+      "data": {
+        "verdict": null
+      }
     },
     "kernel_output": {
       "type": "tri_state",
       "data": {
-        "IsReady": false
+        "verdict": null
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: SAWireAnalysis.checkOuterBound(wire:face:) on a wire with no edges: nil, meaning the check was refused, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1058-outer-bound/transcript.txt line 5 (edgeless wire on panel: IsReady=0, the kernel cannot run the check). The kernel gives no verdict at all when ShapeAnalysis_Wire is not ready, which the bridge reports as nil, so the kernel side is null."
   },
   {
     "test_name": "SAWireAnalysis.checkOuterBound separates a refusal from a clean verdict (#1058)::disconnectedEdgeWireIsRefused",
@@ -1337,60 +1344,72 @@
     "bridge_function": "OCCTShapeDivideByNumber",
     "bridge_output": {
       "type": "face_count",
-      "data": 5
+      "data": {
+        "performed": true,
+        "faces": 5
+      }
     },
     "kernel_output": {
       "type": "face_count",
       "data": {
-        "withUVSplits": 5,
-        "withoutUVSplits": 44
+        "performed": true,
+        "faces": 5
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: OCCTShapeDivideByNumber(face, nbU, nbV) with (nbU, nbV) = (5,1) on a 100 x 1 face: a shape came back, and its face count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1479-1491/transcript.txt line 10 (elongated 100x1 DivideByNumber(5,1) SetNumbersUVSplits=1: Perform=1 faces=5). performed is the kernel's Perform=1 (the bridge returns nil when Perform() fails). The SetNumbersUVSplits=0 lines (44 and 48 faces) are the pre-#1491 behaviour, a different call, and are left out."
   },
   {
     "test_name": "Issue #1491: OCCTShapeDivideByNumber respects nbU/nbV::exactSplitCountVOnly",
     "bridge_function": "OCCTShapeDivideByNumber",
     "bridge_output": {
       "type": "face_count",
-      "data": 5
+      "data": {
+        "performed": true,
+        "faces": 5
+      }
     },
     "kernel_output": {
       "type": "face_count",
       "data": {
-        "withUVSplits": 5,
-        "withoutUVSplits": 44
+        "performed": true,
+        "faces": 5
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: OCCTShapeDivideByNumber(face, nbU, nbV) with (nbU, nbV) = (1,5) on a 100 x 1 face: a shape came back, and its face count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1479-1491/transcript.txt line 11 (elongated 100x1 DivideByNumber(1,5) SetNumbersUVSplits=1: Perform=1 faces=5). performed is the kernel's Perform=1 (the bridge returns nil when Perform() fails). The SetNumbersUVSplits=0 lines (44 and 48 faces) are the pre-#1491 behaviour, a different call, and are left out."
   },
   {
     "test_name": "Issue #1491: OCCTShapeDivideByNumber respects nbU/nbV::exactSplitCountAsymmetric",
     "bridge_function": "OCCTShapeDivideByNumber",
     "bridge_output": {
       "type": "face_count",
-      "data": 6
+      "data": {
+        "performed": true,
+        "faces": 6
+      }
     },
     "kernel_output": {
       "type": "face_count",
       "data": {
-        "withUVSplits": 6,
-        "withoutUVSplits": 48
+        "performed": true,
+        "faces": 6
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: OCCTShapeDivideByNumber(face, nbU, nbV) with (nbU, nbV) = (6,1) on a 100 x 1 face: a shape came back, and its face count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1479-1491/transcript.txt line 12 (elongated 100x1 DivideByNumber(6,1) SetNumbersUVSplits=1: Perform=1 faces=6). performed is the kernel's Perform=1 (the bridge returns nil when Perform() fails). The SetNumbersUVSplits=0 lines (44 and 48 faces) are the pre-#1491 behaviour, a different call, and are left out."
   },
   {
     "test_name": "Issue #1491: fixSmallCurves/fixSmallBezierCurves removed, fixSmallEdges is the real replacement::smallEdgeIsActuallyMerged",
@@ -1768,32 +1787,48 @@
     "bridge_function": "occtDefaultBSplineRestrictionParameters",
     "bridge_output": {
       "type": "flags",
-      "data": "matches Swift occtDefaults field by field"
+      "data": {
+        "plane": false,
+        "bezier": false,
+        "revolution": true,
+        "extrusion": true,
+        "offset": true,
+        "cylindrical": false,
+        "conical": false,
+        "toroidal": false,
+        "spherical": false,
+        "segment": true,
+        "curve3d": true,
+        "offset3d": true,
+        "curve2d": true,
+        "offset2d": true
+      }
     },
     "kernel_output": {
       "type": "flags",
       "data": {
-        "plane": 0,
-        "bezier": 0,
-        "revolution": 1,
-        "extrusion": 1,
-        "offset": 1,
-        "cylindrical": 0,
-        "conical": 0,
-        "toroidal": 0,
-        "spherical": 0,
-        "segment": 1,
-        "curve3d": 1,
-        "offset3d": 1,
-        "curve2d": 1,
-        "offset2d": 1
+        "plane": false,
+        "bezier": false,
+        "revolution": true,
+        "extrusion": true,
+        "offset": true,
+        "cylindrical": false,
+        "conical": false,
+        "toroidal": false,
+        "spherical": false,
+        "segment": true,
+        "curve3d": true,
+        "offset3d": true,
+        "curve2d": true,
+        "offset2d": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: occtDefaultBSplineRestrictionParameters(): the fourteen default switches the bridge reads from ShapeCustom_RestrictionParameters (convertPlane, convertBezierSurf, convertRevolutionSurf, convertExtrusionSurf, convertOffsetSurf, convertCylindricalSurf, convertConicalSurf, convertToroidalSurf, convertSphericalSurf, segmentSurfaceMode, convertCurve3d, convertOffsetCurv3d, convertCurve2d, convertOffsetCurv2d), under the short names plane ... offset2d, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1636-1637/transcript.txt line 5 (kernel defaults: plane=0 bezier=0 revolution=1 extrusion=1 offset=1 cylindrical=0 conical=0 toroidal=0 spherical=0 segment=1 curve3d=1 offset3d=1 curve2d=1 offset2d=1), read from a directly constructed ShapeCustom_RestrictionParameters. The kernel prints 0/1, recorded as false/true. The test's own assertion is that the Swift `occtDefaults` equal this bridge-read set field by field."
   },
   {
     "test_name": "Issue #1637: BSplineRestriction's per-surface-kind switches are reachable::occtDefaultsConvertNothingOnACylinder",
@@ -1912,31 +1947,45 @@
     "test_name": "Issue #490: one continuity vocabulary per operation (healing)::restrictionEntryPointsAgree",
     "bridge_function": "OCCTShapeBSplineRestrictionAdvanced",
     "bridge_output": {
-      "type": "restriction",
-      "data": "plain == advanced within 1e-9 at C0/C1/C2"
+      "type": "volume",
+      "data": {
+        "c0": {
+          "plain": 785.3939252078734,
+          "advanced": 785.3939252078734
+        },
+        "c1": {
+          "plain": 785.4180381848563,
+          "advanced": 785.4180381848563
+        },
+        "c2": {
+          "plain": 785.2459301546661,
+          "advanced": 785.2459301546661
+        }
+      }
     },
     "kernel_output": {
-      "type": "restriction",
+      "type": "volume",
       "data": {
-        "C0": [
-          785.393925208,
-          785.393925208
-        ],
-        "C1": [
-          785.418038185,
-          785.418038185
-        ],
-        "C2": [
-          785.245930155,
-          785.245930155
-        ]
+        "c0": {
+          "plain": 785.393925208,
+          "advanced": 785.393925208
+        },
+        "c1": {
+          "plain": 785.418038185,
+          "advanced": 785.418038185
+        },
+        "c2": {
+          "plain": 785.245930155,
+          "advanced": 785.245930155
+        }
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a cylinder r5 h10 through bsplineRestriction (plain) and bsplineRestrictionAdvanced at continuity C0, C1, C2 (tol 0.01, degree 6, 20 segments, degree priority, rational): the volume each entry point returns, per continuity, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-490-570-655/transcript.txt lines 1-3 (#490 restriction C0/C1/C2: plain volume and advanced volume). The test asserts the two entry points agree within 1e-9; here each is compared to the kernel's own volume for the same continuity."
   },
   {
     "test_name": "Issue #490: one continuity vocabulary per operation (healing)::restrictionRejectsC3",
@@ -1963,55 +2012,79 @@
     "test_name": "Issue #490: one continuity vocabulary per operation (healing)::restrictionContinuityIsObservable",
     "bridge_function": "OCCTShapeCustomBSplineRestriction",
     "bridge_output": {
-      "type": "restriction",
-      "data": "C0 and C2 volumes differ"
+      "type": "volume",
+      "data": {
+        "atC0": 785.3939252078734,
+        "atC2": 785.2459301546661,
+        "volumesDiffer": true
+      }
     },
     "kernel_output": {
-      "type": "restriction",
+      "type": "volume",
       "data": {
-        "C0": 785.393925208,
-        "C2": 785.245930155
+        "atC0": 785.393925208,
+        "atC2": 785.245930155,
+        "volumesDiffer": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: bsplineRestriction of a cylinder at C0 and at C2 (rational, degree 6, 20 segments): the two volumes and whether they differ by more than 1e-9, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-490-570-655/transcript.txt lines 1 and 3 (plain volume at C0 785.393925208, at C2 785.245930155). volumesDiffer on the kernel side is |785.393925208 - 785.245930155| > 1e-9."
   },
   {
     "test_name": "Issue #490: one continuity vocabulary per operation (healing)::surfaceSplitEntryPointsAgree",
     "bridge_function": "OCCTSurfaceSplitByContinuity / OCCTSplitSurfaceContinuity",
     "bridge_output": {
-      "type": "restriction",
-      "data": "both entry points agree at 0...3"
+      "type": "split_counts",
+      "data": {
+        "c0": {
+          "u": 2,
+          "v": 2
+        },
+        "c1": {
+          "u": 2,
+          "v": 2
+        },
+        "c2": {
+          "u": 3,
+          "v": 2
+        },
+        "c3": {
+          "u": 3,
+          "v": 2
+        }
+      }
     },
     "kernel_output": {
-      "type": "restriction",
+      "type": "split_counts",
       "data": {
-        "C0": [
-          2,
-          2
-        ],
-        "C1": [
-          2,
-          2
-        ],
-        "C2": [
-          3,
-          2
-        ],
-        "C3": [
-          3,
-          2
-        ]
+        "c0": {
+          "u": 2,
+          "v": 2
+        },
+        "c1": {
+          "u": 2,
+          "v": 2
+        },
+        "c2": {
+          "u": 3,
+          "v": 2
+        },
+        "c3": {
+          "u": 3,
+          "v": 2
+        }
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: surface.splitByContinuity(criterion: 0...3, tolerance: 1e-6) on the surface that is only C0 at its U midpoint: the U and V split-value counts per criterion (the test also requires splitSurfaceByContinuity to return the same counts, printed as entryPointsAgree, true for all four), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-490-570-655/transcript.txt lines 5-8 (ShapeUpgrade_SplitSurfaceContinuity at C0..C3: uSplitValues/vSplitValues 2/2, 2/2, 3/2, 3/2). The two entry points wrap the same class, so one kernel value serves both; their agreement is a Swift-level relation and is not part of the kernel comparison."
   },
   {
     "test_name": "Issue #490: one continuity vocabulary per operation (healing)::surfaceSplitCriterionIsObservable",
@@ -2040,27 +2113,37 @@
     "test_name": "Issue #490: one continuity vocabulary per operation (healing)::outOfRangeCriterionSaturates",
     "bridge_function": "OCCTSurfaceSplitByContinuity",
     "bridge_output": {
-      "type": "restriction",
-      "data": "criterion 99 >= C3 on both axes"
+      "type": "split_counts",
+      "data": {
+        "atC3": {
+          "u": 3,
+          "v": 2
+        },
+        "criterion99": {
+          "u": 3,
+          "v": 2
+        }
+      }
     },
     "kernel_output": {
-      "type": "restriction",
+      "type": "split_counts",
       "data": {
-        "C3": [
-          3,
-          2
-        ],
-        "CN": [
-          3,
-          2
-        ]
+        "atC3": {
+          "u": 3,
+          "v": 2
+        },
+        "criterion99": {
+          "u": 3,
+          "v": 2
+        }
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: splitByContinuity at criterion 3 and at the out-of-range criterion 99: U and V split-value counts (the test asserts 99 gives at least as many as 3), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-490-570-655/transcript.txt lines 8 and 9 (C3: 3/2; CN, where 99 saturates: 3/2). criterion 99 decodes to GeomAbs_CN (the shared decoder saturates), so its kernel counterpart is the CN run."
   },
   {
     "test_name": "Issue 570: healing approximations accepted on a zeroed error::convertedToBSplineDoesNotCollapse",
@@ -2293,26 +2376,163 @@
     "bridge_function": "OCCTFreeBoundsPropsCounts",
     "bridge_output": {
       "type": "free_bounds",
-      "data": "closed/open as the four argument rows"
+      "data": {
+        "internal_tol0": {
+          "closed": 2,
+          "open": 0
+        },
+        "internal_tol-1": {
+          "closed": 2,
+          "open": 0
+        },
+        "forward_tol0": {
+          "closed": 2,
+          "open": 4
+        },
+        "forward_tol-1": {
+          "closed": 2,
+          "open": 4
+        }
+      }
     },
     "kernel_output": {
       "type": "free_bounds",
       "data": {
-        "INTERNAL_tol0": [
-          2,
-          0
-        ],
-        "INTERNAL_tol-1": [
-          2,
-          0
-        ],
-        "FORWARD_tol0": [
-          2,
-          4
-        ],
-        "FORWARD_tol-1": [
-          2,
-          4
+        "internal_tol0": {
+          "closed": 2,
+          "open": 0
+        },
+        "internal_tol-1": {
+          "closed": 2,
+          "open": 0
+        },
+        "forward_tol0": {
+          "closed": 2,
+          "open": 4
+        },
+        "forward_tol-1": {
+          "closed": 2,
+          "open": 4
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Bridge: freeBoundsAnalysis(tolerance: 0 and -1) on the #655 fixture with the embedded loop INTERNAL and FORWARD: closed and open bound counts per (orientation, tolerance), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-490-570-655/transcript.txt lines 14-15 (ShapeAnalysis_FreeBoundsProperties: INTERNAL loop props(tol 0) and (tol -1) closed=2 open=0; FORWARD loop closed=2 open=4 at both)."
+  },
+  {
+    "test_name": "ShapeAnalysis_Curve Static Method Tests::isClosedWithPrecision",
+    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
+    "bridge_output": {
+      "type": "curve_analysis",
+      "data": {
+        "isClosed": true
+      }
+    },
+    "kernel_output": {
+      "type": "curve_analysis",
+      "data": {
+        "isClosed": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Bridge: the circle r5 through the curve's own SA wrapper: isClosed, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeanalysis/transcript.txt line 1 (circle: IsClosed=1 IsPeriodic=-, ShapeAnalysis_Curve::IsClosed). The kernel prints 0/1, recorded as false/true."
+  },
+  {
+    "test_name": "ShapeAnalysis_Curve Static Method Tests::lineIsNotClosed",
+    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
+    "bridge_output": {
+      "type": "curve_analysis",
+      "data": {
+        "isClosed": false
+      }
+    },
+    "kernel_output": {
+      "type": "curve_analysis",
+      "data": {
+        "isClosed": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Bridge: the line through the curve's own SA wrapper: isClosed, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeanalysis/transcript.txt line 2 (line: IsClosed=0 IsPeriodic=-, ShapeAnalysis_Curve::IsClosed). The kernel prints 0/1, recorded as false/true."
+  },
+  {
+    "test_name": "ShapeAnalysis_Curve Static Method Tests::isPeriodicSA",
+    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
+    "bridge_output": {
+      "type": "curve_analysis",
+      "data": {
+        "isPeriodic": true
+      }
+    },
+    "kernel_output": {
+      "type": "curve_analysis",
+      "data": {
+        "isPeriodic": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Bridge: the circle r5 through the curve's own SA wrapper: isPeriodic, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeanalysis/transcript.txt line 1 (circle: IsClosed=- IsPeriodic=1, ShapeAnalysis_Curve::IsPeriodic). The kernel prints 0/1, recorded as false/true."
+  },
+  {
+    "test_name": "ShapeAnalysis_Curve Static Method Tests::lineIsNotPeriodic",
+    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
+    "bridge_output": {
+      "type": "curve_analysis",
+      "data": {
+        "isPeriodic": false
+      }
+    },
+    "kernel_output": {
+      "type": "curve_analysis",
+      "data": {
+        "isPeriodic": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Bridge: the line through the curve's own SA wrapper: isPeriodic, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeanalysis/transcript.txt line 2 (line: IsClosed=- IsPeriodic=0, ShapeAnalysis_Curve::IsPeriodic). The kernel prints 0/1, recorded as false/true."
+  },
+  {
+    "test_name": "ShapeAnalysis_Curve Static Method Tests::circleIsPlanar",
+    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
+    "bridge_output": {
+      "type": "curve_analysis",
+      "data": {
+        "planar": true,
+        "normal": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "curve_analysis",
+      "data": {
+        "planar": true,
+        "normal": [
+          0.0,
+          0.0,
+          1.0
         ]
       }
     },
@@ -2320,359 +2540,140 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
-  },
-  {
-    "test_name": "ShapeAnalysis_Curve Static Method Tests::isClosedWithPrecision",
-    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
-    "bridge_output": {
-      "type": "curve_analysis",
-      "data": "as asserted"
-    },
-    "kernel_output": {
-      "type": "curve_analysis",
-      "data": {
-        "circle": {
-          "IsClosed": true,
-          "IsPeriodic": true,
-          "IsPlanar": true,
-          "normal": [
-            0,
-            0,
-            1
-          ]
-        },
-        "line": {
-          "IsClosed": false,
-          "IsPeriodic": false,
-          "IsPlanar": true,
-          "normal": [
-            0,
-            0,
-            1
-          ]
-        }
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "ShapeAnalysis_Curve Static Method Tests::lineIsNotClosed",
-    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
-    "bridge_output": {
-      "type": "curve_analysis",
-      "data": "as asserted"
-    },
-    "kernel_output": {
-      "type": "curve_analysis",
-      "data": {
-        "circle": {
-          "IsClosed": true,
-          "IsPeriodic": true,
-          "IsPlanar": true,
-          "normal": [
-            0,
-            0,
-            1
-          ]
-        },
-        "line": {
-          "IsClosed": false,
-          "IsPeriodic": false,
-          "IsPlanar": true,
-          "normal": [
-            0,
-            0,
-            1
-          ]
-        }
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "ShapeAnalysis_Curve Static Method Tests::isPeriodicSA",
-    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
-    "bridge_output": {
-      "type": "curve_analysis",
-      "data": "as asserted"
-    },
-    "kernel_output": {
-      "type": "curve_analysis",
-      "data": {
-        "circle": {
-          "IsClosed": true,
-          "IsPeriodic": true,
-          "IsPlanar": true,
-          "normal": [
-            0,
-            0,
-            1
-          ]
-        },
-        "line": {
-          "IsClosed": false,
-          "IsPeriodic": false,
-          "IsPlanar": true,
-          "normal": [
-            0,
-            0,
-            1
-          ]
-        }
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "ShapeAnalysis_Curve Static Method Tests::lineIsNotPeriodic",
-    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
-    "bridge_output": {
-      "type": "curve_analysis",
-      "data": "as asserted"
-    },
-    "kernel_output": {
-      "type": "curve_analysis",
-      "data": {
-        "circle": {
-          "IsClosed": true,
-          "IsPeriodic": true,
-          "IsPlanar": true,
-          "normal": [
-            0,
-            0,
-            1
-          ]
-        },
-        "line": {
-          "IsClosed": false,
-          "IsPeriodic": false,
-          "IsPlanar": true,
-          "normal": [
-            0,
-            0,
-            1
-          ]
-        }
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "ShapeAnalysis_Curve Static Method Tests::circleIsPlanar",
-    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
-    "bridge_output": {
-      "type": "curve_analysis",
-      "data": "as asserted"
-    },
-    "kernel_output": {
-      "type": "curve_analysis",
-      "data": {
-        "circle": {
-          "IsClosed": true,
-          "IsPeriodic": true,
-          "IsPlanar": true,
-          "normal": [
-            0,
-            0,
-            1
-          ]
-        },
-        "line": {
-          "IsClosed": false,
-          "IsPeriodic": false,
-          "IsPlanar": true,
-          "normal": [
-            0,
-            0,
-            1
-          ]
-        }
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: planeNormal(tolerance: 1e-6) on the circle r5: whether it is planar (a normal came back) and the normal, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeanalysis/transcript.txt line 1 (IsPlanar=1 normal=(0, 0, 1), ShapeAnalysis_Curve::IsPlanar). A line lies in every plane containing it; the kernel reports planar with normal (0, 0, 1) for this one."
   },
   {
     "test_name": "ShapeAnalysis_Curve Static Method Tests::lineIsPlanar",
     "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
     "bridge_output": {
       "type": "curve_analysis",
-      "data": "as asserted"
+      "data": {
+        "planar": true,
+        "normal": [
+          0,
+          0,
+          1
+        ]
+      }
     },
     "kernel_output": {
       "type": "curve_analysis",
       "data": {
-        "circle": {
-          "IsClosed": true,
-          "IsPeriodic": true,
-          "IsPlanar": true,
-          "normal": [
-            0,
-            0,
-            1
-          ]
-        },
-        "line": {
-          "IsClosed": false,
-          "IsPeriodic": false,
-          "IsPlanar": true,
-          "normal": [
-            0,
-            0,
-            1
-          ]
-        }
+        "planar": true,
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: planeNormal(tolerance: 1e-6) on the line: whether it is planar (a normal came back) and the normal, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeanalysis/transcript.txt line 2 (IsPlanar=1 normal=(0, 0, 1), ShapeAnalysis_Curve::IsPlanar). A line lies in every plane containing it; the kernel reports planar with normal (0, 0, 1) for this one."
   },
   {
     "test_name": "ShapeAnalysis_Surface Tests::projectPointOnPlane",
     "bridge_function": "OCCTSurfaceProjectPointUV / OCCTSurfaceHasSingularities / OCCTSurfaceIsUClosedSA",
     "bridge_output": {
       "type": "surface_analysis",
-      "data": "as asserted"
+      "data": {
+        "u": 5,
+        "v": 3,
+        "gap": 0
+      }
     },
     "kernel_output": {
       "type": "surface_analysis",
       "data": {
-        "uv(5,3,0)": [
-          5,
-          3
-        ],
-        "gap": 0.0,
-        "uv(0,0,10)": [
-          0,
-          0
-        ],
-        "gap10": 10.0,
-        "singularities": 0,
-        "UClosed": false,
-        "VClosed": false
+        "u": 5.0,
+        "v": 3.0,
+        "gap": 0.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Surface.projectPointUV(5, 3, 0) on the z = 0 plane: u, v, gap, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeanalysis/transcript.txt line 3 (plane ValueOfUV(5,3,0)=(5, 3) gap=0)."
   },
   {
     "test_name": "ShapeAnalysis_Surface Tests::projectPointOffPlane",
     "bridge_function": "OCCTSurfaceProjectPointUV / OCCTSurfaceHasSingularities / OCCTSurfaceIsUClosedSA",
     "bridge_output": {
       "type": "surface_analysis",
-      "data": "as asserted"
+      "data": {
+        "u": 0,
+        "v": 0,
+        "gap": 10
+      }
     },
     "kernel_output": {
       "type": "surface_analysis",
       "data": {
-        "uv(5,3,0)": [
-          5,
-          3
-        ],
-        "gap": 0.0,
-        "uv(0,0,10)": [
-          0,
-          0
-        ],
-        "gap10": 10.0,
-        "singularities": 0,
-        "UClosed": false,
-        "VClosed": false
+        "u": 0.0,
+        "v": 0.0,
+        "gap": 10.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Surface.projectPointUV(0, 0, 10) on the z = 0 plane: u, v, gap, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeanalysis/transcript.txt line 4 (plane ValueOfUV(0,0,10)=(0, 0) gap=10)."
   },
   {
     "test_name": "ShapeAnalysis_Surface Tests::planeHasNoSingularities",
     "bridge_function": "OCCTSurfaceProjectPointUV / OCCTSurfaceHasSingularities / OCCTSurfaceIsUClosedSA",
     "bridge_output": {
       "type": "surface_analysis",
-      "data": "as asserted"
+      "data": {
+        "hasSingularities": false,
+        "singularityCount": 0
+      }
     },
     "kernel_output": {
       "type": "surface_analysis",
       "data": {
-        "uv(5,3,0)": [
-          5,
-          3
-        ],
-        "gap": 0.0,
-        "uv(0,0,10)": [
-          0,
-          0
-        ],
-        "gap10": 10.0,
-        "singularities": 0,
-        "UClosed": false,
-        "VClosed": false
+        "hasSingularities": false,
+        "singularityCount": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the plane's hasSingularitiesSA and singularityCountSA, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeanalysis/transcript.txt line 5 (plane HasSingularities=0 NbSingularities=0)."
   },
   {
     "test_name": "ShapeAnalysis_Surface Tests::planeIsNotClosed",
     "bridge_function": "OCCTSurfaceProjectPointUV / OCCTSurfaceHasSingularities / OCCTSurfaceIsUClosedSA",
     "bridge_output": {
       "type": "surface_analysis",
-      "data": "as asserted"
+      "data": {
+        "uClosed": false,
+        "vClosed": false
+      }
     },
     "kernel_output": {
       "type": "surface_analysis",
       "data": {
-        "uv(5,3,0)": [
-          5,
-          3
-        ],
-        "gap": 0.0,
-        "uv(0,0,10)": [
-          0,
-          0
-        ],
-        "gap10": 10.0,
-        "singularities": 0,
-        "UClosed": false,
-        "VClosed": false
+        "uClosed": false,
+        "vClosed": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the plane's isUClosedSA and isVClosedSA, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeanalysis/transcript.txt line 5 (plane IsUClosed=0 IsVClosed=0)."
   },
   {
     "test_name": "Shape Analysis Tests::analyzeValidBox",
@@ -2881,765 +2882,368 @@
     "bridge_function": "OCCTShapeBuildEdge*",
     "bridge_output": {
       "type": "edge",
-      "data": "as asserted"
+      "data": {
+        "isSame": false,
+        "first": [
+          -5,
+          -5,
+          -5
+        ],
+        "last": [
+          -5,
+          -5,
+          5
+        ]
+      }
     },
     "kernel_output": {
       "type": "edge",
       "data": {
-        "edge0": {
-          "from": [
-            -5,
-            -5,
-            -5
-          ],
-          "to": [
-            -5,
-            -5,
-            5
-          ],
-          "range": [
-            0,
-            10
-          ]
-        },
-        "copy": {
-          "isSame": false,
-          "range": [
-            0,
-            10
-          ]
-        },
-        "replaceVertices": {
-          "from": [
-            -5,
-            -5,
-            5
-          ],
-          "to": [
-            -5,
-            -5,
-            -5
-          ]
-        },
-        "setRange3d": [
-          0,
-          5
+        "isSame": false,
+        "first": [
+          -5.0,
+          -5.0,
+          -5.0
         ],
-        "copyRangesBack": [
-          0,
-          10
-        ],
-        "BuildCurve3d": true,
-        "removeCurve3d": {
-          "hasCurve3d": false
-        },
-        "cylinderRemovePCurve": {
-          "hasPCurve": false
-        },
-        "cylinderCopyPCurves": {
-          "hasPCurve": true
-        }
+        "last": [
+          -5.0,
+          -5.0,
+          5.0
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: edges[0].copyEdge(sharePCurves: true) on the box's first mapped edge: whether the copy is the same edge, and its first and last vertex, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapebuild/transcript.txt lines 4-5 (Copy(edge0, share): first=(-5, -5, -5) last=(-5, -5, 5); IsSame(edge0)=0)."
   },
   {
     "test_name": "ShapeBuild Edge::copyEdgeNoShare",
     "bridge_function": "OCCTShapeBuildEdge*",
     "bridge_output": {
       "type": "edge",
-      "data": "as asserted"
+      "data": {
+        "isSame": false,
+        "hasCurve3d": true,
+        "range": [
+          0,
+          10
+        ]
+      }
     },
     "kernel_output": {
       "type": "edge",
       "data": {
-        "edge0": {
-          "from": [
-            -5,
-            -5,
-            -5
-          ],
-          "to": [
-            -5,
-            -5,
-            5
-          ],
-          "range": [
-            0,
-            10
-          ]
-        },
-        "copy": {
-          "isSame": false,
-          "range": [
-            0,
-            10
-          ]
-        },
-        "replaceVertices": {
-          "from": [
-            -5,
-            -5,
-            5
-          ],
-          "to": [
-            -5,
-            -5,
-            -5
-          ]
-        },
-        "setRange3d": [
-          0,
-          5
-        ],
-        "copyRangesBack": [
-          0,
-          10
-        ],
-        "BuildCurve3d": true,
-        "removeCurve3d": {
-          "hasCurve3d": false
-        },
-        "cylinderRemovePCurve": {
-          "hasPCurve": false
-        },
-        "cylinderCopyPCurves": {
-          "hasPCurve": true
-        }
+        "isSame": false,
+        "hasCurve3d": true,
+        "range": [
+          0.0,
+          10.0
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: edges[0].copyEdge(sharePCurves: false): whether the copy is the same edge, whether it has a 3D curve, and its parameter range, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapebuild/transcript.txt line 6 (Copy(edge0, no share): hasCurve3d=1 range=[0, 10]) and Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T024: IsSame of that copy). The earlier transcript printed IsSame only for the sharing copy, so the no-sharing copy's IsSame is measured in the new probe."
   },
   {
     "test_name": "ShapeBuild Edge::copyEdgeReplaceVertices",
     "bridge_function": "OCCTShapeBuildEdge*",
     "bridge_output": {
       "type": "edge",
-      "data": "as asserted"
+      "data": {
+        "first": [
+          -5,
+          -5,
+          5
+        ],
+        "last": [
+          -5,
+          -5,
+          -5
+        ]
+      }
     },
     "kernel_output": {
       "type": "edge",
       "data": {
-        "edge0": {
-          "from": [
-            -5,
-            -5,
-            -5
-          ],
-          "to": [
-            -5,
-            -5,
-            5
-          ],
-          "range": [
-            0,
-            10
-          ]
-        },
-        "copy": {
-          "isSame": false,
-          "range": [
-            0,
-            10
-          ]
-        },
-        "replaceVertices": {
-          "from": [
-            -5,
-            -5,
-            5
-          ],
-          "to": [
-            -5,
-            -5,
-            -5
-          ]
-        },
-        "setRange3d": [
-          0,
-          5
+        "first": [
+          -5.0,
+          -5.0,
+          5.0
         ],
-        "copyRangesBack": [
-          0,
-          10
-        ],
-        "BuildCurve3d": true,
-        "removeCurve3d": {
-          "hasCurve3d": false
-        },
-        "cylinderRemovePCurve": {
-          "hasPCurve": false
-        },
-        "cylinderCopyPCurves": {
-          "hasPCurve": true
-        }
+        "last": [
+          -5.0,
+          -5.0,
+          -5.0
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: copyEdgeReplacingVertices(startVertex: vertices[0], endVertex: vertices[1]): the copy's first and last vertex, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapebuild/transcript.txt line 7 (CopyReplaceVertices(edge0, v0, v1): first=(-5, -5, 5) last=(-5, -5, -5))."
   },
   {
     "test_name": "ShapeBuild Edge::setRange3d",
     "bridge_function": "OCCTShapeBuildEdge*",
     "bridge_output": {
       "type": "edge",
-      "data": "as asserted"
+      "data": {
+        "range": [
+          0,
+          5
+        ]
+      }
     },
     "kernel_output": {
       "type": "edge",
       "data": {
-        "edge0": {
-          "from": [
-            -5,
-            -5,
-            -5
-          ],
-          "to": [
-            -5,
-            -5,
-            5
-          ],
-          "range": [
-            0,
-            10
-          ]
-        },
-        "copy": {
-          "isSame": false,
-          "range": [
-            0,
-            10
-          ]
-        },
-        "replaceVertices": {
-          "from": [
-            -5,
-            -5,
-            5
-          ],
-          "to": [
-            -5,
-            -5,
-            -5
-          ]
-        },
-        "setRange3d": [
-          0,
-          5
-        ],
-        "copyRangesBack": [
-          0,
-          10
-        ],
-        "BuildCurve3d": true,
-        "removeCurve3d": {
-          "hasCurve3d": false
-        },
-        "cylinderRemovePCurve": {
-          "hasPCurve": false
-        },
-        "cylinderCopyPCurves": {
-          "hasPCurve": true
-        }
+        "range": [
+          0.0,
+          5.0
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: setEdgeRange3d(first: 0, last: 5) on a copy of edges[0]: the parameter range, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapebuild/transcript.txt line 8 (copy + SetRange3d(0,5): range=[0, 5])."
   },
   {
     "test_name": "ShapeBuild Edge::buildCurve3d",
     "bridge_function": "OCCTShapeBuildEdge*",
     "bridge_output": {
       "type": "edge",
-      "data": "as asserted"
+      "data": {
+        "built": true
+      }
     },
     "kernel_output": {
       "type": "edge",
       "data": {
-        "edge0": {
-          "from": [
-            -5,
-            -5,
-            -5
-          ],
-          "to": [
-            -5,
-            -5,
-            5
-          ],
-          "range": [
-            0,
-            10
-          ]
-        },
-        "copy": {
-          "isSame": false,
-          "range": [
-            0,
-            10
-          ]
-        },
-        "replaceVertices": {
-          "from": [
-            -5,
-            -5,
-            5
-          ],
-          "to": [
-            -5,
-            -5,
-            -5
-          ]
-        },
-        "setRange3d": [
-          0,
-          5
-        ],
-        "copyRangesBack": [
-          0,
-          10
-        ],
-        "BuildCurve3d": true,
-        "removeCurve3d": {
-          "hasCurve3d": false
-        },
-        "cylinderRemovePCurve": {
-          "hasPCurve": false
-        },
-        "cylinderCopyPCurves": {
-          "hasPCurve": true
-        }
+        "built": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: buildEdgeCurve3d() on a box edge: whether it reports success, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapebuild/transcript.txt line 10 (BuildCurve3d(edge0 copy)=1)."
   },
   {
     "test_name": "ShapeBuild Edge::removeCurve3d",
     "bridge_function": "OCCTShapeBuildEdge*",
     "bridge_output": {
       "type": "edge",
-      "data": "as asserted"
+      "data": {
+        "hasCurve3dBefore": true,
+        "hasCurve3dAfter": false
+      }
     },
     "kernel_output": {
       "type": "edge",
       "data": {
-        "edge0": {
-          "from": [
-            -5,
-            -5,
-            -5
-          ],
-          "to": [
-            -5,
-            -5,
-            5
-          ],
-          "range": [
-            0,
-            10
-          ]
-        },
-        "copy": {
-          "isSame": false,
-          "range": [
-            0,
-            10
-          ]
-        },
-        "replaceVertices": {
-          "from": [
-            -5,
-            -5,
-            5
-          ],
-          "to": [
-            -5,
-            -5,
-            -5
-          ]
-        },
-        "setRange3d": [
-          0,
-          5
-        ],
-        "copyRangesBack": [
-          0,
-          10
-        ],
-        "BuildCurve3d": true,
-        "removeCurve3d": {
-          "hasCurve3d": false
-        },
-        "cylinderRemovePCurve": {
-          "hasPCurve": false
-        },
-        "cylinderCopyPCurves": {
-          "hasPCurve": true
-        }
+        "hasCurve3dBefore": true,
+        "hasCurve3dAfter": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a copy of edges[0]: whether it has a 3D curve before and after removeEdgeCurve3d(), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapebuild/transcript.txt lines 4 and 11 (copy: hasCurve3d=1; copy + RemoveCurve3d: hasCurve3d=0)."
   },
   {
     "test_name": "ShapeBuild Edge::copyRanges",
     "bridge_function": "OCCTShapeBuildEdge*",
     "bridge_output": {
       "type": "edge",
-      "data": "as asserted"
+      "data": {
+        "afterSetRange": [
+          0,
+          5
+        ],
+        "afterCopyRanges": [
+          0,
+          10
+        ]
+      }
     },
     "kernel_output": {
       "type": "edge",
       "data": {
-        "edge0": {
-          "from": [
-            -5,
-            -5,
-            -5
-          ],
-          "to": [
-            -5,
-            -5,
-            5
-          ],
-          "range": [
-            0,
-            10
-          ]
-        },
-        "copy": {
-          "isSame": false,
-          "range": [
-            0,
-            10
-          ]
-        },
-        "replaceVertices": {
-          "from": [
-            -5,
-            -5,
-            5
-          ],
-          "to": [
-            -5,
-            -5,
-            -5
-          ]
-        },
-        "setRange3d": [
-          0,
-          5
+        "afterSetRange": [
+          0.0,
+          5.0
         ],
-        "copyRangesBack": [
-          0,
-          10
-        ],
-        "BuildCurve3d": true,
-        "removeCurve3d": {
-          "hasCurve3d": false
-        },
-        "cylinderRemovePCurve": {
-          "hasPCurve": false
-        },
-        "cylinderCopyPCurves": {
-          "hasPCurve": true
-        }
+        "afterCopyRanges": [
+          0.0,
+          10.0
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a copy of edges[0] narrowed with setEdgeRange3d(0, 5) and then given edges[1]'s ranges with copyEdgeRanges(from:): the range after each step, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapebuild/transcript.txt lines 8-9 (SetRange3d(0,5): range=[0, 5]; then CopyRanges(from edge1): range=[0, 10])."
   },
   {
     "test_name": "ShapeBuild Edge::copyPCurves",
     "bridge_function": "OCCTShapeBuildEdge*",
     "bridge_output": {
       "type": "edge",
-      "data": "as asserted"
+      "data": {
+        "hasPCurveAfterRemove": false,
+        "hasPCurveAfterCopy": true
+      }
     },
     "kernel_output": {
       "type": "edge",
       "data": {
-        "edge0": {
-          "from": [
-            -5,
-            -5,
-            -5
-          ],
-          "to": [
-            -5,
-            -5,
-            5
-          ],
-          "range": [
-            0,
-            10
-          ]
-        },
-        "copy": {
-          "isSame": false,
-          "range": [
-            0,
-            10
-          ]
-        },
-        "replaceVertices": {
-          "from": [
-            -5,
-            -5,
-            5
-          ],
-          "to": [
-            -5,
-            -5,
-            -5
-          ]
-        },
-        "setRange3d": [
-          0,
-          5
-        ],
-        "copyRangesBack": [
-          0,
-          10
-        ],
-        "BuildCurve3d": true,
-        "removeCurve3d": {
-          "hasCurve3d": false
-        },
-        "cylinderRemovePCurve": {
-          "hasPCurve": false
-        },
-        "cylinderCopyPCurves": {
-          "hasPCurve": true
-        }
+        "hasPCurveAfterRemove": false,
+        "hasPCurveAfterCopy": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a copy of the cylinder's first edge on its lateral face: whether it has a pcurve after removeEdgePCurve(onFace:) and after copyEdgePCurves(from:), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapebuild/transcript.txt lines 16-17 (cyl copy + RemovePCurve: hasPCurve(face0)=0; then CopyPCurves: hasPCurve(face0)=1)."
   },
   {
     "test_name": "ShapeBuild Edge::removePCurve",
     "bridge_function": "OCCTShapeBuildEdge*",
     "bridge_output": {
       "type": "edge",
-      "data": "as asserted"
+      "data": {
+        "hasPCurveBefore": true,
+        "hasPCurveAfter": false
+      }
     },
     "kernel_output": {
       "type": "edge",
       "data": {
-        "edge0": {
-          "from": [
-            -5,
-            -5,
-            -5
-          ],
-          "to": [
-            -5,
-            -5,
-            5
-          ],
-          "range": [
-            0,
-            10
-          ]
-        },
-        "copy": {
-          "isSame": false,
-          "range": [
-            0,
-            10
-          ]
-        },
-        "replaceVertices": {
-          "from": [
-            -5,
-            -5,
-            5
-          ],
-          "to": [
-            -5,
-            -5,
-            -5
-          ]
-        },
-        "setRange3d": [
-          0,
-          5
-        ],
-        "copyRangesBack": [
-          0,
-          10
-        ],
-        "BuildCurve3d": true,
-        "removeCurve3d": {
-          "hasCurve3d": false
-        },
-        "cylinderRemovePCurve": {
-          "hasPCurve": false
-        },
-        "cylinderCopyPCurves": {
-          "hasPCurve": true
-        }
+        "hasPCurveBefore": true,
+        "hasPCurveAfter": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a copy of the cylinder's first edge on its lateral face: whether it has a pcurve before and after removeEdgePCurve(onFace:), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapebuild/transcript.txt lines 15-16 (cyl edge0: hasPCurve(face0)=1; cyl copy + RemovePCurve: hasPCurve(face0)=0). A cylinder is used because a planar face projects a missing pcurve on demand and cannot show a removal (measured, see the test's header)."
   },
   {
     "test_name": "ShapeBuild Vertex::combineVertices",
     "bridge_function": "OCCTShapeBuildVertexCombine / OCCTShapeBuildVertexCombineFromPoints",
     "bridge_output": {
       "type": "vertex",
-      "data": "as asserted"
+      "data": {
+        "point": [
+          -5,
+          -5,
+          0
+        ],
+        "tolerance": 5.000500100009999
+      }
     },
     "kernel_output": {
       "type": "vertex",
       "data": {
-        "combine": {
-          "point": [
-            -5,
-            -5,
-            0
-          ],
-          "tol": 5.0005001
-        },
-        "fromPoints": {
-          "point": [
-            0.005,
-            0,
-            0
-          ],
-          "tol": 0.0150015
-        },
-        "factor1.5": {
-          "point": [
-            -5,
-            -5,
-            0
-          ],
-          "tol": 7.50000015
-        }
+        "point": [
+          -5.0,
+          -5.0,
+          0.0
+        ],
+        "tolerance": 5.0005001
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: vertices[0].combineVertex(with: vertices[1]) on the box's first two vertices: the combined point and tolerance, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapebuild/transcript.txt line 18 (CombineVertex(v0, v1, 1.0001) = (-5, -5, 0) tol=5.000500100)."
   },
   {
     "test_name": "ShapeBuild Vertex::combineFromPoints",
     "bridge_function": "OCCTShapeBuildVertexCombine / OCCTShapeBuildVertexCombineFromPoints",
     "bridge_output": {
       "type": "vertex",
-      "data": "as asserted"
+      "data": {
+        "point": [
+          0.005,
+          0,
+          0
+        ],
+        "tolerance": 0.0150015
+      }
     },
     "kernel_output": {
       "type": "vertex",
       "data": {
-        "combine": {
-          "point": [
-            -5,
-            -5,
-            0
-          ],
-          "tol": 5.0005001
-        },
-        "fromPoints": {
-          "point": [
-            0.005,
-            0,
-            0
-          ],
-          "tol": 0.0150015
-        },
-        "factor1.5": {
-          "point": [
-            -5,
-            -5,
-            0
-          ],
-          "tol": 7.50000015
-        }
+        "point": [
+          0.005,
+          0.0,
+          0.0
+        ],
+        "tolerance": 0.0150015
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.combineVertices(point1: (0,0,0) tol 0.01, point2: (0.01,0,0) tol 0.01): the combined point and tolerance, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapebuild/transcript.txt line 20 (CombineVertex(points 0.01 apart, tol 0.01 each) = (0.005, 0, 0) tol=0.015001500)."
   },
   {
     "test_name": "ShapeBuild Vertex::combineWithTolFactor",
     "bridge_function": "OCCTShapeBuildVertexCombine / OCCTShapeBuildVertexCombineFromPoints",
     "bridge_output": {
       "type": "vertex",
-      "data": "as asserted"
+      "data": {
+        "point": [
+          -5,
+          -5,
+          0
+        ],
+        "tolerance": 7.500000149999999
+      }
     },
     "kernel_output": {
       "type": "vertex",
       "data": {
-        "combine": {
-          "point": [
-            -5,
-            -5,
-            0
-          ],
-          "tol": 5.0005001
-        },
-        "fromPoints": {
-          "point": [
-            0.005,
-            0,
-            0
-          ],
-          "tol": 0.0150015
-        },
-        "factor1.5": {
-          "point": [
-            -5,
-            -5,
-            0
-          ],
-          "tol": 7.50000015
-        }
+        "point": [
+          -5.0,
+          -5.0,
+          0.0
+        ],
+        "tolerance": 7.50000015
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: combineVertex(with:, tolFactor: 1.5) on the box's first two vertices: the combined point and tolerance, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapebuild/transcript.txt line 19 (CombineVertex(v0, v1, 1.5) = (-5, -5, 0) tol=7.500000150)."
   },
   {
     "test_name": "Location Purge::cleanShapePurge",
@@ -3727,812 +3331,602 @@
     "bridge_function": "OCCTShapeConvertToNURBS",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "bsplineFaces": 6,
+        "volume": 149.99999999999997
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "box10x5x3": {
-          "bsplineFaces": 6,
-          "volume": 150.0
-        },
-        "sphere": {
-          "bsplineFaces": 1,
-          "volume": 523.369781
-        },
-        "filletedBox": {
-          "bsplineFaces": 26,
-          "volume": 975.587014
-        }
+        "valid": true,
+        "bsplineFaces": 6,
+        "volume": 149.99999999999997
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.convertedToNURBS() on a 10 x 5 x 3 box: validity, the number of BSpline faces, and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T035): BRepBuilderAPI_NurbsConvert on the same shape, faces counted by BRepAdaptor_Surface type."
   },
   {
     "test_name": "NURBS Conversion::convertSphere",
     "bridge_function": "OCCTShapeConvertToNURBS",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "bsplineFaces": 1,
+        "volume": 523.3697814741581
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "box10x5x3": {
-          "bsplineFaces": 6,
-          "volume": 150.0
-        },
-        "sphere": {
-          "bsplineFaces": 1,
-          "volume": 523.369781
-        },
-        "filletedBox": {
-          "bsplineFaces": 26,
-          "volume": 975.587014
-        }
+        "valid": true,
+        "bsplineFaces": 1,
+        "volume": 523.3697814741581
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.convertedToNURBS() on a radius-5 sphere: validity, the number of BSpline faces, and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T036): BRepBuilderAPI_NurbsConvert on the same shape, faces counted by BRepAdaptor_Surface type."
   },
   {
     "test_name": "NURBS Conversion::convertFilleted",
     "bridge_function": "OCCTShapeConvertToNURBS",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "bsplineFaces": 26,
+        "volume": 975.5870138153904
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "box10x5x3": {
-          "bsplineFaces": 6,
-          "volume": 150.0
-        },
-        "sphere": {
-          "bsplineFaces": 1,
-          "volume": 523.369781
-        },
-        "filletedBox": {
-          "bsplineFaces": 26,
-          "volume": 975.587014
-        }
+        "valid": true,
+        "bsplineFaces": 26,
+        "volume": 975.5870138153904
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.convertedToNURBS() on a box with radius-1 fillets on every edge: validity, the number of BSpline faces, and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T037): BRepBuilderAPI_NurbsConvert on the same shape, faces counted by BRepAdaptor_Surface type."
   },
   {
     "test_name": "Remove Locations::removeFromTranslated",
     "bridge_function": "OCCTShapeRemoveLocations",
     "bridge_output": {
       "type": "bounds",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "volume": 999.9999999999998,
+        "boundsMin": [
+          94.9999999,
+          194.9999999,
+          294.9999999
+        ],
+        "boundsMax": [
+          105.0000001,
+          205.0000001,
+          305.0000001
+        ]
+      }
     },
     "kernel_output": {
       "type": "bounds",
       "data": {
-        "movedBox": {
-          "bounds": [
-            [
-              95,
-              195,
-              295
-            ],
-            [
-              105,
-              205,
-              305
-            ]
-          ],
-          "volume": 1000.0,
-          "locationAfterIdentity": true
-        },
-        "rotatedCylinderMoved50": {
-          "bounds": [
-            [
-              45,
-              -10.6066,
-              -3.5355
-            ],
-            [
-              55,
-              3.5355,
-              10.6066
-            ]
-          ],
-          "volume": 785.398163
-        }
+        "valid": true,
+        "volume": 999.9999999999998,
+        "boundsMin": [
+          94.9999999,
+          194.9999999,
+          294.9999999
+        ],
+        "boundsMax": [
+          105.0000001,
+          205.0000001,
+          305.0000001
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a box placed with moved(dx: 100, dy: 200, dz: 300) (a TopLoc_Location) and then removingLocations(): validity, volume and bounds, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T038): ShapeUpgrade_RemoveLocations on the same located box, bounds by BRepBndLib::Add with triangulation as the bridge does. The earlier record quoted a 4-decimal bounds print; the bounds here include the 1e-7 vertex tolerance both sides add."
   },
   {
     "test_name": "Remove Locations::removeFromRotated",
     "bridge_function": "OCCTShapeRemoveLocations",
     "bridge_output": {
       "type": "bounds",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "volume": 785.3981633974482,
+        "boundsMin": [
+          44.9999999,
+          -10.606601817798213,
+          -3.535534005932737
+        ],
+        "boundsMax": [
+          55.0000001,
+          3.5355340059327376,
+          10.606601817798213
+        ]
+      }
     },
     "kernel_output": {
       "type": "bounds",
       "data": {
-        "movedBox": {
-          "bounds": [
-            [
-              95,
-              195,
-              295
-            ],
-            [
-              105,
-              205,
-              305
-            ]
-          ],
-          "volume": 1000.0,
-          "locationAfterIdentity": true
-        },
-        "rotatedCylinderMoved50": {
-          "bounds": [
-            [
-              45,
-              -10.6066,
-              -3.5355
-            ],
-            [
-              55,
-              3.5355,
-              10.6066
-            ]
-          ],
-          "volume": 785.398163
-        }
+        "valid": true,
+        "volume": 785.3981633974482,
+        "boundsMin": [
+          44.9999999,
+          -10.606601817798213,
+          -3.535534005932737
+        ],
+        "boundsMax": [
+          55.0000001,
+          3.5355340059327376,
+          10.606601817798213
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a cylinder rotated pi/4 about X (a copying transform) and then placed with moved(dx: 50) and removingLocations(): validity, volume and bounds, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T039): the same sequence in OCCT: BRepBuilderAPI_Transform with copy, TopoDS_Shape::Moved, ShapeUpgrade_RemoveLocations. The earlier record quoted bounds (45..55 in x) that the earlier transcript had measured only without the +50 move; this measurement includes it."
   },
   {
     "test_name": "Same Parameter::sameParameterBox",
     "bridge_function": "OCCTShapeSameParameter",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "faces": 6
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "box": {
-          "valid": true,
-          "volume": 1000.0
-        },
-        "cylinder": {
-          "valid": true,
-          "volume": 785.398163397
-        }
+        "valid": true,
+        "faces": 6
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.sameParameter() on a box: validity and face count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T040): BRepLib::SameParameter(1e-6) on a BRepBuilderAPI_Copy of the box."
   },
   {
     "test_name": "Same Parameter::sameParameterCylinder",
     "bridge_function": "OCCTShapeSameParameter",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "volume": 785.3981633974482
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "box": {
-          "valid": true,
-          "volume": 1000.0
-        },
-        "cylinder": {
-          "valid": true,
-          "volume": 785.398163397
-        }
+        "valid": true,
+        "volume": 785.398163397
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.sameParameter() on a cylinder r5 h10: validity and volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-locations-nurbs-sameparam/transcript.txt line 15 (SameParameter(cylinder, 1e-6): valid=1 volume=785.398163397)."
   },
   {
     "test_name": "Same Parameter::sameParameterPreservesVolume",
     "bridge_function": "OCCTShapeSameParameter",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "box": {
-          "valid": true,
-          "volume": 1000.0
-        },
-        "cylinder": {
-          "valid": true,
-          "volume": 785.398163397
-        }
+        "volume": 1000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.sameParameter() on a box: the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-locations-nurbs-sameparam/transcript.txt line 14 (SameParameter(box, 1e-6): valid=1 volume=1000)."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::fixSolidMultiBody",
-    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_function": "OCCTShapeFixSolid",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.999999999999
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "twoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "hollowPlusWiderSibling": {
-          "bodies": 2,
-          "volume": 35000.0
-        }
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.9999999999995
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.fixSolid() on the two-box compound (two disjoint 10 mm boxes): the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T043): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::fixSolidSingleBody",
-    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_function": "OCCTShapeFixSolid",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 1,
+        "faces": 6,
+        "volume": 999.9999999999998,
+        "isSolid": true,
+        "valid": true
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "twoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "hollowPlusWiderSibling": {
-          "bodies": 2,
-          "volume": 35000.0
-        }
+        "bodies": 1,
+        "faces": 6,
+        "volume": 999.9999999999998,
+        "isSolid": true,
+        "valid": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.fixSolid() on a single 10 mm box: the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T044): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture isSolid is the result's shape type being SOLID; valid is BRepCheck_Analyzer on it.."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::fixSolidHollow",
-    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_function": "OCCTShapeFixSolid",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 1,
+        "faces": 12,
+        "volume": 6999.999999999996
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "twoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "hollowPlusWiderSibling": {
-          "bodies": 2,
-          "volume": 35000.0
-        }
+        "bodies": 1,
+        "faces": 12,
+        "volume": 6999.999999999996
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.fixSolid() on the hollow box (a 20 mm cube with a 10 mm cavity: one solid, two shells): the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T045): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::fixSolidMulticonnex",
-    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_function": "OCCTShapeFixSolid",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.999999999999
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "twoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "hollowPlusWiderSibling": {
-          "bodies": 2,
-          "volume": 35000.0
-        }
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.9999999999995
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.fixSolid() on the multiconnex solid (one solid holding two disjoint box shells): the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T046): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::fixSolidNoSolid",
-    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_function": "OCCTShapeFixSolid",
     "bridge_output": {
-      "type": "bodies",
-      "data": "bodies and volumes as asserted"
-    },
-    "kernel_output": {
-      "type": "bodies",
+      "type": "object",
       "data": {
-        "twoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "hollowPlusWiderSibling": {
-          "bodies": 2,
-          "volume": 35000.0
-        }
+        "resultIsNull": true
       }
     },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "no kernel call: fixSolid() on a face finds no TopAbs_SOLID to heal, so the bridge returns nil before ShapeFix_Solid is constructed"
+    },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "source": "No kernel counterpart: OCCTShapeFixSolid iterates TopAbs_SOLID children and hands each to ShapeFix_Solid; a face has none, the body list stays empty and the bridge returns nil without any kernel call. The test observes that nil (bridge-observed.txt)."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellMultiBody",
     "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.999999999999
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "twoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "hollowPlusWiderSibling": {
-          "bodies": 2,
-          "volume": 35000.0
-        }
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.9999999999995
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solidFromShellFixed() on the two-box compound: the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T048): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellSingleBody",
     "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 1,
+        "faces": 6,
+        "volume": 999.9999999999998,
+        "isSolid": true
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "twoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "hollowPlusWiderSibling": {
-          "bodies": 2,
-          "volume": 35000.0
-        }
+        "bodies": 1,
+        "faces": 6,
+        "volume": 999.9999999999998,
+        "isSolid": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solidFromShellFixed() on a single 10 mm box: the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T049): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellSkipsCavity",
     "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 1,
+        "faces": 6,
+        "volume": 7999.999999999998,
+        "isSolid": true
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "twoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "hollowPlusWiderSibling": {
-          "bodies": 2,
-          "volume": 35000.0
-        }
+        "bodies": 1,
+        "faces": 6,
+        "volume": 7999.999999999998,
+        "isSolid": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solidFromShellFixed() on the hollow box: the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T050): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture The cavity shell is enclosed once (odd), so only the outer shell becomes a body: 6 faces and 8000 (the cavity filled).."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellMulticonnex",
     "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.999999999999
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "twoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "hollowPlusWiderSibling": {
-          "bodies": 2,
-          "volume": 35000.0
-        }
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.9999999999995
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solidFromShellFixed() on the multiconnex solid: the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T051): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellCavityWithWiderSibling",
     "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "faces": 12,
+        "volume": 35000
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "twoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "hollowPlusWiderSibling": {
-          "bodies": 2,
-          "volume": 35000.0
-        }
+        "bodies": 2,
+        "faces": 12,
+        "volume": 35000
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solidFromShellFixed() on one solid holding a hollow body's two shells and a wider body's shell (three shells): the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T052): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture The cavity is skipped even though a wider sibling exists: 2 bodies, 8000 + 27000.."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellFreeShells",
     "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.999999999999
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "twoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "hollowPlusWiderSibling": {
-          "bodies": 2,
-          "volume": 35000.0
-        }
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.9999999999995
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solidFromShellFixed() on a compound of two free box shells: the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T053): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellDeduplicates",
     "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 1,
+        "faces": 6,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "twoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "hollowPlusWiderSibling": {
-          "bodies": 2,
-          "volume": 35000.0
-        }
+        "bodies": 1,
+        "faces": 6,
+        "volume": 999.9999999999998
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solidFromShellFixed() on a compound holding the same free shell twice: the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T054): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture One body, not two: the same shell is claimed once.."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::solidFromShellNoShell",
     "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
-      "type": "bodies",
-      "data": "bodies and volumes as asserted"
-    },
-    "kernel_output": {
-      "type": "bodies",
+      "type": "object",
       "data": {
-        "twoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "hollowPlusWiderSibling": {
-          "bodies": 2,
-          "volume": 35000.0
-        }
+        "resultIsNull": true
       }
     },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "no kernel call: solidFromShellFixed() on a face finds no shell, so the bridge returns nil before ShapeFix_Solid::SolidFromShell is called"
+    },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "source": "No kernel counterpart: OCCTShapeSolidFromShell builds its body list from the shape's shells; a face has none, the list stays empty and the bridge returns nil without any kernel call. The test observes that nil (bridge-observed.txt)."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::documentedUnclosedCheck",
-    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_function": "OCCTShapeFixSolid",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "directChildren": 2,
+        "allChildrenSolids": true,
+        "shellsAtAnyDepth": 2,
+        "volume": 1999.999999999999,
+        "singleIsSolid": true,
+        "singleShells": 1
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "twoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "hollowPlusWiderSibling": {
-          "bodies": 2,
-          "volume": 35000.0
-        }
+        "directChildren": 2,
+        "allChildrenSolids": true,
+        "shellsAtAnyDepth": 2,
+        "volume": 1999.9999999999995,
+        "singleIsSolid": true,
+        "singleShells": 1
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: fixSolid() on the two-box compound: the result's direct children, whether all are solids, the shells found at any depth, the volume; and fixSolid() on a single box: whether it is a solid and how many shells it holds, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T056): ShapeFix_Solid per solid as the bridge runs it, then TopoDS_Iterator over the result's children and TopExp::MapShapes for the shells. The shells at any depth are 2 for two solids and 1 for a single solid, which is why the test's documentation says not to use a shell count as a failure signal."
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::openShellDoesNotPerturbParity",
@@ -4555,34 +3949,56 @@
   },
   {
     "test_name": "Issue 442: fixSolid/solidFromShellFixed cover every body::reproducerTable",
-    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
+    "bridge_function": "OCCTShapeFixSolid / OCCTShapeSolidFromShell",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "input": {
+          "bodies": 2,
+          "faces": 12,
+          "volume": 1999.999999999999,
+          "minX": -1e-07,
+          "maxX": 30.0000001
+        },
+        "fixSolid": {
+          "bodies": 2,
+          "faces": 12,
+          "volume": 1999.999999999999,
+          "minX": -1e-07,
+          "maxX": 30.0000001
+        },
+        "solidFromShellFixed": {
+          "bodies": 2,
+          "faces": 12,
+          "volume": 1999.999999999999,
+          "minX": -1e-07,
+          "maxX": 30.0000001
+        }
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "twoBoxes": {
+        "input": {
           "bodies": 2,
-          "volume": 2000.0
+          "faces": 12,
+          "volume": 1999.9999999999995,
+          "minX": -1e-07,
+          "maxX": 30.0000001
         },
-        "singleBox": {
-          "bodies": 1,
-          "volume": 1000.0
-        },
-        "hollow": {
-          "fixSolidVolume": 7000.0,
-          "solidFromShellBodies": 1,
-          "volume": 8000.0
-        },
-        "multiconnex": {
+        "fixSolid": {
           "bodies": 2,
-          "volume": 2000.0
+          "faces": 12,
+          "volume": 1999.9999999999995,
+          "minX": -1e-07,
+          "maxX": 30.0000001
         },
-        "hollowPlusWiderSibling": {
+        "solidFromShellFixed": {
           "bodies": 2,
-          "volume": 35000.0
+          "faces": 12,
+          "volume": 1999.9999999999995,
+          "minX": -1e-07,
+          "maxX": 30.0000001
         }
       }
     },
@@ -4590,231 +4006,227 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the issue's table for the two-box compound: for the input, fixSolid() and solidFromShellFixed(): bodies, faces, volume and the x extent of the bounding box, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T057): the input, ShapeFix_Solid per solid, and enclosure parity plus SolidFromShell, bounds by BRepBndLib::Add with triangulation as the bridge does."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidFromSewnMultiBody",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeCreateSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.999999999999
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.9999999999995
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solid(from:) on the sewn two-box compound (two shells): the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T058): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture Shape.solid(from:) builds each solid with BRepBuilderAPI_MakeSolid and then ShapeFix_Solid, unlike solidFromShellFixed.."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidFromAgreesWithSibling",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeCreateSolidFromShell / OCCTShapeSolidFromShell",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "viaMakeSolid": {
+          "bodies": 2,
+          "volume": 1999.999999999999
+        },
+        "viaShapeFix": {
+          "bodies": 2,
+          "volume": 1999.999999999999
+        },
+        "bodiesAgree": true
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
+        "viaMakeSolid": {
           "bodies": 2,
-          "volume": 2000.0
+          "volume": 1999.9999999999995
         },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
+        "viaShapeFix": {
+          "bodies": 2,
+          "volume": 1999.9999999999995
         },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodiesAgree": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: solid(from:) and solidFromShellFixed() on the sewn two-box compound: bodies and volume for each, and whether the body counts agree, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T059): the MakeSolid + ShapeFix_Solid sequence and the ShapeFix_Solid::SolidFromShell sequence on the same sewn shape."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidFromSingleShell",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeCreateSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 1,
+        "faces": 6,
+        "volume": 999.9999999999998,
+        "isSolid": true,
+        "valid": true
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 1,
+        "faces": 6,
+        "volume": 999.9999999999998,
+        "isSolid": true,
+        "valid": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solid(from:) of one shell on a single box shell: the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T060): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidFromKeepsOpenBody",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeCreateSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "faces": 11
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 2,
+        "faces": 11
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solid(from:) on a compound of one closed box shell and one disjoint sewn five-face (open) shell: bodies and faces (both bodies kept, 11 faces), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T061): the same sequence on the same fixture (the open shell is sewn from five faces of a second box)."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidFromSkipsCavity",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeCreateSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 1,
+        "faces": 6,
+        "volume": 7999.999999999998,
+        "isSolid": true
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 1,
+        "faces": 6,
+        "volume": 7999.999999999998,
+        "isSolid": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solid(from:) on the hollow box: the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T062): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture Outer shell only: 6 faces, 8000, the cavity filled.."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidFromMulticonnex",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeCreateSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.999999999999
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.9999999999995
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solid(from:) on the multiconnex solid: the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T063): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidFromNoShell",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeCreateSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
-      "type": "bodies",
-      "data": "bodies and volumes as asserted"
-    },
-    "kernel_output": {
-      "type": "bodies",
+      "type": "object",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "resultIsNull": true
       }
     },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "no kernel call: solid(from:) on a face finds no shell, so the bridge returns nil before BRepBuilderAPI_MakeSolid is constructed"
+    },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "source": "No kernel counterpart: OCCTShapeCreateSolidFromShell builds its body list from the shape's shells; a face has none, the list stays empty and the bridge returns nil without any kernel call. The test observes that nil (bridge-observed.txt)."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::sewnHollowIsOneBody",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeCreateSolidFromShell / OCCTShapeSolidFromShell",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "viaSolidFrom": {
+          "bodies": 1,
+          "volume": 7999.999999999998
+        },
+        "viaSolidFromShellFixed": {
+          "bodies": 1,
+          "volume": 7999.999999999998
+        }
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
+        "viaSolidFrom": {
           "bodies": 1,
-          "volume": 8000.0
+          "volume": 7999.999999999998
         },
-        "hundredBoxesSewn": {
-          "bodies": 100
+        "viaSolidFromShellFixed": {
+          "bodies": 1,
+          "volume": 7999.999999999998
         }
       }
     },
@@ -4822,413 +4234,376 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: solid(from:) and solidFromShellFixed() on the sewn hollow box (two free shells, outer and cavity): bodies and volume for each, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T065): both sequences on the same sewn shape; the cavity is one group with its outer shell under parity, so one body of volume 8000."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::sewnAndUnsewnHollowAgree",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "fromSolid": {
+          "bodies": 1,
+          "volume": 7999.999999999998
+        },
+        "fromShells": {
+          "bodies": 1,
+          "volume": 7999.999999999998
+        },
+        "bodiesAgree": true
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
+        "fromSolid": {
           "bodies": 1,
-          "volume": 8000.0
+          "volume": 7999.999999999998
         },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "fromShells": {
+          "bodies": 1,
+          "volume": 7999.999999999998
+        },
+        "bodiesAgree": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: solidFromShellFixed() on the hollow box (a solid with a cavity) and on the sewn hollow box (free shells): bodies and volume for each, and whether the counts agree, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T066): ShapeFix_Solid::SolidFromShell sequence on both shapes."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::manyFreeShells",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeCreateSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 100,
+        "volume": 100000.00000000061
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 100,
+        "volume": 100000.00000000048
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solid(from:) on one hundred disjoint 10 mm boxes sewn together: the body count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T067): the same sequence on the same sewn fixture (parity over one hundred free shells)."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::touchingBodiesNotPruned",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeCreateSolidFromShell (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "volume": 1999.999999999999
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 2,
+        "volume": 1999.999999999999
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solid(from:) on a compound of two touching box shells (sharing a face plane): the body count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T068): the same sequence on the same fixture (touching boxes are two bodies, not enclosure)."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidWithHistoryMultiBody",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeCreateSolidFromShellWithHistory (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.999999999999
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.9999999999995
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.solidWithFullHistory(from:) on the sewn two-box compound: the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T069): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture The history variant runs ShapeFix_Solid with one shared ShapeBuild_ReShape context.."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidWithHistoryQueryableForEveryBody",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeCreateSolidFromShellWithHistory (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "facesQueried": 12,
+        "facesReportedDeleted": 0
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 2,
+        "facesQueried": 12,
+        "facesReportedDeleted": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: solidWithFullHistory(from:) on a compound of two free box shells: the body count, and, for every face of both input boxes, how many the returned history reports as deleted, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T070): the same sequence with one shared ShapeBuild_ReShape, then BRepTools_History::IsRemoved for each input face. Deleted means IsRemoved, the call the bridge's history wrapper makes; 0 of 12 are removed."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidWithHistorySingleShell",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeCreateSolidFromShellWithHistory (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 1,
+        "isSolid": true,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 1,
+        "isSolid": true,
+        "volume": 999.9999999999998
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: solidWithFullHistory(from:) on a single box shell: the body count, whether the result is a solid, and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T071): the same sequence with a shared ShapeBuild_ReShape."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::solidWithHistoryKeepsOpenBody",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeCreateSolidFromShellWithHistory (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "faces": 11
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 2,
+        "faces": 11
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: solidWithFullHistory(from:) on the closed + open shell compound: bodies and faces (11 faces, both bodies kept), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T072): the same sequence with a shared ShapeBuild_ReShape."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::upgradedMultiBody",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeUpgrade (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.999999999999,
+        "minX": -1e-07,
+        "maxX": 30.0000001
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.9999999999995,
+        "minX": -1e-07,
+        "maxX": 30.0000001
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.upgraded(tolerance: 1e-6) on the two-box compound: bodies, faces, volume and the x extent of the bounding box, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T073): BRepBuilderAPI_Sewing, one solid per body-bounding shell (BRepBuilderAPI_MakeSolid), ShapeFix_Shape, as OCCTShapeUpgrade does; bounds by BRepBndLib::Add with triangulation."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::upgradedFromLooseFaces",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeUpgrade (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.999999999999
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 2,
+        "faces": 12,
+        "volume": 1999.9999999999995
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.upgraded(tolerance: 1e-6) on a compound of the twelve loose faces of the two boxes: the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T074): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::upgradedSingleBody",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeUpgrade (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 1,
+        "faces": 6,
+        "volume": 999.9999999999998,
+        "valid": true
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 1,
+        "faces": 6,
+        "volume": 999.9999999999998,
+        "valid": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.upgraded(tolerance: 1e-6) on a single box: the body count (unique solids), the face count and the volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T075): the same OCCT sequence the bridge function runs (ShapeFix_Solid per solid, or enclosure parity over each group of shells with BRepClass3d_SolidClassifier then per-shell solid construction), on the same fixture."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::upgradedHollow",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeUpgrade (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "inputVolume": 6999.999999999996,
+        "bodies": 1,
+        "volume": 7999.999999999998
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "inputVolume": 6999.999999999996,
+        "bodies": 1,
+        "volume": 7999.999999999998
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.upgraded(tolerance: 1e-6) on the hollow box: the input's own volume, and the result's body count and volume (the cavity is filled: 8000), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T076): the same sequence; the input volume is the hollow box's BRepGProp volume (8000 outer minus 1000 cavity)."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::upgradedNestedBody",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeUpgrade (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 2,
+        "volume": 8512
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 2,
+        "volume": 8512
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.upgraded(tolerance: 1e-6) on a hollow body with a second body nested in its cavity: the body count and the volume (8000 + 512), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T077): the same sequence on the same fixture (a 20 mm cube minus a 12 mm cavity, plus an 8 mm box inside it)."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::upgradedKeepsOpenBody",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeUpgrade (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "faces": 11
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "faces": 11
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.upgraded(tolerance: 1e-6) on the closed + open shell compound: the face count (11, an unclosable shell's faces are kept), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T078): the same sequence on the same fixture."
   },
   {
     "test_name": "Issue 443: solid(from:) and upgraded() cover every body::upgradedNoShell",
-    "bridge_function": "occtBodyBoundingShells via OCCTShapeCreateSolidFromShell / OCCTShapeUpgrade",
+    "bridge_function": "OCCTShapeUpgrade (occtBodyBoundingShells)",
     "bridge_output": {
       "type": "bodies",
-      "data": "bodies and volumes as asserted"
+      "data": {
+        "bodies": 0,
+        "faces": 1
+      }
     },
     "kernel_output": {
       "type": "bodies",
       "data": {
-        "sewnTwoBoxes": {
-          "bodies": 2,
-          "volume": 2000.0
-        },
-        "sewnHollow": {
-          "bodies": 1,
-          "volume": 8000.0
-        },
-        "hundredBoxesSewn": {
-          "bodies": 100
-        }
+        "bodies": 0,
+        "faces": 1
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.upgraded(tolerance: 1e-6) on a lone face: the body count (none) and the face count (1), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T079): BRepBuilderAPI_Sewing then ShapeFix_Shape on the lone face; with no shell to bound a body the sewn shape passes through."
   },
   {
     "test_name": "Issue #1638: composeShell splits along a real patch grid::planarFaceSplitsIntoTheRequestedGrid",
