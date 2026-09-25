@@ -2374,24 +2374,23 @@
     "test_name": "Thread Safety: OCCTSerial::serialLockBasic",
     "bridge_function": "OCCTSerialLockAcquire",
     "bridge_output": {
-      "type": "lock+volume",
+      "type": "volume",
       "data": {
-        "ran_while_held": false,
         "volume": 1000.0
       }
     },
     "kernel_output": {
       "type": "volume",
       "data": {
-        "BRepGProp::VolumeProperties": 1000.0,
-        "lock": "N/A: the mutex is the bridge's own, OCCT has no counterpart"
+        "volume": 1000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: volume, the volume of a 10 x 10 x 10 box computed while the OCCTSerial lock is held. Bridge: the test's volume, 1000 (the record's own bridge value). Kernel: BRepGProp::VolumeProperties printed 1000.000000 (Scripts/repro/766-foundation-sheet-bom-serial/transcript.txt, box 10^3). The bridge record also carried ran_while_held = false, a property of the bridge's own mutex, which OCCT has no counterpart for; it is not compared here (the earlier kernel side said the same). Keys normalised by the evidence-fix pass (#1987): the two sides named the same measured quantity differently."
   },
   {
     "test_name": "Thread Safety: OCCTSerial::serialLockReentrant",
@@ -2500,12 +2499,12 @@
         },
         "iso": {
           "x": [
-            -10.606601717798213,
-            10.606601717798213
+            -10.606602,
+            10.606602
           ],
           "y": [
-            -12.247448713915894,
-            12.247448713915894
+            -12.247449,
+            12.247449
           ]
         }
       }
@@ -2513,7 +2512,7 @@
     "kernel_output": {
       "type": "hlr_view_bounds_2d",
       "data": {
-        "front (0,1,0)": {
+        "front": {
           "x": [
             -5,
             5
@@ -2521,11 +2520,9 @@
           "y": [
             -10,
             10
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "top (0,0,1)": {
+        "top": {
           "x": [
             -10,
             10
@@ -2533,11 +2530,9 @@
           "y": [
             -7.5,
             7.5
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "side (1,0,0)": {
+        "side": {
           "x": [
             -5,
             5
@@ -2545,11 +2540,9 @@
           "y": [
             -7.5,
             7.5
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "iso (1,1,1)/sqrt3": {
+        "iso": {
           "x": [
             -10.606602,
             10.606602
@@ -2557,9 +2550,7 @@
           "y": [
             -12.247449,
             12.247449
-          ],
-          "visible_sharp": 9,
-          "hidden_sharp": 3
+          ]
         }
       }
     },
@@ -2567,7 +2558,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the 2D bounds (x and y ranges) of each HLR view of the 20 x 15 x 10 box. Bridge: the placed views' bounds as the record already carried them. Kernel: the HLR projection of the same box printed in Scripts/repro/766-foundation-sheet-bom-serial/transcript.txt (section Sheet.standardLayout). The kernel transcript prints six decimals, so both sides are shown rounded to six decimals; the bridge's full-precision iso bounds were 10.606601717798213 and 12.247448713915894. The kernel also printed sharp-edge counts per view (front 4 visible and 4 hidden; top 4 visible and 4 hidden; side 4 visible and 4 hidden; iso 9 visible and 3 hidden), which the bridge side has no counterpart for, so they are not part of the compared data. Keys normalised by the evidence-fix pass (#1987): the kernel side had named each view with its direction, and carried the counts."
   },
   {
     "test_name": "v0.149 Sheet.standardLayout::thirdAngleTopAbove",
@@ -2607,12 +2599,12 @@
         },
         "iso": {
           "x": [
-            -10.606601717798213,
-            10.606601717798213
+            -10.606602,
+            10.606602
           ],
           "y": [
-            -12.247448713915894,
-            12.247448713915894
+            -12.247449,
+            12.247449
           ]
         }
       }
@@ -2620,7 +2612,7 @@
     "kernel_output": {
       "type": "hlr_view_bounds_2d",
       "data": {
-        "front (0,1,0)": {
+        "front": {
           "x": [
             -5,
             5
@@ -2628,11 +2620,9 @@
           "y": [
             -10,
             10
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "top (0,0,1)": {
+        "top": {
           "x": [
             -10,
             10
@@ -2640,11 +2630,9 @@
           "y": [
             -7.5,
             7.5
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "side (1,0,0)": {
+        "side": {
           "x": [
             -5,
             5
@@ -2652,11 +2640,9 @@
           "y": [
             -7.5,
             7.5
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "iso (1,1,1)/sqrt3": {
+        "iso": {
           "x": [
             -10.606602,
             10.606602
@@ -2664,9 +2650,7 @@
           "y": [
             -12.247449,
             12.247449
-          ],
-          "visible_sharp": 9,
-          "hidden_sharp": 3
+          ]
         }
       }
     },
@@ -2674,7 +2658,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the 2D bounds (x and y ranges) of each HLR view of the 20 x 15 x 10 box. Bridge: the placed views' bounds as the record already carried them. Kernel: the HLR projection of the same box printed in Scripts/repro/766-foundation-sheet-bom-serial/transcript.txt (section Sheet.standardLayout). The kernel transcript prints six decimals, so both sides are shown rounded to six decimals; the bridge's full-precision iso bounds were 10.606601717798213 and 12.247448713915894. The kernel also printed sharp-edge counts per view (front 4 visible and 4 hidden; top 4 visible and 4 hidden; side 4 visible and 4 hidden; iso 9 visible and 3 hidden), which the bridge side has no counterpart for, so they are not part of the compared data. Keys normalised by the evidence-fix pass (#1987): the kernel side had named each view with its direction, and carried the counts."
   },
   {
     "test_name": "v0.149 Sheet.standardLayout::viewsFitInsideInnerFrame",
@@ -2714,12 +2699,12 @@
         },
         "iso": {
           "x": [
-            -10.606601717798213,
-            10.606601717798213
+            -10.606602,
+            10.606602
           ],
           "y": [
-            -12.247448713915894,
-            12.247448713915894
+            -12.247449,
+            12.247449
           ]
         }
       }
@@ -2727,7 +2712,7 @@
     "kernel_output": {
       "type": "hlr_view_bounds_2d",
       "data": {
-        "front (0,1,0)": {
+        "front": {
           "x": [
             -5,
             5
@@ -2735,11 +2720,9 @@
           "y": [
             -10,
             10
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "top (0,0,1)": {
+        "top": {
           "x": [
             -10,
             10
@@ -2747,11 +2730,9 @@
           "y": [
             -7.5,
             7.5
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "side (1,0,0)": {
+        "side": {
           "x": [
             -5,
             5
@@ -2759,11 +2740,9 @@
           "y": [
             -7.5,
             7.5
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "iso (1,1,1)/sqrt3": {
+        "iso": {
           "x": [
             -10.606602,
             10.606602
@@ -2771,9 +2750,7 @@
           "y": [
             -12.247449,
             12.247449
-          ],
-          "visible_sharp": 9,
-          "hidden_sharp": 3
+          ]
         }
       }
     },
@@ -2781,7 +2758,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the 2D bounds (x and y ranges) of each HLR view of the 20 x 15 x 10 box. Bridge: the placed views' bounds as the record already carried them. Kernel: the HLR projection of the same box printed in Scripts/repro/766-foundation-sheet-bom-serial/transcript.txt (section Sheet.standardLayout). The kernel transcript prints six decimals, so both sides are shown rounded to six decimals; the bridge's full-precision iso bounds were 10.606601717798213 and 12.247448713915894. The kernel also printed sharp-edge counts per view (front 4 visible and 4 hidden; top 4 visible and 4 hidden; side 4 visible and 4 hidden; iso 9 visible and 3 hidden), which the bridge side has no counterpart for, so they are not part of the compared data. Keys normalised by the evidence-fix pass (#1987): the kernel side had named each view with its direction, and carried the counts."
   },
   {
     "test_name": "v0.149 Sheet.standardLayout::interCellGapIsHalfMargin",
@@ -2821,12 +2799,12 @@
         },
         "iso": {
           "x": [
-            -10.606601717798213,
-            10.606601717798213
+            -10.606602,
+            10.606602
           ],
           "y": [
-            -12.247448713915894,
-            12.247448713915894
+            -12.247449,
+            12.247449
           ]
         }
       }
@@ -2834,7 +2812,7 @@
     "kernel_output": {
       "type": "hlr_view_bounds_2d",
       "data": {
-        "front (0,1,0)": {
+        "front": {
           "x": [
             -5,
             5
@@ -2842,11 +2820,9 @@
           "y": [
             -10,
             10
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "top (0,0,1)": {
+        "top": {
           "x": [
             -10,
             10
@@ -2854,11 +2830,9 @@
           "y": [
             -7.5,
             7.5
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "side (1,0,0)": {
+        "side": {
           "x": [
             -5,
             5
@@ -2866,11 +2840,9 @@
           "y": [
             -7.5,
             7.5
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "iso (1,1,1)/sqrt3": {
+        "iso": {
           "x": [
             -10.606602,
             10.606602
@@ -2878,9 +2850,7 @@
           "y": [
             -12.247449,
             12.247449
-          ],
-          "visible_sharp": 9,
-          "hidden_sharp": 3
+          ]
         }
       }
     },
@@ -2888,7 +2858,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the 2D bounds (x and y ranges) of each HLR view of the 20 x 15 x 10 box. Bridge: the placed views' bounds as the record already carried them. Kernel: the HLR projection of the same box printed in Scripts/repro/766-foundation-sheet-bom-serial/transcript.txt (section Sheet.standardLayout). The kernel transcript prints six decimals, so both sides are shown rounded to six decimals; the bridge's full-precision iso bounds were 10.606601717798213 and 12.247448713915894. The kernel also printed sharp-edge counts per view (front 4 visible and 4 hidden; top 4 visible and 4 hidden; side 4 visible and 4 hidden; iso 9 visible and 3 hidden), which the bridge side has no counterpart for, so they are not part of the compared data. Keys normalised by the evidence-fix pass (#1987): the kernel side had named each view with its direction, and carried the counts."
   },
   {
     "test_name": "v0.149 Sheet.standardLayout::includeIsoFalseOmits",
@@ -2928,12 +2899,12 @@
         },
         "iso": {
           "x": [
-            -10.606601717798213,
-            10.606601717798213
+            -10.606602,
+            10.606602
           ],
           "y": [
-            -12.247448713915894,
-            12.247448713915894
+            -12.247449,
+            12.247449
           ]
         }
       }
@@ -2941,7 +2912,7 @@
     "kernel_output": {
       "type": "hlr_view_bounds_2d",
       "data": {
-        "front (0,1,0)": {
+        "front": {
           "x": [
             -5,
             5
@@ -2949,11 +2920,9 @@
           "y": [
             -10,
             10
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "top (0,0,1)": {
+        "top": {
           "x": [
             -10,
             10
@@ -2961,11 +2930,9 @@
           "y": [
             -7.5,
             7.5
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "side (1,0,0)": {
+        "side": {
           "x": [
             -5,
             5
@@ -2973,11 +2940,9 @@
           "y": [
             -7.5,
             7.5
-          ],
-          "visible_sharp": 4,
-          "hidden_sharp": 4
+          ]
         },
-        "iso (1,1,1)/sqrt3": {
+        "iso": {
           "x": [
             -10.606602,
             10.606602
@@ -2985,9 +2950,7 @@
           "y": [
             -12.247449,
             12.247449
-          ],
-          "visible_sharp": 9,
-          "hidden_sharp": 3
+          ]
         }
       }
     },
@@ -2995,7 +2958,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the 2D bounds (x and y ranges) of each HLR view of the 20 x 15 x 10 box. Bridge: the placed views' bounds as the record already carried them. Kernel: the HLR projection of the same box printed in Scripts/repro/766-foundation-sheet-bom-serial/transcript.txt (section Sheet.standardLayout). The kernel transcript prints six decimals, so both sides are shown rounded to six decimals; the bridge's full-precision iso bounds were 10.606601717798213 and 12.247448713915894. The kernel also printed sharp-edge counts per view (front 4 visible and 4 hidden; top 4 visible and 4 hidden; side 4 visible and 4 hidden; iso 9 visible and 3 hidden), which the bridge side has no counterpart for, so they are not part of the compared data. Keys normalised by the evidence-fix pass (#1987): the kernel side had named each view with its direction, and carried the counts."
   },
   {
     "test_name": "v0.149 Sheet.standardLayout::renderEmitsEveryView",
@@ -3003,19 +2967,21 @@
     "bridge_output": {
       "type": "entity_counts",
       "data": {
-        "lines": 36,
-        "polylines": 0
+        "emitted_edges": 36
       }
     },
     "kernel_output": {
-      "type": "hlr_edge_total",
-      "data": 36
+      "type": "entity_counts",
+      "data": {
+        "emitted_edges": 36
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: emitted_edges, the number of edges drawn for the four views. Bridge: the render produced 36 lines and 0 polylines, 36 edges in all. Kernel: the HLR projection printed in Scripts/repro/766-foundation-sheet-bom-serial/transcript.txt has 4 + 4 (front), 4 + 4 (top), 4 + 4 (side) and 9 + 3 (iso) visible plus hidden sharp edges, 36 in all. Keys and representation normalised by the evidence-fix pass (#1987): one side carried a lines/polylines split and the other a total."
   },
   {
     "test_name": "v0.149 Sheet.standardLayout::renderEmitsEveryViewPDF",
@@ -3023,19 +2989,21 @@
     "bridge_output": {
       "type": "entity_counts",
       "data": {
-        "lines": 36,
-        "polylines": 0
+        "emitted_edges": 36
       }
     },
     "kernel_output": {
-      "type": "hlr_edge_total",
-      "data": 36
+      "type": "entity_counts",
+      "data": {
+        "emitted_edges": 36
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: emitted_edges, the number of edges drawn for the four views. Bridge: the render produced 36 lines and 0 polylines, 36 edges in all. Kernel: the HLR projection printed in Scripts/repro/766-foundation-sheet-bom-serial/transcript.txt has 4 + 4 (front), 4 + 4 (top), 4 + 4 (side) and 9 + 3 (iso) visible plus hidden sharp edges, 36 in all. Keys and representation normalised by the evidence-fix pass (#1987): one side carried a lines/polylines split and the other a total."
   },
   {
     "test_name": "v0.149 Sheet.standardLayout::renderEmitsEveryViewSVG",
@@ -3043,19 +3011,21 @@
     "bridge_output": {
       "type": "entity_counts",
       "data": {
-        "lines": 36,
-        "polylines": 0
+        "emitted_edges": 36
       }
     },
     "kernel_output": {
-      "type": "hlr_edge_total",
-      "data": 36
+      "type": "entity_counts",
+      "data": {
+        "emitted_edges": 36
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: emitted_edges, the number of edges drawn for the four views. Bridge: the render produced 36 lines and 0 polylines, 36 edges in all. Kernel: the HLR projection printed in Scripts/repro/766-foundation-sheet-bom-serial/transcript.txt has 4 + 4 (front), 4 + 4 (top), 4 + 4 (side) and 9 + 3 (iso) visible plus hidden sharp edges, 36 in all. Keys and representation normalised by the evidence-fix pass (#1987): one side carried a lines/polylines split and the other a total."
   },
   {
     "test_name": "v0.150 BillOfMaterials::emptyBOMHeader",
