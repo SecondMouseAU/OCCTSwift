@@ -5930,13 +5930,13 @@
     "bridge_output": {
       "type": "refusal",
       "data": {
-        "wire": null
+        "wire_built": false
       }
     },
     "kernel_output": {
       "type": "refusal",
       "data": {
-        "BRepBuilderAPI_MakePolygon": "one point, Close(): throws BRep_API: command not done"
+        "wire_built": false
       }
     },
     "comparison": {
@@ -5944,6 +5944,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether a polygon of a single point (closed, the Swift default) yields a wire. The earlier record carried {wire: null} on the bridge side against a prose exception description under a different key on the kernel side. Bridge: Wire.polygon3D([(0, 0, 0)]) returned nil; a temporary print in the test (never committed) observed nil for both closed and open. The refusal happens before OCCT: the Swift wrapper guards points.count >= 2 and OCCTWireCreateFastPolygon guards pointCount < 2 again, so BRepBuilderAPI_MakePolygon is never reached. Kernel: what OCCT itself does with the same single point: BRepBuilderAPI_MakePolygon with one Add and Close() threw BRep_API: command not done, so no wire is built (transcript.txt, singlePointReturnsNil line). The two refusals agree.",
     "probe": "Scripts/repro/766-fast3dpolygon/"
   }
 ]
