@@ -1,0 +1,7 @@
+0 translation (10,20,30): (13, 24, 35)
+1 rotation z pi/2: (-4, 3, 5)
+2 scale (1,1,1) x3: (7, 10, 13)
+3 mirror point (1,2,3): (-1, 0, 1)
+4 mirror axis (1,2,0) z: (-1, 0, 5)
+5 mirror plane z=1: (3, 4, -3)
+circle radius 5, after SetRadius(8) 8

@@ -20,13 +20,18 @@ struct IntegrationGoldenShapeBaselineTests {
         #expect(box.isValid)
 
         // Volume = w * h * d = 6000
+        // #766: a nil volume or area used to skip the check and pass.
         if let vol = box.volume {
             #expect(abs(vol - 6000.0) < 1e-6, "Volume should be 6000, got \(vol)")
+        } else {
+            Issue.record("box volume was nil")
         }
 
         // Surface area = 2*(w*h + h*d + w*d) = 2*(200 + 600 + 300) = 2200
         if let area = box.surfaceArea {
             #expect(abs(area - 2200.0) < 1e-6, "Surface area should be 2200, got \(area)")
+        } else {
+            Issue.record("box surface area was nil")
         }
 
         // Face count = 6
