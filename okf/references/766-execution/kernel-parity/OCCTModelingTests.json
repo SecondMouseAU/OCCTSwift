@@ -422,8 +422,10 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "nonNil": true,
+        "done": true,
+        "type": "SHELL",
         "faces": 6,
+        "valid": true,
         "volume": 480000
       }
     },
@@ -441,7 +443,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, result type, face count, valid and volume of the BiTgte blend of edge 0 of the 100x80x60 box at r=5. Bridge: Shape.biTgteBlend non-nil (OCCTBiTgteBlend returns nullptr when BiTgte_Blend is not done or the shape is null), shapeType (ordinal 3, TopAbs_SHELL), faces().count, isValid and Shape.volume; the test asserted non-nil, 6 faces and the volume. Kernel: BiTgte_Blend(box, r, 1e-3, false) with SetEdge on the same TopExp edge-map indices and Perform(true), IsDone, TopAbs::ShapeTypeToString, a TopExp_Explorer face count, BRepCheck_Analyzer, BRepGProp::VolumeProperties; blendBoxEdge line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-bitgte-blend/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "BiTgte Blend Tests::blendMultipleEdges",
@@ -449,9 +453,11 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "nonNil": true,
+        "done": true,
+        "type": "SHELL",
         "faces": 6,
-        "volume": 125000
+        "valid": true,
+        "volume": 124999.99999999999
       }
     },
     "kernel_output": {
@@ -461,14 +467,16 @@
         "type": "SHELL",
         "faces": 6,
         "valid": true,
-        "volume": 125000
+        "volume": 124999.99999999999
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, result type, face count, valid and volume of the BiTgte blend of edges 0 and 1 of the 50 mm cube at r=3. Bridge: Shape.biTgteBlend non-nil (OCCTBiTgteBlend returns nullptr when BiTgte_Blend is not done or the shape is null), shapeType (ordinal 3, TopAbs_SHELL), faces().count, isValid and Shape.volume; the test asserted non-nil, 6 faces and the volume. Kernel: BiTgte_Blend(box, r, 1e-3, false) with SetEdge on the same TopExp edge-map indices and Perform(true), IsDone, TopAbs::ShapeTypeToString, a TopExp_Explorer face count, BRepCheck_Analyzer, BRepGProp::VolumeProperties; blendMultipleEdges line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-bitgte-blend/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
     "test_name": "Boolean Pre-Validation::validBoxCheck",
@@ -663,19 +671,22 @@
     "bridge_function": "OCCTShapeBooleanCheckPair",
     "bridge_output": {
       "type": "value",
-      "data": [
-        true,
-        true
-      ]
+      "data": {
+        "valid": true
+      }
     },
     "kernel_output": {
       "type": "value",
-      "data": true
+      "data": {
+        "valid": true
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the centred 10x20x30 box and the r=5 sphere are valid for a boolean together, operation unknown, small-edge and self-interference tests on. Bridge: isValidForBoolean(with:) and isBooleanValidWith both printed true (the test asserts they agree; the first forwards to the second, so they are one call), recorded once as valid. Kernel: BRepAlgoAPI_Check(box, sphere, BOPAlgo_UNKNOWN, true, true).IsValid(); pairParityWithBooleanValidWith line of the transcript.",
+    "probe": "Scripts/repro/766-modeling-boolean-check/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   }
 ]

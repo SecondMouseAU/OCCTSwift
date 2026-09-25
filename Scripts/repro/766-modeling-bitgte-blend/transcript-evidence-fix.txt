@@ -1,0 +1,2 @@
+blendBoxEdge: done=true type="SHELL" faces=6 valid=true volume=480000
+blendMultipleEdges: done=true type="SHELL" faces=6 valid=true volume=124999.99999999999
