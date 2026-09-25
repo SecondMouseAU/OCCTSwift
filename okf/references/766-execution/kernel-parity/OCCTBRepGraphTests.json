@@ -4934,5 +4934,533 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Stats::boxStats",
+    "bridge_function": "OCCTBRepGraphGetStats",
+    "bridge_output": {
+      "type": "stats",
+      "data": {
+        "solids": 1,
+        "shells": 1,
+        "faces": 6,
+        "wires": 6,
+        "edges": 12,
+        "vertices": 8,
+        "coedges": 24,
+        "compounds": 0,
+        "totalNodes": 58,
+        "surfaces": 6,
+        "curves3d": 12,
+        "curves2d": 24
+      }
+    },
+    "kernel_output": {
+      "type": "stats",
+      "data": {
+        "solids": 1,
+        "shells": 1,
+        "faces": 6,
+        "wires": 6,
+        "edges": 12,
+        "vertices": 8,
+        "coedges": 24,
+        "compounds": 0,
+        "totalNodes": 58,
+        "surfaces": 6,
+        "curves3d": 12,
+        "curves2d": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Supplement Vertices::faceDirectVertexAttachCountRemove",
+    "bridge_function": "OCCTBRepGraphFaceNbVertexRefs",
+    "bridge_output": {
+      "type": "sequence",
+      "data": {
+        "before": 0,
+        "uid": 1,
+        "after_add": 1,
+        "remove1": true,
+        "after_remove": 0,
+        "remove2": false
+      }
+    },
+    "kernel_output": {
+      "type": "sequence",
+      "data": {
+        "before": 0,
+        "uid": 1,
+        "after_add": 1,
+        "remove1": true,
+        "after_remove": 0,
+        "remove2": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Supplement Vertices::edgeInternalVertexAttach",
+    "bridge_function": "OCCTBRepGraphEdgeAddInternalVertex",
+    "bridge_output": {
+      "type": "uid",
+      "data": {
+        "attached": true,
+        "uid": 1
+      }
+    },
+    "kernel_output": {
+      "type": "uid",
+      "data": {
+        "attached": true,
+        "uid": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "Both sides attach one edge-internal vertex to edge 0 of a fresh box graph, so uid is that graph's first attachment (1). The Swift test asserts uid != nil and uid >= 0; the uid value was read through graph.edgeAddInternalVertex(0, vertexIndex: 0) with a temporary print. An earlier record had kernel uid 2 because the probe reused a graph that already held one face attachment."
+  },
+  {
+    "test_name": "BRepGraph Supplement Vertices::boxFacesNotNaturalRestriction",
+    "bridge_function": "OCCTBRepGraphFaceIsNaturalRestriction",
+    "bridge_output": {
+      "type": "bool_array",
+      "data": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    "kernel_output": {
+      "type": "bool_array",
+      "data": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Transform::translateGraph",
+    "bridge_function": "OCCTBRepGraphTransformTranslation",
+    "bridge_output": {
+      "type": "vertex",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "v0_from": [
+          -5,
+          -5,
+          -5
+        ],
+        "v0_to": [
+          95,
+          195,
+          295
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "vertex",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "v0_from": [
+          -5,
+          -5,
+          -5
+        ],
+        "v0_to": [
+          95,
+          195,
+          295
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Transform::translateLightCopy",
+    "bridge_function": "OCCTBRepGraphTransformTranslation",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "v0_after_translate_dx10": [
+          -5,
+          -5,
+          -5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "v0_after_translate_dx10": [
+          -5,
+          -5,
+          -5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "The Swift test asserts only the three counts. The v0 value was read through graph.translated(dx: 10, dy: 0, dz: 0, copyGeometry: false).vertexPoint(0) with a temporary print: (-5, -5, -5), unmoved, identical to the kernel (BRepGraph_Transform with the Share policy leaves vertex 0 where it was; see the PR body observation 1). Parity is a MATCH; the unmoved vertex is deliberately not pinned by the test."
+  },
+  {
+    "test_name": "BRepGraph Validate::boxIsValid",
+    "bridge_function": "OCCTBRepGraphValidate",
+    "bridge_output": {
+      "type": "validate",
+      "data": {
+        "isValid": true,
+        "errors": 0,
+        "warnings": 0
+      }
+    },
+    "kernel_output": {
+      "type": "validate",
+      "data": {
+        "isValid": true,
+        "errors": 0,
+        "warnings": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "The Swift test asserts isValid and errorCount == 0. warnings: 0 was read from graph.validate().warningCount with a temporary print, and matches the kernel's BRepGraph_Validate::Perform warning count."
+  },
+  {
+    "test_name": "BRepGraph Vertex Geometry::vertexPoint",
+    "bridge_function": "OCCTBRepGraphVertexPoint",
+    "bridge_output": {
+      "type": "point",
+      "data": [
+        -5,
+        -10,
+        -15
+      ]
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": [
+        -5,
+        -10,
+        -15
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Vertex Geometry::vertexTolerance",
+    "bridge_function": "OCCTBRepGraphVertexTolerance",
+    "bridge_output": {
+      "type": "double",
+      "data": 1e-07
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 1e-07
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Vertex Queries::vertexEdges",
+    "bridge_function": "OCCTBRepGraphVertexEdgeCount",
+    "bridge_output": {
+      "type": "int",
+      "data": 3
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 3
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph UV Grid::sampleBoxFace",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "grid",
+      "data": {
+        "count": 25,
+        "normal": [
+          1,
+          0,
+          0
+        ],
+        "K": 0,
+        "H": 0,
+        "p0": [
+          -5,
+          5,
+          -5
+        ],
+        "p24": [
+          -5,
+          -5,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "grid",
+      "data": {
+        "count": 25,
+        "normal": [
+          1,
+          0,
+          0
+        ],
+        "K": 0,
+        "H": 0,
+        "p0": [
+          -5,
+          5,
+          -5
+        ],
+        "p24": [
+          -5,
+          -5,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph UV Grid::sampleSphereFace",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "grid",
+      "data": {
+        "count": 16,
+        "K_interior": 0.04,
+        "K_poles": 0
+      }
+    },
+    "kernel_output": {
+      "type": "grid",
+      "data": {
+        "count": 16,
+        "K_interior": 0.04,
+        "K_poles": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph UV Grid::sampleSinglePoint",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "count": 1,
+        "p0": [
+          -5,
+          5,
+          -5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "count": 1,
+        "p0": [
+          -5,
+          5,
+          -5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph UV Grid::sampleInvalidFace",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "optional",
+      "data": {
+        "sample": null
+      }
+    },
+    "kernel_output": {
+      "type": "face_lookup",
+      "data": {
+        "faces": 6,
+        "face_999_shape_null": true
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "The nil is the bridge's own guard on the kernel answer, not a kernel output: OCCTBRepGraphSampleFaceUVGrid returns 0 when Shapes().Shape(face 999) is null, and Swift maps 0 to nil. There is no kernel quantity to compare it with."
+    },
+    "status": "N/A",
+    "source": "Bridge: sampleFaceUVGrid(faceIndex: 999, ...) returned nil, which the test asserts. Kernel: the only kernel fact is that the graph has 6 faces and Shapes().Shape(face 999) is null (\"sampleInvalidFace: faces=6, face 999 -> Shape() null=1\" in the probe transcript); it is recorded for context, not compared. The old record put {faces, face_999_exists} on the kernel side against a bare null on the bridge side while claiming equal.",
+    "probe": "Scripts/repro/766-brepgraph-stats-vertex-uvgrid/"
+  },
+  {
+    "test_name": "BRepGraph UV Grid::sampleZeroCounts",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "optional",
+      "data": {
+        "sample": null
+      }
+    },
+    "kernel_output": {
+      "type": "none",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "Rejected in Swift before any bridge or kernel call: Sampling.gridTotal returns nil for a zero sample count, so sampleFaceUVGrid never reaches OCCTBRepGraphSampleFaceUVGrid."
+    },
+    "status": "N/A",
+    "source": "Bridge side: sampleFaceUVGrid(faceIndex: 0, uSamples: 0, vSamples: 5) returned nil, which the test asserts. There is no kernel call for this guard; the probe's \"sampleZeroCounts: no sample (null face or zero count)\" line is a statement of the guard, not a kernel measurement, so no kernel value is recorded. The old record put {uSamples: 0, sampled: false} on the kernel side.",
+    "probe": "Scripts/repro/766-brepgraph-stats-vertex-uvgrid/"
+  },
+  {
+    "test_name": "BRepGraph Wire Extended::wireIsClosed",
+    "bridge_function": "OCCTBRepGraphWireIsClosed",
+    "bridge_output": {
+      "type": "bool_array",
+      "data": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "kernel_output": {
+      "type": "bool_array",
+      "data": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Wire Extended::wireCoEdgeCount",
+    "bridge_function": "OCCTBRepGraphWireNbCoEdges",
+    "bridge_output": {
+      "type": "int",
+      "data": 4
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 4
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Wire Extended::wireFaces",
+    "bridge_function": "OCCTBRepGraphWireFaceIndices",
+    "bridge_output": {
+      "type": "int_array",
+      "data": {
+        "count": 1,
+        "faces": [
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "int_array",
+      "data": {
+        "count": 1,
+        "faces": [
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

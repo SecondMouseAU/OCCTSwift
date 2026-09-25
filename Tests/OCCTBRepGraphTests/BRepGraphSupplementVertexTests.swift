@@ -32,7 +32,7 @@ struct BRepGraphSupplementVertexTests {
         if let uid {
             #expect(uid >= 0)
             // The attachment now shows up in the FaceDirectVertex count for face 0.
-            #expect(graph.faceVertexRefCount(0) >= 1)
+            #expect(graph.faceVertexRefCount(0) == 1)
 
             // Removing by the returned uid succeeds and drops the count back.
             #expect(graph.faceRemoveVertex(0, attachmentUID: uid) == true)
