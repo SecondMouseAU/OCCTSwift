@@ -7,14 +7,16 @@ import simd
 @Suite("IntAna LinePlane Tests")
 struct IntAnaLinePlaneTests {
 
-    @Test func linePlaneIntersection() {
+    @Test func linePlaneIntersection() throws {
         let r = IntAna.linePlane(
             lineOrigin: SIMD3(0, 0, -5), lineDir: SIMD3(0, 0, 1),
             planeOrigin: SIMD3(0, 0, 0), planeNormal: SIMD3(0, 0, 1))
-        #expect(r.points.count == 1)
-        if r.points.count == 1 {
-            #expect(abs(r.points[0].z) < 1e-10)
-        }
+        try #require(r.points.count == 1)
+        // The line crosses z = 0 at the origin; x and y were never read, so a hit anywhere in the
+        // plane passed.
+        #expect(abs(r.points[0].x) < 1e-12)
+        #expect(abs(r.points[0].y) < 1e-12)
+        #expect(abs(r.points[0].z) < 1e-10)
     }
 
     @Test func parallelLineAndPlane() {

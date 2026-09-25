@@ -484,15 +484,15 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
-| linePlaneIntersection | OCCTIntAnaLineQuad | IntAna_IntConicQuad | point z + 1 | ✅ | ✅ |  |
+| linePlaneIntersection | OCCTIntAnaLineQuad | IntAna_IntConicQuad | point z + 1 | ✅ | ✅ | Tightened: the hit's x and y were never read (asserted 0 at 1e-12 now), and the hit is `try #require`, not `if r.points.count == 1`. Red at `IntAnaLinePlaneTests.swift:17` with x + 1 and at `:18` with y + 1 |
 | parallelLineAndPlane | OCCTIntAnaLineQuad | IntAna_IntConicQuad | isParallel forced false | ✅ | ✅ |  |
 | embeddedLineLiesInPlane | OCCTIntAnaLineQuad | IntAna_IntConicQuad | isParallel forced false; isInQuadric forced false | ✅ | ✅ |  |
-| planePlaneIntersection | OCCTIntAnaPlanePlane | IntAna_QuadQuadGeo | solution count 0 | ✅ | ✅ |  |
-| planePlaneLine | OCCTIntAnaPlanePlane | IntAna_QuadQuadGeo | solution count 0; line dx/dy swapped | ✅ | ✅ | Rewritten: skipped every check with no line, then checked only unit length |
-| cylinderSphereIntersection | OCCTIntAnaCylinderSphere | IntAna_IntQuadQuad | NbCurve() + 1 | ✅ | ✅ |  |
+| planePlaneIntersection | OCCTIntAnaPlanePlane | IntAna_QuadQuadGeo | solution count 0 | ✅ | ✅ | Rewritten: asserted `count >= 1` only, which any line and any count passes; now `try #require(r.count == 1)` and the line (origin at the origin, direction -X, as in planePlaneLine). Red at `IntAnaPlanePlaneTests.swift:18` with count 0 or 2, `:20` with origin x + 1, `:21` with direction x negated, `:22` and `:23` with direction y or z + 0.1 |
+| planePlaneLine | OCCTIntAnaPlanePlane | IntAna_QuadQuadGeo | solution count 0; line dx/dy swapped | ✅ | ✅ | Rewritten: skipped every check with no line, then checked only unit length. Red at `:35` with count 0 or 2, `:37` origin x + 1, `:38` direction x negated, `:39`/`:40` direction y/z + 0.1 |
+| cylinderSphereIntersection | OCCTIntAnaCylinderSphere | IntAna_IntQuadQuad | NbCurve() + 1 | ✅ | ✅ | The count is `try #require`, not `#expect(count != nil)` then `if let`: red at `IntAnaQuadQuadTests.swift:11` with the bridge failing (-1) |
 | cylinderSphereNotIdentical | OCCTIntAnaCylinderSphereIdentical | IntAna_IntQuadQuad | drop the IdenticalElements() term | ✅ | ✅ |  |
-| threePlanesAtOrigin | OCCTIntAna3Planes | IntAna_Int3Pln | x + 1 | ✅ | ✅ |  |
-| offsetPlanes | OCCTIntAna3Planes | IntAna_Int3Pln | x + 1 | ✅ | ✅ |  |
+| threePlanesAtOrigin | OCCTIntAna3Planes | IntAna_Int3Pln | x + 1 | ✅ | ✅ | The point is `try #require`, not `#expect(pt != nil)` then `if let`: red at `IntAnaThreePlanesTests.swift:11` with the bridge returning false |
+| offsetPlanes | OCCTIntAna3Planes | IntAna_Int3Pln | x + 1 | ✅ | ✅ | The point is `try #require`, as above: red at `IntAnaThreePlanesTests.swift:20` with the bridge returning false |
 
 ---
 
