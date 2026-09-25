@@ -4574,19 +4574,22 @@
     "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
     "bridge_output": {
       "type": "result",
-      "data": "drift > 1"
-    },
-    "kernel_output": {
-      "type": "result",
       "data": {
-        "slot12_vs_slot21_distance_gt_1": true
+        "max_drift_gt_1": true
       }
     },
-    "comparison": {
-      "equal": true,
-      "differences": []
+    "kernel_output": {
+      "type": "none",
+      "data": null
     },
-    "status": "PASS"
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "The assertion compares two index formulas applied to the bridge's own position buffer (the largest distance between the V-major and U-major reads of a 3x10 grid); no kernel call produces that quantity."
+    },
+    "status": "N/A",
+    "source": "Bridge: the test asserts the largest distance between the pre-#617 V-major read and the U-major read of the 3x10 sample buffer exceeds 1 (a guard that the fixture patch is asymmetric enough to tell the layouts apart). The kernel positions those slots hold are checked against direct evaluation by the neighbouring tests (tallGridMatchesDirectEvaluation, wideGridMatchesDirectEvaluation) using the slot values in the probe transcript; this test adds no kernel quantity of its own. The old record put a string \"drift > 1\" on the bridge side against {slot12_vs_slot21_distance_gt_1} on the kernel side, two different quantities, while claiming equal.",
+    "probe": "Scripts/repro/766-brepgraph-facegrid/"
   },
   {
     "test_name": "Issue 617: FaceGridSample U-major layout::accessorAgreesWithDocumentedIndex",
