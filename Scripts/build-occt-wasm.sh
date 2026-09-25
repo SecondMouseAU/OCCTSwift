@@ -663,7 +663,7 @@ CMAKE_COMMON_OPTS=(
     -DINSTALL_TEST_CASES=OFF
     -DINSTALL_DOC_Overview=OFF
     -DCMAKE_CXX_STANDARD=17
-    # Three things, and every one of them has to reach EVERY translation unit.
+    # Four things, and every one of them has to reach EVERY translation unit.
     #
     # -include <shim>        the std threading stand-ins (#2170). See the block above.
     #
@@ -685,9 +685,50 @@ CMAKE_COMMON_OPTS=(
     #                        #2047's claim that -fwasm-exceptions covers setjmp is wrong; #2171
     #                        measured both halves.
     #
+    #                        IT NOW LOWERS NOTHING, because -UOCC_CONVERT_SIGNALS below removes
+    #                        every setjmp in the build. It is kept because it is inert in a build
+    #                        with no setjmp call and because retiring it also retires -lsetjmp
+    #                        from Package.swift, make-wasi-toolset.py's self-test and #2048's
+    #                        measured matrix, which is a separate change; see #2175's memo.
+    #
+    # -UOCC_CONVERT_SIGNALS  OCCT's own CMake adds -DOCC_CONVERT_SIGNALS on every non-Windows
+    #                        target, which makes OCC_CATCH_SIGNALS expand to a real setjmp. This
+    #                        build cannot have that, and the reason is a codegen defect rather
+    #                        than a preference (#2175).
+    #
+    #                        A function carrying BOTH a lowered setjmp and wasm exceptions comes
+    #                        out INVALID. Measured on BRepCheck_ParallelAnalyzer::operator()(int)
+    #                        const, which has six OCC_CATCH_SIGNALS in one body: the module the
+    #                        pinned clang emits contains
+    #
+    #                            br_table {4, 1, 2, 2}
+    #
+    #                        inside a `try_table (catch_ref 0 0)` whose depth-1 target is a
+    #                        multi-value block with results [i32, exnref] while its depth-2 and
+    #                        depth-4 targets carry nothing. The WebAssembly specification requires
+    #                        every br_table target to have the SAME label types, so this is not a
+    #                        runtime's fussiness: wasmkit refuses the module with "expected the
+    #                        same copy types for all branches in `br_table`", and it is right to.
+    #                        The whole Swift-over-OCCT module dies at the first OCCT call.
+    #
+    #                        Turning the define off is the correct fix and not only the convenient
+    #                        one. OCC_CONVERT_SIGNALS exists to turn an OS signal into a C++
+    #                        exception; a wasm module receives no OS signals at all, so
+    #                        OCC_CATCH_SIGNALS can never do anything here. It also matches what
+    #                        the Apple kernel this repo ships already does, where the macro is
+    #                        inert (okf/references/known-occt-bugs.md, and CLAUDE.md's Known OCCT
+    #                        Bugs).
+    #
+    #                        -U rather than a patch, and it goes in CMAKE_CXX_FLAGS rather than
+    #                        anywhere else, because CMake's compile rule is
+    #                        `$(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS)`: the -U is therefore
+    #                        the LAST word on the command line and wins over the -D OCCT's own
+    #                        CMake put in CXX_DEFINES. A patch would have to find every place
+    #                        upstream adds the define and would move with every kernel bump.
+    #
     # Quoted inside the flag value so a checkout path containing a space still reaches the
     # compiler as one argument. CMake inserts this string into the build command verbatim.
-    "-DCMAKE_CXX_FLAGS=-include \"$WASI_THREADING_SHIM\" $WASM_CXX_EH_FLAGS -mllvm -wasm-enable-sjlj"
+    "-DCMAKE_CXX_FLAGS=-include \"$WASI_THREADING_SHIM\" $WASM_CXX_EH_FLAGS -mllvm -wasm-enable-sjlj -UOCC_CONVERT_SIGNALS"
 )
 
 # --------------------

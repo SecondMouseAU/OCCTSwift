@@ -19,6 +19,23 @@
 #ifndef OCCTBridge_Internal_h
 #define OCCTBridge_Internal_h
 
+// The std threading stand-ins, on WASI only, and FIRST because the declarations below name
+// std::mutex and std::recursive_mutex and the pinned Swift SDK's libc++ is built with
+// _LIBCPP_HAS_THREADS 0, which removes them. #2174 measured that this is a requirement on anything
+// that merely INCLUDES OCCT, not only on OCCT's own compile: Message_ProgressIndicator.hxx,
+// NCollection_IncAllocator.hxx and Poly_Triangulation.hxx name std::mutex or std::shared_mutex in
+// PUBLIC headers, so a bridge translation unit fails on those before it reaches its own mutexes.
+//
+// A guarded #include rather than the `-include` Scripts/build-occt-wasm.sh uses for OCCT's own
+// sources, because a flag would have to come from the consumer's toolset and a consumer who
+// forgets it gets six errors naming std::mutex, while a consumer who forgets nothing cannot forget
+// this. Both mechanisms were measured to work in Scripts/repro/2048/run.sh, cases 4 and 8. The
+// header search path that finds it is `Scripts/wasm-shims`, already in Package.swift's WASI
+// OCCTBridge target, and the shim compiles to nothing against a libc++ that has threads.
+#if defined(__wasi__)
+  #include "wasi-std-threading.hpp"
+#endif
+
 #include <algorithm>
 #include <mutex>
 #include <string>

@@ -2507,92 +2507,108 @@ public final class Shape: @unchecked Sendable {
         }
     }
 
-    /// Whether this shape self-intersects, with a **true hard wall-clock deadline** (#319),
-    /// unlike ``isSelfIntersecting(timeout:)``, this returns at `hardTimeout` even if OCCT never
-    /// reaches a checkpoint to poll.
-    ///
-    /// Runs the check on a detached background thread against a geometry-independent copy of
-    /// this shape and waits on the calling thread with a real deadline. If the deadline passes
-    /// first, this returns `nil` immediately and the background computation is **abandoned, not
-    /// cancelled**, it keeps running orphaned on its own thread until it eventually completes.
-    /// That is a deliberate trade (burned CPU for a caller-side wall-clock guarantee), the same
-    /// one the #286 mesher-hang caller accepted.
-    ///
-    /// - Note: The probe is built via `Shape.deepCopy(_:copyGeometry:copyMesh:)`
-    ///   (`BRepTools_CopyModification`), not the no-argument instance `deepCopy()`
-    ///   (`TNaming_CopyShape::CopyTool`), which only clones topology and would leave the probe
-    ///   sharing `Geom_Surface`/`Geom_Curve` handles, and their mutable evaluation caches, with
-    ///   `self` (#1160, following up on #831). The orphaned background computation on `probe`
-    ///   and the caller continuing to use `self` after a timeout are independent `Geom_Surface`/
-    ///   `Geom_Curve` objects, not just independent `TopoDS_Shape`s, so they no longer race on
-    ///   `docs/thread-safety.md` item 1's shared adaptor caches. `copyMesh` stays `false`, the
-    ///   triangulation plays no part in `BOPAlgo_CheckerSI`'s self-interference analysis. If
-    ///   `deepCopy` itself fails (rare on a valid shape; `BRepTools_Modifier` throws a catchable
-    ///   `Standard_Failure` for, e.g., a nullified shape, and `deepCopy` returns `nil` for that
-    ///   or any other construction failure), this returns `nil` rather than silently falling back
-    ///   to a `self`-based check, which would reintroduce the exact shared-cache race this method
-    ///   exists to avoid (#1549).
-    ///
-    /// - Important: `BOPAlgo_ArgumentAnalyzer`'s safety when run on a background thread
-    ///   concurrently with unrelated OCCT calls on other threads was verified with a
-    ///   ThreadSanitizer stress test (60 bursts × 8 threads, half running self-intersection
-    ///   checks on independent self-intersecting shapes, half running unrelated fuse+mesh work,
-    ///   480 operations total): zero TSan race reports, zero wrong-but-plausible results. That
-    ///   covers one stress shape and one access pattern, not an exhaustive audit of every
-    ///   `BOPAlgo_ArgumentAnalyzer`/`Intf_Interference` code path, prefer
-    ///   ``isSelfIntersecting(timeout:)`` unless a caller genuinely needs a hard in-process
-    ///   wall-clock guarantee (e.g. no process/subprocess isolation available).
-    ///
-    /// - Parameter hardTimeout: Seconds to wait before giving up and returning `nil`.
-    /// - Returns: `true`/`false` if the check completed in time, `nil` if the deadline passed
-    ///   first (indeterminate, the background check may still be running), if the analysis
-    ///   could not answer the question, per ``isSelfIntersecting(timeout:)``, or if the
-    ///   geometry-independent probe itself could not be built (#1549). The inner call
-    ///   passes `0`, so no watchdog can abort it, but `BOPAlgo_OperationAborted` is recorded for
-    ///   any `BOPAlgo_CheckerSI` error and not only a watchdog break, so that case reaches this
-    ///   entry point too.
-    ///
-    /// ```swift
-    /// // Bound total wall-clock time even on a pathological B-spline solid with no
-    /// // OCCT checkpoints in its self-interference phase.
-    /// switch solid.isSelfIntersecting(hardTimeout: 5) {
-    /// case .some(true):  print("self-intersects")
-    /// case .some(false): print("clean")
-    /// case .none:        print("deadline hit, treat as unknown, not clean")
-    /// }
-    /// ```
-    public func isSelfIntersecting(hardTimeout: Double) -> Bool? {
-        final class SelfIntersectResultBox: @unchecked Sendable {
-            var rawResult: Int32 = -1
+    // NOT AVAILABLE ON WASI, and not because Dispatch happens to be missing (#2175).
+    //
+    // This entry point's whole contract is a HARD wall-clock deadline: a second thread runs the
+    // check while this one waits on a semaphore, so the caller gets an answer at `hardTimeout`
+    // whether or not OCCT has reached a checkpoint. `wasm32-unknown-wasip1` in the non-threads
+    // configuration this package targets has one thread and one linear memory. There is no
+    // second thread to run the check on, so no implementation of this signature can honour it:
+    // a wasm version would have to become the cooperative `isSelfIntersecting(timeout:)` that
+    // already exists beside it, under a name that promises something stronger.
+    //
+    // So it is removed rather than weakened. A caller who needs a bound on wasm calls
+    // ``isSelfIntersecting(timeout:)``, whose bound is cooperative and says so. Whether the wasm
+    // surface should instead carry this name with the cooperative behaviour is an API decision
+    // for Phase 2 and is filed as its own issue, not settled here by a `#if`.
+    #if !os(WASI)
+        /// Whether this shape self-intersects, with a **true hard wall-clock deadline** (#319),
+        /// unlike ``isSelfIntersecting(timeout:)``, this returns at `hardTimeout` even if OCCT never
+        /// reaches a checkpoint to poll.
+        ///
+        /// Runs the check on a detached background thread against a geometry-independent copy of
+        /// this shape and waits on the calling thread with a real deadline. If the deadline passes
+        /// first, this returns `nil` immediately and the background computation is **abandoned, not
+        /// cancelled**, it keeps running orphaned on its own thread until it eventually completes.
+        /// That is a deliberate trade (burned CPU for a caller-side wall-clock guarantee), the same
+        /// one the #286 mesher-hang caller accepted.
+        ///
+        /// - Note: The probe is built via `Shape.deepCopy(_:copyGeometry:copyMesh:)`
+        ///   (`BRepTools_CopyModification`), not the no-argument instance `deepCopy()`
+        ///   (`TNaming_CopyShape::CopyTool`), which only clones topology and would leave the probe
+        ///   sharing `Geom_Surface`/`Geom_Curve` handles, and their mutable evaluation caches, with
+        ///   `self` (#1160, following up on #831). The orphaned background computation on `probe`
+        ///   and the caller continuing to use `self` after a timeout are independent `Geom_Surface`/
+        ///   `Geom_Curve` objects, not just independent `TopoDS_Shape`s, so they no longer race on
+        ///   `docs/thread-safety.md` item 1's shared adaptor caches. `copyMesh` stays `false`, the
+        ///   triangulation plays no part in `BOPAlgo_CheckerSI`'s self-interference analysis. If
+        ///   `deepCopy` itself fails (rare on a valid shape; `BRepTools_Modifier` throws a catchable
+        ///   `Standard_Failure` for, e.g., a nullified shape, and `deepCopy` returns `nil` for that
+        ///   or any other construction failure), this returns `nil` rather than silently falling back
+        ///   to a `self`-based check, which would reintroduce the exact shared-cache race this method
+        ///   exists to avoid (#1549).
+        ///
+        /// - Important: `BOPAlgo_ArgumentAnalyzer`'s safety when run on a background thread
+        ///   concurrently with unrelated OCCT calls on other threads was verified with a
+        ///   ThreadSanitizer stress test (60 bursts × 8 threads, half running self-intersection
+        ///   checks on independent self-intersecting shapes, half running unrelated fuse+mesh work,
+        ///   480 operations total): zero TSan race reports, zero wrong-but-plausible results. That
+        ///   covers one stress shape and one access pattern, not an exhaustive audit of every
+        ///   `BOPAlgo_ArgumentAnalyzer`/`Intf_Interference` code path, prefer
+        ///   ``isSelfIntersecting(timeout:)`` unless a caller genuinely needs a hard in-process
+        ///   wall-clock guarantee (e.g. no process/subprocess isolation available).
+        ///
+        /// - Parameter hardTimeout: Seconds to wait before giving up and returning `nil`.
+        /// - Returns: `true`/`false` if the check completed in time, `nil` if the deadline passed
+        ///   first (indeterminate, the background check may still be running), if the analysis
+        ///   could not answer the question, per ``isSelfIntersecting(timeout:)``, or if the
+        ///   geometry-independent probe itself could not be built (#1549). The inner call
+        ///   passes `0`, so no watchdog can abort it, but `BOPAlgo_OperationAborted` is recorded for
+        ///   any `BOPAlgo_CheckerSI` error and not only a watchdog break, so that case reaches this
+        ///   entry point too.
+        ///
+        /// ```swift
+        /// // Bound total wall-clock time even on a pathological B-spline solid with no
+        /// // OCCT checkpoints in its self-interference phase.
+        /// switch solid.isSelfIntersecting(hardTimeout: 5) {
+        /// case .some(true):  print("self-intersects")
+        /// case .some(false): print("clean")
+        /// case .none:        print("deadline hit, treat as unknown, not clean")
+        /// }
+        /// ```
+        public func isSelfIntersecting(hardTimeout: Double) -> Bool? {
+            final class SelfIntersectResultBox: @unchecked Sendable {
+                var rawResult: Int32 = -1
+            }
+            // A `deepCopy` failure is rare on a valid shape, but falling back to `self` here would
+            // silently reintroduce the shared-`Geom_Surface`/`Geom_Curve`-evaluation-cache race this
+            // method exists to avoid (#1549): the whole point of the probe is that it is NOT `self`.
+            // `nil` is the existing "indeterminate" answer this method already gives for a check that
+            // could not run to completion, so a probe that could not even be built reads the same way.
+            guard let probe = Shape.deepCopy(self, copyGeometry: true, copyMesh: false) else {
+                return nil
+            }
+            let box = SelfIntersectResultBox()
+            // The `0` below is load-bearing beyond "the caller's deadline is the only bound", and a
+            // test depends on it: passing 0 means no watchdog exists, so this call can never lose a
+            // conclusive answer to an aborted analysis the way a cooperative `timeout:` can (#1054).
+            // Issue598PipeShellFrenetModeTests uses this entry point for exactly that property.
+            // Threading a cooperative bound in here would reintroduce that fragility silently.
+            let semaphore = DispatchSemaphore(value: 0)
+            DispatchQueue.global(qos: .userInitiated).async {
+                box.rawResult = OCCTShapeSelfIntersectsBounded(probe.handle, 0)
+                semaphore.signal()
+            }
+            guard semaphore.wait(timeout: .now() + hardTimeout) == .success else {
+                return nil
+            }
+            switch box.rawResult {
+            case 1: return true
+            case 0: return false
+            default: return nil
+            }
         }
-        // A `deepCopy` failure is rare on a valid shape, but falling back to `self` here would
-        // silently reintroduce the shared-`Geom_Surface`/`Geom_Curve`-evaluation-cache race this
-        // method exists to avoid (#1549): the whole point of the probe is that it is NOT `self`.
-        // `nil` is the existing "indeterminate" answer this method already gives for a check that
-        // could not run to completion, so a probe that could not even be built reads the same way.
-        guard let probe = Shape.deepCopy(self, copyGeometry: true, copyMesh: false) else {
-            return nil
-        }
-        let box = SelfIntersectResultBox()
-        // The `0` below is load-bearing beyond "the caller's deadline is the only bound", and a
-        // test depends on it: passing 0 means no watchdog exists, so this call can never lose a
-        // conclusive answer to an aborted analysis the way a cooperative `timeout:` can (#1054).
-        // Issue598PipeShellFrenetModeTests uses this entry point for exactly that property.
-        // Threading a cooperative bound in here would reintroduce that fragility silently.
-        let semaphore = DispatchSemaphore(value: 0)
-        DispatchQueue.global(qos: .userInitiated).async {
-            box.rawResult = OCCTShapeSelfIntersectsBounded(probe.handle, 0)
-            semaphore.signal()
-        }
-        guard semaphore.wait(timeout: .now() + hardTimeout) == .success else {
-            return nil
-        }
-        switch box.rawResult {
-        case 1: return true
-        case 0: return false
-        default: return nil
-        }
-    }
+    #endif
 
     /// Detailed self-intersection check with progress information (BOPAlgo-based).
     ///

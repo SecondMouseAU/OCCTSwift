@@ -55,7 +55,7 @@ figure (interactive 3D where it helps). The **[Cookbook index](guides/cookbook/)
 - [Thread Safety](thread-safety.md) · [Bridge Diagnostics](reference/Diagnostics.md) · [Naming Conventions](naming-conventions.md) ·
   [Versioning (SemVer)](SEMVER.md) · [Ecosystem](ecosystem.md)
 - [WebAssembly feasibility](wasm-feasibility.md), the wasm32-wasip1 plan of record: what is
-  proven, what is not, and the Phase 0 go/no-go.
+  proven, what is not, and the Phase 0 memo, whose verdict is GO with four conditions (#2175).
 - [WASI guard sites](WASI_GUARD_SITES.md), the `std` names the wasip1 libc++ removes, the files
   that use them, and why they are answered by a shim rather than by a patch.
 - [v4.0.0 Release Plan](v4.0.0-plan.md), scope, order, and beta/RC criteria for the in-flight major.

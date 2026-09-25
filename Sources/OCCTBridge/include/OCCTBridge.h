@@ -20,6 +20,15 @@
 // compile of this header (#2256).
 #include <stdint.h>
 
+// `bool`, for the same reason and found the same way one layer later (#2175). Every .mm in this
+// target compiles as C++, where `bool` is a keyword, so the bridge's own translation units never
+// noticed. `import OCCTBridge` from Swift builds these headers as a clang module in C (Objective-C
+// on Apple), and in C `bool` is a macro `<stdbool.h>` defines: 1,198 `unknown type name 'bool'`
+// errors across 14 of this directory's 18 headers, out of 1,523 errors in total, on the first
+// wasm compile of the SWIFT target. None of them is reachable from a C++ compile of the bridge,
+// which is why every .mm in this target had already compiled clean.
+#include <stdbool.h>
+
 #if !defined(__wasi__)
   #import <Foundation/Foundation.h>
 #endif

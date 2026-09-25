@@ -239,6 +239,35 @@ other half: without `-lsetjmp` the module fails on `__wasm_setjmp`, `__wasm_long
 `__c_longjmp`, and without wasi-sdk's `eh` `libc++abi` and `libunwind` it fails on
 `__cxa_allocate_exception`, `__cxa_begin_catch` and `__cxa_end_catch`.
 
+### The setjmp half is now switched off, and the reason is a codegen defect (#2175)
+
+`Scripts/build-occt-wasm.sh` also passes **`-UOCC_CONVERT_SIGNALS`**, which is a fourth thing in
+`CMAKE_CXX_FLAGS` and the only one that takes something away. OCCT's own CMake adds
+`-DOCC_CONVERT_SIGNALS` on every non-Windows target, and with it `OCC_CATCH_SIGNALS` expands to a
+real `setjmp`; the `-U` is last on the command line, because CMake's compile rule is
+`$(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS)`, so it wins.
+
+A function that carries **both** a lowered `setjmp` and wasm exceptions comes out invalid. Measured
+on `BRepCheck_ParallelAnalyzer::operator()(int) const`, which has six `OCC_CATCH_SIGNALS` in one
+body: the emitted `br_table` has targets whose label types differ, `[i32, exnref]` for one and
+nothing for the others, which the WebAssembly specification forbids. wasmkit refuses the module and
+is right to. The whole Swift-over-OCCT module died at its first OCCT call until this define was
+switched off. `Scripts/repro/2175/run.sh sjlj` reproduces both directions.
+
+It is also the semantically correct setting rather than only the convenient one:
+`OCC_CONVERT_SIGNALS` exists to turn an OS signal into a C++ exception, and a wasm module receives
+no OS signals, so `OCC_CATCH_SIGNALS` could never do anything here. It matches the Apple kernel this
+repo ships, where the macro is inert for a different reason
+(`okf/references/known-occt-bugs.md`).
+
+**Two consequences for the paragraph above.** The clean archive contains **zero** references to
+`__wasm_setjmp`, `__wasm_longjmp` or `__c_longjmp`, measured with the pinned `llvm-nm` over all
+5,488 members, so `-mllvm -wasm-enable-sjlj` lowers nothing and `-lsetjmp` resolves nothing. Both
+are kept for now because retiring them also touches `Package.swift`,
+`Scripts/make-wasi-toolset.py`'s `--self-test` and #2048's measured matrix, which is a separate
+change; and `Scripts/repro/2174/run.sh libs` will now report `-lsetjmp` as **not** load-bearing,
+which is a moved number rather than a regression.
+
 ## Gaps that are closed, and what is left
 
 **`TKernel` is complete: 127 of 127.** [#2172](https://github.com/SecondMouseAU/OCCTSwift/issues/2172)
