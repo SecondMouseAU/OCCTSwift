@@ -431,6 +431,10 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
                 // deprecated `--build-system native` a cxxSettings `-x c++` reaches .c sources in
                 // the same target, while the toolset's does not.
                 // Use WASI-built OCCT headers
+                // Relative to this target's own path, Sources/OCCTBridge/src, which is what
+                // SwiftPM resolves headerSearchPath against. It is two levels up because the
+                // target's sources sit in a `src` subdirectory; moving them would break this, and
+                // SwiftPM offers no package-root-relative form.
                 .headerSearchPath("../../Libraries/occt-headers-wasm"),
                 // The threading shim, for a bridge source that includes it by name under an
                 // `#if defined(__wasi__)` guard. A guarded `#include` needs no build setting of
@@ -461,6 +465,12 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
                 // is there too but is the NO-EXCEPTIONS flavour, so the toolset's -L into
                 // wasi-sdk's lib/wasm32-wasip1/eh has to precede the sysroot rather than merely
                 // be present.
+                // Deliberately repeated from the OCCT target, which also declares it. A review
+                // suggested removing it here on the grounds that SwiftPM propagates a dependency's
+                // linker settings. That may well be so, and a duplicate `-l` is a no-op to the
+                // linker either way, but it cannot be checked until `libOCCT-wasm.a` exists, which
+                // is #2174. Dropping it on an untested assumption trades a harmless duplicate for
+                // an `undefined symbol` at the end of a full link. Revisit once #2174 lands.
                 .linkedLibrary("OCCT-wasm"),
                 .linkedLibrary("c++"),
                 .linkedLibrary("c++abi"),

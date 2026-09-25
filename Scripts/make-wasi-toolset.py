@@ -89,7 +89,19 @@ def eh_library_dir(wasi_sdk: Path) -> Path:
     `cxa_noexception.cpp.o` and defines no `__cxa_throw`) and no `libunwind` at all, so this
     directory has to precede the sysroot on the library search path, not merely be on it.
     """
-    return wasi_sdk / "share" / "wasi-sysroot" / "lib" / "wasm32-wasip1" / "eh"
+    path = wasi_sdk / "share" / "wasi-sysroot" / "lib" / "wasm32-wasip1" / "eh"
+    # The layout is wasi-sdk 34.0's, pinned in Scripts/wasm-toolchain-versions.txt. Check it rather
+    # than trust it: if a later wasi-sdk moves this, the toolset would still be written and the
+    # failure would surface as `undefined symbol: __cxa_throw` at the end of a full link, which is
+    # a long way from the cause. Both names are required, since the sysroot supplies neither.
+    if path.is_dir():
+        missing = [n for n in ("libc++abi.a", "libunwind.a") if not (path / n).is_file()]
+        if missing:
+            raise SystemExit(
+                f"{path} exists but does not hold {', '.join(missing)}. This is wasi-sdk's "
+                f"exception-enabled C++ runtime and the link needs it; check the wasi-sdk version "
+                f"against WASI_SDK_VERSION in Scripts/wasm-toolchain-versions.txt.")
+    return path
 
 
 def build_toolset(wasi_sdk: Path, occt_lib_dir: Path, shim: Path | None,
@@ -197,8 +209,11 @@ def self_test() -> int:
             if opt.startswith("-wasm-") and (index == 0 or opts[index - 1] != "-mllvm"):
                 failures.append(f"{tool}'s {opt} is not preceded by -mllvm")
 
-    # The shim is force-included when one is named, and not otherwise.
-    if ["-include", "/shim.hpp"] != cxx[-2:]:
+    # The shim is force-included when one is named, and not otherwise. Checked by presence, not
+    # by position: this used to assert `cxx[-2:]`, which would fail the moment anything was
+    # appended after the shim, and a self-test that fails on a correct document is as broken as
+    # one that passes on a wrong one.
+    if not any(cxx[i] == "-include" and cxx[i + 1] == "/shim.hpp" for i in range(len(cxx) - 1)):
         failures.append("the shim is not force-included")
     if any("-include" == opt for opt in
            build_toolset(Path("/wasi"), Path("/libs"), None, eh)["cxxCompiler"]["extraCLIOptions"]):
