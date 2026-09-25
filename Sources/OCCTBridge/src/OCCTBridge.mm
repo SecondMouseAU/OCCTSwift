@@ -671,6 +671,13 @@ bool occtHasSelfIntersectingWire(const TopoDS_Shape& s)
 {
   if (s.IsNull())
     return false;
+  // #2750: BRepCheck_Analyzer faults on a face edge with no valid 3D curve and a pcurve
+  // (#2746), which is reachable from a .brep file alone. This guard exists to PREVENT a crash, so
+  // it answers the same way this function's own catch (...) below already does: true, refuse the
+  // operation. That is the contract here, not a claim that a self-intersecting wire was found;
+  // every caller treats true as "do not proceed", and the shape is invalid either way.
+  if (occtShapeHasPCurveOnlyEdge(s))
+    return true;
   try
   {
     BRepCheck_Analyzer analyzer(s);
@@ -712,6 +719,13 @@ bool occtHasSelfIntersectingWire(const TopoDS_Shape& s)
         BRepBuilderAPI_MakeFace faceMaker(wire, /*OnlyPlane=*/true);
         if (!faceMaker.IsDone())
           continue; // not planar, or otherwise can't be faced: no verdict from this path
+        // #2750: the guard above cannot stand in for this one. It only looks at edges that
+        // already belong to a face, and this branch runs precisely when `s` has no face at all:
+        // the face synthesized here is what first puts those edges in a face context, and so
+        // what first makes them able to reach BRepCheck_Edge::InContext (#2746). Refusing the
+        // operation is the same answer the outer guard and this function's catch (...) give.
+        if (occtShapeHasPCurveOnlyEdge(faceMaker.Face()))
+          return true;
         BRepCheck_Analyzer wireAnalyzer(faceMaker.Face());
         if (wireAnalyzer.IsValid())
           continue;
