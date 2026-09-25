@@ -5844,11 +5844,11 @@
       "data": {
         "sphere_r5_u0_v0.3": {
           "kmax": -0.2,
-          "kmin": -0.2
+          "kmin": -0.20000000000000004
         },
         "cylinder_r3_u1.2_v-0.8": {
           "kmax": 0.0,
-          "kmin": -0.3333333333333333
+          "kmin": -0.33333333333333326
         },
         "apex_cone_v0.01": {
           "H": -86.60254037844388
@@ -5864,11 +5864,11 @@
       "data": {
         "sphere_r5_u0_v0.3": {
           "kmax": -0.2,
-          "kmin": -0.2
+          "kmin": -0.20000000000000004
         },
         "cylinder_r3_u1.2_v-0.8": {
           "kmax": 0.0,
-          "kmin": -0.3333333333333333
+          "kmin": -0.33333333333333326
         },
         "apex_cone_v0.01": {
           "H": -86.60254037844388
@@ -5884,7 +5884,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-local-props-parity/"
+    "probe": "Scripts/repro/766-local-props-parity/transcript-evidence-fix.txt",
+    "source": "Same quantities on both sides: kmax and kmin of a sphere (r 5, u 0, v 0.3) and a cylinder (r 3, u 1.2, v -0.8), H of the apex cone (v 0.01), and for the plane at (1, 2) defined and umbilic. Bridge: Surface.localCurvatures(u:v:) read with a temporary print in the test helper (not committed): sphere maxCurvature -0.2 and minCurvature -0.20000000000000004, cylinder 0.0 and -0.33333333333333326, cone mean -86.60254037844388; for the plane localCurvatures is non-nil (defined true) and localCurvatureDirections is nil, which is the bridge's umbilic rejection (OCCTSurfaceLocalCurvatureDirections sets isDefined = IsCurvatureDefined() && !IsUmbilic()), so umbilic true. Kernel: GeomLProp_SLProps at Precision::Confusion() printed, in the wellConditionedSurfacesAgree section of transcript-evidence-fix.txt, kmax -0.20000000000000001 (the double -0.2) and kmin -0.20000000000000004; kmax 0 and kmin -0.33333333333333326; H -86.602540378443877; plane defined=1 umbilic=1. The bridge and kernel doubles are identical. The earlier record carried kmin -0.2 and -0.3333333333333333, which are not the measured doubles (corrected)."
   },
   {
     "test_name": "Local* local-properties parity (#494)::Inside the old 1e-10 window the two Surface families agree",
@@ -5912,7 +5913,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-local-props-parity/"
+    "probe": "Scripts/repro/766-local-props-parity/transcript-evidence-fix.txt",
+    "source": "Same quantity on both sides: whether curvature is defined. Bridge: Surface.localCurvatures(u: 0, v:) on the apex cone (semi-angle pi/6, radius 0) was nil at v 1e-9, 1e-8 and 1e-7 and non-nil at v 3e-7 and 1e-6; on a radius-3 sphere at v = pi/2 - delta it was nil at delta 1e-9 and 1e-8 and non-nil at 1e-7 (temporary print of the helper's local value, not committed; principalCurvatures agrees, as the test asserts). Kernel: GeomLProp_SLProps IsCurvatureDefined() at Precision::Confusion() printed defined=0 for the cone at v 1e-9, 1e-8, 1e-7 and defined=1 at 3e-7 and 1e-6; defined=0 for the sphere at delta 1e-9 and 1e-8 and defined=1 at 1e-7 (surfaceToleranceWindowAgrees section of transcript-evidence-fix.txt). Values are definedness only, so no numeric precision is at issue."
   },
   {
     "test_name": "Local* local-properties parity (#494)::Genuinely degenerate surface points are undefined for both families",
@@ -5936,7 +5938,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-local-props-parity/"
+    "probe": "Scripts/repro/766-local-props-parity/transcript-evidence-fix.txt",
+    "source": "Same quantity on both sides: whether curvature is defined at a genuine degeneracy. Bridge: Surface.localCurvatures, principalCurvatures and localCurvatureDirections at the apex cone's v = 0 were all nil, and localCurvatures at both poles (v = +pi/2 and -pi/2) of a radius-3 sphere was nil (temporary prints, not committed). Kernel: GeomLProp_SLProps IsCurvatureDefined() at Precision::Confusion() printed defined=0 for the cone at v 0 and for the sphere at v = +pi/2 and -pi/2 (degenerateSurfacePointsAgree section of transcript-evidence-fix.txt)."
   },
   {
     "test_name": "Local* local-properties parity (#494)::Well-conditioned curve parameters agree",
@@ -5945,11 +5948,11 @@
       "type": "curve_props",
       "data": {
         "circle_r5_u0.7_tangent": [
-          -0.644218,
-          0.764842,
-          0
+          -0.644217687237691,
+          0.7648421872844885,
+          0.0
         ],
-        "line_curvature": 0,
+        "line_curvature": 0.0,
         "bezier_u0.25_curvature": 0.6105956290559427
       }
     },
@@ -5957,11 +5960,11 @@
       "type": "curve_props",
       "data": {
         "circle_r5_u0.7_tangent": [
-          -0.644218,
-          0.764842,
-          0
+          -0.644217687237691,
+          0.7648421872844885,
+          0.0
         ],
-        "line_curvature": 0,
+        "line_curvature": 0.0,
         "bezier_u0.25_curvature": 0.6105956290559427
       }
     },
@@ -5970,7 +5973,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-local-props-parity/"
+    "probe": "Scripts/repro/766-local-props-parity/transcript-evidence-fix.txt",
+    "source": "Same quantities on both sides: the tangent of a radius-5 circle at u 0.7, the curvature of a line at u 1, and the curvature of the spacing-1 cubic Bezier at u 0.25. Bridge: Curve3D.localTangent(at: 0.7) on the circle (equal to tangentDirection(at: 0.7)) returned (-0.644217687237691, 0.7648421872844885, 0.0), and curvature(at:) returned 0.0 on the line at u 1 and 0.6105956290559427 on the Bezier at u 0.25 (temporary print in the curve helper, not committed). Kernel: GeomLProp_CLProps at Precision::Confusion() printed tangent=(-0.64421768723769102, 0.7648421872844885, 0) for the circle, curvature=0 for the line and curvature=0.61059562905594267 for the Bezier (wellConditionedCurvesAgree section of transcript-evidence-fix.txt); the same doubles. The earlier record carried the circle tangent as (-0.644218, 0.764842, 0), the six-digit rounding the first transcript printed, not a measured value (corrected)."
   },
   {
     "test_name": "Local* local-properties parity (#494)::Inside the old 1e-10 window the two Curve3D families agree",
@@ -5979,14 +5983,14 @@
       "type": "curve_props",
       "data": {
         "cusp_spacing_1e-8_tangent": [
-          0.707107,
-          0.707107,
-          0
+          0.7071067741154795,
+          0.7071067882576154,
+          0.0
         ],
         "cusp_spacing_1e-7_tangent": [
-          1,
-          0,
-          0
+          1.0,
+          0.0,
+          0.0
         ]
       }
     },
@@ -5994,14 +5998,14 @@
       "type": "curve_props",
       "data": {
         "cusp_spacing_1e-8_tangent": [
-          0.707107,
-          0.707107,
-          0
+          0.7071067741154795,
+          0.7071067882576154,
+          0.0
         ],
         "cusp_spacing_1e-7_tangent": [
-          1,
-          0,
-          0
+          1.0,
+          0.0,
+          0.0
         ]
       }
     },
@@ -6010,7 +6014,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-local-props-parity/"
+    "probe": "Scripts/repro/766-local-props-parity/transcript-evidence-fix.txt",
+    "source": "Same quantity on both sides: the tangent at u 0 of the cubic Bezier whose first two poles are spacing apart, at spacing 1e-8 and 1e-7. Bridge: Curve3D.localTangent(at: 0) (equal to tangentDirection(at: 0)) returned (0.7071067741154795, 0.7071067882576154, 0.0) at spacing 1e-8 and (1.0, 0.0, 0.0) at 1e-7 (temporary print in the curve helper, not committed). Kernel: GeomLProp_CLProps at Precision::Confusion() printed tangent=(0.70710677411547951, 0.70710678825761542, 0) and (1, 0, 0) (curveToleranceWindowAgrees section of transcript-evidence-fix.txt); the same doubles. The earlier record carried (0.707107, 0.707107, 0), the six-digit rounding of the first transcript, which is 2.6e-7 away from the measured tangent (corrected)."
   },
   {
     "test_name": "Local* local-properties parity (#494)::Shape.curveLocalProps agrees with Edge's per-scalar entry points",
@@ -6019,14 +6024,14 @@
       "type": "curve_props",
       "data": {
         "circle_edges_curvature": 0.1,
-        "seam_edges_curvature": 0
+        "seam_edges_curvature": 0.0
       }
     },
     "kernel_output": {
       "type": "curve_props",
       "data": {
         "circle_edges_curvature": 0.1,
-        "seam_edges_curvature": 0
+        "seam_edges_curvature": 0.0
       }
     },
     "comparison": {
@@ -6034,7 +6039,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-local-props-parity/"
+    "probe": "Scripts/repro/766-local-props-parity/transcript-evidence-fix.txt",
+    "source": "Same quantity on both sides: the curvature of the radius-10 cylinder's two circle edges and its seam line edge, at parameters 0, 0.5, 1 and 2. Bridge: Shape.curveLocalProps(at:).curvature and Edge.curvature(at:) (temporary print, not committed) returned 0.1 at all four parameters on both circle edges (edges 0 and 2) and 0.0 at all four on the seam (edge 1). Kernel: GeomLProp_CLProps on the same unique edges printed curvature=0.10000000000000001 (the double 0.1) at all four parameters for both Geom_Circle edges and curvature=0 for the Geom_Line edge (curveLocalPropsAgreesWithEdge section of transcript-evidence-fix.txt)."
   },
   {
     "test_name": "Local* local-properties parity (#494)::Shape.curveLocalProps agrees with Edge on a cusped edge",
@@ -6042,15 +6048,15 @@
     "bridge_output": {
       "type": "curve_props",
       "data": {
-        "spacing_0_to_1e-8": "RealLast",
-        "spacing_1e-7": 666666.6666666667
+        "spacing_0_1e-12_1e-9_1e-8": "RealLast",
+        "spacing_1e-7": 66666666666666.67
       }
     },
     "kernel_output": {
       "type": "curve_props",
       "data": {
-        "spacing_0_to_1e-8": "RealLast",
-        "spacing_1e-7": 666666.6666666667
+        "spacing_0_1e-12_1e-9_1e-8": "RealLast",
+        "spacing_1e-7": 66666666666666.67
       }
     },
     "comparison": {
@@ -6058,7 +6064,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-local-props-parity/"
+    "probe": "Scripts/repro/766-local-props-parity/transcript-evidence-fix.txt",
+    "source": "Same quantity on both sides: the curvature at u 0 of the cusp Bezier (first two poles spacing apart) at spacing 0, 1e-12, 1e-9, 1e-8 (RealLast, OCCT's infinite-curvature sentinel, Double.greatestFiniteMagnitude) and 1e-7 (a finite number). Bridge: Shape.curveLocalProps(at: 0).curvature and Edge.curvature(at: 0) (temporary print, not committed) returned 1.7976931348623157e+308 (RealLast) at 0, 1e-12, 1e-9 and 1e-8 and 66666666666666.67 at 1e-7. Kernel: GeomLProp_CLProps at Precision::Confusion() printed curvature=1.7976931348623157e+308 (RealLast) at those four spacings and curvature=66666666666666.672 (the double 66666666666666.67) at 1e-7 (curveLocalPropsAgreesOnCusp section of transcript-evidence-fix.txt). The earlier record carried 666666.6666666667 for spacing 1e-7, which is the spacing-1e-3 curvature, not the measured 6.67e13 (corrected); the key that read spacing_0_to_1e-8 now names the four spacings tested."
   },
   {
     "test_name": "Local* local-properties parity (#494)::Shape.surfaceLocalProps agrees with Face's per-scalar entry points",
@@ -6066,15 +6073,19 @@
     "bridge_output": {
       "type": "curvatures",
       "data": {
-        "lateral_H": -0.05,
-        "caps_H": 0
+        "lateral_H_u0_v0": -0.05,
+        "lateral_H_u0.5_v1": -0.05,
+        "lateral_H_u1.2_v2": -0.05000000000000002,
+        "caps_H": 0.0
       }
     },
     "kernel_output": {
       "type": "curvatures",
       "data": {
-        "lateral_H": -0.05,
-        "caps_H": 0
+        "lateral_H_u0_v0": -0.05,
+        "lateral_H_u0.5_v1": -0.05,
+        "lateral_H_u1.2_v2": -0.05000000000000002,
+        "caps_H": 0.0
       }
     },
     "comparison": {
@@ -6082,7 +6093,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-local-props-parity/"
+    "probe": "Scripts/repro/766-local-props-parity/transcript-evidence-fix.txt",
+    "source": "Same quantity on both sides: the mean curvature H of the radius-10 cylinder's lateral face at (u, v) = (0, 0), (0.5, 1) and (1.2, 2), and of its two planar caps (0 at every one of those points). Bridge: Shape.surfaceLocalProps(u:v:).meanCurvature (equal to Face.meanCurvature(atU:v:), as the test asserts) returned -0.05, -0.05 and -0.05000000000000002 on the lateral face and 0.0 on both caps at all three points (temporary print, not committed). Kernel: GeomLProp_SLProps at Precision::Confusion() on the same unique faces printed H=-0.050000000000000003, -0.050000000000000003 and -0.050000000000000017 for the Geom_CylindricalSurface and H=0 for both Geom_Plane faces at all three points (surfaceLocalPropsAgreesWithFace section of transcript-evidence-fix.txt); the same doubles. The earlier record carried a single lateral_H of -0.05, true at two of the three points."
   },
   {
     "test_name": "Local* local-properties parity (#494)::Shape.surfaceLocalProps agrees with Face approaching a cone apex",
@@ -6092,7 +6104,7 @@
       "data": {
         "apex_minus_1e-8_1e-7": "undefined",
         "apex_minus_5e-7_to_1e-5": "defined",
-        "apex_minus_1e-6_H": -1000000.000613578
+        "apex_minus_1e-6_H": -1000000.0023899348
       }
     },
     "kernel_output": {
@@ -6100,7 +6112,7 @@
       "data": {
         "apex_minus_1e-8_1e-7": "undefined",
         "apex_minus_5e-7_to_1e-5": "defined",
-        "apex_minus_1e-6_H": -1000000.000613578
+        "apex_minus_1e-6_H": -1000000.0023899348
       }
     },
     "comparison": {
@@ -6108,7 +6120,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-local-props-parity/"
+    "probe": "Scripts/repro/766-local-props-parity/transcript-evidence-fix.txt",
+    "source": "Same quantities on both sides: whether curvature is defined at v = vApex - delta on the lateral face of the cone (radius 5 to 0, height 10), for delta 1e-8 and 1e-7 (undefined) and 5e-7, 1e-6, 2e-6 and 1e-5 (defined), and the mean curvature H at delta 1e-6. The test's v is vApex - delta with vApex = (5*5 + 10*10).squareRoot() = 11.180339887498949; H at delta 1e-6 moves by about 2e-9 relative for a 2e-15 change in v, so the kernel run uses that exact v. Bridge: Shape.surfaceLocalProps(u: 0, v:) curvatureDefined was false at delta 1e-8 and 1e-7 and true at 5e-7, 1e-6, 2e-6, 1e-5 and 1.0, and meanCurvature at delta 1e-6 (v = 11.18033888749895) was -1000000.0023899348 (temporary print, not committed). Kernel: GeomLProp_SLProps at Precision::Confusion() on the same face surface printed defined=0 at v 11.180339877498948 and 11.18033978749895, defined=1 at the other deltas, and H=-1000000.0023899348 at v=11.18033888749895 (surfaceLocalPropsAgreesNearConeApex section of transcript-evidence-fix.txt). The earlier record carried apex_minus_1e-6_H -1000000.000613578, taken from a kernel run at a v that differs from the test's by 2e-15 (the apex from -RefRadius / sin(SemiAngle)); it is not the value the test path returns (corrected)."
   },
   {
     "test_name": "Local* local-properties parity (#494)::A cusp's infinite curvature yields no centre of curvature, not a NaN one",
@@ -6134,8 +6147,8 @@
       ]
     },
     "status": "EXPECTED_DIVERGENCE",
-    "probe": "Scripts/repro/766-local-props-parity/",
-    "source": "Same quantities on both sides: curvature and centre at parameter 0 of a cubic Bezier cusp (first two poles spacing apart) at spacing 0, 1e-14, 1e-12, 1e-11. Bridge: Curve3D.curvature(at: 0) == greatestFiniteMagnitude (OCCT's RealLast) and both Curve3D.centerOfCurvature(at: 0) and localCentreOfCurvature(at: 0) == nil at every spacing, as the test asserts. Kernel: GeomLProp_CLProps at Precision::Confusion() printed curvature RealLast for all four and a raw CentreOfCurvature that raises Standard_ConstructionError at spacing 0 and is (nan, inf, nan) at 1e-14, 1e-12 and 1e-11 (transcript.txt, the res=1e-07 lines of the cusp section). The two differ by design: the bridge refuses a centre that is not a real point (#494)."
+    "probe": "Scripts/repro/766-local-props-parity/transcript-evidence-fix.txt",
+    "source": "Same quantities on both sides: curvature and centre at parameter 0 of a cubic Bezier cusp (first two poles spacing apart) at spacing 0, 1e-14, 1e-12, 1e-11. Bridge: Curve3D.curvature(at: 0) returned 1.7976931348623157e+308 (RealLast, Double.greatestFiniteMagnitude) at all four spacings and both centerOfCurvature(at: 0) and localCentreOfCurvature(at: 0) returned nil at all four, as the test asserts (temporary print, not committed). Kernel: GeomLProp_CLProps at Precision::Confusion() printed curvature=1.7976931348623157e+308 (RealLast) at all four and a raw CentreOfCurvature that raises Standard_ConstructionError at spacing 0 and is (nan, inf, nan) at 1e-14, 1e-12 and 1e-11 (cuspCentreOfCurvatureIsUndefined section of transcript-evidence-fix.txt). The two differ by design: the bridge refuses a centre that is not a real point (#494)."
   },
   {
     "test_name": "Local* local-properties parity (#494)::No local-properties entry point returns a non-finite number",
@@ -6159,7 +6172,7 @@
       ]
     },
     "status": "EXPECTED_DIVERGENCE",
-    "probe": "Scripts/repro/766-local-props-parity/",
-    "source": "Same quantity on both sides: all_returned_values_finite, whether every number the entry points hand back is finite. Bridge: the test sweeps Curve3D.curvature, centerOfCurvature, localCentreOfCurvature, normal, localNormal, tangentDirection and localTangent over the cusp (spacing 0, 1e-12, 1e-8), circle and line at u in 0, 1e-9, 0.5, 1, and Surface.localCurvatures and localCurvatureDirections over an apex cone and a sphere, and expects every returned value finite; it passes, so true. Kernel: the raw GeomLProp_CLProps::CentreOfCurvature on the same cusp printed (nan, inf, nan) at spacing 1e-12 and 1e-8 with curvature RealLast, and raises Standard_ConstructionError at spacing 0 (transcript.txt, the res=1e-07 lines of the cusp section), so the kernel's answers are not all finite: false. The bridge's guard is what makes the two differ (#494)."
+    "probe": "Scripts/repro/766-local-props-parity/transcript-evidence-fix.txt",
+    "source": "Same quantity on both sides: all_returned_values_finite, whether every number the entry points return is finite. Bridge: the test's sweep (curvature, centerOfCurvature, localCentreOfCurvature, normal, localNormal, tangentDirection and localTangent on the cusp at spacing 0, 1e-12 and 1e-8, the circle and the line at u 0, 1e-9, 0.5 and 1: 20 curve points; localCurvatures and localCurvatureDirections on the apex cone and a radius-3 sphere at v 0, 1e-9, 1e-8, 1e-7, pi/2 and 1: 12 surface points) returned 306 numbers, none non-finite, so true (temporary print of every returned value, not committed; nil is not a number, and RealLast is finite). Kernel: the raw GeomLProp_CLProps tangent, curvature, Normal and CentreOfCurvature over the same 20 curve points returned 155 numbers, 15 of them non-finite, all raw centre components at the cusp: (inf, -inf, nan) at spacing 0 u 1e-9, (nan, inf, nan) at spacing 1e-12 and 1e-8 u 0, (-inf, inf, nan) at spacing 1e-12 and 1e-8 u 1e-9 (the last section of transcript-evidence-fix.txt); 15 further calls raised instead of returning, so false. The bridge's guard is what makes the two differ (#494). The kernel sweep covers the curve entry points only, since the non-finite values are curve centres; the raw surface accessors raise where curvature is undefined."
   }
 ]

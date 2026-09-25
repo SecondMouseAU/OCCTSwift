@@ -1,0 +1,105 @@
+--- wellConditionedSurfacesAgree
+sphere r=5 u=0 v=0.29999999999999999: defined=1 kmax=-0.20000000000000001 kmin=-0.20000000000000004 K=0.040000000000000015 H=-0.20000000000000004 umbilic=0
+cylinder r=3 u=1.2 v=-0.80000000000000004: defined=1 kmax=0 kmin=-0.33333333333333326 K=-0 H=-0.16666666666666663 umbilic=0
+apex cone u=0 v=0.01: defined=1 kmax=0 kmin=-173.20508075688775 K=-0 H=-86.602540378443877 umbilic=0
+plane u=1 v=2: defined=1 kmax=0 kmin=0 K=0 H=0 umbilic=1
+--- surfaceToleranceWindowAgrees
+apex cone u=0 v=1.0000000000000001e-09: defined=0
+apex cone u=0 v=1e-08: defined=0
+apex cone u=0 v=9.9999999999999995e-08: defined=0
+apex cone u=0 v=2.9999999999999999e-07: defined=1 kmax=0 kmin=-5773502.6918962598 K=-0 H=-2886751.3459481299 umbilic=0
+apex cone u=0 v=9.9999999999999995e-07: defined=1 kmax=0 kmin=-1732050.8075688777 K=-0 H=-866025.40378443885 umbilic=0
+sphere r=3 pole- u=0 v=1.5707963257948965: defined=0
+sphere r=3 pole- u=0 v=1.5707963167948966: defined=0
+sphere r=3 pole- u=0 v=1.5707962267948965: defined=1 kmax=-0.33333333333333331 kmin=-0.33333333333333331 K=0.1111111111111111 H=-0.33333333333333331 umbilic=1
+--- degenerateSurfacePointsAgree
+apex cone u=0 v=0: defined=0
+sphere r=3 pole u=0 v=1.5707963267948966: defined=0
+sphere r=3 pole u=0 v=-1.5707963267948966: defined=0
+--- wellConditionedCurvesAgree
+circle r=5 u=0.69999999999999996: tangentDefined=1 tangent=(-0.64421768723769102, 0.7648421872844885, 0) curvature=0.20000000000000001 rawCentre=(4.4408920985006262e-16, 0, 0)
+line u=1: tangentDefined=1 tangent=(1, 0, 0) curvature=0 rawCentre raises 16LProp_NotDefined
+bezier spacing=1 u=0.25: tangentDefined=1 tangent=(0.89442719099991597, 0.44721359549995798, 0) curvature=0.61059562905594267 rawCentre=(-0.13867187499999989, 1.6054687499999998, 0)
+--- curveToleranceWindowAgrees
+cusp bezier u=0: tangentDefined=1 tangent=(0.70710677411547951, 0.70710678825761542, 0) curvature=1.7976931348623157e+308 (RealLast) rawCentre=(nan, inf, nan)
+cusp bezier u=0: tangentDefined=1 tangent=(1, 0, 0) curvature=66666666666666.672 rawCentre=(2.8048387741191533e-30, 1.4999999999999999e-14, 0)
+--- curveLocalPropsAgreesWithEdge (unique edges of the radius-10 height-5 cylinder)
+edge 0 (Geom_Circle) u=0: tangentDefined=1 tangent=(-0, 1, 0) curvature=0.10000000000000001 rawCentre=(0, 0, 5)
+edge 0 (Geom_Circle) u=0.5: tangentDefined=1 tangent=(-0.47942553860420301, 0.87758256189037276, 0) curvature=0.10000000000000001 rawCentre=(1.7763568394002505e-15, 0, 5)
+edge 0 (Geom_Circle) u=1: tangentDefined=1 tangent=(-0.8414709848078965, 0.54030230586813977, 0) curvature=0.10000000000000001 rawCentre=(1.7763568394002505e-15, 1.7763568394002505e-15, 5)
+edge 0 (Geom_Circle) u=2: tangentDefined=1 tangent=(-0.90929742682568171, -0.41614683654714241, 0) curvature=0.10000000000000001 rawCentre=(-8.8817841970012523e-16, 1.7763568394002505e-15, 5)
+edge 1 (Geom_Line) u=0: tangentDefined=1 tangent=(0, 0, 1) curvature=0 rawCentre raises 16LProp_NotDefined
+edge 1 (Geom_Line) u=0.5: tangentDefined=1 tangent=(0, 0, 1) curvature=0 rawCentre raises 16LProp_NotDefined
+edge 1 (Geom_Line) u=1: tangentDefined=1 tangent=(0, 0, 1) curvature=0 rawCentre raises 16LProp_NotDefined
+edge 1 (Geom_Line) u=2: tangentDefined=1 tangent=(0, 0, 1) curvature=0 rawCentre raises 16LProp_NotDefined
+edge 2 (Geom_Circle) u=0: tangentDefined=1 tangent=(-0, 1, 0) curvature=0.10000000000000001 rawCentre=(0, 0, 0)
+edge 2 (Geom_Circle) u=0.5: tangentDefined=1 tangent=(-0.47942553860420301, 0.87758256189037276, 0) curvature=0.10000000000000001 rawCentre=(1.7763568394002505e-15, 0, 0)
+edge 2 (Geom_Circle) u=1: tangentDefined=1 tangent=(-0.8414709848078965, 0.54030230586813977, 0) curvature=0.10000000000000001 rawCentre=(1.7763568394002505e-15, 1.7763568394002505e-15, 0)
+edge 2 (Geom_Circle) u=2: tangentDefined=1 tangent=(-0.90929742682568171, -0.41614683654714241, 0) curvature=0.10000000000000001 rawCentre=(-8.8817841970012523e-16, 1.7763568394002505e-15, 0)
+--- curveLocalPropsAgreesOnCusp
+cusp bezier u=0: tangentDefined=1 tangent=(0.70710678118654757, 0.70710678118654757, 0) curvature=1.7976931348623157e+308 (RealLast) rawCentre raises 26Standard_ConstructionError
+cusp bezier u=0: tangentDefined=1 tangent=(0.70710678118584047, 0.70710678118725456, 0) curvature=1.7976931348623157e+308 (RealLast) rawCentre=(nan, inf, nan)
+cusp bezier u=0: tangentDefined=1 tangent=(0.70710678047944076, 0.70710678189365428, 0) curvature=1.7976931348623157e+308 (RealLast) rawCentre=(inf, inf, nan)
+cusp bezier u=0: tangentDefined=1 tangent=(0.70710677411547951, 0.70710678825761542, 0) curvature=1.7976931348623157e+308 (RealLast) rawCentre=(nan, inf, nan)
+cusp bezier u=0: tangentDefined=1 tangent=(1, 0, 0) curvature=66666666666666.672 rawCentre=(2.8048387741191533e-30, 1.4999999999999999e-14, 0)
+--- surfaceLocalPropsAgreesWithFace
+face 0 (Geom_CylindricalSurface) u=0 v=0: defined=1 kmax=0 kmin=-0.10000000000000001 K=-0 H=-0.050000000000000003 umbilic=0
+face 0 (Geom_CylindricalSurface) u=0.5 v=1: defined=1 kmax=0 kmin=-0.10000000000000001 K=-0 H=-0.050000000000000003 umbilic=0
+face 0 (Geom_CylindricalSurface) u=1.2 v=2: defined=1 kmax=0 kmin=-0.10000000000000003 K=-0 H=-0.050000000000000017 umbilic=0
+face 1 (Geom_Plane) u=0 v=0: defined=1 kmax=0 kmin=0 K=0 H=0 umbilic=1
+face 1 (Geom_Plane) u=0.5 v=1: defined=1 kmax=0 kmin=0 K=0 H=0 umbilic=1
+face 1 (Geom_Plane) u=1.2 v=2: defined=1 kmax=0 kmin=0 K=0 H=0 umbilic=1
+face 2 (Geom_Plane) u=0 v=0: defined=1 kmax=0 kmin=0 K=0 H=0 umbilic=1
+face 2 (Geom_Plane) u=0.5 v=1: defined=1 kmax=0 kmin=0 K=0 H=0 umbilic=1
+face 2 (Geom_Plane) u=1.2 v=2: defined=1 kmax=0 kmin=0 K=0 H=0 umbilic=1
+--- surfaceLocalPropsAgreesNearConeApex (the test's v: (5*5 + 10*10).squareRoot() - delta)
+vApex=11.180339887498949
+cone lateral near apex u=0 v=11.180339877498948: defined=0
+cone lateral near apex u=0 v=11.18033978749895: defined=0
+cone lateral near apex u=0 v=11.180339387498949: defined=1 kmax=0 kmin=-4000000.009020451 K=-0 H=-2000000.0045102255 umbilic=0
+cone lateral near apex u=0 v=11.18033888749895: defined=1 kmax=0 kmin=-2000000.0047798697 K=-0 H=-1000000.0023899348 umbilic=0
+cone lateral near apex u=0 v=11.180337887498949: defined=1 kmax=0 kmin=-1000000.0006809891 K=-0 H=-500000.00034049456 umbilic=0
+cone lateral near apex u=0 v=11.180329887498949: defined=1 kmax=0 kmin=-200000.00004040223 K=-0 H=-100000.00002020111 umbilic=0
+cone lateral near apex u=0 v=10.180339887498949: defined=1 kmax=0 kmin=-2.0000000000000027 K=-0 H=-1.0000000000000013 umbilic=0
+--- cuspCentreOfCurvatureIsUndefined
+cusp bezier u=0: tangentDefined=1 tangent=(0.70710678118654757, 0.70710678118654757, 0) curvature=1.7976931348623157e+308 (RealLast) rawCentre raises 26Standard_ConstructionError
+cusp bezier u=0: tangentDefined=1 tangent=(0.70710678118654047, 0.70710678118655457, 0) curvature=1.7976931348623157e+308 (RealLast) rawCentre=(nan, inf, nan)
+cusp bezier u=0: tangentDefined=1 tangent=(0.70710678118584047, 0.70710678118725456, 0) curvature=1.7976931348623157e+308 (RealLast) rawCentre=(nan, inf, nan)
+cusp bezier u=0: tangentDefined=1 tangent=(0.70710678117947634, 0.70710678119361847, 0) curvature=1.7976931348623157e+308 (RealLast) rawCentre=(nan, inf, nan)
+--- localPropsNeverReturnNonFinite: raw kernel values over the test's curve sweep
+  cusp d=0 u=0
+  cusp d=0 u=1.0000000000000001e-09
+    non-finite centre.x = inf
+    non-finite centre.y = -inf
+    non-finite centre.z = nan
+  cusp d=0 u=0.5
+  cusp d=0 u=1
+  cusp d=1e-12 u=0
+    non-finite centre.x = nan
+    non-finite centre.y = inf
+    non-finite centre.z = nan
+  cusp d=1e-12 u=1.0000000000000001e-09
+    non-finite centre.x = -inf
+    non-finite centre.y = inf
+    non-finite centre.z = nan
+  cusp d=1e-12 u=0.5
+  cusp d=1e-12 u=1
+  cusp d=1e-8 u=0
+    non-finite centre.x = nan
+    non-finite centre.y = inf
+    non-finite centre.z = nan
+  cusp d=1e-8 u=1.0000000000000001e-09
+    non-finite centre.x = -inf
+    non-finite centre.y = inf
+    non-finite centre.z = nan
+  cusp d=1e-8 u=0.5
+  cusp d=1e-8 u=1
+  circle u=0
+  circle u=1.0000000000000001e-09
+  circle u=0.5
+  circle u=1
+  line u=0
+  line u=1.0000000000000001e-09
+  line u=0.5
+  line u=1
+raw curve sweep: 155 values returned, 15 non-finite, 15 calls raised
