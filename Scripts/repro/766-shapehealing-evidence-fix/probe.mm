@@ -66,6 +66,10 @@
 #include <ShapeFix_Face.hxx>
 #include <ShapeExtend_Status.hxx>
 #include <ShapeFix_FixSmallSolid.hxx>
+#include <BRepAlgoAPI_Fuse.hxx>
+#include <ShapeAnalysis_Surface.hxx>
+#include <ShapeUpgrade_UnifySameDomain.hxx>
+#include <ShapeUpgrade_WireDivide.hxx>
 #include <Standard_Failure.hxx>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -361,6 +365,56 @@ static TopoDS_Shape closedAndOpen()
     five.push_back(faces(i));
   TopoDS_Shape openShell = apiSew(five);
   return compoundOf({closedShell, openShell});
+}
+
+// ---- Issue 702 fixtures (T183-T194) ----
+// Shape.sewn(tolerance: 1e-6) on a compound of five of a centred 10 mm box's six faces (the first is dropped)
+static TopoDS_Shape sewnMissingOneFace()
+{
+  TopTools_IndexedMapOfShape fs;
+  TopExp::MapShapes(box(-5, -5, -5, 10), TopAbs_FACE, fs);
+  std::vector<TopoDS_Shape> rest;
+  for (int i = 2; i <= fs.Extent(); i++)
+    rest.push_back(fs(i));
+  BRepBuilderAPI_Sewing sw(1e-6);
+  sw.Add(compoundOf(rest));
+  sw.Perform();
+  return sw.SewedShape();
+}
+struct ShellScan
+{
+  bool hasFree;
+  int  freeEdges;
+};
+// occtAnalyzeShellOrientation: CheckOrientedShells(shape, alsofree = true, checkinternaledges = true)
+static ShellScan scanShell(const TopoDS_Shape& s)
+{
+  ShapeAnalysis_Shell a;
+  a.CheckOrientedShells(s, true, true);
+  ShellScan r{a.HasFreeEdges(), 0};
+  if (r.hasFree)
+    for (TopExp_Explorer e(a.FreeEdges(), TopAbs_EDGE); e.More(); e.Next())
+      r.freeEdges++;
+  return r;
+}
+// OCCTShapeAnalyze's per-shell loop: free edges summed over the shells that have any, and how many shells that is
+static void analyzeFree(const TopoDS_Shape& shape, int& freeEdges, int& freeFaces)
+{
+  freeEdges = freeFaces = 0;
+  for (TopExp_Explorer se(shape, TopAbs_SHELL); se.More(); se.Next())
+  {
+    ShellScan sc = scanShell(se.Current());
+    if (sc.hasFree)
+    {
+      freeEdges += sc.freeEdges;
+      freeFaces++;
+    }
+  }
+}
+// OCCTShapeIsValidSolid: the shape is a SOLID and BRepCheck_Analyzer accepts it
+static bool isValidSolid(const TopoDS_Shape& s)
+{
+  return s.ShapeType() == TopAbs_SOLID && BRepCheck_Analyzer(s).IsValid();
 }
 
 int main()
@@ -1014,6 +1068,117 @@ int main()
       char key[32];
       snprintf(key, sizeof key, "status%d", n);
       emitBool("T151", key, sf->Status(static_cast<ShapeExtend_Status>(n)));
+    }
+  }
+  // ===== TYPES batch 4 (T158-T194) =====
+  {
+    // T166: ShapeUpgrade_WireDivide on the box's first wire and first face, as OCCTShapeUpgradeWireDivideOnFace drives it
+    TopTools_IndexedMapOfShape f, w;
+    TopoDS_Shape               bx = box(-5, -5, -5, 10);
+    TopExp::MapShapes(bx, TopAbs_FACE, f);
+    TopExp::MapShapes(bx, TopAbs_WIRE, w);
+    Handle(ShapeUpgrade_WireDivide) wd = new ShapeUpgrade_WireDivide();
+    wd->SetContext(new ShapeBuild_ReShape());
+    wd->Init(TopoDS::Wire(w(1)), TopoDS::Face(f(1)));
+    wd->Perform();
+    TopoDS_Wire rw = wd->Wire();
+    emitBool("T166", "isWire", !rw.IsNull() && rw.ShapeType() == TopAbs_WIRE);
+    emitInt("T166", "edges", rw.IsNull() ? -1 : uniq(rw, TopAbs_EDGE));
+  }
+  {
+    // T174-T176: ShapeAnalysis_Surface::ValueOfUV / NextValueOfUV at precision 1e-6, as OCCTSurfaceValueOfUV / NextValueOfUV
+    Handle(Geom_Plane)            pl   = new Geom_Plane(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
+    Handle(ShapeAnalysis_Surface) sap  = new ShapeAnalysis_Surface(pl);
+    gp_Pnt2d                      uv   = sap->ValueOfUV(gp_Pnt(5, 3, 2), 1e-6);
+    printf("T174|uv|[%.17g, %.17g]\n", uv.X(), uv.Y());
+    emit("T174", "gap", sap->Gap());
+    Handle(ShapeAnalysis_Surface) sap1 = new ShapeAnalysis_Surface(pl);
+    gp_Pnt2d                      p1   = sap1->ValueOfUV(gp_Pnt(5, 3, 0), 1e-6);
+    Handle(ShapeAnalysis_Surface) sap2 = new ShapeAnalysis_Surface(pl);
+    gp_Pnt2d                      p2   = sap2->NextValueOfUV(p1, gp_Pnt(5.5, 3.5, 0), 1e-6);
+    printf("T176|uv|[%.17g, %.17g]\n", p2.X(), p2.Y());
+    emit("T176", "gap", sap2->Gap());
+    Handle(Geom_SphericalSurface) sph = new Geom_SphericalSurface(gp_Ax3(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), 5);
+    Handle(ShapeAnalysis_Surface) sas = new ShapeAnalysis_Surface(sph);
+    gp_Pnt2d                      us  = sas->ValueOfUV(gp_Pnt(0, 0, 10), 1e-6);
+    emit("T175", "v", us.Y());
+    emit("T175", "gap", sas->Gap());
+  }
+  {
+    // T180: ShapeUpgrade_UnifySameDomain(true, true, false) with SetSafeInputMode(true) on the two fused boxes, uncopied:
+    // how many faces the input still has after Build
+    TopoDS_Shape a     = box(-5, -5, -5, 10);
+    TopoDS_Shape b     = box(5, -5, -5, 10);
+    TopoDS_Shape fused = BRepAlgoAPI_Fuse(a, b).Shape();
+    emitInt("T180", "inputFacesBefore", uniq(fused, TopAbs_FACE));
+    ShapeUpgrade_UnifySameDomain usd(fused, true, true, false);
+    usd.SetSafeInputMode(true);
+    usd.Build();
+    emitInt("T180", "inputFacesAfter", uniq(fused, TopAbs_FACE));
+    emitInt("T180", "resultFaces", uniq(usd.Shape(), TopAbs_FACE));
+  }
+  {
+    // T183-T194: the Issue 702 open-shell fixtures
+    TopoDS_Shape shell = sewnMissingOneFace();
+    TopoDS_Shape fake  = BRepBuilderAPI_MakeSolid(TopoDS::Shell(TopExp_Explorer(shell, TopAbs_SHELL).Current())).Solid();
+    TopoDS_Shape bx    = box(-5, -5, -5, 10);
+    TopoDS_Shape fixed = apiFixSolid(fake);
+    Handle(ShapeFix_Shape) hf = new ShapeFix_Shape(fake);
+    hf->Perform();
+    TopoDS_Shape healed = hf->Shape();
+    emitBool("T183", "isSolid", fake.ShapeType() == TopAbs_SOLID);
+    emitBool("T183", "valid", BRepCheck_Analyzer(fake).IsValid());
+    emitBool("T184", "isShell", fixed.ShapeType() == TopAbs_SHELL);
+    emitBool("T184", "valid", BRepCheck_Analyzer(fixed).IsValid());
+    emitBool("T185", "isShell", healed.ShapeType() == TopAbs_SHELL);
+    emitBool("T185", "valid", BRepCheck_Analyzer(healed).IsValid());
+    emitBool("T186", "fixedValid", BRepCheck_Analyzer(fixed).IsValid());
+    emitBool("T186", "boxValid", BRepCheck_Analyzer(bx).IsValid());
+    emitBool("T186", "sameType", fixed.ShapeType() == bx.ShapeType());
+    emitBool("T187", "fixedIsValidSolid", isValidSolid(fixed));
+    emitBool("T187", "healedIsValidSolid", isValidSolid(healed));
+    emitBool("T187", "boxIsValidSolid", isValidSolid(bx));
+    TopTools_IndexedMapOfShape bf, bs;
+    TopExp::MapShapes(bx, TopAbs_FACE, bf);
+    TopExp::MapShapes(bx, TopAbs_SHELL, bs);
+    emitBool("T188", "faceIsValidSolid", isValidSolid(bf(1)));
+    emitBool("T188", "shellIsValidSolid", isValidSolid(bs(1)));
+    emitBool("T188", "boxIsValidSolid", isValidSolid(bx));
+    int       fe, ff;
+    ShellScan sc = scanShell(shell);
+    analyzeFree(shell, fe, ff);
+    emitBool("T189", "analyzeShell.hasFreeEdges", sc.hasFree);
+    emitInt("T189", "analyzeShell.freeEdgeCount", sc.freeEdges);
+    emitInt("T189", "analyze.freeEdgeCount", fe);
+    emitInt("T189", "analyze.freeFaceCount", ff);
+    analyzeFree(fixed, fe, ff);
+    emitInt("T190", "freeEdgeCount", fe);
+    emitInt("T190", "freeFaceCount", ff);
+    analyzeFree(bx, fe, ff);
+    emitInt("T191", "freeEdgeCount", fe);
+    emitInt("T191", "freeFaceCount", ff);
+    analyzeFree(compoundOf({sewnMissingOneFace(), sewnMissingOneFace()}), fe, ff);
+    emitInt("T192", "freeEdgeCount", fe);
+    emitInt("T192", "freeFaceCount", ff);
+    {
+      // T194: a one-face shell holding an INTERNAL-oriented duplicate of one of the face's own edges
+      BRepBuilderAPI_MakePolygon po(gp_Pnt(0, 0, 0), gp_Pnt(10, 0, 0), gp_Pnt(10, 10, 0), gp_Pnt(0, 10, 0), true);
+      TopoDS_Face                face = BRepBuilderAPI_MakeFace(po.Wire());
+      TopoDS_Edge                cand = TopoDS::Edge(TopExp_Explorer(face, TopAbs_EDGE).Current());
+      cand.Orientation(TopAbs_INTERNAL);
+      BRep_Builder b;
+      TopoDS_Wire  iw;
+      b.MakeWire(iw);
+      b.Add(iw, cand);
+      iw.Orientation(TopAbs_INTERNAL);
+      b.Add(face, iw);
+      TopoDS_Shell sh;
+      b.MakeShell(sh);
+      b.Add(sh, face);
+      ShellScan s2 = scanShell(sh);
+      analyzeFree(sh, fe, ff);
+      emitInt("T194", "analyzeShell.freeEdgeCount", s2.freeEdges);
+      emitInt("T194", "analyze.freeEdgeCount", fe);
     }
   }
   return 0;

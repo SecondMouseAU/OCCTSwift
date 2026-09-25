@@ -1,5 +1,11 @@
 # Temporary Swift test prints (the prints themselves were never committed), one `<record>|<key>|<json>` line per observation,
 # doubles at %.17g. Regenerate: add the prints, `swift test --filter OCCTShapeHealingTests`, keep the EVID| lines.
+F001|resultIsNil|true
+F002|resultIsNil|true
+F003|resultIsNil|true
+F004|resultIsNil|true
+F005|resultIsNil|true
+F006|resultIsNil|true
 K001|count|360
 K001|first|[5, 0, 0]
 K001|last|[5, -1.2246467991473533e-15, 0]
@@ -585,3 +591,123 @@ T155|wires|2
 T156|verdict|false
 T157|canDivide|[true, false, true]
 T157|edges|3
+T158|compute|false
+T159|computeTrue|0
+T159|edges|3
+T160|area|628.3185307179587
+T160|faces|1
+T160|isFace|true
+T161|area|10000
+T161|faces|1
+T161|isFace|true
+T162|faces|6
+T162|isSolid|true
+T162|valid|true
+T162|volume|999.9999999999998
+T163|singleSpan.end|[4, 0, 0]
+T163|singleSpan.pieces|1
+T163|singleSpan.start|[0, 0, 0]
+T163|twoSpan.first.end|[2.5, 1.5, 0]
+T163|twoSpan.first.start|[0, 0, 0]
+T163|twoSpan.pieces|2
+T163|twoSpan.second.end|[5, 1, 0]
+T163|twoSpan.second.start|[2.5, 1.5, 0]
+T164|singleSpan.end|[4, 0]
+T164|singleSpan.pieces|1
+T164|singleSpan.start|[0, 0]
+T164|twoSpan.first.end|[2.5, 1.5]
+T164|twoSpan.first.start|[0, 0]
+T164|twoSpan.pieces|2
+T164|twoSpan.second.end|[5, 1]
+T164|twoSpan.second.start|[2.5, 1.5]
+T165|singleSpan.allBezier|true
+T165|singleSpan.end|[4, 0]
+T165|singleSpan.pieces|1
+T165|singleSpan.start|[0, 0]
+T165|twoSpan.allBezier|true
+T165|twoSpan.first.end|[2.5, 1.5]
+T165|twoSpan.first.start|[0, 0]
+T165|twoSpan.pieces|2
+T165|twoSpan.second.end|[5, 1]
+T165|twoSpan.second.start|[2.5, 1.5]
+T166|edges|4
+T166|isWire|true
+T167|badEdges|false
+T167|connected|true
+T167|freeCount|0
+T167|freeEdges|false
+T167|orientationProblem|false
+T168|badEdges|false
+T168|connected|true
+T168|freeCount|0
+T168|freeEdges|false
+T168|orientationProblem|false
+T169|uSplitCount|4
+T169|vSplitCount|2
+T170|uSplitCount|5
+T170|vSplitCount|2
+T171|uSplitCount|3
+T171|vSplitCount|3
+T172|gap|3.580361673049448e-15
+T172|isCylinder|true
+T173|alreadyMeetsCriterion|false
+T173|uSplitCount|4
+T173|vSplitCount|2
+T173|wasSplit|true
+T174|gap|2
+T174|uv|[5, 3]
+T175|gap|5
+T175|v|1.5707963267948966
+T176|gap|0
+T176|uv|[5.5, 3.5]
+T177|edges|12
+T177|faces|6
+T177|valid|true
+T177|volume|1999.9999999999995
+T178|edges|12
+T178|faces|6
+T178|valid|true
+T178|volume|1999.9999999999995
+T179|edges|15
+T179|faces|7
+T179|valid|true
+T180|edges|12
+T180|faces|6
+T180|inputFacesAfter|10
+T180|valid|true
+T180|volume|1999.9999999999995
+T181|edges|12
+T181|faces|6
+T181|valid|true
+T181|volume|1999.9999999999995
+T182|edgeCount|2
+T182|isDone|true
+T182|status|[1, -1]
+T183|isSolid|true
+T183|valid|false
+T184|isShell|true
+T184|valid|true
+T185|isShell|true
+T185|valid|true
+T186|boxValid|true
+T186|fixedValid|true
+T186|sameType|false
+T187|boxIsValidSolid|true
+T187|fixedIsValidSolid|false
+T187|healedIsValidSolid|false
+T188|boxIsValidSolid|true
+T188|faceIsValidSolid|false
+T188|shellIsValidSolid|false
+T189|analyze.freeEdgeCount|4
+T189|analyze.freeFaceCount|1
+T189|analyzeShell.freeEdgeCount|4
+T189|analyzeShell.hasFreeEdges|true
+T190|freeEdgeCount|4
+T190|freeFaceCount|1
+T191|freeEdgeCount|0
+T191|freeFaceCount|0
+T192|freeEdgeCount|8
+T192|freeFaceCount|2
+T193|hasSelfIntersection|true
+T194|analyze.freeEdgeCount|3
+T194|analyzeShell.freeEdgeCount|3

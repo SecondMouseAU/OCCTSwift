@@ -6857,246 +6857,144 @@
     "bridge_function": "OCCTShapeUpgradeConvertCurves3dToBezier",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "nil for every input (known issue: Set3dConversion never set)"
+      "data": {
+        "resultIsNil": true
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "asBridgeDrivesIt": {
-          "Perform": false,
-          "Result": null
-        },
-        "withSet3dConversion": {
-          "box T,T,T": {
-            "edges": 12,
-            "bezierEdges": 12,
-            "volume": 1000.0,
-            "valid": false
-          },
-          "cyl T,T,T": {
-            "edges": 17,
-            "bezierEdges": 17,
-            "volume": 785.398163,
-            "valid": false
-          },
-          "cyl F,T,F": {
-            "Perform": false,
-            "edges": 3,
-            "bezierEdges": 0
-          }
-        }
+        "resultIsNil": false
       }
     },
     "comparison": {
       "equal": false,
-      "differences": []
+      "differences": [
+        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertCurves3dToBezier sets the per-kind modes but never the master Set3dConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on, the kernel returns the converted cube: 12 edges, all Bezier, volume 1000 (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 13). Recorded by the test with withKnownIssue as the #766 finding; the test fails with `Known issue was not recorded` once the bridge sets the flag."
+      ]
     },
-    "status": "MISMATCH"
+    "status": "MISMATCH",
+    "source": "Bridge: box.convertCurves3dToBezier() on a 10 mm cube: whether the result is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 13 (with Set3dConversion(true): curves->Bezier(box, T,T,T) Perform=1, a shape returned), ShapeUpgrade_ShapeConvertToBezier with the master mode on; the same call as the bridge drives it (line 7) returns null. The kernel side is the configuration the test's own assertions describe, so this is a bridge defect, not a kernel one."
   },
   {
     "test_name": "ShapeUpgrade ConvertCurves3dToBezier::convertCylinderCurves",
     "bridge_function": "OCCTShapeUpgradeConvertCurves3dToBezier",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "nil for every input (known issue: Set3dConversion never set)"
+      "data": {
+        "resultIsNil": true
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "asBridgeDrivesIt": {
-          "Perform": false,
-          "Result": null
-        },
-        "withSet3dConversion": {
-          "box T,T,T": {
-            "edges": 12,
-            "bezierEdges": 12,
-            "volume": 1000.0,
-            "valid": false
-          },
-          "cyl T,T,T": {
-            "edges": 17,
-            "bezierEdges": 17,
-            "volume": 785.398163,
-            "valid": false
-          },
-          "cyl F,T,F": {
-            "Perform": false,
-            "edges": 3,
-            "bezierEdges": 0
-          }
-        }
+        "resultIsNil": false
       }
     },
     "comparison": {
       "equal": false,
-      "differences": []
+      "differences": [
+        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertCurves3dToBezier sets the per-kind modes but never the master Set3dConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on, the kernel returns the converted cylinder: 17 edges, all Bezier, volume 785.398163 (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 14). Recorded by the test with withKnownIssue as the #766 finding; the test fails with `Known issue was not recorded` once the bridge sets the flag."
+      ]
     },
-    "status": "MISMATCH"
+    "status": "MISMATCH",
+    "source": "Bridge: cylinder.convertCurves3dToBezier(lineMode: true, circleMode: true, conicMode: true): whether the result is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 14 (with Set3dConversion(true): curves->Bezier(cyl, T,T,T) Perform=1, a shape returned), ShapeUpgrade_ShapeConvertToBezier with the master mode on; the same call as the bridge drives it (line 8) returns null. The kernel side is the configuration the test's own assertions describe, so this is a bridge defect, not a kernel one."
   },
   {
     "test_name": "ShapeUpgrade ConvertCurves3dToBezier::convertSelectiveModes",
     "bridge_function": "OCCTShapeUpgradeConvertCurves3dToBezier",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "nil for every input (known issue: Set3dConversion never set)"
+      "data": {
+        "resultIsNil": true
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "asBridgeDrivesIt": {
-          "Perform": false,
-          "Result": null
-        },
-        "withSet3dConversion": {
-          "box T,T,T": {
-            "edges": 12,
-            "bezierEdges": 12,
-            "volume": 1000.0,
-            "valid": false
-          },
-          "cyl T,T,T": {
-            "edges": 17,
-            "bezierEdges": 17,
-            "volume": 785.398163,
-            "valid": false
-          },
-          "cyl F,T,F": {
-            "Perform": false,
-            "edges": 3,
-            "bezierEdges": 0
-          }
-        }
+        "resultIsNil": false
       }
     },
     "comparison": {
       "equal": false,
-      "differences": []
+      "differences": [
+        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertCurves3dToBezier sets the per-kind modes but never the master Set3dConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on and circles only, the kernel returns the cylinder unchanged: 3 edges, none Bezier (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 15). Recorded by the test with withKnownIssue as the #766 finding; the test fails with `Known issue was not recorded` once the bridge sets the flag."
+      ]
     },
-    "status": "MISMATCH"
+    "status": "MISMATCH",
+    "source": "Bridge: cylinder.convertCurves3dToBezier(lineMode: false, circleMode: true, conicMode: false): whether the result is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 15 (with Set3dConversion(true): curves->Bezier(cyl, F,T,F) Perform=0, a shape returned with 3 edges), ShapeUpgrade_ShapeConvertToBezier with the master mode on; the same call as the bridge drives it (line 9) returns null. The kernel side is the configuration the test's own assertions describe, so this is a bridge defect, not a kernel one."
   },
   {
     "test_name": "ShapeUpgrade ConvertSurfacesToBezier::convertCylinderSurfaces",
     "bridge_function": "OCCTShapeUpgradeConvertSurfaceToBezier",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "nil for every input (known issue: SetSurfaceConversion never set)"
+      "data": {
+        "resultIsNil": true
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "asBridgeDrivesIt": {
-          "Perform": false,
-          "Result": null
-        },
-        "withSetSurfaceConversion": {
-          "cyl T,T,T,T": {
-            "faces": 3,
-            "bezierFaces": 2,
-            "volume": 785.398163,
-            "valid": true
-          },
-          "cyl F,T,F,F": {
-            "Perform": false,
-            "faces": 3,
-            "bezierFaces": 0
-          },
-          "box T,F,F,F": {
-            "faces": 6,
-            "bezierFaces": 6,
-            "volume": 1000.0,
-            "valid": false
-          }
-        }
+        "resultIsNil": false
       }
     },
     "comparison": {
       "equal": false,
-      "differences": []
+      "differences": [
+        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertSurfaceToBezier sets the per-kind modes but never the master SetSurfaceConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on, the kernel returns the cylinder with its two planar caps as Bezier faces: 3 faces, 2 Bezier, volume 785.398163 (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 16). Recorded by the test with withKnownIssue as the #766 finding; the test fails with `Known issue was not recorded` once the bridge sets the flag."
+      ]
     },
-    "status": "MISMATCH"
+    "status": "MISMATCH",
+    "source": "Bridge: cylinder.convertSurfacesToBezier(): whether the result is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 16 (with SetSurfaceConversion(true): surfaces->Bezier(cyl, T,T,T,T) Perform=1, a shape returned), ShapeUpgrade_ShapeConvertToBezier with the master mode on; the same call as the bridge drives it (line 10) returns null. The kernel side is the configuration the test's own assertions describe, so this is a bridge defect, not a kernel one."
   },
   {
     "test_name": "ShapeUpgrade ConvertSurfacesToBezier::convertSelectiveModes",
     "bridge_function": "OCCTShapeUpgradeConvertSurfaceToBezier",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "nil for every input (known issue: SetSurfaceConversion never set)"
+      "data": {
+        "resultIsNil": true
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "asBridgeDrivesIt": {
-          "Perform": false,
-          "Result": null
-        },
-        "withSetSurfaceConversion": {
-          "cyl T,T,T,T": {
-            "faces": 3,
-            "bezierFaces": 2,
-            "volume": 785.398163,
-            "valid": true
-          },
-          "cyl F,T,F,F": {
-            "Perform": false,
-            "faces": 3,
-            "bezierFaces": 0
-          },
-          "box T,F,F,F": {
-            "faces": 6,
-            "bezierFaces": 6,
-            "volume": 1000.0,
-            "valid": false
-          }
-        }
+        "resultIsNil": false
       }
     },
     "comparison": {
       "equal": false,
-      "differences": []
+      "differences": [
+        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertSurfaceToBezier sets the per-kind modes but never the master SetSurfaceConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on and revolution only, the kernel returns the cylinder unchanged: 3 faces, none Bezier (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 17). Recorded by the test with withKnownIssue as the #766 finding; the test fails with `Known issue was not recorded` once the bridge sets the flag."
+      ]
     },
-    "status": "MISMATCH"
+    "status": "MISMATCH",
+    "source": "Bridge: cylinder.convertSurfacesToBezier(planeMode: false, revolutionMode: true, extrusionMode: false, bsplineMode: false): whether the result is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 17 (with SetSurfaceConversion(true): surfaces->Bezier(cyl, F,T,F,F) Perform=0, a shape returned with 3 faces), ShapeUpgrade_ShapeConvertToBezier with the master mode on; the same call as the bridge drives it (line 11) returns null. The kernel side is the configuration the test's own assertions describe, so this is a bridge defect, not a kernel one."
   },
   {
     "test_name": "ShapeUpgrade ConvertSurfacesToBezier::convertBoxSurfaces",
     "bridge_function": "OCCTShapeUpgradeConvertSurfaceToBezier",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "nil for every input (known issue: SetSurfaceConversion never set)"
+      "data": {
+        "resultIsNil": true
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "asBridgeDrivesIt": {
-          "Perform": false,
-          "Result": null
-        },
-        "withSetSurfaceConversion": {
-          "cyl T,T,T,T": {
-            "faces": 3,
-            "bezierFaces": 2,
-            "volume": 785.398163,
-            "valid": true
-          },
-          "cyl F,T,F,F": {
-            "Perform": false,
-            "faces": 3,
-            "bezierFaces": 0
-          },
-          "box T,F,F,F": {
-            "faces": 6,
-            "bezierFaces": 6,
-            "volume": 1000.0,
-            "valid": false
-          }
-        }
+        "resultIsNil": false
       }
     },
     "comparison": {
       "equal": false,
-      "differences": []
+      "differences": [
+        "resultIsNil: bridge true vs kernel false. OCCTShapeUpgradeConvertSurfaceToBezier sets the per-kind modes but never the master SetSurfaceConversion(true), which defaults to off, so ShapeUpgrade_ShapeConvertToBezier::Perform() does nothing, Result() is null and the wrapper returns nil. With the master flag on and planes only, the kernel returns the cube with all 6 faces Bezier, volume 1000 (Scripts/repro/766-healing-shapeupgrade/transcript.txt line 18). Recorded by the test with withKnownIssue as the #766 finding; the test fails with `Known issue was not recorded` once the bridge sets the flag."
+      ]
     },
-    "status": "MISMATCH"
+    "status": "MISMATCH",
+    "source": "Bridge: box.convertSurfacesToBezier(planeMode: true, revolutionMode: false, extrusionMode: false, bsplineMode: false): whether the result is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 18 (with SetSurfaceConversion(true): surfaces->Bezier(box, T,F,F,F) Perform=1, a shape returned), ShapeUpgrade_ShapeConvertToBezier with the master mode on; the same call as the bridge drives it (line 12) returns null. The kernel side is the configuration the test's own assertions describe, so this is a bridge defect, not a kernel one."
   },
   {
     "test_name": "ShapeUpgrade DivideClosed Tests::divideCylinder",
@@ -7127,200 +7025,217 @@
     "bridge_function": "OCCTShapeUpgradeEdgeDivideCompute",
     "bridge_output": {
       "type": "edge_divide",
-      "data": "nil (the wrapper maps Compute false to nil)"
+      "data": {
+        "compute": false
+      }
     },
     "kernel_output": {
       "type": "edge_divide",
       "data": {
-        "boxEdge0Face0": {
-          "Compute": false,
-          "HasCurve2d": true,
-          "HasCurve3d": true
-        },
-        "cylEdges0to2Face0": {
-          "Compute": [
-            false,
-            false,
-            false
-          ],
-          "HasCurve2d": true,
-          "HasCurve3d": true
-        }
+        "compute": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: edge.analyzeEdgeDivide(onFace:) on a box's first edge and first face: whether it returned a result (the wrapper returns nil when Compute is false), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 20 (EdgeDivide(box edge0, face0): Compute=0 HasCurve2d=1 HasCurve3d=1), ShapeUpgrade_EdgeDivide::Compute; recorded as false. The kernel also reports HasCurve2d and HasCurve3d true; the wrapper discards them when Compute is false, so they are not observable and not part of the record."
   },
   {
     "test_name": "ShapeUpgrade EdgeDivide::edgeDivideCurveInfo",
     "bridge_function": "OCCTShapeUpgradeEdgeDivideCompute",
     "bridge_output": {
       "type": "edge_divide",
-      "data": "nil (the wrapper maps Compute false to nil)"
+      "data": {
+        "edges": 3,
+        "computeTrue": 0
+      }
     },
     "kernel_output": {
       "type": "edge_divide",
       "data": {
-        "boxEdge0Face0": {
-          "Compute": false,
-          "HasCurve2d": true,
-          "HasCurve3d": true
-        },
-        "cylEdges0to2Face0": {
-          "Compute": [
-            false,
-            false,
-            false
-          ],
-          "HasCurve2d": true,
-          "HasCurve3d": true
-        }
+        "edges": 3,
+        "computeTrue": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a cylinder's edge count, and how many of its three edges analyzeEdgeDivide(onFace:) returned a result for against the lateral face, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 1 (cylinder: edges=3) and lines 21-23 (EdgeDivide(cyl edge0, edge1, edge2, face0): Compute=0 for each), ShapeUpgrade_EdgeDivide::Compute per edge; zero computed."
   },
   {
     "test_name": "ShapeUpgrade FaceDivide::divideCylinderFace",
     "bridge_function": "OCCTShapeUpgradeFaceDivide",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "isFace": true,
+        "faces": 1,
+        "area": 628.3185307179587
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "cyl r5 h20 face0": {
-          "Perform": false,
-          "faces": 1,
-          "area": 628.318531,
-          "sameAsInput": true
-        },
-        "box 100 face0": {
-          "Perform": false,
-          "faces": 1,
-          "area": 10000.0,
-          "sameAsInput": true
-        }
+        "isFace": true,
+        "faces": 1,
+        "area": 628.318531
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: face.divideFace() on a radius-5 height-20 cylinder's lateral face: whether the result is a face, its face count and its surface area, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 24 (FaceDivide(cyl r5 h20 face0): Perform=0 type=4 faces=1 area=628.318531), ShapeUpgrade_FaceDivide with surface-segment mode; type 4 is TopAbs_FACE, recorded as a flag."
   },
   {
     "test_name": "ShapeUpgrade FaceDivide::divideBoxFace",
     "bridge_function": "OCCTShapeUpgradeFaceDivide",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "isFace": true,
+        "faces": 1,
+        "area": 10000
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "cyl r5 h20 face0": {
-          "Perform": false,
-          "faces": 1,
-          "area": 628.318531,
-          "sameAsInput": true
-        },
-        "box 100 face0": {
-          "Perform": false,
-          "faces": 1,
-          "area": 10000.0,
-          "sameAsInput": true
-        }
+        "isFace": true,
+        "faces": 1,
+        "area": 10000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: face.divideFace() on a 100 mm cube's first face: whether the result is a face, its face count and its surface area, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 25 (FaceDivide(box 100 face0): Perform=0 type=4 faces=1 area=10000), ShapeUpgrade_FaceDivide with surface-segment mode; type 4 is TopAbs_FACE, recorded as a flag."
   },
   {
     "test_name": "ShapeUpgrade ShellSewing Tests::sewBoxShells",
     "bridge_function": "OCCTShapeUpgradeShellSewing",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "isSolid": true,
+        "faces": 6,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "box 1e-6": {
-          "type": "SOLID",
-          "valid": true,
-          "faces": 6,
-          "volume": 1000.0
-        }
+        "valid": true,
+        "isSolid": true,
+        "faces": 6,
+        "volume": 1000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.shellSewing(tolerance: 1e-6) on a 10 mm cube: whether the result is valid, whether it is a solid, its face count and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 26 (ShellSewing(box, 1e-6): type=2 valid=1 faces=6 volume=1000), ShapeUpgrade_ShellSewing::ApplySewing; type 2 is TopAbs_SOLID, recorded as a flag."
   },
   {
     "test_name": "ShapeUpgrade SplitCurve Tests::splitSmooth3D",
-    "bridge_function": "OCCTSplitCurve3dContinuity / OCCTSplitCurve2dContinuity / OCCTConvertCurve2dToBezier",
+    "bridge_function": "OCCTSplitCurve3dContinuity",
     "bridge_output": {
       "type": "curve_pieces",
-      "data": "as asserted"
+      "data": {
+        "singleSpan": {
+          "pieces": 1,
+          "start": [
+            0,
+            0,
+            0
+          ],
+          "end": [
+            4,
+            0,
+            0
+          ]
+        },
+        "twoSpan": {
+          "pieces": 2,
+          "first": {
+            "start": [
+              0,
+              0,
+              0
+            ],
+            "end": [
+              2.5,
+              1.5,
+              0
+            ]
+          },
+          "second": {
+            "start": [
+              2.5,
+              1.5,
+              0
+            ],
+            "end": [
+              5,
+              1,
+              0
+            ]
+          }
+        }
+      }
     },
     "kernel_output": {
       "type": "curve_pieces",
       "data": {
         "singleSpan": {
-          "split3d": 1,
-          "split2d": 1,
-          "bezier2d": 1,
-          "ends": [
-            [
+          "pieces": 1,
+          "start": [
+            0,
+            0,
+            0
+          ],
+          "end": [
+            4,
+            0,
+            0
+          ]
+        },
+        "twoSpan": {
+          "pieces": 2,
+          "first": {
+            "start": [
+              0,
               0,
               0
             ],
-            [
-              4,
+            "end": [
+              2.5,
+              1.5,
               0
             ]
-          ]
-        },
-        "C1at0.5": {
-          "split3d": 2,
-          "split2d": 2,
-          "bezier2d": 2,
-          "pieces": [
-            [
-              [
-                0,
-                0
-              ],
-              [
-                2.5,
-                1.5
-              ]
+          },
+          "second": {
+            "start": [
+              2.5,
+              1.5,
+              0
             ],
-            [
-              [
-                2.5,
-                1.5
-              ],
-              [
-                5,
-                1
-              ]
+            "end": [
+              5,
+              1,
+              0
             ]
-          ]
+          }
         }
       }
     },
@@ -7328,59 +7243,87 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a Curve3D cubic BSpline with one span, then one with a C1 knot at 0.5, each through splitByContinuity(criterion: 2): the piece count, and each piece's start and end points, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 30 (single span: curves=1 [(0, 0, 0)-(4, 0, 0)]) and line 35 (C1 at 0.5: curves=2 [(0, 0, 0)-(2.5, 1.5, 0)] [(2.5, 1.5, 0)-(5, 1, 0)]), ShapeUpgrade_SplitCurve3dContinuity with criterion C2 and tolerance 1e-6."
   },
   {
     "test_name": "ShapeUpgrade SplitCurve Tests::splitSmooth2D",
-    "bridge_function": "OCCTSplitCurve3dContinuity / OCCTSplitCurve2dContinuity / OCCTConvertCurve2dToBezier",
+    "bridge_function": "OCCTSplitCurve2dContinuity",
     "bridge_output": {
       "type": "curve_pieces",
-      "data": "as asserted"
+      "data": {
+        "singleSpan": {
+          "pieces": 1,
+          "start": [
+            0,
+            0
+          ],
+          "end": [
+            4,
+            0
+          ]
+        },
+        "twoSpan": {
+          "pieces": 2,
+          "first": {
+            "start": [
+              0,
+              0
+            ],
+            "end": [
+              2.5,
+              1.5
+            ]
+          },
+          "second": {
+            "start": [
+              2.5,
+              1.5
+            ],
+            "end": [
+              5,
+              1
+            ]
+          }
+        }
+      }
     },
     "kernel_output": {
       "type": "curve_pieces",
       "data": {
         "singleSpan": {
-          "split3d": 1,
-          "split2d": 1,
-          "bezier2d": 1,
-          "ends": [
-            [
+          "pieces": 1,
+          "start": [
+            0,
+            0
+          ],
+          "end": [
+            4,
+            0
+          ]
+        },
+        "twoSpan": {
+          "pieces": 2,
+          "first": {
+            "start": [
               0,
               0
             ],
-            [
-              4,
-              0
+            "end": [
+              2.5,
+              1.5
             ]
-          ]
-        },
-        "C1at0.5": {
-          "split3d": 2,
-          "split2d": 2,
-          "bezier2d": 2,
-          "pieces": [
-            [
-              [
-                0,
-                0
-              ],
-              [
-                2.5,
-                1.5
-              ]
+          },
+          "second": {
+            "start": [
+              2.5,
+              1.5
             ],
-            [
-              [
-                2.5,
-                1.5
-              ],
-              [
-                5,
-                1
-              ]
+            "end": [
+              5,
+              1
             ]
-          ]
+          }
         }
       }
     },
@@ -7388,59 +7331,91 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the same two cubic BSplines as Curve2D through splitByContinuity(criterion: 2): the piece count, and each piece's start and end points, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 31 (single span: curves=1 [(0, 0)-(4, 0)]) and line 36 (C1 at 0.5: curves=2 [(0, 0)-(2.5, 1.5)] [(2.5, 1.5)-(5, 1)]), ShapeUpgrade_SplitCurve2dContinuity with criterion C2 and tolerance 1e-6."
   },
   {
     "test_name": "ShapeUpgrade SplitCurve Tests::convertToBezier",
-    "bridge_function": "OCCTSplitCurve3dContinuity / OCCTSplitCurve2dContinuity / OCCTConvertCurve2dToBezier",
+    "bridge_function": "OCCTConvertCurve2dToBezier",
     "bridge_output": {
       "type": "curve_pieces",
-      "data": "as asserted"
+      "data": {
+        "singleSpan": {
+          "pieces": 1,
+          "allBezier": true,
+          "start": [
+            0,
+            0
+          ],
+          "end": [
+            4,
+            0
+          ]
+        },
+        "twoSpan": {
+          "pieces": 2,
+          "allBezier": true,
+          "first": {
+            "start": [
+              0,
+              0
+            ],
+            "end": [
+              2.5,
+              1.5
+            ]
+          },
+          "second": {
+            "start": [
+              2.5,
+              1.5
+            ],
+            "end": [
+              5,
+              1
+            ]
+          }
+        }
+      }
     },
     "kernel_output": {
       "type": "curve_pieces",
       "data": {
         "singleSpan": {
-          "split3d": 1,
-          "split2d": 1,
-          "bezier2d": 1,
-          "ends": [
-            [
+          "pieces": 1,
+          "allBezier": true,
+          "start": [
+            0,
+            0
+          ],
+          "end": [
+            4,
+            0
+          ]
+        },
+        "twoSpan": {
+          "pieces": 2,
+          "allBezier": true,
+          "first": {
+            "start": [
               0,
               0
             ],
-            [
-              4,
-              0
+            "end": [
+              2.5,
+              1.5
             ]
-          ]
-        },
-        "C1at0.5": {
-          "split3d": 2,
-          "split2d": 2,
-          "bezier2d": 2,
-          "pieces": [
-            [
-              [
-                0,
-                0
-              ],
-              [
-                2.5,
-                1.5
-              ]
+          },
+          "second": {
+            "start": [
+              2.5,
+              1.5
             ],
-            [
-              [
-                2.5,
-                1.5
-              ],
-              [
-                5,
-                1
-              ]
+            "end": [
+              5,
+              1
             ]
-          ]
+          }
         }
       }
     },
@@ -7448,200 +7423,179 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the same two Curve2D BSplines through convertToBezierSegments(): the piece count, whether every piece is a Bezier curve (curveType 5), and each piece's start and end points, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapeupgrade/transcript.txt line 32 (single span: curves=1 [(0, 0)-(4, 0) bezier=1]) and line 37 (C1 at 0.5: curves=2, both bezier=1), ShapeUpgrade_ConvertCurve2dToBezier; bezier=1 on every piece is recorded as allBezier true."
   },
   {
     "test_name": "ShapeUpgrade WireDivide::divideWireOnFace",
     "bridge_function": "OCCTShapeUpgradeWireDivideOnFace",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "isWire": true,
+        "edges": 4
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "boxWire0Face0": {
-          "StatusDONE": false,
-          "edges": 4,
-          "sameAsInput": true
-        }
+        "isWire": true,
+        "edges": 4
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: wire.divideWire(onFace:) on a box's first wire and first face: whether the result is a wire and its edge count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T166): ShapeUpgrade_WireDivide with a fresh ShapeBuild_ReShape, Init(wire, face), Perform, then Wire(), as OCCTShapeUpgradeWireDivideOnFace drives it; Scripts/repro/766-healing-shapeupgrade/transcript.txt line 38 holds edges=4 for the same call."
   },
   {
     "test_name": "ShapeAnalysis_Shell Tests::analyzeBox",
     "bridge_function": "OCCTShapeAnalyzeShell",
     "bridge_output": {
       "type": "shell_analysis",
-      "data": "as asserted"
+      "data": {
+        "orientationProblem": false,
+        "freeEdges": false,
+        "badEdges": false,
+        "connected": true,
+        "freeCount": 0
+      }
     },
     "kernel_output": {
       "type": "shell_analysis",
       "data": {
-        "box": {
-          "orientationProblem": false,
-          "freeEdges": false,
-          "badEdges": false,
-          "connected": true,
-          "freeCount": 0
-        },
-        "sphere": {
-          "orientationProblem": false,
-          "freeEdges": false,
-          "badEdges": false,
-          "connected": true,
-          "freeCount": 0
-        }
+        "orientationProblem": false,
+        "freeEdges": false,
+        "badEdges": false,
+        "connected": true,
+        "freeCount": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: analyzeShell() on a 10 mm cube: hasOrientationProblems, hasFreeEdges, hasBadEdges, hasConnectedEdges and freeEdgeCount, under the kernel's names orientationProblem, freeEdges, badEdges, connected and freeCount, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 1 (ShapeAnalysis_Shell(box 10): orientationProblem=0 freeEdges=0 badEdges=0 connected=1 freeCount=0), ShapeAnalysis_Shell::CheckOrientedShells, HasFreeEdges, HasBadEdges, HasConnectedEdges and the free-edge count."
   },
   {
     "test_name": "ShapeAnalysis_Shell Tests::analyzeSphere",
     "bridge_function": "OCCTShapeAnalyzeShell",
     "bridge_output": {
       "type": "shell_analysis",
-      "data": "as asserted"
+      "data": {
+        "orientationProblem": false,
+        "freeEdges": false,
+        "badEdges": false,
+        "connected": true,
+        "freeCount": 0
+      }
     },
     "kernel_output": {
       "type": "shell_analysis",
       "data": {
-        "box": {
-          "orientationProblem": false,
-          "freeEdges": false,
-          "badEdges": false,
-          "connected": true,
-          "freeCount": 0
-        },
-        "sphere": {
-          "orientationProblem": false,
-          "freeEdges": false,
-          "badEdges": false,
-          "connected": true,
-          "freeCount": 0
-        }
+        "orientationProblem": false,
+        "freeEdges": false,
+        "badEdges": false,
+        "connected": true,
+        "freeCount": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: analyzeShell() on a radius-5 sphere: hasOrientationProblems, hasFreeEdges, hasBadEdges, hasConnectedEdges and freeEdgeCount, under the kernel's names orientationProblem, freeEdges, badEdges, connected and freeCount, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 2 (ShapeAnalysis_Shell(sphere r5): orientationProblem=0 freeEdges=0 badEdges=0 connected=1 freeCount=0), ShapeAnalysis_Shell::CheckOrientedShells, HasFreeEdges, HasBadEdges, HasConnectedEdges and the free-edge count."
   },
   {
     "test_name": "ShapeUpgrade_SplitSurface::splitSurfaceByContinuity",
-    "bridge_function": "OCCTSplitSurfaceContinuity / Angle / Area",
+    "bridge_function": "OCCTSplitSurfaceContinuity",
     "bridge_output": {
       "type": "split_counts",
-      "data": "as asserted"
+      "data": {
+        "uSplitCount": 4,
+        "vSplitCount": 2
+      }
     },
     "kernel_output": {
       "type": "split_counts",
       "data": {
-        "toBSpline(infinite cylinder)": "throws: infinite surface",
-        "continuity(bsp r10 h10, C2)": {
-          "u": 4,
-          "v": 2
-        },
-        "angle(infinite cylinder, pi/2)": {
-          "u": 5,
-          "v": 2
-        },
-        "area([0,10]^2, 4)": {
-          "u": 3,
-          "v": 3
-        }
+        "uSplitCount": 4,
+        "vSplitCount": 2
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a trimmed radius-10 height-10 cylinder converted to BSpline, then splitSurfaceByContinuity(criterion: 2, tolerance: 1e-6): the number of U and V split values, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 5 (SplitSurfaceContinuity(bsp r10 h10, C2): u=4 [0, 2.094395, 4.188790, 6.283185] v=2 [0, 10]), ShapeUpgrade_SplitSurfaceContinuity USplitValues and VSplitValues counts. The older record also carried the failed infinite-cylinder conversion (line 3), which the test no longer reaches."
   },
   {
     "test_name": "ShapeUpgrade_SplitSurface::splitByAngle",
-    "bridge_function": "OCCTSplitSurfaceContinuity / Angle / Area",
+    "bridge_function": "OCCTSplitSurfaceAngle",
     "bridge_output": {
       "type": "split_counts",
-      "data": "as asserted"
+      "data": {
+        "uSplitCount": 5,
+        "vSplitCount": 2
+      }
     },
     "kernel_output": {
       "type": "split_counts",
       "data": {
-        "toBSpline(infinite cylinder)": "throws: infinite surface",
-        "continuity(bsp r10 h10, C2)": {
-          "u": 4,
-          "v": 2
-        },
-        "angle(infinite cylinder, pi/2)": {
-          "u": 5,
-          "v": 2
-        },
-        "area([0,10]^2, 4)": {
-          "u": 3,
-          "v": 3
-        }
+        "uSplitCount": 5,
+        "vSplitCount": 2
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: an infinite radius-10 cylinder through splitByAngle(pi / 2): the number of U and V split values, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 6 (SplitSurfaceAngle(infinite cylinder r10, pi/2): u=5 [0, 1.570796, 3.141593, 4.712389, 6.283185] v=2), ShapeUpgrade_SplitSurfaceAngle USplitValues and VSplitValues counts."
   },
   {
     "test_name": "ShapeUpgrade_SplitSurface::splitByArea",
-    "bridge_function": "OCCTSplitSurfaceContinuity / Angle / Area",
+    "bridge_function": "OCCTSplitSurfaceArea",
     "bridge_output": {
       "type": "split_counts",
-      "data": "as asserted"
+      "data": {
+        "uSplitCount": 3,
+        "vSplitCount": 3
+      }
     },
     "kernel_output": {
       "type": "split_counts",
       "data": {
-        "toBSpline(infinite cylinder)": "throws: infinite surface",
-        "continuity(bsp r10 h10, C2)": {
-          "u": 4,
-          "v": 2
-        },
-        "angle(infinite cylinder, pi/2)": {
-          "u": 5,
-          "v": 2
-        },
-        "area([0,10]^2, 4)": {
-          "u": 3,
-          "v": 3
-        }
+        "uSplitCount": 3,
+        "vSplitCount": 3
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a plane trimmed to [0, 10] x [0, 10] through splitByArea(parts: 4): the number of U and V split values, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 7 (SplitSurfaceArea(plane [0,10]^2, 4 parts): u=3 [0, 5, 10] v=3 [0, 5, 10]), ShapeUpgrade_SplitSurfaceArea USplitValues and VSplitValues counts."
   },
   {
     "test_name": "ShapeCustom_Surface ConvertToAnalytical::recognizeCylinder",
     "bridge_function": "OCCTSurfaceConvertToAnalytical",
     "bridge_output": {
       "type": "surface",
-      "data": "as asserted"
+      "data": {
+        "isCylinder": true,
+        "gap": 3.580361673049448e-15
+      }
     },
     "kernel_output": {
       "type": "surface",
       "data": {
-        "type": "Geom_CylindricalSurface",
-        "radius": 5.0,
+        "isCylinder": true,
         "gap": 3.58e-15
       }
     },
@@ -7649,316 +7603,260 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a trimmed radius-5 cylinder converted to BSpline, then convertToAnalytical() at the default 1e-4: whether the recognised surface is a cylinder, and the gap, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 8 (ConvertToAnalytical(bsp r5 h10, 1e-4): type=Geom_CylindricalSurface gap=3.580e-15), ShapeCustom_Surface::ConvertToAnalytical then Gap(); the surface type name is recorded as a flag. The gap is compared at absolute tolerance 1e-9, the test's own bound (gap < 1e-9); the kernel value is printed to four digits."
   },
   {
     "test_name": "ShapeUpgrade_SplitSurfaceContinuity::splitByContinuity",
     "bridge_function": "OCCTSurfaceSplitByContinuity",
     "bridge_output": {
       "type": "split",
-      "data": "as asserted"
+      "data": {
+        "alreadyMeetsCriterion": false,
+        "wasSplit": true,
+        "uSplitCount": 4,
+        "vSplitCount": 2
+      }
     },
     "kernel_output": {
       "type": "split",
       "data": {
-        "OK": false,
-        "DONE1": true,
-        "u": 4,
-        "v": 2
+        "alreadyMeetsCriterion": false,
+        "wasSplit": true,
+        "uSplitCount": 4,
+        "vSplitCount": 2
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a trimmed radius-5 cylinder converted to BSpline, then splitByContinuity(criterion: 2, tolerance: 1e-6): alreadyMeetsCriterion, wasSplit and the number of U and V split values, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 9 (SplitSurfaceContinuity(bsp r5 h10, C2): OK=0 DONE1=1: u=4 v=2), ShapeUpgrade_SplitSurfaceContinuity::Status(ShapeExtend_OK) and Status(ShapeExtend_DONE1) recorded as false and true, then the split value counts."
   },
   {
     "test_name": "ShapeAnalysis Surface ValueOfUV Tests::projectOntoPlane",
-    "bridge_function": "OCCTSurfaceValueOfUV / NextValueOfUV",
+    "bridge_function": "OCCTSurfaceValueOfUV",
     "bridge_output": {
       "type": "uv",
-      "data": "as asserted"
+      "data": {
+        "uv": [
+          5,
+          3
+        ],
+        "gap": 2
+      }
     },
     "kernel_output": {
       "type": "uv",
       "data": {
-        "plane(5,3,2)": {
-          "uv": [
-            5,
-            3
-          ],
-          "gap": 2
-        },
-        "next(5.5,3.5,0)": {
-          "uv": [
-            5.5,
-            3.5
-          ],
-          "gap": 0
-        },
-        "sphere(0,0,10)": {
-          "uv": [
-            0,
-            1.570796327
-          ],
-          "gap": 5
-        }
+        "uv": [
+          5,
+          3
+        ],
+        "gap": 2
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a plane through the origin with normal +Z, valueOfUV(point: (5, 3, 2)): the UV and the gap, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T174): ShapeAnalysis_Surface::ValueOfUV(gp_Pnt(5, 3, 2), 1e-6) then Gap(); Scripts/repro/766-healing-small-files/transcript.txt line 10 holds the same values to nine digits."
   },
   {
     "test_name": "ShapeAnalysis Surface ValueOfUV Tests::projectOntoSphere",
-    "bridge_function": "OCCTSurfaceValueOfUV / NextValueOfUV",
+    "bridge_function": "OCCTSurfaceValueOfUV",
     "bridge_output": {
       "type": "uv",
-      "data": "as asserted"
+      "data": {
+        "v": 1.5707963267948966,
+        "gap": 5
+      }
     },
     "kernel_output": {
       "type": "uv",
       "data": {
-        "plane(5,3,2)": {
-          "uv": [
-            5,
-            3
-          ],
-          "gap": 2
-        },
-        "next(5.5,3.5,0)": {
-          "uv": [
-            5.5,
-            3.5
-          ],
-          "gap": 0
-        },
-        "sphere(0,0,10)": {
-          "uv": [
-            0,
-            1.570796327
-          ],
-          "gap": 5
-        }
+        "v": 1.5707963267948966,
+        "gap": 5
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a radius-5 sphere at the origin, valueOfUV(point: (0, 0, 10)): the V coordinate and the gap, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T175): ShapeAnalysis_Surface::ValueOfUV(gp_Pnt(0, 0, 10), 1e-6) then Gap(); Scripts/repro/766-healing-small-files/transcript.txt line 12 holds the same values to nine digits. The test asserts V and the gap; U is undefined at the pole and is not part of the record."
   },
   {
     "test_name": "ShapeAnalysis Surface ValueOfUV Tests::nextValueOfUV",
-    "bridge_function": "OCCTSurfaceValueOfUV / NextValueOfUV",
+    "bridge_function": "OCCTSurfaceValueOfUV / OCCTSurfaceNextValueOfUV",
     "bridge_output": {
       "type": "uv",
-      "data": "as asserted"
+      "data": {
+        "uv": [
+          5.5,
+          3.5
+        ],
+        "gap": 0
+      }
     },
     "kernel_output": {
       "type": "uv",
       "data": {
-        "plane(5,3,2)": {
-          "uv": [
-            5,
-            3
-          ],
-          "gap": 2
-        },
-        "next(5.5,3.5,0)": {
-          "uv": [
-            5.5,
-            3.5
-          ],
-          "gap": 0
-        },
-        "sphere(0,0,10)": {
-          "uv": [
-            0,
-            1.570796327
-          ],
-          "gap": 5
-        }
+        "uv": [
+          5.5,
+          3.5
+        ],
+        "gap": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the same plane, valueOfUV((5, 3, 0)) then nextValueOfUV(previousUV:, point: (5.5, 3.5, 0)): the second UV and its gap, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T176): ShapeAnalysis_Surface::ValueOfUV(gp_Pnt(5, 3, 0), 1e-6) then NextValueOfUV(that UV, gp_Pnt(5.5, 3.5, 0), 1e-6) and Gap(); Scripts/repro/766-healing-small-files/transcript.txt line 11 holds the same values to nine digits."
   },
   {
     "test_name": "v0.123.0, UnifySameDomain builder::basicUnification",
-    "bridge_function": "OCCTUnifySameDomain*",
+    "bridge_function": "OCCTUnifySameDomainCreate / OCCTUnifySameDomainBuild / OCCTUnifySameDomainShape",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "faces": 6,
+        "edges": 12,
+        "volume": 1999.9999999999995
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "fused": {
-          "faces": 10,
-          "edges": 20,
-          "volume": 2000
-        },
-        "default / AllowInternalEdges / SafeInputMode / tolerances": {
-          "faces": 6,
-          "edges": 12,
-          "valid": true,
-          "volume": 2000
-        },
-        "KeepShape(top seam)": {
-          "faces": 7,
-          "edges": 15,
-          "valid": true
-        }
+        "valid": true,
+        "faces": 6,
+        "edges": 12,
+        "volume": 2000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: UnifySameDomainBuilder on two 10 mm cubes fused side by side (10 faces, 20 edges), build(): whether the result is valid, its face count, its edge count and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 14 (unify default: faces=6 edges=12 valid=1 volume=2000), ShapeUpgrade_UnifySameDomain with default modes, Build."
   },
   {
     "test_name": "v0.123.0, UnifySameDomain builder::allowInternalEdges",
-    "bridge_function": "OCCTUnifySameDomain*",
+    "bridge_function": "OCCTUnifySameDomainAllowInternalEdges / OCCTUnifySameDomainBuild",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "faces": 6,
+        "edges": 12,
+        "volume": 1999.9999999999995
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "fused": {
-          "faces": 10,
-          "edges": 20,
-          "volume": 2000
-        },
-        "default / AllowInternalEdges / SafeInputMode / tolerances": {
-          "faces": 6,
-          "edges": 12,
-          "valid": true,
-          "volume": 2000
-        },
-        "KeepShape(top seam)": {
-          "faces": 7,
-          "edges": 15,
-          "valid": true
-        }
+        "valid": true,
+        "faces": 6,
+        "edges": 12,
+        "volume": 2000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the same builder with allowInternalEdges(true): whether the result is valid, its face count, its edge count and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 15 (unify AllowInternalEdges(true): faces=6 edges=12 valid=1 volume=2000), ShapeUpgrade_UnifySameDomain::AllowInternalEdges(true), Build."
   },
   {
     "test_name": "v0.123.0, UnifySameDomain builder::keepShape",
-    "bridge_function": "OCCTUnifySameDomain*",
+    "bridge_function": "OCCTUnifySameDomainKeepShape / OCCTUnifySameDomainBuild",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "faces": 7,
+        "edges": 15
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "fused": {
-          "faces": 10,
-          "edges": 20,
-          "volume": 2000
-        },
-        "default / AllowInternalEdges / SafeInputMode / tolerances": {
-          "faces": 6,
-          "edges": 12,
-          "valid": true,
-          "volume": 2000
-        },
-        "KeepShape(top seam)": {
-          "faces": 7,
-          "edges": 15,
-          "valid": true
-        }
+        "valid": true,
+        "faces": 7,
+        "edges": 15
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the same builder with keepShape(seam), the edge between the two top faces at x = 5, z = 5: whether the result is valid, its face count and its edge count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 17 (unify KeepShape(top internal edge): faces=7 edges=15 valid=1), ShapeUpgrade_UnifySameDomain::KeepShape on that edge, Build."
   },
   {
     "test_name": "v0.123.0, UnifySameDomain builder::safeInputMode",
-    "bridge_function": "OCCTUnifySameDomain*",
+    "bridge_function": "OCCTUnifySameDomainSetSafeInputMode / OCCTUnifySameDomainBuild",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "faces": 6,
+        "edges": 12,
+        "volume": 1999.9999999999995,
+        "inputFacesAfter": 10
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "fused": {
-          "faces": 10,
-          "edges": 20,
-          "volume": 2000
-        },
-        "default / AllowInternalEdges / SafeInputMode / tolerances": {
-          "faces": 6,
-          "edges": 12,
-          "valid": true,
-          "volume": 2000
-        },
-        "KeepShape(top seam)": {
-          "faces": 7,
-          "edges": 15,
-          "valid": true
-        }
+        "valid": true,
+        "faces": 6,
+        "edges": 12,
+        "volume": 2000.0,
+        "inputFacesAfter": 10
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the same builder with setSafeInputMode(true): whether the result is valid, its face count, its edge count, its volume, and the input shape's face count after the build, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 18 (unify SetSafeInputMode(true): faces=6 edges=12 valid=1 volume=2000) for the result; Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T180) for the input's face count: ShapeUpgrade_UnifySameDomain with SetSafeInputMode(true) run on the fused boxes uncopied leaves them at 10 faces. The bridge also builds on a private copy of the input (#446), which protects the input whatever the mode; the kernel value shows safe mode alone leaves the input unchanged."
   },
   {
     "test_name": "v0.123.0, UnifySameDomain builder::tolerances",
-    "bridge_function": "OCCTUnifySameDomain*",
+    "bridge_function": "OCCTUnifySameDomainSetLinearTolerance / OCCTUnifySameDomainSetAngularTolerance / OCCTUnifySameDomainBuild",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "faces": 6,
+        "edges": 12,
+        "volume": 1999.9999999999995
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "fused": {
-          "faces": 10,
-          "edges": 20,
-          "volume": 2000
-        },
-        "default / AllowInternalEdges / SafeInputMode / tolerances": {
-          "faces": 6,
-          "edges": 12,
-          "valid": true,
-          "volume": 2000
-        },
-        "KeepShape(top seam)": {
-          "faces": 7,
-          "edges": 15,
-          "valid": true
-        }
+        "valid": true,
+        "faces": 6,
+        "edges": 12,
+        "volume": 2000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the same builder with setLinearTolerance(1e-6) and setAngularTolerance(1e-3): whether the result is valid, its face count, its edge count and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 19 (unify SetLinearTolerance(1e-6) SetAngularTolerance(1e-3): faces=6 edges=12 valid=1 volume=2000), ShapeUpgrade_UnifySameDomain with both Set calls, Build."
   },
   {
     "test_name": "Update Tolerances::updateTolerancesBox",
@@ -8014,16 +7912,23 @@
   },
   {
     "test_name": "ShapeAnalysis_WireVertex::wireVertex",
-    "bridge_function": "OCCTShapeWireVertexAnalysis / Status",
+    "bridge_function": "OCCTShapeWireVertexAnalysis / OCCTShapeWireVertexStatus",
     "bridge_output": {
       "type": "wire_vertex",
-      "data": "as asserted"
+      "data": {
+        "isDone": true,
+        "edgeCount": 2,
+        "status": [
+          1,
+          -1
+        ]
+      }
     },
     "kernel_output": {
       "type": "wire_vertex",
       "data": {
-        "done": true,
-        "nbEdges": 2,
+        "isDone": true,
+        "edgeCount": 2,
         "status": [
           1,
           -1
@@ -8034,293 +7939,185 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: wireVertexAnalysis(precision: 0.01) on an open two-edge polyline (0,0,0) to (10,0,0) to (10,10,0): isDone, edgeCount, and the raw status of wireVertexStatus at index 0 and index 1 (1 = same coordinates, -1 = disjoined), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-small-files/transcript.txt line 22 (WireVertex(open L, 0.01): done=1 nbEdges=2 status: 1 -1), ShapeAnalysis_WireVertex Init, Analyze, NbEdges and Status(1) and Status(2)."
   },
   {
     "test_name": "Issue 702: solid demotion is reported accurately::fakeSolidIsInvalid",
     "bridge_function": "OCCTSolidFromShells / OCCTShapeIsValid",
     "bridge_output": {
       "type": "demotion",
-      "data": "as asserted"
+      "data": {
+        "isSolid": true,
+        "valid": false
+      }
     },
     "kernel_output": {
       "type": "demotion",
       "data": {
-        "openShell": {
-          "faces": 5,
-          "freeEdges": 4
-        },
-        "fakeSolid": {
-          "type": "SOLID",
-          "valid": false
-        },
-        "ShapeFix_Solid": {
-          "type": "SHELL",
-          "valid": true,
-          "freeEdges": 4
-        },
-        "ShapeFix_Shape": {
-          "type": "SHELL",
-          "valid": true
-        },
-        "box": {
-          "freeEdges": 0
-        },
-        "twoOpenShells": {
-          "freeEdges": 8,
-          "shells": 2
-        }
+        "isSolid": true,
+        "valid": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the open shell wrapped as a solid (Shape.solidFromShells): whether it is a solid and whether it is valid, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 2 (#702 fake solid: type=2 BRepCheck valid=0), BRepBuilderAPI_MakeSolid on the open shell, then BRepCheck_Analyzer; type 2 is TopAbs_SOLID, recorded as a flag."
   },
   {
     "test_name": "Issue 702: solid demotion is reported accurately::fixSolidDemotes",
     "bridge_function": "OCCTShapeFixSolid",
     "bridge_output": {
       "type": "demotion",
-      "data": "as asserted"
+      "data": {
+        "isShell": true,
+        "valid": true
+      }
     },
     "kernel_output": {
       "type": "demotion",
       "data": {
-        "openShell": {
-          "faces": 5,
-          "freeEdges": 4
-        },
-        "fakeSolid": {
-          "type": "SOLID",
-          "valid": false
-        },
-        "ShapeFix_Solid": {
-          "type": "SHELL",
-          "valid": true,
-          "freeEdges": 4
-        },
-        "ShapeFix_Shape": {
-          "type": "SHELL",
-          "valid": true
-        },
-        "box": {
-          "freeEdges": 0
-        },
-        "twoOpenShells": {
-          "freeEdges": 8,
-          "shells": 2
-        }
+        "isShell": true,
+        "valid": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: fixSolid() on that fake solid: whether the result is a shell (demoted) and whether it is valid, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 3 (#702 ShapeFix_Solid: type=3 valid=1), ShapeFix_Solid Perform on the fake solid; type 3 is TopAbs_SHELL, recorded as a flag."
   },
   {
     "test_name": "Issue 702: solid demotion is reported accurately::healedDemotes",
     "bridge_function": "OCCTShapeHeal",
     "bridge_output": {
       "type": "demotion",
-      "data": "as asserted"
+      "data": {
+        "isShell": true,
+        "valid": true
+      }
     },
     "kernel_output": {
       "type": "demotion",
       "data": {
-        "openShell": {
-          "faces": 5,
-          "freeEdges": 4
-        },
-        "fakeSolid": {
-          "type": "SOLID",
-          "valid": false
-        },
-        "ShapeFix_Solid": {
-          "type": "SHELL",
-          "valid": true,
-          "freeEdges": 4
-        },
-        "ShapeFix_Shape": {
-          "type": "SHELL",
-          "valid": true
-        },
-        "box": {
-          "freeEdges": 0
-        },
-        "twoOpenShells": {
-          "freeEdges": 8,
-          "shells": 2
-        }
+        "isShell": true,
+        "valid": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: healed() on the same fake solid: whether the result is a shell and whether it is valid, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 4 (#702 ShapeFix_Shape: type=3 valid=1), ShapeFix_Shape Perform on the fake solid; type 3 is TopAbs_SHELL, recorded as a flag."
   },
   {
     "test_name": "Issue 702: solid demotion is reported accurately::isValidAloneIsAmbiguous",
     "bridge_function": "OCCTShapeFixSolid / OCCTShapeIsValid",
     "bridge_output": {
       "type": "demotion",
-      "data": "as asserted"
+      "data": {
+        "fixedValid": true,
+        "boxValid": true,
+        "sameType": false
+      }
     },
     "kernel_output": {
       "type": "demotion",
       "data": {
-        "openShell": {
-          "faces": 5,
-          "freeEdges": 4
-        },
-        "fakeSolid": {
-          "type": "SOLID",
-          "valid": false
-        },
-        "ShapeFix_Solid": {
-          "type": "SHELL",
-          "valid": true,
-          "freeEdges": 4
-        },
-        "ShapeFix_Shape": {
-          "type": "SHELL",
-          "valid": true
-        },
-        "box": {
-          "freeEdges": 0
-        },
-        "twoOpenShells": {
-          "freeEdges": 8,
-          "shells": 2
-        }
+        "fixedValid": true,
+        "boxValid": true,
+        "sameType": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the fixSolid() shell and a 10 mm cube: whether each is valid, and whether the two have the same shape type, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T186): BRepCheck_Analyzer on the ShapeFix_Solid result and on the cube, and whether their ShapeType() values are equal; Scripts/repro/766-healing-702-999/transcript.txt line 3 and Scripts/repro/766-healing-702-999/transcript.txt line 5 hold both validities."
   },
   {
     "test_name": "Issue 702: solid demotion is reported accurately::isValidSolidDistinguishesDemotion",
     "bridge_function": "OCCTShapeIsValidSolid",
     "bridge_output": {
       "type": "demotion",
-      "data": "as asserted"
+      "data": {
+        "fixedIsValidSolid": false,
+        "healedIsValidSolid": false,
+        "boxIsValidSolid": true
+      }
     },
     "kernel_output": {
       "type": "demotion",
       "data": {
-        "openShell": {
-          "faces": 5,
-          "freeEdges": 4
-        },
-        "fakeSolid": {
-          "type": "SOLID",
-          "valid": false
-        },
-        "ShapeFix_Solid": {
-          "type": "SHELL",
-          "valid": true,
-          "freeEdges": 4
-        },
-        "ShapeFix_Shape": {
-          "type": "SHELL",
-          "valid": true
-        },
-        "box": {
-          "freeEdges": 0
-        },
-        "twoOpenShells": {
-          "freeEdges": 8,
-          "shells": 2
-        }
+        "fixedIsValidSolid": false,
+        "healedIsValidSolid": false,
+        "boxIsValidSolid": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: isValidSolid on the fixSolid() shell, on the healed() shell and on a 10 mm cube, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T187): the bridge's own predicate, ShapeType() == TopAbs_SOLID and BRepCheck_Analyzer::IsValid(), computed on the same three shapes. isValidSolid is a bridge composite of those two OCCT calls, so the kernel side is the same two calls."
   },
   {
     "test_name": "Issue 702: solid demotion is reported accurately::isValidSolidFalseOnNonSolidTypes",
     "bridge_function": "OCCTShapeIsValidSolid",
     "bridge_output": {
       "type": "demotion",
-      "data": "as asserted"
+      "data": {
+        "faceIsValidSolid": false,
+        "shellIsValidSolid": false,
+        "boxIsValidSolid": true
+      }
     },
     "kernel_output": {
       "type": "demotion",
       "data": {
-        "openShell": {
-          "faces": 5,
-          "freeEdges": 4
-        },
-        "fakeSolid": {
-          "type": "SOLID",
-          "valid": false
-        },
-        "ShapeFix_Solid": {
-          "type": "SHELL",
-          "valid": true,
-          "freeEdges": 4
-        },
-        "ShapeFix_Shape": {
-          "type": "SHELL",
-          "valid": true
-        },
-        "box": {
-          "freeEdges": 0
-        },
-        "twoOpenShells": {
-          "freeEdges": 8,
-          "shells": 2
-        }
+        "faceIsValidSolid": false,
+        "shellIsValidSolid": false,
+        "boxIsValidSolid": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: isValidSolid on a cube's first face, on its shell and on the cube, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T188): ShapeType() == TopAbs_SOLID and BRepCheck_Analyzer::IsValid() on the same three shapes, as OCCTShapeIsValidSolid computes it. isValidSolid is a bridge composite of those two OCCT calls, so the kernel side is the same two calls."
   },
   {
     "test_name": "Issue 702: solid demotion is reported accurately::analyzeReportsFreeEdgesOnOpenShell",
-    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_function": "OCCTShapeAnalyze / OCCTShapeAnalyzeShell",
     "bridge_output": {
       "type": "demotion",
-      "data": "as asserted"
+      "data": {
+        "analyzeShell": {
+          "hasFreeEdges": true,
+          "freeEdgeCount": 4
+        },
+        "analyze": {
+          "freeEdgeCount": 4,
+          "freeFaceCount": 1
+        }
+      }
     },
     "kernel_output": {
       "type": "demotion",
       "data": {
-        "openShell": {
-          "faces": 5,
-          "freeEdges": 4
+        "analyzeShell": {
+          "hasFreeEdges": true,
+          "freeEdgeCount": 4
         },
-        "fakeSolid": {
-          "type": "SOLID",
-          "valid": false
-        },
-        "ShapeFix_Solid": {
-          "type": "SHELL",
-          "valid": true,
-          "freeEdges": 4
-        },
-        "ShapeFix_Shape": {
-          "type": "SHELL",
-          "valid": true
-        },
-        "box": {
-          "freeEdges": 0
-        },
-        "twoOpenShells": {
-          "freeEdges": 8,
-          "shells": 2
+        "analyze": {
+          "freeEdgeCount": 4,
+          "freeFaceCount": 1
         }
       }
     },
@@ -8328,209 +8125,125 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a 10 mm cube with one face dropped and the other five sewn at 1e-6 into an open shell: analyzeShell()'s hasFreeEdges and freeEdgeCount, and analyze(tolerance: 1e-6)'s freeEdgeCount and freeFaceCount, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T189): ShapeAnalysis_Shell::CheckOrientedShells(shape, true, true) with HasFreeEdges and the free-edge count, and the per-shell loop OCCTShapeAnalyze runs over it (free edges summed, one free face per shell that has any); Scripts/repro/766-healing-702-999/transcript.txt line 1 holds freeEdges=4. The Swift-only assertions in this test (totalProblems equals the sum of the other fields, and does not add freeFaceCount again) have no kernel counterpart and are not part of the record."
   },
   {
     "test_name": "Issue 702: solid demotion is reported accurately::analyzeReportsFreeEdgesOnDemotedShell",
     "bridge_function": "OCCTShapeAnalyze",
     "bridge_output": {
       "type": "demotion",
-      "data": "as asserted"
+      "data": {
+        "freeEdgeCount": 4,
+        "freeFaceCount": 1
+      }
     },
     "kernel_output": {
       "type": "demotion",
       "data": {
-        "openShell": {
-          "faces": 5,
-          "freeEdges": 4
-        },
-        "fakeSolid": {
-          "type": "SOLID",
-          "valid": false
-        },
-        "ShapeFix_Solid": {
-          "type": "SHELL",
-          "valid": true,
-          "freeEdges": 4
-        },
-        "ShapeFix_Shape": {
-          "type": "SHELL",
-          "valid": true
-        },
-        "box": {
-          "freeEdges": 0
-        },
-        "twoOpenShells": {
-          "freeEdges": 8,
-          "shells": 2
-        }
+        "freeEdgeCount": 4,
+        "freeFaceCount": 1
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: analyze(tolerance: 1e-6) on the fixSolid() shell: freeEdgeCount and freeFaceCount, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T190): the same per-shell CheckOrientedShells loop on the ShapeFix_Solid result; Scripts/repro/766-healing-702-999/transcript.txt line 3 holds freeEdges=4. isHealthy and the totalProblems identity are Swift-only and are not part of the record."
   },
   {
     "test_name": "Issue 702: solid demotion is reported accurately::analyzeReportsNoFreeEdgesOnClosedBox",
     "bridge_function": "OCCTShapeAnalyze",
     "bridge_output": {
       "type": "demotion",
-      "data": "as asserted"
+      "data": {
+        "freeEdgeCount": 0,
+        "freeFaceCount": 0
+      }
     },
     "kernel_output": {
       "type": "demotion",
       "data": {
-        "openShell": {
-          "faces": 5,
-          "freeEdges": 4
-        },
-        "fakeSolid": {
-          "type": "SOLID",
-          "valid": false
-        },
-        "ShapeFix_Solid": {
-          "type": "SHELL",
-          "valid": true,
-          "freeEdges": 4
-        },
-        "ShapeFix_Shape": {
-          "type": "SHELL",
-          "valid": true
-        },
-        "box": {
-          "freeEdges": 0
-        },
-        "twoOpenShells": {
-          "freeEdges": 8,
-          "shells": 2
-        }
+        "freeEdgeCount": 0,
+        "freeFaceCount": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: analyze(tolerance: 1e-6) on a closed 10 mm cube: freeEdgeCount and freeFaceCount, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T191): the same per-shell CheckOrientedShells loop on the cube; Scripts/repro/766-healing-702-999/transcript.txt line 5 holds freeEdges=0."
   },
   {
     "test_name": "Issue 702: solid demotion is reported accurately::analyzeCountsFreeFacesPerShell",
     "bridge_function": "OCCTShapeAnalyze",
     "bridge_output": {
       "type": "demotion",
-      "data": "as asserted"
+      "data": {
+        "freeEdgeCount": 8,
+        "freeFaceCount": 2
+      }
     },
     "kernel_output": {
       "type": "demotion",
       "data": {
-        "openShell": {
-          "faces": 5,
-          "freeEdges": 4
-        },
-        "fakeSolid": {
-          "type": "SOLID",
-          "valid": false
-        },
-        "ShapeFix_Solid": {
-          "type": "SHELL",
-          "valid": true,
-          "freeEdges": 4
-        },
-        "ShapeFix_Shape": {
-          "type": "SHELL",
-          "valid": true
-        },
-        "box": {
-          "freeEdges": 0
-        },
-        "twoOpenShells": {
-          "freeEdges": 8,
-          "shells": 2
-        }
+        "freeEdgeCount": 8,
+        "freeFaceCount": 2
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: analyze(tolerance: 1e-6) on a compound of two such open shells at the same place: freeEdgeCount and freeFaceCount, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T192): the same per-shell CheckOrientedShells loop on a compound of two independently sewn open shells; Scripts/repro/766-healing-702-999/transcript.txt line 6 holds freeEdges=8 for two offset shells. The totalProblems identity is Swift-only and is not part of the record."
   },
   {
     "test_name": "Issue 702: solid demotion is reported accurately::totalProblemsExcludingFreeFaceIncludesSelfIntersection",
-    "bridge_function": "OCCTShapeAnalyze + OCCTShapeSelfIntersectsBounded",
+    "bridge_function": "OCCTShapeAnalyze / OCCTShapeSelfIntersectsBounded",
     "bridge_output": {
       "type": "demotion",
-      "data": "as asserted"
+      "data": {
+        "hasSelfIntersection": true
+      }
     },
     "kernel_output": {
       "type": "demotion",
       "data": {
-        "openShell": {
-          "faces": 5,
-          "freeEdges": 4
-        },
-        "fakeSolid": {
-          "type": "SOLID",
-          "valid": false
-        },
-        "ShapeFix_Solid": {
-          "type": "SHELL",
-          "valid": true,
-          "freeEdges": 4
-        },
-        "ShapeFix_Shape": {
-          "type": "SHELL",
-          "valid": true
-        },
-        "box": {
-          "freeEdges": 0
-        },
-        "twoOpenShells": {
-          "freeEdges": 8,
-          "shells": 2
-        }
+        "hasSelfIntersection": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: analyze(tolerance: 0.001, selfIntersectionTimeout: 30) on a compound of two overlapping 10 mm boxes (corners at (0,0,0) and (5,0,0)): hasSelfIntersection, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 7 (#772 self-intersection: box=0 overlapping compound=1), BOPAlgo_ArgumentAnalyzer with SelfInterMode; recorded as true. The totalProblems identity the test then checks is Swift-only and is not part of the record."
   },
   {
     "test_name": "Issue 702: solid demotion is reported accurately::analyzeAgreesWithAnalyzeShellOnInternalDuplicate",
-    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_function": "OCCTShapeAnalyze / OCCTShapeAnalyzeShell",
     "bridge_output": {
       "type": "demotion",
-      "data": "as asserted"
+      "data": {
+        "analyzeShell": {
+          "freeEdgeCount": 3
+        },
+        "analyze": {
+          "freeEdgeCount": 3
+        }
+      }
     },
     "kernel_output": {
       "type": "demotion",
       "data": {
-        "openShell": {
-          "faces": 5,
-          "freeEdges": 4
+        "analyzeShell": {
+          "freeEdgeCount": 3
         },
-        "fakeSolid": {
-          "type": "SOLID",
-          "valid": false
-        },
-        "ShapeFix_Solid": {
-          "type": "SHELL",
-          "valid": true,
-          "freeEdges": 4
-        },
-        "ShapeFix_Shape": {
-          "type": "SHELL",
-          "valid": true
-        },
-        "box": {
-          "freeEdges": 0
-        },
-        "twoOpenShells": {
-          "freeEdges": 8,
-          "shells": 2
+        "analyze": {
+          "freeEdgeCount": 3
         }
       }
     },
@@ -8538,7 +8251,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a one-face shell holding an INTERNAL-oriented duplicate of one of the face's own edges: analyzeShell()'s freeEdgeCount and analyze(tolerance: 1e-6)'s freeEdgeCount, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T194): ShapeAnalysis_Shell::CheckOrientedShells(shell, true, true) on the same fixture built with BRep_Builder (INTERNAL edge in an INTERNAL wire added to the face), and the per-shell loop OCCTShapeAnalyze runs over it; the duplicate drops one edge from the free count, 4 to 3."
   },
   {
     "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::defaultDoesNotCheck",
