@@ -584,7 +584,9 @@
       "data": {
         "done": true,
         "volume": 1499.9999999999993,
-        "modifiedFaces": 8
+        "solids": 1,
+        "modifiedFaces": 8,
+        "allFaces": true
       }
     },
     "kernel_output": {
@@ -592,7 +594,9 @@
       "data": {
         "done": true,
         "volume": 1499.9999999999993,
-        "modifiedFaces": 8
+        "solids": 1,
+        "modifiedFaces": 8,
+        "allFaces": true
       }
     },
     "comparison": {
@@ -600,7 +604,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: done, the fused volume and the number of modified shapes over shape 1's faces, for two overlapping 10 mm cubes offset 5 in x. Bridge: Shape.fuseWithHistory non-nil (OCCTShapeFuseWithHistory), result.shape.volume (Swift takes the fused shape from a separate union call, the history from the fuse) and modifiedFaces.count, the summed length of BRepAlgoAPI_Fuse::Modified(face) over shape 1's TopExp_Explorer faces; the test asserted positive volume and a positive count. Kernel: the same fuse, IsDone, BRepGProp, and the same summed Modified() list lengths; fuseWithHistory line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "source": "Same quantity on both sides: done, the solid count and volume of the fused shape, the number of modified shapes over the first cube's faces and whether they are all faces, for two 10 mm cubes offset 5 in x (one solid of 2000 - 500 = 1500, 8 modified faces). The test read `r.shape.volume!` inside #expect against `> 0` and `r.modifiedFaces.count > 0`, after a separate non-nil check and inside an `if let`; it now requires the result and asserts 1 solid, the volume within 1e-6, exactly 8 modified shapes and that they are faces. Bridge: Shape.fuseWithHistory non-nil (Swift takes the fused shape from a separate union call, OCCTShapeUnionEx, and the history from OCCTShapeFuseWithHistory), result.shape.subShapes(ofType: .solid).count, result.shape.volume, modifiedFaces.count and whether every modified shape has shapeType .face. Kernel: BRepAlgoAPI_Fuse, IsDone, TopExp::MapShapes solid count, BRepGProp volume, the summed list lengths of Modified(face) over the first cube's TopExp_Explorer faces and whether every entry is a TopAbs_FACE; the fuseWithHistory line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
     "probe": "Scripts/repro/766-modeling-boolean-history/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
@@ -611,7 +615,9 @@
       "data": {
         "done": true,
         "volume": 249.9999999999999,
-        "modifiedFaces": 0
+        "solids": 2,
+        "modifiedFaces": 0,
+        "allFaces": true
       }
     },
     "kernel_output": {
@@ -619,7 +625,9 @@
       "data": {
         "done": true,
         "volume": 249.9999999999999,
-        "modifiedFaces": 0
+        "solids": 2,
+        "modifiedFaces": 0,
+        "allFaces": true
       }
     },
     "comparison": {
@@ -627,7 +635,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantity on both sides: done, the fused volume and the number of modified shapes over shape 1's faces, for two 5 mm cubes 20 apart. Bridge: Shape.fuseWithHistory non-nil, result.shape.volume and modifiedFaces.count; the test asserted 0 modified faces. Kernel: BRepAlgoAPI_Fuse, IsDone, BRepGProp and the summed Modified() list lengths over shape 1's faces; fuseNonOverlappingHistory line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "source": "Same quantity on both sides: done, the solid count and volume of the fused shape and the number of modified shapes over the first cube's faces, for two 5 mm cubes 20 apart (two solids of 125, no modified face). The test asserted only 0 modified faces, after a separate non-nil check and inside an `if let`; it now requires the result and asserts 0 modified shapes, 2 solids and the volume within 1e-6. Bridge: Shape.fuseWithHistory non-nil (Swift takes the fused shape from a separate union call, OCCTShapeUnionEx, and the history from OCCTShapeFuseWithHistory), result.shape.subShapes(ofType: .solid).count, result.shape.volume, modifiedFaces.count and whether every modified shape has shapeType .face. Kernel: BRepAlgoAPI_Fuse, IsDone, TopExp::MapShapes solid count, BRepGProp volume, the summed list lengths of Modified(face) over the first cube's TopExp_Explorer faces and whether every entry is a TopAbs_FACE; the fuseNonOverlappingHistory line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
     "probe": "Scripts/repro/766-modeling-boolean-history/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   },
   {
