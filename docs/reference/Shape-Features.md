@@ -305,7 +305,7 @@ Glues two shapes together at coincident faces.
 public static func glue(_ shape1: Shape, _ shape2: Shape, tolerance: Double = 1e-6) -> Shape?
 ```
 
-More efficient than boolean union when the shapes have perfectly coincident faces. Uses OCCT's glue option (`BRepAlgoAPI_Fuse` with `GlueFull`) to avoid full topology re-computation.
+More efficient than boolean union when the shapes have perfectly coincident faces. Uses OCCT's glue option (`BRepAlgoAPI_Fuse` with `GlueShift`) to avoid full topology re-computation. `shape1` is the argument and `shape2` is the tool (#2735); before the fix, both were passed as arguments with no tool set, which `BRepAlgoAPI_Fuse` always reports as an error, so the operation silently fell back to a plain fuse on every call.
 
 - **Parameters:** `shape1`, first shape; `shape2`, second shape with coincident faces; `tolerance`, face-matching tolerance.
 - **Returns:** Glued shape, or `nil` on failure.
