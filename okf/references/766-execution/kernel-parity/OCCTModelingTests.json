@@ -444,7 +444,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantities on both sides: whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), face count, validity and volume. Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volumes at %.17g). Kernel values are from Scripts/repro/766-modeling-locope-dprism/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call (LocOpe_DPrism(face, 5, 3, 0.1), IsDone, Shape) on face(at: 0) of the centred 10 x 10 x 1 box. The test itself asserts only non-nil.",
+    "source": "Same quantities on both sides: whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), face count, validity and volume. Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volumes at %.17g). Kernel values are from Scripts/repro/766-modeling-locope-dprism/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call (LocOpe_DPrism(face, 5, 3, 0.1), IsDone, Shape) on face(at: 0) of the centred 10 x 10 x 1 box. The test asserts a shape came back, valid, 10 faces and a volume within 1e-6 of 64.050646231928056 (before #766 it asserted only non-nil).",
     "probe": "Scripts/repro/766-modeling-locope-dprism/"
   },
   {
@@ -475,7 +475,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantities on both sides: whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), face count, validity and volume. Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volumes at %.17g). Kernel values are from Scripts/repro/766-modeling-locope-dprism/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call (LocOpe_DPrism(face, 5, 0.1), IsDone, Shape) on face(at: 0) of the centred 10 x 10 x 1 box. The test itself asserts only non-nil.",
+    "source": "Same quantities on both sides: whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), face count, validity and volume. Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volumes at %.17g). Kernel values are from Scripts/repro/766-modeling-locope-dprism/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call (LocOpe_DPrism(face, 5, 0.1), IsDone, Shape) on face(at: 0) of the centred 10 x 10 x 1 box. The test asserts a shape came back, valid, 6 faces and a volume within 1e-6 of 24.085995119264528 (before #766 it asserted only non-nil).",
     "probe": "Scripts/repro/766-modeling-locope-dprism/"
   },
   {
@@ -597,7 +597,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantities on both sides: whether a shape came back, its type, face count, validity and volume. Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volumes at %.17g). Kernel values are from Scripts/repro/766-modeling-locope-linear-form/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call (LocOpe_LinearForm::Perform(box, (0,0,10), (0,0,0), (0,0,10)), Shape) on the centred 5 x 5 x 0.1 box. The two volumes differ by 2e-14, inside the 1e-9 relative tolerance. The test itself asserts only non-nil.",
+    "source": "Same quantities on both sides: whether a shape came back, its type, face count, validity and volume. Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volumes at %.17g). Kernel values are from Scripts/repro/766-modeling-locope-linear-form/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's call (LocOpe_LinearForm::Perform(box, (0,0,10), (0,0,0), (0,0,10)), Shape) on the centred 5 x 5 x 0.1 box. The two volumes differ by 2e-14, inside the 1e-9 relative tolerance. The test asserts a shape came back, valid, 12 faces and a volume within 1e-6 of 5 (before #766 it asserted only non-nil).",
     "probe": "Scripts/repro/766-modeling-locope-linear-form/"
   },
   {
@@ -772,7 +772,7 @@
       "differences": []
     },
     "status": "PASS",
-    "source": "Same quantities on both sides: the origin-cornered 10 mm box's face count before the split, the best face count over the six faces the edge (0,5,10)-(10,5,10) is bound to in turn, and each face's result (face count, validity). Bridge: the test asserts best > original; the per-face results are read from a temporary print of locOpeSplit(wiresOnFaces:) for each face (run once and reverted, not committed). Kernel: Scripts/repro/766-modeling-locope-spliter-v71/transcript.txt (LocOpe_WiresOnShape Bind, LocOpe_Spliter::Perform, per face).",
+    "source": "Same quantities on both sides: the origin-cornered 10 mm box's face count before the split, the best face count over the six faces the edge (0,5,10)-(10,5,10) is bound to in turn, and each face's result (face count, validity). Bridge: the test requires a result for every face and asserts that each is valid and that the face counts are exactly [6, 6, 6, 6, 6, 7] (and best > original); the per-face values are read from a temporary print of locOpeSplit(wiresOnFaces:) for each face (run once and reverted, not committed). Kernel: Scripts/repro/766-modeling-locope-spliter-v71/transcript.txt (LocOpe_WiresOnShape Bind, LocOpe_Spliter::Perform, per face).",
     "probe": "Scripts/repro/766-modeling-locope-spliter-v71/"
   },
   {
