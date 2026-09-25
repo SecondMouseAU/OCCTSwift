@@ -4,62 +4,56 @@ import simd
 
 @testable import OCCTSwift
 
+// Values pinned to the kernel probe (Scripts/repro/766-brepgraph-edge-query-sampling). A
+// closed box has no boundary and no non-manifold edge, so a query answering a constant passed
+// the box loops; the face lifted out by `copyFace(0)` supplies the opposite case, four
+// boundary edges that are not manifold (#1986).
 @Suite("BRepGraph Edge Queries")
 struct BRepGraphEdgeQueryTests {
-    @Test func edgeFaceCount() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                let nbFaces = graph.faceCount(of: 0)
-                #expect(nbFaces == 2)
-            }
+    @Test func edgeFaceCount() throws {
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let graph = try #require(BRepGraph(shape: box))
+        #expect(graph.faceCount(of: 0) == 2)
+    }
+
+    @Test func edgeFaces() throws {
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let graph = try #require(BRepGraph(shape: box))
+        #expect(graph.faces(of: 0) == [0, 2])
+    }
+
+    @Test func noBoundaryEdges() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        #expect(graph.edgeCount == 12)
+        for i in 0..<graph.edgeCount {
+            #expect(!graph.isBoundaryEdge(i))
+        }
+        let face = try #require(graph.copyFace(0))
+        #expect(face.edgeCount == 4)
+        for i in 0..<face.edgeCount {
+            #expect(face.isBoundaryEdge(i))
         }
     }
 
-    @Test func edgeFaces() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                let faces = graph.faces(of: 0)
-                #expect(faces.count == 2)
-            }
+    @Test func allManifoldEdges() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        #expect(graph.edgeCount == 12)
+        for i in 0..<graph.edgeCount {
+            #expect(graph.isManifoldEdge(i))
+        }
+        let face = try #require(graph.copyFace(0))
+        #expect(face.edgeCount == 4)
+        for i in 0..<face.edgeCount {
+            #expect(!face.isManifoldEdge(i))
         }
     }
 
-    @Test func noBoundaryEdges() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                for i in 0..<graph.edgeCount {
-                    #expect(!graph.isBoundaryEdge(i))
-                }
-            }
-        }
-    }
-
-    @Test func allManifoldEdges() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                for i in 0..<graph.edgeCount {
-                    #expect(graph.isManifoldEdge(i))
-                }
-            }
-        }
-    }
-
-    @Test func edgeAdjacency() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                let adj = graph.adjacentEdges(of: 0)
-                #expect(adj.count > 0)
-            }
-        }
+    @Test func edgeAdjacency() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        // Edge 0 runs vertex 0 -> 1; each end meets two more edges.
+        #expect(graph.adjacentEdges(of: 0) == [1, 3, 8, 9])
     }
 }

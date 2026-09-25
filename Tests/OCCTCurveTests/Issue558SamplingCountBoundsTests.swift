@@ -210,10 +210,19 @@ struct Issue558SamplingCountBounds {
 
     @Test("QuadricIntersection.coneSpherePoints rejects a count it cannot serve")
     func coneSphereRequest() {
+        // #766: the sphere this used, centred on the cone's axis inside it, meets the cone nowhere,
+        // and curveIndex 0 is below the bridge's 1-based range, so every count returned no points
+        // and the loop could only fail by aborting. Centred on
+        // the cone's own surface instead, a valid count is served in full, and that is the
+        // control that makes an empty answer below mean the count was refused.
+        let served = QuadricIntersection.coneSpherePoints(
+            semiAngle: 0.5, refRadius: 5, sphereCenter: SIMD3(5, 0, 0), sphereRadius: 3,
+            curveIndex: 1, sampleCount: 16)
+        #expect(served.count == 16, "a valid count on an intersecting pair")
         for n in [-1, 0, Self.pastCeiling, Self.pastInt32, Int.max] {
             let pts = QuadricIntersection.coneSpherePoints(
-                semiAngle: 0.5, refRadius: 5, sphereCenter: SIMD3(0, 0, 5), sphereRadius: 3,
-                curveIndex: 0, sampleCount: n)
+                semiAngle: 0.5, refRadius: 5, sphereCenter: SIMD3(5, 0, 0), sphereRadius: 3,
+                curveIndex: 1, sampleCount: n)
             #expect(pts.count == 0, "coneSpherePoints(\(n))")
         }
     }
@@ -340,6 +349,19 @@ struct Issue558SamplingCountBounds {
         guard let e = box().subShapes(ofType: .edge).first else {
             #expect(Bool(false))
             return
+        }
+        // #766: every assertion below expects nil, which a degenerate patch returns whatever the
+        // grid, so the test could only fail by aborting. A real square boundary is the control
+        // that proves a valid grid is still served, and so that the bound is what refuses.
+        if let a = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0)),
+            let b = Shape.edgeFromPoints(SIMD3(10, 0, 0), SIMD3(10, 10, 0)),
+            let c = Shape.edgeFromPoints(SIMD3(10, 10, 0), SIMD3(0, 10, 0)),
+            let d = Shape.edgeFromPoints(SIMD3(0, 10, 0), SIMD3(0, 0, 0))
+        {
+            let grid = Shape.coonsAlgPatch(edge1: a, edge2: b, edge3: c, edge4: d, evalU: 3, evalV: 4)
+            #expect(grid?.count == 12, "a 3 x 4 grid on a real boundary")
+        } else {
+            Issue.record("could not build the square boundary")
         }
         // Four copies of one edge is a degenerate patch, so the result is nil either way; what is
         // under test is that an absurd grid returns rather than aborting the process.

@@ -8,40 +8,43 @@ import simd
 struct Wire2DChamferTests {
 
     @Test("Chamfer single vertex of rectangle")
-    func chamferSingleVertex() {
+    func chamferSingleVertex() throws {
         guard let rect = Wire.rectangle(width: 10, height: 5) else {
             Issue.record("Failed to create rectangle wire")
             return
         }
 
-        let chamfered = rect.chamfered2D(vertexIndex: 0, distance1: 1.0, distance2: 1.0)
-
-        #expect(chamfered != nil)
+        // #1979: `!= nil` only. One corner cut: 5 edges, perimeter 30 - 2 + sqrt 2.
+        let chamfered = try #require(rect.chamfered2D(vertexIndex: 0, distance1: 1.0, distance2: 1.0))
+        #expect(chamfered.edges().count == 5)
+        #expect(abs((chamfered.length ?? 0) - (28 + 2.0.squareRoot())) < 1e-9)
     }
 
     @Test("Chamfer all vertices of rectangle")
-    func chamferAllVertices() {
+    func chamferAllVertices() throws {
         guard let rect = Wire.rectangle(width: 10, height: 5) else {
             Issue.record("Failed to create rectangle wire")
             return
         }
 
-        let chamfered = rect.chamferedAll2D(distance: 1.0)
-
-        #expect(chamfered != nil)
+        // #1979: `!= nil` only. Four corners cut: 8 edges, perimeter 30 - 8 + 4 sqrt 2.
+        let chamfered = try #require(rect.chamferedAll2D(distance: 1.0))
+        #expect(chamfered.edges().count == 8)
+        #expect(abs((chamfered.length ?? 0) - (22 + 4 * 2.0.squareRoot())) < 1e-9)
     }
 
     @Test("Asymmetric chamfer")
-    func asymmetricChamfer() {
+    func asymmetricChamfer() throws {
         guard let rect = Wire.rectangle(width: 20, height: 10) else {
             Issue.record("Failed to create rectangle wire")
             return
         }
 
         // Asymmetric chamfer: different distances
-        let chamfered = rect.chamfered2D(vertexIndex: 1, distance1: 1.0, distance2: 2.0)
-
-        #expect(chamfered != nil)
+        // #1979: `!= nil` only. Legs 1 and 2 give a sqrt 5 chord: perimeter 60 - 3 + sqrt 5.
+        let chamfered = try #require(rect.chamfered2D(vertexIndex: 1, distance1: 1.0, distance2: 2.0))
+        #expect(chamfered.edges().count == 5)
+        #expect(abs((chamfered.length ?? 0) - (57 + 5.0.squareRoot())) < 1e-9)
     }
 
     // MARK: - #1478 Finding 2: adjacency must follow wire connection order, not TopExp::MapShapes order

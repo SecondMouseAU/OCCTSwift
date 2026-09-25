@@ -6,50 +6,40 @@ import simd
 
 // MARK: - ShapeExtend_Explorer
 
+// #766: expected values are the kernel's own answers to the same calls, from
+// Scripts/repro/766-healing-construct-custom-extend/probe.mm (transcript.txt beside it).
+// Before #766 every test returned early, silently green, on a failed fixture, and the counts sat
+// inside `if let`; the edge count was `> 0`. Kernel: 2 solids, 12 faces, 12 edges, predominant SOLID.
 @Suite("ShapeExtend Explorer")
 struct ShapeExtendExplorerTests {
+    private func twoBoxes() throws -> Shape {
+        let box1 = try #require(Shape.box(width: 5, height: 5, depth: 5))
+        let box2 = try #require(Shape.box(width: 3, height: 3, depth: 3))
+        return try #require(Shape.compound([box1, box2]))
+    }
+
     @Test("Sorted compound - extract solids")
-    func sortedCompoundSolids() {
-        guard let box1 = Shape.box(width: 5, height: 5, depth: 5),
-            let box2 = Shape.box(width: 3, height: 3, depth: 3),
-            let compound = Shape.compound([box1, box2])
-        else { return }
-        if let solids = compound.sortedCompound(type: .solid) {
-            let solidList = solids.subShapes(ofType: .solid)
-            #expect(solidList.count == 2)
-        }
+    func sortedCompoundSolids() throws {
+        let solids = try #require(try twoBoxes().sortedCompound(type: .solid))
+        #expect(solids.subShapes(ofType: .solid).count == 2)
     }
 
     @Test("Sorted compound - extract faces")
-    func sortedCompoundFaces() {
-        guard let box1 = Shape.box(width: 5, height: 5, depth: 5),
-            let box2 = Shape.box(width: 3, height: 3, depth: 3),
-            let compound = Shape.compound([box1, box2])
-        else { return }
-        if let faces = compound.sortedCompound(type: .face) {
-            let faceList = faces.subShapes(ofType: .face)
-            #expect(faceList.count == 12)
-        }
+    func sortedCompoundFaces() throws {
+        let faces = try #require(try twoBoxes().sortedCompound(type: .face))
+        #expect(faces.subShapes(ofType: .face).count == 12)
     }
 
     @Test("Sorted compound - extract edges")
-    func sortedCompoundEdges() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let compound = Shape.compound([box])
-        else { return }
-        if let edges = compound.sortedCompound(type: .edge) {
-            let edgeList = edges.subShapes(ofType: .edge)
-            #expect(edgeList.count > 0)
-        }
+    func sortedCompoundEdges() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let compound = try #require(Shape.compound([box]))
+        let edges = try #require(compound.sortedCompound(type: .edge))
+        #expect(edges.subShapes(ofType: .edge).count == 12)
     }
 
     @Test("Predominant shape type")
-    func predominantType() {
-        guard let box1 = Shape.box(width: 5, height: 5, depth: 5),
-            let box2 = Shape.box(width: 3, height: 3, depth: 3),
-            let compound = Shape.compound([box1, box2])
-        else { return }
-        let type = compound.predominantShapeType()
-        #expect(type == .solid)
+    func predominantType() throws {
+        #expect(try twoBoxes().predominantShapeType() == .solid)
     }
 }
