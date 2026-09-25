@@ -9771,5 +9771,204 @@
     "status": "PASS",
     "source": "Same quantities on both sides. Bridge: after setting 16 + 3 layers on the node the test observed layers.count == 19 (OCCTDocumentGetLabelLayers reports the true total even past its 16-entry buffer, #1563). Kernel: XCAFDoc_LayerTool::GetLayers of the label returned a sequence of 19. Kernel values are from the supplementary probe, which runs the test's own scenario through the XCAFDoc_ColorTool / XCAFDoc_LayerTool calls the bridge makes.",
     "probe": "Scripts/repro/766-xcaf-xde-color-layer-parity/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::IsFree returns true for top-level shape",
+    "bridge_function": "OCCTDocumentShapeToolIsFree",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::IsSimpleShape returns true for box",
+    "bridge_function": "OCCTDocumentShapeToolIsSimpleShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::IsComponent returns false for simple shape",
+    "bridge_function": "OCCTDocumentShapeToolIsComponent",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::IsCompound returns false for simple box",
+    "bridge_function": "OCCTDocumentShapeToolIsCompound",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::IsSubShape returns false for top-level",
+    "bridge_function": "OCCTDocumentShapeToolIsSubShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::IsExternRef returns false for regular shape",
+    "bridge_function": "OCCTDocumentShapeToolIsExternRef",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::GetUsers returns 0 for unreferenced shape",
+    "bridge_function": "OCCTDocumentShapeToolGetUsers",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::NbComponents returns 0 for simple shape",
+    "bridge_function": "OCCTDocumentShapeToolNbComponents",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
+  },
+  {
+    "test_name": "v0.126.0, XCAFDoc_ShapeTool completions::ComputeShapes doesn't crash",
+    "bridge_function": "OCCTDocumentShapeToolComputeShapes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "returned": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "returned": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the call returns. The test asserts nothing else, only that the call does not crash. Bridge: shapeToolComputeShapes(labelId:) on a box added with addShape returned. Kernel: 'ComputeShapes returned; IsFree still=true', so the call returns; the label's IsFree reading afterwards is a kernel observation the test does not assert, and it is left out of the compared data. Kernel value: Scripts/repro/766-xcaf-shape-tool-completions/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-shape-tool-completions/"
   }
 ]

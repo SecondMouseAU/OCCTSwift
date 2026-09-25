@@ -605,3 +605,13 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `getLayers` | `OCCTDocumentGetLabelLayers` answers 0 | :38 Expectation failed: layers.count == 1 | passed | `OCCTDocumentGetLabelLayers` | PASS: 1, TestLayer |
 | `findAndVisibility` | `OCCTDocumentGetLayerVisibility` returns true | :62 Expectation failed: !doc.layerVisibility(layerLabelId: layerLabelId) | passed | `OCCTDocumentGetLayerVisibility` | PASS: found; false, true |
 | `getLayersBeyondBufferCap` | `OCCTDocumentGetLabelLayers` answers 0 | :86 Expectation failed: layers.count == extraCount | passed | `OCCTDocumentGetLabelLayers` | PASS: 19 layers set and 19 reported on both sides (no 16-entry cap) |
+### `ShapeToolCompletionsTests.swift`
+| `isFree` | `OCCTDocumentShapeToolIsFree` returns false | :15 Expectation failed: doc.shapeToolIsFree(labelId: labelId) | passed | `OCCTDocumentShapeToolIsFree` | PASS: true |
+| `isSimpleShape` | `OCCTDocumentShapeToolIsSimpleShape` returns false | :27 Expectation failed: doc.shapeToolIsSimpleShape(labelId: labelId) | passed | `OCCTDocumentShapeToolIsSimpleShape` | PASS: true |
+| `isComponent` | `OCCTDocumentShapeToolIsComponent` returns true | :39 Expectation failed: !doc.shapeToolIsComponent(labelId: labelId) | passed | `OCCTDocumentShapeToolIsComponent` | PASS: false |
+| `isCompound` | `OCCTDocumentShapeToolIsCompound` returns true | :51 Expectation failed: !doc.shapeToolIsCompound(labelId: labelId) | passed | `OCCTDocumentShapeToolIsCompound` | PASS: false |
+| `isSubShape` | `OCCTDocumentShapeToolIsSubShape` returns true | :63 Expectation failed: !doc.shapeToolIsSubShape(labelId: labelId) | passed | `OCCTDocumentShapeToolIsSubShape` | PASS: false |
+| `isExternRef` | `OCCTDocumentShapeToolIsExternRef` returns true | :75 Expectation failed: !doc.shapeToolIsExternRef(labelId: labelId) | passed | `OCCTDocumentShapeToolIsExternRef` | PASS: false |
+| `getUsers` | `OCCTDocumentShapeToolGetUsers` returns 1 | :88 Expectation failed: users == 0 | passed | `OCCTDocumentShapeToolGetUsers` | PASS: 0 |
+| `nbComponents` | `OCCTDocumentShapeToolNbComponents` returns 1 | :101 Expectation failed: nb == 0 | passed | `OCCTDocumentShapeToolNbComponents` | PASS: 0 |
+| `computeShapes` | `OCCTDocumentShapeToolComputeShapes` calls `abort()` | process crash (no expectation in the test; a crash is the only failure it can report) | passed | `OCCTDocumentShapeToolComputeShapes` | PASS: the call returns on both sides |
