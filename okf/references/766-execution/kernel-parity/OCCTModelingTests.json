@@ -422,29 +422,86 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "volume": ">0",
-        "face0": {
-          "isDeleted": false,
-          "modified": "<=1"
-        }
+        "volume": 1999.999999999999,
+        "faces": [
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          }
+        ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "volume": 2000,
-        "face0": {
-          "modified": 0,
-          "generated": 0,
-          "deleted": false
-        }
+        "volume": 1999.999999999999,
+        "faces": [
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          }
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: the result's volume where the test measures it, and Modified / Generated / IsDeleted for every face of the first argument in TopExp::MapShapes order (deleted is IsDeleted, printed 0/1 by the probe). Bridge values are what the test observed, read from a temporary print of r.history.record(of:) for each face and of the result volume (run once and reverted, not committed; volumes at %.17g). Kernel values are from Scripts/repro/766-modeling-boolean-full-history/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's builder (BRepAlgoAPI_Fuse of two disjoint 10 mm boxes). The test asserts volume > 0, face 0 not deleted and modified.count <= 1; the measured history is 0 modified, 0 generated for every face on both sides.",
+    "probe": "Scripts/repro/766-modeling-boolean-full-history/"
   },
   {
     "test_name": "Boolean with Full Per-Input History::subtractedWithFullHistorySplitsFace",
@@ -452,22 +509,78 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "volume": "0 < v < 2000",
-        "someFaceModifiedPlusGenerated": ">=2"
+        "volume": 1599.9999999999995,
+        "bigVolume": 1999.9999999999995,
+        "faces": [
+          {
+            "modified": 1,
+            "generated": 1,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": true
+          },
+          {
+            "modified": 1,
+            "generated": 1,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 1,
+            "deleted": false
+          }
+        ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "volume": 1600,
-        "bigVolume": 2000,
-        "faces(mod,gen,del)": [
-          "1,1,0",
-          "1,0,0",
-          "0,0,0",
-          "0,0,1",
-          "1,1,0",
-          "1,1,0"
+        "volume": 1599.9999999999995,
+        "bigVolume": 1999.9999999999995,
+        "faces": [
+          {
+            "modified": 1,
+            "generated": 1,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": true
+          },
+          {
+            "modified": 1,
+            "generated": 1,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 1,
+            "deleted": false
+          }
         ]
       }
     },
@@ -475,7 +588,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: the result's volume where the test measures it, and Modified / Generated / IsDeleted for every face of the first argument in TopExp::MapShapes order (deleted is IsDeleted, printed 0/1 by the probe). Bridge values are what the test observed, read from a temporary print of r.history.record(of:) for each face and of the result volume (run once and reverted, not committed; volumes at %.17g). Kernel values are from Scripts/repro/766-modeling-boolean-full-history/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's builder (BRepAlgoAPI_Cut of the 20 x 20 x 5 box by the 30 x 4 x 20 slab). The test asserts 0 < volume < bigVolume and that some face has modified + generated >= 2; faces 0, 4 and 5 (1 modified, 1 generated) satisfy it on both sides.",
+    "probe": "Scripts/repro/766-modeling-boolean-full-history/"
   },
   {
     "test_name": "Boolean with Full Per-Input History::intersectionWithFullHistory",
@@ -483,43 +598,78 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "volume": "0 < v < 1000"
+        "volume": 124.99999999999997,
+        "box1Volume": 999.9999999999998,
+        "faces": [
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": true
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": true
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": true
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          }
+        ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "volume": 125,
-        "box1Volume": 1000
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "Boolean with Full Per-Input History::splitWithFullHistory",
-    "bridge_function": "OCCTBooleanHistoryIsDeleted",
-    "bridge_output": {
-      "type": "value",
-      "data": {
-        "pieces": ">=1",
-        "anyFaceDeleted": false
-      }
-    },
-    "kernel_output": {
-      "type": "value",
-      "data": {
-        "pieces": 2,
-        "faces(mod,gen,del)": [
-          "2,1,0",
-          "2,0,0",
-          "0,0,0",
-          "1,0,0",
-          "2,1,0",
-          "2,0,0"
+        "volume": 124.99999999999997,
+        "box1Volume": 999.9999999999998,
+        "faces": [
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": true
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": true
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": true
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          }
         ]
       }
     },
@@ -527,7 +677,96 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: the result's volume where the test measures it, and Modified / Generated / IsDeleted for every face of the first argument in TopExp::MapShapes order (deleted is IsDeleted, printed 0/1 by the probe). Bridge values are what the test observed, read from a temporary print of r.history.record(of:) for each face and of the result volume (run once and reverted, not committed; volumes at %.17g). Kernel values are from Scripts/repro/766-modeling-boolean-full-history/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's builder (BRepAlgoAPI_Common of two overlapping 10 mm boxes). The test asserts 0 < volume < box1Volume and queries every face without asserting its record; the measured history is in the payload.",
+    "probe": "Scripts/repro/766-modeling-boolean-full-history/"
+  },
+  {
+    "test_name": "Boolean with Full Per-Input History::splitWithFullHistory",
+    "bridge_function": "OCCTBooleanHistoryIsDeleted",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "pieces": 2,
+        "faces": [
+          {
+            "modified": 2,
+            "generated": 1,
+            "deleted": false
+          },
+          {
+            "modified": 2,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 2,
+            "generated": 1,
+            "deleted": false
+          },
+          {
+            "modified": 2,
+            "generated": 0,
+            "deleted": false
+          }
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "pieces": 2,
+        "faces": [
+          {
+            "modified": 2,
+            "generated": 1,
+            "deleted": false
+          },
+          {
+            "modified": 2,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 2,
+            "generated": 1,
+            "deleted": false
+          },
+          {
+            "modified": 2,
+            "generated": 0,
+            "deleted": false
+          }
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: the number of top-level pieces in the splitter's result and Modified / Generated / IsDeleted for every face of the first argument in TopExp::MapShapes order. Bridge values are what the test observed, read from a temporary print of r.pieces.count and r.history.record(of:) for each face (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-boolean-full-history/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's builder (BRepAlgoAPI_Splitter with the 10 mm box as argument and the 30 x 1 x 20 slab as tool, pieces counted with TopoDS_Iterator). The test asserts pieces >= 1 and no face deleted; the measured count is 2.",
+    "probe": "Scripts/repro/766-modeling-boolean-full-history/"
   },
   {
     "test_name": "Boolean with Full Per-Input History::historyHandleSurvives",
@@ -535,34 +774,147 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "face0": "equal on both reads",
-        "face1": {
-          "modified": 1,
-          "generated": 3,
-          "deleted": false
-        }
+        "firstRead": [
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          }
+        ],
+        "secondRead": [
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          }
+        ]
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "face0": {
-          "modified": 0,
-          "generated": 0,
-          "deleted": false
-        },
-        "face1": {
-          "modified": 1,
-          "generated": 3,
-          "deleted": false
-        },
-        "secondRead": "identical"
+        "firstRead": [
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          }
+        ],
+        "secondRead": [
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          },
+          {
+            "modified": 0,
+            "generated": 0,
+            "deleted": false
+          },
+          {
+            "modified": 1,
+            "generated": 3,
+            "deleted": false
+          }
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: Modified / Generated / IsDeleted for every face of the first box, read twice from the same history handle (the earlier record compared a string 'equal on both reads' with a kernel object). Bridge values are what the test observed, read from a temporary print of both reads for all six faces (run once and reverted, not committed). The test asserts the two reads agree for face 0 and, since #766, 1 modified / 3 generated for face 1 on both reads. Kernel values are from Scripts/repro/766-modeling-boolean-full-history/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's builder (BRepAlgoAPI_Fuse of two overlapping 10 mm boxes, second box shifted by (5,5,5)) and reads the same builder twice.",
+    "probe": "Scripts/repro/766-modeling-boolean-full-history/"
   }
 ]
