@@ -706,3 +706,11 @@ Probe: `Scripts/repro/766-geom2d-curve2d-basics/`. Every row was run red with th
 | Curve2D Tests::Deflection draw produces points | `OCCTCurve2DDrawDeflection` | deflection doubled | ✅ | ✅ | MATCH | `>= 4`; now 17 |
 | Curve2D Tests::Adaptive draw on segment produces at least 2 points | `OCCTCurve2DDrawAdaptive` | one point dropped | ✅ | ✅ | MATCH | `>= 2`; now exactly 2 |
 | Curve2D Tests::Draw arc of ellipse | `OCCTCurve2DDrawAdaptive` | one point dropped | ✅ | ✅ | MATCH | `>= 3` inside `if let`; now 43 and the ends |
+### #1979 executed: `ProjLibTests.swift`, `ProjLibComputeApproxTests.swift`, `ProjLibComputeApproxOnPolarSurfaceTests.swift`, `ProjLibProjectOnSurfaceTests.swift`, `TBezierCurve2DTests.swift`
+| ProjLib::lineOnPlane | `OCCTProjLibPlaneProjectLine` | direction x + 1e-3 | ✅ | ✅ | MATCH | `!= nil` and `|dir| > 0.5`; now location and direction |
+| ProjLib::circleOnPlane | `OCCTProjLibPlaneProjectCircle` | radius + 1e-3 | ✅ | ✅ | MATCH | `if let`; now `#require` and centre pinned |
+| ProjLib::lineOnCylinder | `OCCTProjLibCylinderProjectLine` | location x + 1e-3 | ✅ | ✅ | MATCH | `!= nil` only |
+| ProjLib ComputeApprox::Project edge onto cylinder face | `OCCTProjLibComputeApprox` | returns nullptr | ✅ | ✅ | MATCH | returned at the first success, silently if none |
+| ProjLib ComputeApproxOnPolarSurface::Project edge onto sphere face | `OCCTProjLibComputeApproxOnPolarSurface` | returns nullptr | ✅ | ✅ | MATCH | "may or may not succeed": nothing asserted on failure |
+| ProjLib_ProjectOnSurface Tests::projectLineOnCylinder | `OCCTProjLibProjectOnSurface` | trim end halved | ✅ | ✅ | MATCH | two `if let`s, `upper > lower`; now domain and start pinned |
+| Geom2dEval TBezier 2D Curve::createAndEval | `OCCTGeom2dEvalTBezierCurveCreate` | alpha + 0.5 | ✅ | ✅ | MATCH | domain signs only |
