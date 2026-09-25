@@ -1,13 +1,5 @@
 [
   {
-    "test_name": "Modeling domain kernel parity",
-    "bridge_function": "OCCTModelingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
-    "status": "PENDING"
-  },
-  {
     "test_name": "Offset by Join::offsetArc",
     "bridge_function": "OCCTShapeOffsetByJoin",
     "bridge_output": {
