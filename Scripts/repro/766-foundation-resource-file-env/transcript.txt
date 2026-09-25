@@ -1,0 +1,21 @@
+== Resource_Manager (OCCTResourceManagerSet*/Find/Get*) ==
+Find(key1) 1, Value(key1) "hello"
+Integer(intKey) 42
+Real(realKey) 3.1400000000000001
+Find(no_such_key) 0
+== OSD_File (OCCTFileCreate / Open / Write / OpenReadOnly / ReadLine / Size / IsOpen) ==
+Build(ReadWrite) failed 0, IsOpen 1
+after Close: IsOpen 0
+ReadLine(4096): "Hello, OSD_File!
+" (length 17, nbread 17)
+Size() of the 2-line file = 24
+Size() after writing "ABCDE" = 5
+== OSD_Process (OCCTProcessId / OCCTProcessUserName) ==
+ProcessId() == getpid(): 1
+UserName() == getpwuid(getuid())->pw_name: 1
+== OSD_Chronometer::GetProcessCPU (OCCTGetProcessCPU) ==
+user 0.060000 s, getrusage user [0.061101, 0.061103], within 0.02 s: 1; user > 0: 1
+== OSD_Environment (OCCTEnvironmentSet / Get / Remove) ==
+Build failed 0, Value "hello"
+after Remove: Value length 0
+Value(HOME) == getenv(HOME): 1
