@@ -605,3 +605,19 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `getLayers` | `OCCTDocumentGetLabelLayers` answers 0 | :38 Expectation failed: layers.count == 1 | passed | `OCCTDocumentGetLabelLayers` | PASS: 1, TestLayer |
 | `findAndVisibility` | `OCCTDocumentGetLayerVisibility` returns true | :62 Expectation failed: !doc.layerVisibility(layerLabelId: layerLabelId) | passed | `OCCTDocumentGetLayerVisibility` | PASS: found; false, true |
 | `getLayersBeyondBufferCap` | `OCCTDocumentGetLabelLayers` answers 0 | :86 Expectation failed: layers.count == extraCount | passed | `OCCTDocumentGetLabelLayers` | PASS: 19 layers set and 19 reported on both sides (no 16-entry cap) |
+### `TDataStdNamedDataTests.swift`
+| `namedInteger` | `OCCTDocumentNamedDataGetInteger` answers 0 | :19 Expectation failed: label.namedInteger("count") == 42 | passed | `OCCTDocumentNamedDataGetInteger` | PASS: 42 |
+| `namedReal` | `OCCTDocumentNamedDataHasReal` returns false | :29 Expectation failed: label.hasNamedReal("pi") | passed | `OCCTDocumentNamedDataGetReal` | PASS: 3.14159 |
+| `namedString` | `OCCTDocumentNamedDataGetString` answers "X" | :42 Expectation failed: label.namedString("partName") == "MyPart" | passed | `OCCTDocumentNamedDataGetString` | PASS: MyPart |
+| `multipleValues` | `OCCTDocumentNamedDataGetInteger` answers 0 | :55 Expectation failed: label.namedInteger("count") == 5 | passed | `OCCTDocumentNamedDataGetInteger` | PASS: count 5, weight 12.5 and material Steel all read back from one label, on both sides |
+### `TDataStdNoteBookTests.swift`
+| `createNoteBook` | `OCCTNoteBookFind` returns false | :11 Expectation failed: doc.noteBookExists(tag: 200) | passed | `OCCTNoteBookFind` | PASS: found |
+| `appendReal` | `OCCTNoteBookAppendReal` returns -1 | :18 Expectation failed: childTag != nil | passed | `OCCTNoteBookAppendReal` | PASS: the append returns an attribute with child tag 1, so a tag comes back, on both sides |
+| `appendInteger` | `OCCTNoteBookAppendInteger` returns -1 | :25 Expectation failed: childTag != nil | passed | `OCCTNoteBookAppendInteger` | PASS: the append returns an attribute with child tag 1, so a tag comes back, on both sides |
+| `multipleAppends` | `OCCTNoteBookAppendReal` answers tag 5 every time | :38 Expectation failed: r1 != r2 | passed | `OCCTNoteBookAppendReal` | PASS: every append returns a tag and the two real appends get tags 1 and 2, on both sides |
+### `TDataStdRealArrayTests.swift`
+| `initAndUse` | `OCCTDocumentGetRealArrayValue` answers 0 for any index | :25 Expectation failed: abs(v0 - 1.1) < 1e-10; :26 Expectation failed: abs(v1 - 2.2) < 1e-10 | passed | `OCCTDocumentGetRealArrayValue` | PASS: 0..2; 1.1 2.2 3.3 |
+### `TDataStdRealListTests.swift`
+| `setAndGet` | `OCCTDocumentSetRealList` stores the first value plus 1 | :13 Expectation failed: abs(result[0] - 1.5) < 1e-10 | passed | `OCCTDocumentGetRealList` | PASS: 1.5 .. 3.14 |
+| `appendAndClear` | `OCCTDocumentRealListClear` returns true without clearing | :28 Expectation failed: result.count == 0 | passed | `OCCTDocumentRealListClear` | PASS: 0 after Clear |
+| `hasRealList` | `OCCTDocumentHasRealList` returns true | :34 Expectation failed: !doc.hasRealList(tag: 342) | passed | `OCCTDocumentHasRealList` | PASS: absent before the set and present after, on both sides |

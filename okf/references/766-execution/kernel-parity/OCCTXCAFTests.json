@@ -9771,5 +9771,304 @@
     "status": "PASS",
     "source": "Same quantities on both sides. Bridge: after setting 16 + 3 layers on the node the test observed layers.count == 19 (OCCTDocumentGetLabelLayers reports the true total even past its 16-entry buffer, #1563). Kernel: XCAFDoc_LayerTool::GetLayers of the label returned a sequence of 19. Kernel values are from the supplementary probe, which runs the test's own scenario through the XCAFDoc_ColorTool / XCAFDoc_LayerTool calls the bridge makes.",
     "probe": "Scripts/repro/766-xcaf-xde-color-layer-parity/"
+  },
+  {
+    "test_name": "TDataStd NamedData::Named integer",
+    "bridge_function": "OCCTDocumentNamedDataGetInteger",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 42,
+        "other": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 42,
+        "other": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd NamedData::Named real",
+    "bridge_function": "OCCTDocumentNamedDataGetReal",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 3.14159
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 3.14159
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd NamedData::Named string",
+    "bridge_function": "OCCTDocumentNamedDataGetString",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": "MyPart"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": "MyPart"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd NamedData::Multiple named values on same label",
+    "bridge_function": "OCCTDocumentNamedDataGetInteger",
+    "bridge_output": {
+      "type": "named_data",
+      "data": {
+        "count": 5,
+        "weight": 12.5,
+        "material": "Steel"
+      }
+    },
+    "kernel_output": {
+      "type": "named_data",
+      "data": {
+        "count": 5,
+        "weight": 12.5,
+        "material": "Steel"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for an integer \"count\" of 5, a real \"weight\" of 12.5 and a string \"material\" of \"Steel\" set one after another on the same label: the three values read back. Bridge: namedInteger(\"count\") == 5, namedReal(\"weight\") within 1e-10 of 12.5 and namedString(\"material\") == \"Steel\". Kernel: '[named data multiple] label 0:1:1: same attribute reused=true; HasInteger(count)=true count=5 HasReal(weight)=true weight=12.5 HasString(material)=true material=\"Steel\"', the three setters sharing one NamedData attribute as the bridge's getOrCreateNamedData does. Kernel value: Scripts/repro/766-xcaf-tdatastd-d-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-d-evidence/"
+  },
+  {
+    "test_name": "NoteBook Tests::createNoteBook",
+    "bridge_function": "OCCTNoteBookFind",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "found": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "found": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "NoteBook Tests::appendReal",
+    "bridge_function": "OCCTNoteBookAppendReal",
+    "bridge_output": {
+      "type": "append",
+      "data": {
+        "tag_non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "append",
+      "data": {
+        "tag_non_nil": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether appending a real to a notebook returns a child tag. Bridge: noteBookAppendReal(tag: 201, value: 3.14) was non-nil, the bridge returning the appended attribute's label tag or -1 when there is none. Kernel: '[notebook append real] tag 201: New returned a notebook=true, Append(3.14) returned an attribute=true child tag=1', so a non-null attribute with child tag 1, which the bridge returns. Kernel value: Scripts/repro/766-xcaf-tdatastd-d-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-d-evidence/"
+  },
+  {
+    "test_name": "NoteBook Tests::appendInteger",
+    "bridge_function": "OCCTNoteBookAppendInteger",
+    "bridge_output": {
+      "type": "append",
+      "data": {
+        "tag_non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "append",
+      "data": {
+        "tag_non_nil": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether appending an integer to a notebook returns a child tag. Bridge: noteBookAppendInteger(tag: 202, value: 42) was non-nil. Kernel: '[notebook append integer] tag 202: New returned a notebook=true, Append(42) returned an attribute=true child tag=1', so a non-null attribute with child tag 1, which the bridge returns. The earlier record carried tag 3, from a notebook that had already taken two appends; the test appends once to a notebook of its own. Kernel value: Scripts/repro/766-xcaf-tdatastd-d-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-d-evidence/"
+  },
+  {
+    "test_name": "NoteBook Tests::multipleAppends",
+    "bridge_function": "OCCTNoteBookAppendReal",
+    "bridge_output": {
+      "type": "append",
+      "data": {
+        "all_non_nil": true,
+        "first_two_distinct": true
+      }
+    },
+    "kernel_output": {
+      "type": "append",
+      "data": {
+        "all_non_nil": true,
+        "first_two_distinct": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for two real appends then one integer append on one notebook: whether every append returns a child tag, and whether the two real appends return different tags. Bridge: r1, r2 and i1 all non-nil and r1 != r2. Kernel: '[notebook multiple appends] tag 203: child tags real=1 real=2 integer=3; all attributes returned=true first two tags differ=true'. Kernel value: Scripts/repro/766-xcaf-tdatastd-d-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-d-evidence/"
+  },
+  {
+    "test_name": "TDataStd Real Array::Initialize and use real array",
+    "bridge_function": "OCCTDocumentGetRealArrayValue",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "bounds": [
+          0,
+          2
+        ],
+        "v": [
+          1.1,
+          2.2,
+          3.3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "bounds": [
+          0,
+          2
+        ],
+        "v": [
+          1.1,
+          2.2,
+          3.3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "RealList Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetRealList",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 3,
+        "first": 1.5,
+        "last": 3.14
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 3,
+        "first": 1.5,
+        "last": 3.14
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "RealList Tests::appendAndClear",
+    "bridge_function": "OCCTDocumentRealListClear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "after_clear": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "after_clear": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "RealList Tests::hasRealList",
+    "bridge_function": "OCCTDocumentHasRealList",
+    "bridge_output": {
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for tag 342: whether the real list attribute is present before and after setRealList(tag: 342, values: [1.0]). Bridge: hasRealList was false, then true. Kernel: '[real list has] tag 342: FindAttribute before Set=false, after setRealList([1.0])=true'. Kernel value: Scripts/repro/766-xcaf-tdatastd-d-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-d-evidence/"
   }
 ]
