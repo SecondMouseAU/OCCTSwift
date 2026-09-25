@@ -5842,18 +5842,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "radius": 5
-        },
-        "asserted_within": 1e-06
+        "radius": 5
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "radius": 5
-        }
+        "radius": 5
       }
     },
     "comparison": {
@@ -5861,7 +5856,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-geom-circle-3d/"
+    "probe": "Scripts/repro/766-geom-circle-3d/",
+    "source": "Same quantity on both sides: radius. Bridge: Curve3D.circle(center: .zero, normal: (0, 0, 1), radius: 5).circleProperties.radius through OCCTCurve3DCircleRadius; a temporary print observed 5.0. Kernel: Geom_Circle on gp_Ax2((0,0,0), Z) with radius 5, Radius(), printed 'circleRadius: radius=5' (transcript.txt). The two are the same doubles; the test asserts them only to within 1e-6, a tolerance on the assertion and not part of either measurement."
   },
   {
     "test_name": "Geom_Circle Properties::circleSetRadius",
@@ -5869,18 +5865,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "radius_after_set_10": 10
-        },
-        "asserted_within": 1e-06
+        "radius_after_set_10": 10
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "radius_after_set_10": 10
-        }
+        "radius_after_set_10": 10
       }
     },
     "comparison": {
@@ -5888,7 +5879,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-geom-circle-3d/"
+    "probe": "Scripts/repro/766-geom-circle-3d/",
+    "source": "Same quantity on both sides: radius_after_set_10. Bridge: circleProperties.setRadius(10.0) through OCCTCurve3DCircleSetRadius (the test asserts it returns true) then circleProperties.radius; a temporary print observed 10.0. Kernel: Geom_Circle SetRadius(10) then Radius() printed 'circleSetRadius: radius after SetRadius(10)=10' (transcript.txt). The two are the same doubles; the test asserts them only to within 1e-6, a tolerance on the assertion and not part of either measurement."
   },
   {
     "test_name": "Geom_Circle Properties::circleEccentricity",
@@ -5896,18 +5888,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "eccentricity": 0
-        },
-        "asserted_within": 1e-06
+        "eccentricity": 0
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "eccentricity": 0
-        }
+        "eccentricity": 0
       }
     },
     "comparison": {
@@ -5915,7 +5902,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-geom-circle-3d/"
+    "probe": "Scripts/repro/766-geom-circle-3d/",
+    "source": "Same quantity on both sides: eccentricity. Bridge: circleProperties.eccentricity through OCCTCurve3DCircleEccentricity; a temporary print observed 0.0. Kernel: Geom_Circle::Eccentricity() printed 'circleEccentricity: eccentricity=0' (transcript.txt). The two are the same doubles; the test asserts them only to within 1e-6, a tolerance on the assertion and not part of either measurement."
   },
   {
     "test_name": "Geom_Circle Properties::circleCenter",
@@ -5923,26 +5911,21 @@
     "bridge_output": {
       "type": "point",
       "data": {
-        "observed": {
-          "center": [
-            1,
-            2,
-            3
-          ]
-        },
-        "asserted_within": 1e-06
+        "center": [
+          1,
+          2,
+          3
+        ]
       }
     },
     "kernel_output": {
       "type": "point",
       "data": {
-        "value": {
-          "center": [
-            1,
-            2,
-            3
-          ]
-        }
+        "center": [
+          1,
+          2,
+          3
+        ]
       }
     },
     "comparison": {
@@ -5950,7 +5933,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-geom-circle-3d/"
+    "probe": "Scripts/repro/766-geom-circle-3d/",
+    "source": "Same quantity on both sides: center. Bridge: Curve3D.circle(center: (1, 2, 3), normal: (0, 0, 1), radius: 5).circleProperties.center through OCCTCurve3DCircleCenter; a temporary print observed (1.0, 2.0, 3.0). Kernel: Geom_Circle on gp_Ax2((1,2,3), Z), Circ().Location(), printed 'circleCenter: center=(1, 2, 3)' (transcript.txt). The two are the same doubles; the test asserts them only to within 1e-6, a tolerance on the assertion and not part of either measurement."
   },
   {
     "test_name": "Geom_Circle Properties::circleXAxis",
@@ -5958,36 +5942,31 @@
     "bridge_output": {
       "type": "axis",
       "data": {
-        "observed": {
-          "position": [
-            1,
-            2,
-            3
-          ],
-          "direction": [
-            1,
-            0,
-            0
-          ]
-        },
-        "asserted_within": 1e-06
+        "position": [
+          1,
+          2,
+          3
+        ],
+        "direction": [
+          1,
+          0,
+          0
+        ]
       }
     },
     "kernel_output": {
       "type": "axis",
       "data": {
-        "value": {
-          "position": [
-            1,
-            2,
-            3
-          ],
-          "direction": [
-            1,
-            0,
-            0
-          ]
-        }
+        "position": [
+          1,
+          2,
+          3
+        ],
+        "direction": [
+          1,
+          0,
+          0
+        ]
       }
     },
     "comparison": {
@@ -5995,7 +5974,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-geom-circle-3d/"
+    "probe": "Scripts/repro/766-geom-circle-3d/",
+    "source": "Same quantity on both sides: position, direction. Bridge: circleProperties.xAxis through OCCTCurve3DCircleXAxis on the same circle; a temporary print observed position (1.0, 2.0, 3.0) and direction (1.0, 0.0, -0.0). Kernel: Geom_Circle::XAxis() printed 'circleXAxis: position=(1, 2, 3) direction=(1, 0, -0)' (transcript.txt). The two are the same doubles; the test asserts them only to within 1e-6, a tolerance on the assertion and not part of either measurement."
   },
   {
     "test_name": "Geom_Circle Properties::circleYAxis",
@@ -6003,36 +5983,31 @@
     "bridge_output": {
       "type": "axis",
       "data": {
-        "observed": {
-          "position": [
-            1,
-            2,
-            3
-          ],
-          "direction": [
-            0,
-            1,
-            0
-          ]
-        },
-        "asserted_within": 1e-06
+        "position": [
+          1,
+          2,
+          3
+        ],
+        "direction": [
+          0,
+          1,
+          0
+        ]
       }
     },
     "kernel_output": {
       "type": "axis",
       "data": {
-        "value": {
-          "position": [
-            1,
-            2,
-            3
-          ],
-          "direction": [
-            0,
-            1,
-            0
-          ]
-        }
+        "position": [
+          1,
+          2,
+          3
+        ],
+        "direction": [
+          0,
+          1,
+          0
+        ]
       }
     },
     "comparison": {
@@ -6040,6 +6015,7 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-geom-circle-3d/"
+    "probe": "Scripts/repro/766-geom-circle-3d/",
+    "source": "Same quantity on both sides: position, direction. Bridge: circleProperties.yAxis through OCCTCurve3DCircleYAxis on the same circle; a temporary print observed position (1.0, 2.0, 3.0) and direction (-0.0, 1.0, 0.0). Kernel: Geom_Circle::YAxis() printed 'circleYAxis: position=(1, 2, 3) direction=(-0, 1, 0)' (transcript.txt). The two are the same doubles; the test asserts them only to within 1e-6, a tolerance on the assertion and not part of either measurement."
   }
 ]
