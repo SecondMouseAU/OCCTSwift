@@ -1,0 +1,67 @@
+# Bridge-side values the OCCTMeshTests tests observe, for the #766 Mesh evidence correction pass.
+# Produced by a temporary test file (Tests/OCCTMeshTests/ZZEvidenceDump766.swift, never committed) that repeats each test's own inputs
+# and prints one JSON object per record. Run: swift test --filter ZZEvidenceDump766 on origin/v5.0.0-766-execution at f01eebc8,
+# bridge built from source (OCCTSWIFT_BRIDGE_PREBUILT unset). Sources/ and Tests/ carry no change from this pass.
+
+EVID766 absoluteDeflection {"triangles": 648}
+EVID766 aliases {"blender": 0, "gltf": 1}
+EVID766 bindPolygon3DRep {"edgeHasMeshBefore": false, "edgeHasMeshAfter": true}
+EVID766 bindTriangulationRep {"faceHasMeshBefore": false, "faceHasMeshAfter": true}
+EVID766 booleanIntersection {"triangleCount": 0, "volume": 0.0}
+EVID766 booleanSubtraction {"triangleCount": 120, "volume": 1000.0000000000003}
+EVID766 booleanUnion {"triangleCount": 72, "volume": 1999.9999999999993}
+EVID766 boxMaxDimension {"boxMaxDimension": 10.0000002}
+EVID766 boxShadedMesh {"triangles": 12, "vertices": 24}
+EVID766 coherentAdd {"triangleCount": 2}
+EVID766 coherentCreateFromMesh {"triangleCount": 2}
+EVID766 coherentDeflection {"deflection": 0.5}
+EVID766 coherentLinks {"computeLinks": 5, "linkCount": 5}
+EVID766 coherentNodeCoords {"nodeCoords_1": [1.5, 2.5, 3.5]}
+EVID766 coherentRemove {"triangleCount": 1}
+EVID766 coherentResult {"nodeCount": 3, "triangleCount": 1}
+EVID766 coherentSetNode {"indices": [0, 1, 2]}
+EVID766 computeAbsoluteDeflection {"absoluteDeflection": 0.150000001}
+EVID766 defaultIsFalse {"allowQualityDecrease": false}
+EVID766 finerDeviation {"coarse_triangles": 648, "fine_triangles": 1244}
+EVID766 fixtureSharesAWall {"faceCount": 11, "occurrences": 12, "sharedFaces": 1, "sharedIndex": 5}
+EVID766 generousBuffers {"nodeCount": 24, "triangleCount": 12}
+EVID766 indexOverflow {"returned_count": 0, "outTriangleCount_after": -1}
+EVID766 initFromRaw {"-1": -1, "0": 0, "1": 1, "99": null}
+EVID766 maxFaceTolerance {"maxFaceTolerance": 1e-07}
+EVID766 mergeFromShape {"vertexCount": 24, "triangleCount": 12}
+EVID766 mergedMeshNodesBox {"vertexCount": 24, "triangleCount": 12}
+EVID766 mergedPlainBox613 {"triangleCount": 12, "vertexCount": 24, "outward": 12, "inward": 0}
+EVID766 mergedWall613 {"triangleCount": 24, "vertexCount": 40, "plusX": 2, "minusX": 2}
+EVID766 meshDataAccess {"vertexCount": 168, "triangleCount": 306}
+EVID766 meshRepIdsAbsent {"face0HasMesh": false, "edge0HasMesh": false, "coedge0HasMesh": false}
+EVID766 meshToShape {"edges": 18, "shapeType": 3}
+EVID766 mirroredParams {"mirrored_outward_fraction": 1.0, "mirrored_triangles": 12}
+EVID766 mirroredSolid {"box_outward_fraction": 1.0, "mirrored_outward_fraction": 1.0, "box_triangles": 12, "mirrored_triangles": 12}
+EVID766 noParams1440 {"hasParameters": false, "fallback_parameters": [0.0, 0.0, 0.0]}
+EVID766 nodeTriangle {"triangle": 1}
+EVID766 nodeTriangleCount {"fanCount": 1}
+EVID766 nullOutIndices {"nodeCount": 24, "triangleCount": 12}
+EVID766 p3dDeflection {"deflection": 1.0}
+EVID766 p3dWith {"nodeCount": 3, "hasParameters": true, "parameter_1": 10.0}
+EVID766 p3dWithout {"nodeCount": 3, "hasParameters": false}
+EVID766 parameterisedMesh613 {"triangles": 24, "faceIndices": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "wallIndices": [5], "plusX": 2, "minusX": 2}
+EVID766 persistentPolygon3D {"edgeHasPolygon3D": true}
+EVID766 polygon2DCopy {"nodeCount": 3, "deflection": 0.25}
+EVID766 potDeflection {"deflection": 0.1}
+EVID766 potWith {"nodeCount": 3, "hasParameters": true, "parameter_1": 1.0}
+EVID766 potWithout {"nodeCount": 4, "node0": 1, "node3": 4, "hasParameters": false}
+EVID766 rawValues {"undefined": -1, "zUp": 0, "yUp": 1}
+EVID766 relativeDeflection {"small_triangles": 1244, "large_triangles": 1244}
+EVID766 setNodes {"node0": 5, "node3": 8}
+EVID766 setParameters {"parameter_1": 20.0}
+EVID766 setParametersNoParams {"hasParameters": false, "setParametersReturned": false}
+EVID766 shadedDefaultDrawer {"triangles": 12, "vertices": 24}
+EVID766 shadedOverloads {"triangles": 12, "drawer_triangles": 12}
+EVID766 sphereEdgeMesh {"segments": 3, "vertices": 18}
+EVID766 stlBinaryDeflection {"coarse_1.0_bytes": 15384, "fine_0.05_bytes": 100284}
+EVID766 stlDefaultUnchanged {"bytes_at_deflection_0.1": 48884}
+EVID766 triangleAdjacency {"adjacency": [0, 0, 2]}
+EVID766 triangulationRoundTrip {"nodeCount": 4, "triangleCount": 2, "t0_zero_based": [0, 1, 2], "deflection": 0.01}
+EVID766 triangulationUVNodes {"hasUV": true, "uv1": [0.0, 0.0]}
+EVID766 vertexOverflow {"returned_count": 0, "outTriangleCount_after": -1}
+EVID766 withParams1440 {"hasParameters": true, "parameters": [0.0, 0.5, 1.0]}

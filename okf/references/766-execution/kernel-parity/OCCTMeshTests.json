@@ -13,20 +13,18 @@
       "type": "measured",
       "data": {
         "coarse_1.0_bytes": 15384,
-        "fine_0.05_bytes": 100284,
-        "coarse_triangles": 306,
-        "fine_triangles": 2004
+        "fine_0.05_bytes": 100284
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":42 `fineSize > coarseSize`",
     "injection": "R1: pass 1.0 instead of the caller's deflection to OCCTExportSTLWithMode",
-    "probe": "Scripts/repro/766-mesh-issue197/"
+    "probe": "Scripts/repro/766-mesh-issue197/",
+    "source": "Same quantity on both sides: the byte size of a binary STL of a sphere r10 written after meshing at deflection 1.0 and at 0.05, each on its own fresh sphere because BRepMesh is incremental. Bridge: Shape.writeSTLBinary(to:deflection:), the file size the test reads. Kernel: StlAPI_Writer in binary mode after BRepMesh_IncrementalMesh(sphere r10, deflection) printed size=15384 and size=100284 (306 and 2004 triangles, 84 + 50 * triangles)."
   },
   {
     "test_name": "Issue #197, mesh deflection is a caller-tunable parameter::default deflection (0.1) still writes a valid STL",
@@ -34,25 +32,24 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "default_bytes": 48884
+        "bytes_at_deflection_0.1": 48884
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "default_0.1_bytes": 48884,
-        "triangles": 976
+        "bytes_at_deflection_0.1": 48884
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":60 `size == 84 + 50 * 976`",
     "injection": "R1: pass 1.0 instead of the caller's deflection to OCCTExportSTLWithMode",
-    "probe": "Scripts/repro/766-mesh-issue197/"
+    "probe": "Scripts/repro/766-mesh-issue197/",
+    "source": "Same quantity on both sides: the byte size of the binary STL of a sphere r10 at the default deflection 0.1. Bridge: Shape.writeSTLBinary(to:) with no deflection argument. Kernel: StlAPI_Writer in binary mode after BRepMesh_IncrementalMesh(sphere r10, 0.1) printed size=48884 (976 triangles)."
   },
   {
     "test_name": "Issue #197, mesh deflection is a caller-tunable parameter::coherent triangulation builds at the requested deflection",
@@ -93,18 +90,18 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "IMeshTools_Parameters().AllowQualityDecrease": false
+        "allowQualityDecrease": false
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":12 `MeshParameters.default.allowQualityDecrease == false`",
     "injection": "R1: MeshParameters.default.allowQualityDecrease = true (Mesh.swift)",
-    "probe": "Scripts/repro/766-mesh-issue211/"
+    "probe": "Scripts/repro/766-mesh-issue211/",
+    "source": "Same quantity on both sides: the default value of the AllowQualityDecrease meshing flag. Bridge: MeshParameters.default.allowQualityDecrease, which OCCTMeshParametersDefault also sets to false. Kernel: IMeshTools_Parameters().AllowQualityDecrease printed 0."
   },
   {
     "test_name": "Issue #211, allowQualityDecrease mesh parameter::meshing with the flag set produces a valid mesh",
@@ -170,7 +167,8 @@
       "data": {
         "box_outward_fraction": 1.0,
         "mirrored_outward_fraction": 1.0,
-        "triangles": 12
+        "box_triangles": 12,
+        "mirrored_triangles": 12
       }
     },
     "kernel_output": {
@@ -178,20 +176,19 @@
       "data": {
         "box_outward_fraction": 1.0,
         "mirrored_outward_fraction": 1.0,
-        "triangles": 12,
-        "reversed_faces": 3,
-        "fraction_without_swap": 0.5
+        "box_triangles": 12,
+        "mirrored_triangles": 12
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":55 `boxOutward == 1.0`, :58 `mirroredOutward == 1.0`",
     "injection": "R1: REVERSED faces no longer swap n2/n3",
-    "probe": "Scripts/repro/766-mesh-issue375/"
+    "probe": "Scripts/repro/766-mesh-issue375/",
+    "source": "Same quantity on both sides: the fraction of mesh triangles whose winding faces away from the origin, and the triangle count, for a 10 mm box centred on the origin and for its mirror through z = 0, each meshed at 0.5 / 0.5. Bridge: Shape.mesh(linearDeflection:angularDeflection:) read back through Mesh.vertices and indices. Kernel: BRepBuilderAPI_Transform(gp_Trsf::SetMirror) then BRepMesh_IncrementalMesh, each face's Poly_Triangulation wound by the face orientation (n2 and n3 swapped when REVERSED), printed outwardFraction=1 and triangles=12 for both. The probe also printed 3 reversed faces of 6 and a fraction of 0.5 without the swap."
   },
   {
     "test_name": "Issue #375, mesh() winding reflects true topological orientation, not a naive transform read::mesh(parameters:) has the same outward-normalization behavior as the deflection overload",
@@ -200,26 +197,25 @@
       "type": "measured",
       "data": {
         "mirrored_outward_fraction": 1.0,
-        "triangles": 12
+        "mirrored_triangles": 12
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
         "mirrored_outward_fraction": 1.0,
-        "triangles": 12,
-        "fraction_without_swap": 0.5
+        "mirrored_triangles": 12
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":73 `mirroredOutward == 1.0`",
     "injection": "R1: REVERSED faces no longer swap n2/n3",
-    "probe": "Scripts/repro/766-mesh-issue375/"
+    "probe": "Scripts/repro/766-mesh-issue375/",
+    "source": "Same quantity on both sides: the outward-wound fraction and triangle count of the 10 mm box mirrored through x = 0, meshed through the parameters entry point (MeshParameters.default). Bridge: Shape.mesh(parameters:). Kernel: BRepBuilderAPI_Transform(gp_Trsf::SetMirror) then BRepMesh_IncrementalMesh(IMeshTools_Parameters filled as OCCTShapeCreateMeshWithParams does), each face wound by its orientation, printed outwardFraction=1 and triangles=12 (0.5 without the REVERSED swap)."
   },
   {
     "test_name": "Issue #1440: Polygon3D.parameter(at:) null-Handle guard::a no-params polygon's parameter(at:) is safe, not a crash",
@@ -227,29 +223,24 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "hasParameters": false,
-        "parameters": [
-          0.0,
-          0.0,
-          0.0
-        ]
+        "hasParameters": false
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "HasParameters": false
+        "hasParameters": false
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH on HasParameters; the 0 fallback is bridge behaviour (the kernel call it guards segfaults)"
+      "differences": []
     },
     "status": "PASS",
     "red": "process killed, signal 11 (SIGSEGV) inside the test",
     "injection": "R3: HasParameters() guard removed",
-    "probe": "Scripts/repro/766-mesh-issue1440/"
+    "probe": "Scripts/repro/766-mesh-issue1440/",
+    "source": "Same quantity on both sides: HasParameters of a Poly_Polygon3D built from three nodes with no parameter array. Bridge: polygon.hasParameters. Kernel: Poly_Polygon3D::HasParameters() printed 0. Not compared: the test's other assertions, parameter(at: 0...2) == 0, exercise the bridge's #1440 guard, whose 0 is a fallback (the bridge observed [0.0, 0.0, 0.0]) with no kernel value to set beside it, because Poly_Polygon3D::Parameters() dereferences the null parameter handle (the guard-removed injection in PR #2296 died with SIGSEGV)."
   },
   {
     "test_name": "Issue #1440: Polygon3D.parameter(at:) null-Handle guard::a with-parameters polygon still returns its real stored values",
@@ -268,7 +259,7 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "HasParameters": true,
+        "hasParameters": true,
         "parameters": [
           0.0,
           0.5,
@@ -278,13 +269,13 @@
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":54 `polygon.parameter(at: i) == expected` (i = 0 and i = 2)",
     "injection": "R1: read Parameters()(NbNodes() - index), reversed order",
-    "probe": "Scripts/repro/766-mesh-issue1440/"
+    "probe": "Scripts/repro/766-mesh-issue1440/",
+    "source": "Same quantity on both sides: HasParameters and the three stored parameters of a Poly_Polygon3D built with parameters [0, 0.5, 1]. Bridge: polygon.hasParameters and polygon.parameter(at: 0...2) (0-based). Kernel: HasParameters() and Parameters()(1...3) (1-based) printed 1 and [0, 0.5, 1]."
   },
   {
     "test_name": "Issue #1566: OCCTPolyMergeNodes refuses rather than mis-reports on buffer overflow::generous buffers: succeeds, reports the true counts, and every count matches the write",
@@ -292,26 +283,26 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "nVerts": 24,
-        "triCount": 12
+        "nodeCount": 24,
+        "triangleCount": 12
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "NbNodes": 24,
-        "NbTriangles": 12
+        "nodeCount": 24,
+        "triangleCount": 12
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":61 `triCount > 0`",
     "injection": "R2: *outTriangleCount never written",
-    "probe": "Scripts/repro/766-mesh-issue1566/"
+    "probe": "Scripts/repro/766-mesh-issue1566/",
+    "source": "Same quantity on both sides: the merged node and triangle counts of the 10 mm box meshed at 1.0. Bridge: the return value of OCCTPolyMergeNodes and its outTriangleCount, called with buffers of 1024 vertices and 3072 indices. Kernel: Poly_MergeNodesTool(smoothAngle pi/4, mergeTolerance 0) fed each face's triangulation with its REVERSED flag, as OCCTPolyMergeNodes does, printed nbNodes=24 nbTriangles=12 for the 10 mm box meshed at 1.0."
   },
   {
     "test_name": "Issue #1566: OCCTPolyMergeNodes refuses rather than mis-reports on buffer overflow::vertex buffer too small: refuses (returns 0), does not touch outTriangleCount",
@@ -319,22 +310,21 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "nVerts": 0,
-        "triCount": -1
+        "returned_count": 0,
+        "outTriangleCount_after": -1
       }
     },
     "kernel_output": {
-      "type": "measured",
+      "type": "n/a",
       "data": {
-        "NbNodes": 24
+        "reason": "The refusal is bridge policy (#1566): OCCTPolyMergeNodes returns 0 and leaves outTriangleCount untouched (the bridge observed returned_count 0 and outTriangleCount -1) when the merged node count exceeds the caller's maxVertices. The kernel has no buffer-capacity concept, so there is no kernel value for the refusal itself. What the kernel supplies is the size the refusal is measured against, 24 merged nodes (Poly_MergeNodesTool printed nbNodes=24, against maxVertices 1), which is recorded in the generous-buffers record."
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": [],
-      "note": "MATCH: kernel NbNodes 24 > maxVertices 1, so the refusal is the correct outcome; the refusal itself has no kernel counterpart"
+      "equal": null,
+      "differences": []
     },
-    "status": "PASS",
+    "status": "N/A",
     "red": "process killed, signal 5, writing 24 nodes into a 1-node buffer",
     "injection": "R1b: verticesOverflow = false (the #1566 refusal removed)",
     "probe": "Scripts/repro/766-mesh-issue1566/"
@@ -345,23 +335,21 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "nVerts": 0,
-        "triCount": -1
+        "returned_count": 0,
+        "outTriangleCount_after": -1
       }
     },
     "kernel_output": {
-      "type": "measured",
+      "type": "n/a",
       "data": {
-        "NbTriangles": 12,
-        "indices_needed": 36
+        "reason": "The refusal is bridge policy (#1566): OCCTPolyMergeNodes returns 0 and leaves outTriangleCount untouched (the bridge observed returned_count 0 and outTriangleCount -1) when the merged triangle count needs more indices than maxIndices. The kernel has no buffer-capacity concept, so there is no kernel value for the refusal itself. What the kernel supplies is the size the refusal is measured against, 12 merged triangles needing 36 indices (Poly_MergeNodesTool printed nbTriangles=12, against maxIndices 1), which is recorded in the generous-buffers record."
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": [],
-      "note": "MATCH: kernel needs 36 indices > maxIndices 1, so the refusal is the correct outcome; the refusal itself has no kernel counterpart"
+      "equal": null,
+      "differences": []
     },
-    "status": "PASS",
+    "status": "N/A",
     "red": ":123 `nVerts == 0`",
     "injection": "R2: indicesOverflow = false (the #1566 refusal removed)",
     "probe": "Scripts/repro/766-mesh-issue1566/"
@@ -372,26 +360,26 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "nVerts": 24,
-        "triCount": 12
+        "nodeCount": 24,
+        "triangleCount": 12
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "NbNodes": 24,
-        "NbTriangles": 12
+        "nodeCount": 24,
+        "triangleCount": 12
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":146 `nVerts > 0`, :147 `triCount > 0`",
     "injection": "R4: indicesOverflow no longer gated on outIndices being non-null",
-    "probe": "Scripts/repro/766-mesh-issue1566/"
+    "probe": "Scripts/repro/766-mesh-issue1566/",
+    "source": "Same quantity on both sides: the merged node and triangle counts of the 10 mm box meshed at 1.0. Bridge: the return value of OCCTPolyMergeNodes and its outTriangleCount, called with a null outIndices and maxIndices 0. Kernel: Poly_MergeNodesTool(smoothAngle pi/4, mergeTolerance 0) fed each face's triangulation with its REVERSED flag, as OCCTPolyMergeNodes does, printed nbNodes=24 nbTriangles=12 for the 10 mm box meshed at 1.0."
   },
   {
     "test_name": "Issue #1566: OCCTPolyMergeNodes refuses rather than mis-reports on buffer overflow::mergedMeshNodes still succeeds normally for an ordinary box (non-regression)",
@@ -406,19 +394,19 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "NbNodes": 24,
-        "NbTriangles": 12
+        "vertexCount": 24,
+        "triangleCount": 12
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":157 `merged.triangleCount > 0`",
     "injection": "R2: *outTriangleCount never written",
-    "probe": "Scripts/repro/766-mesh-issue1566/"
+    "probe": "Scripts/repro/766-mesh-issue1566/",
+    "source": "Same quantity on both sides: the merged node (vertex) and triangle counts of the 10 mm box meshed at 1.0. Bridge: mergedMeshNodes(from:smoothAngle:).vertexCount and triangleCount. Kernel: Poly_MergeNodesTool(smoothAngle pi/4, mergeTolerance 0) fed each face's triangulation with its REVERSED flag, as OCCTPolyMergeNodes does, printed nbNodes=24 nbTriangles=12 for the 10 mm box meshed at 1.0."
   },
   {
     "test_name": "Mesh face indices address faces(), and winding survives a shared wall (#613)::the fixture really does share one face between two solids",
@@ -428,27 +416,26 @@
       "data": {
         "faceCount": 11,
         "occurrences": 12,
-        "shared_faces": 1
+        "sharedFaces": 1
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "distinct_faces": 11,
+        "faceCount": 11,
         "occurrences": 12,
-        "shared_faces": 1,
-        "shared_index": 5
+        "sharedFaces": 1
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":80 `compound.faceCount == 11`",
     "injection": "R4: Shape.faceCount reads OCCTShapeGetFaceOccurrenceCount (the pre-#651 explorer count)",
-    "probe": "Scripts/repro/766-mesh-issue613/"
+    "probe": "Scripts/repro/766-mesh-issue613/",
+    "source": "Same quantity on both sides: for the 20x10x10 block split at x = 10 into two solids, the number of distinct faces (TopExp::MapShapes), the number of face occurrences (TopExp_Explorer) and the number of faces present in both orientations. Bridge: compound.faceCount, compound.orientedFaces().count and the count of face indices carrying both orientations; the shared face is index 5. Kernel: printed distinctFaces=11 occurrences=12 sharedFaces=1, shared face index 5 carrying both FORWARD and REVERSED."
   },
   {
     "test_name": "Mesh face indices address faces(), and winding survives a shared wall (#613)::no triangle claims a face index faces() cannot address",
@@ -670,7 +657,12 @@
           8,
           9,
           10
-        ]
+        ],
+        "wallIndices": [
+          5
+        ],
+        "plusX": 2,
+        "minusX": 2
       }
     },
     "kernel_output": {
@@ -690,20 +682,22 @@
           9,
           10
         ],
-        "wall_index": 5,
+        "wallIndices": [
+          5
+        ],
         "plusX": 2,
         "minusX": 2
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":267 `compound.face(at: i) != nil`, :286 `wallIndices.count == 1`",
     "injection": "R4: faceIndex stamped from an occurrence counter, not the map index",
-    "probe": "Scripts/repro/766-mesh-issue613/"
+    "probe": "Scripts/repro/766-mesh-issue613/",
+    "source": "Same quantity on both sides: for the split-block compound meshed through the parameters entry point (MeshParameters.default, deflection 0.5), the triangle count, the set of face indices stamped on triangles, the face indices of the triangles lying in the shared wall x = 10, and the number of those wall triangles wound +x and -x. Bridge: Shape.mesh(parameters:).trianglesWithFaces(). Kernel: BRepMesh_IncrementalMesh(IMeshTools_Parameters) then per-face triangulations wound by face orientation and indexed by the TopExp::MapShapes index, printed triangles=24 faceIndices={0..10} wall(+x): idx5=2 wall(-x): idx5=2."
   },
   {
     "test_name": "Mesh face indices address faces(), and winding survives a shared wall (#613)::merged mesh nodes keep both sides of a shared wall, oppositely wound",
@@ -711,8 +705,8 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "triangles": 24,
-        "vertices": 40,
+        "triangleCount": 24,
+        "vertexCount": 40,
         "plusX": 2,
         "minusX": 2
       }
@@ -720,21 +714,21 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "NbTriangles": 24,
-        "NbNodes": 40,
+        "triangleCount": 24,
+        "vertexCount": 40,
         "plusX": 2,
         "minusX": 2
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":316 `minusX > 0`, :317 `plusX == minusX`",
     "injection": "R4: reversed flag passed to AddTriangulation forced false",
-    "probe": "Scripts/repro/766-mesh-issue613/"
+    "probe": "Scripts/repro/766-mesh-issue613/",
+    "source": "Same quantity on both sides: the merged triangle and node counts of the split-block compound (smoothAngle 0.5) and the number of triangles in the wall x = 10 wound +x and -x. Bridge: mergedMeshNodes(from:smoothAngle:). Kernel: Poly_MergeNodesTool fed each face occurrence with its REVERSED flag printed nbNodes=40 nbTriangles=24 wall +x=2 -x=2."
   },
   {
     "test_name": "Mesh face indices address faces(), and winding survives a shared wall (#613)::merged mesh nodes on a plain box are entirely outward",
@@ -742,29 +736,30 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "triangles": 12,
-        "vertices": 24,
-        "outward": 12
+        "triangleCount": 12,
+        "vertexCount": 24,
+        "outward": 12,
+        "inward": 0
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "NbTriangles": 12,
-        "NbNodes": 24,
+        "triangleCount": 12,
+        "vertexCount": 24,
         "outward": 12,
         "inward": 0
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":341 `outward == 12`, :342 `inward == 0`",
     "injection": "R4: reversed flag passed to AddTriangulation forced false",
-    "probe": "Scripts/repro/766-mesh-issue613/"
+    "probe": "Scripts/repro/766-mesh-issue613/",
+    "source": "Same quantity on both sides: the merged triangle and node counts of a plain 10 mm box (smoothAngle 0.5) and how many merged triangles wind outward and inward relative to the centre (5, 5, 5). Bridge: mergedMeshNodes(from:smoothAngle:). Kernel: Poly_MergeNodesTool fed each face with its REVERSED flag printed nbNodes=24 nbTriangles=12 outward=12 inward=0."
   },
   {
     "test_name": "Mesh from raw arrays::Round-trip vertices and indices",
@@ -942,9 +937,8 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "vertices": 168,
-        "indices": 918,
-        "normals": 168
+        "vertexCount": 168,
+        "triangleCount": 306
       }
     },
     "kernel_output": {
@@ -956,13 +950,13 @@
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":187 `offSphere.isEmpty`",
     "injection": "C3: OCCTMeshGetVertices copies the normals buffer",
-    "probe": "Scripts/repro/766-mesh-core-1/"
+    "probe": "Scripts/repro/766-mesh-core-1/",
+    "source": "Same quantity on both sides: the vertex and triangle counts of a sphere r5 meshed at 0.5. Bridge: Mesh.vertices.count and Mesh.indices.count / 3 (the test read 168 vertices, 168 normals and 918 indices). Kernel: BRepMesh_IncrementalMesh then the per-face triangulations concatenated printed vertexCount=168 triangleCount=306. The kernel side has no normals to set beside the bridge's 168: BRepMesh stores none (HasNormals false on the faces probed, #2337)."
   },
   {
     "test_name": "Mesh Tests::Enhanced mesh parameters",
@@ -1038,25 +1032,26 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "edges": 18
+        "edges": 18,
+        "shapeType": 3
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
         "edges": 18,
-        "type": "TopAbs_SHELL"
+        "shapeType": 3
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":228 `shape != nil`",
     "injection": "C3: the sewn shape dropped (return nullptr on success)",
-    "probe": "Scripts/repro/766-mesh-core-1/"
+    "probe": "Scripts/repro/766-mesh-core-1/",
+    "source": "Same quantity on both sides: the edge count and the top-level shape type (TopAbs_ShapeEnum ordinal, SHELL = 3) of the shape a 10 mm box mesh is converted to. Bridge: Mesh.toShape() then the count of its edges and shape.shapeType.rawValue. Kernel: one BRepBuilderAPI_MakeFace per triangle sewn by BRepBuilderAPI_Sewing at 1e-6 printed edges=18 and top-level type 3 (TopAbs_SHELL=3, not SOLID=2), which is why the mesh Booleans are surface Booleans (#2301)."
   },
   {
     "test_name": "Mesh Tests::toShape weldTolerance: default parity, guards, and large-mesh welding",
@@ -1091,27 +1086,30 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "triangles": 72,
-        "volume": 2000.0
+        "triangleCount": 72,
+        "volume": 1999.9999999999993
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "triangles": 72,
-        "volume": 2000.0,
-        "solid_boolean_volume": 1500.0
+        "triangleCount": 28,
+        "volume": 1500.0
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": [],
-      "note": "MATCH bridge vs kernel pipeline; both wrong against the solid Boolean (1500), filed as #2301, asserted under withKnownIssue"
+      "equal": false,
+      "differences": [
+        "triangleCount: bridge 72, kernel 28",
+        "volume: bridge 2000.0 (the two sewn shells are kept apart), kernel 1500.0 (the solid union)",
+        "known defect #2301"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "red": ":285 `unionMesh != nil`",
     "injection": "C2: occtMeshBoolean returns nullptr",
-    "probe": "Scripts/repro/766-mesh-core-1/"
+    "probe": "Scripts/repro/766-mesh-core-1/, Scripts/repro/766-mesh-evidence-fix/",
+    "source": "Different results for the same operation, by a known defect. Quantity on both sides: the union of a 10 mm box and the same box moved +5 in x. Bridge: Mesh.union(with:)(...) at deflection 0.5, then the triangle count and the volume the result mesh encloses (divergence theorem over the vertices). Kernel: BRepAlgoAPI_Fuse on the ORIGINAL SOLIDS, meshed by BRepMesh_IncrementalMesh at 0.5 / 0.5, same volume computation, printed triangleCount=28 volume=1500. The divergence is the known defect #2301: Mesh.toShape() sews the mesh into a TopAbs_SHELL, so the Boolean runs on surfaces, not solids. Feeding the kernel the bridge's own sewn shells reproduces the bridge value (72 triangles, volume 2000) in the 766-mesh-core-1 transcript, so the whole difference is the sewn-shell input, not a kernel disagreement. The test asserts the correct volume under withKnownIssue."
   },
   {
     "test_name": "Mesh Tests::Mesh boolean subtraction",
@@ -1119,27 +1117,30 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "triangles": 120,
-        "volume": 1000.0
+        "triangleCount": 120,
+        "volume": 1000.0000000000003
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "triangles": 120,
-        "volume": 1000.0,
-        "solid_boolean_volume": 858.628331
+        "triangleCount": 116,
+        "volume": 860.0003390059915
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": [],
-      "note": "MATCH bridge vs kernel pipeline; nothing is removed against the solid Boolean (858.63), filed as #2301, asserted under withKnownIssue"
+      "equal": false,
+      "differences": [
+        "triangleCount: bridge 120, kernel 116",
+        "volume: bridge 1000.0 (nothing removed), kernel 860.00033900599146 (the solid difference; 858.63 exact, the rest tessellation)",
+        "known defect #2301"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "red": ":305 `diffMesh != nil`",
     "injection": "C2: occtMeshBoolean returns nullptr",
-    "probe": "Scripts/repro/766-mesh-core-1/"
+    "probe": "Scripts/repro/766-mesh-core-1/, Scripts/repro/766-mesh-evidence-fix/",
+    "source": "Different results for the same operation, by a known defect. Quantity on both sides: a 10 mm box minus a cylinder r3 h15. Bridge: Mesh.subtracting(_:)(...) at deflection 0.5, then the triangle count and the volume the result mesh encloses (divergence theorem over the vertices). Kernel: BRepAlgoAPI_Cut on the ORIGINAL SOLIDS, meshed by BRepMesh_IncrementalMesh at 0.5 / 0.5, same volume computation, printed triangleCount=116 volume=860.0003390059915. The divergence is the known defect #2301: Mesh.toShape() sews the mesh into a TopAbs_SHELL, so the Boolean runs on surfaces, not solids. Feeding the kernel the bridge's own sewn shells reproduces the bridge value (120 triangles, volume 1000) in the 766-mesh-core-1 transcript, so the whole difference is the sewn-shell input, not a kernel disagreement. The test asserts the correct volume under withKnownIssue."
   },
   {
     "test_name": "Mesh Tests::Mesh boolean intersection",
@@ -1147,27 +1148,30 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "triangles": 0,
+        "triangleCount": 0,
         "volume": 0.0
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "triangles": 0,
-        "volume": 0.0,
-        "solid_boolean_volume": 959.232938
+        "triangleCount": 332,
+        "volume": 955.4196882969247
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": [],
-      "note": "MATCH bridge vs kernel pipeline; result is EMPTY against the solid Boolean (959.23), filed as #2301, asserted under withKnownIssue"
+      "equal": false,
+      "differences": [
+        "triangleCount: bridge 0 (an empty mesh, which the test's `!= nil` accepted), kernel 332",
+        "volume: bridge 0.0, kernel 955.41968829692473 (the solid intersection; 959.23 exact, the rest tessellation)",
+        "known defect #2301"
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
     "red": ":323 `intersectMesh != nil`",
     "injection": "C2: occtMeshBoolean returns nullptr",
-    "probe": "Scripts/repro/766-mesh-core-1/"
+    "probe": "Scripts/repro/766-mesh-core-1/, Scripts/repro/766-mesh-evidence-fix/",
+    "source": "Different results for the same operation, by a known defect. Quantity on both sides: a 10 mm box intersected with a sphere r7. Bridge: Mesh.intersection(with:)(...) at deflection 0.5, then the triangle count and the volume the result mesh encloses (divergence theorem over the vertices). Kernel: BRepAlgoAPI_Common on the ORIGINAL SOLIDS, meshed by BRepMesh_IncrementalMesh at 0.5 / 0.5, same volume computation, printed triangleCount=332 volume=955.4196882969247. The divergence is the known defect #2301: Mesh.toShape() sews the mesh into a TopAbs_SHELL, so the Boolean runs on surfaces, not solids. Feeding the kernel the bridge's own sewn shells reproduces the bridge value (0 triangles, volume 0) in the 766-mesh-core-1 transcript, so the whole difference is the sewn-shell input, not a kernel disagreement. The test asserts the correct volume under withKnownIssue. (the bridge's result is an empty mesh)"
   },
   {
     "test_name": "Presentation Mesh Tests::Box shaded mesh has 12 triangles",
@@ -1176,8 +1180,7 @@
       "type": "measured",
       "data": {
         "triangles": 12,
-        "vertices": 24,
-        "distinct_normals": 6
+        "vertices": 24
       }
     },
     "kernel_output": {
@@ -1189,13 +1192,13 @@
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":354 `len > 0.5` (every vertex)",
     "injection": "D1: computed vertex normals never accumulated (left zero)",
-    "probe": "Scripts/repro/766-mesh-core-2/"
+    "probe": "Scripts/repro/766-mesh-core-2/",
+    "source": "Same quantity on both sides: the triangle and vertex counts of the shaded mesh of a 10 mm box at deflection 0.1. Bridge: Shape.shadedMesh(deflection:). Kernel: BRepMesh_IncrementalMesh then the per-face triangulations counted printed vertexCount=24 triangleCount=12. Not compared: the test also requires every normal to be non-zero (the bridge saw 6 distinct normals). The bridge computes them from the triangles because BRepMesh stores no node normals (#2337), so there is no kernel normal to compare."
   },
   {
     "test_name": "Presentation Mesh Tests::Cylinder shaded mesh has triangles",
@@ -1264,20 +1267,19 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "distinct_edges": 3,
         "segments": 3,
         "vertices": 18
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":382 `edges.segmentCount == 3`, :383",
     "injection": "D1: every edge emitted twice",
-    "probe": "Scripts/repro/766-mesh-core-2/"
+    "probe": "Scripts/repro/766-mesh-core-2/",
+    "source": "Same quantity on both sides: the number of edge polylines and their total vertex count for a sphere r5 at deflection 0.1. Bridge: Shape.edgeMesh(deflection:).segmentCount and vertices.count. Kernel: one PolygonOnTriangulation per distinct edge (TopExp::MapShapes, 3 edges: the seam and the two pole edges) printed segmentCount=3 vertexCount=18."
   },
   {
     "test_name": "Drawer Mesh Extraction::Shaded mesh with default drawer produces valid mesh",
@@ -1285,25 +1287,26 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "triangles": 12
+        "triangles": 12,
+        "vertices": 24
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "effective_deflection": 0.040000000800000005,
-        "triangles": 12
+        "triangles": 12,
+        "vertices": 24
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":398 `mesh != nil`",
     "injection": "D4: the drawer entry points return false",
-    "probe": "Scripts/repro/766-mesh-core-2/"
+    "probe": "Scripts/repro/766-mesh-core-2/",
+    "source": "Same quantity on both sides: the triangle and vertex counts of the shaded mesh of a 10 mm box through a default drawer. Bridge: Shape.shadedMesh(drawer: DisplayDrawer()). Kernel: BRepMesh_IncrementalMesh at the drawer's effective deflection (Prs3d::GetDeflection, 0.040000000800000005) and DeviationAngle (0.3490658503988659) printed vertexCount=24 triangleCount=12."
   },
   {
     "test_name": "Drawer Mesh Extraction::Edge mesh with default drawer produces valid segments",
@@ -1336,28 +1339,26 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "coarse": 648,
-        "fine": 1244
+        "coarse_triangles": 648,
+        "fine_triangles": 1244
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "coarse_deflection": 8.00000008,
-        "coarse": 648,
-        "fine_deflection": 0.0800000008,
-        "fine": 1244
+        "coarse_triangles": 648,
+        "fine_triangles": 1244
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":435 `fine.triangleCount > coarse.triangleCount`",
     "injection": "D2b: DisplayDrawer.deviationCoefficient's setter drops the value",
-    "probe": "Scripts/repro/766-mesh-core-2/"
+    "probe": "Scripts/repro/766-mesh-core-2/",
+    "source": "Same quantity on both sides: the triangle counts of a sphere r10 shaded through drawers with deviation coefficient 0.1 and 0.001. Bridge: Shape.shadedMesh(drawer:) with DisplayDrawer.deviationCoefficient set. Kernel: BRepMesh_IncrementalMesh at the effective deflection Prs3d::GetDeflection gives (8.0000000799999995 and 0.080000000799999998) printed triangleCount=648 and 1244."
   },
   {
     "test_name": "Drawer Mesh Extraction::Absolute deflection type works",
@@ -1371,19 +1372,18 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "triangles": 648,
-        "relative_default_would_give": 1244
+        "triangles": 648
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":451 `mesh.triangleCount == 648`",
     "injection": "D2b: DisplayDrawer.deflectionType's setter drops the value",
-    "probe": "Scripts/repro/766-mesh-core-2/"
+    "probe": "Scripts/repro/766-mesh-core-2/",
+    "source": "Same quantity on both sides: the triangle count of a sphere r10 shaded through an absolute-deflection drawer with maximalChordialDeviation 0.5. Bridge: Shape.shadedMesh(drawer:) with deflectionType .absolute. Kernel: BRepMesh_IncrementalMesh at deflection 0.5 (the effective deflection for an absolute drawer) printed triangleCount=648. The default relative drawer (coefficient 0.001) on the same sphere gives 1244 in the same transcript, which is what the rewritten test distinguishes it from."
   },
   {
     "test_name": "Drawer Mesh Extraction::Relative deflection scales with shape size, matching OCCT's own reference caller (#1418)",
@@ -1391,28 +1391,26 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "small": 1244,
-        "large": 1244
+        "small_triangles": 1244,
+        "large_triangles": 1244
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "small_deflection": 0.0080000008,
-        "small": 1244,
-        "large_deflection": 0.4000000008,
-        "large": 1244
+        "small_triangles": 1244,
+        "large_triangles": 1244
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":480 `ratio < 10`",
     "injection": "D2b: the raw DeviationCoefficient used as an absolute deflection (the pre-#1418 bug)",
-    "probe": "Scripts/repro/766-mesh-core-2/"
+    "probe": "Scripts/repro/766-mesh-core-2/",
+    "source": "Same quantity on both sides: the triangle counts of spheres r1 and r50 shaded through the same default (relative) drawer. Bridge: Shape.shadedMesh(drawer:). Kernel: BRepMesh_IncrementalMesh at the effective deflection Prs3d::GetDeflection gives (0.0080000008000000004 for r1, 0.40000000080000003 for r50) printed triangleCount=1244 for both, a ratio of 1."
   },
   {
     "test_name": "Issue1224 Presentation Mesh Overload Parity::shadedMesh(deflection:) and shadedMesh(drawer:) deinterleave identically",
@@ -1420,7 +1418,8 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "triangles": 12
+        "deflection_triangles": 12,
+        "drawer_triangles": 12
       }
     },
     "kernel_output": {
@@ -1432,13 +1431,13 @@
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH on counts; the equality under test is between two Swift overloads, which has no kernel counterpart"
+      "differences": []
     },
     "status": "PASS",
     "red": ":517 `a.normals == b.normals`",
     "injection": "D2: shadedMesh(drawer:) negates the normals after the shared deinterleave (a fix applied to one overload only)",
-    "probe": "Scripts/repro/766-mesh-core-2/"
+    "probe": "Scripts/repro/766-mesh-core-2/",
+    "source": "Same quantity on both sides: the triangle count of the 10 mm box shaded through each overload, at deflection 0.1 and through an absolute drawer of 0.1. Bridge: Shape.shadedMesh(deflection: 0.1) and Shape.shadedMesh(drawer:). Kernel: BRepMesh_IncrementalMesh at 0.1 printed triangleCount=12 for both routes. Counts only: what the test asserts, that the two Swift overloads deinterleave to identical vertices, normals and indices, is a property of the Swift wrapper and has no kernel counterpart."
   },
   {
     "test_name": "Issue1224 Presentation Mesh Overload Parity::edgeMesh(deflection:) and edgeMesh(drawer:) deinterleave identically",
@@ -1479,20 +1478,20 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "RWMesh_CoordinateSystem_Undefined": -1,
-        "Zup": 0,
-        "Yup": 1
+        "undefined": -1,
+        "zUp": 0,
+        "yUp": 1
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":549 `MeshCoordinateSystem.yUp.rawValue == 1`",
     "injection": "D1: case yUp = 2",
-    "probe": "Scripts/repro/766-mesh-core-2/"
+    "probe": "Scripts/repro/766-mesh-core-2/",
+    "source": "Same quantity on both sides: the integer value of each coordinate-system case. Bridge: MeshCoordinateSystem.undefined / .zUp / .yUp rawValue. Kernel: RWMesh_CoordinateSystem_Undefined, _Zup and _Yup printed -1, 0 and 1."
   },
   {
     "test_name": "MeshCoordinateSystem Enum::Aliases",
@@ -1500,26 +1499,26 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "blender": "zUp",
-        "gltf": "yUp"
+        "blender": 0,
+        "gltf": 1
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "RWMesh_CoordinateSystem_Blender": 0,
-        "glTF": 1
+        "blender": 0,
+        "gltf": 1
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":555 `MeshCoordinateSystem.gltf == .yUp`",
     "injection": "D1: gltf aliased to .zUp",
-    "probe": "Scripts/repro/766-mesh-core-2/"
+    "probe": "Scripts/repro/766-mesh-core-2/",
+    "source": "Same quantity on both sides: the integer value of the two named aliases. Bridge: MeshCoordinateSystem.blender.rawValue and .gltf.rawValue (the test asserts the aliases equal .zUp and .yUp). Kernel: RWMesh_CoordinateSystem_Blender and RWMesh_CoordinateSystem_glTF printed 0 and 1."
   },
   {
     "test_name": "MeshCoordinateSystem Enum::Init from raw value",
@@ -1527,29 +1526,28 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "-1": "undefined",
-        "0": "zUp",
-        "1": "yUp",
-        "99": null
+        "-1": -1,
+        "0": 0,
+        "1": 1
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "Undefined": -1,
-        "Zup": 0,
-        "Yup": 1
+        "-1": -1,
+        "0": 0,
+        "1": 1
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":562 `MeshCoordinateSystem(rawValue: 1) == .yUp`",
     "injection": "D1: case yUp = 2",
-    "probe": "Scripts/repro/766-mesh-core-2/"
+    "probe": "Scripts/repro/766-mesh-core-2/",
+    "source": "Same quantity on both sides: the integer that survives a round trip through the enum, for the raw values -1, 0 and 1. Bridge: MeshCoordinateSystem(rawValue: r)?.rawValue. Kernel: RWMesh_CoordinateSystem_Undefined, _Zup and _Yup printed -1, 0 and 1. Not compared: the test's fourth assertion, MeshCoordinateSystem(rawValue: 99) == nil, is Swift-only (a C++ enum has no failable initialiser)."
   },
   {
     "test_name": "BRepMesh Deflection::Compute absolute deflection",
@@ -1563,18 +1561,18 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "ComputeAbsoluteDeflection": 0.150000001
+        "absoluteDeflection": 0.150000001
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":578 `abs(absDef - 0.150000001) < 1e-9`",
     "injection": "D1: relative deflection ignored (0.1 passed)",
-    "probe": "Scripts/repro/766-mesh-core-2/"
+    "probe": "Scripts/repro/766-mesh-core-2/",
+    "source": "Same quantity on both sides: the absolute deflection for a 10x20x30 box with relative deflection 0.01 and maxShapeSize 30. Bridge: Shape.computeAbsoluteDeflection(relativeDeflection:maxShapeSize:). Kernel: BRepMesh_Deflection::ComputeAbsoluteDeflection printed 0.15000000099999999."
   },
   {
     "test_name": "BRepMesh Deflection::Deflection consistency check",
@@ -1742,24 +1740,24 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "tolerance": 1e-07
+        "maxFaceTolerance": 1e-07
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "MaxFaceTolerance": 1e-07
+        "maxFaceTolerance": 1e-07
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":683 `abs(face.maxMeshTolerance - 1e-7) < 1e-15`",
     "injection": "E1: guard inverted, returns the 0 fallback",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the maximum tolerance of the first face of a 10 mm box. Bridge: Face.maxMeshTolerance. Kernel: BRepMesh_ShapeTool::MaxFaceTolerance printed 9.9999999999999995e-08."
   },
   {
     "test_name": "BRepMesh ShapeTool Tests::box max dimension",
@@ -1767,24 +1765,24 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "maxDim": 10.0000002
+        "boxMaxDimension": 10.0000002
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "BoxMaxDimension": 10.0000002
+        "boxMaxDimension": 10.0000002
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":691 `abs(maxDim - 10.0000002) < 1e-9`",
     "injection": "E1: bounding box enlarged by 1.0",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the largest side of the bounding box of a 10 mm box, as BRepMesh_ShapeTool::BoxMaxDimension reports it (10 plus the bounding box's 1e-7 enlargement on each side). Bridge: Shape.meshMaxDimension. Kernel: BRepBndLib::Add then BRepMesh_ShapeTool::BoxMaxDimension printed 10.000000200000001."
   },
   {
     "test_name": "BRepMesh ShapeTool Tests::UV points on edge",
@@ -1838,19 +1836,19 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "NbNodes": 3,
-        "HasParameters": false
+        "nodeCount": 3,
+        "hasParameters": false
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":715 `!poly.hasParameters`",
     "injection": "E1: HasParameters always true",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the node count and HasParameters of a Poly_Polygon3D built from three points with no parameter array. Bridge: Polygon3D.create(points:) then nodeCount and hasParameters. Kernel: Poly_Polygon3D::NbNodes() and HasParameters() printed 3 and 0."
   },
   {
     "test_name": "Poly_Polygon3D::create with parameters",
@@ -1859,25 +1857,27 @@
       "type": "measured",
       "data": {
         "nodeCount": 3,
+        "hasParameters": true,
         "parameter_1": 10.0
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "NbNodes": 3,
-        "Parameters(2)": 10.0
+        "nodeCount": 3,
+        "hasParameters": true,
+        "parameter_1": 10.0
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":725 `abs(poly.parameter(at: 1) - 10.0) < 1e-10`",
     "injection": "E1: CreateWithParams builds the no-parameter polygon",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the node count, HasParameters and the second stored parameter of a Poly_Polygon3D built with parameters [0, 10, 20]. Bridge: polygon.parameter(at: 1), 0-based. Kernel: Parameters()(2), 1-based, printed 10."
   },
   {
     "test_name": "Poly_Polygon3D::deflection",
@@ -1891,19 +1891,18 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "default": 0.0,
-        "after": 1.0
+        "deflection": 1.0
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":733 `abs(poly.deflection - 1.0) < 1e-10`",
     "injection": "E1: SetDeflection is a no-op",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the deflection read back after setting 1.0 (the default is 0). Bridge: polygon.deflection after the setter. Kernel: Poly_Polygon3D::Deflection() printed 0 before and 1 after Deflection(1.0)."
   },
   {
     "test_name": "Poly_PolygonOnTriangulation::create without parameters",
@@ -1913,27 +1912,28 @@
       "data": {
         "nodeCount": 4,
         "node0": 1,
-        "node3": 4
+        "node3": 4,
+        "hasParameters": false
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "NbNodes": 4,
-        "Node(1)": 1,
-        "Node(4)": 4,
-        "HasParameters": false
+        "nodeCount": 4,
+        "node0": 1,
+        "node3": 4,
+        "hasParameters": false
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":746 `!poly.hasParameters`",
     "injection": "E1: HasParameters always true",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the node count, first and last node index and HasParameters of a Poly_PolygonOnTriangulation built from indices [1, 2, 3, 4] with no parameters. Bridge: nodeIndex(at: 0) and nodeIndex(at: 3), 0-based. Kernel: Node(1) and Node(4), 1-based, printed 1 and 4; NbNodes() 4, HasParameters() 0."
   },
   {
     "test_name": "Poly_PolygonOnTriangulation::create with parameters",
@@ -1941,24 +1941,28 @@
     "bridge_output": {
       "type": "measured",
       "data": {
+        "nodeCount": 3,
+        "hasParameters": true,
         "parameter_1": 1.0
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "Parameter(2)": 1.0
+        "nodeCount": 3,
+        "hasParameters": true,
+        "parameter_1": 1.0
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":756 `abs(poly.parameter(at: 1) - 1.0) < 1e-10`",
     "injection": "E1: CreateWithParams builds the no-parameter polygon",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the node count, HasParameters and the second stored parameter of a Poly_PolygonOnTriangulation built with indices [1, 2, 3] and parameters [0, 1, 2]. Bridge: parameter(at: 1), 0-based. Kernel: Parameter(2), 1-based, printed 1."
   },
   {
     "test_name": "Poly_PolygonOnTriangulation::deflection",
@@ -1972,18 +1976,18 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "after": 0.1
+        "deflection": 0.1
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":764 `abs(poly.deflection - 0.1) < 1e-10`",
     "injection": "E1: SetDeflection is a no-op",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the deflection read back after setting 0.1. Bridge: polygon.deflection after the setter. Kernel: Poly_PolygonOnTriangulation::Deflection() printed 0.10000000000000001 after Deflection(0.1)."
   },
   {
     "test_name": "Poly_MergeNodesTool::merge mesh nodes from shape",
@@ -1998,19 +2002,19 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "NbNodes": 24,
-        "NbTriangles": 12
+        "vertexCount": 24,
+        "triangleCount": 12
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":777 `merged.vertexCount == 24`",
     "injection": "E1: smoothAngle ignored (pi)",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the merged node and triangle counts of the 10 mm box meshed at 1.0. Bridge: mergedMeshNodes(from:smoothAngle: pi/4).vertexCount and triangleCount. Kernel: Poly_MergeNodesTool(smoothAngle pi/4, mergeTolerance 0) fed each face's triangulation with its REVERSED flag, as OCCTPolyMergeNodes does, printed nbNodes=24 nbTriangles=12 for the 10 mm box meshed at 1.0."
   },
   {
     "test_name": "Poly_CoherentTriangulation::create empty and add nodes",
@@ -2028,7 +2032,7 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "SetNode": [
+        "indices": [
           0,
           1,
           2
@@ -2037,13 +2041,13 @@
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":807, :808, :809",
     "injection": "E1: SetNode returns index + 1",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the indices SetNode returns for three new nodes on an empty triangulation. Bridge: CoherentTriangulation.setNode(x:y:z:). Kernel: Poly_CoherentTriangulation::SetNode printed 0 1 2."
   },
   {
     "test_name": "Poly_CoherentTriangulation::add and count triangles",
@@ -2057,18 +2061,18 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "NTriangles": 2
+        "triangleCount": 2
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":815 `ct.triangleCount == 2`",
     "injection": "E2: AddTriangle returns false without adding",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the triangle count after adding (0, 1, 2) and (1, 3, 2) over four nodes. Bridge: CoherentTriangulation.triangleCount. Kernel: Poly_CoherentTriangulation::NTriangles() printed 2."
   },
   {
     "test_name": "Poly_CoherentTriangulation::remove triangle",
@@ -2082,18 +2086,18 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "NTriangles": 1
+        "triangleCount": 1
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":822 `ct.triangleCount == 1`",
     "injection": "E1: NTriangles reads the bridge's own add-list, which removal does not shrink",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the triangle count after removing the first of two triangles. Bridge: CoherentTriangulation.triangleCount after removeTriangle(at: 0). Kernel: Poly_CoherentTriangulation::NTriangles() after RemoveTriangle printed 1."
   },
   {
     "test_name": "Poly_CoherentTriangulation::compute links",
@@ -2101,26 +2105,26 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "links": 5,
+        "computeLinks": 5,
         "linkCount": 5
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "ComputeLinks": 5,
-        "NLinks": 5
+        "computeLinks": 5,
+        "linkCount": 5
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":830 `nLinks == 5`, :831 `ct.linkCount == 5`",
     "injection": "E1: ComputeLinks returns 0 without computing",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the link count ComputeLinks returns and the link count afterwards, for two triangles sharing one edge. Bridge: CoherentTriangulation.computeLinks() and linkCount. Kernel: Poly_CoherentTriangulation::ComputeLinks() and NLinks() printed 5 and 5."
   },
   {
     "test_name": "Poly_CoherentTriangulation::deflection set/get",
@@ -2134,19 +2138,18 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "default": 0.0,
-        "after": 0.5
+        "deflection": 0.5
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":838 `abs(ct.deflection - 0.5) < 1e-10`",
     "injection": "E1: SetDeflection is a no-op",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the deflection read back after setting 0.5 (the default is 0). Bridge: CoherentTriangulation.deflection after setDeflection(0.5). Kernel: Poly_CoherentTriangulation::Deflection() printed 0 before and 0.5 after SetDeflection(0.5)."
   },
   {
     "test_name": "Poly_CoherentTriangulation::convert back to triangulation",
@@ -2161,19 +2164,19 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "NbNodes": 3,
-        "NbTriangles": 1
+        "nodeCount": 3,
+        "triangleCount": 1
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":848 `#require(ct.getResult())`",
     "injection": "E3: result dropped, reports failure",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the node and triangle counts of the triangulation built from three nodes and one triangle. Bridge: CoherentTriangulation.getResult(). Kernel: Poly_CoherentTriangulation::GetTriangulation() printed nbNodes=3 nbTriangles=1."
   },
   {
     "test_name": "Poly_CoherentTriangulation::create from mesh",
@@ -2187,18 +2190,18 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "first_face_NTriangles": 2
+        "triangleCount": 2
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":858 `#require(CoherentTriangulation.createFromMesh(box))`",
     "injection": "E1: returns null for a meshed shape",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the triangle count of the coherent triangulation built from the FIRST face triangulation of a 10 mm box meshed at 1.0 (a face of a box is two triangles). Bridge: CoherentTriangulation.createFromMesh(box).triangleCount. Kernel: Poly_CoherentTriangulation(first face's Poly_Triangulation).NTriangles() printed 2."
   },
   {
     "test_name": "Poly_CoherentTriangulation::node coordinates after result",
@@ -2206,7 +2209,7 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "node1": [
+        "nodeCoords_1": [
           1.5,
           2.5,
           3.5
@@ -2216,7 +2219,7 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "Node(1)": [
+        "nodeCoords_1": [
           1.5,
           2.5,
           3.5
@@ -2225,13 +2228,13 @@
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":873, :874, :875",
     "injection": "E1: reads Node(index + 1), one past the node asked for",
-    "probe": "Scripts/repro/766-mesh-core-3/"
+    "probe": "Scripts/repro/766-mesh-core-3/",
+    "source": "Same quantity on both sides: the coordinates of node 1 of the result triangulation after nodes (1.5, 2.5, 3.5), (4, 5, 6), (7, 8, 9) and one triangle. Bridge: CoherentTriangulation.nodeCoords(at: 1) after getResult(), which reads Poly_Triangulation::Node(1) (1-based). Kernel: Poly_CoherentTriangulation::GetTriangulation()->Node(1) printed (1.5, 2.5, 3.5)."
   },
   {
     "test_name": "Poly_Connect Mesh Adjacency Tests::triangleAdjacency",
@@ -2249,7 +2252,7 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "Poly_Connect::Triangles(1)": [
+        "adjacency": [
           0,
           0,
           2
@@ -2258,13 +2261,13 @@
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":893 `adj.0 == 0 && adj.1 == 0 && adj.2 == 2`",
     "injection": "F1: the first and third neighbour swapped",
-    "probe": "Scripts/repro/766-mesh-core-4/"
+    "probe": "Scripts/repro/766-mesh-core-4/",
+    "source": "Same quantity on both sides: the three neighbour triangles of triangle 1 on face index 1 (x = +5) of a 10 mm box meshed at 0.1, 0 meaning no neighbour. Bridge: Shape.meshTriangleAdjacency(faceIndex: 1, triangleIndex: 1). Kernel: Poly_Connect::Triangles(1, ...) printed (0, 0, 2)."
   },
   {
     "test_name": "Poly_Connect Mesh Adjacency Tests::nodeTriangle",
@@ -2278,18 +2281,18 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "Poly_Connect::Triangle(1)": 1
+        "triangle": 1
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":900 `triIdx == 1`",
     "injection": "F1: Triangle(node) + 1",
-    "probe": "Scripts/repro/766-mesh-core-4/"
+    "probe": "Scripts/repro/766-mesh-core-4/",
+    "source": "Same quantity on both sides: a triangle containing node 1 of face index 1 of a 10 mm box meshed at 0.1. Bridge: Shape.meshNodeTriangle(faceIndex: 1, nodeIndex: 1). Kernel: Poly_Connect::Triangle(1) printed 1."
   },
   {
     "test_name": "Poly_Connect Mesh Adjacency Tests::nodeTriangleCount",
@@ -2297,24 +2300,24 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "count": 1
+        "fanCount": 1
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "fan": 1
+        "fanCount": 1
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":907 `count == 1`",
     "injection": "F1: the fan count starts at 1",
-    "probe": "Scripts/repro/766-mesh-core-4/"
+    "probe": "Scripts/repro/766-mesh-core-4/",
+    "source": "Same quantity on both sides: the number of triangles in the fan around node 1 of face index 1 of a 10 mm box meshed at 0.1. Bridge: Shape.meshNodeTriangleCount(faceIndex: 1, nodeIndex: 1). Kernel: Poly_Connect::Initialize(1) then More()/Next() counted 1."
   },
   {
     "test_name": "v0.115.0 - Triangulation Queries::faceTriangulation",
@@ -2381,8 +2384,8 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "HasUVNodes": true,
-        "UVNode(1)": [
+        "hasUV": true,
+        "uv1": [
           0.0,
           0.0
         ]
@@ -2390,13 +2393,13 @@
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":941 `face.triangulationHasUVNodes`",
     "injection": "F1: HasUVNodes returns false",
-    "probe": "Scripts/repro/766-mesh-core-4/"
+    "probe": "Scripts/repro/766-mesh-core-4/",
+    "source": "Same quantity on both sides: whether the first face triangulation of a 10 mm box meshed at 1.0 has UV nodes, and UV node 1. Bridge: Face.triangulationHasUVNodes and triangulationUVNode(at: 1). Kernel: Poly_Triangulation::HasUVNodes() and UVNode(1) printed 1 and (0, 0)."
   },
   {
     "test_name": "v0.160 MeshCache write API::Triangulation create from arrays round-trips",
@@ -2404,9 +2407,9 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "nodes": 4,
-        "triangles": 2,
-        "t0": [
+        "nodeCount": 4,
+        "triangleCount": 2,
+        "t0_zero_based": [
           0,
           1,
           2
@@ -2417,25 +2420,25 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "NbNodes": 4,
-        "NbTriangles": 2,
-        "Triangle(1)": [
+        "nodeCount": 4,
+        "triangleCount": 2,
+        "t0_zero_based": [
+          0,
           1,
-          2,
-          3
+          2
         ],
-        "Deflection": 0.01
+        "deflection": 0.01
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":961 `t0.0 == 0 && t0.1 == 1 && t0.2 == 2`",
     "injection": "F1: the 2nd and 3rd index of each triangle swapped",
-    "probe": "Scripts/repro/766-mesh-core-4/"
+    "probe": "Scripts/repro/766-mesh-core-4/",
+    "source": "Same quantity on both sides: node count, triangle count, the first triangle's node indices as 0-based, and the deflection read back after setting 0.01, for four nodes and triangles (0, 1, 2) and (1, 3, 2). Bridge: Triangulation.create(nodes:triangles:) with 0-based indices, triangle(at: 0) returned as given. Kernel: Poly_Triangulation stores 1-based indices, so its raw Triangle(1) printed (1, 2, 3), recorded here minus 1 as [0, 1, 2]; NbNodes() 4, NbTriangles() 2, Deflection() 0.01."
   },
   {
     "test_name": "v0.160 MeshCache write API::Triangulation rejects malformed inputs",
@@ -2467,26 +2470,26 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "repId": 0,
-        "before": null,
-        "after": 0
+        "faceHasMeshBefore": false,
+        "faceHasMeshAfter": true
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "Effective().Faces().Has(0) after SetCachedTriangulation": true
+        "faceHasMeshBefore": false,
+        "faceHasMeshAfter": true
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":993 `graph.meshFaceActiveTriangulationRepId(0) != nil`",
     "injection": "F1: AppendCachedTriangulation is a no-op",
-    "probe": "Scripts/repro/766-mesh-core-4/"
+    "probe": "Scripts/repro/766-mesh-evidence-fix/",
+    "source": "Same quantity on both sides: whether face 0 of a fresh, unmeshed box graph has a mesh entry, before and after a triangulation is bound to it. Bridge: BRepGraph.meshFaceActiveTriangulationRepId(0) != nil, before and after createTriangulationRep and appendCachedTriangulation. Kernel: BRepGraph Mesh().Effective().Faces().Has(0) on one graph, before and after Mesh().Editor().Faces().SetCachedTriangulation, printed 0 and 1. The bridge's repId 0 is an index into its own side registry and has no kernel counterpart."
   },
   {
     "test_name": "v0.160 MeshCache write API::Create polygon3D rep and bind it to an edge",
@@ -2494,27 +2497,26 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "repId": 0,
-        "before": null,
-        "after": 0
+        "edgeHasMeshBefore": false,
+        "edgeHasMeshAfter": true
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "Has before": false,
-        "Has after SetCachedPolygon3D": true
+        "edgeHasMeshBefore": false,
+        "edgeHasMeshAfter": true
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":1006 `graph.meshEdgePolygon3DRepId(0) != nil`",
     "injection": "F2 (alone): SetCachedPolygon3D is a no-op",
-    "probe": "Scripts/repro/766-mesh-core-4/"
+    "probe": "Scripts/repro/766-mesh-core-4/",
+    "source": "Same quantity on both sides: whether edge 0 of a fresh, unmeshed box graph has a mesh entry, before and after a Polygon3D is bound to it in the cache. Bridge: BRepGraph.meshEdgePolygon3DRepId(0) != nil, before and after createPolygon3DRep and setCachedPolygon3D. Kernel: BRepGraph Mesh().Effective().Edges().Has(0) on one graph, before and after Mesh().Editor().Edges().SetCachedPolygon3D, printed 0 and 1. The bridge's repId 0 is an index into its own side registry and has no kernel counterpart."
   },
   {
     "test_name": "v0.158 MeshView two-tier mesh storage::Mesh count properties are non-negative on a fresh graph",
@@ -2547,28 +2549,28 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "face0": null,
-        "edge0": null,
-        "coedge0": false
+        "face0HasMesh": false,
+        "edge0HasMesh": false,
+        "coedge0HasMesh": false
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "face0": false,
-        "edge0": false,
-        "coedge0": false
+        "face0HasMesh": false,
+        "edge0HasMesh": false,
+        "coedge0HasMesh": false
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":1034 `graph.meshEdgePolygon3DRepId(0) == nil`",
     "injection": "F1: EdgePolygon3DRepId reports presence unconditionally",
-    "probe": "Scripts/repro/766-mesh-core-4/"
+    "probe": "Scripts/repro/766-mesh-core-4/",
+    "source": "Same quantity on both sides: whether face 0, edge 0 and coedge 0 of a fresh, unmeshed box graph have a mesh entry. Bridge: BRepGraph.meshFaceActiveTriangulationRepId(0) != nil, meshEdgePolygon3DRepId(0) != nil and meshCoEdgeHasMesh(0); the test asserted the two rep ids are nil (the bridge's absent sentinel) and the coedge flag is false. Kernel: BRepGraph Mesh().Effective().Faces().Has(0), Mesh().Effective().Edges().Has(0) and Mesh().Cache().CoEdges().Has(0) printed 0, 0 and 0. Not in the coordinator's worklist: the bridge side carried null where the kernel side carried false, so the value types differed under an equal of true."
   },
   {
     "test_name": "v0.158 MeshView two-tier mesh storage::Mesh counts after incremental meshing",
@@ -2605,24 +2607,24 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "edgeHas": true
+        "edgeHasPolygon3D": true
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "Has after SetPersistentPolygon3D": true
+        "edgeHasPolygon3D": true
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":1065 `graph.edgeHasPolygon3D(0) == true`",
     "injection": "F1: SetEdgePolygon3DRepId is a no-op",
-    "probe": "Scripts/repro/766-mesh-core-4/"
+    "probe": "Scripts/repro/766-mesh-core-4/",
+    "source": "Same quantity on both sides: whether edge 0 has a polygon3D after one is written into the persistent tier. Bridge: BRepGraph.edgeHasPolygon3D(0) after setEdgePolygon3DRepId. Kernel: BRepGraph Mesh().Effective().Edges().Has(0) after Editor().Edges().SetPersistentPolygon3D printed 1."
   },
   {
     "test_name": "Poly Copy & Mutators::Polygon2D copy preserves contents",
@@ -2630,26 +2632,26 @@
     "bridge_output": {
       "type": "measured",
       "data": {
-        "nodes": 3,
+        "nodeCount": 3,
         "deflection": 0.25
       }
     },
     "kernel_output": {
       "type": "measured",
       "data": {
-        "NbNodes": 3,
-        "Deflection": 0.25
+        "nodeCount": 3,
+        "deflection": 0.25
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":1088 `abs(copy.deflection - 0.25) < 1e-12`",
     "injection": "F1: copy rebuilt from the nodes alone, dropping the deflection",
-    "probe": "Scripts/repro/766-mesh-core-4/"
+    "probe": "Scripts/repro/766-mesh-core-4/",
+    "source": "Same quantity on both sides: the node count and deflection of the copy of a three-node Polygon2D whose deflection was set to 0.25. Bridge: Polygon2D.copy(). Kernel: Poly_Polygon2D::Copy() printed NbNodes() 3 and Deflection() 0.25."
   },
   {
     "test_name": "Poly Copy & Mutators::PolygonOnTriangulation copy preserves nodes",
@@ -2699,19 +2701,19 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "Node(1)": 5,
-        "Node(4)": 8
+        "node0": 5,
+        "node3": 8
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":1110 `!poly.setNodes([1, 2])`",
     "injection": "F1: size mismatch clamped instead of refused",
-    "probe": "Scripts/repro/766-mesh-core-4/"
+    "probe": "Scripts/repro/766-mesh-core-4/",
+    "source": "Same quantity on both sides: the first and last node index of a Poly_PolygonOnTriangulation after its nodes are replaced with [5, 6, 7, 8]. Bridge: setNodes then nodeIndex(at: 0) and nodeIndex(at: 3), 0-based. Kernel: writing 5...8 through ChangeNodeArray then Node(1) and Node(4), 1-based, printed 5 and 8."
   },
   {
     "test_name": "Poly Copy & Mutators::PolygonOnTriangulation setParameters mutates in place",
@@ -2725,18 +2727,18 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "Parameter(2)": 20.0
+        "parameter_1": 20.0
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":1122 `!poly.setParameters([1.0])`",
     "injection": "F1: size mismatch clamped instead of refused",
-    "probe": "Scripts/repro/766-mesh-core-4/"
+    "probe": "Scripts/repro/766-mesh-core-4/",
+    "source": "Same quantity on both sides: the second parameter of a Poly_PolygonOnTriangulation after its parameters are replaced with [10, 20, 30]. Bridge: setParameters then parameter(at: 1), 0-based. Kernel: writing 10, 20, 30 through ChangeParameterArray then Parameter(2), 1-based, printed 20."
   },
   {
     "test_name": "Poly Copy & Mutators::setParameters fails when polygon has no parameters",
@@ -2750,17 +2752,17 @@
     "kernel_output": {
       "type": "measured",
       "data": {
-        "HasParameters": false
+        "hasParameters": false
       }
     },
     "comparison": {
       "equal": true,
-      "differences": [],
-      "note": "MATCH"
+      "differences": []
     },
     "status": "PASS",
     "red": ":1130 `!poly.setParameters([0.0, 1.0, 2.0])`",
     "injection": "F1: the HasParameters() refusal returns true",
-    "probe": "Scripts/repro/766-mesh-core-4/"
+    "probe": "Scripts/repro/766-mesh-core-4/",
+    "source": "Same quantity on both sides: HasParameters of a Poly_PolygonOnTriangulation built from indices [1, 2, 3] with no parameters. Bridge: polygon.hasParameters. Kernel: Poly_PolygonOnTriangulation::HasParameters() printed 0. Not compared: the test's other assertion, setParameters([0, 1, 2]) returning false (the bridge observed false), is the bridge's refusal on a polygon without a parameter array; the kernel's ChangeParameterArray has no such refusal to compare."
   }
 ]
