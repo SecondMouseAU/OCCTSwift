@@ -4610,28 +4610,23 @@
     "bridge_function": "OCCTShapeFixComposeShell",
     "bridge_output": {
       "type": "compose_shell",
-      "data": "face counts and areas as asserted"
+      "data": {
+        "faces": {
+          "2x1": 2,
+          "1x2": 2,
+          "3x2": 6,
+          "4x4": 16
+        }
+      }
     },
     "kernel_output": {
       "type": "compose_shell",
       "data": {
-        "planar": {
-          "1x1": 1,
+        "faces": {
           "2x1": 2,
           "1x2": 2,
           "3x2": 6,
-          "4x4": 16,
-          "2x2": [
-            25,
-            25,
-            25,
-            25
-          ]
-        },
-        "cylinderWall": {
-          "area": 314.159265359,
-          "4x1": 4,
-          "1x2": 2
+          "4x4": 16
         }
       }
     },
@@ -4639,307 +4634,260 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: face.composeShell(uPatches:vPatches:) on a 10 x 10 planar face for the grids 2x1, 1x2, 3x2 and 4x4: the face count of each result, under the key `<uPatches>x<vPatches>`, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1638-266-318-438/transcript.txt lines 2-5 (planar 10x10 2x1, 1x2, 3x2, 4x4: faces=2, 2, 6, 16), ShapeFix_ComposeShell over the same u x v grid of trimmed patches. The 1x1 grid (1 face) is the next test's quantity."
   },
   {
     "test_name": "Issue #1638: composeShell splits along a real patch grid::defaultGridIsStillAWireRebuild",
     "bridge_function": "OCCTShapeFixComposeShell",
     "bridge_output": {
       "type": "compose_shell",
-      "data": "face counts and areas as asserted"
+      "data": {
+        "faces": 1,
+        "valid": true
+      }
     },
     "kernel_output": {
       "type": "compose_shell",
       "data": {
-        "planar": {
-          "1x1": 1,
-          "2x1": 2,
-          "1x2": 2,
-          "3x2": 6,
-          "4x4": 16,
-          "2x2": [
-            25,
-            25,
-            25,
-            25
-          ]
-        },
-        "cylinderWall": {
-          "area": 314.159265359,
-          "4x1": 4,
-          "1x2": 2
-        }
+        "faces": 1,
+        "valid": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: face.composeShell() with the default 1 x 1 grid on a 10 x 10 planar face: the face count and whether the result passes the validity check, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1479-1491/transcript.txt line 1 (ComposeShell(10x10 face, 1x1): faces=1 area=100 valid=1), ShapeFix_ComposeShell over a one-patch grid then BRepCheck_Analyzer."
   },
   {
     "test_name": "Issue #1638: composeShell splits along a real patch grid::piecesTileTheOriginalArea",
     "bridge_function": "OCCTShapeFixComposeShell",
     "bridge_output": {
       "type": "compose_shell",
-      "data": "face counts and areas as asserted"
+      "data": {
+        "whole": 100,
+        "faces": 4,
+        "areas": [
+          25,
+          25,
+          25,
+          25
+        ],
+        "sum": 100
+      }
     },
     "kernel_output": {
       "type": "compose_shell",
       "data": {
-        "planar": {
-          "1x1": 1,
-          "2x1": 2,
-          "1x2": 2,
-          "3x2": 6,
-          "4x4": 16,
-          "2x2": [
-            25,
-            25,
-            25,
-            25
-          ]
-        },
-        "cylinderWall": {
-          "area": 314.159265359,
-          "4x1": 4,
-          "1x2": 2
-        }
+        "whole": 99.99999999999999,
+        "faces": 4,
+        "areas": [
+          25,
+          25,
+          25,
+          25
+        ],
+        "sum": 100
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the 10 x 10 face's own area, then composeShell(uPatches: 2, vPatches: 2): the face count, the four face areas and their sum, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1638-266-318-438/transcript.txt line 6 (planar 10x10 2x2: faces=4, areas 25 x 4, total=100) for the pieces; the whole face's area from Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T082, BRepGProp::SurfaceProperties on the same face, %.17g)."
   },
   {
     "test_name": "Issue #1638: composeShell splits along a real patch grid::cylinderWallSplits",
     "bridge_function": "OCCTShapeFixComposeShell",
     "bridge_output": {
       "type": "compose_shell",
-      "data": "face counts and areas as asserted"
+      "data": {
+        "faces": {
+          "4x1": 4,
+          "1x2": 2
+        },
+        "wallArea": 314.1592653589792,
+        "totalArea": 314.15926535897927
+      }
     },
     "kernel_output": {
       "type": "compose_shell",
       "data": {
-        "planar": {
-          "1x1": 1,
-          "2x1": 2,
-          "1x2": 2,
-          "3x2": 6,
-          "4x4": 16,
-          "2x2": [
-            25,
-            25,
-            25,
-            25
-          ]
-        },
-        "cylinderWall": {
-          "area": 314.159265359,
+        "faces": {
           "4x1": 4,
           "1x2": 2
-        }
+        },
+        "wallArea": 314.159265359,
+        "totalArea": 314.159265359
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the cylinder's periodic lateral face composed 4 x 1 and 1 x 2: the face count of each under `<uPatches>x<vPatches>`, the wall's own area, and the total area of the four 4 x 1 pieces, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1638-266-318-438/transcript.txt lines 7-9 (cylinder wall area=314.159265359; 4x1 faces=4 total=314.159265359; 1x2 faces=2)."
   },
   {
     "test_name": "Issue #1638: composeShell splits along a real patch grid::patchCountsBelowOneAreRefused",
     "bridge_function": "OCCTShapeFixComposeShell",
     "bridge_output": {
       "type": "compose_shell",
-      "data": "face counts and areas as asserted"
-    },
-    "kernel_output": {
-      "type": "compose_shell",
       "data": {
-        "planar": {
-          "1x1": 1,
-          "2x1": 2,
-          "1x2": 2,
-          "3x2": 6,
-          "4x4": 16,
-          "2x2": [
-            25,
-            25,
-            25,
-            25
-          ]
-        },
-        "cylinderWall": {
-          "area": 314.159265359,
-          "4x1": 4,
-          "1x2": 2
-        }
+        "refusedU0": true,
+        "refusedUNeg2V3": true,
+        "refusedV0": true
       }
     },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "no kernel call: composeShell(uPatches:vPatches:) refuses a patch count below 1 in Swift, and again in OCCTShapeFixComposeShell, before any patch grid or ShapeFix_ComposeShell exists"
+    },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "source": "No kernel counterpart. Shape.composeShell has `guard uPatches >= 1, vPatches >= 1` and OCCTShapeFixComposeShell repeats the test, both ahead of every OCCT call, so the nil the test observes (bridge-observed.txt: u = 0, v = 0 and (-2, 3) all refused) is the bridge's own answer, not the kernel's. The guards are load-bearing rather than cosmetic: okf/references/766-test-validity/phase3/OCCTShapeHealingTests.md, run P1, records the process dying on SIGSEGV with both removed."
   },
   {
     "test_name": "Issue #1638: composeShell splits along a real patch grid::nonFaceInputIsRefused",
     "bridge_function": "OCCTShapeFixComposeShell",
     "bridge_output": {
       "type": "compose_shell",
-      "data": "face counts and areas as asserted"
+      "data": {
+        "refused": true
+      }
     },
     "kernel_output": {
       "type": "compose_shell",
       "data": {
-        "planar": {
-          "1x1": 1,
-          "2x1": 2,
-          "1x2": 2,
-          "3x2": 6,
-          "4x4": 16,
-          "2x2": [
-            25,
-            25,
-            25,
-            25
-          ]
-        },
-        "cylinderWall": {
-          "area": 314.159265359,
-          "4x1": 4,
-          "1x2": 2
-        }
+        "refused": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.composeShell(uPatches: 2), a solid handed to a face-only entry point: whether the result is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T085): the bridge's own first two statements, TopoDS::Face(box) then BRep_Tool::Surface, inside try / catch; the kernel raises Standard_Failure on the downcast (kernelRaised: true), which the bridge's catch turns into nullptr."
   },
   {
     "test_name": "Issue #266 follow-up, face healing control & checks::faceFixerControl",
-    "bridge_function": "OCCTFaceFixer*",
+    "bridge_function": "OCCTFaceFixerPerform / OCCTFaceFixerStatus / OCCTFaceFixerResult / OCCTFaceFixerFace",
     "bridge_output": {
       "type": "face_fix",
-      "data": "as asserted"
+      "data": {
+        "perform": false,
+        "ok": true,
+        "done": false,
+        "fail": false,
+        "resultValid": true,
+        "faceValid": true,
+        "area": 99.99999999999999
+      }
     },
     "kernel_output": {
       "type": "face_fix",
       "data": {
-        "Perform": false,
-        "OK": true,
-        "DONE": false,
-        "FAIL": false,
-        "area": 100.0,
-        "passes": [
-          false,
-          false,
-          false,
-          false
-        ],
-        "BRepCheck_Face": "NoError x3"
+        "perform": false,
+        "ok": true,
+        "done": false,
+        "fail": false,
+        "resultValid": true,
+        "faceValid": true,
+        "area": 99.99999999999999
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: FaceFixer(face:) on a clean 10 x 10 planar face with the natural-bound pass off, orientation on and intersecting-wires auto: perform()'s answer, the OK / DONE / FAIL status flags, whether the result and the face are valid, and the face's area, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T086): ShapeFix_Face with a fresh ShapeBuild_ReShape, precision 1e-6 and FixAddNaturalBoundMode 0, FixOrientationMode 1, FixIntersectingWiresMode -1, Perform, then Status(), BRepCheck_Analyzer on Result() and Face(), and BRepGProp::SurfaceProperties on Face()."
   },
   {
     "test_name": "Issue #266 follow-up, face healing control & checks::faceFixerIndividualPasses",
-    "bridge_function": "OCCTFaceFixer*",
+    "bridge_function": "OCCTFaceFixerFixIntersectingWires / OCCTFaceFixerFixWiresTwoCoincEdges / OCCTFaceFixerFixLoopWire / OCCTFaceFixerFixPeriodicDegenerated",
     "bridge_output": {
       "type": "face_fix",
-      "data": "as asserted"
+      "data": {
+        "fixIntersectingWires": false,
+        "fixWiresTwoCoincEdges": false,
+        "fixLoopWire": false,
+        "fixPeriodicDegenerated": false,
+        "faceIsNull": false
+      }
     },
     "kernel_output": {
       "type": "face_fix",
       "data": {
-        "Perform": false,
-        "OK": true,
-        "DONE": false,
-        "FAIL": false,
-        "area": 100.0,
-        "passes": [
-          false,
-          false,
-          false,
-          false
-        ],
-        "BRepCheck_Face": "NoError x3"
+        "fixIntersectingWires": false,
+        "fixWiresTwoCoincEdges": false,
+        "fixLoopWire": false,
+        "fixPeriodicDegenerated": false,
+        "faceIsNull": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the four individual FaceFixer passes on a clean face, in the order fixIntersectingWires, fixWiresTwoCoincEdges, fixLoopWire, fixPeriodicDegenerated, then whether face is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T087): the same four ShapeFix_Face calls in the same order on one instance (precision 1e-6, fresh ShapeBuild_ReShape), then Face().IsNull()."
   },
   {
     "test_name": "Issue #266 follow-up, face healing control & checks::checkCleanFace",
-    "bridge_function": "OCCTFaceFixer*",
+    "bridge_function": "OCCTBRepCheckFaceIntersectWires / OCCTBRepCheckFaceClassifyWires / OCCTBRepCheckFaceOrientationOfWires",
     "bridge_output": {
       "type": "face_fix",
-      "data": "as asserted"
+      "data": {
+        "intersectingWires": "NoError",
+        "wireImbrication": "NoError",
+        "wireOrientation": "NoError"
+      }
     },
     "kernel_output": {
       "type": "face_fix",
       "data": {
-        "Perform": false,
-        "OK": true,
-        "DONE": false,
-        "FAIL": false,
-        "area": 100.0,
-        "passes": [
-          false,
-          false,
-          false,
-          false
-        ],
-        "BRepCheck_Face": "NoError x3"
+        "intersectingWires": "NoError",
+        "wireImbrication": "NoError",
+        "wireOrientation": "NoError"
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: checkFaceIntersectingWires, checkFaceWireImbrication and checkFaceWireOrientation on a clean face, as the OCCT status name (`.noError` is written NoError), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T088): BRepCheck_Face with GeometricControls(true): IntersectWires, then ClassifyWires, then OrientationOfWires, the same sequence the three bridge functions run. wireImbrication is the Swift name of BRepCheck_Face::ClassifyWires."
   },
   {
     "test_name": "Issue #266 follow-up, face healing control & checks::checkNonFace",
-    "bridge_function": "OCCTFaceFixer*",
+    "bridge_function": "OCCTBRepCheckFaceIntersectWires / OCCTBRepCheckFaceOrientationOfWires",
     "bridge_output": {
       "type": "face_fix",
-      "data": "as asserted"
+      "data": {
+        "intersectingWiresRefused": true,
+        "wireOrientationRefused": true
+      }
     },
     "kernel_output": {
       "type": "face_fix",
       "data": {
-        "Perform": false,
-        "OK": true,
-        "DONE": false,
-        "FAIL": false,
-        "area": 100.0,
-        "passes": [
-          false,
-          false,
-          false,
-          false
-        ],
-        "BRepCheck_Face": "NoError x3"
+        "intersectingWiresRefused": true,
+        "wireOrientationRefused": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: checkFaceIntersectingWires and checkFaceWireOrientation on a box, a solid handed to a face-only check: whether each answered checkFail, the bridge's refusal status, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T089): the bridge's own first statement in each, BRepCheck_Face over TopoDS::Face(box); the kernel raises Standard_Failure on the downcast (both flags true), which the bridge's catch turns into checkFail. checkFail is an OCCTSwift status with no BRepCheck_Status counterpart, so the record compares the refusal, not the status value. Dropping the bridge's type guard alone stays green for the same reason (okf/references/766-test-validity/phase3/OCCTShapeHealingTests.md)."
   },
   {
     "test_name": "Issue #318 -- degenerate curve-on-surface edge crashes Shape.analyze::analyzeSurvivesDegenerateCurveOnSurfaceEdge",
@@ -5031,381 +4979,220 @@
   },
   {
     "test_name": "ShapeConstruct Curve Tests::convert3DLine",
-    "bridge_function": "OCCTCurve3DConvertSegmentToBSpline / OCCTCurve2DConvertSegmentToBSpline / OCCTCurve3DAdjustEndpoints",
+    "bridge_function": "OCCTShapeConstructConvertToBSpline3D",
     "bridge_output": {
       "type": "curve",
-      "data": "as asserted"
+      "data": {
+        "degree": 1,
+        "start": [
+          0,
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0,
+          0
+        ]
+      }
     },
     "kernel_output": {
       "type": "curve",
       "data": {
-        "line[0,10]": {
-          "degree": 1,
-          "poles": 2,
-          "start": [
-            0,
-            0,
-            0
-          ],
-          "end": [
-            10,
-            0,
-            0
-          ]
-        },
-        "AdjustCurve": true,
-        "circle[0,pi]": {
-          "degree": 7,
-          "start": [
-            5,
-            0,
-            0
-          ],
-          "end": [
-            -5,
-            0,
-            0
-          ],
-          "mid": [
-            0,
-            4.999934,
-            0
-          ]
-        },
-        "2dLine[0,5]": {
-          "degree": 1,
-          "start": [
-            0,
-            0
-          ],
-          "end": [
-            5,
-            0
-          ]
-        }
+        "degree": 1,
+        "start": [
+          0,
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0,
+          0
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Curve3D line converted with convertSegmentToBSpline(first: 0, last: 10): the BSpline's degree and its points at the lower and upper ends of its own domain, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 1 (line [0,10] -> BSpline: degree=1 start=(0, 0, 0) end=(10, 0, 0)), ShapeConstruct_Curve::ConvertToBSpline at 1e-6."
   },
   {
     "test_name": "ShapeConstruct Curve Tests::convert3DCircle",
-    "bridge_function": "OCCTCurve3DConvertSegmentToBSpline / OCCTCurve2DConvertSegmentToBSpline / OCCTCurve3DAdjustEndpoints",
+    "bridge_function": "OCCTShapeConstructConvertToBSpline3D",
     "bridge_output": {
       "type": "curve",
-      "data": "as asserted"
+      "data": {
+        "degree": 7,
+        "start": [
+          5,
+          0,
+          0
+        ],
+        "end": [
+          -5,
+          8.881784197001252e-16,
+          0
+        ],
+        "mid": [
+          3.3306690738754696e-16,
+          4.9999341453462085,
+          0
+        ]
+      }
     },
     "kernel_output": {
       "type": "curve",
       "data": {
-        "line[0,10]": {
-          "degree": 1,
-          "poles": 2,
-          "start": [
-            0,
-            0,
-            0
-          ],
-          "end": [
-            10,
-            0,
-            0
-          ]
-        },
-        "AdjustCurve": true,
-        "circle[0,pi]": {
-          "degree": 7,
-          "start": [
-            5,
-            0,
-            0
-          ],
-          "end": [
-            -5,
-            0,
-            0
-          ],
-          "mid": [
-            0,
-            4.999934,
-            0
-          ]
-        },
-        "2dLine[0,5]": {
-          "degree": 1,
-          "start": [
-            0,
-            0
-          ],
-          "end": [
-            5,
-            0
-          ]
-        }
+        "degree": 7,
+        "start": [
+          5,
+          0,
+          0
+        ],
+        "end": [
+          -5,
+          8.881784197001252e-16,
+          0
+        ],
+        "mid": [
+          3.3306690738754696e-16,
+          4.9999341453462085,
+          0
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Curve3D circle radius 5 converted with convertSegmentToBSpline(first: 0, last: pi, precision: 1e-3): the BSpline's degree, its points at the lower and upper ends of its domain, and at the middle of the domain, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T091): ShapeConstruct_Curve::ConvertToBSpline(circle, 0, pi, 1e-3) at %.17g; the committed transcript Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 3 holds the same values at six digits."
   },
   {
     "test_name": "ShapeConstruct Curve Tests::convert2DLine",
-    "bridge_function": "OCCTCurve3DConvertSegmentToBSpline / OCCTCurve2DConvertSegmentToBSpline / OCCTCurve3DAdjustEndpoints",
+    "bridge_function": "OCCTShapeConstructConvertToBSpline2D",
     "bridge_output": {
       "type": "curve",
-      "data": "as asserted"
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          5,
+          0
+        ]
+      }
     },
     "kernel_output": {
       "type": "curve",
       "data": {
-        "line[0,10]": {
-          "degree": 1,
-          "poles": 2,
-          "start": [
-            0,
-            0,
-            0
-          ],
-          "end": [
-            10,
-            0,
-            0
-          ]
-        },
-        "AdjustCurve": true,
-        "circle[0,pi]": {
-          "degree": 7,
-          "start": [
-            5,
-            0,
-            0
-          ],
-          "end": [
-            -5,
-            0,
-            0
-          ],
-          "mid": [
-            0,
-            4.999934,
-            0
-          ]
-        },
-        "2dLine[0,5]": {
-          "degree": 1,
-          "start": [
-            0,
-            0
-          ],
-          "end": [
-            5,
-            0
-          ]
-        }
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          5,
+          0
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Curve2D line converted with convertSegmentToBSpline(first: 0, last: 5): the BSpline's points at the lower and upper ends of its domain, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 4 (2D line [0,5] -> BSpline: degree=1 start=(0, 0) end=(5, 0)), ShapeConstruct_Curve::ConvertToBSpline at 1e-6."
   },
   {
     "test_name": "ShapeConstruct Curve Tests::adjust3D",
-    "bridge_function": "OCCTCurve3DConvertSegmentToBSpline / OCCTCurve2DConvertSegmentToBSpline / OCCTCurve3DAdjustEndpoints",
+    "bridge_function": "OCCTShapeConstructAdjustCurve3D",
     "bridge_output": {
       "type": "curve",
-      "data": "as asserted"
+      "data": {
+        "adjusted": true
+      }
     },
     "kernel_output": {
       "type": "curve",
       "data": {
-        "line[0,10]": {
-          "degree": 1,
-          "poles": 2,
-          "start": [
-            0,
-            0,
-            0
-          ],
-          "end": [
-            10,
-            0,
-            0
-          ]
-        },
-        "AdjustCurve": true,
-        "circle[0,pi]": {
-          "degree": 7,
-          "start": [
-            5,
-            0,
-            0
-          ],
-          "end": [
-            -5,
-            0,
-            0
-          ],
-          "mid": [
-            0,
-            4.999934,
-            0
-          ]
-        },
-        "2dLine[0,5]": {
-          "degree": 1,
-          "start": [
-            0,
-            0
-          ],
-          "end": [
-            5,
-            0
-          ]
-        }
+        "adjusted": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Curve3D line adjustEndpoints(start: (0,0,0), end: (10,0,0)): whether the adjustment was reported successful, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 2 (AdjustCurve(line, (0,0,0), (10,0,0))=1), ShapeConstruct_Curve::AdjustCurve; recorded as true."
   },
   {
     "test_name": "ShapeConstruct Triangulation Tests::fromPoints",
-    "bridge_function": "OCCTShapeTriangulationFromPoints / FromWire",
+    "bridge_function": "OCCTShapeConstructTriangulationFromPoints",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "faces": 1,
+        "area": 99.99999999999999
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "fromPoints": {
-          "done": true,
-          "faces": 1,
-          "area": 100.0
-        },
-        "fromTriangleWire": {
-          "done": true,
-          "faces": 1,
-          "area": 50.0
-        }
+        "faces": 1,
+        "area": 100.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.triangulationFromPoints of the four corners of a 10 x 10 square: the face count and the surface area, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 5 (triangulation from 4 points: done=1 type=4 faces=1 area=100), ShapeConstruct_MakeTriangulation."
   },
   {
     "test_name": "ShapeConstruct Triangulation Tests::fromWire",
-    "bridge_function": "OCCTShapeTriangulationFromPoints / FromWire",
+    "bridge_function": "OCCTShapeConstructTriangulationFromWire",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "faces": 1,
+        "area": 50.00000000000001
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "fromPoints": {
-          "done": true,
-          "faces": 1,
-          "area": 100.0
-        },
-        "fromTriangleWire": {
-          "done": true,
-          "faces": 1,
-          "area": 50.0
-        }
+        "faces": 1,
+        "area": 50.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.triangulationFromWire of a base-10, height-10 triangle: the face count and the surface area, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 6 (triangulation from triangle wire: done=1 type=4 faces=1 area=50), ShapeConstruct_MakeTriangulation."
   },
   {
     "test_name": "ShapeCustom BSplineRestriction Tests::bsplineRestrictionBox",
     "bridge_function": "OCCTShapeCustomBSplineRestriction",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
-    },
-    "kernel_output": {
-      "type": "shape_summary",
       "data": {
-        "defaults": {
-          "valid": true,
-          "faces": 6,
-          "planes": 6,
-          "volume": 1000.0
-        },
-        "custom": {
-          "valid": true,
-          "faces": 6,
-          "planes": 6,
-          "volume": 1000.0
-        }
+        "valid": true,
+        "faces": 6,
+        "volume": 999.9999999999998
       }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "ShapeCustom BSplineRestriction Tests::bsplineRestrictionCustom",
-    "bridge_function": "OCCTShapeCustomBSplineRestriction",
-    "bridge_output": {
-      "type": "shape_summary",
-      "data": "as asserted"
-    },
-    "kernel_output": {
-      "type": "shape_summary",
-      "data": {
-        "defaults": {
-          "valid": true,
-          "faces": 6,
-          "planes": 6,
-          "volume": 1000.0
-        },
-        "custom": {
-          "valid": true,
-          "faces": 6,
-          "planes": 6,
-          "volume": 1000.0
-        }
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "ShapeCustom DirectModification::directModification",
-    "bridge_function": "OCCTShapeCustomDirectModification",
-    "bridge_output": {
-      "type": "shape_summary",
-      "data": "as asserted"
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
         "valid": true,
         "faces": 6,
-        "planes": 6,
         "volume": 1000.0
       }
     },
@@ -5413,676 +5200,608 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.bsplineRestriction(tol3d: 0.01, tol2d: 0.01) on a 10 mm cube: whether the result is valid, its face count and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 7 (BSplineRestriction(box, defaults 0.01/0.01/8/100/C1/C1): valid=1 faces=6 planes=6 volume=1000), ShapeCustom::BSplineRestriction with a default ShapeCustom_RestrictionParameters. The kernel also counts planes (6); the test does not observe that, so it is not part of the record."
   },
   {
-    "test_name": "ShapeCustom Surface Periodic Tests::convertToPeriodic",
-    "bridge_function": "OCCTSurfaceConvertToPeriodic / OCCTSurfaceConversionGap",
+    "test_name": "ShapeCustom BSplineRestriction Tests::bsplineRestrictionCustom",
+    "bridge_function": "OCCTShapeCustomBSplineRestriction",
     "bridge_output": {
-      "type": "surface",
-      "data": "as asserted"
+      "type": "shape_summary",
+      "data": {
+        "valid": true,
+        "faces": 6,
+        "volume": 999.9999999999998
+      }
     },
     "kernel_output": {
-      "type": "surface",
+      "type": "shape_summary",
       "data": {
-        "ConvertToPeriodic(cylinder)": null,
-        "conversionGap": "deprecated sentinel -1.0 (#1510)"
+        "valid": true,
+        "faces": 6,
+        "volume": 1000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.bsplineRestriction with tolerances 0.001, degree 4, 50 segments and C2 continuity on a 10 mm cube: whether the result is valid, its face count and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 8 (BSplineRestriction(box, 0.001/0.001/4/50/C2/C2): valid=1 faces=6 planes=6 volume=1000), ShapeCustom::BSplineRestriction."
+  },
+  {
+    "test_name": "ShapeCustom DirectModification::directModification",
+    "bridge_function": "OCCTShapeCustomDirectModification",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "valid": true,
+        "faces": 6,
+        "volume": 999.9999999999998
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "valid": true,
+        "faces": 6,
+        "volume": 1000.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Bridge: box.directModification() on a 10 mm cube: whether the result is valid, its face count and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 9 (DirectModification(box): valid=1 faces=6 planes=6 volume=1000), BRepTools_Modifier with ShapeCustom_DirectModification."
+  },
+  {
+    "test_name": "ShapeCustom Surface Periodic Tests::convertToPeriodic",
+    "bridge_function": "OCCTSurfaceConvertToPeriodic",
+    "bridge_output": {
+      "type": "surface",
+      "data": {
+        "resultIsNull": true
+      }
+    },
+    "kernel_output": {
+      "type": "surface",
+      "data": {
+        "resultIsNull": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Bridge: Surface.cylinder(...).convertToPeriodic(): whether the result is nil (a cylindrical surface is already periodic), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 11 (ConvertToPeriodic(cylindrical surface) null=1), ShapeCustom_Surface::ConvertToPeriodic; recorded as true."
   },
   {
     "test_name": "ShapeCustom Surface Periodic Tests::conversionGapIsDeprecatedSentinel",
     "bridge_function": "OCCTSurfaceConvertToPeriodic / OCCTSurfaceConversionGap",
     "bridge_output": {
       "type": "surface",
-      "data": "as asserted"
+      "data": {
+        "gapBefore": -1,
+        "converted": true,
+        "gapAfter": -1,
+        "resultGap": -1
+      }
     },
     "kernel_output": {
       "type": "surface",
       "data": {
-        "ConvertToPeriodic(cylinder)": null,
-        "conversionGap": "deprecated sentinel -1.0 (#1510)"
+        "gapBefore": 0,
+        "converted": true,
+        "gapAfter": 0,
+        "resultGap": 0
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "gapBefore: bridge -1.0 vs kernel 0.0. Since #1510 the deprecated Surface.conversionGap returns the fixed sentinel -1.0 and never calls ShapeCustom_Surface::Gap(); the kernel's Gap() holds its constructor default 0.0, because only ConvertToAnalytical ever writes it",
+        "gapAfter: bridge -1.0 vs kernel 0.0, the same reason after a successful ConvertToPeriodic, which is a pure knot rearrangement that never writes Gap() (Scripts/repro/1510-surface-conversion-gap/README.md)",
+        "resultGap: bridge -1.0 vs kernel 0.0 for the converted surface's own accessor"
+      ]
     },
-    "status": "PASS"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Bridge: a full-revolution trimmed cylinder converted to a BSpline surface and forced non-periodic: the deprecated conversionGap before convertToPeriodic(), whether the conversion succeeded, conversionGap after it, and conversionGap on the converted surface, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T100): GC_MakeTrimmedCylinder, GeomConvert::SurfaceToBSplineSurface, SetUNotPeriodic, then ShapeCustom_Surface::Gap() before and after ConvertToPeriodic(false) and Gap() of a ShapeCustom_Surface over the result. Both sides agree the conversion succeeds. The gap differs by design: the accessor is a deprecated constant on the bridge side (#1510), and the test pins that constant, so this is an EXPECTED_DIVERGENCE, not a defect."
   },
   {
     "test_name": "ShapeCustom TrsfModification::trsfModificationScale",
-    "bridge_function": "OCCTShapeCustomTrsfModification",
+    "bridge_function": "OCCTShapeCustomTrsfModificationScale",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "volume": 7999.999999999998
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "scale2": {
-          "valid": true,
-          "faces": 6,
-          "volume": 8000.0
-        }
+        "valid": true,
+        "volume": 8000.0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.trsfModificationScale(2.0) on a 10 mm cube: whether the result is valid and its volume, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 10 (TrsfModification(box, scale 2): valid=1 faces=6 planes=6 volume=8000), BRepTools_Modifier with ShapeCustom_TrsfModification."
   },
   {
     "test_name": "ShapeExtend Explorer::sortedCompoundSolids",
-    "bridge_function": "OCCTShapeExtendSortedCompound / OCCTShapeExtendPredominantType",
+    "bridge_function": "OCCTShapeExtendSortedCompound",
     "bridge_output": {
       "type": "counts",
-      "data": "as asserted"
+      "data": {
+        "solids": 2
+      }
     },
     "kernel_output": {
       "type": "counts",
       "data": {
-        "solids": 2,
-        "faces": 12,
-        "edges": 12,
-        "ShapeType": "SOLID (2)"
+        "solids": 2
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: sortedCompound(type: .solid) over a compound of a 5 mm and a 3 mm box: the solid count of the result, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 12 (SortedCompound: solids=2), ShapeExtend_Explorer::SortedCompound(TopAbs_SOLID, explore, compound)."
   },
   {
     "test_name": "ShapeExtend Explorer::sortedCompoundFaces",
-    "bridge_function": "OCCTShapeExtendSortedCompound / OCCTShapeExtendPredominantType",
+    "bridge_function": "OCCTShapeExtendSortedCompound",
     "bridge_output": {
       "type": "counts",
-      "data": "as asserted"
+      "data": {
+        "faces": 12
+      }
     },
     "kernel_output": {
       "type": "counts",
       "data": {
-        "solids": 2,
-        "faces": 12,
-        "edges": 12,
-        "ShapeType": "SOLID (2)"
+        "faces": 12
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: sortedCompound(type: .face) over the same two-box compound: the face count of the result, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 12 (SortedCompound: faces=12), ShapeExtend_Explorer::SortedCompound(TopAbs_FACE, explore, compound)."
   },
   {
     "test_name": "ShapeExtend Explorer::sortedCompoundEdges",
-    "bridge_function": "OCCTShapeExtendSortedCompound / OCCTShapeExtendPredominantType",
+    "bridge_function": "OCCTShapeExtendSortedCompound",
     "bridge_output": {
       "type": "counts",
-      "data": "as asserted"
+      "data": {
+        "edges": 12
+      }
     },
     "kernel_output": {
       "type": "counts",
       "data": {
-        "solids": 2,
-        "faces": 12,
-        "edges": 12,
-        "ShapeType": "SOLID (2)"
+        "edges": 12
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: sortedCompound(type: .edge) over a compound holding one 10 mm box: the edge count of the result, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 12 (SortedCompound: edges(one box)=12), ShapeExtend_Explorer::SortedCompound(TopAbs_EDGE, explore, compound)."
   },
   {
     "test_name": "ShapeExtend Explorer::predominantType",
-    "bridge_function": "OCCTShapeExtendSortedCompound / OCCTShapeExtendPredominantType",
+    "bridge_function": "OCCTShapeExtendShapeType",
     "bridge_output": {
       "type": "counts",
-      "data": "as asserted"
+      "data": {
+        "isSolid": true
+      }
     },
     "kernel_output": {
       "type": "counts",
       "data": {
-        "solids": 2,
-        "faces": 12,
-        "edges": 12,
-        "ShapeType": "SOLID (2)"
+        "isSolid": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: predominantShapeType() over the two-box compound: whether it is solid, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-construct-custom-extend/transcript.txt line 12 (ShapeType(two boxes)=2, TopAbs_SOLID), ShapeExtend_Explorer::ShapeType(compound, true); recorded as a flag."
   },
   {
     "test_name": "Sewing Builder Tests::createSewing",
-    "bridge_function": "OCCTSewing*",
+    "bridge_function": "OCCTSewingCreate / OCCTSewingResult",
     "bridge_output": {
       "type": "sewing",
-      "data": "as asserted"
+      "data": {
+        "sewedShapeIsNull": true
+      }
     },
     "kernel_output": {
       "type": "sewing",
       "data": {
-        "beforePerform": {
-          "SewedShape": null
-        },
-        "sixBoxFaces1e-6": {
-          "type": "SHELL",
-          "faces": 6,
-          "valid": true,
-          "free": 0
-        },
-        "fiveBoxFaces1e-6": {
-          "type": "SHELL",
-          "faces": 5,
-          "valid": true,
-          "free": 4
-        }
+        "sewedShapeIsNull": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: SewingBuilder(tolerance: 1e-6).result before perform(): whether it is nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-sewing/transcript.txt line 1 (before Perform: SewedShape null=1), BRepBuilderAPI_Sewing::SewedShape; recorded as true."
   },
   {
     "test_name": "Sewing Builder Tests::sewBoxFaces",
-    "bridge_function": "OCCTSewing*",
+    "bridge_function": "OCCTSewingAdd / OCCTSewingPerform / OCCTSewingResult",
     "bridge_output": {
       "type": "sewing",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "isShell": true,
+        "faces": 6
+      }
     },
     "kernel_output": {
       "type": "sewing",
       "data": {
-        "beforePerform": {
-          "SewedShape": null
-        },
-        "sixBoxFaces1e-6": {
-          "type": "SHELL",
-          "faces": 6,
-          "valid": true,
-          "free": 0
-        },
-        "fiveBoxFaces1e-6": {
-          "type": "SHELL",
-          "faces": 5,
-          "valid": true,
-          "free": 4
-        }
+        "valid": true,
+        "isShell": true,
+        "faces": 6
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a SewingBuilder at 1e-6 fed the six faces of a 10 mm box: whether the result is valid, whether it is a shell, and its face count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-sewing/transcript.txt line 2 (six box faces, 1e-6: type=3 faces=6 valid=1), BRepBuilderAPI_Sewing; type 3 is TopAbs_SHELL, recorded as a flag."
   },
   {
     "test_name": "Sewing Builder Tests::sewingStatistics",
-    "bridge_function": "OCCTSewing*",
+    "bridge_function": "OCCTSewingNbFreeEdges / OCCTSewingNbContigousEdges / OCCTSewingNbDegeneratedShapes",
     "bridge_output": {
       "type": "sewing",
-      "data": "as asserted"
+      "data": {
+        "nbFreeEdges": 4,
+        "nbContigousEdges": 0,
+        "nbDegeneratedShapes": 0
+      }
     },
     "kernel_output": {
       "type": "sewing",
       "data": {
-        "beforePerform": {
-          "SewedShape": null
-        },
-        "sixBoxFaces1e-6": {
-          "type": "SHELL",
-          "faces": 6,
-          "valid": true,
-          "free": 0
-        },
-        "fiveBoxFaces1e-6": {
-          "type": "SHELL",
-          "faces": 5,
-          "valid": true,
-          "free": 4
-        }
+        "nbFreeEdges": 4,
+        "nbContigousEdges": 0,
+        "nbDegeneratedShapes": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a SewingBuilder at 1e-6 fed five of the box's six faces: nbFreeEdges, nbContigousEdges and nbDegeneratedShapes, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-sewing/transcript.txt line 3 (five box faces, 1e-6: free=4 contig=0 degen=0), BRepBuilderAPI_Sewing::NbFreeEdges / NbContigousEdges / NbDegeneratedShapes."
   },
   {
     "test_name": "v0.122.0, Sewing Extended::sewingDeletedFacesAndQueries",
-    "bridge_function": "OCCTSewing*",
+    "bridge_function": "OCCTSewingNbDeletedFaces / OCCTSewingResult",
     "bridge_output": {
       "type": "sewing",
-      "data": "as asserted"
+      "data": {
+        "faces": 12,
+        "nbDeletedFaces": 0
+      }
     },
     "kernel_output": {
       "type": "sewing",
       "data": {
-        "twoThinBoxes1e-3": {
-          "type": "COMPOUND",
-          "faces": 12,
-          "deletedFaces": 0
-        },
-        "faces1and2": {
-          "faces": 2,
-          "free": 8,
-          "IsModified": [
-            false,
-            false
-          ]
-        },
-        "wholeBox1e-3": {
-          "type": "SHELL",
-          "faces": 6,
-          "IsDegenerated": false,
-          "IsSectionBound(edge1)": false,
-          "WhichFace(edge1)": null
-        },
-        "Load+modes": {
-          "type": "SHELL",
-          "faces": 6,
-          "free": 12
-        }
+        "faces": 12,
+        "nbDeletedFaces": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a SewingBuilder at 1e-3 fed two coincident 10 x 10 x 0.01 boxes: the result's face count and nbDeletedFaces, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-sewing/transcript.txt line 4 (two coincident thin boxes, 1e-3: type=0 faces=12 deletedFaces=0), BRepBuilderAPI_Sewing::NbDeletedFaces."
   },
   {
     "test_name": "v0.122.0, Sewing Extended::sewingIsModified",
-    "bridge_function": "OCCTSewing*",
+    "bridge_function": "OCCTSewingIsModified",
     "bridge_output": {
       "type": "sewing",
-      "data": "as asserted"
+      "data": {
+        "isModified": false
+      }
     },
     "kernel_output": {
       "type": "sewing",
       "data": {
-        "twoThinBoxes1e-3": {
-          "type": "COMPOUND",
-          "faces": 12,
-          "deletedFaces": 0
-        },
-        "faces1and2": {
-          "faces": 2,
-          "free": 8,
-          "IsModified": [
-            false,
-            false
-          ]
-        },
-        "wholeBox1e-3": {
-          "type": "SHELL",
-          "faces": 6,
-          "IsDegenerated": false,
-          "IsSectionBound(edge1)": false,
-          "WhichFace(edge1)": null
-        },
-        "Load+modes": {
-          "type": "SHELL",
-          "faces": 6,
-          "free": 12
-        }
+        "isModified": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a SewingBuilder at 1e-3 fed two faces of a box that already share an edge: isModified(first face), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-sewing/transcript.txt line 6 (IsModified(face1)=0), BRepBuilderAPI_Sewing::IsModified; recorded as false."
   },
   {
     "test_name": "v0.122.0, Sewing Extended::sewingIsDegenerated",
-    "bridge_function": "OCCTSewing*",
+    "bridge_function": "OCCTSewingIsDegenerated",
     "bridge_output": {
       "type": "sewing",
-      "data": "as asserted"
+      "data": {
+        "isDegenerated": false
+      }
     },
     "kernel_output": {
       "type": "sewing",
       "data": {
-        "twoThinBoxes1e-3": {
-          "type": "COMPOUND",
-          "faces": 12,
-          "deletedFaces": 0
-        },
-        "faces1and2": {
-          "faces": 2,
-          "free": 8,
-          "IsModified": [
-            false,
-            false
-          ]
-        },
-        "wholeBox1e-3": {
-          "type": "SHELL",
-          "faces": 6,
-          "IsDegenerated": false,
-          "IsSectionBound(edge1)": false,
-          "WhichFace(edge1)": null
-        },
-        "Load+modes": {
-          "type": "SHELL",
-          "faces": 6,
-          "free": 12
-        }
+        "isDegenerated": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a SewingBuilder at 1e-3 fed a whole box: isDegenerated(box), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-sewing/transcript.txt line 8 (IsDegenerated(box)=0), BRepBuilderAPI_Sewing::IsDegenerated; recorded as false."
   },
   {
     "test_name": "v0.122.0, Sewing Extended::sewingLoadAndModes",
-    "bridge_function": "OCCTSewing*",
+    "bridge_function": "OCCTSewingLoad / OCCTSewingNbFreeEdges",
     "bridge_output": {
       "type": "sewing",
-      "data": "as asserted"
+      "data": {
+        "isShell": true,
+        "faces": 6,
+        "nbFreeEdges": 12
+      }
     },
     "kernel_output": {
       "type": "sewing",
       "data": {
-        "twoThinBoxes1e-3": {
-          "type": "COMPOUND",
-          "faces": 12,
-          "deletedFaces": 0
-        },
-        "faces1and2": {
-          "faces": 2,
-          "free": 8,
-          "IsModified": [
-            false,
-            false
-          ]
-        },
-        "wholeBox1e-3": {
-          "type": "SHELL",
-          "faces": 6,
-          "IsDegenerated": false,
-          "IsSectionBound(edge1)": false,
-          "WhichFace(edge1)": null
-        },
-        "Load+modes": {
-          "type": "SHELL",
-          "faces": 6,
-          "free": 12
-        }
+        "isShell": true,
+        "faces": 6,
+        "nbFreeEdges": 12
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a SewingBuilder loaded with a box and set to non-manifold, face mode on, floating edges off, tolerances 1e-6 to 1e-1: whether the result is a shell, its face count and nbFreeEdges, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-sewing/transcript.txt line 9 (Load(box) + modes: type=3 faces=6 free=12), BRepBuilderAPI_Sewing::Load and the same five Set calls; type 3 is TopAbs_SHELL, recorded as a flag."
   },
   {
     "test_name": "v0.122.0, Sewing Extended::sewingSectionBoundAndWhichFace",
-    "bridge_function": "OCCTSewing*",
+    "bridge_function": "OCCTSewingIsSectionBound / OCCTSewingWhichFace",
     "bridge_output": {
       "type": "sewing",
-      "data": "as asserted"
+      "data": {
+        "isSectionBound": false,
+        "whichFaceIsNull": true
+      }
     },
     "kernel_output": {
       "type": "sewing",
       "data": {
-        "twoThinBoxes1e-3": {
-          "type": "COMPOUND",
-          "faces": 12,
-          "deletedFaces": 0
-        },
-        "faces1and2": {
-          "faces": 2,
-          "free": 8,
-          "IsModified": [
-            false,
-            false
-          ]
-        },
-        "wholeBox1e-3": {
-          "type": "SHELL",
-          "faces": 6,
-          "IsDegenerated": false,
-          "IsSectionBound(edge1)": false,
-          "WhichFace(edge1)": null
-        },
-        "Load+modes": {
-          "type": "SHELL",
-          "faces": 6,
-          "free": 12
-        }
+        "isSectionBound": false,
+        "whichFaceIsNull": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a SewingBuilder at 1e-3 fed a whole box: isSectionBound and whichFace for the box's first edge (whether whichFace is nil), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-sewing/transcript.txt line 8 (IsSectionBound(edge1)=0 WhichFace(edge1) null=1), BRepBuilderAPI_Sewing::IsSectionBound / WhichFace; recorded as false and true."
   },
   {
     "test_name": "Sewing_Extras::multipleEdgeCount",
-    "bridge_function": "OCCTSewingNbMultipleEdges / OCCTSewingMultipleEdge",
+    "bridge_function": "OCCTSewingNbMultipleEdges / OCCTSewingIsMultipleEdge",
     "bridge_output": {
       "type": "sewing",
-      "data": "as asserted"
+      "data": {
+        "multipleEdgeCount": 1,
+        "edge1Returned": true
+      }
     },
     "kernel_output": {
       "type": "sewing",
       "data": {
-        "threeFacesOnOneEdge": {
-          "multiple": 1,
-          "faces": 3,
-          "free": 9
-        },
-        "wholeBox1e-6": {
-          "multiple": 0
-        }
+        "multipleEdgeCount": 1,
+        "edge1Returned": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a non-manifold SewingBuilder at 1e-6 fed three faces meeting on one edge: multipleEdgeCount and whether multipleEdge(at: 1) returned an edge, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-sewing/transcript.txt line 13 (three faces on one edge, non-manifold: multiple=1) for the count; Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T114) for MultipleEdge(1), which returns an edge."
   },
   {
     "test_name": "Sewing_Extras::noMultipleEdgesForBox",
-    "bridge_function": "OCCTSewingNbMultipleEdges / OCCTSewingMultipleEdge",
+    "bridge_function": "OCCTSewingNbMultipleEdges",
     "bridge_output": {
       "type": "sewing",
-      "data": "as asserted"
+      "data": {
+        "multipleEdgeCount": 0
+      }
     },
     "kernel_output": {
       "type": "sewing",
       "data": {
-        "threeFacesOnOneEdge": {
-          "multiple": 1,
-          "faces": 3,
-          "free": 9
-        },
-        "wholeBox1e-6": {
-          "multiple": 0
-        }
+        "multipleEdgeCount": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a SewingBuilder at 1e-6 fed a whole box: multipleEdgeCount, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-sewing/transcript.txt line 10 (whole box, 1e-6: multiple=0), BRepBuilderAPI_Sewing::NbMultipleEdges."
   },
   {
     "test_name": "Sewing_Extras::multipleEdgeAtInvalidIndex",
-    "bridge_function": "OCCTSewingNbMultipleEdges / OCCTSewingMultipleEdge",
+    "bridge_function": "OCCTSewingIsMultipleEdge",
     "bridge_output": {
       "type": "sewing",
-      "data": "as asserted"
-    },
-    "kernel_output": {
-      "type": "sewing",
       "data": {
-        "threeFacesOnOneEdge": {
-          "multiple": 1,
-          "faces": 3,
-          "free": 9
-        },
-        "wholeBox1e-6": {
-          "multiple": 0
-        }
+        "index1Returned": true,
+        "index2Returned": false,
+        "index999Returned": false
       }
     },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "index 1: MultipleEdge(1) returns an edge (T114). Indexes 2 and 999 lie beyond NbMultipleEdges() = 1 and the kernel has no refusal to compare: BRepBuilderAPI_Sewing::MultipleEdge's range check is compiled out of this build, and a forked child asking for either index died on signal 11 (transcript.txt, T116|index2Kernel and T116|index999Kernel)"
+    },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "source": "No kernel counterpart for the out-of-range indexes. OCCTSewingIsMultipleEdge returns false for an index below 1 or above NbMultipleEdges() before it calls the kernel, so the two nils the test observes (bridge-observed.txt) are the bridge's own refusals; asking the kernel the same question crashes the process (Scripts/repro/766-shapehealing-evidence-fix/transcript.txt). Index 1 agrees on both sides."
   },
   {
     "test_name": "Sewing Tests::sewTwoShapes",
-    "bridge_function": "OCCTShapeSew / OCCTShapeSewMultiple",
+    "bridge_function": "OCCTShapeSewTwo (OCCTShapeSew)",
     "bridge_output": {
       "type": "sewing",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "faces": 2
+      }
     },
     "kernel_output": {
       "type": "sewing",
       "data": {
-        "rect10+disc5": {
-          "faces": 2,
-          "free": 5
-        },
-        "rect10+disc5+rect8": {
-          "faces": 3,
-          "free": 9
-        }
+        "valid": true,
+        "faces": 2
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.sew(face1, with: face2, tolerance: 1e-6) on a 10 x 10 rectangle face and a radius-5 disc face: whether the result is valid and its face count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-sewing/transcript.txt line 11 (rect10 + disc5: type=0 faces=2 valid=1), BRepBuilderAPI_Sewing at 1e-6 over the same faces."
   },
   {
     "test_name": "Sewing Tests::sewMultipleFaces",
-    "bridge_function": "OCCTShapeSew / OCCTShapeSewMultiple",
+    "bridge_function": "OCCTShapeSew",
     "bridge_output": {
       "type": "sewing",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "faces": 3
+      }
     },
     "kernel_output": {
       "type": "sewing",
       "data": {
-        "rect10+disc5": {
-          "faces": 2,
-          "free": 5
-        },
-        "rect10+disc5+rect8": {
-          "faces": 3,
-          "free": 9
-        }
+        "valid": true,
+        "faces": 3
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: Shape.sew(shapes:) at 1e-6 on a 10 x 10 rectangle, a radius-5 disc and an 8 x 8 rectangle: whether the result is valid and its face count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-sewing/transcript.txt line 12 (rect10 + disc5 + rect8: type=0 faces=3 valid=1), BRepBuilderAPI_Sewing at 1e-6 over the same faces."
   },
   {
     "test_name": "Sewing Tests::instanceMethodSewn",
-    "bridge_function": "OCCTShapeSew / OCCTShapeSewMultiple",
+    "bridge_function": "OCCTShapeSewTwo (OCCTShapeSew)",
     "bridge_output": {
       "type": "sewing",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "faces": 2
+      }
     },
     "kernel_output": {
       "type": "sewing",
       "data": {
-        "rect10+disc5": {
-          "faces": 2,
-          "free": 5
-        },
-        "rect10+disc5+rect8": {
-          "faces": 3,
-          "free": 9
-        }
+        "valid": true,
+        "faces": 2
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: face1.sewn(with: face2) at the default tolerance on the rectangle and the disc: whether the result is valid and its face count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-sewing/transcript.txt line 11 (rect10 + disc5: type=0 faces=2 valid=1), BRepBuilderAPI_Sewing at 1e-6 over the same faces."
   },
   {
     "test_name": "ShapeFix_ComposeShell::composeShellPlanar",
     "bridge_function": "OCCTShapeFixComposeShell",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "valid": true,
+        "faces": 1
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "source": "Scripts/repro/766-healing-1638-266-318-438",
-        "planar 10x10 1x1": {
-          "faces": 1,
-          "area": 100.0
-        }
+        "valid": true,
+        "faces": 1
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: face.composeShell() with the default 1 x 1 grid on a 10 x 10 planar face: whether the result is valid and its face count, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1479-1491/transcript.txt line 1 (ComposeShell(10x10 face, 1x1): faces=1 valid=1)."
   },
   {
     "test_name": "ShapeFix EdgeConnect Tests::fixEdgeConnect",
     "bridge_function": "OCCTShapeFixEdgeConnect",
     "bridge_output": {
       "type": "shape_summary",
-      "data": "as asserted"
+      "data": {
+        "faces": 6,
+        "volume": 1000.0000000000001,
+        "valid": false
+      }
     },
     "kernel_output": {
       "type": "shape_summary",
       "data": {
-        "source": "Scripts/repro/766-healing-1479-1491 (PR #2303)",
-        "EdgeConnect(box)": {
-          "faces": 6,
-          "edges": 24,
-          "volume": 1000.0,
-          "valid": false
-        }
+        "faces": 6,
+        "volume": 1000.0,
+        "valid": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.fixEdgeConnect() on a 10 mm cube: the returned shape's face count, volume and validity (the bridge returns the input shape, which ShapeFix_EdgeConnect modifies in place), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1479-1491/transcript.txt line 2 (EdgeConnect(box): faces=6 edges=24 volume=1000 valid=0), ShapeFix_EdgeConnect::Add and Build. Both sides agree the box is no longer valid after EdgeConnect; the test asserts only faces and volume, so validity is recorded as observed, not as something the test pins."
   },
   {
     "test_name": "ShapeFix Edge Tests::fixSameParameter",
@@ -6130,95 +5849,95 @@
   },
   {
     "test_name": "v0.122.0, ShapeFix_Edge Extended::addRemoveCurve3d",
-    "bridge_function": "OCCTShapeFixEdge*",
+    "bridge_function": "OCCTShapeFixEdgeRemoveCurve3d / OCCTShapeFixEdgeAddCurve3d / OCCTEdgeHasCurve3dSA",
     "bridge_output": {
       "type": "bools",
-      "data": "as asserted"
+      "data": {
+        "removeCurve3d": false,
+        "addCurve3d": false,
+        "hasCurve3d": true
+      }
     },
     "kernel_output": {
       "type": "bools",
       "data": {
-        "FixRemoveCurve3d": false,
-        "FixAddCurve3d": false,
-        "FixAddPCurve": false,
-        "FixRemovePCurve": false,
-        "FixReversed2d": false
+        "removeCurve3d": false,
+        "addCurve3d": false,
+        "hasCurve3d": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the box's first edge: fixEdgeRemoveCurve3d, fixEdgeAddCurve3d and EdgeAnalysis.hasCurve3d, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 1 (edge0: FixRemoveCurve3d=0 FixAddCurve3d=0) for the two fixes, recorded as false; Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (T122) for ShapeAnalysis_Edge::HasCurve3d on the same first edge."
   },
   {
     "test_name": "v0.122.0, ShapeFix_Edge Extended::addPCurve",
-    "bridge_function": "OCCTShapeFixEdge*",
+    "bridge_function": "OCCTShapeFixEdgeAddPCurve",
     "bridge_output": {
       "type": "bools",
-      "data": "as asserted"
+      "data": {
+        "addPCurve": false
+      }
     },
     "kernel_output": {
       "type": "bools",
       "data": {
-        "FixRemoveCurve3d": false,
-        "FixAddCurve3d": false,
-        "FixAddPCurve": false,
-        "FixRemovePCurve": false,
-        "FixReversed2d": false
+        "addPCurve": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the box's first edge and first face: fixEdgeAddPCurve(edge, face:, isSeam: false), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 1 (FixAddPCurve(face0)=0), ShapeFix_Edge::FixAddPCurve; recorded as false."
   },
   {
     "test_name": "v0.122.0, ShapeFix_Edge Extended::removePCurve",
-    "bridge_function": "OCCTShapeFixEdge*",
+    "bridge_function": "OCCTShapeFixEdgeRemovePCurve",
     "bridge_output": {
       "type": "bools",
-      "data": "as asserted"
+      "data": {
+        "removePCurve": false
+      }
     },
     "kernel_output": {
       "type": "bools",
       "data": {
-        "FixRemoveCurve3d": false,
-        "FixAddCurve3d": false,
-        "FixAddPCurve": false,
-        "FixRemovePCurve": false,
-        "FixReversed2d": false
+        "removePCurve": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the box's first edge and first face: fixEdgeRemovePCurve(edge, face:), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 1 (FixRemovePCurve(face0)=0), ShapeFix_Edge::FixRemovePCurve; recorded as false."
   },
   {
     "test_name": "v0.122.0, ShapeFix_Edge Extended::fixReversed2d",
-    "bridge_function": "OCCTShapeFixEdge*",
+    "bridge_function": "OCCTShapeFixEdgeFixReversed2d",
     "bridge_output": {
       "type": "bools",
-      "data": "as asserted"
+      "data": {
+        "reversed2d": false
+      }
     },
     "kernel_output": {
       "type": "bools",
       "data": {
-        "FixRemoveCurve3d": false,
-        "FixAddCurve3d": false,
-        "FixAddPCurve": false,
-        "FixRemovePCurve": false,
-        "FixReversed2d": false
+        "reversed2d": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the box's first edge and first face: fixEdgeReversed2d(edge, face:), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-shapefix/transcript.txt line 1 (FixReversed2d(face0)=0), ShapeFix_Edge::FixReversed2d; recorded as false."
   },
   {
     "test_name": "ShapeFix EdgeProjAux Tests::projectEdge",

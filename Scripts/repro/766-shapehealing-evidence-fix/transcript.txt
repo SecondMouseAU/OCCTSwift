@@ -150,3 +150,37 @@ T077|volume|8512
 T078|faces|11
 T079|bodies|0
 T079|faces|1
+T082|whole|99.999999999999986
+T085|refused|true
+T085|kernelRaised|true
+T086|perform|false
+T086|ok|true
+T086|done|false
+T086|fail|false
+T086|resultValid|true
+T086|faceValid|true
+T086|area|99.999999999999986
+T087|fixIntersectingWires|false
+T087|fixWiresTwoCoincEdges|false
+T087|fixLoopWire|false
+T087|fixPeriodicDegenerated|false
+T087|faceIsNull|false
+T088|intersectingWires|"NoError"
+T088|wireImbrication|"NoError"
+T088|wireOrientation|"NoError"
+T089|intersectingWiresRefused|true
+T089|wireOrientationRefused|true
+T091|degree|7
+T091|start|[5, 0, 0]
+T091|end|[-5, 8.8817841970012523e-16, 0]
+T091|mid|[3.3306690738754696e-16, 4.9999341453462085, 0]
+T100|gapBefore|0
+T100|converted|true
+T100|gapAfter|0
+T100|resultGap|0
+T114|multipleEdgeCount|1
+T114|edge1Returned|true
+T116|index1Returned|true
+T116|index2Kernel|"signal 11"
+T116|index999Kernel|"signal 11"
+T122|hasCurve3d|true

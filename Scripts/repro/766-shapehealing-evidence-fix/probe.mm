@@ -51,6 +51,22 @@
 #include <TopExp.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <TopoDS_Iterator.hxx>
+#include <BRepCheck_Face.hxx>
+#include <GC_MakeTrimmedCylinder.hxx>
+#include <Geom_BSplineCurve.hxx>
+#include <Geom_BSplineSurface.hxx>
+#include <Geom_Circle.hxx>
+#include <Geom_Plane.hxx>
+#include <GeomConvert.hxx>
+#include <NCollection_Sequence.hxx>
+#include <ShapeAnalysis_Edge.hxx>
+#include <ShapeConstruct_Curve.hxx>
+#include <ShapeCustom_Surface.hxx>
+#include <ShapeFix_Edge.hxx>
+#include <ShapeFix_Face.hxx>
+#include <Standard_Failure.hxx>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <cmath>
 #include <cstdio>
 #include <fstream>
@@ -714,6 +730,188 @@ int main()
       emitInt("T079", "bodies", uniq(r, TopAbs_SOLID));
       emitInt("T079", "faces", uniq(r, TopAbs_FACE));
     }
+  }
+
+  // ===== TYPES batch 2 (T080-T125) =====
+  {
+    // T082: the whole 10 x 10 face's own area, before any composeShell
+    BRepBuilderAPI_MakePolygon pg(gp_Pnt(-5, -5, 0), gp_Pnt(5, -5, 0), gp_Pnt(5, 5, 0), gp_Pnt(-5, 5, 0), true);
+    TopoDS_Face                f = BRepBuilderAPI_MakeFace(pg.Wire());
+    GProp_GProps               g;
+    BRepGProp::SurfaceProperties(f, g);
+    emit("T082", "whole", g.Mass());
+  }
+  {
+    // T085: OCCTShapeFixComposeShell on a box: the bridge's own first two statements, TopoDS::Face
+    // then BRep_Tool::Surface, inside a catch (...) that returns nullptr
+    TopoDS_Shape bx     = box(-5, -5, -5, 10);
+    bool         thrown = false, refused = false;
+    try
+    {
+      TopoDS_Face          f = TopoDS::Face(bx);
+      Handle(Geom_Surface) s = BRep_Tool::Surface(f);
+      refused                = s.IsNull();
+    }
+    catch (Standard_Failure&)
+    {
+      thrown  = true;
+      refused = true;
+    }
+    emitBool("T085", "refused", refused);
+    emitBool("T085", "kernelRaised", thrown);
+  }
+  {
+    // T086-T088: ShapeFix_Face / BRepCheck_Face on a clean 10 x 10 face, FaceFixer(precision 1e-6)
+    Handle(Geom_Plane)         pl = new Geom_Plane(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
+    BRepBuilderAPI_MakePolygon pg(gp_Pnt(0, 0, 0), gp_Pnt(10, 0, 0), gp_Pnt(10, 10, 0), gp_Pnt(0, 10, 0), true);
+    TopoDS_Face                f = BRepBuilderAPI_MakeFace(pl, pg.Wire());
+    {
+      Handle(ShapeFix_Face) ff = new ShapeFix_Face(f);
+      ff->SetContext(new ShapeBuild_ReShape);
+      ff->SetPrecision(1e-6);
+      ff->FixAddNaturalBoundMode()   = 0;
+      ff->FixOrientationMode()       = 1;
+      ff->FixIntersectingWiresMode() = -1;
+      bool         done              = ff->Perform();
+      GProp_GProps g;
+      BRepGProp::SurfaceProperties(ff->Face(), g);
+      emitBool("T086", "perform", done);
+      emitBool("T086", "ok", ff->Status(ShapeExtend_OK));
+      emitBool("T086", "done", ff->Status(ShapeExtend_DONE));
+      emitBool("T086", "fail", ff->Status(ShapeExtend_FAIL));
+      emitBool("T086", "resultValid", BRepCheck_Analyzer(ff->Result()).IsValid());
+      emitBool("T086", "faceValid", BRepCheck_Analyzer(ff->Face()).IsValid());
+      emit("T086", "area", g.Mass());
+    }
+    {
+      Handle(ShapeFix_Face) ff = new ShapeFix_Face(f);
+      ff->SetContext(new ShapeBuild_ReShape);
+      ff->SetPrecision(1e-6);
+      NCollection_Sequence<TopoDS_Shape> rw;
+      bool                               a = ff->FixIntersectingWires();
+      bool                               b = ff->FixWiresTwoCoincEdges();
+      bool                               c = ff->FixLoopWire(rw);
+      bool                               d = ff->FixPeriodicDegenerated();
+      emitBool("T087", "fixIntersectingWires", a);
+      emitBool("T087", "fixWiresTwoCoincEdges", b);
+      emitBool("T087", "fixLoopWire", c);
+      emitBool("T087", "fixPeriodicDegenerated", d);
+      emitBool("T087", "faceIsNull", ff->Face().IsNull());
+    }
+    {
+      Handle(BRepCheck_Face) c = new BRepCheck_Face(f);
+      c->GeometricControls(true);
+      BRepCheck_Status iw = c->IntersectWires();
+      BRepCheck_Status cw = c->ClassifyWires();
+      BRepCheck_Status ow = c->OrientationOfWires();
+      printf("T088|intersectingWires|\"%s\"\n", iw == BRepCheck_NoError ? "NoError" : "Other");
+      printf("T088|wireImbrication|\"%s\"\n", cw == BRepCheck_NoError ? "NoError" : "Other");
+      printf("T088|wireOrientation|\"%s\"\n", ow == BRepCheck_NoError ? "NoError" : "Other");
+    }
+  }
+  {
+    // T089: BRepCheck_Face over TopoDS::Face(box), the first statement of OCCTBRepCheckFaceIntersectWires
+    // and OCCTBRepCheckFaceOrientationOfWires
+    TopoDS_Shape bx = box(-5, -5, -5, 10);
+    bool         raisedA = false, raisedB = false;
+    try
+    {
+      Handle(BRepCheck_Face) c = new BRepCheck_Face(TopoDS::Face(bx));
+      c->IntersectWires();
+    }
+    catch (Standard_Failure&)
+    {
+      raisedA = true;
+    }
+    try
+    {
+      Handle(BRepCheck_Face) c = new BRepCheck_Face(TopoDS::Face(bx));
+      c->IntersectWires();
+      c->ClassifyWires();
+      c->OrientationOfWires();
+    }
+    catch (Standard_Failure&)
+    {
+      raisedB = true;
+    }
+    emitBool("T089", "intersectingWiresRefused", raisedA);
+    emitBool("T089", "wireOrientationRefused", raisedB);
+  }
+  {
+    // T091: ShapeConstruct_Curve::ConvertToBSpline on a radius-5 circle over [0, pi], tolerance 1e-3
+    ShapeConstruct_Curve      scc;
+    Handle(Geom_Circle)       c = new Geom_Circle(gp_Ax2(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), 5);
+    Handle(Geom_BSplineCurve) b = scc.ConvertToBSpline(c, 0, M_PI, 1e-3);
+    gp_Pnt                    a = b->Value(b->FirstParameter()), z = b->Value(b->LastParameter());
+    gp_Pnt                    m = b->Value((b->FirstParameter() + b->LastParameter()) / 2);
+    emitInt("T091", "degree", b->Degree());
+    printf("T091|start|[%.17g, %.17g, %.17g]\n", a.X(), a.Y(), a.Z());
+    printf("T091|end|[%.17g, %.17g, %.17g]\n", z.X(), z.Y(), z.Z());
+    printf("T091|mid|[%.17g, %.17g, %.17g]\n", m.X(), m.Y(), m.Z());
+  }
+  {
+    // T100: ShapeCustom_Surface::Gap() around a real ConvertToPeriodic, on a U-closed clamped BSpline
+    // (a full-revolution trimmed cylinder, GeomConvert, SetUNotPeriodic), as Scripts/repro/1510 builds it
+    GC_MakeTrimmedCylinder      mk(gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), 5, 10);
+    Handle(Geom_BSplineSurface) bsp = GeomConvert::SurfaceToBSplineSurface(mk.Value());
+    bsp->SetUNotPeriodic();
+    ShapeCustom_Surface  sc(bsp);
+    Handle(Geom_Surface) periodic = sc.ConvertToPeriodic(false);
+    emit("T100", "gapBefore", ShapeCustom_Surface(bsp).Gap());
+    emitBool("T100", "converted", !periodic.IsNull());
+    emit("T100", "gapAfter", sc.Gap());
+    if (!periodic.IsNull())
+      emit("T100", "resultGap", ShapeCustom_Surface(periodic).Gap());
+  }
+  {
+    // T114-T116: BRepBuilderAPI_Sewing::MultipleEdge on the non-manifold three-faces-on-one-edge fixture
+    auto quad = [](gp_Pnt a, gp_Pnt b, gp_Pnt c, gp_Pnt d) {
+      return BRepBuilderAPI_MakeFace(BRepBuilderAPI_MakePolygon(a, b, c, d, true).Wire()).Face();
+    };
+    BRepBuilderAPI_Sewing sw(1e-6);
+    sw.SetNonManifoldMode(true);
+    sw.Add(quad(gp_Pnt(0, 0, 0), gp_Pnt(10, 0, 0), gp_Pnt(10, 10, 0), gp_Pnt(0, 10, 0)));
+    sw.Add(quad(gp_Pnt(0, 0, 0), gp_Pnt(10, 0, 0), gp_Pnt(10, -10, 0), gp_Pnt(0, -10, 0)));
+    sw.Add(quad(gp_Pnt(0, 0, 0), gp_Pnt(10, 0, 0), gp_Pnt(10, 0, 10), gp_Pnt(0, 0, 10)));
+    sw.Perform();
+    emitInt("T114", "multipleEdgeCount", sw.NbMultipleEdges());
+    // The kernel's own answer for an index beyond NbMultipleEdges(): asked in a forked child, because
+    // MultipleEdge's Standard_OutOfRange_Raise_if is compiled out of this build and the read can
+    // kill the process. The parent reports how the child ended.
+    auto childOutcome = [&](int index) -> std::string {
+      fflush(stdout);
+      pid_t pid = fork();
+      if (pid == 0)
+      {
+        try
+        {
+          bool isNull = sw.MultipleEdge(index).IsNull();
+          _exit(isNull ? 3 : 0);
+        }
+        catch (Standard_Failure&)
+        {
+          _exit(2);
+        }
+      }
+      int status = 0;
+      waitpid(pid, &status, 0);
+      if (WIFSIGNALED(status))
+        return "signal " + std::to_string(WTERMSIG(status));
+      int code = WEXITSTATUS(status);
+      return code == 0 ? "returned an edge" : (code == 2 ? "raised Standard_Failure" : "returned a null edge");
+    };
+    bool p1 = !sw.MultipleEdge(1).IsNull();
+    emitBool("T114", "edge1Returned", p1);
+    emitBool("T116", "index1Returned", p1);
+    printf("T116|index2Kernel|\"%s\"\n", childOutcome(2).c_str());
+    printf("T116|index999Kernel|\"%s\"\n", childOutcome(999).c_str());
+  }
+  {
+    // T122: ShapeAnalysis_Edge::HasCurve3d on the box's first edge (EdgeAnalysis.hasCurve3d)
+    TopTools_IndexedMapOfShape es;
+    TopExp::MapShapes(box(-5, -5, -5, 10), TopAbs_EDGE, es);
+    ShapeAnalysis_Edge sae;
+    emitBool("T122", "hasCurve3d", sae.HasCurve3d(TopoDS::Edge(es(1))));
   }
   return 0;
 }
