@@ -1,0 +1,48 @@
+pair(0,0) nbExt=1 isParallel=1 distance=12.5
+pair(0,0) threw NCollection_Sequence::Value at ParameterOnFace1
+pair(0,1) nbExt=1 isParallel=1 distance=17.5
+pair(0,1) threw NCollection_Sequence::Value at ParameterOnFace1
+pair(0,2) isDone=1 nbExt=0
+pair(0,3) isDone=1 nbExt=0
+pair(0,4) isDone=1 nbExt=0
+pair(0,5) isDone=1 nbExt=0
+pair(1,0) nbExt=1 isParallel=1 distance=7.5
+pair(1,0) threw NCollection_Sequence::Value at ParameterOnFace1
+pair(1,1) nbExt=1 isParallel=1 distance=12.5
+pair(1,1) threw NCollection_Sequence::Value at ParameterOnFace1
+pair(1,2) isDone=1 nbExt=0
+pair(1,3) isDone=1 nbExt=0
+pair(1,4) isDone=1 nbExt=0
+pair(1,5) isDone=1 nbExt=0
+pair(2,0) isDone=1 nbExt=0
+pair(2,1) isDone=1 nbExt=0
+pair(2,2) nbExt=1 isParallel=1 distance=2.5
+pair(2,2) threw NCollection_Sequence::Value at ParameterOnFace1
+pair(2,3) nbExt=1 isParallel=1 distance=7.5
+pair(2,3) threw NCollection_Sequence::Value at ParameterOnFace1
+pair(2,4) isDone=1 nbExt=0
+pair(2,5) isDone=1 nbExt=0
+pair(3,0) isDone=1 nbExt=0
+pair(3,1) isDone=1 nbExt=0
+pair(3,2) nbExt=1 isParallel=1 distance=2.5
+pair(3,2) threw NCollection_Sequence::Value at ParameterOnFace1
+pair(3,3) nbExt=1 isParallel=1 distance=2.5
+pair(3,3) threw NCollection_Sequence::Value at ParameterOnFace1
+pair(3,4) isDone=1 nbExt=0
+pair(3,5) isDone=1 nbExt=0
+pair(4,0) isDone=1 nbExt=0
+pair(4,1) isDone=1 nbExt=0
+pair(4,2) isDone=1 nbExt=0
+pair(4,3) isDone=1 nbExt=0
+pair(4,4) nbExt=1 isParallel=1 distance=2.5
+pair(4,4) threw NCollection_Sequence::Value at ParameterOnFace1
+pair(4,5) nbExt=1 isParallel=1 distance=7.5
+pair(4,5) threw NCollection_Sequence::Value at ParameterOnFace1
+pair(5,0) isDone=1 nbExt=0
+pair(5,1) isDone=1 nbExt=0
+pair(5,2) isDone=1 nbExt=0
+pair(5,3) isDone=1 nbExt=0
+pair(5,4) nbExt=1 isParallel=1 distance=2.5
+pair(5,4) threw NCollection_Sequence::Value at ParameterOnFace1
+pair(5,5) nbExt=1 isParallel=1 distance=2.5
+pair(5,5) threw NCollection_Sequence::Value at ParameterOnFace1
