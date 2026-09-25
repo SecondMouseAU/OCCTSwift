@@ -66,6 +66,9 @@
 #include <ShapeFix_Face.hxx>
 #include <ShapeExtend_Status.hxx>
 #include <ShapeFix_FixSmallSolid.hxx>
+#include <ShapeCustom_ConvertToBSpline.hxx>
+#include <ShapeAnalysis_Wire.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepAlgoAPI_Fuse.hxx>
 #include <ShapeAnalysis_Surface.hxx>
 #include <ShapeUpgrade_UnifySameDomain.hxx>
@@ -415,6 +418,45 @@ static void analyzeFree(const TopoDS_Shape& shape, int& freeEdges, int& freeFace
 static bool isValidSolid(const TopoDS_Shape& s)
 {
   return s.ShapeType() == TopAbs_SOLID && BRepCheck_Analyzer(s).IsValid();
+}
+
+// OCCTShapeAnalyze's small-edge, small-face and per-junction gap counts (OCCTBridge_Healing_Analysis.mm)
+static void analyzeCounts(const TopoDS_Shape& s, double tol, int& smallEdges, int& smallFaces, int& gaps)
+{
+  smallEdges = smallFaces = gaps = 0;
+  for (TopExp_Explorer e(s, TopAbs_EDGE); e.More(); e.Next())
+  {
+    if (BRep_Tool::Degenerated(TopoDS::Edge(e.Current())))
+      continue;
+    GProp_GProps g;
+    BRepGProp::LinearProperties(e.Current(), g);
+    if (g.Mass() < tol)
+      smallEdges++;
+  }
+  for (TopExp_Explorer f(s, TopAbs_FACE); f.More(); f.Next())
+  {
+    GProp_GProps g;
+    BRepGProp::SurfaceProperties(f.Current(), g);
+    if (g.Mass() < tol * tol)
+      smallFaces++;
+  }
+  for (TopExp_Explorer w(s, TopAbs_WIRE); w.More(); w.Next())
+  {
+    TopoDS_Face face;
+    for (TopExp_Explorer f(s, TopAbs_FACE); f.More() && face.IsNull(); f.Next())
+      for (TopExp_Explorer iw(f.Current(), TopAbs_WIRE); iw.More(); iw.Next())
+        if (iw.Current().IsSame(w.Current()))
+        {
+          face = TopoDS::Face(f.Current());
+          break;
+        }
+    if (face.IsNull())
+      continue;
+    ShapeAnalysis_Wire wa(TopoDS::Wire(w.Current()), face, tol);
+    for (int i = 1; i <= wa.NbEdges(); i++)
+      if (wa.CheckGap3d(i))
+        gaps++;
+  }
 }
 
 int main()
@@ -1180,6 +1222,60 @@ int main()
       emitInt("T194", "analyzeShell.freeEdgeCount", s2.freeEdges);
       emitInt("T194", "analyze.freeEdgeCount", fe);
     }
+  }
+  // ===== unflagged records (U001-U012) =====
+  {
+    // U004-U006: Geom_OffsetSurface(sphere r10, +2) over its full domain (poles included), converted by the three
+    // ShapeCustom_ConvertToBSpline entry points with extrusion, revolution and offset modes on and planes off
+    Handle(Geom_SphericalSurface) sph = new Geom_SphericalSurface(gp_Ax3(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), 10);
+    Handle(Geom_OffsetSurface)    off = new Geom_OffsetSurface(sph, 2);
+    double                        u0, u1, v0, v1;
+    off->Bounds(u0, u1, v0, v1);
+    TopoDS_Face f = BRepBuilderAPI_MakeFace(off, u0, u1, v0, v1, 1e-7);
+    // U004: OCCTShapeConvertToBSpline (ShapeCustom::ConvertToBSpline(shape, true, true, true, false))
+    TopoDS_Shape                r  = ShapeCustom::ConvertToBSpline(f, true, true, true, false);
+    Handle(Geom_BSplineSurface) bs = Handle(Geom_BSplineSurface)::DownCast(BRep_Tool::Surface(TopoDS::Face(TopExp_Explorer(r, TopAbs_FACE).Current())));
+    emitInt("U004", "uDegree", bs->UDegree());
+    emitInt("U004", "uPoles", bs->NbUPoles());
+    emit("U004", "deviation", deviation(r, off));
+    // U005: OCCTShapeCustomConvertToBSpline(extrusion, revolution, offset, plane) = the same ShapeCustom::ConvertToBSpline call
+    emit("U005", "deviation", deviation(ShapeCustom::ConvertToBSpline(f, true, true, true, false), off));
+    // U006: OCCTShapeConvertToBSplineAdvanced: a ShapeCustom_ConvertToBSpline modifier with the four modes set one by one
+    Handle(ShapeCustom_ConvertToBSpline) m = new ShapeCustom_ConvertToBSpline();
+    m->SetExtrusionMode(true);
+    m->SetRevolutionMode(true);
+    m->SetOffsetMode(true);
+    m->SetPlaneMode(false);
+    BRepTools_Modifier mod(f, m);
+    if (mod.IsDone())
+      emit("U006", "deviation", deviation(mod.ModifiedShape(f), off));
+  }
+  {
+    // U009-U011: OCCTShapeAnalyze on a centred 10 mm box: BRepCheck_Analyzer with geometric controls, the free-edge
+    // scan, and the small-edge, small-face and gap counts
+    TopoDS_Shape bx    = box(-5, -5, -5, 10);
+    bool         valid = BRepCheck_Analyzer(bx, true).IsValid();
+    int          fe, ff, se, sf, gp;
+    analyzeFree(bx, fe, ff);
+    emitBool("U009", "invalidTopology", !valid);
+    emitInt("U009", "freeEdgeCount", fe);
+    emitBool("U009", "boxValid", BRepCheck_Analyzer(bx).IsValid());
+    analyzeCounts(bx, 0.001, se, sf, gp);
+    emitInt("U010", "smallEdgeCount", se);
+    emitInt("U010", "smallFaceCount", sf);
+    analyzeCounts(bx, 1e-6, se, sf, gp);
+    emitInt("U011", "gapCount", gp);
+    emitInt("U011", "totalProblems", se + sf + gp + fe + (valid ? 0 : 1));
+    // U012: a planar face on a wire of three line edges with a 1.0 and a 0.5 gap between them, tolerance 0.01
+    BRep_Builder b;
+    TopoDS_Wire  w;
+    b.MakeWire(w);
+    b.Add(w, BRepBuilderAPI_MakeEdge(gp_Pnt(0, 0, 0), gp_Pnt(10, 0, 0)).Edge());
+    b.Add(w, BRepBuilderAPI_MakeEdge(gp_Pnt(10, 1, 0), gp_Pnt(5, 10, 0)).Edge());
+    b.Add(w, BRepBuilderAPI_MakeEdge(gp_Pnt(5.5, 10, 0), gp_Pnt(0, 0, 0)).Edge());
+    BRepBuilderAPI_MakeFace mf(w, true);
+    analyzeCounts(mf.Face(), 0.01, se, sf, gp);
+    emitInt("U012", "gapCount", gp);
   }
   return 0;
 }

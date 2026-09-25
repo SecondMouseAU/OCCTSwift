@@ -1859,22 +1859,34 @@
     "bridge_output": {
       "type": "surface_kinds",
       "data": {
-        "cylinder": 3,
-        "sphere": 1,
-        "torus": 1
+        "cylinder": {
+          "faces": 3,
+          "bsplineFaces": 3
+        },
+        "sphere": {
+          "faces": 1,
+          "bsplineFaces": 1
+        },
+        "torus": {
+          "faces": 1,
+          "bsplineFaces": 1
+        }
       }
     },
     "kernel_output": {
       "type": "surface_kinds",
       "data": {
         "cylinder": {
-          "Geom_BSplineSurface": 3
+          "faces": 3,
+          "bsplineFaces": 3
         },
         "sphere": {
-          "Geom_BSplineSurface": 1
+          "faces": 1,
+          "bsplineFaces": 1
         },
         "torus": {
-          "Geom_BSplineSurface": 1
+          "faces": 1,
+          "bsplineFaces": 1
         }
       }
     },
@@ -1882,7 +1894,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: bsplineRestriction with every surface-kind switch on, at tolerance 0.01, for a cylinder, a sphere and a torus: the result's face count and how many of those faces are Geom_BSplineSurface, per shape, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1636-1637/transcript.txt line 8, Scripts/repro/766-healing-1636-1637/transcript.txt line 9 and Scripts/repro/766-healing-1636-1637/transcript.txt line 10 (cylinder, sphere, torus all kinds: faces=3, 1, 1 and Geom_BSplineSurface=3, 1, 1), ShapeCustom::BSplineRestriction with every ConvertXxx parameter set. The kernel prints the surface type name and its count; the record keeps the count under `bsplineFaces`."
   },
   {
     "test_name": "Issue #1637: BSplineRestriction's per-surface-kind switches are reachable::perKindSwitchesActIndependently",
@@ -1891,12 +1904,12 @@
       "type": "surface_kinds",
       "data": {
         "cylindricalOnly": {
-          "bspline": 1,
-          "plane": 2
+          "bsplineFaces": 1,
+          "planeFaces": 2
         },
         "planesOnly": {
-          "bspline": 2,
-          "cylinder": 1
+          "bsplineFaces": 2,
+          "cylinderFaces": 1
         }
       }
     },
@@ -1904,12 +1917,12 @@
       "type": "surface_kinds",
       "data": {
         "cylindricalOnly": {
-          "Geom_BSplineSurface": 1,
-          "Geom_Plane": 2
+          "bsplineFaces": 1,
+          "planeFaces": 2
         },
         "planesOnly": {
-          "Geom_BSplineSurface": 2,
-          "Geom_CylindricalSurface": 1
+          "bsplineFaces": 2,
+          "cylinderFaces": 1
         }
       }
     },
@@ -1917,7 +1930,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: bsplineRestriction on a cylinder with only the cylindrical switch on, then only the plane switch on: how many faces are Geom_BSplineSurface and how many stay Geom_Plane (first case) or Geom_CylindricalSurface (second), printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-1636-1637/transcript.txt line 11 (cylinder, cylindrical only: Geom_BSplineSurface=1 Geom_Plane=2) and Scripts/repro/766-healing-1636-1637/transcript.txt line 12 (planes only: Geom_BSplineSurface=2 Geom_CylindricalSurface=1), ShapeCustom::BSplineRestriction with that one switch set. The kernel prints OCCT surface type names; the record uses bsplineFaces, planeFaces and cylinderFaces for Geom_BSplineSurface, Geom_Plane and Geom_CylindricalSurface."
   },
   {
     "test_name": "Issue #1637: BSplineRestriction's per-surface-kind switches are reachable::conversionPreservesTheSolid",
@@ -1989,24 +2003,27 @@
   },
   {
     "test_name": "Issue #490: one continuity vocabulary per operation (healing)::restrictionRejectsC3",
-    "bridge_function": "OCCTShapeCustomBSplineRestriction",
+    "bridge_function": "OCCTShapeCustomBSplineRestriction / OCCTShapeBSplineRestrictionAdvanced",
     "bridge_output": {
       "type": "restriction",
       "data": {
-        "C3": null
+        "plainRefused": true,
+        "advancedRefused": true
       }
     },
     "kernel_output": {
       "type": "restriction",
       "data": {
-        "C3": "both entry points throw"
+        "plainRefused": true,
+        "advancedRefused": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: bsplineRestriction(continuity3d: .c3, continuity2d: .c3) and bsplineRestrictionAdvanced(...) on a cylinder: whether each returned nil, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-490-570-655/transcript.txt line 4 (#490 restriction C3: plain volume=-2 advanced volume=-2, where -2 means the kernel call threw), ShapeCustom::BSplineRestriction and the BSplineRestriction modifier at C3; a throw is what the bridge's catch turns into nil, recorded as refused."
   },
   {
     "test_name": "Issue #490: one continuity vocabulary per operation (healing)::restrictionContinuityIsObservable",
@@ -2151,9 +2168,9 @@
     "bridge_output": {
       "type": "deviation",
       "data": {
-        "uDegree": "> 1",
-        "uPoles": "> 2",
-        "deviation": "< 1e-5"
+        "uDegree": 13,
+        "uPoles": 14,
+        "deviation": 1.2103052648113731e-07
       }
     },
     "kernel_output": {
@@ -2161,14 +2178,15 @@
       "data": {
         "uDegree": 13,
         "uPoles": 14,
-        "deviation": 1.21e-07
+        "deviation": 1.2103052648113731e-07
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: convertedToBSpline() on a face over Geom_OffsetSurface(sphere r10, +2) with the poles included: the fitted surface's U degree and U pole count, and the largest distance from the source surface over a 25 x 25 grid, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (U004): ShapeCustom::ConvertToBSpline(face, extrusion, revolution, offset on, plane off) and the same grid deviation; Scripts/repro/766-healing-490-570-655/transcript.txt line 10 holds the degree, pole count and deviation to four digits. The test asserts degree above 1, more than 2 poles and deviation below 1e-5; the record carries the measured values, which agree to the last digit."
   },
   {
     "test_name": "Issue 570: healing approximations accepted on a zeroed error::withSurfacesAsBSplineDoesNotCollapse",
@@ -2176,20 +2194,21 @@
     "bridge_output": {
       "type": "deviation",
       "data": {
-        "deviation": "< 1e-5"
+        "deviation": 1.2103052648113731e-07
       }
     },
     "kernel_output": {
       "type": "deviation",
       "data": {
-        "deviation": 1.21e-07
+        "deviation": 1.2103052648113731e-07
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: withSurfacesAsBSpline(offset: true) on the same face: the largest distance from the source surface over a 25 x 25 grid, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (U005): ShapeCustom::ConvertToBSpline with the same four mode arguments OCCTShapeCustomConvertToBSpline passes, and the same grid deviation."
   },
   {
     "test_name": "Issue 570: healing approximations accepted on a zeroed error::convertToBSplineAdvancedDoesNotCollapse",
@@ -2197,20 +2216,21 @@
     "bridge_output": {
       "type": "deviation",
       "data": {
-        "deviation": "< 1e-5"
+        "deviation": 1.2103052648113731e-07
       }
     },
     "kernel_output": {
       "type": "deviation",
       "data": {
-        "deviation": 1.21e-07
+        "deviation": 1.2103052648113731e-07
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: convertToBSplineAdvanced(face, offsetMode: true) on the same face: the largest distance from the source surface over a 25 x 25 grid, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (U006): a ShapeCustom_ConvertToBSpline modifier with SetExtrusionMode, SetRevolutionMode and SetOffsetMode on and SetPlaneMode off, run through BRepTools_Modifier, and the same grid deviation."
   },
   {
     "test_name": "Issue 570: healing approximations accepted on a zeroed error::bsplineRestrictionHonoursTolerance",
@@ -2305,71 +2325,53 @@
     "bridge_output": {
       "type": "free_bounds",
       "data": {
-        "INTERNAL": {
-          "closed": 2,
-          "closedEdges": 8,
-          "open": 0
-        },
-        "FORWARD": {
-          "closed": 3
-        }
+        "edges": 12,
+        "closedWires": 2,
+        "closedEdges": 8,
+        "openWires": 0,
+        "freeBoundsClosedCount": 2,
+        "freeBoundsOpenCount": 0
       }
     },
     "kernel_output": {
       "type": "free_bounds",
       "data": {
-        "INTERNAL": {
-          "edges": 12,
-          "closedWires": 2,
-          "closedEdges": 8,
-          "openWires": 0
-        },
-        "FORWARD": {
-          "closedWires": 3
-        }
+        "edges": 12,
+        "closedWires": 2,
+        "closedEdges": 8,
+        "openWires": 0,
+        "freeBoundsClosedCount": 2,
+        "freeBoundsOpenCount": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: a compound of two faces, one carrying an embedded INTERNAL 4-edge loop: its edge count, freeBoundsClosedCount, the edge count of freeBoundsClosedWires, the wire count of freeBoundsOpenWires, and freeBounds(sewingTolerance: 1e-6)'s closedCount and openCount, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-490-570-655/transcript.txt line 14 (#655 INTERNAL loop: edges=12 closedWires=2 closedEdges=8 openWires=0), ShapeAnalysis_FreeBounds with sewing tolerance 1e-6, GetClosedWires and GetOpenWires. freeBounds() runs that same analysis, so its closedCount and openCount are the kernel's closedWires and openWires."
   },
   {
     "test_name": "#655: freeBounds* unaffected by INTERNAL orientation::forwardLoopIsCounted",
-    "bridge_function": "OCCTShapeFreeBoundsClosedCount / OCCTShapeFreeBoundsClosed / OCCTShapeFreeBounds",
+    "bridge_function": "OCCTShapeFreeBoundsClosedCount",
     "bridge_output": {
       "type": "free_bounds",
       "data": {
-        "INTERNAL": {
-          "closed": 2,
-          "closedEdges": 8,
-          "open": 0
-        },
-        "FORWARD": {
-          "closed": 3
-        }
+        "closedWires": 3
       }
     },
     "kernel_output": {
       "type": "free_bounds",
       "data": {
-        "INTERNAL": {
-          "edges": 12,
-          "closedWires": 2,
-          "closedEdges": 8,
-          "openWires": 0
-        },
-        "FORWARD": {
-          "closedWires": 3
-        }
+        "closedWires": 3
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: the same compound with the embedded loop left FORWARD: freeBoundsClosedCount, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-healing-490-570-655/transcript.txt line 15 (#655 FORWARD loop: closedWires=3), ShapeAnalysis_FreeBounds with sewing tolerance 1e-6, GetClosedWires."
   },
   {
     "test_name": "#655: freeBounds* unaffected by INTERNAL orientation::sharedTopologyBranchMeasuredDirectly",
@@ -2681,38 +2683,25 @@
     "bridge_output": {
       "type": "analysis",
       "data": {
-        "box": {
-          "smallEdges": 0,
-          "smallFaces": 0,
-          "gapCount": 24,
-          "freeEdges": 0,
-          "invalidTopology": false,
-          "totalProblems": 24
-        },
-        "gappyFace": {
-          "gapCount": 2
-        }
+        "invalidTopology": false,
+        "freeEdgeCount": 0,
+        "boxValid": true
       }
     },
     "kernel_output": {
       "type": "analysis",
       "data": {
-        "box": {
-          "smallEdges": 0,
-          "smallFaces": 0,
-          "gaps": 24,
-          "valid": true
-        },
-        "gappyFace": {
-          "gaps": 2
-        }
+        "invalidTopology": false,
+        "freeEdgeCount": 0,
+        "boxValid": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.analyze(tolerance: 0.001) on a 10 mm cube: hasInvalidTopology and freeEdgeCount, and box.isValid, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (U009): BRepCheck_Analyzer with geometric controls (invalid means not valid), and the per-shell ShapeAnalysis_Shell::CheckOrientedShells free-edge scan OCCTShapeAnalyze runs, plus BRepCheck_Analyzer on the cube."
   },
   {
     "test_name": "Shape Analysis Tests::analyzeForSmallFeatures",
@@ -2720,38 +2709,23 @@
     "bridge_output": {
       "type": "analysis",
       "data": {
-        "box": {
-          "smallEdges": 0,
-          "smallFaces": 0,
-          "gapCount": 24,
-          "freeEdges": 0,
-          "invalidTopology": false,
-          "totalProblems": 24
-        },
-        "gappyFace": {
-          "gapCount": 2
-        }
+        "smallEdgeCount": 0,
+        "smallFaceCount": 0
       }
     },
     "kernel_output": {
       "type": "analysis",
       "data": {
-        "box": {
-          "smallEdges": 0,
-          "smallFaces": 0,
-          "gaps": 24,
-          "valid": true
-        },
-        "gappyFace": {
-          "gaps": 2
-        }
+        "smallEdgeCount": 0,
+        "smallFaceCount": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.analyze(tolerance: 0.001) on a 10 mm cube: smallEdgeCount and smallFaceCount, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (U010): the edge-length and face-area loops OCCTShapeAnalyze runs (BRepGProp::LinearProperties below the tolerance, SurfaceProperties below its square, degenerate edges skipped); Scripts/repro/766-healing-shapeanalysis/transcript.txt line 6 holds the same counts."
   },
   {
     "test_name": "Shape Analysis Tests::analysisResultProperties",
@@ -2759,38 +2733,23 @@
     "bridge_output": {
       "type": "analysis",
       "data": {
-        "box": {
-          "smallEdges": 0,
-          "smallFaces": 0,
-          "gapCount": 24,
-          "freeEdges": 0,
-          "invalidTopology": false,
-          "totalProblems": 24
-        },
-        "gappyFace": {
-          "gapCount": 2
-        }
+        "gapCount": 24,
+        "totalProblems": 24
       }
     },
     "kernel_output": {
       "type": "analysis",
       "data": {
-        "box": {
-          "smallEdges": 0,
-          "smallFaces": 0,
-          "gaps": 24,
-          "valid": true
-        },
-        "gappyFace": {
-          "gaps": 2
-        }
+        "gapCount": 24,
+        "totalProblems": 24
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: box.analyze() at the default 1e-6 on a 10 mm cube: gapCount and totalProblems, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (U011): the per-junction ShapeAnalysis_Wire::CheckGap3d count OCCTShapeAnalyze runs, and the sum of the kernel's own counts (small edges, small faces, gaps, free edges, one for invalid topology) that totalProblems is defined as; Scripts/repro/766-healing-shapeanalysis/transcript.txt line 7 holds gaps=24. totalProblems is a Swift sum of the bridge's counts, so the kernel side is the same sum of the kernel's counts (0 + 0 + 24 + 0 + 0). hasSelfIntersection is nil here (no timeout is passed) and is not part of the record."
   },
   {
     "test_name": "Shape Analysis Tests::gapCountCountsEachGap",
@@ -2798,38 +2757,21 @@
     "bridge_output": {
       "type": "analysis",
       "data": {
-        "box": {
-          "smallEdges": 0,
-          "smallFaces": 0,
-          "gapCount": 24,
-          "freeEdges": 0,
-          "invalidTopology": false,
-          "totalProblems": 24
-        },
-        "gappyFace": {
-          "gapCount": 2
-        }
+        "gapCount": 2
       }
     },
     "kernel_output": {
       "type": "analysis",
       "data": {
-        "box": {
-          "smallEdges": 0,
-          "smallFaces": 0,
-          "gaps": 24,
-          "valid": true
-        },
-        "gappyFace": {
-          "gaps": 2
-        }
+        "gapCount": 2
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Bridge: face.analyze(tolerance: 0.01) on a planar face built on a raw wire of three line edges with a 1.0 gap and a 0.5 gap between them: gapCount, printed by a temporary Swift test print (bridge-observed.txt). Kernel: Scripts/repro/766-shapehealing-evidence-fix/transcript.txt (U012): the per-junction ShapeAnalysis_Wire::CheckGap3d count on the same face, one per gap; Scripts/repro/766-healing-shapeanalysis/transcript.txt line 9 holds gaps=2."
   },
   {
     "test_name": "ShapeAnalysis TransferParametersProj::transferToFace",

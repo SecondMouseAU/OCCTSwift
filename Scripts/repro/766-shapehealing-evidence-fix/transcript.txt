@@ -264,3 +264,16 @@ T192|freeEdgeCount|8
 T192|freeFaceCount|2
 T194|analyzeShell.freeEdgeCount|3
 T194|analyze.freeEdgeCount|3
+U004|uDegree|13
+U004|uPoles|14
+U004|deviation|1.2103052648113731e-07
+U005|deviation|1.2103052648113731e-07
+U006|deviation|1.2103052648113731e-07
+U009|invalidTopology|false
+U009|freeEdgeCount|0
+U009|boxValid|true
+U010|smallEdgeCount|0
+U010|smallFaceCount|0
+U011|gapCount|24
+U011|totalProblems|24
+U012|gapCount|2
