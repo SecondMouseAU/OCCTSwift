@@ -15879,13 +15879,13 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": null
+        "bisector_yields_curve": false
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "IsEmpty": true
+        "bisector_yields_curve": false
       }
     },
     "comparison": {
@@ -15899,7 +15899,9 @@
       "green": "passed after revert (Sources/ clean)",
       "probe": "Scripts/repro/766-geom2d-bisector-bbox-weights/",
       "rewritten": "the assertion sat inside `if let bis` and the kernel returns empty, so nothing was ever checked; now pins nil"
-    }
+    },
+    "source": "Same quantity on both sides: bisector_yields_curve, whether a bisector curve is obtained for the segments (0,0)-(10,0) and (0,0)-(0,10) from origin (0,0). Bridge: Curve2D.bisector(with:origin:side:) returned nil in the test run, false. Kernel: Bisector_BisecCC on the same segments and origin, IsEmpty() is true (transcript line \"BisecCC segments from origin: empty=1\" in Scripts/repro/766-geom2d-bisector-bbox-weights/transcript.txt), so no bisector, false.",
+    "probe": "Scripts/repro/766-geom2d-bisector-bbox-weights/"
   },
   {
     "test_name": "Curve2D Bisector Tests::Bisector between point and line",
