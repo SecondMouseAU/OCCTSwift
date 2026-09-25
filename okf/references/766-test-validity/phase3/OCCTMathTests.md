@@ -440,3 +440,11 @@
 | **GeomLib Tool Tests** | parameters on surface | `OCCTGeomLibToolParametersSurface` | swap u and v (red at :26, :27); parametersOf nil and Surface.plane nil (red at :25, :24) | red | green | PASS |
 | **GeomLib Tool Tests** | parameter on 2D line | `OCCTGeomLibToolParameter2D` | reported parameter + 1.0 (red at :34); parameterOf nil and Curve2D.line nil (red at :33, :32) | red | green | PASS |
 The six rows for `GeomLib IsPlanarSurface Tests` and `GeomLib Tool Tests` were rewritten from `if let` nesting to `try #require`, pinned to the probed values. Under every injection that makes an optional result or a factory nil, the `if let` form stayed green (the assertions were skipped) and the rewritten form is red; both forms are red under the value injections, and under `IsPlanar()` returning false, whose result is a Bool. Each injection was switched on with an environment variable in one build and removed afterwards (`git diff origin/v5.0.0-766-execution -- Sources` is empty).
+### 766-math-polynomial-convert-laguerre (#1983, measured)
+| **Convert_CompPolynomialToPoles** | linearPolynomial | `OCCTConvertPolynomialToPoles` | each pole + 0.5 | red | green | PASS |
+| **Convert_CompPolynomialToPoles** | quadraticPolynomial | `OCCTConvertPolynomialToPoles` | each pole + 0.5 | red | green | PASS |
+| **Convert_CompPolynomialToPoles** | remappedInterval | `OCCTConvertPolynomialToPoles` | knots reported on the polynomial interval instead of the true interval (also red under P4_CPTP_POLE) | red | green | PASS |
+| **PolynomialSolver Laguerre v0.111** | quadraticRoots | `OCCTPolyLaguerreRoots` | each real root + 0.5 | red | green | PASS |
+| **PolynomialSolver Laguerre v0.111** | cubicRoots | `OCCTPolyLaguerreRoots` | each real root + 0.5 | red | green | PASS |
+| **PolynomialSolver Laguerre v0.111** | complexRoots | `OCCTPolyLaguerreComplexRoots (and OCCTPolyLaguerreRoots)` | real and imaginary parts swapped | red | green | PASS |
+| **PolynomialSolver Laguerre v0.111** | quinticRoots | `OCCTPolyQuinticRoots` | one root dropped (NbRoots - 1) | red | green | PASS |
