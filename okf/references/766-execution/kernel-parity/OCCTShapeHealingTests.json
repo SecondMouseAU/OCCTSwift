@@ -3606,25 +3606,32 @@
     "bridge_output": {
       "type": "unify",
       "data": {
-        "resultFaces": 3,
-        "inputUnchanged": true
+        "result_faces": 3,
+        "input_faces": 4,
+        "input_bytes_identical": true,
+        "input_volume_before": 1570.7963267948965,
+        "input_volume_after": 1570.7963267948965,
+        "merged_volume": 1570.7963267948965
       }
     },
     "kernel_output": {
       "type": "unify",
       "data": {
-        "inputFaces": 4,
-        "resultFaces": 3,
-        "volume": 1570.796326795,
-        "inputFacesAfter": 4,
-        "boxSharedFaces": 0
+        "result_faces": 3,
+        "input_faces": 4,
+        "input_bytes_identical": true,
+        "input_volume_before": 1570.7963267948965,
+        "input_volume_after": 1570.7963267948965,
+        "merged_volume": 1570.7963267948965
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-446-484/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: what Shape.unified() (OCCTShapeUnifySameDomain) leaves of its input and what it returns: the merged face count, the input's face count afterwards, whether the input's BREP text (no triangles) is byte-identical before and after, and the input and merged volumes. The Swift byte comparison is Exporter.brepData; the kernel's is BRepTools::Write to a string, both before and after the call. Kernel line 'a unified'. Bridge values: a temporary print in Issue446UnifyInputMutationTests (reverted) on the stacked-cylinders fixture (two coaxial r=5 h=10 cylinders fused end to end, 4 faces). Kernel values: Scripts/repro/766-healing-446-484/probe-evidence-fix.mm makes the same OCCT calls the bridge makes (BRepBuilderAPI_Copy, then ShapeUpgrade_UnifySameDomain on the copy), transcript Scripts/repro/766-healing-446-484/transcript-evidence-fix.txt. Every record of this suite used to carry one generic payload that none of the tests observed; each now carries the quantities its own test asserts."
   },
   {
     "test_name": "Issue #446, unify does not mutate its input::resultDoesNotShareSubShapesWithInput",
@@ -3632,126 +3639,170 @@
     "bridge_output": {
       "type": "unify",
       "data": {
-        "resultFaces": 3,
-        "inputUnchanged": true
+        "result_faces": 6,
+        "input_faces": 6,
+        "result_is_same_as_input": false,
+        "shared_faces": 0
       }
     },
     "kernel_output": {
       "type": "unify",
       "data": {
-        "inputFaces": 4,
-        "resultFaces": 3,
-        "volume": 1570.796326795,
-        "inputFacesAfter": 4,
-        "boxSharedFaces": 0
+        "result_faces": 6,
+        "input_faces": 6,
+        "result_is_same_as_input": false,
+        "shared_faces": 0
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-446-484/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: what unifying a 10 x 10 x 10 box (nothing to merge) returns: the result's face count and the input's, whether the result IsSame as the input, and how many of the input's faces reappear in the result. Kernel line 'b share'. Bridge values: a temporary print in Issue446UnifyInputMutationTests (reverted) on the stacked-cylinders fixture (two coaxial r=5 h=10 cylinders fused end to end, 4 faces). Kernel values: Scripts/repro/766-healing-446-484/probe-evidence-fix.mm makes the same OCCT calls the bridge makes (BRepBuilderAPI_Copy, then ShapeUpgrade_UnifySameDomain on the copy), transcript Scripts/repro/766-healing-446-484/transcript-evidence-fix.txt. Every record of this suite used to carry one generic payload that none of the tests observed; each now carries the quantities its own test asserts."
   },
   {
     "test_name": "Issue #446, unify does not mutate its input::builderDoesNotMutateInput",
-    "bridge_function": "occtUnifySameDomain (OCCTShapeUnifySameDomain)",
+    "bridge_function": "OCCTUnifySameDomainCreate / SetAngularTolerance / Build (occtUnifySameDomainInput)",
     "bridge_output": {
       "type": "unify",
       "data": {
-        "resultFaces": 3,
-        "inputUnchanged": true
+        "result_faces": 3,
+        "input_bytes_identical": true
       }
     },
     "kernel_output": {
       "type": "unify",
       "data": {
-        "inputFaces": 4,
-        "resultFaces": 3,
-        "volume": 1570.796326795,
-        "inputFacesAfter": 4,
-        "boxSharedFaces": 0
+        "result_faces": 3,
+        "input_bytes_identical": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-446-484/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: what UnifySameDomainBuilder(unifyEdges: true, unifyFaces: true) with a 10 degree angular tolerance returns after build() (its face count) and whether the input's BREP text is byte-identical before and after. Kernel line 'c builder'. Bridge values: a temporary print in Issue446UnifyInputMutationTests (reverted) on the stacked-cylinders fixture (two coaxial r=5 h=10 cylinders fused end to end, 4 faces). Kernel values: Scripts/repro/766-healing-446-484/probe-evidence-fix.mm makes the same OCCT calls the bridge makes (BRepBuilderAPI_Copy, then ShapeUpgrade_UnifySameDomain on the copy), transcript Scripts/repro/766-healing-446-484/transcript-evidence-fix.txt. Every record of this suite used to carry one generic payload that none of the tests observed; each now carries the quantities its own test asserts."
   },
   {
     "test_name": "Issue #446, unify does not mutate its input::declinedMergeLeavesInputIntact",
-    "bridge_function": "occtUnifySameDomain (OCCTShapeUnifySameDomain)",
+    "bridge_function": "OCCTUnifySameDomainCreate / Build (occtUnifySameDomainInput); OCCTShapeSelfIntersectsBounded, OCCTShapeIsValid, OCCTShapeGetVolume (checks on the input)",
     "bridge_output": {
       "type": "unify",
       "data": {
-        "resultFaces": 3,
-        "inputFaces": 4
+        "result_faces": 3,
+        "input_faces": 4,
+        "self_intersecting_before": false,
+        "self_intersecting_after": false,
+        "valid_before": true,
+        "valid_after": true,
+        "volume_before": 1570.7963267948965,
+        "volume_after": 1570.7963267948965
       }
     },
     "kernel_output": {
       "type": "unify",
       "data": {
-        "resultFaces": 3,
-        "inputFacesAfter": 4
+        "result_faces": 3,
+        "input_faces": 4,
+        "self_intersecting_before": false,
+        "self_intersecting_after": false,
+        "valid_before": true,
+        "valid_after": true,
+        "volume_before": 1570.7963267948965,
+        "volume_after": 1570.7963267948965
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-446-484/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: after a builder run whose result the caller discards, the builder's face count and the caller's own body: face count, self-intersection (BOPAlgo_ArgumentAnalyzer, as OCCTShapeSelfIntersectsBounded), validity and volume, each before and after. Kernel line 'd declined'. Bridge values: a temporary print in Issue446UnifyInputMutationTests (reverted) on the stacked-cylinders fixture (two coaxial r=5 h=10 cylinders fused end to end, 4 faces). Kernel values: Scripts/repro/766-healing-446-484/probe-evidence-fix.mm makes the same OCCT calls the bridge makes (BRepBuilderAPI_Copy, then ShapeUpgrade_UnifySameDomain on the copy), transcript Scripts/repro/766-healing-446-484/transcript-evidence-fix.txt. Every record of this suite used to carry one generic payload that none of the tests observed; each now carries the quantities its own test asserts."
   },
   {
     "test_name": "Issue #446, unify does not mutate its input::simplifiedDoesNotMutateInput",
-    "bridge_function": "occtUnifySameDomain (OCCTShapeUnifySameDomain)",
+    "bridge_function": "OCCTShapeSimplify (occtUnifySameDomain, ShapeFix_Shape)",
     "bridge_output": {
       "type": "unify",
       "data": {
-        "resultFaces": 3,
-        "inputUnchanged": true
+        "result_non_nil": true,
+        "input_bytes_identical": true
       }
     },
     "kernel_output": {
       "type": "unify",
       "data": {
-        "inputFaces": 4,
-        "resultFaces": 3,
-        "volume": 1570.796326795,
-        "inputFacesAfter": 4,
-        "boxSharedFaces": 0
+        "result_non_nil": true,
+        "input_bytes_identical": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-446-484/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: whether Shape.simplified() (unify on a copy, then ShapeFix_Shape at 1e-6) returns a shape, and whether the input's BREP text is byte-identical before and after. Kernel line 'e simplified'. Bridge values: a temporary print in Issue446UnifyInputMutationTests (reverted) on the stacked-cylinders fixture (two coaxial r=5 h=10 cylinders fused end to end, 4 faces). Kernel values: Scripts/repro/766-healing-446-484/probe-evidence-fix.mm makes the same OCCT calls the bridge makes (BRepBuilderAPI_Copy, then ShapeUpgrade_UnifySameDomain on the copy), transcript Scripts/repro/766-healing-446-484/transcript-evidence-fix.txt. Every record of this suite used to carry one generic payload that none of the tests observed; each now carries the quantities its own test asserts."
   },
   {
     "test_name": "Issue #446, unify does not mutate its input::keepShapeSurvivesTheCopy",
-    "bridge_function": "occtUnifySameDomain (OCCTShapeUnifySameDomain)",
+    "bridge_function": "OCCTUnifySameDomainCreate / KeepShape / Build (occtUnifySameDomainMapped)",
     "bridge_output": {
       "type": "unify",
       "data": {
-        "resultFaces": 3,
-        "inputUnchanged": true
+        "circle_edges_kept": [
+          {
+            "edge_index": 0,
+            "center_z": 10.0,
+            "faces": 4
+          },
+          {
+            "edge_index": 2,
+            "center_z": 0.0,
+            "faces": 3
+          },
+          {
+            "edge_index": 3,
+            "center_z": 20.0,
+            "faces": 3
+          }
+        ]
       }
     },
     "kernel_output": {
       "type": "unify",
       "data": {
-        "inputFaces": 4,
-        "resultFaces": 3,
-        "volume": 1570.796326795,
-        "inputFacesAfter": 4,
-        "boxSharedFaces": 0
+        "circle_edges_kept": [
+          {
+            "edge_index": 0,
+            "center_z": 10.0,
+            "faces": 4
+          },
+          {
+            "edge_index": 2,
+            "center_z": 0.0,
+            "faces": 3
+          },
+          {
+            "edge_index": 3,
+            "center_z": 20.0,
+            "faces": 3
+          }
+        ]
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-446-484/probe-evidence-fix.mm",
+    "source": "Same quantity on both sides: for each circular edge of the body (index into the unique edge map, centre z), the face count of the unified result when that edge is kept: keeping the z = 10 junction circle blocks the merge (4 faces), keeping either cap circle does not (3). The Swift builder maps the caller's edge onto the copy through copier.ModifiedShape; the kernel does the same. Kernel lines 'f keep'. Bridge values: a temporary print in Issue446UnifyInputMutationTests (reverted) on the stacked-cylinders fixture (two coaxial r=5 h=10 cylinders fused end to end, 4 faces). Kernel values: Scripts/repro/766-healing-446-484/probe-evidence-fix.mm makes the same OCCT calls the bridge makes (BRepBuilderAPI_Copy, then ShapeUpgrade_UnifySameDomain on the copy), transcript Scripts/repro/766-healing-446-484/transcript-evidence-fix.txt. Every record of this suite used to carry one generic payload that none of the tests observed; each now carries the quantities its own test asserts."
   },
   {
     "test_name": "Issue #484, Shape.connectedFaces coverage::boxShellRoundTrips",
@@ -3964,22 +4015,24 @@
     "bridge_output": {
       "type": "face_fix",
       "data": {
-        "box10x20x30": "6 of 6",
-        "cylinder": "3 of 3"
+        "faces": 6,
+        "valid_single_face": 6
       }
     },
     "kernel_output": {
       "type": "face_fix",
       "data": {
-        "box10x20x30": "6 of 6 faces valid, 1 face each",
-        "cylinder": "3 of 3"
+        "faces": 6,
+        "valid_single_face": 6
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-446-484/probe.mm",
+    "source": "Same quantity on both sides: for the fixture the test builds (box 10 x 20 x 30, or cylinder r=5 h=12), its face count and how many of its faces Face.fixed(tolerance: 1e-6) (OCCTFaceFix) returns valid and as a single face. Bridge: a temporary print in Issue484FaceFixContextTests (reverted) observed faces=6 validSingle=6. Kernel: ShapeFix_Face with a ShapeBuild_ReShape context per face, transcript.txt line 'box 10x20x30: ShapeFix_Face per face -> 6 of 6 valid single faces'. The earlier records held one generic pair of strings for both tests."
   },
   {
     "test_name": "Issue #484, Face.fixed(tolerance:) gets a ReShape context::cylinderFacesUnaffected",
@@ -3987,21 +4040,23 @@
     "bridge_output": {
       "type": "face_fix",
       "data": {
-        "box10x20x30": "6 of 6",
-        "cylinder": "3 of 3"
+        "faces": 3,
+        "valid_single_face": 3
       }
     },
     "kernel_output": {
       "type": "face_fix",
       "data": {
-        "box10x20x30": "6 of 6 faces valid, 1 face each",
-        "cylinder": "3 of 3"
+        "faces": 3,
+        "valid_single_face": 3
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-healing-446-484/probe.mm",
+    "source": "Same quantity on both sides: for the fixture the test builds (box 10 x 20 x 30, or cylinder r=5 h=12), its face count and how many of its faces Face.fixed(tolerance: 1e-6) (OCCTFaceFix) returns valid and as a single face. Bridge: a temporary print in Issue484FaceFixContextTests (reverted) observed faces=3 validSingle=3. Kernel: ShapeFix_Face with a ShapeBuild_ReShape context per face, transcript.txt line 'cylinder r5 h12: ShapeFix_Face per face -> 3 of 3 valid single faces'. The earlier records held one generic pair of strings for both tests."
   }
 ]

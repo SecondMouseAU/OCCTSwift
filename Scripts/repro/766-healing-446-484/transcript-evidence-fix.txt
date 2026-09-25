@@ -1,0 +1,9 @@
+fixture stacked cylinders: faces=4 volume=1570.7963267948965
+a unified: resultFaces=3 inputFaces=4 bytesIdentical=1 volBefore=1570.7963267948965 volAfter=1570.7963267948965 mergedVol=1570.7963267948965
+b share: resultFaces=6 boxFaces=6 isSame=0 shared=0
+c builder: resultFaces=3 bytesIdentical=1
+d declined: resultFaces=3 inputFaces=4 siBefore=0 siAfter=0 validBefore=1 validAfter=1 volBefore=1570.7963267948965 volAfter=1570.7963267948965
+e simplified: nonNil=1 bytesIdentical=1 faces=3
+f keep: edgeIndex=0 centerZ=10 faces=4
+f keep: edgeIndex=2 centerZ=0 faces=3
+f keep: edgeIndex=3 centerZ=20 faces=3
