@@ -1649,24 +1649,24 @@
     "bridge_output": {
       "type": "measurement",
       "data": {
-        "lowZ(order 2)": 5.875,
-        "highZ(order 8)": -16.9348871193
+        "lowZ(order 2)": 5.874999979638801,
+        "highZ(order 8)": -16.934887119340363
       }
     },
     "kernel_output": {
       "type": "measurement",
       "data": {
-        "refit lowZ(order 2)": 5.87499997964,
-        "refit highZ(order 8)": -16.9348871193,
-        "Evaluate z(order 8)": 4.99999979268
+        "lowZ(order 2)": 5.874999979638802,
+        "highZ(order 8)": 4.99999979267896
       },
-      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt \"1017 refit\" lines"
+      "source": "Scripts/repro/766-surface-evidence-fix/transcript.txt lines 1 and 2"
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": ["Order 8 differs: bridge highZ -16.934887119340363 against NLPlate_NLPlate::Evaluate z 4.9999997926789597. Known defect, a #766 finding pinned by withKnownIssue in Issue1017NLPlateResolutionOrderTests.orderChangesTheAnswer: at order 8 the plate itself meets the (0, 0, 5) constraint but grows to |z| = 1764.55916538 at the edges of the padded [-15, 15]^2 working domain (Scripts/repro/766-nlplate-order-base/transcript.txt), so the 20x20 refit in occtNLPlateFitSolved misses the constraint. Order 2 agrees: bridge 5.8749999796388011, kernel 5.8749999796388019."]
     },
-    "status": "PASS"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantity on both sides: z at uv (0, 0) of the plate solved with Solve2(order, 1) for resolution orders 2 and 8, on the z = 0 plane with the test's three G0 constraints (working domain [-15, 15]^2). Bridge: the value the test reads, Surface.nlPlateDeformed(...).point(atU: 0, v: 0).z, which is the 20x20 GeomAPI_PointsToBSplineSurface refit of the plate (occtNLPlateFitSolved, tolerance 0.1), printed with a temporary print. Kernel: NLPlate_NLPlate::Evaluate(0, 0).z itself, the same value Scripts/repro/766-nlplate-order-base/transcript.txt prints (5.87499997964 at order 2, 4.99999979268 at order 8). The probe's copy of the bridge refit reproduces the bridge values exactly (refit z 5.8749999796388011 at order 2 and -16.934887119340363 at order 8, transcript lines 1 and 2), which is how the divergence below is located."
   },
   {
     "test_name": "NLPlate resolution order is bounded and load-bearing (#1017)::The default order moves the surface off the input plane",
@@ -9188,18 +9188,31 @@
     "bridge_function": "OCCTLocalAnalysisSurfaceContinuityFlags",
     "bridge_output": {
       "type": "measurement",
-      "data": {}
+      "data": {
+        "c0": ["c0"],
+        "g1": ["c0", "g1"],
+        "c1": ["c0", "c1"],
+        "g2": ["c0", "g1", "g2"],
+        "c2": ["c0", "c1", "c2"]
+      }
     },
     "kernel_output": {
       "type": "measurement",
-      "data": {},
-      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 495 identical spheres"
+      "data": {
+        "c0": ["c0"],
+        "g1": ["c0", "g1"],
+        "c1": ["c0", "c1"],
+        "g2": ["c0", "g1", "g2"],
+        "c2": ["c0", "c1", "c2"]
+      },
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt lines 6 to 10"
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the continuity classes reported as holding when two identical radius-5 spheres are analysed at (0.5, 0.5), for each requested order. Bridge: the classes whose bit is set in Surface.ContinuityAnalysis.flags (bit index = ContinuityClass.rawValue, so the flags read 1, 3, 5, 11 and 21 for c0, g1, c1, g2, c2), read with a temporary print; in every order the measured set equals that claimed set, so no bit lies outside it, which is what the test asserts. Kernel: the LocalAnalysis_SurfaceContinuity predicates that are true (IsC0, IsG1, IsC1, IsG2, IsC2) on the same input."
   },
   {
     "test_name": "Issue #495: surface analysis order selects what is measured::the .c2 default cannot analyse a surface with no second derivative",
@@ -11677,39 +11690,53 @@
   },
   {
     "test_name": "Issue 571, plate approximation honours its tolerance::Both plate-through-points entry points agree on the same input",
-    "bridge_function": "OCCTShapePlatePoints",
+    "bridge_function": "OCCTShapePlatePoints, OCCTGeomPlateSurface",
     "bridge_output": {
       "type": "measurement",
-      "data": {}
+      "data": {
+        "plateSurface(through:) area": 581.0409199629642,
+        "plateSurface(points:) area": 581.0409199629642
+      }
     },
     "kernel_output": {
       "type": "measurement",
-      "data": {},
-      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 571"
+      "data": {
+        "plateSurface(through:) area": 581.0409199629642,
+        "plateSurface(points:) area": 581.0409199629642
+      },
+      "source": "Scripts/repro/766-surface-evidence-fix/transcript.txt line 3"
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the surface area of the face each entry point returns for the 25 wavy points of the test (x = 4i, y = 4j, z = 4 sin(1.3 i) cos(1.1 j)) at tolerance 0.01. Bridge: Shape.surfaceArea (BRepGProp::SurfaceProperties) of Shape.plateSurface(through:), which reaches OCCTShapePlatePoints, and of Shape.plateSurface(points:), which reaches OCCTGeomPlateSurface, read with a temporary print. Kernel: the probe rebuilds both bridge pipelines, GeomPlate_BuildPlateSurface(3, 15, 2) and (3, 10, 5) with order-0 point constraints, GeomPlate_MakeApprox(tol, 20, 8, tol * 0.1, 0, C1), BRepBuilderAPI_MakeFace(surface, tol) and BRepGProp::SurfaceProperties. The two areas agree to the last digit on both sides."
   },
   {
     "test_name": "Issue 571, plate approximation honours its tolerance::Curve-constrained plates honour their tolerance too",
-    "bridge_function": "OCCTShapePlateCurves",
+    "bridge_function": "OCCTShapePlateCurves, OCCTFaceProjectPoint",
     "bridge_output": {
       "type": "measurement",
-      "data": {}
+      "data": {
+        "area": 375.61576034560267,
+        "corner distance to face": [0.0007975737202648332, 0.0015956809876816658, 0.00022411194096326028, 0.0010131765294800615, 0.0007205225982321773, 0.0009584401252790585, 0.00046589730636547943, 6.931130607280163e-05]
+      }
     },
     "kernel_output": {
       "type": "measurement",
-      "data": {},
-      "source": "same GeomPlate_MakeApprox arguments as Scripts/repro/766-issue562-571-619-623/transcript.txt 571; the curve constraints themselves are not in the probe"
+      "data": {
+        "area": 375.61576034560267,
+        "corner distance to face": [0.0007975737202648332, 0.0015956809876816658, 0.00022411194096326028, 0.0010131765294800615, 0.0007205225982321773, 0.0009584401252790585, 0.00046589730636547943, 6.931130607280163e-05]
+      },
+      "source": "Scripts/repro/766-surface-evidence-fix/transcript.txt lines 4 to 12"
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the area of the face plateSurface(constrainedBy:) builds on the warped octagon of the test (corner i at angle i * pi / 4, radius 8, z = 3 sin(2.1 i)) at G0 and tolerance 0.01, and the distance from each of the eight corners to that face. Bridge: Shape.surfaceArea and Face.project(point:).distance, read with a temporary print. Kernel: the probe rebuilds OCCTShapePlateCurves (BRepBuilderAPI_MakePolygon closed, one GeomPlate_CurveConstraint(BRepAdaptor_Curve, 0) per edge, GeomPlate_BuildPlateSurface(3, 15, 2), GeomPlate_MakeApprox(0.01, 20, 8, 0.001, 0, C1), BRepBuilderAPI_MakeFace) and measures each corner as OCCTFaceProjectPoint does (GeomAPI_ProjectPointOnSurf over BRepTools::UVBounds, Precision::Confusion). Bit-identical; the worst corner distance is 0.0015956809876816658, inside the 0.01 the test requires."
   },
   {
     "test_name": "Issue #838, findSurface bridge consolidation::findSurface(tolerance:) forwards an explicit non-default tolerance, not a hardcoded one",
@@ -12532,18 +12559,77 @@
     "bridge_function": "OCCTSurfaceDrawMesh",
     "bridge_output": {
       "type": "measurement",
-      "data": {}
+      "data": {
+        "one-row grid (1 x 12), row 0": [
+          [6.123233995736766e-16, 0.0, -10.0],
+          [2.8173255684142977, 0.0, -9.594929736144973],
+          [5.406408174555977, 0.0, -8.412535328311812],
+          [7.5574957435425825, 0.0, -6.548607339452851],
+          [9.096319953545184, 0.0, -4.154150130018864],
+          [9.898214418809328, 0.0, -1.4231483827328506],
+          [9.898214418809328, 0.0, 1.4231483827328506],
+          [9.096319953545184, 0.0, 4.154150130018864],
+          [7.5574957435425825, 0.0, 6.548607339452851],
+          [5.406408174555977, 0.0, 8.412535328311812],
+          [2.8173255684142964, 0.0, 9.594929736144973],
+          [5.053215498074303e-15, 0.0, 10.0]
+        ],
+        "many-row grid (6 x 12), row 0": [
+          [6.123233995736766e-16, 0.0, -10.0],
+          [2.8173255684142977, 0.0, -9.594929736144973],
+          [5.406408174555977, 0.0, -8.412535328311812],
+          [7.5574957435425825, 0.0, -6.548607339452851],
+          [9.096319953545184, 0.0, -4.154150130018864],
+          [9.898214418809328, 0.0, -1.4231483827328506],
+          [9.898214418809328, 0.0, 1.4231483827328506],
+          [9.096319953545184, 0.0, 4.154150130018864],
+          [7.5574957435425825, 0.0, 6.548607339452851],
+          [5.406408174555977, 0.0, 8.412535328311812],
+          [2.8173255684142964, 0.0, 9.594929736144973],
+          [5.053215498074303e-15, 0.0, 10.0]
+        ]
+      }
     },
     "kernel_output": {
       "type": "measurement",
-      "data": {},
-      "source": "Scripts/repro/766-issue620-748-791/transcript.txt 620 sphere"
+      "data": {
+        "one-row grid (1 x 12), row 0": [
+          [6.123233995736766e-16, 0.0, -10.0],
+          [2.8173255684142977, 0.0, -9.594929736144973],
+          [5.406408174555977, 0.0, -8.412535328311812],
+          [7.5574957435425825, 0.0, -6.548607339452851],
+          [9.096319953545184, 0.0, -4.154150130018864],
+          [9.898214418809328, 0.0, -1.4231483827328506],
+          [9.898214418809328, 0.0, 1.4231483827328506],
+          [9.096319953545184, 0.0, 4.154150130018864],
+          [7.5574957435425825, 0.0, 6.548607339452851],
+          [5.406408174555977, 0.0, 8.412535328311812],
+          [2.8173255684142964, 0.0, 9.594929736144973],
+          [5.053215498074303e-15, 0.0, 10.0]
+        ],
+        "many-row grid (6 x 12), row 0": [
+          [6.123233995736766e-16, 0.0, -10.0],
+          [2.8173255684142977, 0.0, -9.594929736144973],
+          [5.406408174555977, 0.0, -8.412535328311812],
+          [7.5574957435425825, 0.0, -6.548607339452851],
+          [9.096319953545184, 0.0, -4.154150130018864],
+          [9.898214418809328, 0.0, -1.4231483827328506],
+          [9.898214418809328, 0.0, 1.4231483827328506],
+          [9.096319953545184, 0.0, 4.154150130018864],
+          [7.5574957435425825, 0.0, 6.548607339452851],
+          [5.406408174555977, 0.0, 8.412535328311812],
+          [2.8173255684142964, 0.0, 9.594929736144973],
+          [5.053215498074303e-15, 0.0, 10.0]
+        ]
+      },
+      "source": "Scripts/repro/766-surface-evidence-fix/transcript.txt lines 13 to 24"
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the twelve points of row 0 (the u = uMin row) of Surface.drawMesh on a radius-10 sphere, requested as a 1 x 12 grid and as a 6 x 12 grid. Bridge: SurfaceGrid.at(u: 0, v: j) for j = 0...11, read with a temporary print. Kernel: Geom_SphericalSurface::D0 at u = uMin and v = vMin + (vMax - vMin) * j / 11, the sweep OCCTSurfaceDrawMesh runs (occtUniformParameter, so a count of 1 samples the low end). Bit-identical on both sides, and the two grids agree with each other, which is the test's assertion."
   },
   {
     "test_name": "drawMesh honours its documented minimum of one sample per direction (#620)::A 1x1 grid is one point, at the sampled-range corner",
@@ -12786,18 +12872,27 @@
     "bridge_function": "OCCTConvertSphereToBSplineSurface",
     "bridge_output": {
       "type": "measurement",
-      "data": {}
+      "data": {
+        "max |distance - radius| over 9 x 9 samples, origin (0,0,0), axis (0,0,1), radius 5": 2.6645352591003757e-15,
+        "max |distance - radius| over 9 x 9 samples, origin (3,-2,7), axis (1,1,1), radius 2.5": 1.7763568394002505e-15,
+        "max |distance - radius| over 9 x 9 samples, origin (-4,10,-1), axis (0,1,0), radius 9.75": 5.329070518200751e-15
+      }
     },
     "kernel_output": {
       "type": "measurement",
-      "data": {},
-      "source": "Scripts/repro/766-issue620-748-791/transcript.txt 791"
+      "data": {
+        "max |distance - radius| over 9 x 9 samples, origin (0,0,0), axis (0,0,1), radius 5": 2.6645352591003757e-15,
+        "max |distance - radius| over 9 x 9 samples, origin (3,-2,7), axis (1,1,1), radius 2.5": 1.7763568394002505e-15,
+        "max |distance - radius| over 9 x 9 samples, origin (-4,10,-1), axis (0,1,0), radius 9.75": 5.329070518200751e-15
+      },
+      "source": "Scripts/repro/766-surface-evidence-fix/transcript.txt lines 25 to 27"
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the worst deviation of |distance to the centre - radius| over a 9 x 9 parameter grid of the BSpline surface built from Convert_SphereToBSplineSurface, for the test's three spheres. Bridge: Surface.fromSphere then evalD0, the maximum tracked with a temporary print in the test. Kernel: the probe builds the same Geom_BSplineSurface the way buildSurfaceFromElementary does (poles, weights, knots, multiplicities, degrees and periodicity of the converter) and samples it on the same grid. The values agree to the last digit, all around 1e-15 against the test's bound of 1e-6."
   },
   {
     "test_name": "Convert Elementary Surfaces Tests::cylinderPatch",
@@ -13507,21 +13602,92 @@
   },
   {
     "test_name": "Issue 486: surface grid layout::drawMesh, evaluateGrid and evaluateGridD1 all read U-major",
-    "bridge_function": "OCCTSurfaceEvaluateGridD1",
+    "bridge_function": "OCCTSurfaceDrawMesh, OCCTSurfaceEvaluateGridD1",
     "bridge_output": {
       "type": "measurement",
-      "data": {}
+      "data": {
+        "drawMesh points, u-major (iu * 3 + iv)": [
+          [3.061616997868383e-16, 0.0, -5.0],
+          [5.0, 0.0, 0.0],
+          [3.061616997868383e-16, 0.0, 5.0],
+          [1.8746997283273223e-32, 3.061616997868383e-16, -5.0],
+          [3.061616997868383e-16, 5.0, 0.0],
+          [1.8746997283273223e-32, 3.061616997868383e-16, 5.0],
+          [-3.061616997868383e-16, 3.7493994566546446e-32, -5.0],
+          [-5.0, 6.123233995736766e-16, 0.0],
+          [-3.061616997868383e-16, 3.7493994566546446e-32, 5.0],
+          [-5.624099184981967e-32, -3.061616997868383e-16, -5.0],
+          [-9.184850993605148e-16, -5.0, 0.0],
+          [-5.624099184981967e-32, -3.061616997868383e-16, 5.0],
+          [3.061616997868383e-16, -7.498798913309289e-32, -5.0],
+          [5.0, -1.2246467991473533e-15, 0.0],
+          [3.061616997868383e-16, -7.498798913309289e-32, 5.0]
+        ],
+        "evaluateGridD1 points, u-major (iu * 3 + iv)": [
+          [3.061616997868383e-16, 0.0, -5.0],
+          [5.0, 0.0, 0.0],
+          [3.061616997868383e-16, 0.0, 5.0],
+          [1.8746997283273223e-32, 3.061616997868383e-16, -5.0],
+          [3.061616997868383e-16, 5.0, 0.0],
+          [1.8746997283273223e-32, 3.061616997868383e-16, 5.0],
+          [-3.061616997868383e-16, 3.7493994566546446e-32, -5.0],
+          [-5.0, 6.123233995736766e-16, 0.0],
+          [-3.061616997868383e-16, 3.7493994566546446e-32, 5.0],
+          [-5.624099184981967e-32, -3.061616997868383e-16, -5.0],
+          [-9.184850993605148e-16, -5.0, 0.0],
+          [-5.624099184981967e-32, -3.061616997868383e-16, 5.0],
+          [3.061616997868383e-16, -7.498798913309289e-32, -5.0],
+          [5.0, -1.2246467991473533e-15, 0.0],
+          [3.061616997868383e-16, -7.498798913309289e-32, 5.0]
+        ]
+      }
     },
     "kernel_output": {
       "type": "measurement",
-      "data": {},
-      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 486"
+      "data": {
+        "drawMesh points, u-major (iu * 3 + iv)": [
+          [3.061616997868383e-16, 0.0, -5.0],
+          [5.0, 0.0, 0.0],
+          [3.061616997868383e-16, 0.0, 5.0],
+          [1.8746997283273223e-32, 3.061616997868383e-16, -5.0],
+          [3.061616997868383e-16, 5.0, 0.0],
+          [1.8746997283273223e-32, 3.061616997868383e-16, 5.0],
+          [-3.061616997868383e-16, 3.7493994566546446e-32, -5.0],
+          [-5.0, 6.123233995736766e-16, 0.0],
+          [-3.061616997868383e-16, 3.7493994566546446e-32, 5.0],
+          [-5.624099184981967e-32, -3.061616997868383e-16, -5.0],
+          [-9.184850993605148e-16, -5.0, 0.0],
+          [-5.624099184981967e-32, -3.061616997868383e-16, 5.0],
+          [3.061616997868383e-16, -7.498798913309289e-32, -5.0],
+          [5.0, -1.2246467991473533e-15, 0.0],
+          [3.061616997868383e-16, -7.498798913309289e-32, 5.0]
+        ],
+        "evaluateGridD1 points, u-major (iu * 3 + iv)": [
+          [3.061616997868383e-16, 0.0, -5.0],
+          [5.0, 0.0, 0.0],
+          [3.061616997868383e-16, 0.0, 5.0],
+          [1.8746997283273223e-32, 3.061616997868383e-16, -5.0],
+          [3.061616997868383e-16, 5.0, 0.0],
+          [1.8746997283273223e-32, 3.061616997868383e-16, 5.0],
+          [-3.061616997868383e-16, 3.7493994566546446e-32, -5.0],
+          [-5.0, 6.123233995736766e-16, 0.0],
+          [-3.061616997868383e-16, 3.7493994566546446e-32, 5.0],
+          [-5.624099184981967e-32, -3.061616997868383e-16, -5.0],
+          [-9.184850993605148e-16, -5.0, 0.0],
+          [-5.624099184981967e-32, -3.061616997868383e-16, 5.0],
+          [3.061616997868383e-16, -7.498798913309289e-32, -5.0],
+          [5.0, -1.2246467991473533e-15, 0.0],
+          [3.061616997868383e-16, -7.498798913309289e-32, 5.0]
+        ]
+      },
+      "source": "Scripts/repro/766-surface-evidence-fix/transcript.txt lines 28 to 42"
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the 15 points of the 5 x 3 grid of a radius-5 sphere, u = 0, pi/2, pi, 3pi/2, 2pi and v = -pi/2, 0, pi/2, in u-major order (index = iu * 3 + iv). Bridge: SurfaceGrid.at(u:v:) of Surface.drawMesh and the .point of evaluateGridD1(...).at(u:v:), read with a temporary print. Kernel: Geom_SphericalSurface::D0 at each (u, v) for the drawMesh sweep, and GeomGridEval_Surface::EvaluateGridD1 with the point taken at row iu + 1, column iv + 1 for evaluateGridD1, which is the kernel's own u-major array. Bit-identical on both sides, so drawMesh and evaluateGridD1 agree cell for cell, which is what the test asserts."
   },
   {
     "test_name": "Issue 486: surface grid layout::empty parameter arrays give an empty grid, not a grid of zeroes",
@@ -13919,25 +14085,22 @@
     "bridge_output": {
       "type": "measurement",
       "data": {
-        "S(0.5,0.5)": [
-          0.49997944573322467,
-          0.49997938750984927,
-          0.999959739527214
-        ]
+        "S(0.5,0.5)": [0.49997944573322467, 0.49997938750984927, 0.999959739527214]
       }
     },
     "kernel_output": {
       "type": "measurement",
       "data": {
-        "solver": "meets the target (displacement form)"
+        "S(0.5,0.5)": [0.5, 0.5, 1.0]
       },
-      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt nlPlateIncrementalSolve"
+      "source": "Scripts/repro/766-surface-evidence-fix/transcript.txt line 43"
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the surface point at uv (0.5, 0.5) after IncrementalSolve(2, 1, 4, false) on the z = 0 plane with one G0 constraint (0.5, 0.5) -> (0.5, 0.5, 1). Bridge: Surface.nlPlateDeformedIncremental(...).point(atU: 0.5, v: 0.5), read with a temporary print; it is the 20x20 GeomAPI_PointsToBSplineSurface refit of the plate (tolerance 1e-3). Kernel: NLPlate_NLPlate::Evaluate(0.5, 0.5), which is the absolute deformed point (#1049), not a displacement. The two are not bit-identical by design: they differ by the refit error, 4.97e-5, inside the 1e-3 the test asserts. The probe's copy of the bridge refit reproduces the bridge value exactly (0.49997944573322467, 0.49997938750984927, 0.999959739527214, transcript line 43). The earlier Scripts/repro/766-nlplate-g2g3-platethrough transcript line for this test printed (1, 1, 1) because its at() helper added the base point to an Evaluate that is already absolute, so that line was never comparable and is not used."
   },
   {
     "test_name": "NLPlate G2/G3 Constraints::nlPlateDerivative",
@@ -15008,18 +15171,141 @@
     "bridge_function": "OCCTGeomConvertApproxSurface",
     "bridge_output": {
       "type": "measurement",
-      "data": {}
+      "data": {
+        "sphere r=10, shared defaults": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "sphere r=10, tol 1e-5": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "sphere r=10, tol 1e-9": {
+          "isDone": false,
+          "hasResult": true,
+          "surface": true
+        },
+        "sphere r=10, C0": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "sphere r=10, C1": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "offset sphere +1.5, tol 1e-5": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "offset sphere +1.5, shared defaults": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "torus 20/5, shared defaults": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "torus 20/5, tol 1e-9": {
+          "isDone": false,
+          "hasResult": true,
+          "surface": true
+        },
+        "trimmed cylinder r=5": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "trimmed cone": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "trimmed cone, degree 4 in 20 segments": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        }
+      }
     },
     "kernel_output": {
       "type": "measurement",
-      "data": {},
-      "source": "Scripts/repro/766-issue491-522-572/transcript.txt lines 2 and 3: '491 sphere r=10 tol 1e-9 C2: IsDone=0 HasResult=1 MaxError=3.11e-09' and '491 torus 20/5 tol 1e-9 C2: IsDone=0 HasResult=1 MaxError=0.000395'"
+      "data": {
+        "sphere r=10, shared defaults": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "sphere r=10, tol 1e-5": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "sphere r=10, tol 1e-9": {
+          "isDone": false,
+          "hasResult": true,
+          "surface": true
+        },
+        "sphere r=10, C0": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "sphere r=10, C1": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "offset sphere +1.5, tol 1e-5": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "offset sphere +1.5, shared defaults": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "torus 20/5, shared defaults": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "torus 20/5, tol 1e-9": {
+          "isDone": false,
+          "hasResult": true,
+          "surface": true
+        },
+        "trimmed cylinder r=5": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "trimmed cone": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        },
+        "trimmed cone, degree 4 in 20 segments": {
+          "isDone": true,
+          "hasResult": true,
+          "surface": true
+        }
+      },
+      "source": "Scripts/repro/766-surface-evidence-fix/transcript.txt lines 44 to 55"
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: for each of the twelve approximation requests of the suite, whether the fit is done, whether it has a result, and whether a surface came back. Bridge: Surface.approxWithDetails(...).isDone, .hasResult and (.surface != nil), read with a temporary print inside the test's loop. Kernel: GeomConvert_ApproxSurface IsDone() and HasResult() and a non-null Surface(), built with the arguments the bridge helper uses (tolerance, continuity in both directions, maxDegree in both, maxSegments, PrecisCode 0). hasResult equals surface-present for every request and isDone implies hasResult, which is what the test asserts; the two over-tolerance requests (sphere and torus at 1e-9) are isDone false with a result on both sides."
   },
   {
     "test_name": "GeomFill_Profiler::add curves and perform",
