@@ -35,7 +35,7 @@ for that to show up as anything but wall-clock time.
 
 **Fixture 2, a gap inside the caller's tolerance but outside OCCT's default confusion precision**
 (box2 offset by 5e-5, with `tolerance = 1e-3`): `(e)` glue+fuzzy and `(f)` fuzzy-only (glue off)
-again measured identically (1 solid, 10 faces) — so `SetGlue` itself still isn't the discriminator.
+again measured identically (1 solid, 10 faces), so `SetGlue` itself still isn't the discriminator.
 **`(g)`, the exact fallback construction the pre-fix bridge code runs
 (`BRepAlgoAPI_Fuse(shape1->shape, shape2->shape)`, no `SetFuzzyValue`, no `SetGlue`)**, measured
 **2 solids, 12 faces**: a compound of two untouched boxes, not a glued solid.
@@ -54,7 +54,7 @@ on this fixture and is red on the pre-fix bridge code (measured `solidCount == 2
 and green after the fix (measured `solidCount == 1`, matching `(e)`).
 
 The existing `glueTwoBoxes` test shares an *exactly* coincident face (fixture 1), where `(b)`/`(c)`/`(d)`
-all agree — which is exactly why that test kept passing while the bug shipped.
+all agree, which is exactly why that test kept passing while the bug shipped.
 
 ## Reproducing
 
