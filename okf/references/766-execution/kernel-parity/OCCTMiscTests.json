@@ -2374,7 +2374,7 @@
       "data": "SheetMetal.Builder is a composite Swift construction (flange prisms, a bend solid chosen by Swift-side seam and direction logic, fuse). There is no single kernel operation with the same inputs, and re-implementing the builder in C++ would test the re-implementation, not the builder. Both assertions compare two builds of the same code against each other."
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2395,7 +2395,7 @@
       "data": "SheetMetal.Builder is a composite Swift construction (flange prisms, a bend solid chosen by Swift-side seam and direction logic, fuse). There is no single kernel operation with the same inputs, and re-implementing the builder in C++ would test the re-implementation, not the builder. Both assertions compare two builds of the same code against each other."
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2417,7 +2417,7 @@
       "data": "SheetMetal.Builder is a composite Swift construction (flange prisms, a bend solid chosen by Swift-side seam and direction logic, fuse). There is no single kernel operation with the same inputs, and re-implementing the builder in C++ would test the re-implementation, not the builder. Both assertions compare two builds of the same code against each other."
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
