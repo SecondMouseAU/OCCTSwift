@@ -4057,6 +4057,6 @@
     },
     "status": "PASS",
     "kernel_probe": "Scripts/repro/766-healing-446-484/probe.mm",
-    "source": "Same quantity on both sides: for the fixture the test builds (box 10 x 20 x 30, or cylinder r=5 h=12), its face count and how many of its faces Face.fixed(tolerance: 1e-6) (OCCTFaceFix) returns valid and as a single face. Bridge: a temporary print in Issue484FaceFixContextTests (reverted) observed faces=3 validSingle=3. Kernel: ShapeFix_Face with a ShapeBuild_ReShape context per face, transcript.txt line 'cylinder r5 h12: ShapeFix_Face per face -> 3 of 3 valid single faces'. The earlier records held one generic pair of strings for both tests."
+    "source": "Same quantity on both sides: for the fixture the test builds (box 10 x 20 x 30, or cylinder r=5 h=12), its face count and how many of its faces Face.fixed(tolerance: 1e-6) (OCCTFaceFix) returns valid and as a single face. Bridge: a temporary print in Issue484FaceFixContextTests (reverted) observed faces=3 validSingle=3. Kernel: ShapeFix_Face with a ShapeBuild_ReShape context per face, transcript.txt line 'cylinder r5 h12: ShapeFix_Face per face -> 3 of 3 valid single faces'. The earlier records held one generic pair of strings for both tests. The test now asserts exactly this record: faces.count == 3 (the lateral surface and two caps), and per face isValid and faces().count == 1, with the valid single faces counted and required to be 3. It used to assert only isValid over whatever faces() yielded."
   }
 ]
