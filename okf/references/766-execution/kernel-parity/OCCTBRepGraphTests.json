@@ -4892,40 +4892,47 @@
     "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
     "bridge_output": {
       "type": "optional",
-      "data": null
+      "data": {
+        "sample": null
+      }
     },
     "kernel_output": {
-      "type": "optional",
+      "type": "face_lookup",
       "data": {
         "faces": 6,
-        "face_999_exists": false
+        "face_999_shape_null": true
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": null,
+      "differences": [],
+      "reason": "The nil is the bridge's own guard on the kernel answer, not a kernel output: OCCTBRepGraphSampleFaceUVGrid returns 0 when Shapes().Shape(face 999) is null, and Swift maps 0 to nil. There is no kernel quantity to compare it with."
     },
-    "status": "PASS"
+    "status": "N/A",
+    "source": "Bridge: sampleFaceUVGrid(faceIndex: 999, ...) returned nil, which the test asserts. Kernel: the only kernel fact is that the graph has 6 faces and Shapes().Shape(face 999) is null (\"sampleInvalidFace: faces=6, face 999 -> Shape() null=1\" in the probe transcript); it is recorded for context, not compared. The old record put {faces, face_999_exists} on the kernel side against a bare null on the bridge side while claiming equal.",
+    "probe": "Scripts/repro/766-brepgraph-stats-vertex-uvgrid/"
   },
   {
     "test_name": "BRepGraph UV Grid::sampleZeroCounts",
     "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
     "bridge_output": {
       "type": "optional",
-      "data": null
-    },
-    "kernel_output": {
-      "type": "optional",
       "data": {
-        "uSamples": 0,
-        "sampled": false
+        "sample": null
       }
     },
-    "comparison": {
-      "equal": true,
-      "differences": []
+    "kernel_output": {
+      "type": "none",
+      "data": null
     },
-    "status": "PASS"
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "Rejected in Swift before any bridge or kernel call: Sampling.gridTotal returns nil for a zero sample count, so sampleFaceUVGrid never reaches OCCTBRepGraphSampleFaceUVGrid."
+    },
+    "status": "N/A",
+    "source": "Bridge side: sampleFaceUVGrid(faceIndex: 0, uSamples: 0, vSamples: 5) returned nil, which the test asserts. There is no kernel call for this guard; the probe's \"sampleZeroCounts: no sample (null face or zero count)\" line is a statement of the guard, not a kernel measurement, so no kernel value is recorded. The old record put {uSamples: 0, sampled: false} on the kernel side.",
+    "probe": "Scripts/repro/766-brepgraph-stats-vertex-uvgrid/"
   },
   {
     "test_name": "BRepGraph Wire Extended::wireIsClosed",
