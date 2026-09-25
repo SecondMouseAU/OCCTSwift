@@ -54,11 +54,12 @@ struct Issue1479HealingFixNullGuardsTests {
     func composeShellOrdinaryFaceUnaffected() throws {
         let rect = try #require(Wire.rectangle(width: 10, height: 10))
         let face = try #require(Shape.face(from: rect))
-        let result = face.composeShell()
-        #expect(result != nil)
-        if let result {
-            #expect(result.isValid)
-        }
+        // #766: pinned to ShapeFix_ComposeShell's own result on a 1x1 grid (one valid face of
+        // area 100, Scripts/repro/766-healing-1479-1491), not just non-nil.
+        let result = try #require(face.composeShell())
+        #expect(result.isValid)
+        #expect(result.faces().count == 1)
+        #expect(abs((result.surfaceArea ?? 0) - 100) < 1e-9)
     }
 
     // MARK: - Finding 2: OCCTShapeFixEdgeConnect
@@ -73,7 +74,16 @@ struct Issue1479HealingFixNullGuardsTests {
     @Test("an ordinary box's fixEdgeConnect() is unaffected")
     func edgeConnectOrdinaryShapeUnaffected() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        let fixed = box.fixEdgeConnect()
-        #expect(fixed != nil)
+        let fixed = try #require(box.fixEdgeConnect())
+        #expect(fixed.faces().count == 6)
+        #expect(abs((fixed.volume ?? 0) - 1000) < 1e-9)
+        // #766 finding: the name says "unaffected", and it is not. ShapeFix_EdgeConnect edits the
+        // box's edges in place, and the bridge hands back that same (shared) shape: the kernel
+        // reports it invalid afterwards, 3 of 6 wires and 5 of 6 faces failing BRepCheck
+        // (Scripts/repro/766-healing-1479-1491/transcript.txt). Recorded as a known issue so the
+        // day it is fixed this test says so.
+        withKnownIssue("ShapeFix_EdgeConnect leaves a valid box invalid (#766 finding)") {
+            #expect(fixed.isValid)
+        }
     }
 }
