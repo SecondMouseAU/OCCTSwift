@@ -279,3 +279,14 @@ Probe: `Scripts/repro/766-modeling-multi-offset-wire/`.
 | multipleInwardOffsets | `OCCTWireMultiOffset` returns 0 wires | `:15 Expectation failed: wires.count >= 3` | pass | `OCCTWireMultiOffset` | PASS |
 | outwardOffset | `OCCTWireMultiOffset` returns 0 wires | `:32 Expectation failed: wires.count >= 2` | pass | `OCCTWireMultiOffset` | PASS |
 | emptyOffsets | `Shape.multiOffsetWires` treats an empty offset list as a single 0 offset | `:39 Expectation failed: wires.isEmpty` | pass | `OCCTWireMultiOffset` | N/A: an empty list is refused in Swift and in the bridge before any kernel call |
+### `FuseAndBlendTests.swift` (3 tests)
+Probe: `Scripts/repro/766-modeling-fuse-and-blend/`.
+| fuseBlendBoxes | `OCCTShapeFuseAndBlend` returns nullptr | `:16 Expectation failed: result != nil` | pass | `OCCTShapeFuseAndBlend` | PASS: no section or generated edge exists for two boxes sharing coplanar faces, so nothing is blended |
+| fuseBlendBoxCylinder | `OCCTShapeFuseAndBlend` returns nullptr | `:28 Expectation failed: result != nil` | pass | `OCCTShapeFuseAndBlend` | PASS |
+| cutBlend | `OCCTShapeCutAndBlend` returns nullptr | `:37 Expectation failed: result != nil` | pass | `OCCTShapeCutAndBlend` | PASS |
+### `GlueTests.swift` (1 tests)
+Probe: `Scripts/repro/766-modeling-glue/`.
+| glueTwoBoxes | `OCCTShapeGlue` returns only the first shape from its plain-fuse fallback | `:24 Expectation failed: abs(gluedVolume - expectedVolume) < 1.0` | pass | `OCCTShapeGlue` | PASS: values match, but OCCTShapeGlue's glue-mode build always fails on this input (both shapes are passed as arguments and none as tools) and the result comes from its plain BRepAlgoAPI_Fuse fallback; see notes |
+### `HalfSpaceTests.swift` (1 tests)
+Probe: `Scripts/repro/766-modeling-half-space/`.
+| halfSpaceFromFace | `OCCTShapeCreateHalfSpace` returns nullptr; returns a wrapper around a null solid (the earlier `halfSpace != nil` test passed this); builds the half-space from the mirrored reference point (0, 0, -5) | `:15 Issue recorded`; `:23 Expectation failed: halfSpace.shapeType == .solid`, `:25 Expectation failed: halfSpace.classify(point: SIMD3(0, 0, -5)) == .outside`; `:24 Expectation failed: halfSpace.classify(point: SIMD3(0, 0, 5)) == .inside`, `:25 Expectation failed: halfSpace.classify(point: SIMD3(0, 0, -5)) == .outside` | pass | `OCCTShapeCreateHalfSpace` | PASS |

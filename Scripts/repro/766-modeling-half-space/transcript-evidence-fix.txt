@@ -1,0 +1,1 @@
+halfSpaceFromFace: faceDone=1 done=1 produced=1 type=solid state(0,0,5)=inside state(0,0,-5)=outside

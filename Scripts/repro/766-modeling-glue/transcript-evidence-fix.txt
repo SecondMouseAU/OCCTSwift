@@ -1,0 +1,3 @@
+glue fuse as OCCTShapeGlue calls it: done=0 hasErrors=1 null=1
+plain fuse fallback: done=1
+glueTwoBoxes returned shape: produced=1 type=compound faces=10 valid=1 volume=1999.9999999999993
