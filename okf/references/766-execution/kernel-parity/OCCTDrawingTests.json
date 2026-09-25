@@ -1793,12 +1793,12 @@
       "visibleEdges": 9,
       "extent": [
         [
-          -7.07106791,
-          -8.16496591
+          -7.071067911865477,
+          -8.164965909277262
         ],
         [
-          7.07106791,
-          8.16496591
+          7.071067911865476,
+          8.16496590927726
         ]
       ]
     },
@@ -1806,7 +1806,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the kernel side was previously printed at 9 significant digits): the unique visible edge count and the BRepBndLib extent of the isometric view of the centred 10-unit box. Bridge: Drawing.isometricView(of:) .visibleEdges .edges().count and .boundingBox x/y (Scripts/repro/766-drawing-core-transform-evidence-fix/swift-side.txt, core.iso.visible). Kernel: HLRBRep_Algo with HLRAlgo_Projector(gp_Ax2(origin, (1,1,1)/sqrt 3)) then BRepBndLib::Add of the visible compound at %.17g (Scripts/repro/766-drawing-core-transform-evidence-fix/transcript.txt). The extent includes BRepBndLib's 1e-7 tolerance gap on both sides.",
+    "probe": "Scripts/repro/766-drawing-core-transform/, Scripts/repro/766-drawing-core-transform-evidence-fix/"
   },
   {
     "test_name": "Drawing Tests::Get hidden edges from isometric view",
@@ -1828,12 +1830,12 @@
       "hiddenEdges": 3,
       "extent": [
         [
-          -7.07106791,
-          -4.082483
+          -7.071067911865477,
+          -4.082483004638631
         ],
         [
-          7.07106791,
-          8.16496591
+          7.071067911865476,
+          8.16496590927726
         ]
       ]
     },
@@ -1841,7 +1843,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the kernel side was previously printed at 9 significant digits): the unique hidden edge count and the BRepBndLib extent of the isometric view of the centred 10-unit box. Bridge: Drawing.isometricView(of:) .hiddenEdges .edges().count and .boundingBox x/y (Scripts/repro/766-drawing-core-transform-evidence-fix/swift-side.txt, core.iso.hidden). Kernel: HLRBRep_Algo with HLRAlgo_Projector(gp_Ax2(origin, (1,1,1)/sqrt 3)) then BRepBndLib::Add of the hidden compound at %.17g (Scripts/repro/766-drawing-core-transform-evidence-fix/transcript.txt). The extent includes BRepBndLib's 1e-7 tolerance gap on both sides.",
+    "probe": "Scripts/repro/766-drawing-core-transform/, Scripts/repro/766-drawing-core-transform-evidence-fix/"
   },
   {
     "test_name": "Drawing Tests::Hidden edges are nil for a convex shape with no self-occlusion (#1421)",
@@ -2036,7 +2040,7 @@
     "test_name": "#1183 Drawing transform sites share one formula::collectDrawing's edge path (collectProjectedEdges) applies scale*p+translate",
     "bridge_function": "OCCTDrawingCreate",
     "bridge_output": {
-      "topViewBounds": [
+      "topViewExtent": [
         [
           -5.0,
           -5.0
@@ -2048,14 +2052,14 @@
       ]
     },
     "kernel_output": {
-      "topVisibleExtent": [
+      "topViewExtent": [
         [
-          -5.0000001,
-          -5.0000001
+          -5.0,
+          -5.0
         ],
         [
-          5.0000001,
-          5.0000001
+          5.0,
+          5.0
         ]
       ]
     },
@@ -2063,6 +2067,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (the previous record put Drawing.bounds() on the bridge side and a BRepBndLib box with its 1e-7 gap on the kernel side, so both the keys and the values differed): the 2D extent of the top view's edge geometry for the centred 10-unit box. Bridge: Drawing.bounds(includeAnnotations: false), the min/max over the edges' polyline points (Scripts/repro/766-drawing-core-transform-evidence-fix/swift-side.txt, core.top.bounds). Kernel: min/max of BRep_Tool::Pnt over every vertex of the six HLR compounds, which is the same set of points for straight edges (Scripts/repro/766-drawing-core-transform-evidence-fix/transcript.txt, top view vertex extent). The test then checks that collectDrawing's recorded edge points land on scale * extent + translate, (90,190) to (110,210) for scale 2 and translate (100,200) (Scripts/repro/766-drawing-core-transform-evidence-fix/swift-side.txt, core.top.sinkExtent); that is Swift arithmetic with no kernel counterpart and is not part of the compared payload, and its red run is unchanged.",
+    "probe": "Scripts/repro/766-drawing-core-transform/, Scripts/repro/766-drawing-core-transform-evidence-fix/"
   }
 ]
