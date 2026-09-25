@@ -1534,18 +1534,24 @@
     "test_name": "Material OCCT Operations Tests::roughnessFromSpecular",
     "bridge_function": "OCCTMaterialRoughnessFromSpecular",
     "bridge_output": {
-      "type": "float",
-      "data": 0.2
+      "type": "value",
+      "data": {
+        "roughness": 0.2
+      }
     },
     "kernel_output": {
-      "type": "float",
-      "data": 0.200000003
+      "type": "value",
+      "data": {
+        "roughness": 0.2
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides (float32): roughness. Bridge: Material.roughnessFromSpecular(color: .white, shininess: 0.8) = OCCTMaterialRoughnessFromSpecular, observed 0.2 (the test asserts within 1e-6 of 0.2). Kernel: Graphic3d_PBRMaterial::RoughnessFromSpecular(white, 0.8) printed 0.2. Not in the worklist; found by re-running the criteria over the file (the two sides differed in the ninth digit, a Float rounding artefact). Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id material-roughnessFromSpecular.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "Material OCCT Operations Tests::metallicFromSpecular",
@@ -1585,35 +1591,47 @@
     "test_name": "OCCTDate Tests::epoch",
     "bridge_function": "OCCTDateValues",
     "bridge_output": {
-      "type": "date",
-      "data": "1979-01-01"
+      "type": "value",
+      "data": {
+        "date": "1979-01-01 00:00:00"
+      }
     },
     "kernel_output": {
-      "type": "date",
-      "data": "1979-01-01 00:00:00"
+      "type": "value",
+      "data": {
+        "date": "1979-01-01 00:00:00"
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the epoch date, as YYYY-MM-DD hh:mm:ss (before, one side carried a date and the other a date and time). Bridge: OCCTDate.epoch.components, observed 1979-01-01 00:00:00. Kernel: a default Quantity_Date, Values(), printed 1979-01-01 00:00:00. Not in the worklist; found by re-running the criteria over the file. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id date-epoch.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "OCCTDate Tests::createDate",
     "bridge_function": "OCCTDateCreate",
     "bridge_output": {
-      "type": "date",
-      "data": "2000-06-15 14:30"
+      "type": "value",
+      "data": {
+        "date": "2000-06-15 14:30:00"
+      }
     },
     "kernel_output": {
-      "type": "date",
-      "data": "2000-06-15 14:30:00"
+      "type": "value",
+      "data": {
+        "date": "2000-06-15 14:30:00"
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the date built from month 6, day 15, year 2000, 14:30, as YYYY-MM-DD hh:mm:ss. Bridge: OCCTDate(month: 6, day: 15, year: 2000, hour: 14, minute: 30) read back through .components, observed 2000-06-15 14:30:00. Kernel: Quantity_Date(6, 15, 2000, 14, 30, 0, 0, 0), Values(), printed 2000-06-15 14:30:00. Not in the worklist; found by re-running the criteria over the file. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id date-createDate.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "OCCTDate Tests::addPeriod",
@@ -2321,24 +2339,26 @@
     "test_name": "UnitsAPI Tests::localSystem",
     "bridge_function": "OCCTUnitsSetLocalSystem",
     "bridge_output": {
-      "type": "system",
-      "data": [
-        ".mdtv",
-        ".si"
-      ]
+      "type": "value",
+      "data": {
+        "after_set_mdtv": 2,
+        "after_set_si": 1
+      }
     },
     "kernel_output": {
-      "type": "LocalSystem",
-      "data": [
-        2,
-        1
-      ]
+      "type": "value",
+      "data": {
+        "after_set_mdtv": 2,
+        "after_set_si": 1
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the local unit system read back after SetLocalSystem(MDTV) and after SetLocalSystem(SI), as UnitsAPI_SystemUnits ordinals (the record previously carried enum case names on one side and ordinals on the other). Bridge: Units.setLocalSystem then Units.localSystem.rawValue (OCCTUnitsGetLocalSystem), observed 2 and 1. Kernel: UnitsAPI::LocalSystem() after UnitsAPI::SetLocalSystem printed 2 and 1. Not in the worklist; found by re-running the criteria over the file. Values: bridge-replay-transcript.jsonl and transcript.txt in the probe directory, id units-localSystem.",
+    "probe": "Scripts/repro/766-foundation-evidence-fix/"
   },
   {
     "test_name": "OSD Environment Tests::setGetRemove",
