@@ -5842,20 +5842,15 @@
     "bridge_output": {
       "type": "scalar+point",
       "data": {
-        "observed": {
-          "length": 10,
-          "center_x": 5
-        },
-        "asserted_within": 0.0001
+        "length": 10,
+        "center_x": 5
       }
     },
     "kernel_output": {
       "type": "scalar+point",
       "data": {
-        "value": {
-          "length": 10,
-          "center_x": 5
-        }
+        "length": 10,
+        "center_x": 5
       }
     },
     "comparison": {
@@ -5863,7 +5858,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-gprop-element/"
+    "probe": "Scripts/repro/766-gprop-element/",
+    "source": "Same quantity on both sides: length, center_x. Bridge: GeometryProperties.lineSegment(from: (0, 0, 0), to: (10, 0, 0)) through OCCTGPropLineSegment; a temporary print observed length 10.0 and center (5.0, 0.0, 0.0), of which the test asserts length and center.x. Kernel: GProp_CelGProps on the same gp_Lin over [0, 10] printed 'lineSegmentLength: length=10 center=(5, 0, 0)' (transcript.txt). The bridge and kernel values are the same doubles; the test asserts them only to within 1e-4, which is a tolerance on the assertion and not part of either measurement."
   },
   {
     "test_name": "GProp Element Properties Tests::circularArcLength",
@@ -5871,18 +5867,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "arcLength": 3.141592653589793
-        },
-        "asserted_within": 0.0001
+        "arcLength": 3.141592653589793
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "arcLength": 3.141592653589793
-        }
+        "arcLength": 3.141592653589793
       }
     },
     "comparison": {
@@ -5890,7 +5881,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-gprop-element/"
+    "probe": "Scripts/repro/766-gprop-element/",
+    "source": "Same quantity on both sides: arcLength. Bridge: GeometryProperties.circularArc(center: .zero, normal: (0, 0, 1), radius: 1, u1: 0, u2: pi) through OCCTGPropCircularArc; a temporary print observed arcLength 3.141592653589793. Kernel: GProp_CelGProps on the same gp_Circ over [0, pi] printed 'circularArcLength: arcLength=3.1415926535897931' (transcript.txt). The bridge and kernel values are the same doubles; the test asserts them only to within 1e-4, which is a tolerance on the assertion and not part of either measurement."
   },
   {
     "test_name": "GProp Element Properties Tests::pointSetCentroid",
@@ -5898,28 +5890,23 @@
     "bridge_output": {
       "type": "scalar+point",
       "data": {
-        "observed": {
-          "count": 4,
-          "centroid": [
-            5,
-            5,
-            0
-          ]
-        },
-        "asserted_within": 0.0001
+        "count": 4,
+        "centroid": [
+          5,
+          5,
+          0
+        ]
       }
     },
     "kernel_output": {
       "type": "scalar+point",
       "data": {
-        "value": {
-          "count": 4,
-          "centroid": [
-            5,
-            5,
-            0
-          ]
-        }
+        "count": 4,
+        "centroid": [
+          5,
+          5,
+          0
+        ]
       }
     },
     "comparison": {
@@ -5927,7 +5914,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-gprop-element/"
+    "probe": "Scripts/repro/766-gprop-element/",
+    "source": "Same quantity on both sides: count, centroid. Bridge: GeometryProperties.pointSetCentroid of the corners (0,0,0), (10,0,0), (10,10,0), (0,10,0) through OCCTGPropPointSetCentroid; a temporary print observed count 4.0 and centroid (5.0, 5.0, 0.0), of which the test asserts count, centroid.x and centroid.y. Kernel: GProp_PGProps on the same four points printed 'pointSetCentroid: mass=4 centroid=(5, 5, 0)' (transcript.txt). The bridge and kernel values are the same doubles; the test asserts them only to within 1e-4, which is a tolerance on the assertion and not part of either measurement."
   },
   {
     "test_name": "GProp Element Properties Tests::sphereSurfaceArea",
@@ -5935,18 +5923,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "area": 314.1592653589793
-        },
-        "asserted_within": 0.1
+        "area": 314.1592653589793
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "area": 314.1592653589793
-        }
+        "area": 314.1592653589793
       }
     },
     "comparison": {
@@ -5954,7 +5937,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-gprop-element/"
+    "probe": "Scripts/repro/766-gprop-element/",
+    "source": "Same quantity on both sides: area. Bridge: GeometryProperties.sphereSurfaceArea(radius: 5) through OCCTGPropSphereSurface; a temporary print observed 314.1592653589793. Kernel: GProp_SelGProps on the same gp_Sphere over the full sphere printed 'sphereSurfaceArea: area=314.15926535897933' (transcript.txt). The bridge and kernel values are the same doubles; the test asserts them only to within 0.1, which is a tolerance on the assertion and not part of either measurement."
   },
   {
     "test_name": "GProp Element Properties Tests::sphereVolume",
@@ -5962,18 +5946,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "volume": 523.5987755982989
-        },
-        "asserted_within": 0.5
+        "volume": 523.5987755982989
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "volume": 523.5987755982989
-        }
+        "volume": 523.5987755982989
       }
     },
     "comparison": {
@@ -5981,7 +5960,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-gprop-element/"
+    "probe": "Scripts/repro/766-gprop-element/",
+    "source": "Same quantity on both sides: volume. Bridge: GeometryProperties.sphereVolume(radius: 5) through OCCTGPropSphereVolume; a temporary print observed 523.5987755982989. Kernel: GProp_VelGProps on the same gp_Sphere over the full sphere printed 'sphereVolume: volume=523.59877559829886' (transcript.txt). The bridge and kernel values are the same doubles; the test asserts them only to within 0.5, which is a tolerance on the assertion and not part of either measurement."
   },
   {
     "test_name": "GProp Weighted Tests::weightedCentroidLengthMismatchIsRejected",
