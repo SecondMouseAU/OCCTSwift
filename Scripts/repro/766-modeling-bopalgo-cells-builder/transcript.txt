@@ -1,0 +1,7 @@
+createCellsBuilder: hasErrors=0
+addRemoveAll after AddAllToResult(0): null=0 valid=1 solids=2 volume=16000
+addRemoveAll after RemoveAllFromResult: null=0 valid=1 solids=0 volume=0
+removeInternalBoundaries before: null=0 valid=1 solids=1 volume=16000
+removeInternalBoundaries after: null=0 valid=1 solids=1 volume=16000
+selective material 1 before RemoveInternalBoundaries: null=0 valid=1 solids=2 volume=16000
+selective material 1 after RemoveInternalBoundaries: null=0 valid=1 solids=1 volume=16000

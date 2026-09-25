@@ -1,0 +1,1 @@
+buildSolidFromFaces: faces=6 hasErrors=0 areas=1 firstValid=1 firstVolume=1000

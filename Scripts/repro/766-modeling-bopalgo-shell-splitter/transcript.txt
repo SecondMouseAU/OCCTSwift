@@ -1,0 +1,1 @@
+splitSingleShell: hasErrors=0 shells=1 firstFaces=6
