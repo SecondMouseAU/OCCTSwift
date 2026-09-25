@@ -2296,14 +2296,45 @@ and the local enum removed (#844); `ShapeType`'s raw values already match the re
 
 ### `checkEdge(at:)`
 
-Check validity of an edge by index.
+Check the structural validity of an edge by index, using only the edge's own data.
 
 ```swift
 public func checkEdge(at index: Int) -> CheckResult
 ```
 
+Runs `BRepCheck_Edge::Minimum()`, which never looks at this shape's other sub-shapes. Measured
+(#2747, `Scripts/repro/2747-brepcheck-minimum-coverage/`), `isValid` can go `false` for exactly
+four faults, all read directly from the edge's own `BRep_TEdge` data:
+
+- No 3D curve representation, or more than one.
+- The `SameParameter` flag set without `SameRange`.
+- A parameter range that is inverted (`Last <= First`) or inconsistent with the curve's own
+  domain or periodicity.
+- The `Degenerated` flag set while a real 3D curve is still attached, though this one is only
+  reachable by mutating the `TopoDS_Edge`'s `BRep_TEdge` directly: the only public route to the
+  flag, `BRep_Builder::Degenerated`, nulls the 3D curve as a side effect, which removes the
+  precondition the check itself needs.
+
+None of these four arise from a shape built end to end through this package's own
+`Shape`/`Wire`/`Edge` API, which never sets those flags or curve representations directly; they
+are realistic for an edge read from an imported file.
+
+**What it cannot detect**: whether the curve agrees with its vertices, whether it deviates from a
+surface it should lie on, or how many faces it borders. Those live in
+`BRepCheck_Edge::InContext(_:)`, which this method never calls, both because `checkSubShape` (the
+shared bridge helper) only calls `Minimum()` and because `InContext` itself raises an uncatchable
+SIGSEGV on some inputs in this build (#2746). Read `isValid == true` as "this edge's own
+bookkeeping is self-consistent", not as "this edge is geometrically valid".
+
+```swift
+if let box = Shape.box(width: 10, height: 10, depth: 10) {
+    let check = box.checkEdge(at: 0)
+    print(check.isValid)  // true: an edge built by OCCTSwift's own API always passes
+}
+```
+
 - **Parameters:** `index`, 0-based edge index.
-- **Returns:** Check result for the specified edge.
+- **Returns:** Check result; see the limitation above before reading `isValid` as a full check.
 - **OCCT:** `BRepCheck_Edge` (via `OCCTCheckEdge`).
 
 ---
@@ -2334,12 +2365,33 @@ public func checkShell(at index: Int) -> CheckResult
 
 ### `checkVertex(at:)`
 
-Check validity of a vertex by index.
+Check the structural validity of a vertex by index. Cannot report an error, for any input.
 
 ```swift
 public func checkVertex(at index: Int) -> CheckResult
 ```
 
+`BRepCheck_Vertex::Minimum()`'s entire body is `Append(BRepCheck_NoError)` with no condition at
+all. No vertex, however malformed, can make it report anything else: `isValid` from this method is
+always `true`. Measured on an ordinary vertex, a negative-tolerance vertex and a huge-coordinate
+zero-tolerance vertex, all `NoError` (#2747, `Scripts/repro/2747-brepcheck-minimum-coverage/`),
+consistent with the source having no branch to take.
+
+Every real per-vertex check OCCT has (does the vertex's point agree with the curve or surface it
+sits on, `BRepCheck_InvalidPointOnCurve` and its siblings) lives in
+`BRepCheck_Vertex::InContext(_:)`, which this method never calls, both because `checkSubShape`
+only calls `Minimum()` and because `InContext` itself raises an uncatchable SIGSEGV on some inputs
+in this build (#2746). Do not read `isValid == true` from this method as "this vertex is valid":
+it carries no information, since it is the only value this method can ever return.
+
+```swift
+if let box = Shape.box(width: 10, height: 10, depth: 10) {
+    let check = box.checkVertex(at: 0)
+    print(check.isValid)  // true, and always true, whatever the vertex
+}
+```
+
+- **Returns:** `isValid` is always `true`.
 - **OCCT:** `BRepCheck_Vertex` (via `OCCTCheckVertex`).
 
 ---
