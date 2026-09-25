@@ -10,12 +10,17 @@ struct SurfaceDrawTests {
         let sphere = Surface.sphere(center: .zero, radius: 5)!
         let grid = sphere.drawGrid(uLineCount: 5, vLineCount: 5, pointsPerLine: 20)
         #expect(grid.count == 10)  // 5 U-iso + 5 V-iso lines
+        // #766: pin two points: u-iso 0 at v-step 10, and v-iso 2 (the equator) at u-step 5.
+        if grid.count == 10, grid[0].count == 20, grid[7].count == 20 {
+            #expect(simd_length(grid[0][10] - SIMD3(4.982922465033349, 0, 0.41289672736166172)) < 1e-12)
+            #expect(simd_length(grid[7][5] - SIMD3(-0.41289672736166133, 4.982922465033349, 0)) < 1e-12)
+        }
         for line in grid {
             #expect(line.count == 20)
             // All points should be on sphere
             for p in line {
                 let dist = simd_length(p)
-                #expect(abs(dist - 5.0) < 0.5)  // allow some tolerance for polar regions
+                #expect(abs(dist - 5.0) < 1e-9)  // #766: was 0.5; the kernel's worst is 8.9e-16
             }
         }
     }
@@ -28,6 +33,8 @@ struct SurfaceDrawTests {
         #expect(mesh.vCount == 10)
         let p = mesh.at(u: 0, v: 0)
         #expect(abs(simd_length(p) - 5.0) < 1e-6)
+        // #766: any point at radius 5 passed; (uMin, vMin) is the south pole.
+        #expect(simd_length(p - SIMD3(0, 0, -5)) < 1e-12)
     }
 
     @Test("Draw mesh on an asymmetric grid indexes .at(u:v:) correctly")

@@ -9,21 +9,23 @@ import simd
 @Suite("v0.144 Shape.section2D")
 struct Section2DTests {
     @Test("Section of a box with the XY plane returns a Drawing")
-    func sectionBox() {
+    func sectionBox() throws {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
             Issue.record("box nil")
             return
         }
         // Cut the box through z = 5 (horizontal plane).
-        let drawing = box.section2D(
-            planeOrigin: SIMD3(5, 5, 5),
-            planeNormal: SIMD3(0, 0, 1)
-        )
-        #expect(drawing != nil)
+        let drawing = try #require(
+            box.section2D(
+                planeOrigin: SIMD3(5, 5, 5),
+                planeNormal: SIMD3(0, 0, 1)
+            ))
+        // #1979: `!= nil` only. A box cut through its middle is a square: four edges.
+        #expect(drawing.visibleEdges?.subShapes(ofType: .edge).count == 4)
     }
 
     @Test("section2DView includes hatch and label")
-    func section2DView() {
+    func section2DView() throws {
         guard let box = Shape.box(width: 30, height: 30, depth: 30) else {
             Issue.record("box nil")
             return
@@ -33,18 +35,18 @@ struct Section2DTests {
             planeNormal: SIMD3(0, 0, 1),
             label: "A-A"
         )
-        #expect(view != nil)
-        if let v = view {
-            // Should have a hatch + a text label.
-            let hasHatch = v.drawing.annotations.contains {
-                if case .hatch = $0 { return true } else { return false }
-            }
-            let hasLabel = v.drawing.annotations.contains {
-                if case .textLabel = $0 { return true } else { return false }
-            }
-            #expect(hasHatch)
-            #expect(hasLabel)
+        let v = try #require(view)  // #1979: was `if let`
+        // Should have a hatch + a text label, and nothing else.
+        let hasHatch = v.drawing.annotations.contains {
+            if case .hatch = $0 { return true } else { return false }
         }
+        let hasLabel = v.drawing.annotations.contains {
+            if case .textLabel = $0 { return true } else { return false }
+        }
+        #expect(hasHatch)
+        #expect(hasLabel)
+        #expect(v.drawing.annotations.count == 2)
+        #expect(v.drawing.visibleEdges?.subShapes(ofType: .edge).count == 4)
     }
 
     // #1171: the only existing section2DView test above sections a plain box, which produces one
@@ -58,7 +60,7 @@ struct Section2DTests {
     // would only be expected to diverge for touching/overlapping loops, which a section of a
     // through-hole never produces.
     @Test("section2DView on a box with a through-hole keeps both the outer and inner contour loops")
-    func section2DViewBoxWithHole() {
+    func section2DViewBoxWithHole() throws {
         guard let box = Shape.box(width: 30, height: 30, depth: 30),
             let cyl = Shape.cylinder(radius: 5, height: 40),
             let cylCentered = cyl.translated(by: SIMD3(15, 15, -5)),
@@ -72,12 +74,12 @@ struct Section2DTests {
             planeNormal: SIMD3(0, 0, 1),
             label: "B-B"
         )
-        #expect(view != nil)
-        if let v = view {
-            let edgeCount = v.drawing.visibleEdges?.subShapes(ofType: .edge).count ?? 0
-            // Both the outer square loop and the inner circular loop must survive: fewer edges
-            // than this would mean one loop was silently dropped by the wire-compounding step.
-            #expect(edgeCount >= 5, "expected edges from both loops, got \(edgeCount)")
-        }
+        let v = try #require(view)  // #1979: was `if let`
+        let edgeCount = v.drawing.visibleEdges?.subShapes(ofType: .edge).count ?? 0
+        // Both the outer square loop and the inner circular loop must survive: fewer edges
+        // than this would mean one loop was silently dropped by the wire-compounding step.
+        #expect(edgeCount >= 5, "expected edges from both loops, got \(edgeCount)")
+        // #1979: `>= 5` alone admits a partial loop; the count is measured at 20.
+        #expect(edgeCount == 20)
     }
 }

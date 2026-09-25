@@ -1,0 +1,13 @@
+fresh qualifier=0 angular=0
+after SetQualifier(Max): qualifier=2 value=20 range=false plusMinus=false
+after SetQualifier(None): qualifier=0
+angular: qualifier=1 angularQualifier=2
+decimal places fresh=(0, 0)
+decimal places set (2, 3) -> (2, 3); bridge presence test (l > 0 || r > 0) = true
+decimal places set (0, 4) -> (0, 4); bridge presence test (l > 0 || r > 0) = true
+decimal places set (0, 0) -> (0, 0); bridge presence test (l > 0 || r > 0) = false
+fresh modifiers=0
+modifiers read back: 19 1 2 (written, as ordinals: 19 1 2)
+after clearing: modifiers=0
+classifiers (location, size): LinearDistance=(true, false) Diameter=(false, true) CommonLabel=(false, false)
+types that are both location and size: 0

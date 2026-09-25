@@ -1,0 +1,28 @@
+sine A0: throws Geom2dEval_SineWaveCurve: amplitude must be > 0
+sine omega 0: throws Geom2dEval_SineWaveCurve: omega must be > 0
+involute R0: throws Geom2dEval_CircleInvoluteCurve: radius must be > 0
+archimedean growth 0: throws Geom2dEval_ArchimedeanSpiralCurve: growth rate must be > 0
+archimedean r0 -1: throws Geom2dEval_ArchimedeanSpiralCurve: initial radius must be >= 0
+log scale 0: throws Geom2dEval_LogarithmicSpiralCurve: scale must be > 0
+log growth 0: throws Geom2dEval_LogarithmicSpiralCurve: growth exponent must be > 0
+sine 1,1,0 D0(0.5) = (0.5, 0.479425538604)
+sine 1,1,0 D0(0) = (0, 0)
+involute R1 D0(0.5) = (1.11729533119, 0.040634257659)
+archimedean 1, 0.1 D0(0.5) = (0.921461689985, 0.503396815534)
+log 1, 0.2 D0(0.5) = (0.969878725612, 0.529847162648)
+sine 1,1,0 D1(0.5): P=(0.5, 0.479425538604) D1=(1, 0.87758256189)
+sine A NaN D0(0.5) = (nan, nan)
+sine omega NaN D0(0.5) = (nan, nan)
+sine A inf D0(0.5) = (nan, inf)
+involute R NaN D0(0.5) = (nan, nan)
+archimedean r0 NaN D0(0.5) = (nan, nan)
+log scale NaN D0(0.5) = (nan, nan)
+sine A NaN D1(0.5): P=(nan, nan) D1=(nan, nan)
+sine u NaN D0(nan) = (nan, nan)
+sine u inf D0(inf) = (nan, nan)
+involute R1 u NaN D1(nan): P=(nan, nan) D1=(nan, nan)
+log 1, 1 D0(1000) = (nan, nan)
+log 1, 1 D0(1) = (1.46869393992, 2.28735528718)
+placed involute R2 at (10,20) D0(0) = (12, 20)
+placed involute R2 at (10,20) D1(1): P=(12.7635465814, 20.6023373579) D1=(1.08060461174, 1.68294196962)
+involute R2 radius NaN placed D0(1) = (nan, nan)

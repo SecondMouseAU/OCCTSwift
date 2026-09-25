@@ -1,0 +1,5 @@
+addAndFindColor: added null=false found IsEqual added=true
+colorCount: before=0 after=1
+removeColor: before=1 after=0
+visibility: default=true afterFalse=false afterTrue=true
+colorByLayer: default=false afterTrue=true

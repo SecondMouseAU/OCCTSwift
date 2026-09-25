@@ -1168,5 +1168,1599 @@
     "red": ":323 `intersectMesh != nil`",
     "injection": "C2: occtMeshBoolean returns nullptr",
     "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Presentation Mesh Tests::Box shaded mesh has 12 triangles",
+    "bridge_function": "OCCTShapeGetShadedMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 12,
+        "vertices": 24,
+        "distinct_normals": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 12,
+        "vertices": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":354 `len > 0.5` (every vertex)",
+    "injection": "D1: computed vertex normals never accumulated (left zero)",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Presentation Mesh Tests::Cylinder shaded mesh has triangles",
+    "bridge_function": "OCCTShapeGetShadedMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 100,
+        "vertices": 106
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 100,
+        "vertices": 106
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":363 `mesh.triangleCount == 100`, :364",
+    "injection": "D1b: the shape's first face skipped in both passes",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Presentation Mesh Tests::Box edge mesh has 12 segments",
+    "bridge_function": "OCCTShapeGetEdgeMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "segments": 12,
+        "vertices": 24
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "segments": 12,
+        "vertices": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":372 `edges.segmentCount == 12`, :373",
+    "injection": "D1: every edge emitted twice (the per-face explorer duplicate the edge map exists to prevent)",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Presentation Mesh Tests::Sphere edge mesh produces valid segments",
+    "bridge_function": "OCCTShapeGetEdgeMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "segments": 3,
+        "vertices": 18
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "distinct_edges": 3,
+        "segments": 3,
+        "vertices": 18
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":382 `edges.segmentCount == 3`, :383",
+    "injection": "D1: every edge emitted twice",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Drawer Mesh Extraction::Shaded mesh with default drawer produces valid mesh",
+    "bridge_function": "OCCTShapeGetShadedMeshWithDrawer",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 12
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "effective_deflection": 0.040000000800000005,
+        "triangles": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":398 `mesh != nil`",
+    "injection": "D4: the drawer entry points return false",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Drawer Mesh Extraction::Edge mesh with default drawer produces valid segments",
+    "bridge_function": "OCCTShapeGetEdgeMeshWithDrawer",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "segments": 12
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "segments": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":412 `mesh != nil`",
+    "injection": "D4: the drawer entry points return false",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Drawer Mesh Extraction::Finer deviation produces more triangles for curved shape",
+    "bridge_function": "OCCTShapeGetShadedMeshWithDrawer, OCCTDrawerSetDeviationCoefficient",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "coarse": 648,
+        "fine": 1244
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "coarse_deflection": 8.00000008,
+        "coarse": 648,
+        "fine_deflection": 0.0800000008,
+        "fine": 1244
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":435 `fine.triangleCount > coarse.triangleCount`",
+    "injection": "D2b: DisplayDrawer.deviationCoefficient's setter drops the value",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Drawer Mesh Extraction::Absolute deflection type works",
+    "bridge_function": "OCCTShapeGetShadedMeshWithDrawer, OCCTDrawerSetTypeOfDeflection",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 648
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 648,
+        "relative_default_would_give": 1244
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":451 `mesh.triangleCount == 648`",
+    "injection": "D2b: DisplayDrawer.deflectionType's setter drops the value",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Drawer Mesh Extraction::Relative deflection scales with shape size, matching OCCT's own reference caller (#1418)",
+    "bridge_function": "OCCTShapeGetShadedMeshWithDrawer (occtDrawerGetEffectiveDeflection)",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "small": 1244,
+        "large": 1244
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "small_deflection": 0.0080000008,
+        "small": 1244,
+        "large_deflection": 0.4000000008,
+        "large": 1244
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":480 `ratio < 10`",
+    "injection": "D2b: the raw DeviationCoefficient used as an absolute deflection (the pre-#1418 bug)",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Issue1224 Presentation Mesh Overload Parity::shadedMesh(deflection:) and shadedMesh(drawer:) deinterleave identically",
+    "bridge_function": "OCCTShapeGetShadedMesh, OCCTShapeGetShadedMeshWithDrawer",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 12
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "deflection_triangles": 12,
+        "drawer_triangles": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH on counts; the equality under test is between two Swift overloads, which has no kernel counterpart"
+    },
+    "status": "PASS",
+    "red": ":517 `a.normals == b.normals`",
+    "injection": "D2: shadedMesh(drawer:) negates the normals after the shared deinterleave (a fix applied to one overload only)",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Issue1224 Presentation Mesh Overload Parity::edgeMesh(deflection:) and edgeMesh(drawer:) deinterleave identically",
+    "bridge_function": "OCCTShapeGetEdgeMesh, OCCTShapeGetEdgeMeshWithDrawer",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "segments": 12
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "segments": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH on counts; the equality under test is between two Swift overloads, which has no kernel counterpart"
+    },
+    "status": "PASS",
+    "red": ":535 `a.vertices == b.vertices`",
+    "injection": "D2: edgeMesh(drawer:) reverses the vertex order after the shared deinterleave",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "MeshCoordinateSystem Enum::Raw values",
+    "bridge_function": "none (Swift enum mirroring RWMesh_CoordinateSystem)",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "undefined": -1,
+        "zUp": 0,
+        "yUp": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "RWMesh_CoordinateSystem_Undefined": -1,
+        "Zup": 0,
+        "Yup": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":549 `MeshCoordinateSystem.yUp.rawValue == 1`",
+    "injection": "D1: case yUp = 2",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "MeshCoordinateSystem Enum::Aliases",
+    "bridge_function": "none (Swift enum mirroring RWMesh_CoordinateSystem)",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "blender": "zUp",
+        "gltf": "yUp"
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "RWMesh_CoordinateSystem_Blender": 0,
+        "glTF": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":555 `MeshCoordinateSystem.gltf == .yUp`",
+    "injection": "D1: gltf aliased to .zUp",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "MeshCoordinateSystem Enum::Init from raw value",
+    "bridge_function": "none (Swift enum mirroring RWMesh_CoordinateSystem)",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "-1": "undefined",
+        "0": "zUp",
+        "1": "yUp",
+        "99": null
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "Undefined": -1,
+        "Zup": 0,
+        "Yup": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":562 `MeshCoordinateSystem(rawValue: 1) == .yUp`",
+    "injection": "D1: case yUp = 2",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "BRepMesh Deflection::Compute absolute deflection",
+    "bridge_function": "OCCTComputeAbsoluteDeflection",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "absoluteDeflection": 0.150000001
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "ComputeAbsoluteDeflection": 0.150000001
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":578 `abs(absDef - 0.150000001) < 1e-9`",
+    "injection": "D1: relative deflection ignored (0.1 passed)",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "BRepMesh Deflection::Deflection consistency check",
+    "bridge_function": "OCCTDeflectionIsConsistent",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "0.1/0.2": true,
+        "0.2/0.2": true,
+        "0.3/0.2": false
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "0.1/0.2": true,
+        "0.2/0.2": true,
+        "0.3/0.2": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":588 `!Shape.deflectionIsConsistent(current: 0.3, required: 0.2)`",
+    "injection": "D1: always returns true",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "BRepBuilderAPI MakeShapeOnMesh::Build shape from mesh",
+    "bridge_function": "OCCTShapeFromMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "faces": 4,
+        "edges": 6,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "faces": 4,
+        "edges": 6,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":611 `#require(Shape.fromMesh(...))`",
+    "injection": "D1: builder result dropped (null on success)",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "BRepBuilderAPI MakeShapeOnMesh::Mesh with minimal geometry",
+    "bridge_function": "OCCTShapeFromMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "faces": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "faces": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":627 `shape != nil`",
+    "injection": "D1: builder result dropped (null on success)",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "BRepGProp MeshCinert Tests::prepare polygon and compute",
+    "bridge_function": "OCCTMeshCinertPreparePolygon, OCCTMeshCinertCompute",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "points": 2,
+        "mass": 10.0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "points": 2,
+        "mass": 10.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":646 `points.count == 2`, :648 `abs(result.mass - 10) < 1e-9`",
+    "injection": "E1: PreparePolygon drops the last point",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "BRepGProp MeshProps Tests::surface mesh properties",
+    "bridge_function": "OCCTMeshPropsCompute",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "mass": 99.99999999999997
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "mass": 99.99999999999997
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":660 `abs(result.mass - 100) < 1e-9`",
+    "injection": "E1: Surface and Volume swapped in the type mapping",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "BRepGProp MeshProps Tests::volume mesh properties",
+    "bridge_function": "OCCTMeshPropsCompute",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "mass": 166.66666666666663
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "mass": 166.66666666666663
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":671 `abs(result.mass - 500.0 / 3.0) < 1e-9`",
+    "injection": "E1: Surface and Volume swapped in the type mapping",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "BRepMesh ShapeTool Tests::max face tolerance",
+    "bridge_function": "OCCTMeshShapeToolMaxFaceTolerance",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "tolerance": 1e-07
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "MaxFaceTolerance": 1e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":683 `abs(face.maxMeshTolerance - 1e-7) < 1e-15`",
+    "injection": "E1: guard inverted, returns the 0 fallback",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "BRepMesh ShapeTool Tests::box max dimension",
+    "bridge_function": "OCCTMeshShapeToolBoxMaxDimension",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "maxDim": 10.0000002
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "BoxMaxDimension": 10.0000002
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":691 `abs(maxDim - 10.0000002) < 1e-9`",
+    "injection": "E1: bounding box enlarged by 1.0",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "BRepMesh ShapeTool Tests::UV points on edge",
+    "bridge_function": "OCCTMeshShapeToolUVPoints",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "uv1": [
+          0.0,
+          0.0
+        ],
+        "uv2": [
+          10.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "uv1": [
+          0.0,
+          0.0
+        ],
+        "uv2": [
+          10.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":703 first point, :704 second point",
+    "injection": "E1: the two UV points swapped",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_Polygon3D::create without parameters",
+    "bridge_function": "OCCTPolyPolygon3DCreate, OCCTPolyPolygon3DHasParameters",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "nodeCount": 3,
+        "hasParameters": false
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "NbNodes": 3,
+        "HasParameters": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":715 `!poly.hasParameters`",
+    "injection": "E1: HasParameters always true",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_Polygon3D::create with parameters",
+    "bridge_function": "OCCTPolyPolygon3DCreateWithParams, OCCTPolyPolygon3DParameter",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "nodeCount": 3,
+        "parameter_1": 10.0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "NbNodes": 3,
+        "Parameters(2)": 10.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":725 `abs(poly.parameter(at: 1) - 10.0) < 1e-10`",
+    "injection": "E1: CreateWithParams builds the no-parameter polygon",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_Polygon3D::deflection",
+    "bridge_function": "OCCTPolyPolygon3DSetDeflection",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "deflection": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "default": 0.0,
+        "after": 1.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":733 `abs(poly.deflection - 1.0) < 1e-10`",
+    "injection": "E1: SetDeflection is a no-op",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_PolygonOnTriangulation::create without parameters",
+    "bridge_function": "OCCTPolyPolygonOnTriCreate, OCCTPolyPolygonOnTriHasParameters",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "nodeCount": 4,
+        "node0": 1,
+        "node3": 4
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "NbNodes": 4,
+        "Node(1)": 1,
+        "Node(4)": 4,
+        "HasParameters": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":746 `!poly.hasParameters`",
+    "injection": "E1: HasParameters always true",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_PolygonOnTriangulation::create with parameters",
+    "bridge_function": "OCCTPolyPolygonOnTriCreateWithParams",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "parameter_1": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "Parameter(2)": 1.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":756 `abs(poly.parameter(at: 1) - 1.0) < 1e-10`",
+    "injection": "E1: CreateWithParams builds the no-parameter polygon",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_PolygonOnTriangulation::deflection",
+    "bridge_function": "OCCTPolyPolygonOnTriSetDeflection",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "deflection": 0.1
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "after": 0.1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":764 `abs(poly.deflection - 0.1) < 1e-10`",
+    "injection": "E1: SetDeflection is a no-op",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_MergeNodesTool::merge mesh nodes from shape",
+    "bridge_function": "OCCTPolyMergeNodes",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "vertexCount": 24,
+        "triangleCount": 12
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "NbNodes": 24,
+        "NbTriangles": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":777 `merged.vertexCount == 24`",
+    "injection": "E1: smoothAngle ignored (pi)",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_CoherentTriangulation::create empty and add nodes",
+    "bridge_function": "OCCTCoherentTriangulationSetNode",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "indices": [
+          0,
+          1,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "SetNode": [
+          0,
+          1,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":807, :808, :809",
+    "injection": "E1: SetNode returns index + 1",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_CoherentTriangulation::add and count triangles",
+    "bridge_function": "OCCTCoherentTriangulationAddTriangle",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangleCount": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "NTriangles": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":815 `ct.triangleCount == 2`",
+    "injection": "E2: AddTriangle returns false without adding",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_CoherentTriangulation::remove triangle",
+    "bridge_function": "OCCTCoherentTriangulationRemoveTriangle, OCCTCoherentTriangulationNTriangles",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangleCount": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "NTriangles": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":822 `ct.triangleCount == 1`",
+    "injection": "E1: NTriangles reads the bridge's own add-list, which removal does not shrink",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_CoherentTriangulation::compute links",
+    "bridge_function": "OCCTCoherentTriangulationComputeLinks",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "links": 5,
+        "linkCount": 5
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "ComputeLinks": 5,
+        "NLinks": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":830 `nLinks == 5`, :831 `ct.linkCount == 5`",
+    "injection": "E1: ComputeLinks returns 0 without computing",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_CoherentTriangulation::deflection set/get",
+    "bridge_function": "OCCTCoherentTriangulationSetDeflection",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "deflection": 0.5
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "default": 0.0,
+        "after": 0.5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":838 `abs(ct.deflection - 0.5) < 1e-10`",
+    "injection": "E1: SetDeflection is a no-op",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_CoherentTriangulation::convert back to triangulation",
+    "bridge_function": "OCCTCoherentTriangulationGetResult",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "nodeCount": 3,
+        "triangleCount": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "NbNodes": 3,
+        "NbTriangles": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":848 `#require(ct.getResult())`",
+    "injection": "E3: result dropped, reports failure",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_CoherentTriangulation::create from mesh",
+    "bridge_function": "OCCTCoherentTriangulationCreateFromMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangleCount": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "first_face_NTriangles": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":858 `#require(CoherentTriangulation.createFromMesh(box))`",
+    "injection": "E1: returns null for a meshed shape",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_CoherentTriangulation::node coordinates after result",
+    "bridge_function": "OCCTCoherentTriangulationNodeCoords",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "node1": [
+          1.5,
+          2.5,
+          3.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "Node(1)": [
+          1.5,
+          2.5,
+          3.5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":873, :874, :875",
+    "injection": "E1: reads Node(index + 1), one past the node asked for",
+    "probe": "Scripts/repro/766-mesh-core-3/"
+  },
+  {
+    "test_name": "Poly_Connect Mesh Adjacency Tests::triangleAdjacency",
+    "bridge_function": "OCCTMeshTriangleAdjacency",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "adjacency": [
+          0,
+          0,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "Poly_Connect::Triangles(1)": [
+          0,
+          0,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":893 `adj.0 == 0 && adj.1 == 0 && adj.2 == 2`",
+    "injection": "F1: the first and third neighbour swapped",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "Poly_Connect Mesh Adjacency Tests::nodeTriangle",
+    "bridge_function": "OCCTMeshNodeTriangle",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangle": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "Poly_Connect::Triangle(1)": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":900 `triIdx == 1`",
+    "injection": "F1: Triangle(node) + 1",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "Poly_Connect Mesh Adjacency Tests::nodeTriangleCount",
+    "bridge_function": "OCCTMeshNodeTriangleCount",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "fan": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":907 `count == 1`",
+    "injection": "F1: the fan count starts at 1",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "v0.115.0 - Triangulation Queries::faceTriangulation",
+    "bridge_function": "OCCTFaceTriangulationNodeCount (and TriangleCount, Deflection, Node, Triangle)",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "nodes": 4,
+        "triangles": 2,
+        "deflection": 3.1401849173675503e-16,
+        "node1": [
+          -5,
+          -5,
+          -5
+        ],
+        "triangle1": [
+          2,
+          1,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "nodes": 4,
+        "triangles": 2,
+        "deflection": 3.1401849173675503e-16,
+        "node1": [
+          -5,
+          -5,
+          -5
+        ],
+        "triangle1": [
+          2,
+          1,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":919 `face.triangulationNodeCount == 4`",
+    "injection": "F1: NodeCount returns NbTriangles",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "v0.115.0 - Triangulation Queries::triangulationUVNodes",
+    "bridge_function": "OCCTFaceTriangulationHasUVNodes, OCCTFaceTriangulationUVNode",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "hasUV": true,
+        "uv1": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "HasUVNodes": true,
+        "UVNode(1)": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":941 `face.triangulationHasUVNodes`",
+    "injection": "F1: HasUVNodes returns false",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "v0.160 MeshCache write API::Triangulation create from arrays round-trips",
+    "bridge_function": "OCCTPolyTriangulationCreate",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "nodes": 4,
+        "triangles": 2,
+        "t0": [
+          0,
+          1,
+          2
+        ],
+        "deflection": 0.01
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "NbNodes": 4,
+        "NbTriangles": 2,
+        "Triangle(1)": [
+          1,
+          2,
+          3
+        ],
+        "Deflection": 0.01
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":961 `t0.0 == 0 && t0.1 == 1 && t0.2 == 2`",
+    "injection": "F1: the 2nd and 3rd index of each triangle swapped",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "v0.160 MeshCache write API::Triangulation rejects malformed inputs",
+    "bridge_function": "Triangulation.create (Swift guard) / OCCTPolyTriangulationCreate",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "results": [
+          null,
+          null,
+          null
+        ]
+      }
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "note": "N/A: input validation in the Swift layer; the bridge and kernel accept an out-of-range index"
+    },
+    "status": "N/A",
+    "red": ":972 `Triangulation.create(nodes:triangles: [0, 1, 99]) == nil`",
+    "injection": "F1: Triangulation.create's index-range guard removed (the bridge does not check range)",
+    "probe": null
+  },
+  {
+    "test_name": "v0.160 MeshCache write API::Create triangulation rep and bind it to a face",
+    "bridge_function": "OCCTBRepGraphMeshCreateTriangulationRep, OCCTBRepGraphMeshAppendCachedTriangulation, OCCTBRepGraphMeshFaceActiveTriangulationRepId",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "repId": 0,
+        "before": null,
+        "after": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "Effective().Faces().Has(0) after SetCachedTriangulation": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":993 `graph.meshFaceActiveTriangulationRepId(0) != nil`",
+    "injection": "F1: AppendCachedTriangulation is a no-op",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "v0.160 MeshCache write API::Create polygon3D rep and bind it to an edge",
+    "bridge_function": "OCCTBRepGraphMeshCreatePolygon3DRep, OCCTBRepGraphMeshSetCachedPolygon3D, OCCTBRepGraphMeshEdgePolygon3DRepId",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "repId": 0,
+        "before": null,
+        "after": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "Has before": false,
+        "Has after SetCachedPolygon3D": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":1006 `graph.meshEdgePolygon3DRepId(0) != nil`",
+    "injection": "F2 (alone): SetCachedPolygon3D is a no-op",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "v0.158 MeshView two-tier mesh storage::Mesh count properties are non-negative on a fresh graph",
+    "bridge_function": "OCCTBRepGraphNbTriangulations, NbPolygons3D, MeshNbPolygons2D, MeshNbPolygonsOnTri, MeshNbActive*",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "all_counts": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "all_counts": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":1018 `graph.triangulationCount == 0`",
+    "injection": "F1: BRepGraph.triangulationCount reads the face count",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "v0.158 MeshView two-tier mesh storage::Mesh rep id queries return nil when no mesh is present",
+    "bridge_function": "OCCTBRepGraphMeshFaceActiveTriangulationRepId, OCCTBRepGraphMeshEdgePolygon3DRepId, OCCTBRepGraphMeshCoEdgeHasMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "face0": null,
+        "edge0": null,
+        "coedge0": false
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "face0": false,
+        "edge0": false,
+        "coedge0": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":1034 `graph.meshEdgePolygon3DRepId(0) == nil`",
+    "injection": "F1: EdgePolygon3DRepId reports presence unconditionally",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "v0.158 MeshView two-tier mesh storage::Mesh counts after incremental meshing",
+    "bridge_function": "OCCTBRepGraphFaceHasTriangulation, OCCTBRepGraphMeshFaceActiveTriangulationRepId, OCCTBRepGraphNbTriangulations",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangulations": 6,
+        "polygonsOnTri": 24,
+        "face0": true
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangulations": 6,
+        "polygonsOnTri": 24,
+        "face0": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":1051 `graph.faceHasTriangulation(0) == true`, :1052",
+    "injection": "F1: face triangulation presence reads the cache tier only (the #1547 regression)",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "v0.158 MeshView two-tier mesh storage::Mesh edge polygon3D rep id resolves the persistent tier (#1547)",
+    "bridge_function": "OCCTBRepGraphSetEdgePolygon3DRepId, OCCTBRepGraphEdgeHasPolygon3D",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "edgeHas": true
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "Has after SetPersistentPolygon3D": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":1065 `graph.edgeHasPolygon3D(0) == true`",
+    "injection": "F1: SetEdgePolygon3DRepId is a no-op",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "Poly Copy & Mutators::Polygon2D copy preserves contents",
+    "bridge_function": "OCCTPolyPolygon2DCopy",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "nodes": 3,
+        "deflection": 0.25
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "NbNodes": 3,
+        "Deflection": 0.25
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":1088 `abs(copy.deflection - 0.25) < 1e-12`",
+    "injection": "F1: copy rebuilt from the nodes alone, dropping the deflection",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "Poly Copy & Mutators::PolygonOnTriangulation copy preserves nodes",
+    "bridge_function": "OCCTPolyPolygonOnTriCopy",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "nodes": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "nodes": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":1098 `copy.nodeIndex(at: i) == Int(indices[i])`",
+    "injection": "F1: the copy's first node overwritten",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "Poly Copy & Mutators::PolygonOnTriangulation setNodes mutates in place",
+    "bridge_function": "OCCTPolyPolygonOnTriSetNodes",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "node0": 5,
+        "node3": 8
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "Node(1)": 5,
+        "Node(4)": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":1110 `!poly.setNodes([1, 2])`",
+    "injection": "F1: size mismatch clamped instead of refused",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "Poly Copy & Mutators::PolygonOnTriangulation setParameters mutates in place",
+    "bridge_function": "OCCTPolyPolygonOnTriSetParameters",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "parameter_1": 20.0
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "Parameter(2)": 20.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":1122 `!poly.setParameters([1.0])`",
+    "injection": "F1: size mismatch clamped instead of refused",
+    "probe": "Scripts/repro/766-mesh-core-4/"
+  },
+  {
+    "test_name": "Poly Copy & Mutators::setParameters fails when polygon has no parameters",
+    "bridge_function": "OCCTPolyPolygonOnTriSetParameters",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "hasParameters": false
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "HasParameters": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":1130 `!poly.setParameters([0.0, 1.0, 2.0])`",
+    "injection": "F1: the HasParameters() refusal returns true",
+    "probe": "Scripts/repro/766-mesh-core-4/"
   }
 ]
