@@ -5855,10 +5855,6 @@
         "sinert_mass": [
           100.0,
           100.0
-        ],
-        "reference_only_domain_bounded_sinert_mass": [
-          78.53981633974483,
-          78.53981633974483
         ]
       }
     },
@@ -5868,7 +5864,7 @@
       "differences": []
     },
     "status": "PASS",
-    "note": "Compared keys: cap_count, centroids, sinert_mass. The bridge (OCCTBRepGPropSinert) calls BRepGProp_Sinert::Perform(BRepGProp_Face), which integrates the untrimmed surface patch, so it reports mass 100 for a disc cap of area 78.54; the bridge never returns 78.54. reference_only_domain_bounded_sinert_mass is the kernel's Perform(face, BRepGProp_Domain(face)) overload from transcript.txt, kept as a labelled reference for the overload the bridge does not call and deliberately absent from bridge_output."
+    "source": "Same quantity on both sides: for the two circular cap faces of Shape.cylinder(radius: 5, height: 10) (found by area, pi*25), the number of caps, each cap's centroid, and each cap's BRepGProp_Sinert mass. Bridge: Shape.measure().faceCentroids (Face.surfaceInertia, OCCTBRepGPropSinert); a temporary print in the test observed caps 1 and 2 with centroids (5.551115123125783e-17, 5.551115123125783e-17, 10) and (5.551115123125783e-17, 5.551115123125783e-17, 0) and Sinert mass 100 for each. Kernel: BRepGProp_Sinert::Perform(BRepGProp_Face) from Scripts/repro/766-shape-measurements/transcript.txt, cylinder(5,10) face[1] and face[2]: sinertMass=100 and the same centroids. OCCTBRepGPropSinert integrates the untrimmed surface patch, so the mass is 100 for a disc cap of area 78.54, and the bridge never returns 78.54. The kernel's Perform(face, BRepGProp_Domain(face)) overload, which gives the trimmed 78.53981633974483 for each cap (transcript, 'domain-bounded Sinert'), is a different call that the bridge does not make, so it is not a compared key."
   },
   {
     "test_name": "ShapeMeasurements::boxFaceAreasMatchExpectedTotals",
