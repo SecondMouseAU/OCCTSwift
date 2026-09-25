@@ -422,27 +422,30 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil",
-        "volume": "> 1000",
-        "isValid": true
+        "produced": true,
+        "type": "compound",
+        "faces": 14,
+        "valid": true,
+        "volume": 1499.9999999999993
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "fuseDone": true,
-        "fuseVolume": 1500,
-        "filletContours": 0,
-        "returned": "the fuse result, unblended",
+        "produced": true,
+        "type": "compound",
+        "faces": 14,
         "valid": true,
-        "volume": 1500
+        "volume": 1499.9999999999993
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), face count, validity and volume. Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volume at %.17g). Kernel values are from Scripts/repro/766-modeling-fuse-and-blend/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's OCCTShapeFuseAndBlend (the boolean, then BRepFilletAPI_MakeFillet with radius 1.0 on every SectionEdges() edge and every edge Generated() from either argument's faces). The kernel adds no fillet contour for these two boxes (contours 0), so the bridge returns the fuse result unblended; the volume is the fuse's, 1500 to rounding. The test asserts non-nil, volume > 1000 and isValid.",
+    "probe": "Scripts/repro/766-modeling-fuse-and-blend/"
   },
   {
     "test_name": "Fuse and Blend::fuseBlendBoxCylinder",
@@ -450,26 +453,30 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil",
-        "isValid": true
+        "produced": true,
+        "type": "compound",
+        "faces": 14,
+        "valid": true,
+        "volume": 5085.865669986801
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "fuseDone": true,
-        "fuseVolume": 5079.922475,
-        "filletContours": 5,
-        "filletDone": true,
+        "produced": true,
+        "type": "compound",
+        "faces": 14,
         "valid": true,
-        "volume": 5085.86567
+        "volume": 5085.865669986801
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), face count, validity and volume. Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volume at %.17g). Kernel values are from Scripts/repro/766-modeling-fuse-and-blend/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's OCCTShapeFuseAndBlend (the boolean, then BRepFilletAPI_MakeFillet with radius 1.0 on every SectionEdges() edge and every edge Generated() from either argument's faces). The kernel adds 5 fillet contours and the fillet is done, so the blended shape is returned. The test asserts non-nil and isValid.",
+    "probe": "Scripts/repro/766-modeling-fuse-and-blend/"
   },
   {
     "test_name": "Fuse and Blend::cutBlend",
@@ -477,27 +484,30 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil",
-        "isValid": true,
-        "volume": "< 8000"
+        "produced": true,
+        "type": "compound",
+        "faces": 13,
+        "valid": true,
+        "volume": 7796.570702923308
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "cutDone": true,
-        "cutVolume": 7803.650459,
-        "filletContours": 5,
-        "filletDone": true,
+        "produced": true,
+        "type": "compound",
+        "faces": 13,
         "valid": true,
-        "volume": 7796.570703
+        "volume": 7796.570702923308
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), face count, validity and volume. Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volume at %.17g). Kernel values are from Scripts/repro/766-modeling-fuse-and-blend/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's OCCTShapeCutAndBlend (the boolean, then BRepFilletAPI_MakeFillet with radius 1.0 on every SectionEdges() edge and every edge Generated() from either argument's faces). The kernel adds 5 fillet contours and the fillet is done, so the blended shape is returned. The test asserts non-nil, isValid and volume < 8000.",
+    "probe": "Scripts/repro/766-modeling-fuse-and-blend/"
   },
   {
     "test_name": "Glue Tests::glueTwoBoxes",
@@ -505,34 +515,30 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "result": "non-nil",
-        "isValid": true,
-        "volume": "within 1 of 2000"
+        "produced": true,
+        "type": "compound",
+        "faces": 10,
+        "valid": true,
+        "volume": 1999.9999999999993
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "glueFuseAsBridgeCallsIt": "IsDone false, HasErrors (no tools set)",
-        "plainFuseFallback": {
-          "done": true,
-          "valid": true,
-          "volume": 2000,
-          "faces": 10
-        },
-        "glueWithToolsSet": {
-          "done": true,
-          "valid": true,
-          "volume": 2000,
-          "faces": 10
-        }
+        "produced": true,
+        "type": "compound",
+        "faces": 10,
+        "valid": true,
+        "volume": 1999.9999999999993
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether a shape came back, its type (spelled as Shape.shapeTypeString spells it), face count, validity and volume. Bridge values are what the test observed, read from a temporary print of the returned shape (run once and reverted, not committed; volume at %.17g). Kernel values are from Scripts/repro/766-modeling-glue/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats OCCTShapeGlue as the bridge runs it: BRepAlgoAPI_Fuse with SetGlue(BOPAlgo_GlueShift), SetFuzzyValue(1e-6), both boxes as arguments and no tools. That glue build is not done on this input (HasErrors, null shape), so the shape the bridge returns, and the one measured on both sides, comes from its plain BRepAlgoAPI_Fuse fallback; the glue option is never exercised. The test asserts non-nil, isValid and volume within 1 of 2000.",
+    "probe": "Scripts/repro/766-modeling-glue/"
   },
   {
     "test_name": "Half-Space::halfSpaceFromFace",
@@ -540,23 +546,27 @@
     "bridge_output": {
       "type": "value",
       "data": {
-        "halfSpace": "non-nil"
+        "produced": true,
+        "type": "solid",
+        "state(0,0,5)": "inside",
+        "state(0,0,-5)": "outside"
       }
     },
     "kernel_output": {
       "type": "value",
       "data": {
-        "faceDone": true,
-        "MakeHalfSpaceDone": true,
-        "solidNull": false,
-        "state(0,0,5)": "IN",
-        "state(0,0,-5)": "OUT"
+        "produced": true,
+        "type": "solid",
+        "state(0,0,5)": "inside",
+        "state(0,0,-5)": "outside"
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantities on both sides: whether a solid came back, its type (spelled as Shape.shapeTypeString spells it), and the classification of (0, 0, 5) and (0, 0, -5) against it (BRepClass3d_SolidClassifier, tolerance 1e-6, spelled as PointClassification spells TopAbs_IN and TopAbs_OUT). Bridge values are what the test now asserts, and were also read from a temporary print (run once and reverted, not committed): this commit rewrites the test, whose only check was halfSpace != nil and passed a null solid (OCCTShapeCreateHalfSpace wraps the maker's solid without a null check) and a half-space on the wrong side. Kernel values are from Scripts/repro/766-modeling-half-space/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the bridge's BRepPrimAPI_MakeHalfSpace(first face, (0, 0, 5)).Solid() on the 20 x 20 rectangle face at z = 0.",
+    "probe": "Scripts/repro/766-modeling-half-space/"
   }
 ]
