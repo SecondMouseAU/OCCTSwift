@@ -20,6 +20,17 @@ struct TransformExpansionTests {
             #expect(result != nil)
             if let r = result {
                 #expect(r.isValid)
+                // Probed (Scripts/repro/766-math-transform-expansion): the centred cube moves
+                // from -5..5 to 0..10 in x and stays at -5..5 in y and z, each face widened by
+                // the 1e-7 vertex tolerance.
+                let bounds = r.boundingBox
+                #expect(bounds != nil)
+                if let bb = bounds {
+                    #expect(abs(bb.min.x - 0.0) < 1e-6)
+                    #expect(abs(bb.max.x - 10.0) < 1e-6)
+                    #expect(abs(bb.min.y + 5.0) < 1e-6)
+                    #expect(abs(bb.max.y - 5.0) < 1e-6)
+                }
             }
         }
     }
@@ -34,6 +45,16 @@ struct TransformExpansionTests {
             ])!
             let result = box.gTransformed(matrix: matrix)
             #expect(result != nil)
+            // Probed (Scripts/repro/766-math-transform-expansion): the centred cube becomes
+            // -10..10 x -5..5 x -2.5..2.5, each face widened by 2e-7.
+            if let r = result, let bb = r.boundingBox {
+                #expect(abs(bb.min.x + 10.0) < 1e-6)
+                #expect(abs(bb.max.x - 10.0) < 1e-6)
+                #expect(abs(bb.min.y + 5.0) < 1e-6)
+                #expect(abs(bb.max.y - 5.0) < 1e-6)
+                #expect(abs(bb.min.z + 2.5) < 1e-6)
+                #expect(abs(bb.max.z - 2.5) < 1e-6)
+            }
         }
     }
 

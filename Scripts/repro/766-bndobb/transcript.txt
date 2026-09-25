@@ -1,0 +1,5 @@
+createAndQuery: IsVoid=0 center=(0, 0, 0) half=(5, 3, 2)
+pointInOut: IsOut(1,1,1)=0 IsOut(10,10,10)=1
+obbOverlap: o1.IsOut(o2 at x=4)=0 o1.IsOut(o at x=20)=1
+fromShape: IsVoid=0 center=(0, 0, 0) half=(5.0000001000000003, 5.0000001000000003, 5.0000001000000003) SquareExtent=300.00001200000014
+enlarge: half=(3, 3, 3)
