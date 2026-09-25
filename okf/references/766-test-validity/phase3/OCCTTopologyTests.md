@@ -22,6 +22,17 @@
 | **Transient/Persistent Tests** | Transient/Persistent Tests | Transient/persistent | Remove transient/persistent |
 | **History/Mapping Tests** | History/Mapping Tests | History/mapping | Remove history/mapping |
 | **Naming/Label Tests** | Naming/Label Tests | Naming/label | Remove naming/label |
+| **BRepClass3d Tests** | pointInsideBox | Solid classification | OCCTShapeClassifyPoint |
+| **BRepClass3d Tests** | pointOutsideBox | Solid classification | OCCTShapeClassifyPoint |
+| **BRepClass3d Tests** | pointInsideSphere | Solid classification | OCCTShapeClassifyPoint |
+| **BRepClass3d Tests** | pointOutsideSphere | Solid classification | OCCTShapeClassifyPoint |
+| **BRepClass3d Tests** | pointOnBoxFace | Solid classification | OCCTShapeClassifyPoint |
+| **BRepClass FClassifier Tests** | classifyPoint2DInside | Face UV classification | OCCTShapeClassifyPoint2D |
+| **BRepClass FClassifier Tests** | classifyPoint2DOutside | Face UV classification | OCCTShapeClassifyPoint2D |
+| **v0.122.0, BRepLib Extended Statics** | Ensure normal consistency | BRepLib::EnsureNormalConsistency | OCCTBRepLibEnsureNormalConsistency |
+| **v0.122.0, BRepLib Extended Statics** | Update deflection | BRepLib::UpdateDeflection | OCCTBRepLibUpdateDeflection |
+| **v0.122.0, BRepLib Extended Statics** | Continuity of faces | BRepLib::ContinuityOfFaces | OCCTBRepLibContinuityOfFaces |
+| **v0.122.0, BRepLib Extended Statics** | Same parameter all | BRepLib::SameParameter | OCCTBRepLibSameParameterAll |
 
 ---
 
@@ -41,6 +52,17 @@
 | Transient/Persistent Tests | OCCTTransientPersistent | Transient/persistent | Remove transient/persistent | ✅ | ✅ |  |
 | History/Mapping Tests | OCCTHistoryMapping | History/mapping | Remove history/mapping | ✅ | ✅ |  |
 | Naming/Label Tests | OCCTNamingLabel | Naming/label | Remove naming/label | ✅ | ✅ |  |
+| pointInsideBox | OCCTShapeClassifyPoint | Solid classification | state rotated IN->OUT->ON->IN | ✅ | ✅ |  |
+| pointOutsideBox | OCCTShapeClassifyPoint | Solid classification | state rotated IN->OUT->ON->IN | ✅ | ✅ |  |
+| pointInsideSphere | OCCTShapeClassifyPoint | Solid classification | state rotated IN->OUT->ON->IN | ✅ | ✅ |  |
+| pointOutsideSphere | OCCTShapeClassifyPoint | Solid classification | state rotated IN->OUT->ON->IN | ✅ | ✅ |  |
+| pointOnBoxFace | OCCTShapeClassifyPoint | Solid classification | state rotated IN->OUT->ON->IN | ✅ | ✅ |  |
+| classifyPoint2DInside | OCCTShapeClassifyPoint2D | Face UV classification | state rotated IN->OUT->ON->IN | ✅ | ✅ |  |
+| classifyPoint2DOutside | OCCTShapeClassifyPoint2D | Face UV classification | state rotated IN->OUT->ON->IN | ✅ | ✅ |  |
+| Ensure normal consistency | OCCTBRepLibEnsureNormalConsistency | BRepLib::EnsureNormalConsistency | return the negated kernel result | ✅ | ✅ | Rewritten: asserted only isValid |
+| Update deflection | OCCTBRepLibUpdateDeflection | BRepLib::UpdateDeflection | BRepTools::Clean instead of UpdateDeflection | ✅ | ✅ | Rewritten: asserted only isValid; a skipped call is unobservable after BRepMesh |
+| Continuity of faces | OCCTBRepLibContinuityOfFaces | BRepLib::ContinuityOfFaces | GeomAbs_Shape + 1 | ✅ | ✅ | Rewritten: accepted nil or any class, and paired two faces that share no edge |
+| Same parameter all | OCCTBRepLibSameParameterAll | BRepLib::SameParameter | skip BRepLib::SameParameter | ✅ | ✅ | Rewritten: asserted only isValid on a box SameParameter never touches |
 
 ---
 
