@@ -1,0 +1,5 @@
+coneFromCircle (ruled, r=5, apex z=10): produced=1 type=solid faces=2 valid=1 volume=261.79938779914943
+  analytic cone volume pi*25*10/3 = 261.79938779914943
+bicone (ruled, r=10, apexes z=-20,+20): produced=1 type=solid faces=2 valid=1 volume=4188.7902047863918
+  analytic bicone volume 2*pi*100*20/3 = 4188.7902047863909
+smoothCone (not ruled, r=5, apex z=10): produced=1 type=solid faces=2 valid=1 volume=261.79938779914943

@@ -74,8 +74,12 @@ struct LoftPolarMethodCrashTests {
             Wire.polygon3D(station.pts.map { SIMD3($0.0, $0.1, station.z) }, closed: true)
         }
         #expect(profiles.count == stations.count)
-        // The call must return (nil or a shape) without aborting the process.
-        _ = Shape.loft(profiles: profiles, solid: true)
-        #expect(true)  // reaching here means the polar-method crash did not fire
+        // The call must return without aborting the process. #766: it used to end in
+        // `#expect(true)`, discarding the result, so only a crash could fail it. The kernel's
+        // answer is pinned too (Scripts/repro/766-modeling-loft-polar-method-crash):
+        // BRepOffsetAPI_ThruSections returns from Build() with IsDone() false for this set, with
+        // CheckCompatibility on (what the bridge sets) and off, so the loft is nil. A bridge that
+        // stopped refusing a failed build would hand back a shape here.
+        #expect(Shape.loft(profiles: profiles, solid: true) == nil)
     }
 }
