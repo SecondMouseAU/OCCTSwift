@@ -558,12 +558,11 @@
       "data": "N/A: box edges not probed; the bridge answers from the same candidate set"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "Not compared: the test asserts only that every one of the 12 box edges answers a point projection (an existence check on the bridge's wrapper). The kernel projection values on the same candidate set are compared in the records above, so no kernel value is recorded for this one and no equality is claimed.",
     "injection": "ednil",
     "red": "Issue539NearestPointOnCurveTests.swift:247 projected != nil",
     "green": "passed",
