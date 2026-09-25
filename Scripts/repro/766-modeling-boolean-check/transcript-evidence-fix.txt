@@ -1,1 +1,8 @@
-pairParityWithBooleanValidWith: valid=true
+singleShapeParityWithBooleanValid(box): valid=true analyzerValid=true
+singleShapeParityWithBooleanValid(sphere): valid=true analyzerValid=true
+singleShapeParityWithBooleanValid(thinBox): valid=false analyzerValid=false validWithoutSmallEdgeTest=true
+singleShapeParityWithBooleanValid(overlappingCompound): valid=false analyzerValid=false validWithoutSelfInterferenceTest=true
+pairParityWithBooleanValidWith(boxSphere): valid=true analyzerValid=true
+pairParityWithBooleanValidWith(thinBoxSphere): valid=false analyzerValid=false validWithoutSmallEdgeTest=true
+pairParityWithBooleanValidWith(boxOverlappingCompound): valid=false analyzerValid=false validWithoutSelfInterferenceTest=true
+pairParityWithBooleanValidWith(overlappingCompoundSphere): valid=false analyzerValid=false
