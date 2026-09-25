@@ -48,8 +48,7 @@
 | **Shape Analysis Tests** | Shape Analysis Tests | Shape analysis | Remove shape analysis |
 | **Shape Fixing Tests** | Shape Fixing Tests | Shape fixing | Remove shape fixing |
 | **Self-Intersecting Profile Crash Guard (#263)** | Self-Intersecting Profile Crash Guard (#263) | Self-intersection | Remove self-intersection guard |
-| **Extrema_ExtPElC Point-Circle** | pointToCircle | Extrema_ExtPElC point-circle | return 0 extrema after IsDone() |
-| **Extrema_ExtPElC Point-Circle** | pointOnCircle | Extrema_ExtPElC point-circle | return 0 extrema (red at :22); separately, SquareDistance(i) + 1.0 (red at :24) |
+| **Extrema_ExtPElC Point-Circle** | pointOnCircle | Extrema_ExtPElC point-circle | return 0 extrema after IsDone(); separately, SquareDistance(i) + 1.0 |
 | **Shape Measurements** | Box face areas | Shape measurements box faces | Remove box face areas |
 | **Shape Measurements** | Box edge lengths | Shape measurements box edges | Remove box edge lengths |
 | **Shape Measurements** | Box face perimeters | Shape measurements box faces | Remove box face perimeters |
@@ -163,8 +162,7 @@
 | Shape Analysis Tests | OCCTShapeAnalysis | Shape analysis | Remove shape analysis | ✅ | ✅ |  |
 | Shape Fixing Tests | OCCTShapeFixing | Shape fixing | Remove shape fixing | ✅ | ✅ |  |
 | Self-Intersecting Profile Crash Guard (#263) | OCCTSelfIntersectingProfileGuard | Self-intersection | Remove SEGV guard | ✅ | ✅ |  |
-| pointToCircle | OCCTExtremaExtPElCCirc | Extrema_ExtPElC point-circle | return 0 extrema after IsDone() | ✅ | ✅ | Red: ExtremaExtPElCCircTests.swift:14 `results.count > 0`. Parity MATCH, `Scripts/repro/766-extrema-extpelc-circ/`. |
-| pointOnCircle | OCCTExtremaExtPElCCirc | Extrema_ExtPElC point-circle | return 0 extrema (red at :22); separately, SquareDistance(i) + 1.0 (red at :24) | ✅ | ✅ | Red: ExtremaExtPElCCircTests.swift:22 `results.count > 0`; ExtremaExtPElCCircTests.swift:24 `first.squareDistance < 1e-6`. Parity MATCH, `Scripts/repro/766-extrema-extpelc-circ/`. |
+| pointOnCircle | OCCTExtremaExtPElCCirc | Extrema_ExtPElC point-circle | return 0 extrema after IsDone(); separately, SquareDistance(i) + 1.0 | ✅ | ✅ | Red: ExtremaExtPElCCircTests.swift:37 `results.count > 0` (no extrema); ExtremaExtPElCCircTests.swift:39 `first.squareDistance < 1e-6` (squared distance + 1.0). Parity MATCH, `Scripts/repro/766-extrema-extpelc-circ-redo/`: both give 2 extrema, squared distances 0 and 100. Corrects the earlier row, which named `OCCTExtremaPointOnCircle` (does not exist) under a suite and test name that do not exist. pointToCircle (#1704) is #2274's record. |
 | Shape Measurements: boxFaceAreas | OCCTShapeMeasurementsBoxFaceAreas | Shape measurements box faces | Remove box face areas | ✅ | ✅ |  |
 | Shape Measurements: boxEdgeLengths | OCCTShapeMeasurementsBoxEdgeLengths | Shape measurements box edges | Remove box edge lengths | ✅ | ✅ |  |
 | Shape Measurements: boxFacePerimeters | OCCTShapeMeasurementsBoxFacePerimeters | Shape measurements box faces | Remove box face perimeters | ✅ | ✅ |  |
@@ -273,7 +271,6 @@ For each test, run ground-truth C++ comparison:
 | Shape Analysis Tests | ✅ | ✅ | ✅ |
 | Shape Fixing Tests | ✅ | ✅ | ✅ |
 | Self-Intersecting Profile Crash Guard (#263) | ✅ | ✅ | ✅ |
-| pointToCircle | ✅ | ✅ | ✅ |
 | pointOnCircle | ✅ | ✅ | ✅ |
 | Shape Measurements: boxFaceAreas | ✅ | ✅ | ✅ |
 | Shape Measurements: boxEdgeLengths | ✅ | ✅ | ✅ |
