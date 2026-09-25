@@ -10,6 +10,7 @@ copied from bridge to kernel. Sections are one per PR.
 ## Thread-safety suites (PR #2362, files: Issue298FilletThreadSafetyTests, Issue341MeshCafThreadSafetyTests, Issue359STEPThreadSafetyTests, Issue361SharedSingletonThreadSafetyTests, Issue367FuseMultiThreadSafetyTests, Issue1404TObjApplicationThreadSafetyTests)
 ## ThreadFormsTests.swift (PR #2365, files: Tests/OCCTThreadTests/ThreadFormsTests.swift)
 ## Thread::Issue181-189 (PR #2363, files: Issue181RobustnessTests.swift, Issue185HelicalSweepTests.swift, Issue187ScrewThreadTests.swift, Issue189ThreadGuardTests.swift)
+## Thread::Issue784-991 (PR #2312, files: Issue784ThreadBuildCodableCompatTests.swift, Issue988ThreadProfileFactoryTests.swift, Issue989ThreadDesignationParseTests.swift, Issue990ThreadAxisBasisTests.swift, Issue991ThreadProfileFlatWidthTests.swift)
 
 Injections are in `Sources/OCCTSwift/ThreadFeatures.swift`. Rounds combined two or three injections only where their code paths are disjoint (stated per row); each test's red is attributed to the one injection on its path.
 Injections are in `Sources/OCCTSwift/ThreadFeatures.swift`, applied in four sets and reverted after
@@ -34,6 +35,9 @@ of the three parameterised tests failed individually. `profileValidationAndCodab
 rejected both, and the original test passed with F1 and F2 applied (measured). Green: all 8
 tests (21 cases) pass, 29.4 s.
 Injections are the named entries of the PR body's injection table; every one was applied with `Sources/` otherwise clean and reverted with `git checkout -- Sources` before the green run.
+All injections are in `Sources/OCCTSwift/ThreadFeatures.swift`. Green: all 16 tests pass on the
+untouched tree before the injections and again after the last one was reverted
+(`Test run with 16 tests in 5 suites passed`). Parity probe: `Scripts/repro/766-thread-784-991/`.
 
 | Test (Suite::func) | Code under test | Injection | Red (failing line) | Green | Parity |
 |---|---|---|---|---|---|
@@ -107,3 +111,19 @@ TSan on the clean tree, each of the seven #361/#1404 tests alone: 0 warnings and
 | Issue #187, screw-motion thread cutter (tight envelope) :: threadedHole cuts a valid in-envelope thread into a bore wall | `threadedHole` cut path | `cutnil`: `applyThreadCut` returns nil | `Issue187ScrewThreadTests.swift:115` `tapped != nil` | passed | PASS: Valid, 17 faces, volume 5708.981 from 5954.920. `nosmoothinternal` stayed green: for ISO-68 the analytic cutter succeeds first |
 | Issue #189, thread guard regression (fastener threads) :: threadedShaft builds valid external threads for standard fasteners (not nil) | `threadedShaft` direct build | `balloon` | `Issue189ThreadGuardTests.swift:39` `vThread < vBlank`, all 4 cases | passed | PASS: e.g. M5x0.8: 426.871 of 490.874 |
 | Issue #189, thread guard regression (fastener threads) :: Coarse worm-pitch result is still rejected or in (loosened) envelope (#181-C kept) | `threadedShaft` direct build | `balloon` | `Issue189ThreadGuardTests.swift:63` `c.max.x <= b.max.x + tol` (and :64) | passed | PASS: bounds max x 6.776 against 6 + 1.750. Like #181-C, nil is accepted by design |
+| Issue784ThreadBuildCodableCompatTests::legacyBooleanDecodesAsDirect | `ThreadBuild.init(from:)` | A: `if container.contains(.boolean)` → `if false` | `:25` Caught error: DecodingError.dataCorrupted ... expected one of "auto", "direct" or the retired "boolean" | pass | N/A, pure Swift Codable |
+| Issue784ThreadBuildCodableCompatTests::legacyBooleanDecodesInsideAWrapper | `ThreadBuild.init(from:)` | A (same run; the other three tests stayed green) | `:32` Caught error: DecodingError.dataCorrupted. Path: build | pass | N/A, pure Swift Codable |
+| Issue784ThreadBuildCodableCompatTests::survivingCasesRoundTrip | `ThreadBuild.encode(to:)` | B: `.direct` encoded under key `.auto` | `:45` Expectation failed: decoded == value | pass | N/A, pure Swift Codable |
+| Issue784ThreadBuildCodableCompatTests::encodingNeverEmitsBoolean | `ThreadBuild.encode(to:)` | C: `.direct` encoded under key `.boolean` (round-trip test stays green, since decode maps it back) | `:54` Expectation failed: !text.contains("boolean") | pass | N/A, pure Swift Codable |
+| Issue784ThreadBuildCodableCompatTests::unknownKeyStillFails | `ThreadBuild.init(from:)` | D: unknown key → `self = .auto` instead of throwing | `:63` an error was expected but none was thrown and "auto" was returned | pass | N/A, pure Swift Codable |
+| Issue988ThreadProfileFactoryTests::squareIsUnchanged | `ThreadProfile.square` | E: `rootFlatFraction: 0.5` → `0.4999` | `:37` Expectation failed: got.axial == want.0; `:47` wall count == 2 | pass | N/A, pure Swift |
+| Issue988ThreadProfileFactoryTests::buttressIsUnchanged | `ThreadProfile.buttress` | F: `crestCentreFraction: 0.2722` → `0.2723` | `:37` Expectation failed: got.axial == want.0 (x2) | pass | N/A, pure Swift |
+| Issue988ThreadProfileFactoryTests::symmetricFormsAreUnchanged | `ThreadProfile.acme29` | G: acme29 `rootFlatFraction: 0.3707` → `0.3708` | `:37` Expectation failed: got.axial == want.0 (x2) | pass | N/A, pure Swift |
+| Issue989ThreadDesignationParseTests::designationsParse | `ThreadSpec.parse` | H: `mmPerInch = 25.4` → `25.4001` (the ACME/Unified agreement test stays green) | `:70` abs(got.nominalDiameter - want.diameter) < 1e-9; `:73` pitch (12 issues) | pass | N/A, pure Swift |
+| Issue989ThreadDesignationParseTests::acmeAndUnifiedAgreeOnTheSameBody | `ThreadSpec.parseInchDesignation` | I: ACME-only pitch × 1.001 in the shared parse | `:97` Expectation failed: acme.pitch == unified.pitch (x4) | pass | N/A, pure Swift |
+| Issue989ThreadDesignationParseTests::unrecognisedInputIsRefused | `ThreadSpec.parseInchDesignation` | J: drop `threadsPerInch > 0` | `:112` argument "1/4-0": Expectation failed: ThreadSpec.parse(text) == nil | pass | N/A, pure Swift |
+| Issue989ThreadDesignationParseTests::measuredEdgeBehaviour | `ThreadSpec.parseMetric` | K: lowercase before splitting on `x` | `:132` Expectation failed: ThreadSpec.parse("M10X1.5") == nil | pass | N/A, pure Swift |
+| Issue990ThreadAxisBasisTests::grooveSitsOnTheCanonicalDatum | `orthonormalRadial` → `buildThreadedRodDirect`; `OCCTShapeClassifyPoint`, `OCCTShapeGetVolume` | L: `perpendicularBasis(to: axis).1` → `.0` | `:140` Expectation failed: off < 15, "groove centre is 91.87 degrees off" for all six axes | pass | PASS: datum = gp_Ax2 YDirection for all six axes; groove -1.8685°, fraction 0.5556, removed 127.8267 mm³ identical in probe |
+| Issue991ThreadProfileFlatWidthTests::flatWidthsMatchTheStandard | `ThreadProfile.flatWidthFraction` | M: `first(where:)` instead of summing flats (fails iso60V, whitworth55, acme29, square, buttress, knuckle) | `:36` root flat width mismatch for all six fixtures, `:33` crest mismatch for knuckle (7 issues) | pass | N/A, pure Swift |
+| Issue991ThreadProfileFlatWidthTests::pointedCrestIsZero | `Segment.isFlat(atDepth:)` | N: drop `kind == .flat` from `isFlat` (M also turns it red, at `:58`) | `:56` pointed.hasCrestFlat == false; `:57` flatWidthFraction(atDepth: 0) == 0 | pass | N/A, pure Swift |
+| Issue991ThreadProfileFlatWidthTests::cutPathStillCuts | `applyThreadCut` (`OCCTShapeBuildThreadCutter`); `OCCTShapeGetVolume`, `OCCTShapeIsValid` | O: `applyThreadCut` returns `self` uncut | `:85` Expectation failed: tappedVolume < blockVolume (5981.59 both) | pass | PASS: block 5981.592412435, tapped 5741.827370224, valid, in probe and Swift |

@@ -1,0 +1,20 @@
+# probe.mm, compiled with CLAUDE.md's ground-truth line against the pinned v4.0.0-kernel.1
+# xcframework and run 2026-09-24 on the BREP files that an instrumented (then reverted) run of
+# Issue990ThreadAxisBasisTests and Issue991...cutPathStillCuts wrote. The Swift-side values from
+# that run are in kernel-parity/OCCTThreadTests.json; every one matches the lines below.
+== Part 1: gp_Ax2(origin, axis).YDirection()
++X YDirection = (0, -1, 0)
+-X YDirection = (-0, -1, -0)
++Y YDirection = (1, 0, -0)
+-Y YDirection = (1, 0, 0)
++Z YDirection = (-0, 1, 0)
+-Z YDirection = (0, 1, 0)
+== Part 2a: Issue990 groove measurement on the Swift-built solids
++X: degrees=-1.868502 grooveFraction=0.555556 removed=127.826663181 (blank 1130.973355292, threaded 1003.146692111)
+-X: degrees=-1.868502 grooveFraction=0.555556 removed=127.826663181 (blank 1130.973355292, threaded 1003.146692111)
++Y: degrees=-1.868502 grooveFraction=0.555556 removed=127.826663181 (blank 1130.973355292, threaded 1003.146692111)
+-Y: degrees=-1.868502 grooveFraction=0.555556 removed=127.826663181 (blank 1130.973355292, threaded 1003.146692111)
++Z: degrees=-1.868502 grooveFraction=0.555556 removed=127.826663181 (blank 1130.973355292, threaded 1003.146692111)
+-Z: degrees=-1.868502 grooveFraction=0.555556 removed=127.826663181 (blank 1130.973355292, threaded 1003.146692111)
+== Part 2b: Issue991 cutPathStillCuts on the Swift-built solids
+block volume=5981.592412435 tapped volume=5741.827370224 tapped valid=1 ratio=0.959916185
