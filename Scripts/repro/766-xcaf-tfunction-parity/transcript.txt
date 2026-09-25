@@ -1,0 +1,10 @@
+logbookBasic: Set non-null=true found on Root=true fresh IsEmpty=true; after SetTouched(t1) IsEmpty=false IsModified(t1)=true IsModified(t2)=false
+logbookImpactedAndClear: SetImpacted raised=false IsEmpty after SetImpacted=false; after Clear IsEmpty=true
+setFunctionScope: TFunction_Scope::Set(Root) non-null=true
+addAndHasFunction: AddFunction=true HasFunction=true
+removeFunction: RemoveFunction=true HasFunction after=false
+removeAllFunctions: count before=2 after RemoveAllFunctions=0
+freeID: fresh GetFreeID=1 after AddFunction GetFreeID=2 (at least 1: true; increased: true)
+setAndHas: tag 500 has Tick before=false after Set=true
+remove: tag 501 Tick found before remove=true, present after ForgetAttribute=false
+removeNonExistent: tag 502 has Tick=false
