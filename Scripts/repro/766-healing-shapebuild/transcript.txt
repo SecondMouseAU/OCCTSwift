@@ -1,0 +1,20 @@
+edge0: hasCurve3d=1 range=[0, 10] hasPCurve(face0)=1 first=(-5, -5, -5) last=(-5, -5, 5)
+edge1: hasCurve3d=1 range=[0, 10] hasPCurve(face0)=1 first=(-5, -5, 5) last=(-5, 5, 5)
+vertex0=(-5, -5, 5) tol=1e-07 vertex1=(-5, -5, -5) tol=1e-07
+Copy(edge0, share): hasCurve3d=1 range=[0, 10] hasPCurve(face0)=1 first=(-5, -5, -5) last=(-5, -5, 5)
+  IsSame(edge0)=0
+Copy(edge0, no share): hasCurve3d=1 range=[0, 10] hasPCurve(face0)=1 first=(-5, -5, -5) last=(-5, -5, 5)
+CopyReplaceVertices(edge0, v0, v1): hasCurve3d=1 range=[0, 10] hasPCurve(face0)=1 first=(-5, -5, 5) last=(-5, -5, -5)
+copy + SetRange3d(0,5): hasCurve3d=1 range=[0, 5] hasPCurve(face0)=1 first=(-5, -5, -5) last=(-5, -5, 5)
+  then CopyRanges(from edge1): hasCurve3d=1 range=[0, 10] hasPCurve(face0)=1 first=(-5, -5, -5) last=(-5, -5, 5)
+BuildCurve3d(edge0 copy)=1
+copy + RemoveCurve3d: hasCurve3d=0 range=[0, 10] hasPCurve(face0)=1 first=(-5, -5, -5) last=(-5, -5, 5)
+copy + RemovePCurve(face0): hasCurve3d=1 range=[0, 10] hasPCurve(face0)=1 first=(-5, -5, -5) last=(-5, -5, 5)
+  then CopyPCurves(from edge0): hasCurve3d=1 range=[0, 10] hasPCurve(face0)=1 first=(-5, -5, -5) last=(-5, -5, 5)
+cylinder face0 surface=Geom_CylindricalSurface
+cyl edge0: hasCurve3d=1 range=[0, 6.28319] hasPCurve(face0)=1 first=(5, -1.22465e-15, 10) last=(5, -1.22465e-15, 10)
+cyl copy + RemovePCurve(face0): hasCurve3d=1 range=[0, 6.28319] hasPCurve(face0)=0 first=(5, -1.22465e-15, 10) last=(5, -1.22465e-15, 10)
+  then CopyPCurves(from cyl edge0): hasCurve3d=1 range=[0, 6.28319] hasPCurve(face0)=1 first=(5, -1.22465e-15, 10) last=(5, -1.22465e-15, 10)
+CombineVertex(v0, v1, 1.0001) = (-5, -5, 0) tol=5.000500100
+CombineVertex(v0, v1, 1.5) = (-5, -5, 0) tol=7.500000150
+CombineVertex(points 0.01 apart, tol 0.01 each) = (0.005, 0, 0) tol=0.015001500
