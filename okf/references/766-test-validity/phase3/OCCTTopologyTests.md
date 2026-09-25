@@ -58,7 +58,7 @@
 | Shell from plane surface | OCCTBRepLibMakeShellFromPlane | BRepLib_MakeShell plane | uMax + 1 | ✅ | ✅ | Rewritten: asserted only non-nil and isValid |
 | Point cloud by triangulation | OCCTBRepLibPointCloudByTriangulation | BRepLib_PointCloudShape triangulation | drop the last point | ✅ | ✅ | Rewritten: asserted count > 0 |
 | Point cloud by density | OCCTBRepLibPointCloudByDensity | BRepLib_PointCloudShape density | density x 2 | ✅ | ✅ | Rewritten: asserted count > 0 |
-| Compute normals on meshed shape | OCCTBRepLibComputeNormals | BRepLib_ToolTriangulatedShape::ComputeNormals | report false after computing | ✅ | ✅ |  |
+| Compute normals on meshed shape | OCCTBRepLibComputeNormals | BRepLib_ToolTriangulatedShape::ComputeNormals | report false after computing; ComputeNormals never called; first face only; node 1 normal overwritten; meshing already computes normals | ✅ | ✅ | Rewritten: asserted only computeNormals() == true, which stayed green under "never called", "first face only" and "node 1 normal overwritten" (and returned silently on a nil box); now asserts no normals after meshing, 6 faces with normals after, every node normal perpendicular to its face plane. Red at BRepLibToolTriangulatedShapeTests.swift:32 and :41 (never called, first face only), :41 (normal overwritten), :26 (meshing already computes them) |
 
 ---
 
