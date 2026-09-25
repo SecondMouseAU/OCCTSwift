@@ -1022,7 +1022,7 @@ struct OSDHostTests {
     // developer machine gets the identical string from both. Both name the same host, so the two
     // are compared by first DNS label, case-insensitively. That still rejects a bridge that
     // returns a fixed or wrong name.
-    @Test func hostName() {
+    @Test func hostName() throws {
         var buf = [CChar](repeating: 0, count: 256)
         #expect(gethostname(&buf, buf.count) == 0)
         let expected = String(cString: buf)
@@ -1030,9 +1030,7 @@ struct OSDHostTests {
         func firstLabel(_ name: String) -> String {
             String(name.prefix { $0 != "." }).lowercased()
         }
-        let actual = HostInfo.hostName
-        #expect(actual != nil)
-        guard let actual else { return }
+        let actual = try #require(HostInfo.hostName)
         #expect(!firstLabel(actual).isEmpty)
         #expect(firstLabel(actual) == firstLabel(expected))
     }
@@ -1050,10 +1048,8 @@ struct OSDHostTests {
     // #1987: this used to be `let _ = HostInfo.internetAddress`, with no assertion at all. The
     // kernel returns a dotted-quad IPv4 address (the loopback address in one probe run, a LAN
     // address in another), so the result must parse as one.
-    @Test func internetAddress() {
-        let address = HostInfo.internetAddress
-        #expect(address != nil)
-        guard let address else { return }
+    @Test func internetAddress() throws {
+        let address = try #require(HostInfo.internetAddress)
         var parsed = in_addr()
         #expect(inet_pton(AF_INET, address, &parsed) == 1)
     }
@@ -1116,15 +1112,12 @@ struct PerfMeterTests {
 @Suite("OSD_Directory Tests")
 struct OSDDirectoryTests {
 
-    @Test func tempDirectory() {
-        let tmpDir = DirectoryUtils.buildTemporary()
-        #expect(tmpDir != nil)
-        if let dir = tmpDir {
-            #expect(DirectoryUtils.exists(dir))
-            // #1987: the removal used to go unchecked.
-            #expect(DirectoryUtils.remove(dir))
-            #expect(!DirectoryUtils.exists(dir))
-        }
+    @Test func tempDirectory() throws {
+        let dir = try #require(DirectoryUtils.buildTemporary())
+        #expect(DirectoryUtils.exists(dir))
+        // #1987: the removal used to go unchecked.
+        #expect(DirectoryUtils.remove(dir))
+        #expect(!DirectoryUtils.exists(dir))
     }
 
     @Test func createAndRemoveDirectory() {
