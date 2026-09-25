@@ -1,0 +1,31 @@
+insertRemoveCol:
+  initial: 2x3 deg=(1,2) poles=(0,0,0)(0,1,0)(0,2,0)(1,0,0)(1,1,1)(1,2,0)
+  InsertPoleColAfter(1): 2x4 deg=(1,3) poles=(0,0,0)(0,0.5,0.5)(0,1,0)(0,2,0)(1,0,0)(1,0.5,0.5)(1,1,1)(1,2,0)
+  RemovePoleCol(2): 2x3 deg=(1,2) poles=(0,0,0)(0,1,0)(0,2,0)(1,0,0)(1,1,1)(1,2,0)
+insertRemoveRow:
+  initial: 3x2 deg=(2,1) poles=(0,0,0)(0,1,0)(1,0,0)(1,1,1)(2,0,0)(2,1,0)
+  InsertPoleRowAfter(1): 4x2 deg=(3,1) poles=(0,0,0)(0,1,0)(0.5,0,0.5)(0.5,1,0.5)(1,0,0)(1,1,1)(2,0,0)(2,1,0)
+  RemovePoleRow(2): 3x2 deg=(2,1) poles=(0,0,0)(0,1,0)(1,0,0)(1,1,1)(2,0,0)(2,1,0)
+increaseDegree:
+  Increase(2,2): 3x3 deg=(2,2) poles=(0,0,0)(0,0.5,0)(0,1,0)(0.5,0,0)(0.5,0.5,0.25)(0.5,1,0.5)(1,0,0)(1,0.5,0.5)(1,1,1)
+  point(0.3,0.7) before=(0.30000000000000004,0.69999999999999996,0.21000000000000002) after=(0.30000000000000004,0.69999999999999996,0.20999999999999999) moved=2.78e-17
+reverse:
+  UReverse: 2x2 deg=(1,1) poles=(1,0,0)(1,1,1)(0,0,0)(0,1,0)
+  VReverse: 2x2 deg=(1,1) poles=(1,1,1)(1,0,0)(0,1,0)(0,0,0)
+insertBefore (bezierFill of two degree-1 Bezier curves, stretch):
+  initial: 2x2 deg=(1,1) poles=(0,0,0)(0,5,0)(10,0,0)(10,5,0)
+  InsertPoleColBefore(1): threw Standard_OutOfRange
+  InsertPoleColBefore(2): 2x3 deg=(1,2) poles=(0,0,0)(0,2.5,1)(0,5,0)(10,0,0)(1,2.5,1)(10,5,0)
+  InsertPoleRowBefore(1): threw Standard_OutOfRange
+  InsertPoleRowBefore(2): 3x3 deg=(2,2) poles=(0,0,0)(0,2.5,1)(0,5,0)(-1,0,0.5)(-1,1,0.5)(-1,2,0.5)(10,0,0)(1,2.5,1)(10,5,0)
+setPoleColRow:
+  SetPoleCol(1): 2x2 deg=(1,1) poles=(0,0,0)(0,5,0)(2,0,0)(10,5,0)
+  SetPoleRow(1): 2x2 deg=(1,1) poles=(0,0,0)(0,3,0)(2,0,0)(10,5,0)
+setWeightColRow:
+  SetPoleCol(1, weights 2): 2x2 deg=(1,1) poles=(0,0,0)(0,5,0)(1,0,0)(10,5,0) weights=2 1 2 1 
+  SetWeightCol(1, 1.5): 2x2 deg=(1,1) poles=(0,0,0)(0,5,0)(1,0,0)(10,5,0) weights=1.5 1 1.5 1 
+  SetWeightRow(1, 1.2): 2x2 deg=(1,1) poles=(0,0,0)(0,5,0)(1,0,0)(10,5,0) weights=1.2 1.2 1.5 1 
+setPoleColWeights:
+  SetPoleCol(2, weights 3): 3x3 deg=(2,2) poles=(0,0,0)(0,5,2)(0,10,0)(5,0,0)(5,5,3)(5,10,0)(10,0,0)(10,5,2)(10,10,0) weights=1 3 1 1 3 1 1 3 1 
+setPoleRowWeights:
+  SetPoleRow(2, weights 4): 3x3 deg=(2,2) poles=(0,0,0)(0,5,0)(0,10,0)(5,0,2)(5,5,3)(5,10,2)(10,0,0)(10,5,0)(10,10,0) weights=1 1 1 4 4 4 1 1 1 

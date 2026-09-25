@@ -1,0 +1,21 @@
+projectLineOnPlane: ok=1 domain=[-2e+100, 2e+100] start=(-2e+100, 2) end=(2e+100, 2) value(0)=(1, 2) value(10)=(11, 2)
+multiResultProjection: NbPoints=2 [1] point=(5, 0, 0) uv=(0, 0) dist=5 [2] point=(-5, 6.1232339957367663e-16, 0) uv=(3.1415926535897931, -0) dist=15 lower=5 at (0, 0)
+trimPlane: bounds=[-5, 5]x[-3, 3]
+trimInU: bounds=[-2, 2]x[-2e+100, 2e+100]
+trimInV: bounds=[-2e+100, 2e+100]x[-3, 3]
+revolvedBoss: IsDone=1 : type=0 valid=1 volume=7999999.9999999981 area=240000 edges=19
+revolvedThruAll: IsDone=1 : type=0 valid=1 volume=8000000.0000000019 area=451428.39931319002 edges=16
+revolvedBoss (top-face profile): IsDone=1 : type=0 valid=1 volume=8392699.0816987269 area=263561.94490192342 edges=24
+revolvedThruAll (top-face profile): IsDone=1 : type=0 valid=1 volume=8882194.4784009419 area=282277.66118942673 edges=27
+revolutionForm base: type=0 valid=1 volume=72.256631032565252 area=106.81415022205296 edges=6
+addRevolutionForm: FindSurface found=0 plane=0
+revolveSegment: type=2 valid=1 volume=785.39816339744823 area=471.23889803846902 edges=3
+revolveCircle: type=2 valid=1 volume=-1776.5287921960844 area=1184.3525281307232 edges=2
+partialRevolution: type=2 valid=1 volume=196.34954084936206 area=217.80972450961724 edges=9
+sectionWithPlane z = 5: type=0 valid=1 volume=0 area=0 edges=4
+  (for comparison, z = 0): type=0 valid=1 volume=0 area=0 edges=4
+sectionWithSurface: type=0 valid=1 volume=0 area=0 edges=4
+cylinderOneAxis: face 1 cylinder axis loc=(0,0,0) dir=(0,0,1)
+torus: faces=4 face 1 type=4
+shellFromCylinder: type=3 valid=1 volume=523.59877559829886 area=314.15926535897933 edges=3
+shellFromPlane: type=3 valid=1 volume=0 area=99.999999999999986 edges=4

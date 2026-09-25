@@ -21,7 +21,13 @@ struct Vector2DMathTests {
     @Test func normalize() {
         let n = Vector2DMath.normalize(SIMD2(3, 4))
         #expect(n != nil)
-        if let n = n { #expect(abs(Vector2DMath.modulus(n) - 1.0) < 1e-10) }
+        if let n = n {
+            #expect(abs(Vector2DMath.modulus(n) - 1.0) < 1e-10)
+            // Probed (Scripts/repro/766-math-trsfmod-uzawa-vector2d): (0.6, 0.8). A unit vector
+            // pointing the wrong way also has modulus 1.
+            #expect(abs(n.x - 0.6) < 1e-12)
+            #expect(abs(n.y - 0.8) < 1e-12)
+        }
     }
 }
 

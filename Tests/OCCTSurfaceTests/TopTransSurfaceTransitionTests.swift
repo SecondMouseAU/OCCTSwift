@@ -39,9 +39,10 @@ struct TopTransSurfaceTransitionTests {
             surfaceMinDirection: SIMD3(0, 0, 1),
             surfaceMaxCurvature: 0.05, surfaceMinCurvature: 0.005,
             surfaceOrientation: 0, boundaryOrientation: 0)
-        // States may be UNKNOWN for some curvature configurations
-        _ = result.stateBefore
-        _ = result.stateAfter
+        // #766: was two discarded reads. TopTrans_SurfaceTransition's curvature form answers
+        // OUT then IN here, the same as the plain crossing (Scripts/repro/766-tbezier-toptrans-typename/).
+        #expect(result.stateBefore == .out)
+        #expect(result.stateAfter == .in)
     }
 
     @Test func stateEnumValues() {
