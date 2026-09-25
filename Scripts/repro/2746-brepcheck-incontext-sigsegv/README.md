@@ -124,7 +124,8 @@ issue mentions `BRepCheck_Edge::InContext`.
 The issue says no bridge function reaches `InContext`, because the `checkSubShape` helper calls
 `Minimum()` only. That is true of `checkSubShape` and false of the bridge as a whole.
 **`BRepCheck_Analyzer::Perform()` calls `BRepCheck_Edge::InContext(face)` itself**, once per edge
-per face, and `BRepCheck_Analyzer` is constructed at 19 sites across six bridge `.mm` files.
+per face, and `BRepCheck_Analyzer` is constructed at 19 sites across six bridge `.mm` files as
+counted here (#2750 recounted it as 20 when it came to guard them; that row is the current one).
 `nulled-edge-analyzer` measures the crash through a plain `BRepCheck_Analyzer(box).IsValid()`, and
 the backtrace runs through `BRepCheck_ParallelAnalyzer::operator()` and `OSD_Parallel::For`.
 
@@ -154,7 +155,12 @@ predicates against four shapes:
 | box with the `Curve3D` representation dropped | false | true | yes |
 | cylinder (seam plus degenerated edges) | false | false | no |
 
-The second predicate is the one to use. Nothing in this PR installs it; see the PR body for why.
+The second predicate is the one to use, and it is the one #2750 installed: the shipped guard is
+`occtShapeHasPCurveOnlyEdge` / `occtShapePCurveOnlyEdgeCount` in `OCCTBridge_Internal.h`, called
+before every bridge `BRepCheck_Analyzer` construction. #2750 narrowed the predicate once more
+along the way, to a non-degenerated **edge of a face**, since `Perform` reaches `InContext` only
+from its `TopAbs_FACE` case. `okf/references/known-occt-bugs.md` carries the current statement of
+the guard and the site count; what is below is this probe's own measurement, unchanged.
 
 ## Transcript
 

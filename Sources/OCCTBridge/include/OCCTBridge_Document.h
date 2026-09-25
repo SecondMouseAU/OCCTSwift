@@ -536,7 +536,9 @@ typedef struct
 } OCCTNamingHistoryEntry;
 
 /// Create a new child label under the given parent label.
-/// Pass parentLabelId = -1 to create under the document root.
+/// Pass parentLabelId = -1 to create under the document root -- on that root the label is always
+/// genuinely new and empty, never a ShapeTool/ColorTool/etc. label XCAFDoc_DocumentTool already
+/// created there (#2730).
 /// Returns the new label's ID, or -1 on failure.
 int64_t OCCTDocumentCreateLabel(OCCTDocumentRef doc, int64_t parentLabelId);
 

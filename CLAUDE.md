@@ -256,7 +256,22 @@ the reproducer). What a bridge author needs without opening it:
 - `OCC_CATCH_SIGNALS` is inert in this build (no `OCC_CONVERT_SIGNALS`). An OS signal raised
   inside OCCT is uncatchable in-process, and so is a C++ exception that reaches the Swift boundary
   (#345), which is why every `gp_Dir`/`gp_Ax*`/`Geom_Direction` construction from caller doubles
-  sits inside a `try`.
+  sits inside a `try`. **Do not read that as "the process always dies", measured #2750.** Once
+  `occtEnsureSignals()` has run, which any of fourteen bridge entry points does once per process,
+  OCCT's own `SegvHandler` reaches `Standard_ErrorHandler::Abort`, and with `OCC_CONVERT_SIGNALS`
+  undefined that is a plain `throw`, which unwinds on macOS arm64. The same fault therefore kills
+  one process and comes back as a caught `Standard_Failure` in another, depending on nothing the
+  caller controls. Guard the fault; never rely on either outcome.
+- **`BRepCheck_Analyzer` is not crash-safe on a shape it did not build.** `Perform()` calls
+  `BRepCheck_Edge::InContext(face)`, which dereferences a failed `down_cast<GeomAdaptor_Curve>` on
+  a non-degenerated **edge of a face** with no valid 3D curve and at least one pcurve (#2746).
+  `Minimum()` reports `NoError` first, only the one owning face whose pcurve became `myCref`
+  faults, and a `.brep` file round-trips the state, so an imported shape reaches it. Guarded at all
+  20 bridge construction sites by `occtShapeHasPCurveOnlyEdge` /
+  `occtShapePCurveOnlyEdgeCount` in `OCCTBridge_Internal.h` (#2750): call one of them before any
+  new `BRepCheck_Analyzer`, and answer "invalid" for a whole-shape question or the site's existing
+  "could not determine" for a per-sub-shape one. The predicate is **not** "has a null `Curve3D`
+  representation", which is false for the shape a `.brep` round trip produces and crashes anyway.
 - `GeomAbs_G2` is never a valid order for `BRepFill_Filling`: curvature continuity is
   `GeomAbs_C1` (ordinal 2), whatever `BRepOffsetAPI_MakeFilling.hxx` says. Test any filling change
   on both a planar and a periodic support surface, since #430 was catchable on one and an
@@ -264,13 +279,6 @@ the reproducer). What a bridge author needs without opening it:
 - `BRepOffsetAPI_ThruSections` takes `CreateRuled` for exactly two sections and `CreateSmoothed`
   for three or more, so a two-section test never reaches #913's array. `MakeSolid` cannot cap a
   non-planar section (#905); loft the wall, cap with `Shape.fill`, sew.
-- **`BRepCheck_Analyzer` is not crash-safe on a shape it did not build.** Its `Perform()` calls
-  `BRepCheck_Edge::InContext(face)`, which raises an uncatchable SIGSEGV on a non-degenerated edge
-  that has no valid 3D curve but does have a pcurve (#2746). `Minimum()` reports `NoError` first,
-  only one of the two owning faces faults, and a `.brep` file round-trips the state, so any of the
-  19 bridge `BRepCheck_Analyzer` sites can take the process down on an imported shape. Nothing is
-  carried and nothing is guarded yet; the guard is #2750 and the predicate it must use is in the
-  reference row.
 - `BRepAlgoAPI_BuilderAlgo` is General Fuse, a compound of split parts, not `BRepAlgoAPI_Fuse`'s
   merged solid; comparing the two is #367's mistake, not a kernel bug.
 - `GeomPlate_MakeApprox::ApproxError()` and `MakeFilling::G0Error()` are not gates for "accepted

@@ -864,7 +864,18 @@ public final class Shape: @unchecked Sendable {
         return Shape(handle: h)
     }
 
-    /// Create a hollow shell by removing material from inside.
+    /// Offset an open shell or face by `thickness`, via `MakeThickSolidBySimple`.
+    ///
+    /// - Note: This wraps `BRepOffsetAPI_MakeThickSolid::MakeThickSolidBySimple`, which OCCT's own
+    ///   header documents as taking "non-closed shell or face" input, not a closed solid. Measured
+    ///   on a closed box, cylinder and sphere at several thicknesses and both signs, this always
+    ///   returns `nil`: it cannot hollow a closed solid the way the name suggests. Use
+    ///   ``shelled(thickness:openFaces:)`` with at least one open face to hollow a closed solid
+    ///   instead. See #2739 for the open question of whether this overload should be re-routed
+    ///   onto the same algorithm.
+    /// - Parameter thickness: Offset distance passed straight to the underlying OCCT call.
+    /// - Returns: The offset shape, or `nil` on failure, including whenever `self` is a closed
+    ///   solid (#2739).
     public func shelled(thickness: Double) -> Shape? {
         guard let handle = OCCTShapeShell(self.handle, thickness) else { return nil }
         return Shape(handle: handle)
@@ -2205,7 +2216,10 @@ public final class Shape: @unchecked Sendable {
 
     /// Glue two shapes together at coincident faces.
     ///
-    /// More efficient than boolean union when shapes have faces that perfectly align.
+    /// More efficient than boolean union when shapes have faces that perfectly align. Uses
+    /// `BOPAlgo_GlueFull`, OCCT's option for fully coincident faces (#2749); see
+    /// `Sources/OCCTBridge/src/OCCTBridge_Modeling_Boolean.mm`'s `OCCTShapeGlue` for the
+    /// measurement behind that choice.
     ///
     /// - Parameters:
     ///   - shape1: First shape
