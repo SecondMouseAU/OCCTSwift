@@ -119,22 +119,29 @@
     "test_file": "Tests/OCCTCurveTests/ApproxSameParameterTests.swift",
     "bridge_function": "OCCTApproxSameParameter",
     "bridge_output": {
-      "type": "bool",
-      "data": true
+      "type": "value",
+      "data": {
+        "done": true,
+        "is_same_parameter": true
+      }
     },
     "kernel_output": {
-      "type": "bool",
-      "data": "IsDone 1, IsSameParameter 1 (TolReached 1.48e50 on these unbounded lines, not asserted)"
+      "type": "value",
+      "data": {
+        "done": true,
+        "is_same_parameter": true
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether Approx_SameParameter completed (done) and reported the 2D line as same-parameter with the 3D line on the plane (is_same_parameter). Bridge: Curve3D.checkSameParameter(curve2D:surface:) returns a result only when OCCTApproxSameParameter reports IsDone, and r.isSameParameter is its outIsSame; the test observed a non-nil result with isSameParameter == true (bridge-observed.txt, record 38). Kernel: Approx_SameParameter(Geom_Line, Geom2d_Line, Geom_Plane, 1e-6) printed done=1 is_same_parameter=1 (transcript.txt, EVID 38). TolReached (1.48e50 on these unbounded lines) is not asserted and is not compared.",
     "injection": "IsSameParameter() negated",
     "red": "ApproxSameParameterTests.swift:25 r.isSameParameter",
     "green": "passed",
-    "probe": "Scripts/repro/766-curve-adaptor-approx/transcript.txt",
+    "probe": "Scripts/repro/766-curve-evidence-fix/",
     "note": "Rewritten: `if let` let a nil result pass unchecked"
   },
   {
@@ -774,22 +781,27 @@
     "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
     "bridge_function": "OCCTCurve3DBSplineSetOrigin",
     "bridge_output": {
-      "type": "bool",
-      "data": false
+      "type": "value",
+      "data": {
+        "succeeded": false
+      }
     },
     "kernel_output": {
-      "type": "exception",
-      "data": "SetOrigin(1) threw Geom_BSplineCurve::SetOrigin"
+      "type": "value",
+      "data": {
+        "succeeded": false
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether SetOrigin(1) succeeded on the non-periodic cubic. Bridge: curve.bsplineSetOrigin(index: 1) returns OCCTCurve3DBSplineSetOrigin's bool, which is false when the kernel call throws; the test observed false (bridge-observed.txt, record 39). Kernel: Geom_BSplineCurve::SetOrigin(1) on the same poles, knots and multiplicities threw Geom_BSplineCurve::SetOrigin, so succeeded=0 (transcript.txt, EVID 39).",
     "injection": "report success without calling SetOrigin on a non-periodic curve",
     "red": "BSplineCurve3DCompletionsV121Tests.swift:95 !curve.bsplineSetOrigin(index: 1)",
     "green": "passed",
-    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt"
+    "probe": "Scripts/repro/766-curve-evidence-fix/"
   },
   {
     "test_name": "BSplineCurve 3D Completions v121::MovePointAndTangent",
@@ -1040,22 +1052,27 @@
     "test_file": "Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift",
     "bridge_function": "OCCTCurve3DBezierGetWeights",
     "bridge_output": {
-      "type": "weights",
-      "data": null
+      "type": "value",
+      "data": {
+        "weights_present": false
+      }
     },
     "kernel_output": {
-      "type": "weights",
-      "data": "Geom_BezierCurve::Weights() is nullptr for the non-rational curve"
+      "type": "value",
+      "data": {
+        "weights_present": false
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether the non-rational Bezier exposes a weights array. Bridge: Curve3D.bezierWeights returns nil when OCCTCurve3DBezierGetWeights finds none; the test observed nil (bridge-observed.txt, record 40). Kernel: Geom_BezierCurve::Weights() on the non-rational three-pole curve returned a null pointer, so weights_present=0 (transcript.txt, EVID 40).",
     "injection": "report all-1.0 weights for a non-rational curve",
     "red": "BezierCurve3DCompletionTests.swift:39 c.bezierWeights == nil",
     "green": "passed",
-    "probe": "Scripts/repro/766-curve-bezier-completions/transcript.txt",
+    "probe": "Scripts/repro/766-curve-evidence-fix/",
     "note": "Rewritten: accepted nil or all-1.0, and `if let` hid a nil curve"
   },
   {
@@ -1381,27 +1398,39 @@
     "test_file": "Tests/OCCTCurveTests/BezierCurveManipulationTests.swift",
     "bridge_function": "OCCTCurve3DBezierSetWeight",
     "bridge_output": {
-      "type": "weights",
-      "data": [
-        1,
-        2,
-        1,
-        1
-      ]
+      "type": "value",
+      "data": {
+        "rational": true,
+        "weights": [
+          1.0,
+          2.0,
+          1.0,
+          1.0
+        ]
+      }
     },
     "kernel_output": {
-      "type": "weights",
-      "data": "rational, weights 1 2 1 1"
+      "type": "value",
+      "data": {
+        "rational": true,
+        "weights": [
+          1.0,
+          2.0,
+          1.0,
+          1.0
+        ]
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether the curve is rational after SetWeight(2, 2.0), and its four weights. Bridge: bez.bezier.setWeight(at: 2, to: 2.0) then bez.bezier.isRational and bez.bezierWeights; the test observed true and [1, 2, 1, 1] (bridge-observed.txt, record 41). Kernel: Geom_BezierCurve::SetWeight(2, 2.0) on the same cubic printed rational=1 weights=1,2,1,1 (transcript.txt, EVID 41).",
     "injection": "SetWeight skipped",
     "red": "BezierCurveManipulationTests.swift:98 bez.bezier.isRational",
     "green": "passed",
-    "probe": "Scripts/repro/766-curve-bezier-manipulation/transcript.txt"
+    "probe": "Scripts/repro/766-curve-evidence-fix/"
   },
   {
     "test_name": "BiTgte CurveOnEdge v0.112::createFromEdges",
@@ -1437,26 +1466,43 @@
     "test_file": "Tests/OCCTCurveTests/BiTgteCurveOnEdgeTests.swift",
     "bridge_function": "OCCTBiTgteCurveOnEdgeValue",
     "bridge_output": {
-      "type": "point",
-      "data": [
-        -5,
-        -5,
-        5
-      ]
+      "type": "value",
+      "data": {
+        "domain": [
+          0.0,
+          10.0
+        ],
+        "point_at_mid": [
+          -5.0,
+          -5.0,
+          5.0
+        ]
+      }
     },
     "kernel_output": {
-      "type": "point",
-      "data": "(-5, -5, 5) at first, mid and last: the shared vertex"
+      "type": "value",
+      "data": {
+        "domain": [
+          0.0,
+          10.0
+        ],
+        "point_at_mid": [
+          -5.0,
+          -5.0,
+          5.0
+        ]
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the curve's parameter domain and its point at the mid parameter (5) for BiTgte_CurveOnEdge(edges[0], edges[1]) on the centred 10 box, where the point is the shared vertex. Bridge: BiTgteCurveOnEdge.domain and .point(at: mid); the test observed 0...10 and (-5, -5, 5) (bridge-observed.txt, record 42). Kernel: BiTgte_CurveOnEdge FirstParameter, LastParameter and D0(5) printed [0, 10] and (-5, -5, 5) (transcript.txt, EVID 42).",
     "injection": "D0 z + 1",
     "red": "BiTgteCurveOnEdgeTests.swift:43 simd_distance(curve.point(at: mid), SIMD3(-5, -5, 5)) < 1e-9",
     "green": "passed",
-    "probe": "Scripts/repro/766-curve-bitgte-pcurve-approx/transcript.txt",
+    "probe": "Scripts/repro/766-curve-evidence-fix/",
     "note": "Rewritten: checked only that the point was finite"
   },
   {
@@ -1493,26 +1539,43 @@
     "test_file": "Tests/OCCTCurveTests/BiTgteCurveOnEdgeTests.swift",
     "bridge_function": "OCCTBiTgteCurveOnEdgeValue",
     "bridge_output": {
-      "type": "point",
-      "data": [
-        -5,
-        -5,
-        0
-      ]
+      "type": "value",
+      "data": {
+        "domain": [
+          0.0,
+          10.0
+        ],
+        "point_at_5": [
+          -5.0,
+          -5.0,
+          0.0
+        ]
+      }
     },
     "kernel_output": {
-      "type": "point",
-      "data": "domain [0, 10], D0(5) = (-5, -5, 0)"
+      "type": "value",
+      "data": {
+        "domain": [
+          0.0,
+          10.0
+        ],
+        "point_at_5": [
+          -5.0,
+          -5.0,
+          0.0
+        ]
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the curve's parameter domain and its point at parameter 5 for BiTgte_CurveOnEdge(edges[0], edges[0]), which is the edge's own midpoint. Bridge: BiTgteCurveOnEdge.domain and .point(at: 5); the test observed 0...10 and (-5, -5, 0) (bridge-observed.txt, record 43). Kernel: BiTgte_CurveOnEdge FirstParameter, LastParameter and D0(5) printed [0, 10] and (-5, -5, 0) (transcript.txt, EVID 43).",
     "injection": "D0 z + 1 (and LastParameter + 1)",
     "red": "BiTgteCurveOnEdgeTests.swift:61 simd_distance(c.point(at: 5), SIMD3(-5, -5, 0)) < 1e-9",
     "green": "passed",
-    "probe": "Scripts/repro/766-curve-bitgte-pcurve-approx/transcript.txt",
+    "probe": "Scripts/repro/766-curve-evidence-fix/",
     "note": "Rewritten: checked only a finite lower bound"
   },
   {
@@ -1520,25 +1583,29 @@
     "test_file": "Tests/OCCTCurveTests/BRepAdaptorPCurveTests.swift",
     "bridge_function": "OCCTEdgePCurveParams",
     "bridge_output": {
-      "type": "range",
-      "data": [
-        0,
-        30
-      ]
+      "type": "value",
+      "data": {
+        "first": 0.0,
+        "last": 30.0
+      }
     },
     "kernel_output": {
-      "type": "range",
-      "data": "BRepAdaptor_Curve2d(edges[0], faces[0]) range [0, 30]"
+      "type": "value",
+      "data": {
+        "first": 0.0,
+        "last": 30.0
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the pcurve's parameter range for edges[0] on faces[0] of the centred 10 x 20 x 30 box. Bridge: edge.pcurveParams(on: face) returns (first, last); the test observed 0 and 30 (bridge-observed.txt, record 44). Kernel: BRepAdaptor_Curve2d(edge, face) FirstParameter and LastParameter printed 0 and 30 (transcript.txt, EVID 44).",
     "injection": "LastParameter halved",
     "red": "BRepAdaptorPCurveTests.swift:36 params.last == 30",
     "green": "passed",
-    "probe": "Scripts/repro/766-curve-bitgte-pcurve-approx/transcript.txt",
+    "probe": "Scripts/repro/766-curve-evidence-fix/",
     "note": "Rewritten: any increasing range passed"
   },
   {
@@ -1687,22 +1754,27 @@
     "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
     "bridge_function": "OCCTBSplineApproxInterpSetClosedTol",
     "bridge_output": {
-      "type": "double",
-      "data": 0.0
+      "type": "value",
+      "data": {
+        "max_deviation": 0.0
+      }
     },
     "kernel_output": {
-      "type": "double",
-      "data": "the setters never reach GeomAPI_PointsToBSpline: the same call twice, maxDeviation 0"
+      "type": "value",
+      "data": {
+        "max_deviation": 0.0
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the maximum distance, over 33 samples, between two fits of the 24-point helix. Bridge: the fit made after setParametrizationAlpha, setMinPivot, setClosedTolerance and setKnotInsertionTolerance against the plain fit; the test asserts maxDeviation == 0.0 and observed 0.0 (bridge-observed.txt, record 45). Kernel: OCCTBSplineApproxInterp forwards only (points, 3, 8, C2, tol3D) to GeomAPI_PointsToBSpline and the four setters have no kernel counterpart, so the kernel side is that call repeated with the same arguments: max_deviation=0 (transcript.txt, EVID 45). The control in the same transcript shows the forwarded tolerance does move the fit (tol3D 1e-1 vs 1e-8: 0.150).",
     "injection": "setClosedTolerance wired to the fit tolerance",
     "red": "BSplineApproxInterpContractTests.swift:80 Self.maxDeviation(a, b) == 0.0",
     "green": "passed",
-    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt",
+    "probe": "Scripts/repro/766-curve-evidence-fix/",
     "note": "A first injection, setMinPivot(1e-3) setting the fit tolerance, stayed green because 1e-3 is already the default tolerance"
   },
   {
@@ -1710,44 +1782,54 @@
     "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
     "bridge_function": "OCCTBSplineApproxInterpInterpolatePoint",
     "bridge_output": {
-      "type": "double",
-      "data": 0.0
+      "type": "value",
+      "data": {
+        "max_deviation": 0.0
+      }
     },
     "kernel_output": {
-      "type": "double",
-      "data": "same PointsToBSpline call twice, maxDeviation 0"
+      "type": "value",
+      "data": {
+        "max_deviation": 0.0
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the maximum distance, over 33 samples, between the plain fit and the fit made after interpolatePoint(0), interpolatePoint(last) and interpolatePoint(mid, withKink: true). Bridge: the test asserts maxDeviation == 0.0 and observed 0.0 (bridge-observed.txt, record 46). Kernel: interpolatePoint has no kernel counterpart and reaches no kernel argument, so the kernel side is GeomAPI_PointsToBSpline repeated with the same arguments: max_deviation=0 (transcript.txt, EVID 46).",
     "injection": "interpolatePoint nudges the constrained point by 0.01 in z",
     "red": "BSplineApproxInterpContractTests.swift:99 Self.maxDeviation(a, b) == 0.0",
     "green": "passed",
-    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+    "probe": "Scripts/repro/766-curve-evidence-fix/"
   },
   {
     "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::performOptimal matches perform and ignores maxIterations",
     "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
     "bridge_function": "OCCTBSplineApproxInterpPerformOptimal",
     "bridge_output": {
-      "type": "double",
-      "data": 0.0
+      "type": "value",
+      "data": {
+        "max_deviation": 0.0
+      }
     },
     "kernel_output": {
-      "type": "double",
-      "data": "same PointsToBSpline call, maxDeviation 0"
+      "type": "value",
+      "data": {
+        "max_deviation": 0.0
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the largest maximum distance, over 33 samples, between perform() and performOptimal(maxIterations: 1), and between performOptimal(maxIterations: 1) and performOptimal(maxIterations: 10000). Bridge: the test asserts both deviations are 0.0 and observed 0.0 and 0.0 (bridge-observed.txt, record 47). Kernel: performOptimal and maxIterations reach no kernel argument, so the kernel side is GeomAPI_PointsToBSpline repeated with the same arguments: max_deviation=0 (transcript.txt, EVID 47).",
     "injection": "maxIterations <= 1 loosens the fit tolerance to 1e-1",
     "red": "BSplineApproxInterpContractTests.swift:117 Self.maxDeviation(a, b) == 0.0",
     "green": "passed",
-    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+    "probe": "Scripts/repro/766-curve-evidence-fix/"
   },
   {
     "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::nbControlPoints and continuousIfClosed are advisory",
@@ -1776,22 +1858,27 @@
     "test_file": "Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift",
     "bridge_function": "OCCTBSplineApproxInterpSetProjectionTol",
     "bridge_output": {
-      "type": "double",
-      "data": 0.0
+      "type": "value",
+      "data": {
+        "max_deviation": 0.0
+      }
     },
     "kernel_output": {
-      "type": "double",
-      "data": "both orders reach tol3D 1e-8: maxDeviation 0"
+      "type": "value",
+      "data": {
+        "max_deviation": 0.0
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the largest maximum distance, over 33 samples, between the convergence-only fit at 1e-8 and each of the two fits that reach the same shared tolerance through setProjectionTolerance in either order. Bridge: the test asserts both deviations are 0.0 and observed 0.0 and 0.0 (bridge-observed.txt, record 48). Kernel: both setter orders leave tol3D at min(...) = 1e-8, so all three fits are GeomAPI_PointsToBSpline(points, 3, 8, C2, 1e-8): max_deviation=0 (transcript.txt, EVID 48).",
     "injection": "setProjectionTolerance assigns instead of taking the minimum",
     "red": "BSplineApproxInterpContractTests.swift:166 Self.maxDeviation(a, b) == 0.0",
     "green": "passed",
-    "probe": "Scripts/repro/766-curve-approxinterp-contract/transcript.txt"
+    "probe": "Scripts/repro/766-curve-evidence-fix/"
   },
   {
     "test_name": "BSplineApproxInterp: documented no-op / advisory contracts (#507)::maxError is the worst back-projection distance from an input point to the fit",
