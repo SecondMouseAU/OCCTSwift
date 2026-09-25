@@ -17,9 +17,19 @@
 // profile (`control...Volume`), which the test comments cite: the volume also says which mode ran.
 // Frenet and corrected Frenet on the S-curve and fixed binormal (Z) on the 3D spine differ (436.40 /
 // 445.03, and 508.59 / 634.64 / 624.29), so a bridge that swapped or dropped a mode fails.
-// Only those three lines of transcript-evidence-fix.txt were regenerated; the rest are the earlier
-// run's (a rerun against the pinned v4.0.0-kernel.1 asset moves the two shell volumes by one ulp, well
-// inside the records' 1e-9 relative tolerance).
+// Only the lines of transcript-evidence-fix.txt for tests whose record changed were regenerated (those
+// three pipe lines and, in the tightening pass below, the three fillet lines, draftVerticalFaces,
+// removeFeatures and pipeShellCreatesShell); the rest are the earlier run's (a rerun against the pinned
+// v4.0.0-kernel.1 asset moves the two shell volumes by one ulp, well inside the records' 1e-9 relative
+// tolerance).
+//
+// Tightening pass (#766): filletSpecificEdges, filletSingleEdge, filletVariableRadius,
+// draftVerticalFaces and removeFeatures asserted non-nil (or a 100 mm3 tolerance on a force-unwrapped
+// volume), so each of those lines now also prints the face count of the result (`faces`, `resultFaces`),
+// which the tests assert next to validity and the volume. pipeShellCreatesShell measured a circle
+// with the default Z normal on an X-axis spine, the same degenerate sweep as the three pipe tests
+// above; it now sweeps a circle whose normal is the spine's direction and prints `faces` and the
+// surface `area` (BRepGProp::SurfaceProperties, what Shape.surfaceArea reports).
 // Original header follows.
 // Epic #766, Tests/OCCTModelingTests/AdvancedModelingTests.swift: kernel parity for all 28 tests.
 // Same inputs as the Swift tests, straight to the OCCT classes the bridge functions call:
@@ -81,6 +91,14 @@ static double volume(const TopoDS_Shape& s)
 }
 
 static bool valid(const TopoDS_Shape& s) { return BRepCheck_Analyzer(s).IsValid(); }
+
+// The distinct faces of a shape, as Shape.subShapes(ofType: .face).count reports them.
+static int countFaces(const TopoDS_Shape& s)
+{
+  TopTools_IndexedMapOfShape m;
+  TopExp::MapShapes(s, TopAbs_FACE, m);
+  return m.Extent();
+}
 
 static const char* tf(bool b) { return b ? "true" : "false"; }
 
@@ -241,8 +259,9 @@ static void filletEdges(const char* label, const TopoDS_Shape& s, int first, int
   for (int i = first; i < first + count; i++)
     mf.Add(r1, r2, TopoDS::Edge(edges(i + 1)));
   mf.Build();
-  printf("%s: edges=%d done=%s valid=%s volume=%.17g\n", label, edges.Extent(), tf(mf.IsDone()),
-         tf(mf.IsDone() && valid(mf.Shape())), mf.IsDone() ? volume(mf.Shape()) : 0.0);
+  printf("%s: edges=%d done=%s valid=%s faces=%d volume=%.17g\n", label, edges.Extent(), tf(mf.IsDone()),
+         tf(mf.IsDone() && valid(mf.Shape())), mf.IsDone() ? countFaces(mf.Shape()) : 0,
+         mf.IsDone() ? volume(mf.Shape()) : 0.0);
 }
 
 int main()
@@ -277,8 +296,9 @@ int main()
       }
     }
     da.Build();
-    printf("draftVerticalFaces: verticalFaces=%d done=%s valid=%s volume=%.17g\n", vertical, tf(da.IsDone()),
-           tf(da.IsDone() && valid(da.Shape())), da.IsDone() ? volume(da.Shape()) : 0.0);
+    printf("draftVerticalFaces: verticalFaces=%d done=%s valid=%s faces=%d volume=%.17g\n", vertical, tf(da.IsDone()),
+           tf(da.IsDone() && valid(da.Shape())), da.IsDone() ? countFaces(da.Shape()) : 0,
+           da.IsDone() ? volume(da.Shape()) : 0.0);
   }
 
   {
@@ -297,9 +317,9 @@ int main()
     df.SetShape(holed);
     df.AddFacesToRemove(nonPlanar);
     df.Build();
-    printf("removeFeatures: faces=%d nonPlanarFaces=%d done=%s valid=%s volume=%.17g\n", faces.Extent(),
+    printf("removeFeatures: faces=%d nonPlanarFaces=%d done=%s valid=%s resultFaces=%d volume=%.17g\n", faces.Extent(),
            nonPlanar.Extent(), tf(df.IsDone()), tf(df.IsDone() && valid(df.Shape())),
-           df.IsDone() ? volume(df.Shape()) : 0.0);
+           df.IsDone() ? countFaces(df.Shape()) : 0, df.IsDone() ? volume(df.Shape()) : 0.0);
   }
 
   // #766: the profile stands across the spine's start (see the header). Frenet on the planar S-curve
@@ -315,8 +335,26 @@ int main()
   pipeAcrossStart("pipeShellFixedBinormal",
                   bspline({gp_Pnt(0, 0, 0), gp_Pnt(10, 5, 0), gp_Pnt(20, -5, 10), gp_Pnt(30, 0, 10)}), 0, 5, 3, 2,
                   {{"controlCorrectedFrenetVolume", 1}, {"controlFrenetVolume", 0}});
-  pipe("pipeShellCreatesShell", line(gp_Pnt(0, 0, 0), gp_Pnt(20, 0, 0)), {circle(gp_Pnt(0, 0, 0), 3)},
-       0, nullptr, false);
+  {
+    // #766: the r=3 circle now has the spine's direction (+X) as its normal. It used to keep the
+    // default Z normal, so it lay in the XY plane holding the spine, the same degenerate sweep as the
+    // three pipe tests above; the shell's lateral area is 2 * pi * 3 * 20 = 376.99.
+    TopoDS_Wire spine   = line(gp_Pnt(0, 0, 0), gp_Pnt(20, 0, 0));
+    TopoDS_Wire profile = circleAcross(gp_Pnt(0, 0, 0), gp_Vec(1, 0, 0), 3);
+    BRepOffsetAPI_MakePipeShell ps(spine);
+    ps.SetMode(Standard_True);
+    ps.SetTransitionMode(BRepBuilderAPI_Transformed);
+    ps.Add(profile, Standard_False, Standard_False);
+    ps.SetIsBuildHistory(false);
+    ps.Build();
+    TopoDS_Shape r = ps.IsDone() ? ps.Shape() : TopoDS_Shape();
+    GProp_GProps a;
+    if (!r.IsNull())
+      BRepGProp::SurfaceProperties(r, a);
+    printf("pipeShellCreatesShell: done=%s type=\"%s\" valid=%s faces=%d area=%.17g\n", tf(ps.IsDone()),
+           r.IsNull() ? "NULL" : TopAbs::ShapeTypeToString(r.ShapeType()), tf(!r.IsNull() && valid(r)),
+           r.IsNull() ? 0 : countFaces(r), r.IsNull() ? 0.0 : a.Mass());
+  }
   pipe("multiSectionFrenetVaryingRadius", line(gp_Pnt(0, 0, 0), gp_Pnt(0, 0, 10)),
        {circle(gp_Pnt(0, 0, 0), 2), circle(gp_Pnt(0, 0, 5), 1), circle(gp_Pnt(0, 0, 10), 2)}, 0,
        nullptr, true);
