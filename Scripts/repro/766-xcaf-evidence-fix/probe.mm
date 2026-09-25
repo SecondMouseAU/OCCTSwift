@@ -81,6 +81,18 @@ static const char* tf(bool b) { return b ? "true" : "false"; }
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <Standard_ConstructionError.hxx>
+#include <XCAFDimTolObjects_DatumModifWithValue.hxx>
+#include <XCAFDimTolObjects_DatumTargetType.hxx>
+#include <XCAFDimTolObjects_DimensionModif.hxx>
+#include <XCAFDimTolObjects_DimensionQualifier.hxx>
+#include <XCAFDimTolObjects_GeomToleranceModif.hxx>
+#include <XCAFDimTolObjects_GeomToleranceTypeValue.hxx>
+#include <XCAFDoc_LayerTool.hxx>
+#include <gp_Ax2.hxx>
+#include <XCAFDimTolObjects_DatumSingleModif.hxx>
+#include <XCAFDimTolObjects_DimensionFormVariance.hxx>
+#include <XCAFDimTolObjects_DimensionGrade.hxx>
 
 // Kernel measurements for the #1982 evidence correction pass over OCCTXCAFTests. Each section prints lines
 // tagged with the worklist index ([n]) of the parity record it backs, so a record's kernel value can be
@@ -405,6 +417,516 @@ static void gdtSingles()
          da->GetObject()->GetName()->ToCString());
 }
 
+// ---- KEYS group 2: the GD&T accessor, setter and buffer tests -------------------------------------------------------
+// Each helper mirrors what the bridge's OCCTDocumentCreateDimension / CreateGeomTolerance / CreateDatum do, then a section
+// applies the calls one test makes to the objects and reads them back through a fresh GetObject().
+struct GdtDoc
+{
+  Handle(TDocStd_Application) app;
+  Handle(TDocStd_Document)    d;
+  Handle(XCAFDoc_DimTolTool)  t;
+  TDF_Label                   shape;
+};
+
+static void gdtInit(GdtDoc& g)
+{
+  g.d     = newDoc(g.app);
+  g.t     = XCAFDoc_DocumentTool::DimTolTool(g.d->Main());
+  g.shape = XCAFDoc_DocumentTool::ShapeTool(g.d->Main())->AddShape(centredBox(10, 10, 10), false);
+}
+
+static Handle(XCAFDoc_Dimension) gdtAddDim(GdtDoc& g, XCAFDimTolObjects_DimensionType ty, double v)
+{
+  TDF_Label dl = g.t->AddDimension();
+  g.t->SetDimension(g.shape, dl);
+  Handle(XCAFDoc_Dimension) da;
+  dl.FindAttribute(XCAFDoc_Dimension::GetID(), da);
+  Handle(XCAFDimTolObjects_DimensionObject) o = new XCAFDimTolObjects_DimensionObject();
+  o->SetType(ty);
+  Handle(TColStd_HArray1OfReal) vals = new TColStd_HArray1OfReal(1, 1);
+  vals->SetValue(1, v);
+  o->SetValues(vals);
+  da->SetObject(o);
+  return da;
+}
+
+static Handle(XCAFDoc_GeomTolerance) gdtAddTol(GdtDoc& g, XCAFDimTolObjects_GeomToleranceType ty, double v)
+{
+  TDF_Label         tl = g.t->AddGeomTolerance();
+  TDF_LabelSequence shapes;
+  shapes.Append(g.shape);
+  g.t->SetGeomTolerance(shapes, tl);
+  Handle(XCAFDoc_GeomTolerance) ta;
+  tl.FindAttribute(XCAFDoc_GeomTolerance::GetID(), ta);
+  Handle(XCAFDimTolObjects_GeomToleranceObject) o = new XCAFDimTolObjects_GeomToleranceObject();
+  o->SetTypeOfValue(XCAFDimTolObjects_GeomToleranceTypeValue_None);
+  o->SetMaterialRequirementModifier(XCAFDimTolObjects_GeomToleranceMatReqModif_None);
+  o->SetZoneModifier(XCAFDimTolObjects_GeomToleranceZoneModif_None);
+  o->SetValueOfZoneModifier(0.0);
+  o->SetMaxValueModifier(0.0);
+  o->SetType(ty);
+  o->SetValue(v);
+  ta->SetObject(o);
+  return ta;
+}
+
+static Handle(XCAFDoc_Datum) gdtAddDatum(GdtDoc& g, const char* name)
+{
+  TDF_Label             dat = g.t->AddDatum();
+  Handle(XCAFDoc_Datum) da;
+  dat.FindAttribute(XCAFDoc_Datum::GetID(), da);
+  Handle(XCAFDimTolObjects_DatumObject) o = new XCAFDimTolObjects_DatumObject();
+  o->SetPosition(0);
+  o->SetModifierWithValue(XCAFDimTolObjects_DatumModifWithValue_None, 0.0);
+  o->SetName(new TCollection_HAsciiString(name));
+  da->SetObject(o);
+  return da;
+}
+
+static bool seqRaises(const TDF_LabelSequence& s, int oneBased)
+{
+  try
+  {
+    (void)s.Value(oneBased);
+    return false;
+  }
+  catch (const Standard_OutOfRange&)
+  {
+    return true;
+  }
+}
+
+static void gdtDimState(const char* tag, const Handle(XCAFDoc_Dimension)& a)
+{
+  Handle(XCAFDimTolObjects_DimensionObject) o = a->GetObject();
+  int                                       l = -1, r = -1;
+  o->GetNbOfDecimalPlaces(l, r);
+  printf("%s: qualifier=%d modifiers=[", tag, (int)o->GetQualifier());
+  for (int i = 1; i <= o->GetModifiers().Length(); i++)
+    printf("%s%d", i > 1 ? ", " : "", (int)o->GetModifiers().Value(i));
+  printf("] decimal places=(%d, %d) present=%s\n", l, r, tf(l > 0 || r > 0));
+}
+
+static void gdtDimAccessors()
+{
+  {
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Dimension) a = gdtAddDim(g, XCAFDimTolObjects_DimensionType_Size_Diameter, 20.0);
+    Handle(XCAFDoc_Dimension) b = gdtAddDim(g, XCAFDimTolObjects_DimensionType_Size_Radius, 5.0);
+    {
+      Handle(XCAFDimTolObjects_DimensionObject) o = a->GetObject();
+      o->SetQualifier(XCAFDimTolObjects_DimensionQualifier_Max);
+      a->SetObject(o);
+    }
+    {
+      Handle(XCAFDimTolObjects_DimensionObject)                o = a->GetObject();
+      NCollection_Sequence<XCAFDimTolObjects_DimensionModif> m;
+      m.Append(XCAFDimTolObjects_DimensionModif_Square);
+      o->SetModifiers(m);
+      a->SetObject(o);
+    }
+    {
+      Handle(XCAFDimTolObjects_DimensionObject) o = b->GetObject();
+      o->SetNbOfDecimalPlaces(1, 1);
+      b->SetObject(o);
+    }
+    gdtDimState("[49] first dimension (qualifier Max, modifiers [Square])", a);
+    gdtDimState("[49] second dimension (decimal places (1, 1))", b);
+  }
+  {
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Dimension) a = gdtAddDim(g, XCAFDimTolObjects_DimensionType_Size_Diameter, 20.0);
+    TDF_LabelSequence         dls;
+    g.t->GetDimensionLabels(dls);
+    printf("[50] dimension labels=%d: Value(6) (index 5) raises Standard_OutOfRange=%s\n", dls.Length(), tf(seqRaises(dls, 6)));
+    bool threw = false;
+    try
+    {
+      Handle(XCAFDimTolObjects_DimensionObject) o = a->GetObject();
+      o->SetNbOfDecimalPlaces(-1, 0);
+      a->SetObject(o);
+    }
+    catch (const Standard_Failure&)
+    {
+      threw = true;
+    }
+    int l = 99, r = 99;
+    a->GetObject()->GetNbOfDecimalPlaces(l, r);
+    printf("[50] SetNbOfDecimalPlaces(-1, 0) without the bridge's guard: threw=%s, read back (%d, %d) (present=%s)\n", tf(threw), l, r,
+           tf(l > 0 || r > 0));
+  }
+  {
+    GdtDoc g;
+    gdtInit(g);
+    TDF_LabelSequence dls, tls, xls;
+    g.t->GetDimensionLabels(dls);
+    g.t->GetGeomToleranceLabels(tls);
+    g.t->GetDatumLabels(xls);
+    printf("[54] [55] [56] fresh document: dimension labels=%d tolerance labels=%d datum labels=%d\n", dls.Length(), tls.Length(),
+           xls.Length());
+    printf("[54] dimension index 0 (Value(1)) raises=%s, index -1 (Value(0)) raises=%s, index 999 (Value(1000)) raises=%s\n",
+           tf(seqRaises(dls, 1)), tf(seqRaises(dls, 0)), tf(seqRaises(dls, 1000)));
+    printf("[55] tolerance index 0 (Value(1)) raises=%s, index -1 (Value(0)) raises=%s\n", tf(seqRaises(tls, 1)), tf(seqRaises(tls, 0)));
+    printf("[56] datum index 0 (Value(1)) raises=%s, index -1 (Value(0)) raises=%s\n", tf(seqRaises(xls, 1)), tf(seqRaises(xls, 0)));
+  }
+}
+
+static void datumState(const char* tag, const Handle(XCAFDoc_Datum)& da)
+{
+  Handle(XCAFDimTolObjects_DatumObject) o = da->GetObject();
+  printf("%s: IsDatumTarget=%s type=%d number=%d HasDatumTargetParams=%s length=%.17g width=%.17g\n", tag, tf(o->IsDatumTarget()),
+         (int)o->GetDatumTargetType(), o->GetDatumTargetNumber(), tf(o->HasDatumTargetParams()), o->GetDatumTargetLength(),
+         o->GetDatumTargetWidth());
+}
+
+static void datumSetTarget(const Handle(XCAFDoc_Datum)& da, XCAFDimTolObjects_DatumTargetType ty, int number)
+{
+  Handle(XCAFDimTolObjects_DatumObject) o = da->GetObject();
+  o->IsDatumTarget(true);
+  o->SetDatumTargetType(ty);
+  o->SetDatumTargetNumber(number);
+  da->SetObject(o);
+}
+
+// The placement calls of OCCTDocumentSetDatumTargetPlacement, WITHOUT its precondition test.
+static bool datumPlace(const Handle(XCAFDoc_Datum)& da, double length, double width)
+{
+  try
+  {
+    Handle(XCAFDimTolObjects_DatumObject) o = da->GetObject();
+    o->SetDatumTargetAxis(gp_Ax2(gp_Pnt(1, 2, 3), gp_Dir(0, 0, 1), gp_Dir(1, 0, 0)));
+    o->SetDatumTargetLength(length);
+    o->SetDatumTargetWidth(width);
+    da->SetObject(o);
+  }
+  catch (const Standard_Failure&)
+  {
+    return true;  // threw
+  }
+  return false;
+}
+
+static void gdtTolDatumAccessors()
+{
+  {  // [57] the test's sequence: allAround (15), commonZone (1), freeState (3), then cleared
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_GeomTolerance)                  t  = gdtAddTol(g, XCAFDimTolObjects_GeomToleranceType_Position, 0.1);
+    Handle(XCAFDimTolObjects_GeomToleranceObject) o  = t->GetObject();
+    printf("[57] fresh tolerance modifiers=%d", o->GetModifiers().Length());
+    NCollection_Sequence<XCAFDimTolObjects_GeomToleranceModif> m;
+    m.Append(XCAFDimTolObjects_GeomToleranceModif_All_Around);
+    m.Append(XCAFDimTolObjects_GeomToleranceModif_Common_Zone);
+    m.Append(XCAFDimTolObjects_GeomToleranceModif_Free_State);
+    o->SetModifiers(m);
+    t->SetObject(o);
+    printf("; written [%d, %d, %d], read back [", (int)XCAFDimTolObjects_GeomToleranceModif_All_Around,
+           (int)XCAFDimTolObjects_GeomToleranceModif_Common_Zone, (int)XCAFDimTolObjects_GeomToleranceModif_Free_State);
+    Handle(XCAFDimTolObjects_GeomToleranceObject) o2 = t->GetObject();
+    for (int i = 1; i <= o2->GetModifiers().Length(); i++)
+      printf("%s%d", i > 1 ? ", " : "", (int)o2->GetModifiers().Value(i));
+    o2->SetModifiers(NCollection_Sequence<XCAFDimTolObjects_GeomToleranceModif>());
+    t->SetObject(o2);
+    printf("]; after clearing modifiers=%d\n", t->GetObject()->GetModifiers().Length());
+  }
+  // [58] a datum target's persisted length and width, by target type (the read-back after SetObject, not the in-memory object)
+  const struct
+  {
+    XCAFDimTolObjects_DatumTargetType ty;
+    const char*                       name;
+  } kinds[3] = {{XCAFDimTolObjects_DatumTargetType_Rectangle, "Rectangle"},
+                {XCAFDimTolObjects_DatumTargetType_Line, "Line"},
+                {XCAFDimTolObjects_DatumTargetType_Point, "Point"}};
+  for (const auto& k : kinds)
+  {
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Datum) da = gdtAddDatum(g, "B");
+    datumSetTarget(da, k.ty, 4);
+    datumPlace(da, 30.0, 18.0);
+    char tag[64];
+    snprintf(tag, sizeof tag, "[58] %s target after placement (30, 18), read back", k.name);
+    datumState(tag, da);
+  }
+  {  // [59] a zero normal: gp_Dir throws before any setter runs
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Datum) da = gdtAddDatum(g, "C");
+    datumSetTarget(da, XCAFDimTolObjects_DatumTargetType_Line, 1);
+    bool threw = false;
+    try
+    {
+      Handle(XCAFDimTolObjects_DatumObject) o = da->GetObject();
+      o->SetDatumTargetAxis(gp_Ax2(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 0), gp_Dir(1, 0, 0)));
+      o->SetDatumTargetLength(10);
+      o->SetDatumTargetWidth(0);
+      da->SetObject(o);
+    }
+    catch (const Standard_ConstructionError&)
+    {
+      threw = true;
+    }
+    printf("[59] gp_Dir(0, 0, 0) in the placement throws Standard_ConstructionError=%s; ", tf(threw));
+    datumState("after the failed placement", da);
+  }
+  {  // [60] two tolerances and two datums, each written differently, read back separately
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_GeomTolerance) ta = gdtAddTol(g, XCAFDimTolObjects_GeomToleranceType_Position, 0.1);
+    Handle(XCAFDoc_GeomTolerance) tb = gdtAddTol(g, XCAFDimTolObjects_GeomToleranceType_Flatness, 0.05);
+    Handle(XCAFDoc_Datum)         da = gdtAddDatum(g, "A");
+    Handle(XCAFDoc_Datum)         db = gdtAddDatum(g, "B");
+    {
+      Handle(XCAFDimTolObjects_GeomToleranceObject) o = ta->GetObject();
+      o->SetTypeOfValue(XCAFDimTolObjects_GeomToleranceTypeValue_Diameter);
+      ta->SetObject(o);
+    }
+    {
+      Handle(XCAFDimTolObjects_GeomToleranceObject)               o = tb->GetObject();
+      NCollection_Sequence<XCAFDimTolObjects_GeomToleranceModif> m;
+      m.Append(XCAFDimTolObjects_GeomToleranceModif_All_Over);
+      o->SetModifiers(m);
+      tb->SetObject(o);
+    }
+    {
+      Handle(XCAFDimTolObjects_DatumObject) o = da->GetObject();
+      o->SetPosition(1);
+      da->SetObject(o);
+    }
+    datumSetTarget(db, XCAFDimTolObjects_DatumTargetType_Circle, 7);
+    Handle(XCAFDimTolObjects_GeomToleranceObject) a = ta->GetObject(), b = tb->GetObject();
+    Handle(XCAFDimTolObjects_DatumObject)          x = da->GetObject(), y = db->GetObject();
+    printf("[60] tolerance A: typeOfValue=%d modifiers=%d; tolerance B: typeOfValue=%d modifiers=[%d]; datum A: name=%s position=%d "
+           "isTarget=%s; datum B: name=%s position=%d isTarget=%s type=%d number=%d\n",
+           (int)a->GetTypeOfValue(), a->GetModifiers().Length(), (int)b->GetTypeOfValue(), (int)b->GetModifiers().Value(1),
+           x->GetName()->ToCString(), x->GetPosition(), tf(x->IsDatumTarget()), y->GetName()->ToCString(), y->GetPosition(),
+           tf(y->IsDatumTarget()), (int)y->GetDatumTargetType(), y->GetDatumTargetNumber());
+  }
+  {  // [61] one tolerance, no datums
+    GdtDoc g;
+    gdtInit(g);
+    gdtAddTol(g, XCAFDimTolObjects_GeomToleranceType_Position, 0.1);
+    TDF_LabelSequence tls, xls;
+    g.t->GetGeomToleranceLabels(tls);
+    g.t->GetDatumLabels(xls);
+    printf("[61] tolerance labels=%d: index 5 (Value(6)) raises=%s; datum labels=%d: index 0 (Value(1)) raises=%s\n", tls.Length(),
+           tf(seqRaises(tls, 6)), xls.Length(), tf(seqRaises(xls, 1)));
+  }
+}
+
+static void gdtPlacement()
+{
+  {  // [67] a datum that is not a target
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Datum) da = gdtAddDatum(g, "A");
+    bool                  threw = datumPlace(da, 30.0, 18.0);
+    printf("[67] placement threw=%s; ", tf(threw));
+    datumState("fresh datum, placement (30, 18) applied without the precondition, read back", da);
+  }
+  {  // [68] an Area target
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Datum) da = gdtAddDatum(g, "A");
+    datumSetTarget(da, XCAFDimTolObjects_DatumTargetType_Area, 1);
+    bool threw = datumPlace(da, 30.0, 18.0);
+    printf("[68] placement threw=%s; ", tf(threw));
+    datumState("Area target (type 4), placement (30, 18) applied without the precondition, read back", da);
+  }
+  {  // [69] a rectangle target with a stored placement, the mark cleared, a second placement applied
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Datum) da = gdtAddDatum(g, "A");
+    datumSetTarget(da, XCAFDimTolObjects_DatumTargetType_Rectangle, 1);
+    datumPlace(da, 30.0, 18.0);
+    datumState("[69] rectangle target with placement (30, 18), read back", da);
+    {
+      Handle(XCAFDimTolObjects_DatumObject) o = da->GetObject();
+      o->IsDatumTarget(false);
+      da->SetObject(o);
+    }
+    bool threw = datumPlace(da, 44.0, 22.0);
+    printf("[69] second placement threw=%s; ", tf(threw));
+    datumState("after IsDatumTarget(false) and a second placement (44, 22) applied without the precondition, read back", da);
+  }
+}
+
+static void gdtNames()
+{
+  {  // [71] one datum, index 1 is past the end
+    GdtDoc g;
+    gdtInit(g);
+    gdtAddDatum(g, "AAAA");
+    TDF_LabelSequence xls;
+    g.t->GetDatumLabels(xls);
+    printf("[71] datum labels=%d: index 1 (Value(2)) raises=%s\n", xls.Length(), tf(seqRaises(xls, 2)));
+  }
+  {  // [73] [74] the layers the bridge reads: XCAFDoc_LayerTool::Set(Main)
+    Handle(TDocStd_Application) app;
+    Handle(TDocStd_Document)    d  = newDoc(app);
+    Handle(XCAFDoc_LayerTool)   lt = XCAFDoc_LayerTool::Set(d->Main());
+    TDF_LabelSequence           ls;
+    lt->GetLayerLabels(ls);
+    printf("[73] [74] XCAFDoc_LayerTool::Set(Main): %d layer labels, name lengths [", ls.Length());
+    for (int i = 1; i <= ls.Length(); i++)
+    {
+      TCollection_ExtendedString nm;
+      lt->GetLayer(ls.Value(i), nm);
+      printf("%s%d", i > 1 ? ", " : "", TCollection_AsciiString(nm).Length());
+    }
+    printf("]; index %d (Value(%d)) raises=%s, index -1 (Value(0)) raises=%s\n", ls.Length(), ls.Length() + 1,
+           tf(seqRaises(ls, ls.Length() + 1)), tf(seqRaises(ls, 0)));
+  }
+}
+
+// ---- KEYS group 2b: what the raw kernel does with the values the bridge's #1037 guards refuse -----------------------------
+// The bridge refuses an enum ordinal outside the enumerator range before any OCCT call. These sections make the same calls
+// WITHOUT that guard, through the attribute (SetObject, then a fresh GetObject), on the same dimension / tolerance / datum in
+// the same order the test uses, and print what the kernel read back.
+template <class E>
+static std::string ordinals(const NCollection_Sequence<E>& s)
+{
+  std::string out = "[";
+  for (int i = 1; i <= s.Length(); i++)
+    out += (i > 1 ? ", " : "") + std::to_string((int)s.Value(i));
+  return out + "]";
+}
+
+static void gdtRawWrites()
+{
+  const int bad[3] = {24, 9999, -1};
+  {  // [62] dimension modifiers: valid [2, 19], three bad singles, then a mixed array
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Dimension) a = gdtAddDim(g, XCAFDimTolObjects_DimensionType_Size_Diameter, 20.0);
+    auto write = [&](std::initializer_list<int> v) {
+      bool                                                   threw = false;
+      try
+      {
+        Handle(XCAFDimTolObjects_DimensionObject)              o = a->GetObject();
+        NCollection_Sequence<XCAFDimTolObjects_DimensionModif> m;
+        for (int x : v)
+          m.Append((XCAFDimTolObjects_DimensionModif)x);
+        o->SetModifiers(m);
+        a->SetObject(o);
+      }
+      catch (const Standard_Failure&)
+      {
+        threw = true;
+      }
+      return threw;
+    };
+    write({2, 19});
+    printf("[62] valid [2, 19] read back %s (StatisticalTolerance=%d AnyCrossSection=%d)\n", ordinals(a->GetObject()->GetModifiers()).c_str(),
+           (int)XCAFDimTolObjects_DimensionModif_StatisticalTolerance, (int)XCAFDimTolObjects_DimensionModif_AnyCrossSection);
+    for (int b : bad)
+    {
+      bool threw = write({b});
+      printf("[62] unguarded single %d: threw=%s, read back %s\n", b, tf(threw), ordinals(a->GetObject()->GetModifiers()).c_str());
+    }
+    bool threw = write({2, 9999, 19});
+    printf("[62] unguarded mixed [2, 9999, 19]: threw=%s, read back %s\n", tf(threw), ordinals(a->GetObject()->GetModifiers()).c_str());
+  }
+  {  // [63] class of tolerance: five out-of-range pairs in the test's order, then the valid pair (11, 7)
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Dimension) a = gdtAddDim(g, XCAFDimTolObjects_DimensionType_Size_Diameter, 20.0);
+    const int pairs[6][2] = {{29, 7}, {9999, 7}, {-1, 7}, {11, 20}, {11, -1}, {11, 7}};
+    for (const auto& p : pairs)
+    {
+      bool threw = false;
+      try
+      {
+        Handle(XCAFDimTolObjects_DimensionObject) o = a->GetObject();
+        o->SetClassOfTolerance(true, (XCAFDimTolObjects_DimensionFormVariance)p[0], (XCAFDimTolObjects_DimensionGrade)p[1]);
+        a->SetObject(o);
+      }
+      catch (const Standard_Failure&)
+      {
+        threw = true;
+      }
+      Handle(XCAFDimTolObjects_DimensionObject) o2 = a->GetObject();
+      bool                                      hole = false;
+      XCAFDimTolObjects_DimensionFormVariance   fv   = XCAFDimTolObjects_DimensionFormVariance_None;
+      XCAFDimTolObjects_DimensionGrade          gr   = XCAFDimTolObjects_DimensionGrade_IT01;
+      bool                                      got  = o2->GetClassOfTolerance(hole, fv, gr);
+      printf("[63] unguarded SetClassOfTolerance(true, %d, %d): threw=%s, IsDimWithClassOfTolerance=%s GetClassOfTolerance=%s (%d, %d)\n",
+             p[0], p[1], tf(threw), tf(o2->IsDimWithClassOfTolerance()), tf(got), (int)fv, (int)gr);
+    }
+  }
+  {  // [64] geometric tolerance modifiers: valid [3, 15], then three bad singles
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_GeomTolerance) t = gdtAddTol(g, XCAFDimTolObjects_GeomToleranceType_Position, 0.1);
+    auto write = [&](std::initializer_list<int> v) {
+      bool threw = false;
+      try
+      {
+        Handle(XCAFDimTolObjects_GeomToleranceObject)               o = t->GetObject();
+        NCollection_Sequence<XCAFDimTolObjects_GeomToleranceModif> m;
+        for (int x : v)
+          m.Append((XCAFDimTolObjects_GeomToleranceModif)x);
+        o->SetModifiers(m);
+        t->SetObject(o);
+      }
+      catch (const Standard_Failure&)
+      {
+        threw = true;
+      }
+      return threw;
+    };
+    write({3, 15});
+    printf("[64] valid [3, 15] read back %s (%d modifiers)\n", ordinals(t->GetObject()->GetModifiers()).c_str(),
+           t->GetObject()->GetModifiers().Length());
+    const int bad64[3] = {17, 9999, -1};
+    for (int b : bad64)
+    {
+      bool threw = write({b});
+      printf("[64] unguarded single %d: threw=%s, read back %s (%d modifiers)\n", b, tf(threw),
+             ordinals(t->GetObject()->GetModifiers()).c_str(), t->GetObject()->GetModifiers().Length());
+    }
+  }
+  {  // [65] [66] datum modifiers: valid [2, 3], three bad singles; and the empty sequence
+    GdtDoc g;
+    gdtInit(g);
+    Handle(XCAFDoc_Datum) d = gdtAddDatum(g, "A");
+    auto write = [&](std::initializer_list<int> v) {
+      bool threw = false;
+      try
+      {
+        Handle(XCAFDimTolObjects_DatumObject)                    o = d->GetObject();
+        NCollection_Sequence<XCAFDimTolObjects_DatumSingleModif> m;
+        for (int x : v)
+          m.Append((XCAFDimTolObjects_DatumSingleModif)x);
+        o->SetModifiers(m);
+        d->SetObject(o);
+      }
+      catch (const Standard_Failure&)
+      {
+        threw = true;
+      }
+      return threw;
+    };
+    write({2, 3});
+    printf("[65] [66] valid [2, 3] read back %s (%d modifiers; Basic=%d ContactingFeature=%d)\n", ordinals(d->GetObject()->GetModifiers()).c_str(),
+           d->GetObject()->GetModifiers().Length(), (int)XCAFDimTolObjects_DatumSingleModif_Basic,
+           (int)XCAFDimTolObjects_DatumSingleModif_ContactingFeature);
+    const int bad65[3] = {22, 9999, -1};
+    for (int b : bad65)
+    {
+      bool threw = write({b});
+      printf("[65] unguarded single %d: threw=%s, read back %s\n", b, tf(threw), ordinals(d->GetObject()->GetModifiers()).c_str());
+    }
+    write({2, 3});
+    int  before = d->GetObject()->GetModifiers().Length();
+    bool threw  = write({});
+    printf("[66] [2, 3] written again (modifiers=%d), then an empty sequence: threw=%s, modifiers=%d\n", before, tf(threw),
+           d->GetObject()->GetModifiers().Length());
+  }
+}
+
 int main()
 {
   textLabel();
@@ -416,5 +938,10 @@ int main()
   stepIdentity();
   gdtAuthoring();
   gdtSingles();
+  gdtDimAccessors();
+  gdtTolDatumAccessors();
+  gdtPlacement();
+  gdtNames();
+  gdtRawWrites();
   return 0;
 }

@@ -994,22 +994,25 @@
     "bridge_output": {
       "type": "modifiers",
       "data": {
-        "read": [
-          "anyCrossSection",
-          "square",
-          "statisticalTolerance"
-        ]
-      }
-    },
-    "kernel_output": {
-      "type": "modifiers",
-      "data": {
+        "fresh_count": 0,
         "read": [
           19,
           1,
           2
         ],
-        "cleared": 0
+        "cleared_count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "modifiers",
+      "data": {
+        "fresh_count": 0,
+        "read": [
+          19,
+          1,
+          2
+        ],
+        "cleared_count": 0
       }
     },
     "comparison": {
@@ -1017,6 +1020,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: a fresh dimension had no modifiers, [.anyCrossSection, .square, .statisticalTolerance] read back in that order, and an empty write cleared them; the Swift raw values 19, 1 and 2 are the kernel's ordinals. Kernel: 'fresh modifiers=0', 'modifiers read back: 19 1 2 (written, as ordinals: 19 1 2)', 'after clearing: modifiers=0'. Kernel value: Scripts/repro/766-xcaf-gdt-dimension-accessor/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
   },
   {
@@ -1071,16 +1075,17 @@
     "bridge_output": {
       "type": "dims",
       "data": {
-        "a": {
-          "qualifier": "max",
+        "first": {
+          "qualifier": 2,
           "modifiers": [
-            "square"
+            1
           ],
-          "places": null
+          "decimal_places": null
         },
-        "b": {
-          "qualifier": "none",
-          "places": [
+        "second": {
+          "qualifier": 0,
+          "modifiers": [],
+          "decimal_places": [
             1,
             1
           ]
@@ -1088,9 +1093,23 @@
       }
     },
     "kernel_output": {
-      "type": "objects",
+      "type": "dims",
       "data": {
-        "separate_objects_keep_separate_values": true
+        "first": {
+          "qualifier": 2,
+          "modifiers": [
+            1
+          ],
+          "decimal_places": null
+        },
+        "second": {
+          "qualifier": 0,
+          "modifiers": [],
+          "decimal_places": [
+            1,
+            1
+          ]
+        }
       }
     },
     "comparison": {
@@ -1098,7 +1117,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-dimension-accessor/"
+    "source": "Same quantities on both sides, for two dimensions on one document (diameter 20 and radius 5): the qualifier ordinal, the modifier ordinals and the decimal places, with places null when neither count is positive (the bridge's own presence test, l > 0 || r > 0). Bridge: the first read back .max (2), [.square] (1) and no places; the second .none (0), no modifiers and places (1, 1). Kernel: the same writes to two dimension objects through their attributes read back first qualifier=2 modifiers=[1] places=(0, 0) present=false, second qualifier=0 modifiers=[] places=(1, 1) present=true. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [49].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T dimension accessors (#1004)::Out-of-range indices are refused by both the accessors and the mutators",
@@ -1106,22 +1126,30 @@
     "bridge_output": {
       "type": "refused",
       "data": {
-        "index": 5,
-        "labels": 1
+        "index_5_dimension_found": false,
+        "index_5_write_refused": true,
+        "negative_places_write_refused": true
       }
     },
     "kernel_output": {
-      "type": "count",
+      "type": "refused",
       "data": {
-        "dimension_labels": 1
+        "index_5_dimension_found": false,
+        "index_5_write_refused": true,
+        "negative_places_write_refused": false
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "negative_places_write_refused: the bridge refuses (OCCTDocumentSetDimensionDecimalPlaces returns false before any OCCT call when either count is negative), the raw kernel call does not: SetNbOfDecimalPlaces(-1, 0) then SetObject does not throw.",
+        "The kernel does not persist the negative count either, it reads back (0, 0), so the guard changes what is reported, not what is stored: without it the caller would be told a write took that did not.",
+        "By design (#1004): the refusal is the guard the test pins; index 5 is refused on both sides because the kernel has no dimension there."
+      ]
     },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-document-gdt/"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, for a document with one dimension: whether index 5 finds a dimension, whether a write at index 5 is refused, and whether a write of a negative place count is refused. Bridge: dimension(at: 5) was nil, the four mutators at index 5 returned false, and setDimensionDecimalPlaces(at: 0, left: -1, right: 0) returned false. Kernel: the dimension labels number 1, so Value(6) raises Standard_OutOfRange and there is no dimension to write to; SetNbOfDecimalPlaces(-1, 0) without the guard threw nothing and read back (0, 0). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [50].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T Document Tests::Empty document has zero dimensions",
@@ -1135,7 +1163,7 @@
     "kernel_output": {
       "type": "count",
       "data": {
-        "dimensions": 0
+        "count": 0
       }
     },
     "comparison": {
@@ -1143,6 +1171,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the dimension count of a fresh document. Bridge: dimensionCount was 0 and dimensions was empty. Kernel: 'dimensions=0' from GetDimensionLabels. Kernel value: Scripts/repro/766-xcaf-dim-tol-tool/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
   },
   {
@@ -1157,7 +1186,7 @@
     "kernel_output": {
       "type": "count",
       "data": {
-        "tolerances": 0
+        "count": 0
       }
     },
     "comparison": {
@@ -1165,6 +1194,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the geometric tolerance count of a fresh document. Bridge: geomToleranceCount was 0 and geomTolerances was empty. Kernel: 'geom tolerances=0' from GetGeomToleranceLabels. Kernel value: Scripts/repro/766-xcaf-dim-tol-tool/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
   },
   {
@@ -1179,7 +1209,7 @@
     "kernel_output": {
       "type": "count",
       "data": {
-        "datum_labels_fresh": 0
+        "count": 0
       }
     },
     "comparison": {
@@ -1187,6 +1217,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the datum count of a fresh document. Bridge: datumCount was 0 and datums was empty. Kernel: 'fresh document datum labels=0' from GetDatumLabels. Kernel value: Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
   },
   {
@@ -1195,18 +1226,17 @@
     "bridge_output": {
       "type": "dimension",
       "data": {
-        "at": [
-          0,
-          -1,
-          999
-        ],
-        "result": null
+        "found_at_0": false,
+        "found_at_minus_1": false,
+        "found_at_999": false
       }
     },
     "kernel_output": {
-      "type": "count",
+      "type": "dimension",
       "data": {
-        "dimensions": 0
+        "found_at_0": false,
+        "found_at_minus_1": false,
+        "found_at_999": false
       }
     },
     "comparison": {
@@ -1214,7 +1244,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
+    "source": "Same quantities on both sides: whether a dimension is found at index 0, -1 and 999 of a fresh document. Bridge: dimension(at:) was nil for all three. Kernel: the fresh document has 0 dimension labels, and Value(1), Value(0) and Value(1000), the 1-based positions for those indices, all raise Standard_OutOfRange. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [54].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T Document Tests::Geom tolerance at invalid index returns nil",
@@ -1222,17 +1253,15 @@
     "bridge_output": {
       "type": "tolerance",
       "data": {
-        "at": [
-          0,
-          -1
-        ],
-        "result": null
+        "found_at_0": false,
+        "found_at_minus_1": false
       }
     },
     "kernel_output": {
-      "type": "count",
+      "type": "tolerance",
       "data": {
-        "tolerances": 0
+        "found_at_0": false,
+        "found_at_minus_1": false
       }
     },
     "comparison": {
@@ -1240,7 +1269,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
+    "source": "Same quantities on both sides: whether a geometric tolerance is found at index 0 and -1 of a fresh document. Bridge: geomTolerance(at:) was nil for both. Kernel: 0 tolerance labels, and Value(1) and Value(0) raise Standard_OutOfRange. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [55].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T Document Tests::Datum at invalid index returns nil",
@@ -1248,17 +1278,15 @@
     "bridge_output": {
       "type": "datum",
       "data": {
-        "at": [
-          0,
-          -1
-        ],
-        "result": null
+        "found_at_0": false,
+        "found_at_minus_1": false
       }
     },
     "kernel_output": {
-      "type": "count",
+      "type": "datum",
       "data": {
-        "datum_labels_fresh": 0
+        "found_at_0": false,
+        "found_at_minus_1": false
       }
     },
     "comparison": {
@@ -1266,7 +1294,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+    "source": "Same quantities on both sides: whether a datum is found at index 0 and -1 of a fresh document. Bridge: datum(at:) was nil for both. Kernel: 0 datum labels, and Value(1) and Value(0) raise Standard_OutOfRange. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [56].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T tolerance and datum accessors (#1004)::A tolerance's value type, material requirement and zone modifier round-trip",
@@ -1347,17 +1376,25 @@
     "bridge_output": {
       "type": "modifiers",
       "data": {
-        "in_order": true
+        "fresh_count": 0,
+        "read": [
+          15,
+          1,
+          3
+        ],
+        "cleared_count": 0
       }
     },
     "kernel_output": {
       "type": "modifiers",
       "data": {
+        "fresh_count": 0,
         "read": [
-          3,
           15,
-          13
-        ]
+          1,
+          3
+        ],
+        "cleared_count": 0
       }
     },
     "comparison": {
@@ -1365,7 +1402,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+    "source": "Same quantities on both sides. Bridge: a fresh tolerance had no modifiers, [.allAround, .commonZone, .freeState] read back in that order (Swift raw values 15, 1, 3, the kernel's ordinals), and an empty write cleared them. Kernel: fresh modifiers=0, the same three written and read back [15, 1, 3], and 0 after clearing. The shared probe wrote a different sequence (3, 15, 13), so this line replaces it. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [57].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T tolerance and datum accessors (#1004)::A datum position round-trips, and reads nil when it has no place in a frame",
@@ -1450,10 +1488,18 @@
     "kernel_output": {
       "type": "target",
       "data": {
-        "stored_for_every_type": {
-          "length": 30,
-          "width": 18
-        }
+        "rectangle": [
+          30,
+          18
+        ],
+        "line": [
+          30,
+          null
+        ],
+        "point": [
+          null,
+          null
+        ]
       }
     },
     "comparison": {
@@ -1461,7 +1507,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+    "source": "Same quantities on both sides: the target length and width that read back for each target type after a placement of (30, 18), null where the value did not survive. Bridge: rectangle (30, 18), line (30, nil), point (nil, nil), since it reports length unless Point and width only for Rectangle. Kernel: after SetObject and a fresh GetObject the rectangle reads length 30 width 18, the line length 30 width 0, the point length 0 width 0, so 18 survives only for the rectangle and 30 only where the type is not Point. The shared probe's in-memory object kept 30 and 18 for every type, which is not what the document stores. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [58].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T tolerance and datum accessors (#1004)::A degenerate datum target placement axis is refused",
@@ -1469,14 +1516,15 @@
     "bridge_output": {
       "type": "bool",
       "data": {
-        "refused": true,
-        "length": null
+        "zero_normal_refused": true,
+        "placement_persisted": false
       }
     },
     "kernel_output": {
-      "type": "exception",
+      "type": "bool",
       "data": {
-        "gp_Dir_zero": "throws: input vector has zero norm"
+        "zero_normal_refused": true,
+        "placement_persisted": false
       }
     },
     "comparison": {
@@ -1484,7 +1532,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+    "source": "Same quantities on both sides: whether a placement whose normal is (0, 0, 0) is refused, and whether any placement is persisted. Bridge: setDatumTargetPlacement returned false and the target reported no length. Kernel: gp_Dir(0, 0, 0) throws Standard_ConstructionError, which the bridge's catch turns into the refusal, and after the failed placement the datum object reads HasDatumTargetParams=false and length 0, so nothing was persisted. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [59].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T tolerance and datum accessors (#1004)::Two tolerances and two datums on one document keep their own accessor values",
@@ -1492,69 +1541,56 @@
     "bridge_output": {
       "type": "entries",
       "data": {
-        "separate": true
+        "tolerance_a": {
+          "value_type": 1,
+          "modifiers": []
+        },
+        "tolerance_b": {
+          "value_type": 0,
+          "modifiers": [
+            16
+          ]
+        },
+        "datum_a": {
+          "name": "A",
+          "position": 1,
+          "target": null
+        },
+        "datum_b": {
+          "name": "B",
+          "position": null,
+          "target": {
+            "type": 3,
+            "number": 7
+          }
+        }
       }
     },
     "kernel_output": {
-      "type": "objects",
+      "type": "entries",
       "data": {
-        "separate_objects_keep_separate_values": true
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
-  },
-  {
-    "test_name": "GD&T tolerance and datum accessors (#1004)::Out-of-range tolerance and datum indices are refused",
-    "bridge_function": "OCCTDocumentSetGeomToleranceTypeOfValue",
-    "bridge_output": {
-      "type": "refused",
-      "data": {
-        "tolerance_index": 5,
-        "datum_index": 0
-      }
-    },
-    "kernel_output": {
-      "type": "count",
-      "data": {
-        "fresh_document_datum_labels": 0
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
-  },
-  {
-    "test_name": "GD&T setters reject values that name no enumerator (#1037)::A dimension modifier outside the enum is refused, and the sequence stays untouched",
-    "bridge_function": "OCCTDocumentSetDimensionModifiers",
-    "bridge_output": {
-      "type": "modifiers",
-      "data": {
-        "kept": [
-          2,
-          19
-        ],
-        "refused": [
-          24,
-          9999,
-          -1
-        ]
-      }
-    },
-    "kernel_output": {
-      "type": "range",
-      "data": {
-        "last": 23,
-        "ordinals": {
-          "StatisticalTolerance": 2,
-          "AnyCrossSection": 19
+        "tolerance_a": {
+          "value_type": 1,
+          "modifiers": []
+        },
+        "tolerance_b": {
+          "value_type": 0,
+          "modifiers": [
+            16
+          ]
+        },
+        "datum_a": {
+          "name": "A",
+          "position": 1,
+          "target": null
+        },
+        "datum_b": {
+          "name": "B",
+          "position": null,
+          "target": {
+            "type": 3,
+            "number": 7
+          }
         }
       }
     },
@@ -1563,7 +1599,95 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+    "source": "Same quantities on both sides, for two tolerances and two datums each written differently: the value type ordinal and modifier ordinals of each tolerance, and the name, position (null when 0, the bridge's own reading of an unplaced datum) and target of each datum. Bridge: tolerance A .diameter (1) with no modifiers, B .none (0) with [.allOver] (16); datum A position 1 and no target, B position nil and a circle (3) target numbered 7. Kernel: the same writes through the attributes read back typeOfValue 1 with 0 modifiers, typeOfValue 0 with [16], datum A position 1 isTarget=false, datum B position 0 isTarget=true type=3 number=7. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [60].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
+  },
+  {
+    "test_name": "GD&T tolerance and datum accessors (#1004)::Out-of-range tolerance and datum indices are refused",
+    "bridge_function": "OCCTDocumentSetGeomToleranceTypeOfValue",
+    "bridge_output": {
+      "type": "refused",
+      "data": {
+        "tolerance_index_5_found": false,
+        "tolerance_index_5_write_refused": true,
+        "datum_index_0_found": false,
+        "datum_index_0_write_refused": true
+      }
+    },
+    "kernel_output": {
+      "type": "refused",
+      "data": {
+        "tolerance_index_5_found": false,
+        "tolerance_index_5_write_refused": true,
+        "datum_index_0_found": false,
+        "datum_index_0_write_refused": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, for a document with one tolerance and no datums: whether anything is found at tolerance index 5 and datum index 0, and whether a write there is refused. Bridge: geomTolerance(at: 5) and datum(at: 0) were nil and every mutator at those indices returned false. Kernel: 1 tolerance label, so Value(6) raises Standard_OutOfRange, and 0 datum labels, so Value(1) raises; with no object there is nothing to write to. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [61].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
+  },
+  {
+    "test_name": "GD&T setters reject values that name no enumerator (#1037)::A dimension modifier outside the enum is refused, and the sequence stays untouched",
+    "bridge_function": "OCCTDocumentSetDimensionModifiers",
+    "bridge_output": {
+      "type": "modifiers",
+      "data": {
+        "valid_write_read_back": [
+          2,
+          19
+        ],
+        "bad_writes_refused": [
+          24,
+          9999,
+          -1
+        ],
+        "sequence_after_bad_writes": [
+          2,
+          19
+        ],
+        "mixed_write_refused": true,
+        "sequence_after_mixed_write": [
+          2,
+          19
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "modifiers",
+      "data": {
+        "valid_write_read_back": [
+          2,
+          19
+        ],
+        "bad_writes_refused": [],
+        "sequence_after_bad_writes": [
+          -1
+        ],
+        "mixed_write_refused": false,
+        "sequence_after_mixed_write": [
+          2,
+          9999,
+          19
+        ]
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "bad_writes_refused: the bridge refuses 24, 9999 and -1 (none names a DimensionModif enumerator, 0 through 23); the raw kernel accepts all three without throwing and stores each.",
+        "sequence_after_bad_writes: the bridge leaves [2, 19] in place; the raw kernel's last write replaces it with [-1].",
+        "mixed_write_refused, sequence_after_mixed_write: the bridge refuses [2, 9999, 19] whole and keeps [2, 19]; the raw kernel stores [2, 9999, 19], so one bad value does not poison the array.",
+        "By design (#1037): the guard is what the test pins. The stored 9999 is what the unfixed reader silently dropped through DimensionModifier(rawValue:)."
+      ]
+    },
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, for a dimension with modifiers [2, 19] written, then 24, 9999 and -1 written singly, then [2, 9999, 19]: whether each bad write is refused and what sequence reads back. Bridge: every bad write returned false, the sequence stayed [.statisticalTolerance, .anyCrossSection] (2, 19) after the singles and after the mixed array. Kernel: the valid write reads back [2, 19]; unguarded singles read back [24], [9999], [-1] with nothing thrown; the mixed array reads back [2, 9999, 19]. The kernel calls are the bridge's own setter calls made without its guard, through the attribute (SetObject, then a fresh GetObject). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [62].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T setters reject values that name no enumerator (#1037)::A class of tolerance outside the enum is refused rather than reported as present",
@@ -1571,7 +1695,7 @@
     "bridge_output": {
       "type": "class",
       "data": {
-        "refused": [
+        "bad_pairs_refused": [
           [
             29,
             7
@@ -1593,27 +1717,35 @@
             -1
           ]
         ],
-        "accepted": {
-          "formVariance": "h",
-          "grade": "it6"
-        }
+        "class_reported_after_bad_writes": false,
+        "valid_pair_read_back": [
+          11,
+          7
+        ]
       }
     },
     "kernel_output": {
-      "type": "range",
+      "type": "class",
       "data": {
-        "formVariance_last": 28,
-        "grade_last": 19,
-        "H": 11,
-        "IT6": 7
+        "bad_pairs_refused": [],
+        "class_reported_after_bad_writes": true,
+        "valid_pair_read_back": [
+          11,
+          7
+        ]
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "bad_pairs_refused: the bridge refuses all five out-of-range (form variance, grade) pairs (form variance runs 0 through 28, grade 0 through 19); the raw kernel accepts each without throwing.",
+        "class_reported_after_bad_writes: the bridge reports no class (classOfTolerance is nil); the raw kernel reports one, IsDimWithClassOfTolerance is true and GetClassOfTolerance returns the bad ordinals, because that predicate is a bare test against _None. This is the class nobody can name that #1037 fixed.",
+        "By design (#1037): the guard rejects the regime, not the feature; the in-range pair (11, 7) reads back identically on both sides."
+      ]
     },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, for a dimension written five out-of-range (form variance, grade) pairs in the test's order, then (11, 7): whether each bad pair is refused, whether a class is reported afterwards, and what the valid pair reads back as. Bridge: every bad pair returned false, classOfTolerance was nil, and the valid pair read back .h and .it6, ordinals 11 and 7. Kernel: each unguarded pair read back (29, 7), (9999, 7), (-1, 7), (11, 20), (11, -1) with IsDimWithClassOfTolerance true and nothing thrown, and (11, 7) read back (11, 7). The kernel calls are the bridge's own setter calls made without its guard, through the attribute (SetObject, then a fresh GetObject). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [63].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T setters reject values that name no enumerator (#1037)::A geometric tolerance modifier outside the enum is refused",
@@ -1621,26 +1753,34 @@
     "bridge_output": {
       "type": "modifiers",
       "data": {
-        "kept": 2,
-        "refused": [
+        "valid_write_count": 2,
+        "bad_writes_refused": [
           17,
           9999,
           -1
-        ]
+        ],
+        "count_after_bad_writes": 2
       }
     },
     "kernel_output": {
-      "type": "range",
+      "type": "modifiers",
       "data": {
-        "last": 16
+        "valid_write_count": 2,
+        "bad_writes_refused": [],
+        "count_after_bad_writes": 1
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "bad_writes_refused: the bridge refuses 17, 9999 and -1 (GeomToleranceModif runs 0 through 16); the raw kernel accepts all three without throwing.",
+        "count_after_bad_writes: the bridge keeps its 2 modifiers; the raw kernel's last write replaces the sequence with the single bad value, so 1.",
+        "By design (#1037): the guard is what the test pins."
+      ]
     },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, for a tolerance with modifiers [3, 15] written, then 17, 9999 and -1 written singly. Bridge: the valid write left 2 modifiers, every bad write returned false, and the count stayed 2. Kernel: [3, 15] reads back with 2 modifiers; unguarded singles read back [17], [9999], [-1], 1 modifier each, nothing thrown. The kernel calls are the bridge's own setter calls made without its guard, through the attribute (SetObject, then a fresh GetObject). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [64].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T setters reject values that name no enumerator (#1037)::A datum modifier outside the enum is refused",
@@ -1648,33 +1788,45 @@
     "bridge_output": {
       "type": "modifiers",
       "data": {
-        "kept": [
+        "valid_write_read_back": [
           2,
           3
         ],
-        "refused": [
+        "bad_writes_refused": [
           22,
           9999,
           -1
+        ],
+        "sequence_after_bad_writes": [
+          2,
+          3
         ]
       }
     },
     "kernel_output": {
-      "type": "range",
+      "type": "modifiers",
       "data": {
-        "last": 21,
-        "ordinals": {
-          "Basic": 2,
-          "ContactingFeature": 3
-        }
+        "valid_write_read_back": [
+          2,
+          3
+        ],
+        "bad_writes_refused": [],
+        "sequence_after_bad_writes": [
+          -1
+        ]
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "bad_writes_refused: the bridge refuses 22, 9999 and -1 (DatumSingleModif runs 0 through 21); the raw kernel accepts all three without throwing.",
+        "sequence_after_bad_writes: the bridge keeps [2, 3]; the raw kernel's last write leaves [-1].",
+        "By design (#1037): the guard is what the test pins."
+      ]
     },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, for a datum with modifiers [2, 3] written, then 22, 9999 and -1 written singly. Bridge: the valid write read back [.basic, .contactingFeature] (2, 3), every bad write returned false, and the sequence stayed [2, 3]. Kernel: [2, 3] reads back [2, 3]; unguarded singles read back [22], [9999], [-1] with nothing thrown. The kernel calls are the bridge's own setter calls made without its guard, through the attribute (SetObject, then a fresh GetObject). Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [65].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "GD&T setters reject values that name no enumerator (#1037)::Clearing a sequence with count 0 still works, so the guard did not break the empty case",
@@ -1682,13 +1834,17 @@
     "bridge_output": {
       "type": "modifiers",
       "data": {
-        "cleared": true
+        "count_before": 2,
+        "empty_write_accepted": true,
+        "count_after_empty_write": 0
       }
     },
     "kernel_output": {
       "type": "modifiers",
       "data": {
-        "after_empty_sequence": 0
+        "count_before": 2,
+        "empty_write_accepted": true,
+        "count_after_empty_write": 0
       }
     },
     "comparison": {
@@ -1696,7 +1852,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+    "source": "Same quantities on both sides, for a datum with modifiers [2, 3] written, then an empty sequence. Bridge: the count was 2, setDatumModifiers with a nil array and count 0 returned true, and the modifiers were empty. Kernel: [2, 3] written again reads back 2 modifiers, and an empty sequence written through the attribute throws nothing and reads back 0. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [66].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Datum target placement states its precondition (#1038)::A datum that is not a target refuses the placement instead of reporting success",
@@ -1704,22 +1861,30 @@
     "bridge_output": {
       "type": "bool",
       "data": {
-        "refused": true,
-        "target": null
+        "target_present": false,
+        "placement_refused": true,
+        "placement_persisted": false
       }
     },
     "kernel_output": {
       "type": "bool",
       "data": {
-        "fresh_is_target": false
+        "target_present": false,
+        "placement_refused": false,
+        "placement_persisted": false
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "placement_refused: the bridge refuses a placement on a datum that is not a target; the raw kernel calls (SetDatumTargetAxis, SetDatumTargetLength, SetDatumTargetWidth, then SetObject) throw nothing.",
+        "placement_persisted is false on both sides: XCAFDoc_Datum::SetObject drops the block when IsDatumTarget is false, so the raw call succeeds silently and stores nothing. The guard is what turns that silence into a refusal.",
+        "By design (#1038): reporting success would describe a call that persisted nothing."
+      ]
     },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, for a datum with no target set: whether it reports a target, whether a placement of length 30 and width 18 is refused, and whether it is persisted. Bridge: setDatumTargetPlacement returned false and datum(at:).target was nil. Kernel: the same placement written without the precondition threw nothing, and the datum read back IsDatumTarget=false HasDatumTargetParams=false length=0. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [67].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Datum target placement states its precondition (#1038)::An area target refuses the placement, because OCCT stores a shape there instead",
@@ -1727,24 +1892,30 @@
     "bridge_output": {
       "type": "bool",
       "data": {
-        "refused": true,
-        "type": "area",
-        "length": null,
-        "width": null
+        "target_type_ordinal": 4,
+        "placement_refused": true,
+        "placement_persisted": false
       }
     },
     "kernel_output": {
-      "type": "ordinal",
+      "type": "bool",
       "data": {
-        "area": 4
+        "target_type_ordinal": 4,
+        "placement_refused": false,
+        "placement_persisted": false
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "placement_refused: the bridge refuses a placement on an Area target; the raw kernel calls throw nothing.",
+        "placement_persisted is false on both sides: the Area branch of XCAFDoc_Datum::SetObject writes the target's own shape, never a placement, so the raw call is silently dropped.",
+        "By design (#1038): OCCT stores a shape there instead."
+      ]
     },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, for an Area target (ordinal 4): the target type, whether a placement of length 30 and width 18 is refused, and whether it is persisted. Bridge: setDatumTarget(.area) succeeded, setDatumTargetPlacement returned false, and the target was type .area with length and width nil. Kernel: the datum reads type=4 after the target write; the same placement without the precondition threw nothing and read back HasDatumTargetParams=false length=0 width=0. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [68].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Datum target placement states its precondition (#1038)::A rectangle target in the documented order still stores length and width",
@@ -1780,21 +1951,32 @@
     "bridge_output": {
       "type": "bool",
       "data": {
-        "refused_after_clear": true
+        "first_placement_accepted": true,
+        "target_present_after_clear": false,
+        "second_placement_refused": true,
+        "second_placement_persisted": false
       }
     },
     "kernel_output": {
       "type": "bool",
       "data": {
-        "is_target_after_clear": false
+        "first_placement_accepted": true,
+        "target_present_after_clear": false,
+        "second_placement_refused": false,
+        "second_placement_persisted": false
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "second_placement_refused: after the target mark is cleared the bridge refuses a placement again (it reads the precondition from the stored object each call); the raw kernel calls throw nothing.",
+        "second_placement_persisted is false on both sides: with IsDatumTarget false the raw placement of (44, 22) is not stored (length reads 0, not 44).",
+        "By design (#1038)."
+      ]
     },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-enum-range-and-placement/"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, for a rectangle target with a placement (30, 18), then the target mark cleared, then a second placement (44, 22): whether the first placement is accepted, whether a target is reported after the clear, and whether the second placement is refused and persisted. Bridge: the first placement returned true, clearDatumTarget succeeded and target was nil, the second placement returned false. Kernel: the first placement reads back HasDatumTargetParams=true length=30 width=18 with nothing thrown; after IsDatumTarget(false) and the second placement (no precondition) it reads IsDatumTarget=false HasDatumTargetParams=false length=0, nothing thrown. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [69].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Datum identifiers round-trip at any length (#1055)::A 100-character datum name reads back whole",
@@ -1854,14 +2036,13 @@
     "bridge_output": {
       "type": "name",
       "data": {
-        "reported": 100,
-        "prefix": "AAAAAAA"
+        "name_length": 100
       }
     },
     "kernel_output": {
       "type": "name",
       "data": {
-        "length": 100
+        "name_length": 100
       }
     },
     "comparison": {
@@ -1869,6 +2050,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the length of a 100-character datum name. Bridge: OCCTDocumentGetDatumName into an 8-byte buffer reported 100 (the prefix of 7 characters and the terminator are buffer behaviour the bridge adds, and are not compared). Kernel: 'datum name of 100 chars reads back 100 chars'. Kernel value: Scripts/repro/766-xcaf-gdt-names-and-answers/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
   },
   {
@@ -1877,14 +2059,15 @@
     "bridge_output": {
       "type": "name",
       "data": {
-        "reported": 100,
-        "next_index": -1
+        "name_length": 100,
+        "index_past_end_found": false
       }
     },
     "kernel_output": {
       "type": "name",
       "data": {
-        "length": 100
+        "name_length": 100,
+        "index_past_end_found": false
       }
     },
     "comparison": {
@@ -1892,7 +2075,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-names-and-answers/"
+    "source": "Same quantities on both sides: the length of a 100-character datum name asked for with a null buffer, and whether the index one past the last datum finds a datum. Bridge: OCCTDocumentGetDatumName(nil, 0) reported 100 and index + 1 returned -1. Kernel: 'datum name of 100 chars reads back 100 chars' from the shared probe, and with 1 datum label Value(2) raises Standard_OutOfRange. Kernel values: Scripts/repro/766-xcaf-gdt-names-and-answers/transcript.txt and the evidence-fix transcript line tagged [71].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Datum identifiers round-trip at any length (#1055)::A negative length, or a null buffer with a positive one, is refused",
@@ -1987,15 +2171,17 @@
     "bridge_output": {
       "type": "int",
       "data": {
-        "lengths_ok": true,
-        "at_count": -1,
-        "at_minus_1": -1
+        "every_name_length_readable": true,
+        "index_count_found": false,
+        "index_minus_1_found": false
       }
     },
     "kernel_output": {
-      "type": "count",
+      "type": "int",
       "data": {
-        "tool_on_main": 3
+        "every_name_length_readable": true,
+        "index_count_found": false,
+        "index_minus_1_found": false
       }
     },
     "comparison": {
@@ -2003,7 +2189,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue1078-layer-name-length/"
+    "source": "Same quantities on both sides, over the layers the bridge reads (XCAFDoc_LayerTool::Set(Main), which lists the 3 tool labels, #2413): whether every name length is readable, and whether the index equal to the count and index -1 find a name. Bridge: every OCCTDocumentGetLayerName length was >= 0, and index count and -1 returned -1. Kernel: 3 layer labels with name lengths [6, 6, 12], and Value(4) and Value(0) raise Standard_OutOfRange. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [73].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Layer names round-trip at any length (#1078)::A short buffer yields a prefix and the length the whole name needs",
@@ -2011,14 +2198,17 @@
     "bridge_output": {
       "type": "name",
       "data": {
-        "reported": 12,
-        "prefix_len": 7
+        "name_lengths_over_10": [
+          12
+        ]
       }
     },
     "kernel_output": {
       "type": "name",
       "data": {
-        "VisMaterials_length": 12
+        "name_lengths_over_10": [
+          12
+        ]
       }
     },
     "comparison": {
@@ -2026,7 +2216,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-issue1078-layer-name-length/"
+    "source": "Same quantity on both sides: the lengths of the layer names longer than 10 characters. Bridge: only one layer had len > 10, and OCCTDocumentGetLayerName into an 8-byte buffer reported that len, 12 (the 7-character prefix and the terminator are buffer behaviour the bridge adds, and are not compared). Kernel: the layer name lengths are [6, 6, 12], so only 12 exceeds 10. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [74].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "Layer names round-trip at any length (#1078)::A negative length, or a null buffer with a positive one, is refused",

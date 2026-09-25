@@ -13,7 +13,7 @@
 [212] fresh label: XCAFDoc_Material present=false
 [32;1mMesh /tmp/766-xcaf-evidence-fix-1508.obj
 [3 nodes] [1 2d elements]
-[read in 0.000444 s][0m
+[read in 0.000276 s][0m
 [135] RWObj_CafReader::Perform=true free shapes=1 common material found=true Shininess=0.300000012 specular=(0.603827357, 0.603827357, 0.603827357) RoughnessFromSpecular=0.699999988 |r-0.7|=1.19209289e-08
 [32;1m
 *******************************************************************
@@ -32,3 +32,44 @@
 [45] dimensions=3 tolerances=2 datums=2, has Size_Diameter=true, has Perpendicularity=true, sorted datum names=["A", "B"]
 [43] flatness 0.01: tolerance labels=1 (index of new = 0) GetType=7 (Flatness=7) GetValue=0.01
 [44] datum A: datum labels=1 (index of new = 0) GetName="A"
+[49] first dimension (qualifier Max, modifiers [Square]): qualifier=2 modifiers=[1] decimal places=(0, 0) present=false
+[49] second dimension (decimal places (1, 1)): qualifier=0 modifiers=[] decimal places=(1, 1) present=true
+[50] dimension labels=1: Value(6) (index 5) raises Standard_OutOfRange=true
+[50] SetNbOfDecimalPlaces(-1, 0) without the bridge's guard: threw=false, read back (0, 0) (present=false)
+[54] [55] [56] fresh document: dimension labels=0 tolerance labels=0 datum labels=0
+[54] dimension index 0 (Value(1)) raises=true, index -1 (Value(0)) raises=true, index 999 (Value(1000)) raises=true
+[55] tolerance index 0 (Value(1)) raises=true, index -1 (Value(0)) raises=true
+[56] datum index 0 (Value(1)) raises=true, index -1 (Value(0)) raises=true
+[57] fresh tolerance modifiers=0; written [15, 1, 3], read back [15, 1, 3]; after clearing modifiers=0
+[58] Rectangle target after placement (30, 18), read back: IsDatumTarget=true type=2 number=4 HasDatumTargetParams=true length=30 width=18
+[58] Line target after placement (30, 18), read back: IsDatumTarget=true type=1 number=4 HasDatumTargetParams=true length=30 width=0
+[58] Point target after placement (30, 18), read back: IsDatumTarget=true type=0 number=4 HasDatumTargetParams=true length=0 width=0
+[59] gp_Dir(0, 0, 0) in the placement throws Standard_ConstructionError=true; after the failed placement: IsDatumTarget=true type=1 number=1 HasDatumTargetParams=false length=0 width=0
+[60] tolerance A: typeOfValue=1 modifiers=0; tolerance B: typeOfValue=0 modifiers=[16]; datum A: name=A position=1 isTarget=false; datum B: name=B position=0 isTarget=true type=3 number=7
+[61] tolerance labels=1: index 5 (Value(6)) raises=true; datum labels=0: index 0 (Value(1)) raises=true
+[67] placement threw=false; fresh datum, placement (30, 18) applied without the precondition, read back: IsDatumTarget=false type=0 number=0 HasDatumTargetParams=false length=0 width=0
+[68] placement threw=false; Area target (type 4), placement (30, 18) applied without the precondition, read back: IsDatumTarget=true type=4 number=1 HasDatumTargetParams=false length=0 width=0
+[69] rectangle target with placement (30, 18), read back: IsDatumTarget=true type=2 number=1 HasDatumTargetParams=true length=30 width=18
+[69] second placement threw=false; after IsDatumTarget(false) and a second placement (44, 22) applied without the precondition, read back: IsDatumTarget=false type=0 number=0 HasDatumTargetParams=false length=0 width=0
+[71] datum labels=1: index 1 (Value(2)) raises=true
+[73] [74] XCAFDoc_LayerTool::Set(Main): 3 layer labels, name lengths [6, 6, 12]; index 3 (Value(4)) raises=true, index -1 (Value(0)) raises=true
+[62] valid [2, 19] read back [2, 19] (StatisticalTolerance=2 AnyCrossSection=19)
+[62] unguarded single 24: threw=false, read back [24]
+[62] unguarded single 9999: threw=false, read back [9999]
+[62] unguarded single -1: threw=false, read back [-1]
+[62] unguarded mixed [2, 9999, 19]: threw=false, read back [2, 9999, 19]
+[63] unguarded SetClassOfTolerance(true, 29, 7): threw=false, IsDimWithClassOfTolerance=true GetClassOfTolerance=true (29, 7)
+[63] unguarded SetClassOfTolerance(true, 9999, 7): threw=false, IsDimWithClassOfTolerance=true GetClassOfTolerance=true (9999, 7)
+[63] unguarded SetClassOfTolerance(true, -1, 7): threw=false, IsDimWithClassOfTolerance=true GetClassOfTolerance=true (-1, 7)
+[63] unguarded SetClassOfTolerance(true, 11, 20): threw=false, IsDimWithClassOfTolerance=true GetClassOfTolerance=true (11, 20)
+[63] unguarded SetClassOfTolerance(true, 11, -1): threw=false, IsDimWithClassOfTolerance=true GetClassOfTolerance=true (11, -1)
+[63] unguarded SetClassOfTolerance(true, 11, 7): threw=false, IsDimWithClassOfTolerance=true GetClassOfTolerance=true (11, 7)
+[64] valid [3, 15] read back [3, 15] (2 modifiers)
+[64] unguarded single 17: threw=false, read back [17] (1 modifiers)
+[64] unguarded single 9999: threw=false, read back [9999] (1 modifiers)
+[64] unguarded single -1: threw=false, read back [-1] (1 modifiers)
+[65] [66] valid [2, 3] read back [2, 3] (2 modifiers; Basic=2 ContactingFeature=3)
+[65] unguarded single 22: threw=false, read back [22]
+[65] unguarded single 9999: threw=false, read back [9999]
+[65] unguarded single -1: threw=false, read back [-1]
+[66] [2, 3] written again (modifiers=2), then an empty sequence: threw=false, modifiers=0
