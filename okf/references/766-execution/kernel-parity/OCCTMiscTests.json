@@ -2363,51 +2363,44 @@
     "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
     "bridge_function": "OCCTIntToolsIsDirsCoinside",
     "bridge_output": {
-      "type": "diagnostic_record",
+      "type": "caught_exception",
       "data": {
-        "value": false,
-        "count": 1,
-        "kind": "occtFailure",
-        "exceptionType": "Standard_ConstructionError",
-        "messageContains": "zero norm",
-        "function": "OCCTIntToolsIsDirsCoinside",
-        "stackTraceEmpty": true
+        "exception_type": "Standard_ConstructionError",
+        "message": "gp_Dir() - input vector has zero norm",
+        "stack_trace_empty": true
       }
     },
     "kernel_output": {
       "type": "caught_exception",
       "data": {
-        "exceptionType": "Standard_ConstructionError",
+        "exception_type": "Standard_ConstructionError",
         "message": "gp_Dir() - input vector has zero norm",
-        "stackTraceEmpty": true
+        "stack_trace_empty": true
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: what the kernel raises for the zero-norm direction inside OCCTIntToolsIsDirsCoinside(0,0,0, 0,0,1): the OCCT exception type, its message and whether a stack string is attached at the default depth. Bridge: OCCTDiagnostics.capturing around IntTools.isDirsCoinside; the record's exceptionType, message and stackTrace. Kernel: IntTools_Tools::IsDirsCoinside(gp_Dir(0,0,0), gp_Dir(0,0,1)) caught as Standard_Failure. The test also asserts the call returns false, the record count is 1, kind is occtFailure and function is OCCTIntToolsIsDirsCoinside; those are bridge-side bookkeeping with no kernel value, and the earlier record's differing keys (value, count, kind, function, messageContains) are dropped from the compared quantity for that reason.",
+    "probe": "Scripts/repro/766-bridge-exception-diagnostics/"
   },
   {
     "test_name": "Bridge exception diagnostics (#1161)::a nil-returning public API can now say why it refused",
     "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
     "bridge_function": "OCCTShapeHistoryFromRotate",
     "bridge_output": {
-      "type": "diagnostic_record",
+      "type": "caught_exception",
       "data": {
-        "result": null,
-        "count": 1,
-        "kind": "occtFailure",
-        "exceptionType": "Standard_ConstructionError",
-        "messageContains": "zero norm",
-        "function": "OCCTShapeHistoryFromRotate",
-        "stackTraceEmpty": true
+        "exception_type": "Standard_ConstructionError",
+        "message": "gp_Dir() - input vector has zero norm"
       }
     },
     "kernel_output": {
       "type": "caught_exception",
       "data": {
-        "exceptionType": "Standard_ConstructionError",
+        "exception_type": "Standard_ConstructionError",
         "message": "gp_Dir() - input vector has zero norm"
       }
     },
@@ -2415,7 +2408,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the OCCT exception type and message behind the refusal. Bridge: the record OCCTDiagnostics.capturing captures around Shape.rotatedWithFullHistory(axis: .zero, ...), which returns nil; its function is OCCTShapeHistoryFromRotate. Kernel: gp_Ax1(gp_Pnt(0,0,0), gp_Dir(0,0,0)), the construction that function makes from the axis, caught as Standard_Failure.",
+    "probe": "Scripts/repro/766-bridge-exception-diagnostics/"
   },
   {
     "test_name": "Bridge exception diagnostics (#1161)::nothing is recorded unless capture is switched on",
@@ -2433,7 +2428,7 @@
       "data": "bridge-side record bookkeeping (thread-local buffer, capture flag, cap, logging switch); OCCT has no counterpart"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2443,16 +2438,16 @@
     "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
     "bridge_function": "OCCTIntToolsIsDirsCoinside",
     "bridge_output": {
-      "type": "value_and_records",
+      "type": "value_and_exception",
       "data": {
         "value": true,
-        "records": 0
+        "threw": false
       }
     },
     "kernel_output": {
-      "type": "value",
+      "type": "value_and_exception",
       "data": {
-        "IsDirsCoinside((0,0,1),(0,0,1))": true,
+        "value": true,
         "threw": false
       }
     },
@@ -2460,7 +2455,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the value of IsDirsCoinside for two equal unit directions and whether anything was thrown. Bridge: the value returned by IntTools.isDirsCoinside(0,0,1, 0,0,1) and whether OCCTDiagnostics.capturing recorded anything (a record is how the bridge shows a throw). Kernel: IntTools_Tools::IsDirsCoinside(gp_Dir(0,0,1), gp_Dir(0,0,1)) and whether it threw.",
+    "probe": "Scripts/repro/766-bridge-exception-diagnostics/"
   },
   {
     "test_name": "Bridge exception diagnostics (#1161)::captures nest: the inner scope reports its own, the outer scope reports both",
@@ -2479,7 +2476,7 @@
       "data": "bridge-side record bookkeeping (thread-local buffer, capture flag, cap, logging switch); OCCT has no counterpart"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2501,7 +2498,7 @@
       "data": "bridge-side record bookkeeping (thread-local buffer, capture flag, cap, logging switch); OCCT has no counterpart"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2524,7 +2521,7 @@
       "data": "bridge-side record bookkeeping (thread-local buffer, capture flag, cap, logging switch); OCCT has no counterpart"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2536,25 +2533,28 @@
     "bridge_output": {
       "type": "stack_trace",
       "data": {
-        "depth0Empty": true,
-        "depth": 16,
-        "depth16Empty": false
+        "depth_initial": 0,
+        "depth0_stack_empty": true,
+        "depth_after_set_16": 16,
+        "depth16_stack_empty": false
       }
     },
     "kernel_output": {
       "type": "stack_trace",
       "data": {
-        "DefaultStackTraceLength_initial": 0,
-        "depth0Empty": true,
-        "after_SetDefaultStackTraceLength_16": 16,
-        "depth16Empty": false
+        "depth_initial": 0,
+        "depth0_stack_empty": true,
+        "depth_after_set_16": 16,
+        "depth16_stack_empty": false
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the default stack depth, whether the exception's stack string is empty at depth 0 and at depth 16, and the depth read back after setting 16. Bridge: OCCTDiagnostics.stackTraceDepth and the captured record's stackTrace (OCCTDiagnosticsSetStackTraceDepth). Kernel: Standard_Failure::DefaultStackTraceLength / SetDefaultStackTraceLength and GetStackString on the caught gp_Dir(0,0,0) exception.",
+    "probe": "Scripts/repro/766-bridge-exception-diagnostics/"
   },
   {
     "test_name": "Bridge exception diagnostics (#1161)::a negative stack-trace depth is clamped rather than passed through",
@@ -2563,14 +2563,13 @@
     "bridge_output": {
       "type": "int",
       "data": {
-        "set": -5,
-        "read": 0
+        "read_back": 0
       }
     },
     "kernel_output": {
       "type": "int",
       "data": {
-        "SetDefaultStackTraceLength(-5)": -5
+        "read_back": -5
       }
     },
     "comparison": {
@@ -2579,7 +2578,9 @@
         "Expected divergence, and the reason the clamp exists: the kernel stores -5 as given (DefaultStackTraceLength() reads back -5), the bridge and the Swift setter each clamp it to 0."
       ]
     },
-    "status": "EXPECTED_DIVERGENCE"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantity on both sides: the depth read back after setting -5. Bridge: OCCTDiagnostics.stackTraceDepth = -5 then read, which the Swift setter and OCCTDiagnosticsSetStackTraceDepth each clamp to 0. Kernel: Standard_Failure::SetDefaultStackTraceLength(-5) then DefaultStackTraceLength(), which stores -5 as given. The values differ by design, the reason the clamp exists, so this stays a divergence.",
+    "probe": "Scripts/repro/766-bridge-exception-diagnostics/"
   },
   {
     "test_name": "Bridge exception diagnostics (#1161)::the logging switch is independent of capture, and either order works",
@@ -2597,7 +2598,7 @@
       "data": "bridge-side record bookkeeping (thread-local buffer, capture flag, cap, logging switch); OCCT has no counterpart"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2607,13 +2608,16 @@
     "test_file": "Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift",
     "bridge_function": "OCCTIntToolsIsDirsCoinside",
     "bridge_output": {
-      "type": "string",
-      "data": "OCCTIntToolsIsDirsCoinside: Standard_ConstructionError: <message> (prefix and suffix asserted)"
+      "type": "caught_exception",
+      "data": {
+        "exception_type": "Standard_ConstructionError",
+        "message": "gp_Dir() - input vector has zero norm"
+      }
     },
     "kernel_output": {
       "type": "caught_exception",
       "data": {
-        "exceptionType": "Standard_ConstructionError",
+        "exception_type": "Standard_ConstructionError",
         "message": "gp_Dir() - input vector has zero norm"
       }
     },
@@ -2621,6 +2625,8 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the OCCT exception type and message the record is made of. Bridge: the captured record's exceptionType and message; the test asserts its description is 'OCCTIntToolsIsDirsCoinside: <type>: <message>' (prefix and suffix), and the run observed 'OCCTIntToolsIsDirsCoinside: Standard_ConstructionError: gp_Dir() - input vector has zero norm'. The formatting is Swift, so only the two parts the kernel supplies are compared. Kernel: the caught Standard_Failure's ExceptionType and what().",
+    "probe": "Scripts/repro/766-bridge-exception-diagnostics/"
   }
 ]
