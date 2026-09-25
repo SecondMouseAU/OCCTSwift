@@ -1734,7 +1734,7 @@ Creates a hollow solid with specific faces left open.
 public func shelled(thickness: Double, openFaces: [Face]) -> Shape?
 ```
 
-- **Parameters:** `thickness`, wall thickness (positive = inward, negative = outward); `openFaces`, faces to leave open (must have valid `index` values).
+- **Parameters:** `thickness`, wall thickness (positive = outward, negative = inward), matching `offset(by:)` ([#2736](https://github.com/SecondMouseAU/OCCTSwift/issues/2736)); `openFaces`, faces to leave open (must have valid `index` values).
 - **Returns:** Shelled shape with specified faces open, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeThickSolid::MakeThickSolidByJoin` (via `OCCTShapeShellWithOpenFaces`).
 - **Note:** every face must be one of *this* shape's, by index. A `Face` whose `index` names no face
