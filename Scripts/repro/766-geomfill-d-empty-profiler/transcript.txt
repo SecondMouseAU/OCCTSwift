@@ -1,0 +1,2 @@
+before Perform on an empty GeomFill_Profiler
+[process terminated: Segmentation fault: 11, exit 139, inside GeomFill_Profiler::Perform]

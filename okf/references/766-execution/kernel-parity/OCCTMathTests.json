@@ -6941,5 +6941,683 @@
       "failing_expectation": "original: **green**; rewritten: :35 `abs(n.x - 1.0 / 3.0) < 1e-12`"
     },
     "green": true
+  },
+  {
+    "test_name": "math_NewtonMinimum Tests::minimizeQuadratic",
+    "bridge_function": "OCCTMathNewtonMinimum",
+    "bridge_output": {
+      "type": "observed",
+      "data": "x=3 4 min=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "x=3 4 min=0",
+      "source": "Scripts/repro/766-math-newton-nonuniformscale/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "location + 0.05 in every coordinate",
+      "failing_expectation": ":22 `abs(r.point[0] - 3.0) < 1e-4`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "math_NewtonMinimum Tests::minimizeRosenbrock",
+    "bridge_function": "OCCTMathNewtonMinimum",
+    "bridge_output": {
+      "type": "observed",
+      "data": "x=1 1 min=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "x=1 1 min=0",
+      "source": "Scripts/repro/766-math-newton-nonuniformscale/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "location + 0.05 in every coordinate",
+      "failing_expectation": "original: **green**; rewritten: :46 `abs(r.point[0] - 1.0) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "NewtonRoot::findRoot",
+    "bridge_function": "OCCTMathNewtonFunctionRoot",
+    "bridge_output": {
+      "type": "observed",
+      "data": "root=2",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "root=2",
+      "source": "Scripts/repro/766-math-newton-nonuniformscale/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "Root() + 0.5",
+      "failing_expectation": ":14 `abs(r.root - 2.0) < 1e-8`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Non-Uniform Scale::Scale box non-uniformly",
+    "bridge_function": "OCCTShapeNonUniformScale",
+    "bridge_output": {
+      "type": "observed",
+      "data": "size (BRepBndLib::Add incl. gap) 20.0000004 10.0000004 5.0000004",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "size (BRepBndLib::Add incl. gap) 20.0000004 10.0000004 5.0000004",
+      "source": "Scripts/repro/766-math-newton-nonuniformscale/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "drop sz (scale z by 1)",
+      "failing_expectation": "original: red; rewritten: :21 `abs(size.z - 5) < 0.1`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Non-Uniform Scale::Non-uniform scale preserves volume ratio",
+    "bridge_function": "OCCTShapeNonUniformScale",
+    "bridge_output": {
+      "type": "observed",
+      "data": "volume 3000, ratio 3.0000000000000009",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume 3000, ratio 3.0000000000000009",
+      "source": "Scripts/repro/766-math-newton-nonuniformscale/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "drop sz (scale z by 1)",
+      "failing_expectation": ":31 `abs(scaledVol / origVol - 3.0) < 0.1`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion::generalTransform",
+    "bridge_function": "OCCTShapeTransformed",
+    "bridge_output": {
+      "type": "observed",
+      "data": "min (-1e-7, -5.0000001, -5.0000001), max (10.0000001, 5.0000001, 5.0000001)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min (-1e-7, -5.0000001, -5.0000001), max (10.0000001, 5.0000001, 5.0000001)",
+      "source": "Scripts/repro/766-math-transform-expansion/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "the three GROUPED translation entries read as zero",
+      "failing_expectation": "original: **green**; rewritten: :29 `abs(bb.min.x - 0.0) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion::nonUniformScale",
+    "bridge_function": "OCCTShapeGTransformed",
+    "bridge_output": {
+      "type": "observed",
+      "data": "min (-10.0000002, -5.0000002, -2.5000002), max (10.0000002, 5.0000002, 2.5000002)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min (-10.0000002, -5.0000002, -2.5000002), max (10.0000002, 5.0000002, 2.5000002)",
+      "source": "Scripts/repro/766-math-transform-expansion/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "gp_GTrsf (3,3) set from matrix12[5] (the Y scale) instead of matrix12[10]",
+      "failing_expectation": "original: **green**; rewritten: :55 `abs(bb.min.z + 2.5) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion::generalTransformGroupedLayoutTranslatesAsDocumented",
+    "bridge_function": "OCCTShapeTransformed",
+    "bridge_output": {
+      "type": "observed",
+      "data": "min (4.9999999, -1e-7, -1e-7), max (15.0000001, 10.0000001, 10.0000001)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min (4.9999999, -1e-7, -1e-7), max (15.0000001, 10.0000001, 10.0000001)",
+      "source": "Scripts/repro/766-math-transform-expansion/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "GROUPED translation entries read as zero",
+      "failing_expectation": ":61 `abs(bb.min.x - 5.0) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion::nonUniformScaleInterleavedLayoutScalesAsDocumented",
+    "bridge_function": "OCCTShapeGTransformed",
+    "bridge_output": {
+      "type": "observed",
+      "data": "min (-2e-7, -2e-7, -2e-7), max (20.0000002, 20.0000002, 15.0000002)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "min (-2e-7, -2e-7, -2e-7), max (20.0000002, 20.0000002, 15.0000002)",
+      "source": "Scripts/repro/766-math-transform-expansion/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "gp_GTrsf (3,3) from the Y scale",
+      "failing_expectation": ":94 `abs(bb.max.z - 15.0) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion::groupedInterleavedConversionRoundTripsTheSameTransform",
+    "bridge_function": "OCCTShapeTransformed and OCCTShapeTransformFromMatrix",
+    "bridge_output": {
+      "type": "observed",
+      "data": "both paths min (4.9999999, 9.9999999, 14.9999999), max (15.0000001, 20.0000001, 25.0000001)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "both paths min (4.9999999, 9.9999999, 14.9999999), max (15.0000001, 20.0000001, 25.0000001)",
+      "source": "Scripts/repro/766-math-transform-expansion/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "GROUPED translation entries read as zero, so the grouped path disagrees with the interleaved one",
+      "failing_expectation": ":125 `abs(a.min.x - b.min.x) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion::deprecatedArrayOverloadsStillWork",
+    "bridge_function": "OCCTShapeTransformed, OCCTShapeGTransformed, OCCTShapeTransformFromMatrix",
+    "bridge_output": {
+      "type": "observed",
+      "data": "a min.x 4.9999999; b and c min (4.9999999, 9.9999999, 14.9999999)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "a min.x 4.9999999; b and c min (4.9999999, 9.9999999, 14.9999999)",
+      "source": "Scripts/repro/766-math-transform-expansion/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "GROUPED translation entries read as zero",
+      "failing_expectation": ":154 `abs(bb.min.x - 5.0) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion::typedInitializersReturnNilRatherThanTrapOnWrongCount",
+    "bridge_function": "none (pure Swift: validated12 in Sources/OCCTSwift/TransformFactory.swift)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A",
+      "source": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A",
+      "source": "N/A: pure-Swift element-count validation, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red": {
+      "injection": "Swift injection: the count check in validated12 bypassed. RUN THIS TOKEN WITH A FILTER ON THIS ONE TEST ONLY: with it set, deprecatedArrayOverloadsStillWork hands a 3-element array to a bridge that reads 12",
+      "failing_expectation": ":206 `Matrix12Grouped(elevenElements) == nil`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomLib Interpolate Tests::polynomial interpolation",
+    "bridge_function": "OCCTGeomLibInterpolate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "isDone=1 degree=3 poles=7; C(t_i) = P_i for all five (C(0.5).y = -5.55e-17)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "isDone=1 degree=3 poles=7; C(t_i) = P_i for all five (C(0.5).y = -5.55e-17)",
+      "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "first and middle input points shifted +0.5 in Y before GeomLib_Interpolate",
+      "failing_expectation": "original: **green**; rewritten: :21 `simd_length(curve.point(at: t) - p) < 1e-9`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomLib Interpolate Tests::interpolated curve endpoints",
+    "bridge_function": "OCCTGeomLibInterpolate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "isDone=1 degree=3 poles=5 domain [0,1]; C(0)=(0,0,0) C(1)=(4,0,0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "isDone=1 degree=3 poles=5 domain [0,1]; C(0)=(0,0,0) C(1)=(4,0,0)",
+      "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "first and middle input points shifted +0.5 in Y",
+      "failing_expectation": "original: red; rewritten: :35 `abs(start.x) < 1e-6 && abs(start.y) < 1e-6`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "GeomLib IsPlanarSurface Tests::plane is planar",
+    "bridge_function": "OCCTGeomLibIsPlanarSurface",
+    "bridge_output": {
+      "type": "observed",
+      "data": "IsPlanar=1",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "IsPlanar=1",
+      "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "negate GeomLib_IsPlanarSurface::IsPlanar()",
+      "failing_expectation": ":16 `plane.isPlanar()`"
+    },
+    "red_nil_return": {
+      "injection": "OCCTGeomLibIsPlanarSurface returns false, and separately OCCTSurfacePlaneFromPointNormal returns nullptr (Surface.plane is nil)",
+      "failing_expectation": ":16 `plane.isPlanar()`; :15 `try #require(Surface.plane(...))`"
+    },
+    "original_if_let_form": "red under the false return (Bool result), green under the nil Surface.plane (setup nested in if let)",
+    "green": true
+  },
+  {
+    "test_name": "GeomLib IsPlanarSurface Tests::get plane from planar surface",
+    "bridge_function": "OCCTGeomLibPlanarSurfacePlane",
+    "bridge_output": {
+      "type": "observed",
+      "data": "origin=(1,2,3) normal=(0,0,1) x=(1,0,0)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "origin=(1,2,3) normal=(0,0,1) x=(1,0,0)",
+      "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "negate the Z of Plan().Location(); also origin X + 1, normal negated, X direction negated",
+      "failing_expectation": ":23 `simd_length(result.origin - SIMD3(1, 2, 3)) < 1e-9` (origin Z and origin X); :24 `simd_length(result.normal - SIMD3(0, 0, 1)) < 1e-9`; :25 `simd_length(result.xDirection - SIMD3(1, 0, 0)) < 1e-9`"
+    },
+    "red_nil_return": {
+      "injection": "OCCTGeomLibPlanarSurfacePlane returns false, and separately Surface.plane is nil",
+      "failing_expectation": ":22 `try #require(plane.planarPlane())`; :21 `try #require(Surface.plane(...))`"
+    },
+    "original_if_let_form": "green under both nil injections (result and setup nested in if let); it asserted only origin Z and abs(normal.z) > 0.99, so by inspection (not run) a negated normal, shifted origin X or wrong X direction passed it",
+    "green": true
+  },
+  {
+    "test_name": "GeomLib IsPlanarSurface Tests::cylinder is not planar",
+    "bridge_function": "OCCTGeomLibIsPlanarSurface",
+    "bridge_output": {
+      "type": "observed",
+      "data": "IsPlanar=0",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "IsPlanar=0",
+      "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "negate IsPlanar(); also IsPlanar() always true",
+      "failing_expectation": ":32 `!cyl.isPlanar()`"
+    },
+    "red_nil_return": {
+      "injection": "OCCTSurfaceCreateCylinder returns nullptr (Surface.cylinder is nil); IsPlanar() has a Bool result, and false is the correct value for a cylinder, so its only wrong-value injection is the one above",
+      "failing_expectation": ":30 `try #require(Surface.cylinder(...))`"
+    },
+    "original_if_let_form": "green under the nil Surface.cylinder (setup nested in if let)",
+    "green": true
+  },
+  {
+    "test_name": "GeomLib Tool Tests::parameter on 3D line",
+    "bridge_function": "OCCTGeomLibToolParameter3D",
+    "bridge_output": {
+      "type": "observed",
+      "data": "ok=1 param=5",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "ok=1 param=5",
+      "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "reported parameter + 1.0",
+      "failing_expectation": ":19 `abs(param - 5.0) < 1e-9`"
+    },
+    "red_nil_return": {
+      "injection": "OCCTGeomLibToolParameter3D returns false, and separately OCCTCurve3DCreateLine returns nullptr",
+      "failing_expectation": ":18 `try #require(line.parameterOf(...))`; :17 `try #require(Curve3D.line(...))`"
+    },
+    "original_if_let_form": "green under both nil injections (result and setup nested in if let)",
+    "green": true
+  },
+  {
+    "test_name": "GeomLib Tool Tests::parameters on surface",
+    "bridge_function": "OCCTGeomLibToolParametersSurface",
+    "bridge_output": {
+      "type": "observed",
+      "data": "ok=1 u=3 v=4",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "ok=1 u=3 v=4",
+      "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "swap u and v",
+      "failing_expectation": ":26 `abs(uv.u - 3.0) < 1e-9` and :27 `abs(uv.v - 4.0) < 1e-9`"
+    },
+    "red_nil_return": {
+      "injection": "OCCTGeomLibToolParametersSurface returns false, and separately Surface.plane is nil",
+      "failing_expectation": ":25 `try #require(plane.parametersOf(...))`; :24 `try #require(Surface.plane(...))`"
+    },
+    "original_if_let_form": "green under both nil injections (result and setup nested in if let)",
+    "green": true
+  },
+  {
+    "test_name": "GeomLib Tool Tests::parameter on 2D line",
+    "bridge_function": "OCCTGeomLibToolParameter2D",
+    "bridge_output": {
+      "type": "observed",
+      "data": "ok=1 param=7",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "ok=1 param=7",
+      "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "reported parameter + 1.0",
+      "failing_expectation": ":34 `abs(param - 7.0) < 1e-9`"
+    },
+    "red_nil_return": {
+      "injection": "OCCTGeomLibToolParameter2D returns false, and separately OCCTCurve2DCreateLine returns nullptr",
+      "failing_expectation": ":33 `try #require(line.parameterOf(...))`; :32 `try #require(Curve2D.line(...))`"
+    },
+    "original_if_let_form": "green under both nil injections (result and setup nested in if let)",
+    "green": true
+  },
+  {
+    "test_name": "Convert_CompPolynomialToPoles::linearPolynomial",
+    "bridge_function": "OCCTConvertPolynomialToPoles",
+    "bridge_output": {
+      "type": "observed",
+      "data": "degree 1, poles [1, 3], knots [0, 1]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "degree 1, poles [1, 3], knots [0, 1]",
+      "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "each pole + 0.5",
+      "failing_expectation": "original: **green**; rewritten: :23 `zip(r.poles, [1.0, 3.0]).allSatisfy { abs($0 - $1) < 1e-12 }`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Convert_CompPolynomialToPoles::quadraticPolynomial",
+    "bridge_function": "OCCTConvertPolynomialToPoles",
+    "bridge_output": {
+      "type": "observed",
+      "data": "degree 2, poles [1, 1.5, 3], knots [0, 1]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "degree 2, poles [1, 1.5, 3], knots [0, 1]",
+      "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "each pole + 0.5",
+      "failing_expectation": "original: **green**; rewritten: :41 `zip(r.poles, [1.0, 1.5, 3.0]).allSatisfy { abs($0 - $1) < 1e-12 }`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "Convert_CompPolynomialToPoles::remappedInterval",
+    "bridge_function": "OCCTConvertPolynomialToPoles",
+    "bridge_output": {
+      "type": "observed",
+      "data": "degree 1, poles [0, 1], knots [-1, 1]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "degree 1, poles [0, 1], knots [-1, 1]",
+      "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "knots reported on the polynomial interval instead of the true interval (also red under P4_CPTP_POLE)",
+      "failing_expectation": "original: **green**; rewritten: :60 `zip(r.knots, [-1.0, 1.0]).allSatisfy { abs($0 - $1) < 1e-12 }`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "PolynomialSolver Laguerre v0.111::quadraticRoots",
+    "bridge_function": "OCCTPolyLaguerreRoots",
+    "bridge_output": {
+      "type": "observed",
+      "data": "roots [2, 3]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "roots [2, 3]",
+      "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "each real root + 0.5",
+      "failing_expectation": ":14 `abs(roots[0] - 2.0) < 0.1`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "PolynomialSolver Laguerre v0.111::cubicRoots",
+    "bridge_function": "OCCTPolyLaguerreRoots",
+    "bridge_output": {
+      "type": "observed",
+      "data": "roots [1, 2, 3]",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "roots [1, 2, 3]",
+      "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "each real root + 0.5",
+      "failing_expectation": ":24 `abs(roots[0] - 1.0) < 0.1`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "PolynomialSolver Laguerre v0.111::complexRoots",
+    "bridge_function": "OCCTPolyLaguerreComplexRoots (and OCCTPolyLaguerreRoots)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "0 real roots; complex (-5.0e-17, +1), (-5.0e-17, -1)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "0 real roots; complex (-5.0e-17, +1), (-5.0e-17, -1)",
+      "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "real and imaginary parts swapped",
+      "failing_expectation": ":39 `abs(complexRoots[0].real) < 0.1`"
+    },
+    "green": true
+  },
+  {
+    "test_name": "PolynomialSolver Laguerre v0.111::quinticRoots",
+    "bridge_function": "OCCTPolyQuinticRoots",
+    "bridge_output": {
+      "type": "observed",
+      "data": "4 roots [1, 2, 3, 4] (0.99999999999999989, 1.9999999999999987, 3.000000000000012, 4.0000000000000249)",
+      "source": "pinned by the assertions of the green test run"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "4 roots [1, 2, 3, 4] (0.99999999999999989, 1.9999999999999987, 3.000000000000012, 4.0000000000000249)",
+      "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red": {
+      "injection": "one root dropped (NbRoots - 1)",
+      "failing_expectation": "original: **green**; rewritten: :49 `roots.count == 4`"
+    },
+    "green": true
   }
 ]
