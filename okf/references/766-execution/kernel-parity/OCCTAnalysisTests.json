@@ -6056,11 +6056,6 @@
           5.000000100000001,
           10.0000001,
           15.0000001
-        ],
-        "packed_OCCTShapeOrientedBoundingBox_half_sizes": [
-          5.000000100000001,
-          10.0000001,
-          15.0000001
         ]
       }
     },
@@ -6083,7 +6078,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-brepbndlib/probe.mm",
+    "source": "Same quantity on both sides: the oriented bounding box (centre and half sizes) of the 10 x 20 x 30 box rotated pi/6 about z. Bridge: Shape.orientedBoundingBoxDetailed() (OCCTShapeOrientedBoundingBoxDetailed, AddOBB optimal=false), observed centre (-0, 0, 0) and half sizes (5.000000100000001, 10.0000001, 15.0000001). The test also reads the packed accessor orientedBoundingBox() and requires it to agree to 1e-9; the run observed identical values, and because both accessors wrap the one AddOBB computation the packed reading is not a separate kernel quantity, so it is not a payload key. Kernel: Bnd_OBB after BRepBndLib::AddOBB on the rotated box printed center=(-0, 0, 0) half=(5.0000001000000012, 10.000000099999999, 15.000000099999999); the sides differ by at most one unit in the last place, inside the test's 1e-9."
   },
   {
     "test_name": "BRepBndLib::boundingBoxSphere",
@@ -6132,11 +6129,7 @@
     "bridge_output": {
       "type": "bnd_box",
       "data": {
-        "is_void": true,
-        "boundingBox": null,
-        "bounds_OCCTShapeGetBounds": null,
-        "size": null,
-        "center": null
+        "is_void": true
       }
     },
     "kernel_output": {
@@ -6149,7 +6142,9 @@
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-brepbndlib/probe.mm",
+    "source": "Same quantity on both sides: whether the box of a void shape (the Common of two disjoint boxes) is void. Bridge: the test asserts boundingBox, bounds, size and center are all nil and the run printed nil for all four, which is how the wrapper reports a void box, so is_void is true exactly when all four accessors answer nil. Kernel: Bnd_Box::IsVoid() after BRepBndLib::Add on the Common result (IsDone=1) printed IsVoid=1."
   },
   {
     "test_name": "BRepBndLib::pointVertexAtOriginBoundingBoxIsNotNil",
