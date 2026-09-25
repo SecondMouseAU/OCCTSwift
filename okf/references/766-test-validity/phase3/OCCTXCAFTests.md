@@ -607,15 +607,15 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `getLayersBeyondBufferCap` | `OCCTDocumentGetLabelLayers` answers 0 | :86 Expectation failed: layers.count == extraCount | passed | `OCCTDocumentGetLabelLayers` | PASS: 19 layers set and 19 reported on both sides (no 16-entry cap) |
 ### `TDataStdExtStringArrayTests.swift`
 | `setAndGet` | `OCCTDocumentGetExtStringArrayValue` answers "X" | :15 Expectation failed: v == "Hello"; :18 Expectation failed: v == "World" | passed | `OCCTDocumentGetExtStringArrayValue` | PASS: 3; Hello, World |
-| `hasExtStringArray` | `OCCTDocumentHasExtStringArray` returns true | :24 Expectation failed: !doc.hasExtStringArray(tag: 351) | passed | `OCCTDocumentHasExtStringArray` | PASS: absent before Set |
+| `hasExtStringArray` | `OCCTDocumentHasExtStringArray` returns true | :24 Expectation failed: !doc.hasExtStringArray(tag: 351) | passed | `OCCTDocumentHasExtStringArray` | PASS: absent before the set and present after, on both sides |
 ### `TDataStdExtStringListTests.swift`
 | `setAndGet` | `OCCTDocumentGetExtStringListValue` answers "X" | :15 Expectation failed: v == "Alpha"; :18 Expectation failed: v == "Gamma" | passed | `OCCTDocumentGetExtStringListValue` | PASS: 3; Alpha .. Gamma |
 | `appendAndClear` | `OCCTDocumentExtStringListClear` returns true without clearing | :32 Expectation failed: count == 0 | passed | `OCCTDocumentExtStringListClear` | PASS: 0 after Clear |
-| `hasExtStringList` | `OCCTDocumentHasExtStringList` returns true | :38 Expectation failed: !doc.hasExtStringList(tag: 362) | passed | `OCCTDocumentHasExtStringList` | PASS: absent before Set |
+| `hasExtStringList` | `OCCTDocumentHasExtStringList` returns true | :38 Expectation failed: !doc.hasExtStringList(tag: 362) | passed | `OCCTDocumentHasExtStringList` | PASS: absent before the set and present after, on both sides |
 ### `TDataStdIntegerArrayTests.swift`
 | `initAndUse` | `OCCTDocumentGetIntegerArrayValue` answers -1 for any index | :27 Expectation failed: label.integerArrayValue(at: 1) == 10; :28 Expectation failed: label.integerArrayValue(at: 3) == 30 | passed | `OCCTDocumentGetIntegerArrayValue` | PASS: 1..5; 10, 30, 50 |
-| `outOfBounds` | `OCCTDocumentGetIntegerArrayValue` answers -1 for any index | :37 Expectation failed: label.integerArrayValue(at: 99) == nil | passed | `OCCTDocumentGetIntegerArrayValue` | PASS: 99 outside 1..5 |
+| `outOfBounds` | `OCCTDocumentGetIntegerArrayValue` answers -1 for any index | :37 Expectation failed: label.integerArrayValue(at: 99) == nil | passed | `OCCTDocumentGetIntegerArrayValue` | EXPECTED_DIVERGENCE: by-design guard: the bridge returns nil for index 99 of a 0..2 array; the raw kernel Value(99) does not raise and returns a value |
 ### `TDataStdIntegerListTests.swift`
 | `setAndGet` | `OCCTDocumentSetIntegerList` stores the first value plus 1 | :13 Expectation failed: result[0] == 10 | passed | `OCCTDocumentGetIntegerList` | PASS: 10 .. 30 |
 | `appendAndClear` | `OCCTDocumentIntegerListClear` returns true without clearing | :29 Expectation failed: result.count == 0 | passed | `OCCTDocumentIntegerListClear` | PASS: 0 after Clear |
-| `hasIntegerList` | `OCCTDocumentHasIntegerList` returns true | :35 Expectation failed: !doc.hasIntegerList(tag: 332) | passed | `OCCTDocumentHasIntegerList` | PASS: absent before Set |
+| `hasIntegerList` | `OCCTDocumentHasIntegerList` returns true | :35 Expectation failed: !doc.hasIntegerList(tag: 332) | passed | `OCCTDocumentHasIntegerList` | PASS: absent before the set and present after, on both sides |

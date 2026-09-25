@@ -9802,22 +9802,26 @@
     "test_name": "ExtStringArray Tests::hasExtStringArray",
     "bridge_function": "OCCTDocumentHasExtStringArray",
     "bridge_output": {
-      "type": "value",
+      "type": "has",
       "data": {
         "before": false,
         "after": true
       }
     },
     "kernel_output": {
-      "type": "value",
-      "data": {}
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+    "source": "Same quantities on both sides, for tag 351: whether the extended string array attribute is present before and after setExtStringArray(tag: 351, values: [\"A\"]). Bridge: hasExtStringArray was false, then true. Kernel: '[ext string array has] tag 351: FindAttribute before Set=false, after setExtStringArray([\"A\"])=true'. Kernel value: Scripts/repro/766-xcaf-tdatastd-b-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-b-evidence/"
   },
   {
     "test_name": "ExtStringList Tests::setAndGet",
@@ -9871,22 +9875,26 @@
     "test_name": "ExtStringList Tests::hasExtStringList",
     "bridge_function": "OCCTDocumentHasExtStringList",
     "bridge_output": {
-      "type": "value",
+      "type": "has",
       "data": {
         "before": false,
         "after": true
       }
     },
     "kernel_output": {
-      "type": "value",
-      "data": {}
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+    "source": "Same quantities on both sides, for tag 362: whether the extended string list attribute is present before and after setExtStringList(tag: 362, values: [\"A\"]). Bridge: hasExtStringList was false, then true. Kernel: '[ext string list has] tag 362: FindAttribute before Set=false, after setExtStringList([\"A\"])=true'. Kernel value: Scripts/repro/766-xcaf-tdatastd-b-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-b-evidence/"
   },
   {
     "test_name": "TDataStd Integer Array::Initialize and use integer array",
@@ -9930,23 +9938,27 @@
     "test_name": "TDataStd Integer Array::Out of bounds returns nil",
     "bridge_function": "OCCTDocumentGetIntegerArrayValue",
     "bridge_output": {
-      "type": "value",
+      "type": "out_of_bounds",
       "data": {
-        "at_99": null
+        "value_returned_at_99": false
       }
     },
     "kernel_output": {
-      "type": "value",
+      "type": "out_of_bounds",
       "data": {
-        "in_range": false
+        "value_returned_at_99": true
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "Whether a value comes back for index 99 of an array with bounds 0..2: the bridge returns none (integerArrayValue(at: 99) is nil), the raw kernel Value(99) returned a value without raising.",
+        "By design: OCCTDocumentGetIntegerArrayValue compares the index with Lower() and Upper() before reading, because the kernel accessor did not raise Standard_OutOfRange for an index outside the bounds (its header says it does), so an unguarded read would return whatever lies beyond the array."
+      ]
     },
-    "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantity on both sides: whether a value comes back for index 99 of an integer array initialised with bounds 0 and 2. Bridge: label.integerArrayValue(at: 99) == nil, the bridge's bounds check refusing it. Kernel: '[integer array out of bounds] initIntegerArray(0, 2): found=true Lower=0 Upper=2 index 99 within bounds=false; the raw Value(99) raised Standard_OutOfRange=false and returned a value=true'. Kernel value: Scripts/repro/766-xcaf-tdatastd-b-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-b-evidence/"
   },
   {
     "test_name": "IntegerList Tests::setAndGet",
@@ -10000,21 +10012,25 @@
     "test_name": "IntegerList Tests::hasIntegerList",
     "bridge_function": "OCCTDocumentHasIntegerList",
     "bridge_output": {
-      "type": "value",
+      "type": "has",
       "data": {
         "before": false,
         "after": true
       }
     },
     "kernel_output": {
-      "type": "value",
-      "data": {}
+      "type": "has",
+      "data": {
+        "before": false,
+        "after": true
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+    "source": "Same quantities on both sides, for tag 332: whether the integer list attribute is present before and after setIntegerList(tag: 332, values: [1]). Bridge: hasIntegerList was false, then true. Kernel: '[integer list has] tag 332: FindAttribute before Set=false, after setIntegerList([1])=true'. Kernel value: Scripts/repro/766-xcaf-tdatastd-b-evidence/transcript.txt.",
+    "probe": "Scripts/repro/766-xcaf-tdatastd-b-evidence/"
   }
 ]
