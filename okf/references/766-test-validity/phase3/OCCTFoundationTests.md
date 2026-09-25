@@ -15,14 +15,8 @@
 | StepData_StepWriter AddString (patch 0009) | 22 | CR¹ |
 | Handle lifecycle tests | 20 | CR¹ |
 | Borrowed handles audit | 18 | CR¹ |
-| OSD Environment/Directory tests | 18 | WR² |
-| UnitsConversion tests | 16 | WR² |
-| ExtStringArray tests | 12 | WR² |
-| FontManager tests | 10 | WR² |
-| Color OCCT Operations | 8 | WR² |
-| Thread Safety: OCCTSerial | 6 | CR¹ |
 
-**Total**: 200 tests across ~11 suites
+**Total**: 130 tests across ~5 suites
 
 ¹ CR = Crash-Related (critical priority, kernel patches or bridge fixes preventing crashes)
 ² WR = Wrapper/Regression (wrapper behavior tests, non-crash functional validation)
@@ -72,13 +66,6 @@
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
 | Foundation properties borrowed handle | Various properties views | Raw handle storage | Revert to `fileprivate let handle` |  |  | SIGSEGV (use-after-free) |
-
-### OSD Chronometer & Thread Safety
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| OCCTOSDChronometer precision | `OCCTOSDChronometer` | Wrong timing | Revert fix |  |  | Incorrect results |
-| OCCTSerial lock contention | `OCCTSerialLock` | Deadlock | Remove mutex |  |  | Hang |
 
 ---
 
