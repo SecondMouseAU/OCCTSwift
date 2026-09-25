@@ -1,0 +1,4 @@
+New(100) null=false
+Find(100)=true
+AddDirectory null=false tag=1
+MakeObjectLabel null=false tag=2
