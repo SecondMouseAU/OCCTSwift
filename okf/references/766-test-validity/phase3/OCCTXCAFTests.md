@@ -610,14 +610,14 @@ Each row below was run: the injection applied behind an `OCCT_INJ` environment s
 | `changeReal` | `OCCTDocumentGetRealAttr` answers 0 | :27 Expectation failed: abs(val - 2.718) < 1e-10 | passed | `OCCTDocumentGetRealAttr` | PASS: 2.718 |
 ### `TDataStdReferenceArrayTests.swift`
 | `setAndGet` | `OCCTDocumentSetReferenceArray` stores the first tag plus 1 | :13 Expectation failed: result[0] == 400 | passed | `OCCTDocumentGetReferenceArray` | PASS: 400 401 402 |
-| `hasReferenceArray` | `OCCTDocumentHasReferenceArray` returns true | :21 Expectation failed: !doc.hasReferenceArray(tag: 371) | passed | `OCCTDocumentHasReferenceArray` | PASS: absent before Set |
+| `hasReferenceArray` | `OCCTDocumentHasReferenceArray` returns true | :21 Expectation failed: !doc.hasReferenceArray(tag: 371) | passed | `OCCTDocumentHasReferenceArray` | PASS: absent before the set and present after, on both sides |
 ### `TDataStdReferenceListTests.swift`
 | `setAndGet` | `OCCTDocumentSetReferenceList` stores the first tag plus 1 | :13 Expectation failed: result[0] == 410 | passed | `OCCTDocumentGetReferenceList` | PASS: 410 411 |
 | `appendAndClear` | `OCCTDocumentReferenceListClear` returns true without clearing | :28 Expectation failed: result.count == 0 | passed | `OCCTDocumentReferenceListClear` | PASS: 0 after Clear |
-| `hasReferenceList` | `OCCTDocumentHasReferenceList` returns true | :34 Expectation failed: !doc.hasReferenceList(tag: 382) | passed | `OCCTDocumentHasReferenceList` | PASS: absent before Set |
+| `hasReferenceList` | `OCCTDocumentHasReferenceList` returns true | :34 Expectation failed: !doc.hasReferenceList(tag: 382) | passed | `OCCTDocumentHasReferenceList` | PASS: absent before the set and present after, on both sides |
 ### `TDataStdRelationTests.swift`
-| `setAndGet` | `OCCTDocumentGetRelation` answers "X" | :11 Expectation failed: rel == "x + y = z" | passed | `OCCTDocumentGetRelation` | PASS: a = b |
-| `hasRelation` | `OCCTDocumentHasRelation` returns true | :17 Expectation failed: !doc.hasRelation(tag: 391) | passed | `OCCTDocumentHasRelation` | PASS: absent before Set |
+| `setAndGet` | `OCCTDocumentGetRelation` answers "X" | :11 Expectation failed: rel == "x + y = z" | passed | `OCCTDocumentGetRelation` | PASS: set, and the string "x + y = z" reads back, on both sides |
+| `hasRelation` | `OCCTDocumentHasRelation` returns true | :17 Expectation failed: !doc.hasRelation(tag: 391) | passed | `OCCTDocumentHasRelation` | PASS: absent before the set and present after, on both sides |
 ### `TDataStdTreeNodeTests.swift`
 | `createTreeNode` | `OCCTDocumentTreeNodeDepth` returns 1 | :18 Expectation failed: label.treeNodeDepth == 0 | passed | `OCCTDocumentTreeNodeDepth` | PASS: no father, depth 0 |
-| `parentChild` | `OCCTDocumentTreeNodeNbChildren` returns 1 | :37 Expectation failed: root.treeNodeChildCount == 2 | passed | `OCCTDocumentTreeNodeNbChildren` | PASS: depth 1, 2 children, first/next chain |
+| `parentChild` | `OCCTDocumentTreeNodeNbChildren` returns 1 | :37 Expectation failed: root.treeNodeChildCount == 2 | passed | `OCCTDocumentTreeNodeNbChildren` | PASS: child1 has the root as father at depth 1, the root has 2 children, first is child1, next is child2, child2 has no next, on both sides |
