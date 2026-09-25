@@ -9,7 +9,7 @@ import simd
 @Suite("v0.143 Sketch arcs and circles")
 struct SketchArcCircleTests {
     @Test("Circle tessellation produces a closed polygon of N points")
-    func circleTessellation() {
+    func circleTessellation() throws {
         let circle = SketchElement.CurveKind.circle(center: SIMD2(0, 0), radius: 5)
         let pts = circle.tessellate2D(segmentsPerRadian: 8)
         // Int(8 * 2pi) = 50 segments, so 51 points with the last repeating the first.
@@ -19,10 +19,10 @@ struct SketchArcCircleTests {
             let r = sqrt(p.x * p.x + p.y * p.y)
             #expect(abs(r - 5.0) < 1e-9)
         }
-        if let first = pts.first, let last = pts.last {
-            #expect(simd_distance(first, SIMD2(5, 0)) < 1e-9)
-            #expect(simd_distance(last, first) < 1e-9)
-        }
+        let first = try #require(pts.first)
+        let last = try #require(pts.last)
+        #expect(simd_distance(first, SIMD2(5, 0)) < 1e-9)
+        #expect(simd_distance(last, first) < 1e-9)
     }
 
     @Test("Arc tessellation stays within bounds")

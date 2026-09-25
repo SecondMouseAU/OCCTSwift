@@ -20,7 +20,7 @@ struct QuasiUniformDeflectionTests {
     }
 
     @Test("Sample circle with deflection")
-    func sampleCircle() {
+    func sampleCircle() throws {
         guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10) else {
             Issue.record("circle was nil")
             return
@@ -32,9 +32,8 @@ struct QuasiUniformDeflectionTests {
             #expect(abs(sqrt(p.x * p.x + p.y * p.y) - 10) < 1e-9)
         }
         #expect(maxSagitta(points, radius: 10) <= 0.1)
-        if let first = points.first {
-            #expect(simd_distance(first, SIMD3(10, 0, 0)) < 1e-9)
-        }
+        let first = try #require(points.first)
+        #expect(simd_distance(first, SIMD3(10, 0, 0)) < 1e-9)
     }
 
     @Test("Tighter deflection yields more points")

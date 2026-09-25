@@ -10,7 +10,7 @@ import simd
 @Suite("v0.113.0 - ProjectionOnCurve")
 struct ProjectionOnCurveTests {
 
-    @Test func multiResultProjection() {
+    @Test func multiResultProjection() throws {
         guard
             let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
             let proj = ProjectionOnCurve(curve: circ, point: SIMD3(10, 0, 0))
@@ -18,8 +18,7 @@ struct ProjectionOnCurveTests {
             Issue.record("circle or projection was nil")
             return
         }
-        #expect(proj.count == 2)
-        guard proj.count == 2 else { return }
+        try #require(proj.count == 2)
         #expect(simd_distance(proj.point(at: 0), SIMD3(5, 0, 0)) < 1e-9)
         #expect(abs(proj.distance(at: 0) - 5.0) < 1e-9)
         #expect(simd_distance(proj.point(at: 1), SIMD3(-5, 0, 0)) < 1e-9)
@@ -27,7 +26,7 @@ struct ProjectionOnCurveTests {
         #expect(abs(proj.lowerDistance - 5.0) < 1e-9)
     }
 
-    @Test func parameterAccess() {
+    @Test func parameterAccess() throws {
         guard
             let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
             let proj = ProjectionOnCurve(curve: circ, point: SIMD3(10, 0, 0))
@@ -35,8 +34,7 @@ struct ProjectionOnCurveTests {
             Issue.record("circle or projection was nil")
             return
         }
-        #expect(proj.count == 2)
-        guard proj.count == 2 else { return }
+        try #require(proj.count == 2)
         // (5,0,0) is the circle's origin point, u = 0; the far extremum (-5,0,0) is u = pi.
         #expect(abs(proj.parameter(at: 0)) < 1e-9)
         #expect(abs(proj.parameter(at: 1) - .pi) < 1e-9)

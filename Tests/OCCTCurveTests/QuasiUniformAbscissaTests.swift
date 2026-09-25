@@ -39,14 +39,13 @@ struct QuasiUniformAbscissaTests {
     }
 
     @Test("Minimum count returns the two ends")
-    func minCount() {
+    func minCount() throws {
         guard let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) else {
             Issue.record("segment was nil")
             return
         }
         let params = seg.quasiUniformParameters(count: 2)
-        #expect(params.count == 2)
-        guard params.count == 2 else { return }
+        try #require(params.count == 2)
         #expect(abs(params[0]) < 1e-9)
         #expect(abs(params[1] - 10) < 1e-9)
     }
