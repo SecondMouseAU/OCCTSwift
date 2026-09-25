@@ -1,0 +1,18 @@
+identity: ScaleFactor=1 IsNegative=0 a11=1 a12=0 a21=0 a22=1
+translation (3,4) of (0,0) -> (3, 4)
+inverse of translation (3,4) applied to (3,4) -> (0, 0)
+(1,0) composed with (0,2) applied to origin -> (1, 2)
+(1,0) powered 3 applied to origin -> (3, 0)
+rotation pi/2 of (1,0) -> (6.12323399573677e-17, 1)
+scale 3: ScaleFactor=3
+scale 3 of (1,2) -> (3, 6)
+mirror through origin of (1,2) -> (-1, -2)
+mirror across x-axis: IsNegative=1
+mirror across x-axis of (1,2) -> (1, -2)
+segment (0,0)-(1,0) translated by 5: (5, 0)-(6, 0)
+gce_MakeMirror2d origin of (3,4) -> (-3, -4)
+gce_MakeRotation2d pi/2 of (1,0) -> (6.12323399573677e-17, 1)
+gce_MakeScale2d 3 of (1,2) -> (3, 6)
+gce_MakeTranslation2d (10,20) of (1,2) -> (11, 22)
+gce_MakeDir2d(3,4)=(0.6, 0.8); (0,0)->(1,1)=(0.707106781186547, 0.707106781186547)
+angle (1,0)^(0,1)=1.5707963267949 cross=1 dot (3,4).(1,0)=3 |(3,4)|=5 normalized=(0.6, 0.8)

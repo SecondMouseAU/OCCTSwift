@@ -1,0 +1,16 @@
+#702 open shell: type=3 faces=5 closed=0 freeEdges=4
+#702 fake solid: type=2 BRepCheck valid=0
+#702 ShapeFix_Solid: type=3 valid=1 freeEdges=4
+#702 ShapeFix_Shape: type=3 valid=1
+#702 box: freeEdges=0 valid=1
+#702 two open shells: freeEdges=8 shells=2
+#772 self-intersection: box=0 overlapping compound=1
+#837 fixture OrientationOfWires=32 (NoError=0)
+#837 FixFreeFaceMode=0: OrientationOfWires=32
+#837 FixFreeFaceMode=1: OrientationOfWires=0
+#839 edge 3e-07: fixture edges=6; tol 1e-07 -> 6; tol 1e-06 -> 5; tol 0.5 -> 5
+#839 edge 0.1: fixture edges=6; tol 1e-07 -> 6; tol 1e-06 -> 6; tol 0.5 -> 5
+#849 ShapeExtend_Status: OK=0 DONE1=1 DONE8=8 DONE=9 FAIL1=10 FAIL8=17 FAIL=18
+#849 ShapeFix_Shape(box): OK=0 DONE=1 FAIL=0
+#870 ShapeExtend_Explorer::ShapeType: box=2 vertex=7 (TopAbs_SOLID=2 TopAbs_VERTEX=7)
+#999 panel CheckOuterBound per wire: 0 1; single-wire face: 0
