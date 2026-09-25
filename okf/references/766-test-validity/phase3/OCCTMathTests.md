@@ -416,6 +416,30 @@
 | **Vector3DMath** | dot | `OCCTXYZDot` | z term dropped | red | green | PASS |
 | **Vector3DMath** | dotCross | `OCCTXYZDotCross` | b and c swapped in the triple product | red | green | PASS |
 | **Vector3DMath** | normalize | `OCCTXYZNormalize` | normalized x and y swapped | red | green | PASS |
+### 766-math-newton-nonuniformscale (#1983, measured)
+| **math_NewtonMinimum Tests** | minimizeQuadratic | `OCCTMathNewtonMinimum` | location + 0.05 in every coordinate | red | green | PASS |
+| **math_NewtonMinimum Tests** | minimizeRosenbrock | `OCCTMathNewtonMinimum` | location + 0.05 in every coordinate | red | green | PASS |
+| **NewtonRoot** | findRoot | `OCCTMathNewtonFunctionRoot` | Root() + 0.5 | red | green | PASS |
+| **Non-Uniform Scale** | Scale box non-uniformly | `OCCTShapeNonUniformScale` | drop sz (scale z by 1) | red | green | PASS |
+| **Non-Uniform Scale** | Non-uniform scale preserves volume ratio | `OCCTShapeNonUniformScale` | drop sz (scale z by 1) | red | green | PASS |
+### 766-math-transform-expansion (#1983, measured)
+| **v0.115.0 - Transform Expansion** | generalTransform | `OCCTShapeTransformed` | the three GROUPED translation entries read as zero | red | green | PASS |
+| **v0.115.0 - Transform Expansion** | nonUniformScale | `OCCTShapeGTransformed` | gp_GTrsf (3,3) set from matrix12[5] (the Y scale) instead of matrix12[10] | red | green | PASS |
+| **v0.115.0 - Transform Expansion** | generalTransformGroupedLayoutTranslatesAsDocumented | `OCCTShapeTransformed` | GROUPED translation entries read as zero | red | green | PASS |
+| **v0.115.0 - Transform Expansion** | nonUniformScaleInterleavedLayoutScalesAsDocumented | `OCCTShapeGTransformed` | gp_GTrsf (3,3) from the Y scale | red | green | PASS |
+| **v0.115.0 - Transform Expansion** | groupedInterleavedConversionRoundTripsTheSameTransform | `OCCTShapeTransformed and OCCTShapeTransformFromMatrix` | GROUPED translation entries read as zero, so the grouped path disagrees with the interleaved one | red | green | PASS |
+| **v0.115.0 - Transform Expansion** | deprecatedArrayOverloadsStillWork | `OCCTShapeTransformed, OCCTShapeGTransformed, OCCTShapeTransformFromMatrix` | GROUPED translation entries read as zero | red | green | PASS |
+| **v0.115.0 - Transform Expansion** | typedInitializersReturnNilRatherThanTrapOnWrongCount | `none (pure Swift: validated12 in Sources/OCCTSwift/TransformFactory.swift)` | Swift injection: the count check in validated12 bypassed. RUN THIS TOKEN WITH A FILTER ON THIS ONE TEST ONLY: with it set, deprecatedArrayOverloadsStillWork hands a 3-element array to a bridge that reads 12 | red | green | N/A |
+### 766-math-geomlib-interp-planar-tool (#1983, measured)
+| **GeomLib Interpolate Tests** | polynomial interpolation | `OCCTGeomLibInterpolate` | first and middle input points shifted +0.5 in Y before GeomLib_Interpolate | red | green | PASS |
+| **GeomLib Interpolate Tests** | interpolated curve endpoints | `OCCTGeomLibInterpolate` | first and middle input points shifted +0.5 in Y | red | green | PASS |
+| **GeomLib IsPlanarSurface Tests** | plane is planar | `OCCTGeomLibIsPlanarSurface` | negate IsPlanar(); IsPlanar() returns false; Surface.plane is nil (red at :16 and :15) | red | green | PASS |
+| **GeomLib IsPlanarSurface Tests** | get plane from planar surface | `OCCTGeomLibPlanarSurfacePlane` | negate the Z of Plan().Location(); origin X + 1; normal negated; X direction negated (red at :23, :24, :25); planarPlane() nil and Surface.plane nil (red at :22, :21) | red | green | PASS |
+| **GeomLib IsPlanarSurface Tests** | cylinder is not planar | `OCCTGeomLibIsPlanarSurface` | negate IsPlanar() and IsPlanar() always true (red at :32); Surface.cylinder is nil (red at :30) | red | green | PASS |
+| **GeomLib Tool Tests** | parameter on 3D line | `OCCTGeomLibToolParameter3D` | reported parameter + 1.0 (red at :19); parameterOf nil and Curve3D.line nil (red at :18, :17) | red | green | PASS |
+| **GeomLib Tool Tests** | parameters on surface | `OCCTGeomLibToolParametersSurface` | swap u and v (red at :26, :27); parametersOf nil and Surface.plane nil (red at :25, :24) | red | green | PASS |
+| **GeomLib Tool Tests** | parameter on 2D line | `OCCTGeomLibToolParameter2D` | reported parameter + 1.0 (red at :34); parameterOf nil and Curve2D.line nil (red at :33, :32) | red | green | PASS |
+The six rows for `GeomLib IsPlanarSurface Tests` and `GeomLib Tool Tests` were rewritten from `if let` nesting to `try #require`, pinned to the probed values. Under every injection that makes an optional result or a factory nil, the `if let` form stayed green (the assertions were skipped) and the rewritten form is red; both forms are red under the value injections, and under `IsPlanar()` returning false, whose result is a Bool. Each injection was switched on with an environment variable in one build and removed afterwards (`git diff origin/v5.0.0-766-execution -- Sources` is empty).
 ### 766-math-polynomial-convert-laguerre (#1983, measured)
 | **Convert_CompPolynomialToPoles** | linearPolynomial | `OCCTConvertPolynomialToPoles` | each pole + 0.5 | red | green | PASS |
 | **Convert_CompPolynomialToPoles** | quadraticPolynomial | `OCCTConvertPolynomialToPoles` | each pole + 0.5 | red | green | PASS |

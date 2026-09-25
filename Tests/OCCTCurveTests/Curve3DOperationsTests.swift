@@ -6,6 +6,10 @@ import simd
 
 @Suite("Curve3D Operations Tests")
 struct Curve3DOperationsTests {
+    // #766: rotation and the three lengths used tolerances of 0.01, loose enough to pass a 1%
+    // rotation error or a 0.01% length error, and several checks looked at one coordinate of one
+    // end. Whole end points and exact lengths are pinned now; Geom_Curve::Transform and
+    // GCPnts_AbscissaPoint give the same values (Scripts/repro/766-curve-operations/).
 
     @Test("Trim circle to quarter arc")
     func trimCircle() {
@@ -16,8 +20,8 @@ struct Curve3DOperationsTests {
             #expect(!arc.isClosed)
             let start = arc.startPoint
             let end = arc.endPoint
-            #expect(abs(start.x - 5) < 1e-10)
-            #expect(abs(end.y - 5) < 1e-10)
+            #expect(simd_distance(start, SIMD3(5, 0, 0)) < 1e-12)
+            #expect(simd_distance(end, SIMD3(0, 5, 0)) < 1e-12)
         }
     }
 
@@ -27,8 +31,8 @@ struct Curve3DOperationsTests {
         let rev = seg.reversed()!
         let revStart = rev.startPoint
         let revEnd = rev.endPoint
-        #expect(abs(revStart.x - 10) < 1e-10)
-        #expect(abs(revEnd.x) < 1e-10)
+        #expect(simd_distance(revStart, SIMD3(10, 5, 3)) < 1e-12)
+        #expect(simd_distance(revEnd, SIMD3(0, 0, 0)) < 1e-12)
     }
 
     @Test("Translate segment")
@@ -36,9 +40,8 @@ struct Curve3DOperationsTests {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
         let moved = seg.translated(by: SIMD3(5, 5, 5))!
         let start = moved.startPoint
-        #expect(abs(start.x - 5) < 1e-10)
-        #expect(abs(start.y - 5) < 1e-10)
-        #expect(abs(start.z - 5) < 1e-10)
+        #expect(simd_distance(start, SIMD3(5, 5, 5)) < 1e-12)
+        #expect(simd_distance(moved.endPoint, SIMD3(15, 5, 5)) < 1e-12)
     }
 
     @Test("Rotate segment around Z axis")
@@ -46,8 +49,9 @@ struct Curve3DOperationsTests {
         let seg = Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(10, 0, 0))!
         let rotated = seg.rotated(around: .zero, direction: SIMD3(0, 0, 1), angle: .pi / 2)!
         let start = rotated.startPoint
-        #expect(abs(start.x) < 0.01)
-        #expect(abs(start.y - 5) < 0.01)
+        // A quarter turn about Z takes (5, 0, 0) to (0, 5, 0) and (10, 0, 0) to (0, 10, 0).
+        #expect(simd_distance(start, SIMD3(0, 5, 0)) < 1e-12)
+        #expect(simd_distance(rotated.endPoint, SIMD3(0, 10, 0)) < 1e-12)
     }
 
     @Test("Scale segment")
@@ -64,8 +68,8 @@ struct Curve3DOperationsTests {
     func mirrorPlane() {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 1), to: SIMD3(10, 0, 1))!
         let mirrored = seg.mirrored(acrossPlane: .zero, normal: SIMD3(0, 0, 1))!
-        let start = mirrored.startPoint
-        #expect(abs(start.z + 1) < 1e-10)
+        #expect(simd_distance(mirrored.startPoint, SIMD3(0, 0, -1)) < 1e-12)
+        #expect(simd_distance(mirrored.endPoint, SIMD3(10, 0, -1)) < 1e-12)
     }
 
     // #416: mirrored(acrossPoint:) had zero test coverage anywhere in Tests/.
@@ -104,10 +108,7 @@ struct Curve3DOperationsTests {
     func segmentLength() {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(3, 4, 0))!
         let len = seg.length
-        #expect(len != nil)
-        if let l = len {
-            #expect(abs(l - 5.0) < 0.01)
-        }
+        #expect(len == 5.0)
     }
 
     @Test("Length of circle")
@@ -115,10 +116,7 @@ struct Curve3DOperationsTests {
         let radius = 5.0
         let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: radius)!
         let len = circle.length
-        #expect(len != nil)
-        if let l = len {
-            #expect(abs(l - 2 * .pi * radius) < 0.01)
-        }
+        #expect(abs((len ?? -1) - 2 * .pi * radius) < 1e-9)
     }
 
     @Test("Partial length")
@@ -126,9 +124,6 @@ struct Curve3DOperationsTests {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
         let d = seg.domain
         let halfLen = seg.length(from: d.lowerBound, to: (d.lowerBound + d.upperBound) / 2)
-        #expect(halfLen != nil)
-        if let h = halfLen {
-            #expect(abs(h - 5.0) < 0.01)
-        }
+        #expect(halfLen == 5.0)
     }
 }

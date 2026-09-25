@@ -40,17 +40,21 @@ struct Issue1020ExtremaBoundsTests {
 
     // Extrema_ExtPElC solves (1/4F)U^3 + (2F - X)U - 2FY = 0 for the parabola and keeps only the
     // roots inside [Uinf, Usup]. With F = 1e6 and the point 1e7 along the parabola's Y axis, the
-    // cubic term dominates and the real root lands near 4.3e6, past the old 1e6 bound.
+    // cubic term dominates and the real root lands at 3.69e6 (probed; this comment said 4.3e6),
+    // past the old 1e6 bound, where Extrema_ExtPElC reports done with no extremum.
     @Test("A parabola root beyond the old bound is not discarded")
     func pointToParabolaBeyondOldBound() {
         let results = ExtremaPointCurve.pointToParabola(
             point: SIMD3(0, 1e7, 0),
             center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), xDir: SIMD3(1, 0, 0),
             focal: 1e6)
-        #expect(!results.isEmpty)
+        // #766: pinned to the kernel's single extremum (Scripts/repro/766-curve-integration-
+        // extrema-law), rather than "some root past 1e6".
+        #expect(results.count == 1)
         if let r = results.first {
-            #expect(abs(r.point2.y) > 1e6)
-            #expect(r.squareDistance.isFinite)
+            #expect(abs(r.point2.y - 3694838.0756654656) < 1e-3, "foot y \(r.point2.y)")
+            #expect(abs(r.point2.x - 3412957.1013468201) < 1e-3, "foot x \(r.point2.x)")
+            #expect(abs(r.squareDistance - 51403343067711.656) / 51403343067711.656 < 1e-9)
         }
     }
 
@@ -61,6 +65,16 @@ struct Issue1020ExtremaBoundsTests {
             point: SIMD3(10, 0, 0),
             center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), xDir: SIMD3(1, 0, 0),
             focal: 2)
-        #expect(!results.isEmpty)
+        // #766: "not empty" passed on any answer. The kernel finds three: the two symmetric feet at
+        // (6, +-4sqrt(3)) at distance 8, and the vertex at distance 10.
+        #expect(results.count == 3)
+        let sq = results.map(\.squareDistance).sorted()
+        if sq.count == 3 {
+            #expect(abs(sq[0] - 64) < 1e-9 && abs(sq[1] - 64) < 1e-9 && abs(sq[2] - 100) < 1e-9)
+        }
+        let feet = results.map(\.point2)
+        #expect(feet.contains { abs($0.x - 6) < 1e-9 && abs($0.y - 48.0.squareRoot()) < 1e-9 })
+        #expect(feet.contains { abs($0.x - 6) < 1e-9 && abs($0.y + 48.0.squareRoot()) < 1e-9 })
+        #expect(feet.contains { abs($0.x) < 1e-9 && abs($0.y) < 1e-9 })
     }
 }

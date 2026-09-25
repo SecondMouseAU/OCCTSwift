@@ -19,7 +19,10 @@ struct Issue486Curve3DBatchTests {
 
     @Test("empty parameters give an empty result, not one padded with zeroes")
     func emptyParametersGiveEmptyResult() {
-        guard let curve = bspline() else { return }
+        guard let curve = bspline() else {
+            Issue.record("could not build the interpolated curve")  // #766: was a silent return
+            return
+        }
         #expect(curve.evaluateGrid([]).isEmpty)
         #expect(curve.evaluateGridD1([]).isEmpty)
     }
