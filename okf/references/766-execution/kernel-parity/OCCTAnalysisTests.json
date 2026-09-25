@@ -5915,14 +5915,15 @@
           "x": 5.0,
           "y": 5.0,
           "z": 1.0
-        },
-        "note": "BRepExtrema_DistanceSS on the same pair: isDone 0, no solution, as the test's comment says"
+        }
       }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "kernel_probe": "Scripts/repro/766-brepextrema-distancess/probe.mm",
+    "source": "Same quantity on both sides: the minimum distance between the first edge of the centred unit box and the vertex (5, 5, 1) of the box at (5, 5, 0), with the solution count and the two witness points. Bridge: Shape.distance(to:) (OCCTShapeDistance, BRepExtrema_DistShapeShape); a temporary print in the test observed distance 7.794228634059948, solutionCount 1, pointOnShape1 (-0.5, -0.5, 0.5), pointOnShape2 (5, 5, 1). Kernel: BRepExtrema_DistShapeShape(edge, vertex, 1e-6) printed isDone=1 nbSolution=1 distance=7.794228634059948 with PointOnShape1(1)=(-0.5, -0.5, 0.5) and PointOnShape2(1)=(5, 5, 1). The probe also ran the low-level BRepExtrema_DistanceSS on the same pair and got isDone=0, no solution, which is what the test's comment says and which the bridge call under test does not use, so it is context here and not a compared key."
   }
 ]
