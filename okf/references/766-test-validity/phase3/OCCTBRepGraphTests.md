@@ -105,6 +105,13 @@
 | **v0.142 ConstructionAxis resolution** | normalToFaceOriginIsOnFaceNotRawPoint | Axis normal to face | raw point returned |
 | **v0.142 ConstructionAxis resolution** | alongEdgeUndefinedStartTangentFailsLoudNotSilent | Axis along edge | undefined tangent accepted |
 | **v0.142 ConstructionAxis resolution** | coaxialCrossSectionAcceptsMeasuredEdgeToleranceNoise | Axis along edge | edge tolerance ignored |
+| **Issue 617: FaceGridSample U-major layout** | tallGridMatchesDirectEvaluation | Face grid layout | grid steps zeroed |
+| **Issue 617: FaceGridSample U-major layout** | wideGridMatchesDirectEvaluation | Face grid layout | grid steps zeroed |
+| **Issue 617: FaceGridSample U-major layout** | transposedReadIsMateriallyDifferent | Face grid layout | grid steps zeroed |
+| **Issue 617: FaceGridSample U-major layout** | accessorAgreesWithDocumentedIndex | Face grid layout | grid index reverses v |
+| **Issue 617: FaceGridSample U-major layout** | normalsMatchDirectEvaluationPerSlot | Face grid layout | grid steps zeroed |
+| **Issue 617: FaceGridSample U-major layout** | handRolledIndexArithmetic | Face grid layout | grid index drops v |
+| **Issue 617: FaceGridSample U-major layout** | squareAndSingleGridsStillWork | Face grid layout | grid steps zeroed |
 
 ---
 
@@ -207,6 +214,13 @@
 | normalToFaceOriginIsOnFaceNotRawPoint | OCCTFaceProjectPoint | Axis normal to face | projectedNormal returns (point, normal) instead of (projection.point, normal) | ✅ | ✅ |  |
 | alongEdgeUndefinedStartTangentFailsLoudNotSilent | OCCTEdgeGetTangent3D | Axis along edge | nil tangent replaced by zero vector (R2); redirect skipped (R1) | ✅ | ✅ |  |
 | coaxialCrossSectionAcceptsMeasuredEdgeToleranceNoise | OCCTEdgeGetPointAtParam | Axis along edge | crossSectionTolerance = floor only | ✅ | ✅ |  |
+| tallGridMatchesDirectEvaluation | OCCTBRepGraphSampleFaceUVGrid | Face grid layout | uStep = vStep = 0 | ✅ | ✅ | Test compares every slot to Surface.point at 1e-9; probe slots listed |
+| wideGridMatchesDirectEvaluation | OCCTBRepGraphSampleFaceUVGrid | Face grid layout | uStep = vStep = 0 | ✅ | ✅ |  |
+| transposedReadIsMateriallyDifferent | OCCTBRepGraphSampleFaceUVGrid | Face grid layout | uStep = vStep = 0 | ✅ | ✅ |  |
+| accessorAgreesWithDocumentedIndex | none (pure Swift: surfaceGridIndex / FaceGridSample.at) | Face grid layout | surfaceGridIndex = u * vCount + (vCount - 1 - v) | ✅ | ✅ |  |
+| normalsMatchDirectEvaluationPerSlot | OCCTBRepGraphSampleFaceUVGrid | Face grid layout | uStep = vStep = 0 | ✅ | ✅ | Test compares every normal to the d1 cross product up to sign |
+| handRolledIndexArithmetic | none (pure Swift: surfaceGridIndex) | Face grid layout | surfaceGridIndex = u * vCount | ✅ | ✅ |  |
+| squareAndSingleGridsStillWork | OCCTBRepGraphSampleFaceUVGrid | Face grid layout | uStep = vStep = 0 | ✅ | ✅ |  |
 
 ---
 

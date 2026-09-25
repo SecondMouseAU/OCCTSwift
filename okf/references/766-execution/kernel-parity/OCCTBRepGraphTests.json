@@ -4934,5 +4934,211 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue 617: FaceGridSample U-major layout::tallGridMatchesDirectEvaluation",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "grid",
+      "data": {
+        "slot0": [
+          0,
+          0,
+          0
+        ],
+        "slot5": [
+          2.333333333,
+          8.0,
+          1.090534979
+        ],
+        "slot29": [
+          21,
+          8,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "grid",
+      "data": {
+        "slot0": [
+          0,
+          0,
+          0
+        ],
+        "slot5": [
+          2.333333333,
+          8.0,
+          1.090534979
+        ],
+        "slot29": [
+          21,
+          8,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 617: FaceGridSample U-major layout::wideGridMatchesDirectEvaluation",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "grid",
+      "data": {
+        "slot12": [
+          10.5,
+          1.777777778,
+          4.680555556
+        ],
+        "slot21": [
+          21.0,
+          0.888888889,
+          1.222222222
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "grid",
+      "data": {
+        "slot12": [
+          10.5,
+          1.777777778,
+          4.680555556
+        ],
+        "slot21": [
+          21.0,
+          0.888888889,
+          1.222222222
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 617: FaceGridSample U-major layout::transposedReadIsMateriallyDifferent",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "result",
+      "data": {
+        "max_drift_gt_1": true
+      }
+    },
+    "kernel_output": {
+      "type": "none",
+      "data": null
+    },
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "The assertion compares two index formulas applied to the bridge's own position buffer (the largest distance between the V-major and U-major reads of a 3x10 grid); no kernel call produces that quantity."
+    },
+    "status": "N/A",
+    "source": "Bridge: the test asserts the largest distance between the pre-#617 V-major read and the U-major read of the 3x10 sample buffer exceeds 1 (a guard that the fixture patch is asymmetric enough to tell the layouts apart). The kernel positions those slots hold are checked against direct evaluation by the neighbouring tests (tallGridMatchesDirectEvaluation, wideGridMatchesDirectEvaluation) using the slot values in the probe transcript; this test adds no kernel quantity of its own. The old record put a string \"drift > 1\" on the bridge side against {slot12_vs_slot21_distance_gt_1} on the kernel side, two different quantities, while claiming equal.",
+    "probe": "Scripts/repro/766-brepgraph-facegrid/"
+  },
+  {
+    "test_name": "Issue 617: FaceGridSample U-major layout::accessorAgreesWithDocumentedIndex",
+    "bridge_function": "none (pure Swift: surfaceGridIndex / FaceGridSample.at)",
+    "bridge_output": {
+      "type": "result",
+      "data": "at(u:v:) == flat[u * vSamples + v]"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift index arithmetic"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue 617: FaceGridSample U-major layout::normalsMatchDirectEvaluationPerSlot",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "normal",
+      "data": {
+        "slot7": [
+          -0.375652,
+          0.056151,
+          0.925058
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "normal",
+      "data": {
+        "slot7": [
+          -0.375652,
+          0.056151,
+          0.925058
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 617: FaceGridSample U-major layout::handRolledIndexArithmetic",
+    "bridge_function": "none (pure Swift: surfaceGridIndex)",
+    "bridge_output": {
+      "type": "result",
+      "data": "bijection"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "pure index arithmetic"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue 617: FaceGridSample U-major layout::squareAndSingleGridsStillWork",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "grid",
+      "data": {
+        "slot0": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "grid",
+      "data": {
+        "slot0": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
