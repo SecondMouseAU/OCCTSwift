@@ -690,12 +690,11 @@
       "data": "N/A for the value: the refusal is the bridge's occtValidEllipseRadii; the kernel builds gp_Elips (5,0) without complaint"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A for the value: the refusal is the bridge's occtValidEllipseRadii; the kernel builds gp_Elips (5,0) without complaint",
     "injection": "noconic: every conic validator returns true",
     "red": "Issue554Conic3dDegenerateTests.swift:283 ExtremaPointCurve.pointToEllipse(",
     "green": "passed",
@@ -714,12 +713,11 @@
       "data": "N/A for the value: bridge guard; gp_Parab focal 0 is accepted by the kernel"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A for the value: bridge guard; gp_Parab focal 0 is accepted by the kernel",
     "injection": "noconic: every conic validator returns true",
     "red": "Issue554Conic3dDegenerateTests.swift:301 ExtremaPointCurve.pointToParabola(",
     "green": "passed",
@@ -738,12 +736,11 @@
       "data": "N/A for the value: bridge guard; gp_Elips (5,0) accepted by the kernel"
     },
     "comparison": {
-      "equal": false,
-      "differences": [
-        ""
-      ]
+      "equal": null,
+      "differences": []
     },
     "status": "N/A",
+    "source": "N/A for the value: bridge guard; gp_Elips (5,0) accepted by the kernel",
     "injection": "noconic: every conic validator returns true",
     "red": "Issue554Conic3dDegenerateTests.swift:318 ExtremaElC.lineToEllipse(  (+1 more)",
     "green": "passed",
