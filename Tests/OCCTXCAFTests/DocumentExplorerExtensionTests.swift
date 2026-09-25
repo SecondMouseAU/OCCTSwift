@@ -78,11 +78,11 @@ struct DocumentExplorerExtensionTests {
         doc.defineAllFormats()
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             _ = doc.addShape(box)
-            let count = doc.explorerNodeCount
-            if count > 0 {
-                let matrix = doc.explorerLocation(at: 0)
-                #expect(matrix.count == 12)
-            }
+            // A free, unplaced box is one leaf with an identity location. The array is
+            // fixed-length, so asserting only `count == 12` could not fail (#766).
+            #expect(doc.explorerNodeCount == 1)
+            let matrix = doc.explorerLocation(at: 0)
+            #expect(matrix == [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0])
         }
     }
 

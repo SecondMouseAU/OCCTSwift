@@ -9,50 +9,43 @@ import simd
 @Suite("Shape Analysis Tests")
 struct ShapeAnalysisTests {
 
+    // #766: the three tests below force-unwrapped inside `#expect` (`analysis!.x`); they now
+    // require the result and pin the kernel's counts on the same box at the same tolerance
+    // (Scripts/repro/766-healing-shapeanalysis/probe.mm): no small edges or faces, valid
+    // topology, and 24 per-junction 3D gaps. That last number is ShapeAnalysis_Wire::CheckGap3d
+    // on every box face wire, which the kernel reports the same way through the same calls; it is
+    // pinned as measured and flagged in the #766 PR as a finding, not endorsed as correct.
     @Test("Analyze valid box")
-    func analyzeValidBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-
-        let analysis = box.analyze(tolerance: 0.001)
-
-        #expect(analysis != nil)
-        #expect(analysis!.hasInvalidTopology == false)
-        // A valid box may have gap counts due to wire analysis heuristics,
-        // but should have no invalid topology
+    func analyzeValidBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let analysis = try #require(box.analyze(tolerance: 0.001))
+        #expect(analysis.hasInvalidTopology == false)
+        #expect(analysis.freeEdgeCount == 0)
         #expect(box.isValid)
     }
 
     @Test("Analyze shape for small features")
-    func analyzeForSmallFeatures() {
-        // Create a box - should have no small features
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-
-        let analysis = box.analyze(tolerance: 0.001)
-
-        #expect(analysis != nil)
-        #expect(analysis!.smallEdgeCount == 0)
-        #expect(analysis!.smallFaceCount == 0)
+    func analyzeForSmallFeatures() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let analysis = try #require(box.analyze(tolerance: 0.001))
+        #expect(analysis.smallEdgeCount == 0)
+        #expect(analysis.smallFaceCount == 0)
     }
 
     @Test("Analysis result properties")
-    func analysisResultProperties() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let analysis = box.analyze()!
-
-        #expect(analysis.totalProblems >= 0)
-        // Check that totalProblems is consistent with component counts. freeFaceCount is
-        // deliberately excluded: it is a derived summary of the same scan freeEdgeCount already
-        // counts (this shell has at least one free edge), not an independent defect, so including
-        // both would double-count one open shell's boundary gap (#717 review, the totalProblems double-count).
-        // hasSelfIntersection is nil here (selfIntersectionTimeout defaults to nil, #772), so it
-        // contributes 0, same as the pre-#772 formula, but is included explicitly so this test
-        // stays a true mirror of totalProblems's implementation rather than a numeric coincidence.
+    func analysisResultProperties() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let analysis = try #require(box.analyze())
+        // freeFaceCount is deliberately excluded from totalProblems (#717 review), and
+        // hasSelfIntersection is nil here (#772), contributing 0.
         let expectedTotal =
             analysis.smallEdgeCount + analysis.smallFaceCount + analysis.gapCount
             + analysis.freeEdgeCount + (analysis.hasInvalidTopology ? 1 : 0)
             + (analysis.hasSelfIntersection == true ? 1 : 0)
         #expect(analysis.totalProblems == expectedTotal)
         #expect(analysis.hasSelfIntersection == nil)
+        #expect(analysis.gapCount == 24)
+        #expect(analysis.totalProblems == 24)
     }
 
     // #1438: gapCount used to be `gaps += wireAnalysis.CheckGaps3d()`, and CheckGaps3d() returns
@@ -95,6 +88,7 @@ struct ShapeAnalysisTests {
             return
         }
 
+        // Kernel: 2 (one per gap) on the same face and tolerance.
         let analysis = face.analyze(tolerance: 0.01)
         #expect(analysis != nil)
         #expect(analysis?.gapCount == 2)

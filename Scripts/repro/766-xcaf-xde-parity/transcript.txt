@@ -1,0 +1,4 @@
+area: Get=true value=2200; volume: Get=true value=6000; centroid: Get=true value=(5, 10, 15)
+getComponents: component null=false GetComponents=1 first IsEqual component=true GetReferredShape=true referred null=false referred IsEqual box=true
+userCount: GetUsers(box)=1
+updateAssemblies: component null=false NbComponents=1 solids in the assembly shape=1

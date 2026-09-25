@@ -1,0 +1,3 @@
+offsetWire (arc, 2): done=1 wire length=52.56637061
+offsetWireIntersection (1): done=1 wire length=48
+offsetFace (2): null=0 area=400 centre z=2

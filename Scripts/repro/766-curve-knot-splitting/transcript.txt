@@ -1,0 +1,25 @@
+#398 8-point cubic: degree 3 knots 8 domain [0, 90.995437366198999]
+  C0 splits 2 0 90.995437366198999
+  C1 splits 2 0 90.995437366198999
+  C2 splits 2 0 90.995437366198999
+  C3 splits 8 0 11.180339887498949 25.3224755112299 39.464611134960847 53.606746758691799 67.74888238242275 80.555130857288447 90.995437366198999
+#398 400-point: degree 3 knots 400 domain [0, 163.98328299392941]
+  C0 splits 2 0 163.98328299392941
+  C1 splits 2 0 163.98328299392941
+  C2 splits 2 0 163.98328299392941
+  C3 splits 400
+#403 mult-2 at 0.5:
+  C0 splits 2: 0 1
+  C1 splits 2: 0 1
+  C2 splits 3: 0 0.5 1
+  C3 splits 3: 0 0.5 1
+#480 cubic, 4 simple interior knots:
+  C0 splits 2: 0 5
+  C1 splits 2: 0 5
+  C2 splits 2: 0 5
+  C3 splits 6: 0 1 2 3 4 5
+#480 cubic, knot 2 at multiplicity 3:
+  C0 splits 2: 0 5
+  C1 splits 3: 0 2 5
+  C2 splits 3: 0 2 5
+  C3 splits 6: 0 1 2 3 4 5

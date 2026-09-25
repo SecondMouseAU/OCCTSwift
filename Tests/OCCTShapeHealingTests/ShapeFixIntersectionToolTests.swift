@@ -7,8 +7,9 @@ import simd
 @Suite("ShapeFix IntersectionTool Tests")
 struct ShapeFixIntersectionToolTests {
 
-    @Test func fixIntersectingWires() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
+    @Test func fixIntersectingWires() throws {
+        // #766: was a silent `return` on a failed fixture. Kernel: nothing to fix on a box face.
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let fixed = box.fixIntersectingWires(faceIndex: 0)
         #expect(!fixed)
     }
