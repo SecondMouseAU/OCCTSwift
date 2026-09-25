@@ -509,7 +509,7 @@
       "data": "headless selector with a default Camera resolves no hit; the test asserts only that an absurd capacity returns, and a hit count is not what it compares"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -527,7 +527,7 @@
       "data": "OCCTHatchLines wraps Hatch_Hatcher in bridge-side line generation and clipping; no single kernel call returns the segment count"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -807,7 +807,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -825,7 +825,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -843,7 +843,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -861,7 +861,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -879,7 +879,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -897,7 +897,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -915,7 +915,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -933,7 +933,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -951,7 +951,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -969,7 +969,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -987,7 +987,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1005,7 +1005,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1023,7 +1023,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1041,7 +1041,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1059,7 +1059,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1077,7 +1077,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1116,7 +1116,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1134,7 +1134,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1481,7 +1481,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1499,7 +1499,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1517,7 +1517,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1535,7 +1535,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1553,7 +1553,7 @@
       "data": "XCAF layer bookkeeping through the bridge; not re-probed"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1574,7 +1574,7 @@
       "data": "composite Swift construction over several bridge calls"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1592,7 +1592,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1673,7 +1673,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1691,7 +1691,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1709,7 +1709,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1727,7 +1727,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1745,7 +1745,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1763,7 +1763,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1785,7 +1785,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1803,7 +1803,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1821,7 +1821,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1841,7 +1841,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1861,7 +1861,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1883,7 +1883,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1905,7 +1905,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1925,7 +1925,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1945,7 +1945,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1965,7 +1965,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -1985,7 +1985,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2003,7 +2003,7 @@
       "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2021,7 +2021,7 @@
       "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2079,7 +2079,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2097,7 +2097,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2115,7 +2115,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2133,7 +2133,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2191,7 +2191,7 @@
       "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2209,7 +2209,7 @@
       "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2227,7 +2227,7 @@
       "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2245,7 +2245,7 @@
       "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2263,7 +2263,7 @@
       "data": "pure Swift; nothing in this test reaches OCCT"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2281,7 +2281,7 @@
       "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2299,7 +2299,7 @@
       "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2317,7 +2317,7 @@
       "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2335,7 +2335,7 @@
       "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
@@ -2353,7 +2353,7 @@
       "data": "bent build: a Swift-chosen fillet edge or Swift-built bend-material prism; the pinned volume is a regression pin from this build, not a kernel value"
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
     "status": "N/A"
