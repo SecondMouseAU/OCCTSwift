@@ -1,0 +1,8 @@
+filletContourAccess: contour=1 nbContours=1 nbEdges=1
+filletEdgeVertexQueries: edgeNull=0 sameAsInput=1 firstNull=0 lastNull=0 first=(-5,-5,-5) last=(-5,-5,5) abscissa(first)=0 relAbscissa(first)=0 abscissa(last)=10 relAbscissa(last)=1
+filletClosedAndTangent: closed=0 closedAndTangent=0
+filletSurfaces: done=1 nbSurfaces=2
+filletSetRadius: SetRadius(2, ic, E) ok
+filletSetRadius: SetRadius(1, 3, ic, 1) ok
+filletSetRadius: build after both done=1
+filletStripeAndFaulty: done=1 contour=1 stripeStatus=0 nbComputedSurfaces=1 nbFaultyContours=0 nbFaultyVertices=0

@@ -1,0 +1,12 @@
+edge 0: status=0 (0=IsOk,1=IsNotOk,2=IsPartial) nbSurface=1 tolApp3d(1)=1.9536208262849663e-15 first=-0 last=10
+edge 1: status=0 (0=IsOk,1=IsNotOk,2=IsPartial) nbSurface=1 tolApp3d(1)=1.9536208262849663e-15 first=-0 last=10
+edge 2: status=0 (0=IsOk,1=IsNotOk,2=IsPartial) nbSurface=1 tolApp3d(1)=1.9536208262849663e-15 first=-0 last=10
+edge 3: status=0 (0=IsOk,1=IsNotOk,2=IsPartial) nbSurface=1 tolApp3d(1)=1.9536208262849663e-15 first=-0 last=10
+edge 4: status=0 (0=IsOk,1=IsNotOk,2=IsPartial) nbSurface=1 tolApp3d(1)=1.9536208262849663e-15 first=-0 last=10
+edge 5: status=0 (0=IsOk,1=IsNotOk,2=IsPartial) nbSurface=1 tolApp3d(1)=1.9536208262849663e-15 first=-0 last=10
+edge 6: status=0 (0=IsOk,1=IsNotOk,2=IsPartial) nbSurface=1 tolApp3d(1)=1.9536208262849663e-15 first=-0 last=10
+edge 7: status=0 (0=IsOk,1=IsNotOk,2=IsPartial) nbSurface=1 tolApp3d(1)=1.9536208262849663e-15 first=-0 last=10
+edge 8: status=0 (0=IsOk,1=IsNotOk,2=IsPartial) nbSurface=1 tolApp3d(1)=1.9536208262849663e-15 first=-0 last=10
+edge 9: status=0 (0=IsOk,1=IsNotOk,2=IsPartial) nbSurface=1 tolApp3d(1)=1.9536208262849663e-15 first=-0 last=10
+edge 10: status=0 (0=IsOk,1=IsNotOk,2=IsPartial) nbSurface=1 tolApp3d(1)=1.9536208262849663e-15 first=-0 last=10
+edge 11: status=0 (0=IsOk,1=IsNotOk,2=IsPartial) nbSurface=1 tolApp3d(1)=1.9536208262849663e-15 first=-0 last=10

@@ -6,20 +6,20 @@ import simd
 @Suite("FilletSurf_Builder Tests")
 struct FilletSurfBuilderTests {
     @Test("fillet surface on box edge")
-    func filletSurface() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let b = box {
-            let edges = b.subShapes(ofType: .edge)
-            // Try edges until we find one that produces a fillet surface
-            for edge in edges {
-                let result = b.filletSurfaces(edges: [edge], radius: 1.0)
-                if let r = result, r.status != 1, !r.surfaces.isEmpty {
-                    let info = r.surfaces[0]
-                    #expect(info.tolerance < 1.0)
-                    #expect(info.lastParameter > info.firstParameter)
-                    return
-                }
-            }
-        }
+    func filletSurface() throws {
+        // #766: this used to loop over the edges and assert only inside
+        // `if let r = result, r.status != 1, !r.surfaces.isEmpty`, returning silently if no edge
+        // qualified, so a FilletSurf_Builder wrapper that failed on every edge passed. The kernel
+        // (Scripts/repro/766-modeling-fillet-surf-builder) builds one surface for every box edge
+        // with status IsOk, TolApp3d ~2e-15 and parameter range [0, 10]; the first edge is pinned.
+        let b = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let edge = try #require(b.subShapes(ofType: .edge).first)
+        let r = try #require(b.filletSurfaces(edges: [edge], radius: 1.0))
+        #expect(r.status == 0)  // FilletSurf_IsOk
+        #expect(r.surfaces.count == 1)
+        let info = try #require(r.surfaces.first)
+        #expect(info.tolerance < 1e-6)
+        #expect(abs(info.firstParameter) < 1e-9)
+        #expect(abs(info.lastParameter - 10.0) < 1e-9)
     }
 }
