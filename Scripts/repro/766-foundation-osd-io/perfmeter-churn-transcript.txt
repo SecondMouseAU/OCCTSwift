@@ -1,0 +1,3 @@
+# swift test --filter ZZChurnProbe: 150 windows of a 0.1 s thread-CPU spin under thread churn
+# (3 threads spawned every 150 ms, each burning 0.3 s of CPU and then exiting)
+churn: single-window lower-bound failures 72/150 (min reading -1.1726580000000002); retry-rule failures 2/150; upper-bound violations 0

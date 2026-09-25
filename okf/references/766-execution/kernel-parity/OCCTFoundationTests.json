@@ -2857,5 +2857,413 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "OSD_Host Tests::hostName",
+    "bridge_function": "OCCTHostName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "first_dns_label_equals_gethostname": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "first_dns_label_equals_gethostname": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the first DNS label of the host name, compared case-insensitively, equals gethostname(2)'s. Bridge: HostInfo.hostName = OCCTHostName; the test asserts the labels are equal and passes. Kernel: OSD_Host::HostName() printed 'first DNS labels equal: 1' (Scripts/repro/766-foundation-osd-io/transcript.txt, section OSD_Host). The full strings can differ in form (on the macOS CI runner gethostname gives '<host>.local' and OSD_Host gives '<host>.', per the test's comment), which is why the compared quantity is the first label. Keys and representation normalised by the evidence-fix pass (#1987)."
+  },
+  {
+    "test_name": "OSD_Host Tests::systemVersion",
+    "bridge_function": "OCCTSystemVersion",
+    "bridge_output": {
+      "type": "string",
+      "data": "Darwin 27.0.0"
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": "Darwin 27.0.0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_Host Tests::internetAddress",
+    "bridge_function": "OCCTInternetAddress",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "parses_as_ipv4_dotted_quad": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "parses_as_ipv4_dotted_quad": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the internet address parses as an IPv4 dotted quad. Bridge: HostInfo.internetAddress = OCCTInternetAddress; the test asserts inet_pton(AF_INET) succeeds and passes. Kernel: OSD_Host::InternetAddress() printed 'parses as an IPv4 dotted quad: 1' (Scripts/repro/766-foundation-osd-io/transcript.txt, section OSD_Host). The address itself differs between runs (the loopback address in one, a LAN address in another), so it is not compared. Keys and representation normalised by the evidence-fix pass (#1987)."
+  },
+  {
+    "test_name": "OSD_PerfMeter Tests::measureTime",
+    "bridge_function": "OCCTPerfMeterElapsed",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "elapsed_at_least_0_09_in_a_window": true,
+        "elapsed_at_most_process_cpu_plus_0_02_in_every_window": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "elapsed_at_least_0_09_in_a_window": true,
+        "elapsed_at_most_process_cpu_plus_0_02_in_every_window": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides (the test's two bounds): the meter reads at least 0.09 s in at least one window in which the thread used 0.1 s of CPU, and never more than the process CPU over the same window plus 0.02 s in any window. Bridge: PerfMeter.elapsed = OCCTPerfMeterElapsed; the test asserts both and passes. Kernel (Scripts/repro/766-foundation-osd-io/transcript.txt, section OSD_PerfMeter): the 0.1 s spin read 0.0965 s against 0.1000 s of process CPU, and the other windows read 0.19 against 0.20, 0.19 against 0.80 and 1.04 against 1.05, so 0.0965 >= 0.09 in one window and every window is within 0.02 of the process CPU. Absolute readings differ between the test process and the probe, so the predicates are compared. Keys and representation normalised by the evidence-fix pass (#1987)."
+  },
+  {
+    "test_name": "OSD_Directory Tests::tempDirectory",
+    "bridge_function": "OCCTDirectoryRemove",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "exists": true,
+        "exists_after": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "exists": true,
+        "exists_after": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: exists, whether the temporary directory exists after BuildTemporary, and exists_after, whether it exists after Remove. Bridge: DirectoryUtils.buildTemporary, exists, remove, exists (OCCTDirectoryBuildTemporary, OCCTDirectoryExists, OCCTDirectoryRemove). Kernel: OSD_Directory BuildTemporary then Exists printed 1, and Exists after Remove printed 0 (Scripts/repro/766-foundation-osd-io/transcript.txt, section OSD_Directory). The bridge record also carried removed = true, the success flag of the bridge's own Remove wrapper (OCCTDirectoryRemove); the kernel side expresses the same removal through the Exists check after it, so the flag is not part of the compared data. Keys and representation normalised by the evidence-fix pass (#1987)."
+  },
+  {
+    "test_name": "OSD_Directory Tests::createAndRemoveDirectory",
+    "bridge_function": "OCCTDirectoryCreate",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "created": true,
+        "exists_after_remove": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "created": true,
+        "exists_after_remove": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Resource_Unicode Tests::setAndGetFormat",
+    "bridge_function": "OCCTUnicodeSetFormat",
+    "bridge_output": {
+      "type": "formats",
+      "data": [
+        "SJIS",
+        "ANSI"
+      ]
+    },
+    "kernel_output": {
+      "type": "formats",
+      "data": [
+        "SJIS",
+        "ANSI"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the format read back after SetFormat(SJIS) and after SetFormat(ANSI), spelled as OCCT's Resource_FormatType_SJIS and Resource_FormatType_ANSI. Bridge: UnicodeUtils.setFormat then UnicodeUtils.format; the test asserts .sjis then .ansi and passes (the Swift cases .sjis and .ansi are Resource_FormatType_SJIS and ANSI). Kernel: Resource_Unicode::GetFormat() printed 'GetFormat() == SJIS: 1' and 'GetFormat() == ANSI: 1' (Scripts/repro/766-foundation-osd-io/transcript.txt, section Resource_Unicode). Only the case of the spelling differed before. Keys and representation normalised by the evidence-fix pass (#1987)."
+  },
+  {
+    "test_name": "Resource_Unicode Tests::convertToUnicode",
+    "bridge_function": "OCCTUnicodeConvertToUnicode",
+    "bridge_output": {
+      "type": "string",
+      "data": "hello"
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": "hello"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Resource_Unicode Tests::convertFromUnicode",
+    "bridge_function": "OCCTUnicodeConvertFromUnicode",
+    "bridge_output": {
+      "type": "string",
+      "data": "hello"
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": "hello"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_DirectoryIterator Tests::countDirectories",
+    "bridge_function": "OCCTDirectoryIteratorCount",
+    "bridge_output": {
+      "type": "int",
+      "data": 4
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 4
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_DirectoryIterator Tests::nameAtIndex",
+    "bridge_function": "OCCTDirectoryIteratorName",
+    "bridge_output": {
+      "type": "names",
+      "data": [
+        ".",
+        "..",
+        "a",
+        "b"
+      ]
+    },
+    "kernel_output": {
+      "type": "names",
+      "data": [
+        ".",
+        "..",
+        "a",
+        "b"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_DirectoryIterator Tests::listDirectories",
+    "bridge_function": "OCCTDirectoryList",
+    "bridge_output": {
+      "type": "names",
+      "data": [
+        ".",
+        "..",
+        "a",
+        "b"
+      ]
+    },
+    "kernel_output": {
+      "type": "names",
+      "data": [
+        ".",
+        "..",
+        "a",
+        "b"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_FileIterator Tests::countFiles",
+    "bridge_function": "OCCTFileIteratorCount",
+    "bridge_output": {
+      "type": "int",
+      "data": 3
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 3
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_FileIterator Tests::nameAtIndex",
+    "bridge_function": "OCCTFileIteratorName",
+    "bridge_output": {
+      "type": "names",
+      "data": [
+        "x.txt",
+        "y.txt",
+        "z.dat"
+      ]
+    },
+    "kernel_output": {
+      "type": "names",
+      "data": [
+        "x.txt",
+        "y.txt",
+        "z.dat"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_FileIterator Tests::listFiles",
+    "bridge_function": "OCCTFileList",
+    "bridge_output": {
+      "type": "names",
+      "data": [
+        "x.txt",
+        "y.txt",
+        "z.dat"
+      ]
+    },
+    "kernel_output": {
+      "type": "names",
+      "data": [
+        "x.txt",
+        "y.txt",
+        "z.dat"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_Disk::diskSize",
+    "bridge_function": "OCCTDiskSize",
+    "bridge_output": {
+      "type": "kb",
+      "data": 971350180
+    },
+    "kernel_output": {
+      "type": "kb",
+      "data": 971350180
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_Disk::diskFreeSpace",
+    "bridge_function": "OCCTDiskFree",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "free_kb_positive": true,
+        "free_kb_at_most_size": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "free_kb_positive": true,
+        "free_kb_at_most_size": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides (the test's two bounds): the free space of / is positive and does not exceed the volume size. Bridge: DiskInfo.freeSpace() and DiskInfo.size(); the test asserts free > 0 and free <= size and passes. Kernel: OSD_Disk DiskFree()/2 printed 40800504 KB (> 0: 1) against DiskSize()/2 971350180 KB (Scripts/repro/766-foundation-osd-io/transcript.txt, section OSD_Disk). Free space moves with disk activity, so the predicates are compared and not a raw figure. The earlier record quoted 66712552 KB for the kernel, a figure not in this branch's transcript; it is dropped. Keys and representation normalised by the evidence-fix pass (#1987)."
+  },
+  {
+    "test_name": "OSD_Disk::diskIsValid",
+    "bridge_function": "OCCTDiskIsValid",
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD_Disk::diskName",
+    "bridge_function": "OCCTDiskName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name_is_empty": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name_is_empty": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the disk name is empty (the record previously compared two empty strings, which carried no value). Bridge: DiskInfo.name() = OCCTDiskName, which builds OSD_Disk from an OSD_Path; the test asserts it equals the empty string and passes. Kernel: OSD_Disk(OSD_Path(\"/\")).Name() system name printed an empty string (Scripts/repro/766-foundation-osd-io/transcript.txt, section OSD_Disk). OSD_Path never fills its disk component on Unix, the finding #1442 documents. Keys and representation normalised by the evidence-fix pass (#1987)."
   }
 ]
