@@ -5842,22 +5842,21 @@
     "bridge_output": {
       "type": "direction",
       "data": {
-        "observed": {
-          "direction_z": 1
-        },
-        "asserted_within": 1e-06
+        "direction": [
+          0,
+          0,
+          1
+        ]
       }
     },
     "kernel_output": {
       "type": "direction",
       "data": {
-        "value": {
-          "direction": [
-            0,
-            0,
-            1
-          ]
-        }
+        "direction": [
+          0,
+          0,
+          1
+        ]
       }
     },
     "comparison": {
@@ -5865,6 +5864,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the sweep direction of the extrusion surface, (x, y, z). The earlier record carried only direction_z on the bridge side (the one component the test asserts) against the full direction on the kernel side; both now carry the direction. Bridge: ext.sweptProperties.direction (OCCTSurfaceSweptDirection) on Surface.extrusion(profile: Curve3D.line(through: .zero, direction: +X), direction: +Z); a temporary print in the test (never committed) observed (0, 0, 1); the test asserts only z within 1e-6 of 1. Kernel: Geom_SurfaceOfLinearExtrusion::Direction() printed direction=(0, 0, 1) (transcript.txt, sweptDirection line).",
     "probe": "Scripts/repro/766-geom-swept-torus/"
   },
   {
@@ -5873,38 +5873,33 @@
     "bridge_output": {
       "type": "curve",
       "data": {
-        "observed": {
-          "basis": "line",
-          "location": [
-            0,
-            0,
-            0
-          ],
-          "direction": [
-            1,
-            0,
-            0
-          ]
-        },
-        "asserted_within": 1e-12
+        "basis": "Geom_Line",
+        "location": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          1,
+          0,
+          0
+        ]
       }
     },
     "kernel_output": {
       "type": "curve",
       "data": {
-        "value": {
-          "basis": "Geom_Line",
-          "location": [
-            0,
-            0,
-            0
-          ],
-          "direction": [
-            1,
-            0,
-            0
-          ]
-        }
+        "basis": "Geom_Line",
+        "location": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          1,
+          0,
+          0
+        ]
       }
     },
     "comparison": {
@@ -5912,6 +5907,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the swept surface's basis curve, its OCCT type and, being a line, its location and direction. Bridge: ext.sweptProperties.basisCurve (OCCTSurfaceSweptBasisCurve) on Surface.extrusion(profile: Curve3D.line(through: .zero, direction: +X), direction: +Z); a temporary print in the test (never committed) observed typeName Geom_Line (the earlier record spelled it 'line'), location (0, 0, 0) and direction (1, 0, 0); the test asserts location and direction within 1e-12, and a curve that is not a Geom_Line reads direction (0, 0, 0) through the line accessors, so the assertion does pin the type. Kernel: Geom_SurfaceOfLinearExtrusion::BasisCurve() down-cast to Geom_Line, printed Geom_Line location=(0, 0, 0) direction=(1, 0, 0) (transcript.txt, sweptBasisCurve line).",
     "probe": "Scripts/repro/766-geom-swept-torus/"
   },
   {
@@ -5920,20 +5916,15 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "major": 10,
-          "minor": 2
-        },
-        "asserted_within": 1e-06
+        "major": 10,
+        "minor": 2
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "major": 10,
-          "minor": 2
-        }
+        "major": 10,
+        "minor": 2
       }
     },
     "comparison": {
@@ -5941,6 +5932,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the major and minor radius. Bridge: t.torusProperties.majorRadius / minorRadius (OCCTSurfaceTorusMajorRadius, OCCTSurfaceTorusMinorRadius) on Surface.torus(origin: .zero, axis: +Z, majorRadius: 10, minorRadius: 2); a temporary print in the test (never committed) observed 10 and 2; the test asserts each within 1e-6. Kernel: Geom_ToroidalSurface::MajorRadius() and MinorRadius() printed major=10 minor=2 (transcript.txt, torusRadii line).",
     "probe": "Scripts/repro/766-geom-swept-torus/"
   },
   {
@@ -5949,20 +5941,15 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "major_after_set": 15,
-          "minor_after_set": 3
-        },
-        "asserted_within": 1e-06
+        "major_after_set": 15,
+        "minor_after_set": 3
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "major_after_set": 15,
-          "minor_after_set": 3
-        }
+        "major_after_set": 15,
+        "minor_after_set": 3
       }
     },
     "comparison": {
@@ -5970,6 +5957,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the radii after SetMajorRadius(15) and SetMinorRadius(3). Bridge: t.torusProperties.setMajorRadius(15) and setMinorRadius(3) (OCCTSurfaceTorusSetMajorRadius, OCCTSurfaceTorusSetMinorRadius, both returned true), each followed by the radius getter, on Surface.torus(origin: .zero, axis: +Z, majorRadius: 10, minorRadius: 2); a temporary print in the test (never committed) observed 15 and 3; the test asserts each within 1e-6. Kernel: Geom_ToroidalSurface::SetMajorRadius(15) then MajorRadius(), SetMinorRadius(3) then MinorRadius(), printed major=15 minor=3 (transcript.txt, torusSetRadii line).",
     "probe": "Scripts/repro/766-geom-swept-torus/"
   },
   {
@@ -5978,18 +5966,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "area": 789.5683520871487
-        },
-        "asserted_within": 1.0
+        "area": 789.5683520871487
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "area": 789.5683520871487
-        }
+        "area": 789.5683520871487
       }
     },
     "comparison": {
@@ -5997,6 +5980,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the torus surface area for R = 10, r = 2 (4 pi^2 R r). Bridge: t.torusProperties.area (OCCTSurfaceTorusArea) on Surface.torus(origin: .zero, axis: +Z, majorRadius: 10, minorRadius: 2); a temporary print in the test (never committed) observed 789.5683520871487 (the test asserts it within 1.0 of the closed form, a looser band than the value itself). Kernel: Geom_ToroidalSurface::Area() printed area=789.5683520871487 (transcript.txt, torusArea line).",
     "probe": "Scripts/repro/766-geom-swept-torus/"
   },
   {
@@ -6005,18 +5989,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "volume": 789.5683520871486
-        },
-        "asserted_within": 1.0
+        "volume": 789.5683520871486
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "volume": 789.5683520871486
-        }
+        "volume": 789.5683520871486
       }
     },
     "comparison": {
@@ -6024,6 +6003,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the torus volume for R = 10, r = 2 (2 pi^2 R r^2). Bridge: t.torusProperties.volume (OCCTSurfaceTorusVolume) on Surface.torus(origin: .zero, axis: +Z, majorRadius: 10, minorRadius: 2); a temporary print in the test (never committed) observed 789.56835208714858 (the test asserts it within 1.0 of the closed form, a looser band than the value itself). Kernel: Geom_ToroidalSurface::Volume() printed volume=789.56835208714858 (transcript.txt, torusVolume line).",
     "probe": "Scripts/repro/766-geom-swept-torus/"
   }
 ]
