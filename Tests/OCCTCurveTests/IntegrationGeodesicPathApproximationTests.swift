@@ -44,13 +44,11 @@ struct IntegrationGeodesicPathApproximationTests {
             prevPt = pt
         }
 
-        #expect(polyLength.isFinite, "Polyline length should be finite")
-        // UV-straight path on sphere is longer than chord but less than pi*R (half great circle)
-        #expect(
-            polyLength >= straightDist - 1e-6,
-            "Surface path (\(polyLength)) should be >= straight distance (\(straightDist))")
-        #expect(
-            polyLength < .pi * radius,
-            "Surface path (\(polyLength)) should be < pi*R (\(.pi * radius))")
+        // #766: the old bounds (finite, >= chord, < pi*R) held for almost any point(atU:v:) that
+        // stayed on a sphere of this size. Both values are Geom_SphericalSurface::Value driven the
+        // same way in Scripts/repro/766-curve-integration-extrema-law.
+        #expect(abs(straightDist - 58.094750193111253) < 1e-9, "chord \(straightDist)")
+        #expect(abs(polyLength - 80.002912490963794) < 1e-9, "polyline \(polyLength)")
+        #expect(polyLength > straightDist)
     }
 }
