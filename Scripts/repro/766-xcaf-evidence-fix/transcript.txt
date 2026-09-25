@@ -175,3 +175,10 @@
 [extra rectangle target] placement threw=false; rectangle target number 1 then placement (30, 18), read back: IsDatumTarget=true type=2 number=1 HasDatumTargetParams=true length=30 width=18
 [extra item ref] Set(label, "/0:1:1:1") non-null=true, FindAttribute=true, GetItem().ToString()="0:1:1:1"
 [extra delete evolution] primitive(box) then delete(box) on one label: evolution=DELETE
+[proof createLabel] XCAF document as OCCTDocument() initialises it: Main=0:1, children: 0:1:1 [TDataStd_Name, XCAFDoc_ShapeTool] 0:1:2 [TDataStd_Name, XCAFDoc_ColorTool] 0:1:10 [TDataStd_Name, XCAFDoc_VisMaterialTool]; TDF_TagSource attribute on Main present=false (Get() = -1 means absent)
+[proof createLabel] NewChild call 1: entry 0:1:1, Main children 3 -> 3 (an existing label was returned, none was added), NbAttributes=2 [TDataStd_Name, XCAFDoc_ShapeTool], TDF_TagSource Get()=1
+[proof createLabel] NewChild call 2: entry 0:1:2, Main children 3 -> 3 (an existing label was returned, none was added), NbAttributes=2 [TDataStd_Name, XCAFDoc_ColorTool], TDF_TagSource Get()=2
+[proof createLabel] NewChild call 3: entry 0:1:3, Main children 3 -> 4 (a new label was added), NbAttributes=0 [none], TDF_TagSource Get()=3
+[proof createLabel] NewChild call 4: entry 0:1:4, Main children 4 -> 5 (a new label was added), NbAttributes=0 [none], TDF_TagSource Get()=4
+[proof createLabel] tool labels named by XCAFDoc_DocumentTool: ShapesLabel=0:1:1 ColorsLabel=0:1:2 LayersLabel=0:1:3 DGTsLabel=0:1:4
+[proof createLabel] contrast, a MDTV-Standard document with no XCAF tools: Main().NewChild() -> entry 0:1:1, NbAttributes=0

@@ -152,6 +152,8 @@ static const char* tf(bool b) { return b ? "true" : "false"; }
 #include <XCAFDoc_GraphNode.hxx>
 #include <XCAFDoc_ShapeMapTool.hxx>
 #include <climits>
+#include <TDF_TagSource.hxx>
+#include <Standard_Type.hxx>
 
 // Kernel measurements for the #1982 evidence correction pass over OCCTXCAFTests. Each section prints lines
 // tagged with the worklist index ([n]) of the parity record it backs, so a record's kernel value can be
@@ -2219,6 +2221,66 @@ static void extras()
   }
 }
 
+// ---- proof that Document.createLabel() on an initialised XCAF document does not always return a new, empty label ---------------------------
+// OCCTDocumentCreateLabel(doc, -1) is `parentLabel = doc->doc->Main(); newLabel = parentLabel.NewChild();`, and newDoc() is OCCTDocument()'s
+// initialisation (NewDocument("MDTV-XCAF"), then the ShapeTool, ColorTool and VisMaterialTool the bridge fetches). This section makes those
+// same calls and prints, before any XCAFDoc_DocumentTool label accessor is called (they create labels), Main's children and the tag source,
+// then what each NewChild returns and whether it added a child.
+static std::string attrNames(const TDF_Label& l)
+{
+  std::string out;
+  for (TDF_AttributeIterator it(l); it.More(); it.Next())
+  {
+    if (!out.empty())
+      out += ", ";
+    out += it.Value()->DynamicType()->Name();
+  }
+  return out.empty() ? "none" : out;
+}
+
+static std::string entryOf(const TDF_Label& l)
+{
+  TCollection_AsciiString s;
+  TDF_Tool::Entry(l, s);
+  return std::string(s.ToCString());
+}
+
+static int tagSourceGet(const TDF_Label& main)
+{
+  Handle(TDF_TagSource) ts;
+  return main.FindAttribute(TDF_TagSource::GetID(), ts) ? ts->Get() : -1;
+}
+
+static void proofCreatedLabel()
+{
+  Handle(TDocStd_Application) app;
+  Handle(TDocStd_Document)    d    = newDoc(app);
+  TDF_Label                   main = d->Main();
+  printf("[proof createLabel] XCAF document as OCCTDocument() initialises it: Main=%s, children:", entryOf(main).c_str());
+  for (TDF_ChildIterator it(main, false); it.More(); it.Next())
+    printf(" %s [%s]", entryOf(it.Value()).c_str(), attrNames(it.Value()).c_str());
+  Handle(TDF_TagSource) ts;
+  printf("; TDF_TagSource attribute on Main present=%s (Get() = -1 means absent)\n", tf(main.FindAttribute(TDF_TagSource::GetID(), ts)));
+  for (int i = 1; i <= 4; i++)
+  {
+    int       before = main.NbChildren();
+    TDF_Label l      = main.NewChild();
+    printf("[proof createLabel] NewChild call %d: entry %s, Main children %d -> %d (%s), NbAttributes=%d [%s], TDF_TagSource Get()=%d\n", i,
+           entryOf(l).c_str(), before, main.NbChildren(), main.NbChildren() == before ? "an existing label was returned, none was added" : "a new label was added",
+           l.NbAttributes(), attrNames(l).c_str(), tagSourceGet(main));
+  }
+  printf("[proof createLabel] tool labels named by XCAFDoc_DocumentTool: ShapesLabel=%s ColorsLabel=%s LayersLabel=%s DGTsLabel=%s\n",
+         entryOf(XCAFDoc_DocumentTool::ShapesLabel(main)).c_str(), entryOf(XCAFDoc_DocumentTool::ColorsLabel(main)).c_str(),
+         entryOf(XCAFDoc_DocumentTool::LayersLabel(main)).c_str(), entryOf(XCAFDoc_DocumentTool::DGTsLabel(main)).c_str());
+  // For contrast: a document with no XCAF tools gives an empty label from the same call.
+  Handle(TDocStd_Application) app2 = new TDocStd_Application();
+  Handle(TDocStd_Document)    bare;
+  app2->NewDocument("MDTV-Standard", bare);
+  TDF_Label bareFirst = bare->Main().NewChild();
+  printf("[proof createLabel] contrast, a MDTV-Standard document with no XCAF tools: Main().NewChild() -> entry %s, NbAttributes=%d\n",
+         entryOf(bareFirst).c_str(), bareFirst.NbAttributes());
+}
+
 int main()
 {
   textLabel();
@@ -2257,5 +2319,6 @@ int main()
   tracing198();
   lastRecords();
   extras();
+  proofCreatedLabel();
   return 0;
 }
