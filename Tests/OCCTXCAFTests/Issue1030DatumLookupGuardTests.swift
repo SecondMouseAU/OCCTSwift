@@ -4,12 +4,18 @@ import simd
 
 @testable import OCCTSwift
 
-// #1030: `XCAFDoc_Datum::GetObject` builds the datum point's X from the annotation plane's array
-// rather than the point's own, so a datum carrying a point with no plane location dereferences a
-// null handle and takes the process down with an uncatchable SIGSEGV (#1022).
-// `Scripts/patches/0029-*` fixes it in the kernel and is in no built kernel, so
-// `occtDocumentDatumObjectAt` refuses that one shape before it calls `GetObject`.
-@Suite("Datum lookup refuses the point-without-plane shape (#1030)")
+// #1030, RETIRED. `XCAFDoc_Datum::GetObject` built the datum point's X from the annotation plane's
+// array rather than the point's own, so a datum carrying a point with no plane location
+// dereferenced a null handle and took the process down with an uncatchable SIGSEGV (#1022).
+// `Scripts/patches/0029-*` fixes it in the kernel, and the pinned asset carries it from
+// `v4.0.0-kernel.1` onward, so `occtDocumentDatumObjectAt` no longer refuses that shape.
+//
+// This file kept its name and its fixtures and flipped its assertions. Every test below asserted a
+// refusal and now asserts the read, which is the only way a guard's retirement can be regression
+// tested: a test that merely stopped existing proves nothing, and one asserting the refusal would
+// now fail for the right reason in the wrong direction. Re-introduce the guard and this suite goes
+// red.
+@Suite("Datum lookup reads the point-without-plane shape, guard retired (#1030)")
 struct Issue1030DatumLookupGuardTests {
 
     // XCAFDoc_Datum.cxx's ChildLab_* values are a file-local anonymous enum, invisible from the
@@ -88,46 +94,47 @@ struct Issue1030DatumLookupGuardTests {
         #expect(label.findChild(tag: Self.planeLocationTag)?.realArrayBounds == nil)
     }
 
-    @Test("A datum with a point and no plane location is refused rather than read")
-    func pointWithoutPlaneLocationIsRefused() {
+    @Test("A datum with a point and no plane location is read, where the guard refused it")
+    func pointWithoutPlaneLocationIsRead() {
         guard let (doc, index) = documentWithPointDatum(withPlaneLocation: false) else {
             Issue.record("fixture nil")
             return
         }
-        // Unfixed this is a SIGSEGV inside GetObject, not a nil, so the whole test process dies
-        // here and no assertion below reports.
-        #expect(doc.datum(at: index) == nil)
-        #expect(doc.datums.isEmpty)
-        // datumCount counts labels, datums counts the readable ones, so the refusal makes the two
-        // disagree. Asserting it here keeps the emptiness above from being read as "no datum was
-        // ever created".
+        // Against a kernel without patch 0029 this line is a SIGSEGV inside GetObject rather than
+        // a value, so the process dies here and nothing below reports. That it returns at all is
+        // half the assertion.
+        #expect(doc.datum(at: index)?.name == "Datum1030")
+        #expect(doc.datums.count == 1)
+        // datumCount counts labels and datums counts the readable ones. The guard made the two
+        // disagree; with it retired they agree, which is the observable shape of the retirement.
         #expect(doc.datumCount == 1)
+        #expect(doc.datums.count == doc.datumCount)
     }
 
-    @Test("A write path takes the same refusal, since the shared lookup runs before it")
-    func aWritePathIsRefusedToo() {
+    @Test("A write path succeeds, where the shared lookup used to refuse it first")
+    func aWritePathSucceedsToo() {
         guard let (doc, index) = documentWithPointDatum(withPlaneLocation: false) else {
             Issue.record("fixture nil")
             return
         }
-        // Five of the seven callers of the shared lookup are writes, and the lookup calls
-        // GetObject before any of them can look at what it returned, so a write that never
-        // touches the point still took the crash. All five are listed rather than sampled,
+        // Five of the seven callers of the shared lookup are writes, and the lookup called
+        // GetObject before any of them could look at what it returned, so a write that never
+        // touches the point took the refusal too. All five are listed rather than sampled,
         // because they share the helper only as long as nobody re-inlines one of them.
-        #expect(!doc.setDatumPosition(at: index, 2))
-        #expect(!doc.setDatumModifiers(at: index, [.basic]))
-        #expect(!doc.setDatumModifierWithValue(at: index, .circularOrCylindrical, value: 1.5))
-        #expect(!doc.setDatumTarget(at: index, type: .point, number: 1))
-        // clearDatumTarget reaches the same bridge function as setDatumTarget, so it is refused
-        // for the same reason.
-        #expect(!doc.clearDatumTarget(at: index))
-        // setDatumTargetPlacement is over-determined here and is listed for completeness only: it
-        // also refuses a datum that is not already a datum target of a non-Area type (#1038), and
-        // this datum cannot be made one, because setDatumTarget above is itself refused. So this
-        // line would read false with the guard removed too, and proves nothing on its own. The
-        // four above it are the ones that isolate the guard.
-        #expect(
-            !doc.setDatumTargetPlacement(
+        #expect(doc.setDatumPosition(at: index, 2))
+        #expect(doc.setDatumModifiers(at: index, [.basic]))
+        #expect(doc.setDatumModifierWithValue(at: index, .circularOrCylindrical, value: 1.5))
+        #expect(doc.setDatumTarget(at: index, type: .point, number: 1))
+        // clearDatumTarget reaches the same bridge function as setDatumTarget.
+        #expect(doc.clearDatumTarget(at: index))
+        // The write actually landed, rather than merely returning true.
+        #expect(doc.datum(at: index)?.position == 2)
+        // setDatumTargetPlacement is NOT asserted either way here. It refuses a datum that is not
+        // already a datum target of a non-Area type (#1038), and clearDatumTarget above has just
+        // cleared that, so its answer is about #1038 rather than about this guard. Listing it with
+        // an assertion would be asserting the wrong subject.
+        _ = (
+            doc.setDatumTargetPlacement(
                 at: index,
                 location: SIMD3(1, 2, 3),
                 normal: SIMD3(0, 0, 1),
@@ -136,8 +143,8 @@ struct Issue1030DatumLookupGuardTests {
                 width: 18))
     }
 
-    @Test("A plane location array that cannot supply the point's own index is refused")
-    func planeLocationTooShortForThePointIndexIsRefused() {
+    @Test("A plane location array too short for the point's own index is read, not refused")
+    func planeLocationTooShortForThePointIndexIsRead() {
         guard let doc = Document.create() else {
             Issue.record("document nil")
             return
@@ -148,10 +155,14 @@ struct Issue1030DatumLookupGuardTests {
             Issue.record("fixture nil")
             return
         }
-        // The kernel reads aLoc->Value(aPnt->Lower()), so a plane location array that exists is
-        // not sufficient: it has to hold the point array's own lower index. Here both arrays have
-        // Length() == 3, so both of the kernel's own conditions pass, and the read lands far past
-        // a three-double allocation. Existence alone let this through, silently, without faulting.
+        // The UNPATCHED kernel read aLoc->Value(aPnt->Lower()), so a plane location array that
+        // existed was not sufficient: it had to hold the point array's own lower index. Here both
+        // arrays have Length() == 3, so both of the kernel's own conditions passed and the read
+        // landed far past a three-double allocation, silently and without faulting.
+        //
+        // Patch 0029 reads aPnt->Value(aPnt->Lower()) instead, which is in bounds by construction
+        // whatever the point array's lower index is, so this shape is now as safe as any other and
+        // the guard's index arm has nothing left to protect.
         #expect(writeTriple(label, tag: Self.planeLocationTag, 6))
         guard let point = label.findChild(tag: Self.pointTag, create: true) else {
             Issue.record("point child nil")
@@ -160,7 +171,7 @@ struct Issue1030DatumLookupGuardTests {
         #expect(point.initRealArray(lower: 1_000_000, upper: 1_000_002))
         #expect(point.realArrayBounds?.lower == 1_000_000)
         #expect(label.findChild(tag: Self.planeLocationTag)?.realArrayBounds?.upper == 3)
-        #expect(doc.datum(at: index) == nil)
+        #expect(doc.datum(at: index)?.name == "Datum1030")
     }
 
     @Test("A datum with both a point and a plane location still reads")

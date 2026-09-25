@@ -1128,8 +1128,13 @@ extension Document {
     /// - forceIfNotRoot: Force rescale even if label is not root.
     ///
     /// - Parameters:
-    /// - Returns: true on success; false if the document holds a datum OCCT cannot read without
-    ///   crashing (#1030), in which case nothing is rescaled.
+    /// - Returns: true on success, false if OCCT refused the rescale.
+    ///
+    ///   This used to answer `false` for a document holding a datum with an annotation point and
+    ///   no annotation plane, which the bridge refused rather than let `XCAFDoc_Editor` crash on
+    ///   it mid-rescale. Carried patch `0029` makes that datum readable and is pinned as of
+    ///   `v4.0.0-kernel.1`, so the refusal is retired and such a document rescales normally
+    ///   (#1030).
     @discardableResult
     public func rescaleGeometry(labelId: Int64, scaleFactor: Double, forceIfNotRoot: Bool = false)
         -> Bool
@@ -1485,9 +1490,11 @@ extension Document {
 
     /// Count of geometric tolerance objects via XCAFDimTolObjects_Tool.
     ///
-    /// `0` when any datum attached to a tolerance is one OCCT cannot read without crashing
-    /// (#1030), which is indistinguishable from a document with no tolerances; see
-    /// `docs/reference/Annotation.md`.
+    /// This used to answer `0` whenever any datum attached to a tolerance carried an annotation
+    /// point with no annotation plane, which was indistinguishable from a document with no
+    /// tolerances. That refusal existed because reading such a datum was an uncatchable SIGSEGV
+    /// (#1022); carried patch `0029` fixes it in the kernel and is pinned as of
+    /// `v4.0.0-kernel.1`, so the count is now the real one (#1030).
     public var dimTolToolToleranceCount: Int {
         Int(OCCTDocumentDimTolToleranceCount(handle))
     }
