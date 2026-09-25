@@ -5934,7 +5934,7 @@
           null,
           null
         ],
-        "solid": "TopoDS::Edge throws"
+        "solid": null
       }
     },
     "comparison": {
@@ -5942,6 +5942,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the edge curvature at a parameter, null where none is obtainable. For the 'solid' entry (a Shape that is not an edge) the kernel side was the string 'TopoDS::Edge throws' against null on the bridge side, a different type for the same absence; it is now null on both, with the mechanism here. Bridge: Shape.edgeCurvatureLP(at:) (OCCTEdgeLPropCurvature); a temporary print in the test (never committed) observed 12 box edges each 0 at u = 5, the sphere's 2 degenerate pole edges nil at u = 0.5, and nil for the box solid passed as an edge, which the test asserts. Kernel: BRepLProp_CLProps on the box edges (24 occurrences, each of the 12 unique edges met twice, all with tangent defined and curvature exactly 0), IsTangentDefined()=0 on the sphere's 2 degenerated edges, and TopoDS::Edge(solid) threw (transcript.txt, box edge, sphere degenerated edge and TopoDS::Edge(solid) lines); the bridge catches that throw and returns absence, so no curvature is obtainable on either side.",
     "probe": "Scripts/repro/766-issue595-curvature-definedness-g4/"
   },
   {
