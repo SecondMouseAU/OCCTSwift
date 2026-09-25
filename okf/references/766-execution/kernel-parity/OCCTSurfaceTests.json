@@ -1649,24 +1649,24 @@
     "bridge_output": {
       "type": "measurement",
       "data": {
-        "lowZ(order 2)": 5.875,
-        "highZ(order 8)": -16.9348871193
+        "lowZ(order 2)": 5.874999979638801,
+        "highZ(order 8)": -16.934887119340363
       }
     },
     "kernel_output": {
       "type": "measurement",
       "data": {
-        "refit lowZ(order 2)": 5.87499997964,
-        "refit highZ(order 8)": -16.9348871193,
-        "Evaluate z(order 8)": 4.99999979268
+        "lowZ(order 2)": 5.874999979638802,
+        "highZ(order 8)": 4.99999979267896
       },
-      "source": "Scripts/repro/766-nlplate-order-base/transcript.txt \"1017 refit\" lines"
+      "source": "Scripts/repro/766-surface-evidence-fix/transcript.txt lines 1 and 2"
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": ["Order 8 differs: bridge highZ -16.934887119340363 against NLPlate_NLPlate::Evaluate z 4.9999997926789597. Known defect, a #766 finding pinned by withKnownIssue in Issue1017NLPlateResolutionOrderTests.orderChangesTheAnswer: at order 8 the plate itself meets the (0, 0, 5) constraint but grows to |z| = 1764.55916538 at the edges of the padded [-15, 15]^2 working domain (Scripts/repro/766-nlplate-order-base/transcript.txt), so the 20x20 refit in occtNLPlateFitSolved misses the constraint. Order 2 agrees: bridge 5.8749999796388011, kernel 5.8749999796388019."]
     },
-    "status": "PASS"
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantity on both sides: z at uv (0, 0) of the plate solved with Solve2(order, 1) for resolution orders 2 and 8, on the z = 0 plane with the test's three G0 constraints (working domain [-15, 15]^2). Bridge: the value the test reads, Surface.nlPlateDeformed(...).point(atU: 0, v: 0).z, which is the 20x20 GeomAPI_PointsToBSplineSurface refit of the plate (occtNLPlateFitSolved, tolerance 0.1), printed with a temporary print. Kernel: NLPlate_NLPlate::Evaluate(0, 0).z itself, the same value Scripts/repro/766-nlplate-order-base/transcript.txt prints (5.87499997964 at order 2, 4.99999979268 at order 8). The probe's copy of the bridge refit reproduces the bridge values exactly (refit z 5.8749999796388011 at order 2 and -16.934887119340363 at order 8, transcript lines 1 and 2), which is how the divergence below is located."
   },
   {
     "test_name": "NLPlate resolution order is bounded and load-bearing (#1017)::The default order moves the surface off the input plane",
@@ -14085,25 +14085,22 @@
     "bridge_output": {
       "type": "measurement",
       "data": {
-        "S(0.5,0.5)": [
-          0.49997944573322467,
-          0.49997938750984927,
-          0.999959739527214
-        ]
+        "S(0.5,0.5)": [0.49997944573322467, 0.49997938750984927, 0.999959739527214]
       }
     },
     "kernel_output": {
       "type": "measurement",
       "data": {
-        "solver": "meets the target (displacement form)"
+        "S(0.5,0.5)": [0.5, 0.5, 1.0]
       },
-      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt nlPlateIncrementalSolve"
+      "source": "Scripts/repro/766-surface-evidence-fix/transcript.txt line 43"
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "source": "Same quantity on both sides: the surface point at uv (0.5, 0.5) after IncrementalSolve(2, 1, 4, false) on the z = 0 plane with one G0 constraint (0.5, 0.5) -> (0.5, 0.5, 1). Bridge: Surface.nlPlateDeformedIncremental(...).point(atU: 0.5, v: 0.5), read with a temporary print; it is the 20x20 GeomAPI_PointsToBSplineSurface refit of the plate (tolerance 1e-3). Kernel: NLPlate_NLPlate::Evaluate(0.5, 0.5), which is the absolute deformed point (#1049), not a displacement. The two are not bit-identical by design: they differ by the refit error, 4.97e-5, inside the 1e-3 the test asserts. The probe's copy of the bridge refit reproduces the bridge value exactly (0.49997944573322467, 0.49997938750984927, 0.999959739527214, transcript line 43). The earlier Scripts/repro/766-nlplate-g2g3-platethrough transcript line for this test printed (1, 1, 1) because its at() helper added the base point to an Evaluate that is already absolute, so that line was never comparable and is not used."
   },
   {
     "test_name": "NLPlate G2/G3 Constraints::nlPlateDerivative",
