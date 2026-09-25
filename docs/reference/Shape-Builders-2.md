@@ -676,6 +676,7 @@ public func convertCurves3dToBezier(lineMode: Bool = true, circleMode: Bool = tr
 - **Parameters:** `lineMode`, convert line segments. `circleMode`, convert circles. `conicMode`, convert other conics.
 - **Returns:** Shape with Bezier curves, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ShapeConvertToBezier` with 3D-curve conversion enabled
+- **Validity:** the result can report `isValid == false`. `ShapeUpgrade_ShapeConvertToBezier` converts curve geometry only; it does not re-derive the converted edges' `SameRange`/pcurve consistency, which `BRepCheck_Analyzer` treats as invalid on its own, without checking the actual geometric deviation any further. That is the documented split between OCCT's "ShapeUpgrade" (convert) and "ShapeFix" (repair) families, not a defect in this wrapper; run `shape.healed()` afterward if a `BRepCheck`-valid result is required.
 - **Example:**
   ```swift
   if let bez = shape.convertCurves3dToBezier(lineMode: false) { }
@@ -697,6 +698,7 @@ public func convertSurfacesToBezier(planeMode: Bool = true, revolutionMode: Bool
 - **Parameters:** `planeMode`, convert planes. `revolutionMode`, convert revolution surfaces. `extrusionMode`, convert extrusions. `bsplineMode`, convert BSpline surfaces.
 - **Returns:** Shape with Bezier surfaces, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ShapeConvertToBezier` with surface conversion enabled
+- **Validity:** the result can report `isValid == false` when a converted face's edges border another face (e.g. a box, where every face is converted and every edge borders two of them); a single converted face bounded only by unconverted neighbors (e.g. a cylinder's end caps) stays valid. Same cause and the same non-goal for this wrapper as `convertCurves3dToBezier(lineMode:circleMode:conicMode:)` above.
 - **Example:**
   ```swift
   if let bez = shape.convertSurfacesToBezier(bsplineMode: false) { }

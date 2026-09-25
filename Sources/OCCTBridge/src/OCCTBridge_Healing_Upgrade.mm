@@ -1221,6 +1221,8 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeConvertCurves3dToBezier(OCCTShapeRef shap
   try
   {
     ShapeUpgrade_ShapeConvertToBezier converter(shape->shape);
+    converter.Set3dConversion(true); // master switch (#2732): per-kind modes below do nothing
+                                     // without it, so Perform() was always a no-op
     converter.Set3dLineConversion(lineMode ? Standard_True : Standard_False);
     converter.Set3dCircleConversion(circleMode ? Standard_True : Standard_False);
     converter.Set3dConicConversion(conicMode ? Standard_True : Standard_False);
@@ -1249,6 +1251,8 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeConvertSurfaceToBezier(OCCTShapeRef shape
   try
   {
     ShapeUpgrade_ShapeConvertToBezier converter(shape->shape);
+    converter.SetSurfaceConversion(true); // master switch (#2732): per-kind modes below do
+                                          // nothing without it, so Perform() was always a no-op
     converter.SetPlaneMode(planeMode ? Standard_True : Standard_False);
     converter.SetRevolutionMode(revolutionMode ? Standard_True : Standard_False);
     converter.SetExtrusionMode(extrusionMode ? Standard_True : Standard_False);
