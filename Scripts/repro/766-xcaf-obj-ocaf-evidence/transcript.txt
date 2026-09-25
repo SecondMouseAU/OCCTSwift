@@ -1,0 +1,22 @@
+[load OBJ] Shape.writeOBJ of the box: RWObj_CafWriter::Perform=true file exists=true
+[32;1mMesh /tmp/766-xcaf-obj-ocaf-evidence-a.obj
+[24 nodes] [12 2d elements]
+[read in 6e-05 s][0m
+[load OBJ] Document.loadOBJ(from:): RWObj_CafReader::Perform=true (the bridge returns a document exactly when this is true) free shapes=1 allShapes count=2 has shapes=true
+[load OBJ single precision] Shape.writeOBJ of the box: Perform=true file exists=true
+[32;1mMesh /tmp/766-xcaf-obj-ocaf-evidence-b.obj
+[24 nodes] [12 2d elements]
+[read in 2.6e-05 s][0m
+[load OBJ single precision] Document.loadOBJ(from:singlePrecision: true): RWObj_CafReader::Perform=true (the bridge returns a document exactly when this is true) free shapes=1 allShapes count=2 has shapes=true
+[write OBJ] Shape.writeOBJ of the box: Perform=true file exists=true
+[32;1mMesh /tmp/766-xcaf-obj-ocaf-evidence-c-src.obj
+[24 nodes] [12 2d elements]
+[read in 2.3e-05 s][0m
+[write OBJ] Document.loadOBJ(fromPath:): RWObj_CafReader::Perform=true (the bridge returns a document exactly when this is true) free shapes=1 allShapes count=2 has shapes=true
+[write OBJ] Document.writeOBJ(to:): RWObj_CafWriter::Perform=true output file exists=true
+[load OBJ with coordinate system] Shape.writeOBJ of the box: Perform=true file exists=true
+[32;1mMesh /tmp/766-xcaf-obj-ocaf-evidence-d.obj
+[24 nodes] [12 2d elements]
+[read in 2.3e-05 s][0m
+[load OBJ with coordinate system] MeshCoordinateSystem .zUp = 0 and .yUp = 1 cast to RWMesh_CoordinateSystem: Zup=0 Yup=1
+[load OBJ with coordinate system] Document.loadOBJ(from:inputCS: .zUp, outputCS: .yUp): RWObj_CafReader::Perform=true (the bridge returns a document exactly when this is true) free shapes=1 allShapes count=2 has shapes=true
