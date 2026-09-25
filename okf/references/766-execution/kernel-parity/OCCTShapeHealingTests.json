@@ -8926,5 +8926,617 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::fakeSolidIsInvalid",
+    "bridge_function": "OCCTSolidFromShells / OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::fixSolidDemotes",
+    "bridge_function": "OCCTShapeFixSolid",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::healedDemotes",
+    "bridge_function": "OCCTShapeHeal",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::isValidAloneIsAmbiguous",
+    "bridge_function": "OCCTShapeFixSolid / OCCTShapeIsValid",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::isValidSolidDistinguishesDemotion",
+    "bridge_function": "OCCTShapeIsValidSolid",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::isValidSolidFalseOnNonSolidTypes",
+    "bridge_function": "OCCTShapeIsValidSolid",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::analyzeReportsFreeEdgesOnOpenShell",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::analyzeReportsFreeEdgesOnDemotedShell",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::analyzeReportsNoFreeEdgesOnClosedBox",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::analyzeCountsFreeFacesPerShell",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::totalProblemsExcludingFreeFaceIncludesSelfIntersection",
+    "bridge_function": "OCCTShapeAnalyze + OCCTShapeSelfIntersectsBounded",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 702: solid demotion is reported accurately::analyzeAgreesWithAnalyzeShellOnInternalDuplicate",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "demotion",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "demotion",
+      "data": {
+        "openShell": {
+          "faces": 5,
+          "freeEdges": 4
+        },
+        "fakeSolid": {
+          "type": "SOLID",
+          "valid": false
+        },
+        "ShapeFix_Solid": {
+          "type": "SHELL",
+          "valid": true,
+          "freeEdges": 4
+        },
+        "ShapeFix_Shape": {
+          "type": "SHELL",
+          "valid": true
+        },
+        "box": {
+          "freeEdges": 0
+        },
+        "twoOpenShells": {
+          "freeEdges": 8,
+          "shells": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::defaultDoesNotCheck",
+    "bridge_function": "OCCTShapeSelfIntersectsBounded (via Shape.analyze)",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "box_hasSelfIntersection": null,
+        "overlappingCompound_hasSelfIntersection": null
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "no kernel call: analyze() without selfIntersectionTimeout never reaches OCCTShapeSelfIntersectsBounded, which is what the test asserts"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "No kernel counterpart. The test asserts hasSelfIntersection == nil for a box and for the overlapping compound when analyze() is called with no selfIntersectionTimeout, i.e. that the kernel check is NOT run (Swift-side opt-in guard). bridge_output is the two asserted nils."
+  },
+  {
+    "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::nonNilTimeoutOnCleanShapePopulatesFalse",
+    "bridge_function": "OCCTShapeSelfIntersectsBounded (via Shape.analyze)",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "box_hasSelfIntersection": false
+      }
+    },
+    "kernel_output": {
+      "type": "self_intersection",
+      "data": {
+        "box_hasSelfIntersection": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the 10x10x10 box self-intersects, as a boolean. Bridge: analyze(tolerance: 0.001, selfIntersectionTimeout: 30).hasSelfIntersection, asserted == false. Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 7 ('#772 self-intersection: box=0 overlapping compound=1'); the probe's selfInter() returns 1 when BOPAlgo_ArgumentAnalyzer (SelfInterMode, StopOnFirstFaulty) reports BOPAlgo_SelfIntersect and 0 otherwise, so 0 is false and 1 is true."
+  },
+  {
+    "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::nonNilTimeoutOnSelfIntersectingShapePopulatesTrue",
+    "bridge_function": "OCCTShapeSelfIntersectsBounded (via Shape.analyze)",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "overlappingCompound_hasSelfIntersection": true
+      }
+    },
+    "kernel_output": {
+      "type": "self_intersection",
+      "data": {
+        "overlappingCompound_hasSelfIntersection": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the compound of two overlapping 10x10x10 boxes (offset 5 in X) self-intersects, as a boolean. Bridge: analyze(tolerance: 0.001, selfIntersectionTimeout: 30).hasSelfIntersection, asserted == true. Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 7 ('#772 self-intersection: box=0 overlapping compound=1'); the probe's selfInter() returns 1 when BOPAlgo_ArgumentAnalyzer (SelfInterMode, StopOnFirstFaulty) reports BOPAlgo_SelfIntersect and 0 otherwise, so 0 is false and 1 is true."
+  },
+  {
+    "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::totalProblemsReflectsOnlyWhatWasChecked",
+    "bridge_function": "OCCTShapeSelfIntersectsBounded (via Shape.analyze)",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "totalProblems_checked_minus_unchecked": 1,
+        "checked_isHealthy": false
+      }
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "no kernel counterpart: OCCT has no totalProblems or isHealthy, only the self-intersection answer already compared in the nonNilTimeoutOnSelfIntersectingShapePopulatesTrue record"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "source": "No kernel counterpart. The test asserts checked.totalProblems == unchecked.totalProblems + 1 and checked.isHealthy == false for the overlapping compound, Swift-side aggregation of the one kernel answer (hasSelfIntersection true) that the nonNilTimeoutOnSelfIntersectingShapePopulatesTrue record compares. bridge_output is the two asserted values."
+  },
+  {
+    "test_name": "Issue 772: analyze() self-intersection is opt-in and representable::timeoutAloneCannotBeSuppliedWithoutOptingIn",
+    "bridge_function": "OCCTShapeSelfIntersectsBounded (via Shape.analyze)",
+    "bridge_output": {
+      "type": "self_intersection",
+      "data": {
+        "box_hasSelfIntersection": false
+      }
+    },
+    "kernel_output": {
+      "type": "self_intersection",
+      "data": {
+        "box_hasSelfIntersection": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: whether the 10x10x10 box self-intersects, as a boolean. Bridge: analyze(tolerance: 0.001, selfIntersectionTimeout: 5).hasSelfIntersection, asserted == false (the timeout value does not enter the answer). Kernel: Scripts/repro/766-healing-702-999/transcript.txt line 7 ('#772 self-intersection: box=0 overlapping compound=1'); the probe's selfInter() returns 1 when BOPAlgo_ArgumentAnalyzer (SelfInterMode, StopOnFirstFaulty) reports BOPAlgo_SelfIntersect and 0 otherwise, so 0 is false and 1 is true."
   }
 ]

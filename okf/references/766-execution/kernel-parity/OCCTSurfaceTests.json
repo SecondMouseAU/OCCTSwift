@@ -1,22 +1,5 @@
 [
   {
-    "test_name": "Surface domain kernel parity",
-    "bridge_function": "OCCTSurfacePlaceholder",
-    "bridge_output": {
-      "type": "object",
-      "data": {}
-    },
-    "kernel_output": {
-      "type": "object",
-      "data": {}
-    },
-    "comparison": {
-      "equal": null,
-      "differences": []
-    },
-    "status": "PENDING"
-  },
-  {
     "test_name": "Advanced Plate Surface Tests::Plate surface with G0 constraint orders",
     "bridge_function": "OCCTShapePlatePointsAdvanced",
     "bridge_output": {
@@ -12809,6 +12792,2540 @@
       "type": "measurement",
       "data": {},
       "source": "Scripts/repro/766-issue620-748-791/transcript.txt 791"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Convert Elementary Surfaces Tests::cylinderPatch",
+    "bridge_function": "OCCTConvertCylinderToBSplineSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "domain": [
+          0,
+          3.141592653589793,
+          0,
+          10
+        ],
+        "S(30%,60%)": [
+          2.905542905574595,
+          4.069130180255375,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "domain": [
+          0,
+          3.141592653589793,
+          0,
+          10
+        ],
+        "S(30%,60%)": [
+          2.905542905574595,
+          4.069130180255375,
+          6
+        ]
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt cylinderPatch"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Convert Elementary Surfaces Tests::conePatch",
+    "bridge_function": "OCCTConvertConeToBSplineSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(30%,60%)": [
+          4.648868648919352,
+          6.5106082884086,
+          5.196152422706632
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(30%,60%)": [
+          4.648868648919352,
+          6.5106082884086,
+          5.196152422706632
+        ]
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt conePatch"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Convert Elementary Surfaces Tests::fullTorus",
+    "bridge_function": "OCCTConvertTorusToBSplineSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(30%,60%)": [
+          -5.386577708006278,
+          15.141849190972033,
+          -3.09294787065871
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(30%,60%)": [
+          -5.386577708006278,
+          15.141849190972033,
+          -3.09294787065871
+        ]
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt fullTorus"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Curve-on-Surface Check Tests::Box has consistent edge curves",
+    "bridge_function": "OCCTShapeCheckCurveOnSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "maxDistance": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "maxDistance": 0
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt boxConsistency (24 pairs)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Curve-on-Surface Check Tests::Sphere has consistent edge curves",
+    "bridge_function": "OCCTShapeCheckCurveOnSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "maxDistance": 3.4638242249419733e-15
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "maxDistance": 3.4638242249419733e-15
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt sphereConsistency"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Curve-on-Surface Check Tests::Cylinder has consistent edge curves",
+    "bridge_function": "OCCTShapeCheckCurveOnSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "maxDistance": 1.2246467991473533e-15
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "maxDistance": 1.2246467991473533e-15
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt cylinderConsistency"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Curve-on-Surface Check Tests::Fused shapes have consistent curves",
+    "bridge_function": "OCCTShapeCheckCurveOnSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "maxDistance": 9.526792049327087e-08
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "maxDistance": 9.526792049327087e-08
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt fusedConsistency (plain BRepAlgoAPI_Fuse)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Evolved Surface Tests::Simple evolved shape",
+    "bridge_function": "OCCTShapeCreateEvolved",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "arc spine": null,
+        "square/segment": {
+          "valid": true,
+          "area": 160
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "arc spine": null,
+        "square/segment": {
+          "valid": true,
+          "area": 160
+        }
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt simpleEvolved threw \"Geom_TrimmedCurve::U1 == U2\"; evolved square/segment area=160 valid"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extended Revolution::revolveFaceFull",
+    "bridge_function": "OCCTShapeCreateRevolutionFull",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 628.3185307179588,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 628.3185307179588,
+        "valid": true
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt revolveFaceFull (XZ profile); the original XY profile gives an invalid zero-volume solid"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extended Revolution::revolveFacePartial",
+    "bridge_function": "OCCTShapeCreateRevolutionPartial",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 314.15926535897944,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 314.15926535897944,
+        "valid": true
+      },
+      "source": "Scripts/repro/766-convert-check-evolved-revol/transcript.txt revolveFacePartial (XZ profile)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface measured continuity encoding after the retirement (#619)::An analytic surface reports CN as ordinal 6, the old encoding's 99 is unreachable",
+    "bridge_function": "OCCTSurfaceGetContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "plane": 6,
+        "sphere": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "plane": 6,
+        "sphere": 6
+      },
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 485 plane/sphere"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface measured continuity encoding after the retirement (#619)::A C1 surface reports C1 as ordinal 2, not 1",
+    "bridge_function": "OCCTSurfaceGetContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "mult 2": 2,
+        "mult 1": 4
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "mult 2": 2,
+        "mult 1": 4
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 619/623 continuity"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface measured continuity encoding after the retirement (#619)::The sibling bezierContinuity accessor uses the same encoding, so CN is 6 there too",
+    "bridge_function": "OCCTSurfaceBezierContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "bezierContinuity": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "bezierContinuity": 6
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 619 Bezier 3x3 Continuity()=6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface measured continuity encoding after the retirement (#619)::A raw threshold of 2 now admits a merely-C1 surface; satisfies(.c2) still refuses it",
+    "bridge_function": "OCCTSurfaceGetContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "continuity": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "continuity": 2
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 619/623 continuity mult2=2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ContinuityClass floor checks agree with the ordering (#623)::A geometric class meets the C0 floor, and nothing above it",
+    "bridge_function": "(Swift) ContinuityClass.satisfies",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Swift predicate over ContinuityClass, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "ContinuityClass floor checks agree with the ordering (#623)::Every measured class clears the positional floor",
+    "bridge_function": "(Swift) ContinuityClass.satisfies",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Swift predicate over ContinuityClass, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "ContinuityClass floor checks agree with the ordering (#623)::satisfies() and >= agree across the whole 7x7 matrix, bar one documented pair",
+    "bridge_function": "(Swift) ContinuityClass",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Swift predicate over ContinuityClass, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "ContinuityClass floor checks agree with the ordering (#623)::A floor check never claims more than the ordering allows",
+    "bridge_function": "(Swift) ContinuityClass",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Swift predicate over ContinuityClass, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "ContinuityClass floor checks agree with the ordering (#623)::The floor is monotonic in the requested order, and in the measured class bar one pair",
+    "bridge_function": "(Swift) ContinuityClass",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Swift predicate over ContinuityClass, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "ContinuityClass floor checks agree with the ordering (#623)::The junction-analysis bitmask contract is independent of the floor check",
+    "bridge_function": "(Swift) ContinuityClass.analysisFlagBit",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "the bit layout the bridge writes in OCCTLocalAnalysisSurfaceContinuityFlags"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "ContinuityClass floor checks agree with the ordering (#623)::The floor gate holds on geometry OCCT actually measured",
+    "bridge_function": "OCCTSurfaceGetContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "plane": 6,
+        "mult 3": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "plane": 6,
+        "mult 3": 0
+      },
+      "source": "Scripts/repro/766-issue562-571-619-623/transcript.txt 619/623 continuity mult3=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface measured continuity (#485)::ContinuityClass mirrors the real GeomAbs_Shape ordinals",
+    "bridge_function": "(Swift) ContinuityClass",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "C0": 0,
+        "G1": 1,
+        "C1": 2,
+        "G2": 3,
+        "C2": 4,
+        "C3": 5,
+        "CN": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "C0": 0,
+        "G1": 1,
+        "C1": 2,
+        "G2": 3,
+        "C2": 4,
+        "C3": 5,
+        "CN": 6
+      },
+      "source": "Scripts/repro/766-issue398-403-437-480/transcript.txt 398 GeomAbs_Shape line"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface measured continuity (#485)::ContinuityClass orders by increasing smoothness",
+    "bridge_function": "(Swift) ContinuityClass.<",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Swift ordering over the GeomAbs_Shape ordinals"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Surface measured continuity (#485)::satisfies() answers a parametric floor without raw-value comparison",
+    "bridge_function": "(Swift) ContinuityClass.satisfies",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Swift predicate, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Surface measured continuity (#485)::Knot multiplicity drives the measured class, at GeomAbs_Shape's own ordinals",
+    "bridge_function": "OCCTSurfaceGetContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "mult 1": 4,
+        "mult 2": 2,
+        "mult 3": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "mult 1": 4,
+        "mult 2": 2,
+        "mult 3": 0
+      },
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 485 bicubic"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface measured continuity (#485)::Analytic surfaces report CN as ordinal 6, not 99",
+    "bridge_function": "OCCTSurfaceGetContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "plane": 6,
+        "sphere": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "plane": 6,
+        "sphere": 6
+      },
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 485 plane/sphere"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface measured continuity (#485)::continuity and continuityClass agree on the same surface, in every class",
+    "bridge_function": "OCCTSurfaceGetContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "values": [
+          4,
+          2,
+          0,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "values": [
+          4,
+          2,
+          0,
+          6
+        ]
+      },
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 485"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface measured continuity (#485)::The result vocabulary stays distinct from the two request vocabularies",
+    "bridge_function": "(Swift) ContinuityClass",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "type identity, no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue 486: surface grid layout::evaluateGridD1 indexes each (u, v) at its own parameter, not transposed",
+    "bridge_function": "OCCTSurfaceEvaluateGridD1",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "max|grid - D1|": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "max|grid - D1|": 0
+      },
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 486"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 486: surface grid layout::evaluateGrid and evaluateGridD1 agree point-for-point under .at(u:v:)",
+    "bridge_function": "OCCTSurfaceEvaluateGridD1",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "max|grid - D1|": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "max|grid - D1|": 0
+      },
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 486"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 486: surface grid layout::drawMesh, evaluateGrid and evaluateGridD1 all read U-major",
+    "bridge_function": "OCCTSurfaceEvaluateGridD1",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Scripts/repro/766-issue485-486-495/transcript.txt 486"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 486: surface grid layout::empty parameter arrays give an empty grid, not a grid of zeroes",
+    "bridge_function": "(Swift) Surface.evaluateGrid",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "isEmpty": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "isEmpty": true
+      },
+      "source": "the refusal is the wrapper guard (and the bridge count guard behind it); no kernel call is made"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "GeomConvert_CompBezierSurfacesToBSplineSurface::Join two Bezier patches into BSpline",
+    "bridge_function": "OCCTSurfaceJoinBezierPatches",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "poles": [
+          3,
+          2
+        ],
+        "domain": [
+          0,
+          2,
+          0,
+          1
+        ],
+        "S(1.5,0.5)": [
+          7.5,
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "poles": [
+          3,
+          2
+        ],
+        "domain": [
+          0,
+          2,
+          0,
+          1
+        ],
+        "S(1.5,0.5)": [
+          7.5,
+          5,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-join-local-loft/transcript.txt joinPatches"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomConvert_CompBezierSurfacesToBSplineSurface::Rejects a rational patch instead of silently dropping its weights (#725)",
+    "bridge_function": "OCCTSurfaceJoinBezierPatches",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "refused bridge-side (the kernel has no rational path, its own guard is compiled out, #725)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "LocalAnalysis SurfaceContinuity Tests::identicalPlanes",
+    "bridge_function": "OCCTLocalAnalysisSurfaceContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "IsC0": true,
+        "C0Value": 0,
+        "IsG1": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "IsC0": true,
+        "C0Value": 0,
+        "IsG1": true
+      },
+      "source": "Scripts/repro/766-join-local-loft/transcript.txt identicalPlanes"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LocalAnalysis SurfaceContinuity Tests::planeVsCylinder",
+    "bridge_function": "OCCTLocalAnalysisSurfaceContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "IsC0": false,
+        "C0Value": 5
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "IsC0": false,
+        "C0Value": 5
+      },
+      "source": "Scripts/repro/766-join-local-loft/transcript.txt planeVsCylinder"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LocalAnalysis SurfaceContinuity Tests::surfaceContinuityFlags",
+    "bridge_function": "OCCTLocalAnalysisSurfaceContinuityFlags",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "flags": "> 0"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "flags": "> 0"
+      },
+      "source": "the flags word is the bridge's own record of which measurements it made; no kernel counterpart"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Local Revolution Tests::Revolve face around Z axis",
+    "bridge_function": "OCCTLocOpeRevol",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 157.07963267948972,
+        "faces": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 157.07963267948972,
+        "faces": 6
+      },
+      "source": "Scripts/repro/766-join-local-loft/transcript.txt LocOpe_Revol XZ face angle=pi/2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Local Revolution Tests::Revolve face produces solid-like shape",
+    "bridge_function": "OCCTLocOpeRevol",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 78.53981633974482,
+        "faces": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 78.53981633974482,
+        "faces": 6
+      },
+      "source": "Scripts/repro/766-join-local-loft/transcript.txt LocOpe_Revol XZ face angle=pi/4"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Local Revolution Tests::Revolve with angular offset",
+    "bridge_function": "OCCTLocOpeRevolWithOffset",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 157.07963267948972,
+        "bbox y": [
+          6.36396,
+          11
+        ],
+        "bbox x": [
+          -7.77817,
+          7.77817
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 157.07963267948972,
+        "bbox y": [
+          6.36396,
+          11
+        ],
+        "bbox x": [
+          -7.77817,
+          7.77817
+        ]
+      },
+      "source": "Scripts/repro/766-join-local-loft/transcript.txt LocOpe_Revol XZ face offset pi/4"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Local Revolution Tests::Full revolution",
+    "bridge_function": "OCCTLocOpeRevol",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 628.3185307179588,
+        "faces": 4
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 628.3185307179588,
+        "faces": 4
+      },
+      "source": "Scripts/repro/766-join-local-loft/transcript.txt LocOpe_Revol XZ face 2 pi"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LocOpe Pipe Tests::Pipe sweep along wire spine",
+    "bridge_function": "OCCTLocOpePipe",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 40,
+        "area": 88
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 40,
+        "area": 88
+      },
+      "source": "Scripts/repro/766-join-local-loft/transcript.txt LocOpe_Pipe YZ face along X"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "LocOpe RevolutionForm Tests::Revolution form creates swept shape",
+    "bridge_function": "OCCTLocOpeRevolutionForm",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 157.07963267948972,
+        "faces": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 157.07963267948972,
+        "faces": 6
+      },
+      "source": "Scripts/repro/766-join-local-loft/transcript.txt LocOpe_RevolutionForm XZ face pi/2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate G2/G3 Constraints::nlPlateG2Deformation",
+    "bridge_function": "OCCTSurfaceNLPlateG2",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,0.5)": [
+          4.777,
+          5.397,
+          -2161222938273.674
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "solver S(0.5,0.5), displacement semantics": [
+          1,
+          1,
+          1
+        ],
+        "IsDone": true
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt nlPlateG2Deformation"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "bridge-fitted surface evaluates to z of about -2e12 at the constraint"
+      ]
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "NLPlate G2/G3 Constraints::nlPlateG3Deformation",
+    "bridge_function": "OCCTSurfaceNLPlateG3",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3,0.3)": [
+          4.77,
+          5.482,
+          -1.0402339780780796e+21
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "solver S(0.3,0.3), displacement semantics": [
+          0.6,
+          0.6,
+          0.5
+        ],
+        "IsDone": true
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt nlPlateG3Deformation"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "bridge-fitted surface evaluates to z of about -1e21 at the constraint"
+      ]
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "NLPlate G2/G3 Constraints::nlPlateIncrementalSolve",
+    "bridge_function": "OCCTSurfaceNLPlateIncrementalG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.5,0.5)": [
+          0.49997944573322467,
+          0.49997938750984927,
+          0.999959739527214
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "solver": "meets the target (displacement form)"
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt nlPlateIncrementalSolve"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate G2/G3 Constraints::nlPlateDerivative",
+    "bridge_function": "OCCTSurfaceNLPlateEvaluateDerivative",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "d/du at (0.5,0.5)": [
+          1,
+          0,
+          0.9999995000002498
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "d/du at (0.5,0.5)": [
+          1,
+          0,
+          0.9999995000002498
+        ]
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt nlPlateDerivative"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Parametric Plate Surface Tests::Plate through points returns parametric surface",
+    "bridge_function": "OCCTSurfacePlateThrough",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "domain u": [
+          -7.91905785,
+          7.79192669
+        ],
+        "maxPointDistance": 1.12e-07
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "domain u": [
+          -7.91905785,
+          7.79192669
+        ],
+        "maxPointDistance": 1.12e-07
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt plateThroughPoints"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Parametric Plate Surface Tests::Plate through points is evaluable",
+    "bridge_function": "OCCTSurfacePlateThrough",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "z at mid-domain": 0,
+        "maxPointDistance": 4.44e-16
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "z at mid-domain": 0,
+        "maxPointDistance": 4.44e-16
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt plateThroughEvaluable"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Parametric Plate Surface Tests::Plate through rejects fewer than 3 points",
+    "bridge_function": "OCCTSurfacePlateThrough",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt plateThroughTooFew threw Geom_RectangularTrimmedSurface::V1==V2"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Parametric Plate Surface Tests::Plate through with custom degree",
+    "bridge_function": "OCCTSurfacePlateThrough",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "maxPointDistance": 1.34e-06
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "maxPointDistance": 1.34e-06
+      },
+      "source": "Scripts/repro/766-nlplate-g2g3-platethrough/transcript.txt plateThroughCustomDegree"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval TBezier 3D Curve::createAndEval",
+    "bridge_function": "OCCTGeomEvalTBezierCurveCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "domain": [
+          0,
+          3.141592653589793
+        ],
+        "start": [
+          2,
+          0,
+          0
+        ],
+        "end": [
+          -2,
+          0,
+          0
+        ],
+        "mid": [
+          1,
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "domain": [
+          0,
+          3.141592653589793
+        ],
+        "start": [
+          2,
+          0,
+          0
+        ],
+        "end": [
+          -2,
+          0,
+          0
+        ],
+        "mid": [
+          1,
+          1,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt createAndEval"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval TBezier 3D Curve::rationalTBezier",
+    "bridge_function": "OCCTGeomEvalTBezierCurveCreateRational",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "mid": [
+          0.6666666666666666,
+          0.6666666666666666,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "mid": [
+          0.6666666666666666,
+          0.6666666666666666,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt rationalTBezier"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval TBezier 3D Curve::rejectsEvenPoleCount",
+    "bridge_function": "OCCTGeomEvalTBezierCurveCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt rejectsEvenPoleCount: kernel threw \"number of poles must be odd and >= 3\""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval TBezier Surface::createSurface",
+    "bridge_function": "OCCTGeomEvalTBezierSurfaceCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3pi,0.7pi)": [
+          2.4236412486698917,
+          -0.8785562767951539,
+          0.5061610958661189
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3pi,0.7pi)": [
+          2.4236412486698917,
+          -0.8785562767951539,
+          0.5061610958661189
+        ]
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt createSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomEval TBezier Surface::rejectsEvenCounts",
+    "bridge_function": "OCCTGeomEvalTBezierSurfaceCreate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt rejectsEvenCounts: kernel threw \"U pole count must be odd and >= 3\""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "TopTrans SurfaceTransition Tests::forwardCrossing",
+    "bridge_function": "OCCTTopTransSurfaceTransition",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "before": "OUT",
+        "after": "IN"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "before": "OUT",
+        "after": "IN"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt forwardCrossing"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "TopTrans SurfaceTransition Tests::reversedCrossing",
+    "bridge_function": "OCCTTopTransSurfaceTransition",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "before": "IN",
+        "after": "OUT"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "before": "IN",
+        "after": "OUT"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt reversedCrossing"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "TopTrans SurfaceTransition Tests::withCurvature",
+    "bridge_function": "OCCTTopTransSurfaceTransitionCurvature",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "before": "OUT",
+        "after": "IN"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "before": "OUT",
+        "after": "IN"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt withCurvature"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "TopTrans SurfaceTransition Tests::stateEnumValues",
+    "bridge_function": "Shape.TopologicalState (Swift enum, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "IN": 0,
+        "OUT": 1,
+        "ON": 2,
+        "UNKNOWN": 3
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "IN": 0,
+        "OUT": 1,
+        "ON": 2,
+        "UNKNOWN": 3
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt stateEnumValues: TopAbs_State values match"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Curve/Surface Type Names::lineTypeName",
+    "bridge_function": "OCCTCurve3DTypeName",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_Line"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_Line"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt typeNames"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Curve/Surface Type Names::bsplineTypeName",
+    "bridge_function": "OCCTCurve3DTypeName",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_BSplineCurve"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_BSplineCurve"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt typeNames"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Curve/Surface Type Names::line2dTypeName",
+    "bridge_function": "OCCTCurve2DTypeName",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom2d_Line"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom2d_Line"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt typeNames"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Curve/Surface Type Names::sphereTypeName",
+    "bridge_function": "OCCTSurfaceTypeName",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_SphericalSurface"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_SphericalSurface"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt typeNames"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Curve/Surface Type Names::planeTypeName",
+    "bridge_function": "OCCTSurfaceTypeName",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_Plane"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "typeName": "Geom_Plane"
+      },
+      "source": "Scripts/repro/766-tbezier-toptrans-typename/transcript.txt typeNames"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Trim sphere surface",
+    "bridge_function": "OCCTSurfaceTrim",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          0,
+          3.141592653589793,
+          -1.5707963267948966,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          0,
+          3.141592653589793,
+          -1.5707963267948966,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt trimSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Offset surface",
+    "bridge_function": "OCCTSurfaceOffset",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          7,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          7,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt offsetSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Translate surface",
+    "bridge_function": "OCCTSurfaceTranslate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          15,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          15,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt translateSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Scale surface",
+    "bridge_function": "OCCTSurfaceScale",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          10,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt scaleSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Mirror surface across XY plane",
+    "bridge_function": "OCCTSurfaceMirrorPlane",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          2,
+          0,
+          -5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          2,
+          0,
+          -5
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt mirrorSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Rotate surface around an axis",
+    "bridge_function": "OCCTSurfaceRotate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3,0.2)": [
+          -1.4481473881275762,
+          14.681466817920995,
+          5.993346653975306
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3,0.2)": [
+          -1.4481473881275762,
+          14.681466817920995,
+          5.993346653975306
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt rotateSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Mirror surface across a point",
+    "bridge_function": "OCCTSurfaceMirrorPoint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.4,0.1)": [
+          0.16708094898402104,
+          3.225054254734457,
+          0.8003331667063437
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.4,0.1)": [
+          0.16708094898402104,
+          3.225054254734457,
+          0.8003331667063437
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt mirrorPointSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Operations::Mirror surface across an axis",
+    "bridge_function": "OCCTSurfaceMirrorAxis",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(pi/4,pi/6)": [
+          -6.224744871391589,
+          -1.224744871391589,
+          0.9999999999999999
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(pi/4,pi/6)": [
+          -6.224744871391589,
+          -1.224744871391589,
+          0.9999999999999999
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt mirrorAxisSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Pipe::Pipe with circular cross-section",
+    "bridge_function": "OCCTSurfaceCreatePipe",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          0,
+          6.283185307179586,
+          0,
+          10
+        ],
+        "S(0.3*2pi,6)": [
+          -1.9021130325903073,
+          -0.6180339887498945,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          0,
+          6.283185307179586,
+          0,
+          10
+        ],
+        "S(0.3*2pi,6)": [
+          -1.9021130325903073,
+          -0.6180339887498945,
+          6
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt pipeCircular"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Pipe::Pipe with section curve",
+    "bridge_function": "OCCTSurfaceCreatePipeWithSection",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3*2pi,6)": [
+          -0.927050983124842,
+          2.853169548885461,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0.3*2pi,6)": [
+          -0.927050983124842,
+          2.853169548885461,
+          6
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt pipeWithSection"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.123.0, Surface queries::Cylinder U period",
+    "bridge_function": "OCCTSurfaceGetUPeriod",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "UPeriod": 6.283185307179586
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "UPeriod": 6.283185307179586
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt cylinderUPeriod"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.123.0, Surface queries::Plane has no period",
+    "bridge_function": "OCCTSurfaceGetVPeriod",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "periodic": [
+          false,
+          false
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "periodic": [
+          false,
+          false
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt planePeriod"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface approximation parity: approximated vs approxWithDetails (#491)::Both entry points succeed, or neither does, on the same request",
+    "bridge_function": "OCCTSurfaceApproximate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "torus 1e-9": "surface, IsDone false",
+        "sphere 1e-9": "surface, IsDone false"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "torus 1e-9": "surface, IsDone false",
+        "sphere 1e-9": "surface, IsDone false"
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt lines 2 and 3: '491 sphere r=10 tol 1e-9 C2: IsDone=0 HasResult=1 MaxError=3.11e-09' and '491 torus 20/5 tol 1e-9 C2: IsDone=0 HasResult=1 MaxError=0.000395'"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface approximation parity: approximated vs approxWithDetails (#491)::Both entry points return the same fitted surface",
+    "bridge_function": "OCCTSurfaceApproximate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "sphere 1e-3 C2": {
+          "degree": [
+            8,
+            8
+          ],
+          "poles": [
+            15,
+            9
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "sphere 1e-3 C2": {
+          "degree": [
+            8,
+            8
+          ],
+          "poles": [
+            15,
+            9
+          ]
+        }
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt line 1: '491 sphere r=10 tol 1e-3 C2: IsDone=1 HasResult=1 MaxError=0.000206 degree=(8,8) poles=(15,9)'"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface approximation parity: approximated vs approxWithDetails (#491)::The two entry points share their default continuity",
+    "bridge_function": "OCCTSurfaceApproximate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "sphere 1e-3 C2 poles": [
+          15,
+          9
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "sphere 1e-3 C2 poles": [
+          15,
+          9
+        ]
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt line 1: '491 sphere r=10 tol 1e-3 C2: IsDone=1 HasResult=1 MaxError=0.000206 degree=(8,8) poles=(15,9)'"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface approximation parity: approximated vs approxWithDetails (#491)::maxError describes the surface both entry points return",
+    "bridge_function": "OCCTGeomConvertApproxSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "sphere 1e-3 MaxError": 0.000206
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "sphere 1e-3 MaxError": 0.000206
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt line 1: '491 sphere r=10 tol 1e-3 C2: IsDone=1 HasResult=1 MaxError=0.000206 degree=(8,8) poles=(15,9)'"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface approximation parity: approximated vs approxWithDetails (#491)::An over-tolerance fit is returned by both, with isDone false",
+    "bridge_function": "OCCTGeomConvertApproxSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "IsDone": false,
+        "HasResult": true,
+        "MaxError": 0.000395
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "IsDone": false,
+        "HasResult": true,
+        "MaxError": 0.000395
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt line 3: '491 torus 20/5 tol 1e-9 C2: IsDone=0 HasResult=1 MaxError=0.000395'"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface approximation parity: approximated vs approxWithDetails (#491)::maxDegree and maxSegments are order-sensitive, and both entry points agree on the order",
+    "bridge_function": "OCCTSurfaceApproximate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "deg 4 seg 20": {
+          "degree": [
+            5,
+            5
+          ],
+          "poles": [
+            27,
+            6
+          ]
+        },
+        "deg 20 seg 4": {
+          "degree": [
+            11,
+            5
+          ],
+          "poles": [
+            12,
+            6
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "deg 4 seg 20": {
+          "degree": [
+            5,
+            5
+          ],
+          "poles": [
+            27,
+            6
+          ]
+        },
+        "deg 20 seg 4": {
+          "degree": [
+            11,
+            5
+          ],
+          "poles": [
+            12,
+            6
+          ]
+        }
+      },
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt lines 4 and 5: '491 cone maxDegree 4 maxSegments 20: IsDone=1 HasResult=1 MaxError=4.42e-05 degree=(5,5) poles=(27,6)' and '491 cone maxDegree 20 maxSegments 4: IsDone=1 HasResult=1 MaxError=0.000114 degree=(11,5) poles=(12,6)'"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface approximation parity: approximated vs approxWithDetails (#491)::hasResult and the returned surface agree",
+    "bridge_function": "OCCTGeomConvertApproxSurface",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "Scripts/repro/766-issue491-522-572/transcript.txt lines 2 and 3: '491 sphere r=10 tol 1e-9 C2: IsDone=0 HasResult=1 MaxError=3.11e-09' and '491 torus 20/5 tol 1e-9 C2: IsDone=0 HasResult=1 MaxError=0.000395'"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_Profiler::add curves and perform",
+    "bridge_function": "OCCTGeomFillProfilerNbPoles",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": 14,
+        "nbPoles": 15,
+        "nbKnots": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": 14,
+        "nbPoles": 15,
+        "nbKnots": 2
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt profiler circles r5 z0 + r3 z10"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_Profiler::null-handle guard does not block a valid curve (#710 regression)",
+    "bridge_function": "OCCTGeomFillProfilerAddCurve",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": 14,
+        "nbPoles": 15
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": 14,
+        "nbPoles": 15
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt profiler circles r5 z0 + r3 z10"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_Profiler::extract poles",
+    "bridge_function": "OCCTGeomFillProfilerPoles",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "poles(1)[0]": [
+          5,
+          0,
+          0
+        ],
+        "poles(1)[1]": [
+          5,
+          2.24399475257,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "poles(1)[0]": [
+          5,
+          0,
+          0
+        ],
+        "poles(1)[1]": [
+          5,
+          2.24399475257,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt profiler Poles(1)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_Profiler::knots and multiplicities",
+    "bridge_function": "OCCTGeomFillProfilerKnotsAndMults",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "knots": [
+          0,
+          6.28318530718
+        ],
+        "mults": [
+          15,
+          15
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "knots": [
+          0,
+          6.28318530718
+        ],
+        "mults": [
+          15,
+          15
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt profiler circles r5 z0 + r4 z5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_SectionPlacement::place section on path",
+    "bridge_function": "OCCTGeomFillSectionPlacement",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "distance": 2,
+        "angle": 1.57079632679
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "distance": 2,
+        "angle": 1.57079632679
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt sectionPlacement"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_SectionPlacement::query placement parameters",
+    "bridge_function": "OCCTGeomFillSectionPlacement",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "parameterOnPath": 0,
+        "parameterOnSection": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "parameterOnPath": 0,
+        "parameterOnSection": 0
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt sectionPlacement"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_SectionPlacement::null-handle guard does not block a valid section (#710 regression)",
+    "bridge_function": "OCCTGeomFillSectionPlacement",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "isDone": true,
+        "distance": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "isDone": true,
+        "distance": 2
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt sectionPlacement"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_Stretch::stretch fill from 4 boundary point arrays",
+    "bridge_function": "OCCTGeomFillStretch",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "nbU": 3,
+        "nbV": 3,
+        "poles[1]": [
+          0,
+          5,
+          2
+        ],
+        "poles[4]": [
+          7.5,
+          7.5,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "nbU": 3,
+        "nbV": 3,
+        "poles[1]": [
+          0,
+          5,
+          2
+        ],
+        "poles[4]": [
+          7.5,
+          7.5,
+          3
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt stretchFill"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_Stretch::isRational for linear stretch",
+    "bridge_function": "OCCTGeomFillStretch",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "isRational": false
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "isRational": false
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt isRational"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill Sweep::Sweep circle along line",
+    "bridge_function": "OCCTGeomFillSweep",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "faceArea": 376.991118431,
+        "errorOnSurface": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "faceArea": 376.991118431,
+        "errorOnSurface": 0
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt sweepCircleAlongLine"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill Sweep::Rejects a sweep that misses its own tolerance instead of reporting it as done (#597)",
+    "bridge_function": "OCCTGeomFillSweep",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null,
+        "kernel errorOnSurface": 13.0281
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null,
+        "kernel errorOnSurface": 13.0281
+      },
+      "source": "Scripts/repro/766-geomfill-d/transcript.txt sweepRejectsOutOfToleranceFit: IsDone=1 ErrorOnSurface=13.0281"
     },
     "comparison": {
       "equal": true,

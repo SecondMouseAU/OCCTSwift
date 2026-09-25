@@ -15553,6 +15553,2209 @@
     }
   },
   {
+    "test_name": "Curve2D knot-splitting duplicates (#562)::A curve with more splits than the first-pass buffer reports all of them",
+    "bridge_function": "Curve2D.splitIndicesAtDiscontinuities (retry)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 302,
+        "last": 302
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 302,
+        "last": 302
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the split count and the last split index. Bridge: indices.count and indices.last, both asserted by the test. Kernel: transcript.txt line 1 ('NbSplits=302 last=302'), Geom2dConvert_BSplineCurveKnotSplitting NbSplits() as count and SplitValue(NbSplits()) as last.",
+    "evidence": {
+      "injection": "no retry: result cut at 256",
+      "red": "Issue562Curve2DKnotSplitDuplicateTests.swift:43:9: Expectation failed: indices.count == 302",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D knot-splitting duplicates (#562)::The retry boundary is exact at 255, 256 and 257 splits",
+    "bridge_function": "Curve2D.splitIndicesAtDiscontinuities (retry)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "255": 255,
+        "256": 256,
+        "257": 257
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "255": 255,
+        "256": 256,
+        "257": 257
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "no retry: result cut at 256",
+      "red": "Issue562Curve2DKnotSplitDuplicateTests.swift:54:13: Expectation failed: indices?.count == splits",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D reports the nearest point over the range (#615)::A half circle queried from below answers with the near end, not the far side",
+    "bridge_function": "occtNearestProjectionOnCurve2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "u": 0,
+        "distance": 7.81024967590665
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "u": 0,
+        "distance": 7.81024967590665
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the nearest point of the half circle (radius 5, [0, pi]) to (0, -6), as parameter u and distance, both printed at 15 significant digits (the bridge value measured 7.810249675906654 at 17). Bridge: Curve2D.project(point:), which takes the nearest of the interior extrema and both ends. Kernel: transcript.txt line 5 ('half circle from (0,-6): ... nearest u=0 distance=7.81024967590665'), the probe taking the same nearest-of-extrema-and-ends. The pre-#615 answer (interior extrema only, distance 11 at u = pi/2, transcript.txt line 9) is the defect the injection reproduces, not the current kernel answer, so it is kept under evidence.defect_reference and is not compared.",
+    "evidence": {
+      "defect_reference": {
+        "what": "Geom2dAPI_ProjectPointOnCurve interior extrema only, from (0, -6)",
+        "u": 1.57079632679,
+        "distance": 11
+      },
+      "injection": "pre-#615 projection: Geom2dAPI_ProjectPointOnCurve interior extrema only, ends ignored",
+      "red": "Issue615Curve2DNearestPointTests.swift:59:9: Expectation failed: abs(projected.distance - truth) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D reports the nearest point over the range (#615)::A point on the circle but off the arc answers with the arc's end",
+    "bridge_function": "occtNearestProjectionOnCurve2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distance": 4.47213595499958,
+        "point": [
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "distance": 4.47213595499958,
+        "point": [
+          5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#615 projection: Geom2dAPI_ProjectPointOnCurve interior extrema only, ends ignored",
+      "red": "Issue615Curve2DNearestPointTests.swift:79:9: Expectation failed: abs(projected.distance - 4.47213595499958) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D reports the nearest point over the range (#615)::A point past the end is answered, not refused",
+    "bridge_function": "occtNearestProjectionOnCurve2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "(100,0)": {
+          "u": 8,
+          "distance": 92
+        },
+        "(0,0)": {
+          "u": 3,
+          "distance": 3
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "(100,0)": {
+          "u": 8,
+          "distance": 92
+        },
+        "(0,0)": {
+          "u": 3,
+          "distance": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#615 projection: Geom2dAPI_ProjectPointOnCurve interior extrema only, ends ignored",
+      "red": "Issue615Curve2DNearestPointTests.swift:91:26: Expectation failed: segment.project(point: SIMD2(100, 0))",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D reports the nearest point over the range (#615)::All four nearest-point spellings agree on every query",
+    "bridge_function": "OCCTPoint2DDistanceToCurve",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "agree": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "agree": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Point2D.distance(to: curve) + 1e-3",
+      "red": "Issue615Curve2DNearestPointTests.swift:138:13: Expectation failed: projected.distance == point2D.distance(to: curve)",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D reports the nearest point over the range (#615)::The 2D and 3D answers match for the same geometry",
+    "bridge_function": "occtNearestProjectionOnCurve2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "2D == 3D": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "2D == 3D": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#615 projection: Geom2dAPI_ProjectPointOnCurve interior extrema only, ends ignored",
+      "red": "Issue615Curve2DNearestPointTests.swift:167:13: Expectation failed: abs(flat.distance - solid.distance) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D measured continuity encoding after the retirement (#619)::An analytic 2D curve reports CN as ordinal 6, the old encoding's 99 is unreachable",
+    "bridge_function": "OCCTCurve2DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "segment": 6
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "segment": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99)",
+      "red": "Issue619Curve2DContinuityEncodingTests.swift:34:9: Expectation failed: segment.continuity == 6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D measured continuity encoding after the retirement (#619)::A C1 pcurve reports C1 as ordinal 2, not 1",
+    "bridge_function": "OCCTCurve2DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "C1": 2,
+        "C2": 4,
+        "bsplineContinuity": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "C1": 2,
+        "C2": 4,
+        "bsplineContinuity": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99)",
+      "red": "Issue619Curve2DContinuityEncodingTests.swift:47:9: Expectation failed: c1.continuity == 2",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D measured continuity encoding after the retirement (#619)::A raw threshold of 2 now admits a merely-C1 pcurve; satisfies(.c2) still refuses it",
+    "bridge_function": "OCCTCurve2DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "C1 ordinal": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "C1 ordinal": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pre-#485 encoding in Curve2D.continuity (C1 = 1, C2 = 2, CN = 99)",
+      "red": "Issue619Curve2DContinuityEncodingTests.swift:63:9: Expectation failed: c1.continuity >= 2",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-issue-regressions-b/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "gce Transform Factory 2D Tests::pointMirror2d",
+    "bridge_function": "OCCTMakeMirror2dPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          -3,
+          -4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          -3,
+          -4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "mirror point x + 1",
+      "red": "TransformFactory2DTests.swift:13:9: Expectation failed: abs(p.x + 3) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "gce Transform Factory 2D Tests::rotation2d",
+    "bridge_function": "OCCTMakeRotation2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "angle negated",
+      "red": "TransformFactory2DTests.swift:21:9: Expectation failed: abs(p.y - 1) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "gce Transform Factory 2D Tests::scale2d",
+    "bridge_function": "OCCTMakeScale2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          3,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          3,
+          6
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "factor + 1",
+      "red": "TransformFactory2DTests.swift:27:9: Expectation failed: abs(p.x - 3) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "gce Transform Factory 2D Tests::translation2d",
+    "bridge_function": "OCCTMakeTranslation2dVec",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          11,
+          22
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          11,
+          22
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "vy + 1",
+      "red": "TransformFactory2DTests.swift:35:9: Expectation failed: abs(p.y - 22) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "x only; y now pinned"
+    }
+  },
+  {
+    "test_name": "gce Transform Factory 2D Tests::direction2d",
+    "bridge_function": "OCCTMakeDir2d",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "d": [
+          0.6,
+          0.8
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "d": [
+          0.6,
+          0.8
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "x and y swapped",
+      "red": "TransformFactory2DTests.swift:44:9: Expectation failed: abs(d.x - 0.6) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "unit length only, inside `if let`; now the direction"
+    }
+  },
+  {
+    "test_name": "gce Transform Factory 2D Tests::direction2dFromPoints",
+    "bridge_function": "OCCTMakeDir2dFromPoints",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "d": [
+          0.707106781186547,
+          0.707106781186547
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "d": [
+          0.707106781186547,
+          0.707106781186547
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "second point x + 1",
+      "red": "TransformFactory2DTests.swift:51:9: Expectation failed: abs(d.x - 0.5.squareRoot()) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": "`!= nil` only; now the direction"
+    }
+  },
+  {
+    "test_name": "Vector2D Utilities::angle",
+    "bridge_function": "OCCTVector2DAngle",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "angle": 1.5707963267949
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "angle": 1.5707963267949
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "angle + 1e-3",
+      "red": "Vector2DUtilityTests.swift:11:9: Expectation failed: abs(a - .pi / 2) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Vector2D Utilities::cross",
+    "bridge_function": "OCCTVector2DCross",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "cross": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "cross": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "operands swapped",
+      "red": "Vector2DUtilityTests.swift:16:9: Expectation failed: abs(c - 1.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Vector2D Utilities::dot",
+    "bridge_function": "OCCTVector2DDot",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "dot": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "dot": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "y term dropped, + 1",
+      "red": "Vector2DUtilityTests.swift:21:9: Expectation failed: abs(d - 3.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Vector2D Utilities::magnitude",
+    "bridge_function": "OCCTVector2DMagnitude",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "magnitude": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "magnitude": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "square instead of root",
+      "red": "Vector2DUtilityTests.swift:26:9: Expectation failed: abs(m - 5.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Vector2D Utilities::normalize",
+    "bridge_function": "OCCTVector2DNormalize",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "n": [
+          0.6,
+          0.8
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "n": [
+          0.6,
+          0.8
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "x divided by half the magnitude",
+      "red": "Vector2DUtilityTests.swift:31:9: Expectation failed: abs(n.x - 0.6) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-transform-vector/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Wire 2D Chamfer Tests::Chamfer single vertex of rectangle",
+    "bridge_function": "OCCTWireChamfer2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 5,
+        "length": 29.4142135624
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "ChFi2d_Builder": {
+          "edges": 5,
+          "length": 29.4142135624
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "distance1 + 0.5",
+      "red": "Wire2DChamferTests.swift:20:9: Expectation failed: abs((chamfered.length ?? 0) - (28 + 2.0.squareRoot())) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "Wire 2D Chamfer Tests::Chamfer all vertices of rectangle",
+    "bridge_function": "OCCTWireChamferAll2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 8,
+        "length": 27.6568542495
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 8,
+        "length": 27.6568542495
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "only every other corner chamfered",
+      "red": "Wire2DChamferTests.swift:32:9: Expectation failed: chamfered.edges().count == 8",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "Wire 2D Chamfer Tests::Asymmetric chamfer",
+    "bridge_function": "OCCTWireChamfer2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 5,
+        "length": 59.2360679775
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 5,
+        "length": 59.2360679775
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "distance1 + 0.5",
+      "red": "Wire2DChamferTests.swift:47:9: Expectation failed: abs((chamfered.length ?? 0) - (57 + 5.0.squareRoot())) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "Wire 2D Chamfer Tests::chamferedAll2D pairs edges by true wire connection order, not TopExp::MapShapes insertion order",
+    "bridge_function": "OCCTWireChamferAll2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 8
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "only every other corner chamfered",
+      "red": "Wire2DChamferTests.swift:91:9: Expectation failed: chamfered.edges().count == 8",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Wire 2D Fillet Tests::Fillet single vertex of rectangle",
+    "bridge_function": "OCCTWireFillet2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 5,
+        "length": 29.5707963268
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "ChFi2d_Builder": {
+          "edges": 5,
+          "length": 29.5707963268
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 0.5",
+      "red": "Wire2DFilletTests.swift:20:9: Expectation failed: abs((filleted.length ?? 0) - (28 + .pi / 2)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "Wire 2D Fillet Tests::Fillet all vertices of rectangle",
+    "bridge_function": "OCCTWireFilletAll2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 8,
+        "length": 28.2831853072
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 8,
+        "length": 28.2831853072
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 0.5",
+      "red": "Wire2DFilletTests.swift:33:9: Expectation failed: abs((filleted.length ?? 0) - (22 + 2 * .pi)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "Wire 2D Fillet Tests::Fillet polygon wire",
+    "bridge_function": "OCCTWireFillet2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 6,
+        "length": 44.0775921817
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 6,
+        "length": 44.0775921817
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 0.5",
+      "red": "Wire2DFilletTests.swift:56:9: Expectation failed: abs((filleted.length ?? 0) - 44.0775921817) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "Wire 2D Fillet Tests::filletedAll2D falls back to the original wire on a mid-loop failure, not just a last-vertex one",
+    "bridge_function": "OCCTWireFilletAll2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "a failed AddFillet is ignored",
+      "red": "Wire2DFilletTests.swift:93:9: Expectation failed: filleted.edges().count == polygon.edges().count",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Wire fromCurve2D on Plane Tests::Segment on XY plane lifts to horizontal 3D wire",
+    "bridge_function": "OCCTWireFromCurve2DOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": 10
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pcurve trimmed to half its range",
+      "red": "WireFromCurve2DOnPlaneTests.swift:19:9: Expectation failed: abs((w.length ?? 0) - 10.0) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "nested `if let`s, 0.01 slack"
+    }
+  },
+  {
+    "test_name": "Wire fromCurve2D on Plane Tests::Circle arc on XY plane lifts correctly",
+    "bridge_function": "OCCTWireFromCurve2DOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": 7.85398163397
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": 7.85398163397
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pcurve trimmed to half its range",
+      "red": "WireFromCurve2DOnPlaneTests.swift:32:9: Expectation failed: abs((w.length ?? 0) - .pi / 2.0 * 5.0) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "nested `if let`s, 0.05 slack"
+    }
+  },
+  {
+    "test_name": "Wire fromCurve2D on Plane Tests::Segment on XY plane at Z offset",
+    "bridge_function": "OCCTWireFromCurve2DOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "z": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "z": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "plane origin ignored",
+      "red": "WireFromCurve2DOnPlaneTests.swift:49:9: Expectation failed: abs(bb.min.z - 5.0) < 0.01",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "nested `if let`s, force-unwrapped bounds"
+    }
+  },
+  {
+    "test_name": "Wire fromCurve2D on Plane Tests::Segment on YZ plane (normal = X axis)",
+    "bridge_function": "OCCTWireFromCurve2DOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "x": 3,
+        "max y": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "x": 3,
+        "max y": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "plane origin ignored",
+      "red": "WireFromCurve2DOnPlaneTests.swift:65:9: Expectation failed: abs(bb.min.x - 3.0) < 0.01",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "nested `if let`s, force-unwrapped bounds"
+    }
+  },
+  {
+    "test_name": "Wire fromCurve2D on Plane Tests::BSpline interpolated curve lifts to 3D wire",
+    "bridge_function": "OCCTWireFromCurve2DOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": 15.5494532204
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": 15.5494532204
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pcurve trimmed to half its range",
+      "red": "WireFromCurve2DOnPlaneTests.swift:81:9: Expectation failed: abs((w.length ?? 0) - expected) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`isValid` only; now the 2D length"
+    }
+  },
+  {
+    "test_name": "Wire fromCurve2D on Plane Tests::Resulting 3D wire can be used as profile for extrusion",
+    "bridge_function": "OCCTWireFromCurve2DOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "area": 245.04422698
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "area": 245.04422698
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pcurve trimmed to half its range",
+      "red": "WireFromCurve2DOnPlaneTests.swift:97:9: Expectation failed: extruded.isValid",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "nested `if let`s; now area 78 pi"
+    }
+  },
+  {
+    "test_name": "v0.144 Shape.section2D::Section of a box with the XY plane returns a Drawing",
+    "bridge_function": "Shape.section2D (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "visible edges": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "visible edges": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "section plane moved off the box",
+      "red": "Section2DTests.swift:18:27: Expectation failed: box.section2D(planeOrigin: SIMD3(5, 5, 5), planeNormal: SIMD3(0, 0, 1))",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "v0.144 Shape.section2D::section2DView includes hatch and label",
+    "bridge_function": "Shape.section2DView (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "annotations": 2,
+        "edges": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "annotations": 2,
+        "edges": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "label dropped",
+      "red": "Section2DTests.swift:47:9: Expectation failed: hasLabel",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`if let`; now `#require`, counts pinned"
+    }
+  },
+  {
+    "test_name": "v0.144 Shape.section2D::section2DView on a box with a through-hole keeps both the outer and inner contour loops",
+    "bridge_function": "Shape.section2DView (Swift)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 20
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 20
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "section plane moved off the box",
+      "red": "Section2DTests.swift:77:21: Expectation failed: view",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`if let`, `>= 5`; now `== 20` (measured)"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Create segment and verify endpoints",
+    "bridge_function": "OCCTCurve2DCreateSegment",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "end x + 1",
+      "red": "Curve2DTests.swift:25:9: Expectation failed: abs(end.x - 10) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Segment degenerate returns nil",
+    "bridge_function": "OCCTCurve2DCreateSegment",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "coincident end nudged apart",
+      "red": "Curve2DTests.swift:32:9: Expectation failed: seg == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Create circle and verify closed/periodic",
+    "bridge_function": "OCCTCurve2DGetPeriod",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "period": 6.28318530717959
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "period": 6.28318530717959
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "period + 1",
+      "red": "Curve2DTests.swift:41:9: Expectation failed: abs(period - 2 * .pi) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`period != nil` inside `if let`; now 2 pi"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Circle zero radius returns nil",
+    "bridge_function": "OCCTCurve2DCreateCircle",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "nil",
+        "r-1": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0": "nil",
+        "r-1": "nil"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "non-positive radius replaced by 1",
+      "red": "Curve2DTests.swift:47:9: Expectation failed: circle == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Arc of circle is not closed",
+    "bridge_function": "OCCTCurve2DCreateArcOfCircle",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "end": [
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "end": [
+          0,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "end angle doubled",
+      "red": "Curve2DTests.swift:60:9: Expectation failed: simd_distance(arc.endPoint, SIMD2(0, 5)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`!isClosed` inside `if let`; now endpoints"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Arc through 3 points",
+    "bridge_function": "OCCTCurve2DCreateArcThrough",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "end": [
+          10,
+          0
+        ],
+        "mid": [
+          5,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "end": [
+          10,
+          0
+        ],
+        "mid": [
+          5,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "middle point y + 1",
+      "red": "Curve2DTests.swift:71:9: Expectation failed: simd_distance(arc.point(at: (arc.domain.lowerBound + arc.domain.upperBound) / 2), SIMD2(5, 5)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`if let`, start only; now end and mid"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Create ellipse and verify closed",
+    "bridge_function": "OCCTCurve2DCreateEllipse",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "value(0)": [
+          10,
+          0
+        ],
+        "value(pi/2)": [
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "value(0)": [
+          10,
+          0
+        ],
+        "value(pi/2)": [
+          0,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "major radius + 1",
+      "red": "Curve2DTests.swift:79:9: Expectation failed: simd_distance(ell.point(at: 0), SIMD2(10, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "flags inside `if let`; now points"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Ellipse minor > major returns nil",
+    "bridge_function": "OCCTCurve2DCreateEllipse",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radii reordered instead of refused",
+      "red": "Curve2DTests.swift:86:9: Expectation failed: ell == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Infinite line",
+    "bridge_function": "OCCTCurve2DCreateLine",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "value(3)": [
+          3,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "value(3)": [
+          3,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "point y + 1",
+      "red": "Curve2DTests.swift:93:9: Expectation failed: simd_distance(line.point(at: 3), SIMD2(3, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`!isClosed` inside `if let`"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Parabola creation",
+    "bridge_function": "OCCTCurve2DCreateParabola",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "focal": 1,
+        "focus": [
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "focal": 1,
+        "focus": [
+          1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "focus x + 1",
+      "red": "Curve2DTests.swift:100:9: Expectation failed: simd_distance(p.parabolaProperties.focus, SIMD2(1, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Hyperbola creation",
+    "bridge_function": "OCCTCurve2DCreateHyperbola",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "major": 5,
+        "value(0)": [
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "major": 5,
+        "value(0)": [
+          5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "major radius + 1",
+      "red": "Curve2DTests.swift:106:9: Expectation failed: abs(h.hyperbolaProperties.majorRadius - 5) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Evaluate segment midpoint",
+    "bridge_function": "OCCTCurve2DGetPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "mid": [
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "mid": [
+          5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "x + 1e-3",
+      "red": "Curve2DTests.swift:116:9: Expectation failed: abs(p.x - 5) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Circle point at 0 and pi/2",
+    "bridge_function": "OCCTCurve2DGetPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "p0": [
+          5,
+          0
+        ],
+        "pi/2": [
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "p0": [
+          5,
+          0
+        ],
+        "pi/2": [
+          0,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "x + 1e-3",
+      "red": "Curve2DTests.swift:125:9: Expectation failed: abs(p0.x - 5) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::D1 returns non-zero tangent",
+    "bridge_function": "OCCTCurve2DD1",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "D1": [
+          0.894427190999916,
+          0.447213595499958
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "D1": [
+          0.894427190999916,
+          0.447213595499958
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "D1 x + 1e-3",
+      "red": "Curve2DTests.swift:139:9: Expectation failed: simd_distance(result.tangent, SIMD2(10, 5) / 125.0.squareRoot()) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`|D1| > 0`; now the unit direction"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::D2 second derivative of a circle points from the curve back to its own center",
+    "bridge_function": "OCCTCurve2DD2",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "D2": "-P"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "D2": "-P"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "D2 x + 1e-3",
+      "red": "Curve2DTests.swift:152:9: Expectation failed: abs(result.d2.x - (-result.point.x)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Adaptive draw on circle produces at least 10 points",
+    "bridge_function": "OCCTCurve2DDrawAdaptive",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 64
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 64
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "one point dropped",
+      "red": "Curve2DTests.swift:161:9: Expectation failed: points.count == 64",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`>= 10`; now 64"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Uniform draw produces exact count",
+    "bridge_function": "OCCTCurve2DDrawUniform",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 32
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 32
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "one point dropped",
+      "red": "Curve2DTests.swift:168:9: Expectation failed: points.count == 32",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Uniform draw stays within the requested count on an overshooting ellipse",
+    "bridge_function": "OCCTCurve2DDrawUniform",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": "as requested"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": "as requested"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "one point dropped",
+      "red": "Curve2DTests.swift:185:13: Expectation failed: points.count == count",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Uniform draw rejects counts below two",
+    "bridge_function": "Curve2D.drawUniform (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "counts below two raised to two",
+      "red": "Curve2DTests.swift:196:13: Expectation failed: circle.drawUniform(pointCount: count).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Deflection draw produces points",
+    "bridge_function": "OCCTCurve2DDrawDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 17
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 17
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "deflection doubled",
+      "red": "Curve2DTests.swift:205:9: Expectation failed: points.count == 17",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`>= 4`; now 17"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Adaptive draw on segment produces at least 2 points",
+    "bridge_function": "OCCTCurve2DDrawAdaptive",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "one point dropped",
+      "red": "Curve2DTests.swift:212:9: Expectation failed: points.count == 2",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`>= 2`; now exactly 2"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Draw arc of ellipse",
+    "bridge_function": "OCCTCurve2DDrawAdaptive",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 43,
+        "ends": [
+          [
+            10,
+            0
+          ],
+          [
+            -10,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 43,
+        "ends": [
+          [
+            10,
+            0
+          ],
+          [
+            -10,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "one point dropped",
+      "red": "Curve2DTests.swift:222:9: Expectation failed: points.count == 43",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`>= 3` inside `if let`; now 43 and the ends"
+    }
+  },
+  {
+    "test_name": "ProjLib::lineOnPlane",
+    "bridge_function": "OCCTProjLibPlaneProjectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "loc": [
+          0,
+          0
+        ],
+        "dir": [
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "loc": [
+          0,
+          0
+        ],
+        "dir": [
+          1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "direction x + 1e-3",
+      "red": "ProjLibTests.swift:19:9: Expectation failed: abs(r.directionX - 1) < 1e-12 && abs(r.directionY) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`!= nil` and `|dir| > 0.5`; now location and direction"
+    }
+  },
+  {
+    "test_name": "ProjLib::circleOnPlane",
+    "bridge_function": "OCCTProjLibPlaneProjectCircle",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "center": [
+          0,
+          0
+        ],
+        "r": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "center": [
+          0,
+          0
+        ],
+        "r": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1e-3",
+      "red": "ProjLibTests.swift:29:9: Expectation failed: abs(r.radius - 5.0) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`if let`; now `#require` and centre pinned"
+    }
+  },
+  {
+    "test_name": "ProjLib::lineOnCylinder",
+    "bridge_function": "OCCTProjLibCylinderProjectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "loc": [
+          0,
+          0
+        ],
+        "dir": [
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "loc": [
+          0,
+          0
+        ],
+        "dir": [
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "location x + 1e-3",
+      "red": "ProjLibTests.swift:40:9: Expectation failed: abs(r.locationX) < 1e-12 && abs(r.locationY) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "ProjLib ComputeApprox::Project edge onto cylinder face",
+    "bridge_function": "OCCTProjLibComputeApprox",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "projected edges": 3,
+        "seam": {
+          "x": 10,
+          "z": [
+            0,
+            20
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "projected edges": 3,
+        "seam": {
+          "x": 10,
+          "z": [
+            0,
+            20
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "returns nullptr",
+      "red": "ProjLibComputeApproxTests.swift:22:30: Expectation failed: edge.projectOntoSurface(cylFaces[0])",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "returned at the first success, silently if none"
+    }
+  },
+  {
+    "test_name": "ProjLib ComputeApproxOnPolarSurface::Project edge onto sphere face",
+    "bridge_function": "OCCTProjLibComputeApproxOnPolarSurface",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "bounds_max_x": 13.4392023242,
+        "bounds_min_x": -13.4392023242,
+        "bounds_min_z": 6.68540947326,
+        "bounds_max_z": 6.73099839174
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "bounds_max_x": 13.4392023242,
+        "bounds_min_x": -13.4392023242,
+        "bounds_min_z": 6.68540947326,
+        "bounds_max_z": 6.73099839174
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "returns nullptr",
+      "red": "ProjLibComputeApproxOnPolarSurfaceTests.swift:20:26: Expectation failed: edge.projectOntoPolarSurface(faces[0])",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "\"may or may not succeed\": nothing asserted on failure"
+    },
+    "source": "Same quantity on both sides: the bounding box (x extent, and the z range) of the edge that results from projecting the half circle of radius 10 at z = 5 onto the radius-15 sphere, the four values the test bounds. Bridge: Shape.projectOntoPolarSurface(_:) then Shape.bounds. Kernel: the same sequence in the probe, ProjLib_ComputeApproxOnPolarSurface (tolerance 1e-3), BRepBuilderAPI_MakeEdge on the resulting 2D curve, BRepBndLib::Add with triangulation as OCCTShapeGetBounds does. Values at 12 significant digits. The analytic radial projection the test's 0.05 tolerance is centred on (radius 13.416407865, height 6.7082039325) is printed in the probe transcript; it is a reference, not a kernel output, and is not part of the record.",
+    "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/"
+  },
+  {
+    "test_name": "ProjLib_ProjectOnSurface Tests::projectLineOnCylinder",
+    "bridge_function": "OCCTProjLibProjectOnSurface",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          0,
+          10
+        ],
+        "start": [
+          4.08248290464,
+          2.88675134595,
+          3.53553390593
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          0,
+          10
+        ],
+        "start": [
+          4.08248290464,
+          2.88675134595,
+          3.53553390593
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "trim end halved",
+      "red": "ProjLibProjectOnSurfaceTests.swift:21:9: Expectation failed: abs(domain.lowerBound) < 1e-12 && abs(domain.upperBound - 10) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "two `if let`s, `upper > lower`; now domain and start pinned"
+    },
+    "source": "Same quantity on both sides: the parameter domain and the first point of the curve that results from projecting the line (5,0,0) + t (0,1,1), t in [0, 10], onto the radius-5 cylinder. Bridge: Curve3D.projectOnSurface(_:range:), domain and point(at: lower bound). Kernel: ProjLib_ProjectOnSurface (tolerance 1e-3) on the same trimmed line and cylinder, BSpline domain and Value(first), from the probe. Values at 12 significant digits. Not asserted and not part of the record: the kernel's B-spline evaluates to (0, 0, 0) from mid-domain on (value(5) in the transcript), so the result does not stay on the cylinder.",
+    "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/"
+  },
+  {
+    "test_name": "Geom2dEval TBezier 2D Curve::createAndEval",
+    "bridge_function": "OCCTGeom2dEvalTBezierCurveCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          0,
+          3.14159265359
+        ],
+        "start": [
+          2,
+          0
+        ],
+        "mid": [
+          1,
+          1
+        ],
+        "end": [
+          -2,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          0,
+          3.14159265359
+        ],
+        "start": [
+          2,
+          0
+        ],
+        "mid": [
+          1,
+          1
+        ],
+        "end": [
+          -2,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "alpha + 0.5",
+      "red": "TBezierCurve2DTests.swift:20:9: Expectation failed: abs(domain.upperBound - .pi) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "domain signs only"
+    }
+  },
+  {
     "test_name": "Issue514 2D conic degenerate dimensions::ellipseArcRejectsZeroRadii",
     "bridge_function": "OCCTConvertEllipseToBSpline2D",
     "bridge_output": {
