@@ -5842,18 +5842,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "semiAngle": 0.3
-        },
-        "asserted_within": 1e-06
+        "semiAngle": 0.3
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "semiAngle": 0.3
-        }
+        "semiAngle": 0.3
       }
     },
     "comparison": {
@@ -5861,6 +5856,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the cone's semi-angle in radians. Bridge: c.coneProperties.semiAngle (OCCTSurfaceConeSemiAngle) on Surface.cone(origin: .zero, axis: +Z, radius: 5, semiAngle: 0.3); observed 0.29999999999999999 by a temporary print in the test (never committed); the test asserts it within 1e-6 of 0.3. Kernel: Geom_ConicalSurface::SemiAngle() printed semiAngle=0.29999999999999999 (transcript.txt, coneSemiAngle line).",
     "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
   },
   {
@@ -5869,18 +5865,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "refRadius": 5
-        },
-        "asserted_within": 1e-06
+        "refRadius": 5
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "refRadius": 5
-        }
+        "refRadius": 5
       }
     },
     "comparison": {
@@ -5888,6 +5879,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the cone's reference radius. Bridge: c.coneProperties.refRadius (OCCTSurfaceConeRefRadius) on the same cone; observed 5 by a temporary print in the test (never committed); the test asserts it within 1e-6 of 5. Kernel: Geom_ConicalSurface::RefRadius() printed refRadius=5 (transcript.txt, coneRefRadius line).",
     "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
   },
   {
@@ -5896,26 +5888,21 @@
     "bridge_output": {
       "type": "point",
       "data": {
-        "observed": {
-          "apex": [
-            1,
-            2,
-            -13.16364071882914
-          ]
-        },
-        "asserted_within": 1e-06
+        "apex": [
+          1,
+          2,
+          -13.16364071882914
+        ]
       }
     },
     "kernel_output": {
       "type": "point",
       "data": {
-        "value": {
-          "apex": [
-            1,
-            2,
-            -13.16364071882914
-          ]
-        }
+        "apex": [
+          1,
+          2,
+          -13.16364071882914
+        ]
       }
     },
     "comparison": {
@@ -5923,6 +5910,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the cone apex, (x, y, z). Bridge: c.coneProperties.apex (OCCTSurfaceConeApex) on Surface.cone(origin: (1, 2, 3), axis: +Z, radius: 5, semiAngle: 0.3); observed (1, 2, -13.163640718829139) by a temporary print in the test (never committed); the test asserts each component within 1e-6 of (1, 2, 3 - 5/tan(0.3)). Kernel: Geom_ConicalSurface::Apex() printed apex=(1, 2, -13.163640718829139) (transcript.txt, coneApex line).",
     "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
   },
   {
@@ -5931,36 +5919,31 @@
     "bridge_output": {
       "type": "axis",
       "data": {
-        "observed": {
-          "position": [
-            1,
-            2,
-            3
-          ],
-          "direction": [
-            0,
-            0,
-            1
-          ]
-        },
-        "asserted_within": 1e-06
+        "position": [
+          1,
+          2,
+          3
+        ],
+        "direction": [
+          0,
+          0,
+          1
+        ]
       }
     },
     "kernel_output": {
       "type": "axis",
       "data": {
-        "value": {
-          "position": [
-            1,
-            2,
-            3
-          ],
-          "direction": [
-            0,
-            0,
-            1
-          ]
-        }
+        "position": [
+          1,
+          2,
+          3
+        ],
+        "direction": [
+          0,
+          0,
+          1
+        ]
       }
     },
     "comparison": {
@@ -5968,6 +5951,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the cone's axis placement, position and direction. Bridge: c.coneProperties.axis (OCCTSurfaceConeAxis) on the same origin (1, 2, 3) cone; observed position (1, 2, 3) and direction (0, 0, 1) by a temporary print in the test (never committed); the test asserts each component within 1e-6. Kernel: Geom_ConicalSurface::Cone().Axis() printed position=(1, 2, 3) direction=(0, 0, 1) (transcript.txt, coneAxis line).",
     "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
   },
   {
@@ -5976,20 +5960,15 @@
     "bridge_output": {
       "type": "counts",
       "data": {
-        "observed": {
-          "lines_over_18_face_pairs": 10,
-          "circles_r10_at_z_pm0.5": 2
-        },
-        "asserted_within": "exact counts; circle radius and z within 1e-9"
+        "lines_over_18_face_pairs": 10,
+        "circles_r10_at_z_pm0.5": 2
       }
     },
     "kernel_output": {
       "type": "counts",
       "data": {
-        "value": {
-          "lines_over_18_face_pairs": 10,
-          "circles_r10_at_z_pm0.5": 2
-        }
+        "lines_over_18_face_pairs": 10,
+        "circles_r10_at_z_pm0.5": 2
       }
     },
     "comparison": {
@@ -5997,6 +5976,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the intersection curves GeomInt_IntSS reports over every cylinder face x box face pair (3 x 6 = 18), and how many of them are circles of radius 10 at z = -0.5 / +0.5. Bridge: Shape.surfaceSurfaceIntersection over the 18 pairs; a temporary print in the test (never committed) observed 10 curves in total and 2 with curvature 0.1, at radius 10 and z = -0.5 and +0.5 (the test asserts lines == 10, circles == 2, radius within 1e-9 of 10 and |z| within 1e-9 of 0.5). Kernel: GeomInt_IntSS over the same 18 pairs printed total lines=10, circles (curvature 0.1)=2, the two circles' first points being (10, 0, -0.5) and (10, 0, 0.5) (transcript.txt, planeCylinderIntersection lines).",
     "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
   },
   {
@@ -6005,42 +5985,59 @@
     "bridge_output": {
       "type": "local props",
       "data": {
-        "observed": {
-          "circle_edges": 2,
-          "curvature": 0.1,
-          "tangent": [
+        "circle_edges": 2,
+        "curvature": 0.1,
+        "tangent": [
+          0,
+          1,
+          0
+        ],
+        "normal": [
+          -1,
+          0,
+          0
+        ],
+        "centres": [
+          [
             0,
-            1,
-            0
+            0,
+            5
           ],
-          "normal": [
-            -1,
+          [
+            0,
             0,
             0
-          ],
-          "centre": "(0, 0, z) for z in {0, 5}"
-        },
-        "asserted_within": 1e-12
+          ]
+        ]
       }
     },
     "kernel_output": {
       "type": "local props",
       "data": {
-        "value": {
-          "circle_edges": 2,
-          "curvature": 0.1,
-          "tangent": [
+        "circle_edges": 2,
+        "curvature": 0.1,
+        "tangent": [
+          0,
+          1,
+          0
+        ],
+        "normal": [
+          -1,
+          0,
+          0
+        ],
+        "centres": [
+          [
             0,
-            1,
-            0
+            0,
+            5
           ],
-          "normal": [
-            -1,
+          [
+            0,
             0,
             0
-          ],
-          "centre": "(0, 0, z) for z in {0, 5}"
-        }
+          ]
+        ]
       }
     },
     "comparison": {
@@ -6048,6 +6045,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: GeomLProp_CLProps at parameter 0 on the two circular edges of a cylinder (r 10, h 5): number of circle edges, curvature, unit tangent, principal normal and centre of curvature (the centres in edge order, z = 5 then z = 0). The straight seam is not counted. Bridge: edge.curveLocalProps(at: 0) (OCCTGeomLPropCLProps) over the cylinder's three edges; a temporary print in the test (never committed) observed curvature 0.10000000000000001, tangent (-0, 1, 0), normal (-1, -0, 0) on both circles and centres (0, 0, 5) and (0, 0, 0); a printed -0 is written 0 here. The test asserts curvature, tangent and normal within 1e-12. The earlier record carried the centre as the prose '(0, 0, z) for z in {0, 5}' on both sides; it is now the numeric centres. Kernel: GeomLProp_CLProps printed the same values for edges 1 and 3 (transcript.txt, curvePropsOnCircle lines).",
     "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
   },
   {
@@ -6056,28 +6054,23 @@
     "bridge_output": {
       "type": "local props",
       "data": {
-        "observed": {
-          "tangent": [
-            0,
-            0,
-            1
-          ],
-          "curvature": 0
-        },
-        "asserted_within": "tangent 1e-12, curvature < 0.001"
+        "tangent": [
+          0,
+          0,
+          1
+        ],
+        "curvature": 0
       }
     },
     "kernel_output": {
       "type": "local props",
       "data": {
-        "value": {
-          "tangent": [
-            0,
-            0,
-            1
-          ],
-          "curvature": 0
-        }
+        "tangent": [
+          0,
+          0,
+          1
+        ],
+        "curvature": 0
       }
     },
     "comparison": {
@@ -6085,6 +6078,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: GeomLProp_CLProps at parameter 0.5 on the first edge of a centred 10-cube, a line along +Z: unit tangent and curvature. Bridge: first.curveLocalProps(at: 0.5) (OCCTGeomLPropCLProps); a temporary print in the test (never committed) observed tangent (0, 0, 1) and curvature 0; the test asserts the tangent within 1e-12 and curvature < 0.001. Kernel: GeomLProp_CLProps printed tangent=(0, 0, 1) curvature=0 (transcript.txt, tangentOnLineEdge line).",
     "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
   },
   {
@@ -6093,18 +6087,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "maxCurvature": -0.1
-        },
-        "asserted_within": 1e-12
+        "maxCurvature": -0.09999999999999999
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "maxCurvature": -0.09999999999999999
-        }
+        "maxCurvature": -0.09999999999999999
       }
     },
     "comparison": {
@@ -6112,6 +6101,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the signed maximum curvature of a radius-10 sphere face at (u, v) = (0, 0.5). Bridge: face.faceLPropMaxCurvature(u: 0, v: 0.5) (OCCTFaceLPropMaxCurvature); a temporary print in the test (never committed) observed -0.099999999999999992, where the earlier record carried the constant -0.1 the test asserts against within 1e-12. Kernel: BRepLProp_SLProps::MaxCurvature() printed max=-0.099999999999999992 (transcript.txt, surfacePropsOnSphere line).",
     "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
   },
   {
@@ -6120,18 +6110,13 @@
     "bridge_output": {
       "type": "scalar",
       "data": {
-        "observed": {
-          "maxCurvature": 0
-        },
-        "asserted_within": 0.001
+        "maxCurvature": 0
       }
     },
     "kernel_output": {
       "type": "scalar",
       "data": {
-        "value": {
-          "maxCurvature": 0
-        }
+        "maxCurvature": 0
       }
     },
     "comparison": {
@@ -6139,6 +6124,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the maximum curvature of a planar box face at (u, v) = (0, 0), defined and 0. Bridge: face.faceLPropMaxCurvature(u: 0, v: 0) (OCCTFaceLPropMaxCurvature); a temporary print in the test (never committed) observed 0; the test asserts it within 0.001 of 0. Kernel: BRepLProp_SLProps::MaxCurvature() printed max=0 with curvature defined (transcript.txt, normalOnPlaneFace line).",
     "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
   }
 ]
