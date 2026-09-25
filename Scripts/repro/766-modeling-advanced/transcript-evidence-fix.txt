@@ -1,0 +1,27 @@
+filletSpecificEdges: edges=12 done=true valid=true faces=10 volume=3951.5634099876793
+filletSingleEdge: edges=12 done=true valid=true faces=7 volume=1997.8539816339744
+filletVariableRadius: edges=12 done=true valid=true faces=7 volume=2990.5237334555886
+edgeHasIndex/faceHasIndex: edges=12 faces=6
+draftVerticalFaces: verticalFaces=4 done=true valid=true faces=6 volume=12024.71917796442
+removeFeatures: faces=7 nonPlanarFaces=1 done=true valid=true resultFaces=6 volume=7999.9999999999982
+pipeShellFrenet: done=true type="SOLID" valid=true volume=436.39600453178826 controlCorrectedFrenetVolume=445.0331455462985
+pipeShellCorrectedFrenet: done=true type="SOLID" valid=true volume=299.06536887934379 controlFrenetVolume=293.00599059417402
+pipeShellFixedBinormal: done=true type="SOLID" valid=true volume=508.59380610024181 controlCorrectedFrenetVolume=634.63610746095401 controlFrenetVolume=624.28964125421749
+pipeShellCreatesShell: done=true type="SHELL" valid=true faces=1 area=376.99111843077515
+multiSectionFrenetVaryingRadius: done=true irDone=true makeSolid=true type="SOLID" valid=true signedVolume=58.643062441853715
+multiSectionAuxiliarySpine: done=true irDone=true makeSolid=true type="SOLID" valid=true signedVolume=73.30382760882533
+multiSectionProfileCountBounds(single): done=true irDone=true makeSolid=true type="SOLID" valid=true signedVolume=125.6637061435917
+wireLengthLine: length=10
+wireLengthCircle: length=62.831853071795862
+wireCurveInfoCircle: closed=true length=31.415926535897931
+wireCurveInfoLine: closed=false length=20 start=[0,0,0] end=[20,0,0]
+wirePointAtParameter: x@0=0 x@0.5=10 x@1=20
+wireTangentAtParameter: tangent=[1,0,0]
+wireCurvatureLine: curvature=0
+wireCurvatureCircle: curvature=0.10000000000000002
+wireCurvePointDerivatives: point=[3.0616169978683831e-16,5,0] curvature=0.20000000000000004 normal=[-6.123233995736766e-17,-1,0]
+wireOffset3D: start=[5,0,10]
+bsplineSurface: done=true valid=true
+ruledSurfaceBetweenCircles: done=true type="SHELL"
+shellWithOpenFaces: upwardFaces=1 done=true valid=true volume=4519.4099853010066
+shellWithSpecificFaceOpen: upwardFaces=0 done=true valid=true volume=3325.1548397129909
