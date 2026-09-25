@@ -62,6 +62,25 @@ static const char* tf(bool b) { return b ? "true" : "false"; }
 #include <XCAFDoc_VisMaterialPBR.hxx>
 #include <XCAFDoc_VisMaterialTool.hxx>
 #include <fstream>
+#include <BRepPrimAPI_MakeBox.hxx>
+#include <Interface_Static.hxx>
+#include <STEPCAFControl_Reader.hxx>
+#include <STEPControl_Writer.hxx>
+#include <TColStd_HArray1OfReal.hxx>
+#include <TCollection_HAsciiString.hxx>
+#include <TDataStd_Name.hxx>
+#include <XCAFDimTolObjects_DatumObject.hxx>
+#include <XCAFDimTolObjects_DimensionObject.hxx>
+#include <XCAFDimTolObjects_DimensionType.hxx>
+#include <XCAFDimTolObjects_GeomToleranceObject.hxx>
+#include <XCAFDimTolObjects_GeomToleranceType.hxx>
+#include <XCAFDoc_Datum.hxx>
+#include <XCAFDoc_DimTolTool.hxx>
+#include <XCAFDoc_Dimension.hxx>
+#include <XCAFDoc_GeomTolerance.hxx>
+#include <algorithm>
+#include <string>
+#include <vector>
 
 // Kernel measurements for the #1982 evidence correction pass over OCCTXCAFTests. Each section prints lines
 // tagged with the worklist index ([n]) of the parity record it backs, so a record's kernel value can be
@@ -218,6 +237,174 @@ static void roughnessFallback()
   printf("\n");
 }
 
+// ---- KEYS group 1 --------------------------------------------------------------------------------
+// [16] AssemblyNodeIdentityTests.labelIdRoundTrip: box -> STEP -> STEPCAFControl_Reader (the modes OCCTDocumentLoadSTEP
+// sets); the root label is fetched twice (Document.node(at:) re-fetches through GetFreeShapes) and its name read from both.
+static std::string nameOf(const TDF_Label& l)
+{
+  Handle(TDataStd_Name) nm;
+  return l.FindAttribute(TDataStd_Name::GetID(), nm) ? std::string(TCollection_AsciiString(nm->Get()).ToCString())
+                                                     : std::string("<none>");
+}
+
+static void stepIdentity()
+{
+  const char* path = "/tmp/766-xcaf-evidence-fix-16.step";
+  {
+    STEPControl_Writer w;
+    Interface_Static::SetCVal("write.step.schema", "AP214");
+    w.Transfer(centredBox(10, 10, 10), STEPControl_AsIs);
+    w.Write(path);
+  }
+  Handle(TDocStd_Application) app;
+  Handle(TDocStd_Document)    d = newDoc(app);
+  STEPCAFControl_Reader       r;
+  r.SetColorMode(true);
+  r.SetNameMode(true);
+  r.SetLayerMode(true);
+  r.SetPropsMode(true);
+  r.SetMatMode(true);
+  r.ReadFile(path);
+  r.Transfer(d);
+  TDF_LabelSequence first, second;
+  XCAFDoc_DocumentTool::ShapeTool(d->Main())->GetFreeShapes(first);
+  XCAFDoc_DocumentTool::ShapeTool(d->Main())->GetFreeShapes(second);
+  std::string n1 = nameOf(first.Value(1)), n2 = nameOf(second.Value(1));
+  printf("[16] free shapes=%d, re-fetched root IsEqual first=%s, name(first)=\"%s\" name(re-fetched)=\"%s\" equal=%s\n", first.Length(),
+         tf(second.Value(1).IsEqual(first.Value(1))), n1.c_str(), n2.c_str(), tf(n1 == n2));
+}
+
+// [45] DocumentGDTTests.fullAuthoring: 3 dimensions + 2 tolerances + 2 datums on one box through the calls the bridge's
+// OCCTDocumentCreateDimension / CreateGeomTolerance / CreateDatum make, then the counts and the types and names read back.
+static void gdtAuthoring()
+{
+  Handle(TDocStd_Application) app;
+  Handle(TDocStd_Document)    d = newDoc(app);
+  Handle(XCAFDoc_DimTolTool)  t = XCAFDoc_DocumentTool::DimTolTool(d->Main());
+  TDF_Label                   shape = XCAFDoc_DocumentTool::ShapeTool(d->Main())->AddShape(centredBox(100, 50, 25), false);
+  const XCAFDimTolObjects_DimensionType dtypes[3] = {XCAFDimTolObjects_DimensionType_Size_Diameter,
+                                                     XCAFDimTolObjects_DimensionType_Location_LinearDistance,
+                                                     XCAFDimTolObjects_DimensionType_Size_Radius};
+  const double                          dvals[3]  = {10.0, 50.0, 5.0};
+  for (int i = 0; i < 3; i++)
+  {
+    TDF_Label dl = t->AddDimension();
+    t->SetDimension(shape, dl);
+    Handle(XCAFDoc_Dimension) da;
+    dl.FindAttribute(XCAFDoc_Dimension::GetID(), da);
+    Handle(XCAFDimTolObjects_DimensionObject) o = new XCAFDimTolObjects_DimensionObject();
+    o->SetType(dtypes[i]);
+    Handle(TColStd_HArray1OfReal) vals = new TColStd_HArray1OfReal(1, 1);
+    vals->SetValue(1, dvals[i]);
+    o->SetValues(vals);
+    da->SetObject(o);
+  }
+  const XCAFDimTolObjects_GeomToleranceType ttypes[2] = {XCAFDimTolObjects_GeomToleranceType_Flatness,
+                                                         XCAFDimTolObjects_GeomToleranceType_Perpendicularity};
+  const double                              tvals[2]  = {0.01, 0.05};
+  for (int i = 0; i < 2; i++)
+  {
+    TDF_Label         tl = t->AddGeomTolerance();
+    TDF_LabelSequence shapes;
+    shapes.Append(shape);
+    t->SetGeomTolerance(shapes, tl);
+    Handle(XCAFDoc_GeomTolerance) ta;
+    tl.FindAttribute(XCAFDoc_GeomTolerance::GetID(), ta);
+    Handle(XCAFDimTolObjects_GeomToleranceObject) o = new XCAFDimTolObjects_GeomToleranceObject();
+    o->SetTypeOfValue(XCAFDimTolObjects_GeomToleranceTypeValue_None);
+    o->SetMaterialRequirementModifier(XCAFDimTolObjects_GeomToleranceMatReqModif_None);
+    o->SetZoneModifier(XCAFDimTolObjects_GeomToleranceZoneModif_None);
+    o->SetValueOfZoneModifier(0.0);
+    o->SetMaxValueModifier(0.0);
+    o->SetType(ttypes[i]);
+    o->SetValue(tvals[i]);
+    ta->SetObject(o);
+  }
+  const char* dnames[2] = {"A", "B"};
+  for (int i = 0; i < 2; i++)
+  {
+    TDF_Label             dat = t->AddDatum();
+    Handle(XCAFDoc_Datum) da;
+    dat.FindAttribute(XCAFDoc_Datum::GetID(), da);
+    Handle(XCAFDimTolObjects_DatumObject) o = new XCAFDimTolObjects_DatumObject();
+    o->SetPosition(0);
+    o->SetModifierWithValue(XCAFDimTolObjects_DatumModifWithValue_None, 0.0);
+    o->SetName(new TCollection_HAsciiString(dnames[i]));
+    da->SetObject(o);
+  }
+  TDF_LabelSequence dl, tl, xl;
+  t->GetDimensionLabels(dl);
+  t->GetGeomToleranceLabels(tl);
+  t->GetDatumLabels(xl);
+  bool hasDiameter = false, hasPerp = false;
+  for (int i = 1; i <= dl.Length(); i++)
+  {
+    Handle(XCAFDoc_Dimension) da;
+    dl.Value(i).FindAttribute(XCAFDoc_Dimension::GetID(), da);
+    hasDiameter = hasDiameter || da->GetObject()->GetType() == XCAFDimTolObjects_DimensionType_Size_Diameter;
+  }
+  for (int i = 1; i <= tl.Length(); i++)
+  {
+    Handle(XCAFDoc_GeomTolerance) ta;
+    tl.Value(i).FindAttribute(XCAFDoc_GeomTolerance::GetID(), ta);
+    hasPerp = hasPerp || ta->GetObject()->GetType() == XCAFDimTolObjects_GeomToleranceType_Perpendicularity;
+  }
+  std::vector<std::string> names;
+  for (int i = 1; i <= xl.Length(); i++)
+  {
+    Handle(XCAFDoc_Datum) da;
+    xl.Value(i).FindAttribute(XCAFDoc_Datum::GetID(), da);
+    names.push_back(da->GetObject()->GetName()->ToCString());
+  }
+  std::sort(names.begin(), names.end());
+  printf("[45] dimensions=%d tolerances=%d datums=%d, has Size_Diameter=%s, has Perpendicularity=%s, sorted datum names=[", dl.Length(),
+         tl.Length(), xl.Length(), tf(hasDiameter), tf(hasPerp));
+  for (size_t i = 0; i < names.size(); i++)
+    printf("%s\"%s\"", i ? ", " : "", names[i].c_str());
+  printf("]\n");
+}
+
+// [43] [44] DocumentGDTTests.createTolerance / createDatum: the index the bridge returns for a new tolerance or datum is the
+// label count minus one (OCCTDocumentCreateGeomTolerance / OCCTDocumentCreateDatum), read back through the objects.
+static void gdtSingles()
+{
+  Handle(TDocStd_Application) app;
+  Handle(TDocStd_Document)    d = newDoc(app);
+  Handle(XCAFDoc_DimTolTool)  t = XCAFDoc_DocumentTool::DimTolTool(d->Main());
+  TDF_Label                   shape = XCAFDoc_DocumentTool::ShapeTool(d->Main())->AddShape(centredBox(10, 10, 10), false);
+  TDF_Label                   tl    = t->AddGeomTolerance();
+  TDF_LabelSequence           shapes;
+  shapes.Append(shape);
+  t->SetGeomTolerance(shapes, tl);
+  Handle(XCAFDoc_GeomTolerance) ta;
+  tl.FindAttribute(XCAFDoc_GeomTolerance::GetID(), ta);
+  Handle(XCAFDimTolObjects_GeomToleranceObject) to = new XCAFDimTolObjects_GeomToleranceObject();
+  to->SetTypeOfValue(XCAFDimTolObjects_GeomToleranceTypeValue_None);
+  to->SetMaterialRequirementModifier(XCAFDimTolObjects_GeomToleranceMatReqModif_None);
+  to->SetZoneModifier(XCAFDimTolObjects_GeomToleranceZoneModif_None);
+  to->SetValueOfZoneModifier(0.0);
+  to->SetMaxValueModifier(0.0);
+  to->SetType(XCAFDimTolObjects_GeomToleranceType_Flatness);
+  to->SetValue(0.01);
+  ta->SetObject(to);
+  TDF_LabelSequence tls;
+  t->GetGeomToleranceLabels(tls);
+  printf("[43] flatness 0.01: tolerance labels=%d (index of new = %d) GetType=%d (Flatness=%d) GetValue=%.17g\n", tls.Length(),
+         tls.Length() - 1, (int)ta->GetObject()->GetType(), (int)XCAFDimTolObjects_GeomToleranceType_Flatness, ta->GetObject()->GetValue());
+  TDF_Label             dat = t->AddDatum();
+  Handle(XCAFDoc_Datum) da;
+  dat.FindAttribute(XCAFDoc_Datum::GetID(), da);
+  Handle(XCAFDimTolObjects_DatumObject) dobj = new XCAFDimTolObjects_DatumObject();
+  dobj->SetPosition(0);
+  dobj->SetModifierWithValue(XCAFDimTolObjects_DatumModifWithValue_None, 0.0);
+  dobj->SetName(new TCollection_HAsciiString("A"));
+  da->SetObject(dobj);
+  TDF_LabelSequence dls;
+  t->GetDatumLabels(dls);
+  printf("[44] datum A: datum labels=%d (index of new = %d) GetName=\"%s\"\n", dls.Length(), dls.Length() - 1,
+         da->GetObject()->GetName()->ToCString());
+}
+
 int main()
 {
   textLabel();
@@ -226,5 +413,8 @@ int main()
   iFunction();
   freshLabelAttrs();
   roughnessFallback();
+  stepIdentity();
+  gdtAuthoring();
+  gdtSingles();
   return 0;
 }

@@ -5,7 +5,7 @@
     "bridge_output": {
       "type": "label",
       "data": {
-        "free_shapes": 1,
+        "root_nodes_non_empty": true,
         "recovered_label_id_equals_original": true,
         "name_equal": true
       }
@@ -13,11 +13,9 @@
     "kernel_output": {
       "type": "label",
       "data": {
-        "free_shapes": 1,
-        "root_entry": "0:1:1:1",
-        "root_is_null": false,
-        "refetched_root_is_equal": true,
-        "name": "Open CASCADE STEP translator 8.0 1"
+        "root_nodes_non_empty": true,
+        "recovered_label_id_equals_original": true,
+        "name_equal": true
       }
     },
     "comparison": {
@@ -25,7 +23,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-assembly-node-identity/"
+    "source": "Same quantities on both sides. Bridge: after a STEP round trip of a box the test observed rootNodes non-empty, Document.node(at: original.labelId) returning a node with the same labelId, and equal names. A labelId is the bridge's registry handle for a TDF_Label, so 'the same labelId' is 'the same label' at kernel level. Kernel: STEPCAFControl_Reader (the modes OCCTDocumentLoadSTEP sets) gives 1 free shape; fetching the free shapes again returns a root that IsEqual the first, and both read the name \"Open CASCADE STEP translator 8.0 1\". Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [16].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "AssemblyNode public labelId + Document.node(at:) round-trip::Document.node(at:) returns nil for a nonexistent labelId",
@@ -37,16 +36,17 @@
       }
     },
     "kernel_output": {
-      "type": "count",
+      "type": "n/a",
       "data": {
-        "fresh_doc_free_shapes": 0
+        "reason": "labelIds are indices into the bridge's own registry vector; no OCCT call resolves an id, and Int64.max is not in it"
       }
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS",
+    "status": "N/A",
+    "source": "No kernel counterpart. A labelId is an index into the bridge's own registry of TDF_Labels (OCCTDocumentLabelIsNull checks that registry), so 'no label is registered for Int64.max' is bridge state. OCCT has no label ids to ask. The shared probe's fresh-document free-shape count of 0 measured a different thing.",
     "probe": "Scripts/repro/766-xcaf-assembly-node-identity/"
   },
   {
@@ -59,17 +59,17 @@
       }
     },
     "kernel_output": {
-      "type": "label",
+      "type": "n/a",
       "data": {
-        "free_shapes": 1,
-        "root_entry": "0:1:1:1"
+        "reason": "labelId 0 is the first entry the bridge registers from its free-shape walk; OCCT has no label ids"
       }
     },
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS",
+    "status": "N/A",
+    "source": "No kernel counterpart. That node(at: 0) resolves with labelId 0 on a freshly loaded document is the bridge's own registry warm-up (issue #95): OCCTDocumentGetRootLabelId registers each free-shape label and hands out its index. The kernel side of that walk, one free shape at 0:1:1:1, is measured under the round-trip record, but the id 0 itself is bridge state.",
     "probe": "Scripts/repro/766-xcaf-assembly-node-identity/"
   },
   {
@@ -84,7 +84,6 @@
     "kernel_output": {
       "type": "count",
       "data": {
-        "has_tree_node": false,
         "count": 0
       }
     },
@@ -93,6 +92,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: child node count for tag 400 of a fresh document. Bridge: childNodeCount(tag: 400) was 0. Kernel: the label has no default TreeNode attribute, so no iterator is built and the count is 0 (has_tree_node false is the reason, not a compared value). Kernel value: Scripts/repro/766-xcaf-child-node-iterator/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-child-node-iterator/"
   },
   {
@@ -107,8 +107,7 @@
     "kernel_output": {
       "type": "label",
       "data": {
-        "added_null": false,
-        "found_is_equal_added": true
+        "found_equals_added": true
       }
     },
     "comparison": {
@@ -116,6 +115,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether FindColor returns the label AddColor made. Bridge: colorToolFindColor equalled the tag colorToolAddColor returned. Kernel: 'addAndFindColor: added null=false found IsEqual added=true' (added_null is the precondition, not a compared value). Kernel value: Scripts/repro/766-xcaf-color-tool-completions/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-color-tool-completions/"
   },
   {
@@ -130,8 +130,7 @@
     "kernel_output": {
       "type": "count",
       "data": {
-        "before": 0,
-        "after": 1
+        "after_minus_before": 1
       }
     },
     "comparison": {
@@ -139,6 +138,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: how much the colour count grew after one AddColor. Bridge: after == before + 1 (recorded as 1). Kernel: 'colorCount: before=0 after=1', so after - before is 1. Kernel value: Scripts/repro/766-xcaf-color-tool-completions/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-color-tool-completions/"
   },
   {
@@ -153,8 +153,7 @@
     "kernel_output": {
       "type": "count",
       "data": {
-        "before": 1,
-        "after": 0
+        "before_minus_after": 1
       }
     },
     "comparison": {
@@ -162,6 +161,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: how much the colour count shrank after RemoveColor. Bridge: after == before - 1 (recorded as 1). Kernel: 'removeColor: before=1 after=0', so before - after is 1. Kernel value: Scripts/repro/766-xcaf-color-tool-completions/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-color-tool-completions/"
   },
   {
@@ -224,8 +224,7 @@
           1.0,
           0.0,
           0.0
-        ],
-        "tolerance": 0.01
+        ]
       }
     },
     "kernel_output": {
@@ -243,6 +242,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the label colour, compared within the test's 0.01. Bridge: color.red, green and blue were within 0.01 of 1, 0 and 0 after setColor. Kernel: 'setLabelColor: GetColor(Gen)=true rgb=(1.000000, 0.000000, 0.000000)' after SetColor(Gen), printed at %.6f, and 'before GetColor(Gen)=false'. Kernel value: Scripts/repro/766-xcaf-document-color-material/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-color-material/"
   },
   {
@@ -255,8 +255,7 @@
           0.5,
           0.25,
           0.75
-        ],
-        "tolerance": 1e-06
+        ]
       }
     },
     "kernel_output": {
@@ -266,11 +265,6 @@
           0.5,
           0.25,
           0.75
-        ],
-        "srgb_defect_readback": [
-          0.214041,
-          0.050876,
-          0.522522
         ]
       }
     },
@@ -279,6 +273,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the XCAFDoc_Color attribute rgb after a set and get, compared within the test's 1e-6. Bridge: readBack red, green and blue were within 1e-6 of 0.5, 0.25 and 0.75. Kernel: 'colorAttr TOC_RGB: set null=false read=(0.500000, 0.250000, 0.750000)'. The same probe shows the #1508 defect the test guards, the colour built as Quantity_TOC_sRGB reading back (0.214041, 0.050876, 0.522522); that is a separate measurement and is not carried in kernel_output. Kernel value: Scripts/repro/766-xcaf-document-color-material/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-color-material/"
   },
   {
@@ -292,8 +287,7 @@
           0.25,
           0.75,
           0.4
-        ],
-        "tolerance": 1e-06
+        ]
       }
     },
     "kernel_output": {
@@ -312,6 +306,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the XCAFDoc_Color attribute rgba after a set and get, compared within the test's 1e-6. Bridge: readBack red, green, blue and alpha were within 1e-6 of 0.5, 0.25, 0.75 and 0.4. Kernel: 'colorRGBAAttr: read=(0.500000, 0.250000, 0.750000, 0.400000)' at %.6f. Kernel value: Scripts/repro/766-xcaf-document-color-material/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-color-material/"
   },
   {
@@ -321,16 +316,14 @@
       "type": "material",
       "data": {
         "metallic": 0.9,
-        "roughness": 0.3,
-        "tolerance": 0.01
+        "roughness": 0.3
       }
     },
     "kernel_output": {
       "type": "material",
       "data": {
         "metallic": 0.9,
-        "roughness": 0.3,
-        "has_pbr": true
+        "roughness": 0.3
       }
     },
     "comparison": {
@@ -338,6 +331,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: metallic and roughness after a material set and get, compared within the test's 0.01. Bridge: readMat.metallic and roughness were within 0.01 of 0.9 and 0.3. Kernel: 'material: found=true hasPbr=true metallic=0.900000 roughness=0.300000' (hasPbr is a precondition, not a compared value). Kernel value: Scripts/repro/766-xcaf-document-color-material/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-color-material/"
   },
   {
@@ -346,13 +340,13 @@
     "bridge_output": {
       "type": "count",
       "data": {
-        "count_at_least": 1
+        "count_at_least_1": true
       }
     },
     "kernel_output": {
       "type": "count",
       "data": {
-        "leaf_nodes": 1
+        "count_at_least_1": true
       }
     },
     "comparison": {
@@ -360,6 +354,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether the explorer holds at least one leaf. Bridge: explorerNodeCount >= 1 for a box added with the default makeAssembly. Kernel: 'leaf node count=1' from XCAFPrs_DocumentExplorer over the same document, so at least 1 holds. Kernel value: Scripts/repro/766-xcaf-document-explorer/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-explorer/"
   },
   {
@@ -374,7 +369,7 @@
     "kernel_output": {
       "type": "shape",
       "data": {
-        "non_null": true
+        "non_nil": true
       }
     },
     "comparison": {
@@ -382,6 +377,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether leaf 0 has a shape. Bridge: explorerShape(at: 0) was non-nil. Kernel: 'node[0] shape non-null=true'. Kernel value: Scripts/repro/766-xcaf-document-explorer/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-explorer/"
   },
   {
@@ -396,7 +392,7 @@
     "kernel_output": {
       "type": "string",
       "data": {
-        "path_id": "0:1:1:1."
+        "non_nil": true
       }
     },
     "comparison": {
@@ -404,6 +400,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether leaf 0 has a path id. Bridge: explorerPathId(at: 0) was non-nil. Kernel: 'node[0] path id=\"0:1:1:1.\"', a non-empty string, so non_nil is true (the id text itself is not compared, the test asserts only non-nil). Kernel value: Scripts/repro/766-xcaf-document-explorer/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-explorer/"
   },
   {
@@ -418,8 +415,7 @@
     "kernel_output": {
       "type": "shape",
       "data": {
-        "non_null": true,
-        "shape_type": "TopAbs_SOLID (2)"
+        "non_nil": true
       }
     },
     "comparison": {
@@ -427,6 +423,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether the path id resolves to a shape. Bridge: explorerFindShape(pathId:) was non-nil. Kernel: 'FindShapeFromPathId non-null=true type=2' (a solid; the type is not asserted by the test, so it is not compared). Kernel value: Scripts/repro/766-xcaf-document-explorer/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-explorer/"
   },
   {
@@ -481,16 +478,15 @@
     "bridge_output": {
       "type": "graph",
       "data": {
-        "faces": 6,
-        "vertices": 8
+        "face_count_preserved": true,
+        "vertex_count_preserved": true
       }
     },
     "kernel_output": {
       "type": "graph",
       "data": {
-        "faces": 6,
-        "edges": 12,
-        "vertices": 8
+        "face_count_preserved": true,
+        "vertex_count_preserved": true
       }
     },
     "comparison": {
@@ -498,6 +494,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: whether a graph rebuilt from the BREP text keeps the face and vertex counts. Bridge: restored.faceCount == graph.faceCount and restored.vertexCount == graph.vertexCount (the attribute half of the test is a pure Swift store). Kernel: a box and the same box read back from its BREP text give faces 6 and 6, vertices 8 and 8 ('g1 faces=6 edges=12 vertices=8', 'g2 faces=6 edges=12 vertices=8'). Kernel value: Scripts/repro/766-xcaf-brepgraph-attribute/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
   },
   {
@@ -529,16 +526,15 @@
     "bridge_output": {
       "type": "points",
       "data": {
-        "max_distance_lt": 1e-09
+        "counts_equal": true,
+        "max_vertex_distance_lt_1e_9": true
       }
     },
     "kernel_output": {
       "type": "points",
       "data": {
-        "faces": 6,
-        "edges": 12,
-        "vertices": 8,
-        "max_vertex_distance": 0.0
+        "counts_equal": true,
+        "max_vertex_distance_lt_1e_9": true
       }
     },
     "comparison": {
@@ -546,6 +542,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: whether two graphs of the same BREP have equal face, edge and vertex counts, and every vertex index lands within 1e-9 of the same point. Bridge: the three count equalities and abs(p1 - p2) < 1e-9 per axis for every vertex. Kernel: 6, 12, 8 on both builds, and 'max vertex distance across rebuild=0', so the bound holds. Kernel value: Scripts/repro/766-xcaf-brepgraph-attribute/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
   },
   {
@@ -575,15 +572,15 @@
     "test_name": "BRepGraph Attributes::invalidBREPThrows",
     "bridge_function": "OCCTShapeFromBREPString",
     "bridge_output": {
-      "type": "error",
+      "type": "value",
       "data": {
-        "thrown": "invalidBREP"
+        "brep_parse_rejected": true
       }
     },
     "kernel_output": {
-      "type": "shape",
+      "type": "value",
       "data": {
-        "read_is_null": true
+        "brep_parse_rejected": true
       }
     },
     "comparison": {
@@ -591,6 +588,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether the text \"not a brep\" is rejected as a BREP. Bridge: BRepGraph(snapshot:) threw GraphSnapshotError, which it does when Shape.fromBREPString returns nil for that text (the throw is the Swift consequence of the rejected parse). Kernel: 'BRepTools::Read(\"not a brep\") null=true', the shape stays null. Kernel value: Scripts/repro/766-xcaf-brepgraph-attribute/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-brepgraph-attribute/"
   },
   {
@@ -599,13 +597,13 @@
     "bridge_output": {
       "type": "bool",
       "data": {
-        "ok": true
+        "expression_set": true
       }
     },
     "kernel_output": {
       "type": "bool",
       "data": {
-        "set_is_null": false
+        "expression_set": true
       }
     },
     "comparison": {
@@ -613,6 +611,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether an expression attribute was set on the label. Bridge: setExpression(at: 1) returned true. Kernel: 'Expression::Set null=false', a non-null TDataStd_Expression. Kernel value: Scripts/repro/766-xcaf-driver-table-expression/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-driver-table-expression/"
   },
   {
@@ -649,7 +648,7 @@
     "kernel_output": {
       "type": "string",
       "data": {
-        "name": "a + b"
+        "non_nil": true
       }
     },
     "comparison": {
@@ -657,6 +656,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: whether the expression name can be read. Bridge: expressionName(at: 1) was non-nil after setExpressionString(\"a + b\"). Kernel: 'Name()=\"a + b\"', a readable name, so non_nil is true (the text is not asserted by the test). Kernel value: Scripts/repro/766-xcaf-driver-table-expression/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-driver-table-expression/"
   },
   {
@@ -665,32 +665,32 @@
     "bridge_output": {
       "type": "dimension",
       "data": {
-        "returned": false,
-        "bounds": "plusMinus(-0.3, 0.7)",
-        "value": 20.0
+        "value": 20.0,
+        "lower_tol": -0.3,
+        "upper_tol": 0.7,
+        "plus_minus": true
       }
     },
     "kernel_output": {
       "type": "dimension",
       "data": {
-        "before": [
-          20,
-          -0.3,
-          0.7
-        ],
-        "after_unguarded_write": {
-          "value": 10,
-          "lowerTol": 12,
-          "upperTol": 0.7,
-          "plusMinus": true
-        }
+        "value": 10.0,
+        "lower_tol": 12.0,
+        "upper_tol": 0.7,
+        "plus_minus": true
       }
     },
     "comparison": {
-      "equal": true,
-      "differences": []
+      "equal": false,
+      "differences": [
+        "value: the bridge leaves 20, the raw kernel call writes 10. SetLowerBound and SetUpperBound branch on the value array's length; on a length-3 plus/minus array they write in place, so the requested lower bound 10 lands in the value slot.",
+        "lower_tol: the bridge leaves -0.3, the raw kernel call writes 12 (the requested upper bound lands in the lower tolerance slot).",
+        "upper_tol and plus_minus are unchanged in both (0.7, true): the stale upper tolerance survives and the dimension stays plus/minus.",
+        "By design: OCCTDocumentSetDimensionBounds refuses a plus/minus dimension before writing (returning false), so the corrupting kernel write never happens. The divergence is the guard the test pins."
+      ]
     },
-    "status": "PASS",
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides: the dimension's value, tolerances and plus/minus flag after setDimensionBounds(10, 12) on a plus/minus dimension (20, -0.3, +0.7). Bridge: the call returned false and the dimension read back value 20 with bounds plusMinus(-0.3, 0.7). Kernel, the same calls without the bridge's guard: 'plus/minus after SetLower/UpperBound(10, 12) (bridge refuses before this): plusMinus=true value=10 lowerTol=12 upperTol=0.7', the corruption the refusal prevents. Kernel value: Scripts/repro/766-xcaf-document-gdt/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-gdt/"
   },
   {
@@ -699,17 +699,17 @@
     "bridge_output": {
       "type": "dimension",
       "data": {
-        "returned": true,
-        "bounds": "range(10, 12)"
+        "range": true,
+        "lower": 10.0,
+        "upper": 12.0
       }
     },
     "kernel_output": {
       "type": "dimension",
       "data": {
         "range": true,
-        "lower": 10,
-        "upper": 12,
-        "value": 11
+        "lower": 10.0,
+        "upper": 12.0
       }
     },
     "comparison": {
@@ -717,6 +717,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides: whether the dimension is a range, and its bounds. Bridge: setDimensionBounds(10, 12) returned true and dim.bounds == .range(lower: 10, upper: 12). Kernel: 'simple after SetLower/UpperBound(10, 12): range=true ... lower=10 upper=12' (the kernel's value 11 is not asserted by the test). Kernel value: Scripts/repro/766-xcaf-document-gdt/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-gdt/"
   },
   {
@@ -726,22 +727,24 @@
       "type": "dimension",
       "data": {
         "index": 0,
-        "count": 1,
-        "type": "sizeRadius",
+        "dimension_count": 1,
+        "type_ordinal": 17,
         "value": 25.0,
-        "lowerTol": -0.1,
-        "upperTol": 0.1
+        "lower_tol": -0.1,
+        "upper_tol": 0.1,
+        "plus_minus": true
       }
     },
     "kernel_output": {
       "type": "dimension",
       "data": {
-        "labels": 1,
+        "index": 0,
+        "dimension_count": 1,
         "type_ordinal": 17,
-        "value": 25,
-        "lowerTol": -0.1,
-        "upperTol": 0.1,
-        "plusMinus": true
+        "value": 25.0,
+        "lower_tol": -0.1,
+        "upper_tol": 0.1,
+        "plus_minus": true
       }
     },
     "comparison": {
@@ -749,6 +752,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantities on both sides. Bridge: createDimension returned index 0, dimensionCount was 1, dim.type was .sizeRadius (Swift raw value 17, the kernel ordinal), the value and both tolerances matched 25, -0.1 and 0.1 within 1e-9, and the bounds were plusMinus. Kernel: 'dimension labels=1 (index of new = 0)', 'radius type ordinal=17', and 'radius 25 -0.1/+0.1: plusMinus=true value=25 lowerTol=-0.1 upperTol=0.1' (printed with %g). Kernel value: Scripts/repro/766-xcaf-document-gdt/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-gdt/"
   },
   {
@@ -758,13 +762,15 @@
       "type": "tolerance",
       "data": {
         "index": 0,
-        "type": "flatness",
+        "type_ordinal": 7,
         "value": 0.01
       }
     },
     "kernel_output": {
       "type": "tolerance",
       "data": {
+        "index": 0,
+        "type_ordinal": 7,
         "value": 0.01
       }
     },
@@ -773,7 +779,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-gdt-tolerance-datum-accessor/"
+    "source": "Same quantities on both sides. Bridge: createGeomTolerance returned index 0, tol.type was .flatness (Swift raw value 7, the kernel ordinal) and the value was within 1e-9 of 0.01. Kernel: the same object set on an XCAFDoc_GeomTolerance gives 'tolerance labels=1 (index of new = 0) GetType=7 (Flatness=7) GetValue=0.01' at %.17g. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [43].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "v0.140 Document GD&T write path::Create datum A",
@@ -788,6 +795,7 @@
     "kernel_output": {
       "type": "datum",
       "data": {
+        "index": 0,
         "name": "A"
       }
     },
@@ -796,7 +804,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-document-gdt/"
+    "source": "Same quantities on both sides. Bridge: createDatum(name: \"A\") returned index 0 and datum(at: 0).name was \"A\". Kernel: after AddDatum and SetObject with the name 'datum labels=1 (index of new = 0) GetName=\"A\"'. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [44].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "v0.140 Document GD&T write path::Full authoring: box + 3 dimensions + 2 tolerances + 2 datums",
@@ -804,8 +813,12 @@
     "bridge_output": {
       "type": "counts",
       "data": {
-        "datums": 2,
-        "names": [
+        "dimension_count": 3,
+        "tolerance_count": 2,
+        "datum_count": 2,
+        "has_size_diameter": true,
+        "has_perpendicularity": true,
+        "datum_names": [
           "A",
           "B"
         ]
@@ -814,7 +827,15 @@
     "kernel_output": {
       "type": "counts",
       "data": {
-        "datum_labels_after_two": 2
+        "dimension_count": 3,
+        "tolerance_count": 2,
+        "datum_count": 2,
+        "has_size_diameter": true,
+        "has_perpendicularity": true,
+        "datum_names": [
+          "A",
+          "B"
+        ]
       }
     },
     "comparison": {
@@ -822,7 +843,8 @@
       "differences": []
     },
     "status": "PASS",
-    "probe": "Scripts/repro/766-xcaf-document-gdt/"
+    "source": "Same quantities on both sides, after authoring 3 dimensions (diameter 10, linear distance 50, radius 5), 2 tolerances (flatness, perpendicularity) and 2 datums (A, B) on one box. Bridge: dimensionCount 3, geomToleranceCount 2, datumCount 2, a diameter among the dimension types, a perpendicularity among the tolerance types, and the sorted datum names [A, B]. Kernel: 'dimensions=3 tolerances=2 datums=2, has Size_Diameter=true, has Perpendicularity=true, sorted datum names=[\"A\", \"B\"]'. Kernel value: Scripts/repro/766-xcaf-evidence-fix/transcript.txt, line tagged [45].",
+    "probe": "Scripts/repro/766-xcaf-evidence-fix/"
   },
   {
     "test_name": "v0.140 Document GD&T write path::DimensionType enum covers all 32 cases",
@@ -836,8 +858,7 @@
     "kernel_output": {
       "type": "count",
       "data": {
-        "cases": 32,
-        "last": "XCAFDimTolObjects_DimensionType_DimensionPresentation"
+        "cases": 32
       }
     },
     "comparison": {
@@ -845,6 +866,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the number of dimension types. Bridge: Document.DimensionType.allCases.count was 32. Kernel: 'XCAFDimTolObjects_DimensionType cases=32', the last enumerator DimensionPresentation (31) plus 1. Kernel value: Scripts/repro/766-xcaf-document-gdt/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-gdt/"
   },
   {
@@ -859,8 +881,7 @@
     "kernel_output": {
       "type": "count",
       "data": {
-        "cases": 16,
-        "last": "XCAFDimTolObjects_GeomToleranceType_TotalRunout"
+        "cases": 16
       }
     },
     "comparison": {
@@ -868,6 +889,7 @@
       "differences": []
     },
     "status": "PASS",
+    "source": "Same quantity on both sides: the number of geometric tolerance types. Bridge: Document.GeomToleranceType.allCases.count was 16. Kernel: 'XCAFDimTolObjects_GeomToleranceType cases=16', the last enumerator TotalRunout (15) plus 1. Kernel value: Scripts/repro/766-xcaf-document-gdt/transcript.txt.",
     "probe": "Scripts/repro/766-xcaf-document-gdt/"
   },
   {
