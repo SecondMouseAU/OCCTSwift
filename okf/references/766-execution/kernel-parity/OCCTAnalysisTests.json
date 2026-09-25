@@ -5938,7 +5938,12 @@
     },
     "status": "PASS",
     "probe": "Scripts/repro/766-gprop-element/",
-    "source": "Same quantity on both sides: area. Bridge: GeometryProperties.sphereSurfaceArea(radius: 5) through OCCTGPropSphereSurface; a temporary print observed 314.1592653589793. Kernel: GProp_SelGProps on the same gp_Sphere over the full sphere printed 'sphereSurfaceArea: area=314.15926535897933' (transcript.txt). The bridge and kernel values are the same doubles; the test asserts them only to within 0.1, which is a tolerance on the assertion and not part of either measurement."
+    "source": "Same quantity on both sides: area. Bridge: GeometryProperties.sphereSurfaceArea(radius: 5) through OCCTGPropSphereSurface; a temporary print observed 314.1592653589793. Kernel: GProp_SelGProps on the same gp_Sphere over the full sphere printed 'sphereSurfaceArea: area=314.15926535897933' (transcript.txt). The bridge and kernel values are the same doubles; the test asserts them to within 1e-9 relative (it was an absolute 0.1, 3e-4 relative, which passed a area scaled by 1.000001), a tolerance on the assertion and not part of either measurement.",
+    "test_file": "Tests/OCCTAnalysisTests/GPropElementTests.swift",
+    "injection": "area x 1.000001 (OCCTGPropSphereSurface returns props.Mass() * 1.000001)",
+    "red": "GPropElementTests.swift:42 abs(area - expected) < 1e-9 * expected",
+    "green": "passed",
+    "note": "REWRITTEN: tolerance was an absolute 0.1 (3e-4 relative) and stayed green under a area scaled by 1.000001; now 1e-9 relative, red under the same injection"
   },
   {
     "test_name": "GProp Element Properties Tests::sphereVolume",
@@ -5961,7 +5966,12 @@
     },
     "status": "PASS",
     "probe": "Scripts/repro/766-gprop-element/",
-    "source": "Same quantity on both sides: volume. Bridge: GeometryProperties.sphereVolume(radius: 5) through OCCTGPropSphereVolume; a temporary print observed 523.5987755982989. Kernel: GProp_VelGProps on the same gp_Sphere over the full sphere printed 'sphereVolume: volume=523.59877559829886' (transcript.txt). The bridge and kernel values are the same doubles; the test asserts them only to within 0.5, which is a tolerance on the assertion and not part of either measurement."
+    "source": "Same quantity on both sides: volume. Bridge: GeometryProperties.sphereVolume(radius: 5) through OCCTGPropSphereVolume; a temporary print observed 523.5987755982989. Kernel: GProp_VelGProps on the same gp_Sphere over the full sphere printed 'sphereVolume: volume=523.59877559829886' (transcript.txt). The bridge and kernel values are the same doubles; the test asserts them to within 1e-9 relative (it was an absolute 0.5, 1e-3 relative, which passed a volume scaled by 1.000001), a tolerance on the assertion and not part of either measurement.",
+    "test_file": "Tests/OCCTAnalysisTests/GPropElementTests.swift",
+    "injection": "volume x 1.000001 (OCCTGPropSphereVolume returns props.Mass() * 1.000001)",
+    "red": "GPropElementTests.swift:50 abs(vol - expected) < 1e-9 * expected",
+    "green": "passed",
+    "note": "REWRITTEN: tolerance was an absolute 0.5 (1e-3 relative) and stayed green under a volume scaled by 1.000001; now 1e-9 relative, red under the same injection"
   },
   {
     "test_name": "GProp Weighted Tests::weightedCentroidLengthMismatchIsRejected",

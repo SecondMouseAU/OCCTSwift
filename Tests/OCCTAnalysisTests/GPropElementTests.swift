@@ -37,12 +37,16 @@ struct GPropElementTests {
     @Test func sphereSurfaceArea() {
         let area = GeometryProperties.sphereSurfaceArea(radius: 5.0)
         let expected = 4.0 * Double.pi * 25.0
-        #expect(abs(area - expected) < 0.1)
+        // Relative 1e-9, not the absolute 0.1 this used (3e-4 relative): the kernel agrees with
+        // 4 pi r^2 to within one ulp, and 0.1 passed an area scaled by 1.000001 (#766).
+        #expect(abs(area - expected) < 1e-9 * expected, "area \(area) vs \(expected)")
     }
 
     @Test func sphereVolume() {
         let vol = GeometryProperties.sphereVolume(radius: 5.0)
         let expected = (4.0 / 3.0) * Double.pi * 125.0
-        #expect(abs(vol - expected) < 0.5)
+        // Relative 1e-9, not the absolute 0.5 this used (1e-3 relative): the kernel agrees with
+        // 4/3 pi r^3 to within one ulp, and 0.5 passed a volume scaled by 1.000001 (#766).
+        #expect(abs(vol - expected) < 1e-9 * expected, "volume \(vol) vs \(expected)")
     }
 }

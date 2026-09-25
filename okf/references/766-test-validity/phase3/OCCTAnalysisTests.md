@@ -484,8 +484,8 @@
 | lineSegmentLength | OCCTGPropLineSegment | GProp_CelGProps line | length + 1, centre x + 1 | ✅ | ✅ |  |
 | circularArcLength | OCCTGPropCircularArc | GProp_CelGProps circle | arc length * 2 | ✅ | ✅ |  |
 | pointSetCentroid | OCCTGPropPointSetCentroid | GProp_PGProps | mass + 1, centroid x + 1 | ✅ | ✅ |  |
-| sphereSurfaceArea | OCCTGPropSphereSurface | GProp_SelGProps sphere | area * 2 | ✅ | ✅ |  |
-| sphereVolume | OCCTGPropSphereVolume | GProp_VelGProps sphere | volume * 2 | ✅ | ✅ |  |
+| sphereSurfaceArea | OCCTGPropSphereSurface | GProp_SelGProps sphere | area * 2; area * 1.000001 | ✅ | ✅ | Rewritten: the absolute 0.1 tolerance (3e-4 relative) stayed green under area * 1.000001; now 1e-9 relative. Red at GPropElementTests.swift:42 |
+| sphereVolume | OCCTGPropSphereVolume | GProp_VelGProps sphere | volume * 2; volume * 1.000001 | ✅ | ✅ | Rewritten: the absolute 0.5 tolerance (1e-3 relative) stayed green under volume * 1.000001; now 1e-9 relative. Red at GPropElementTests.swift:50 |
 | weightedCentroidLengthMismatchIsRejected | GeometryProperties.weightedCentroid (Swift guard; OCCTGPropPointSetWeightedCentroid not reached) | Weighted centroid length contract | accept extra weights / truncate to the shorter array | ✅ | ✅ |  |
 
 ---
