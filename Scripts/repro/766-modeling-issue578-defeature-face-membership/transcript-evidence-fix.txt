@@ -1,0 +1,24 @@
+fixture: faces=7 filletIndex=2 volume=7982.8318530717943
+t1 [fillet]: produced=1 faces=6 volume=7999.9999999999982
+t1 [fillet, foreign]: produced=1 faces=6 volume=7999.9999999999982
+t1 [foreign, fillet]: produced=1 faces=6 volume=7999.9999999999982
+t1 [foreign]: produced=0
+t2 compound(fillet, foreign): produced=1 faces=6 volume=7999.9999999999982
+t2 compound(fillet): produced=1 faces=6 volume=7999.9999999999982
+t3 twin: faces=7 twinFilletIsSameAsA=0
+t3 [twin fillet]: produced=0
+t3 [fillet, twin fillet]: produced=1 faces=6 volume=7999.9999999999982
+t3 [fillet]: produced=1 faces=6 volume=7999.9999999999982
+t4 [edge]: produced=0
+t4 [fillet, edge]: produced=1 faces=6 volume=7999.9999999999982
+t4 [fillet, vertex]: produced=1 faces=6 volume=7999.9999999999982
+t5 [fillet reversed]: produced=1 faces=6 volume=7999.9999999999982
+t5 [fillet]: produced=1 faces=6 volume=7999.9999999999982
+t5 reversed IsSame=1 IsEqual=0
+t6 input: faces=7 volume=7982.8318530717943
+t6 [solid]: produced=1 faces=7 volume=7982.8318530717943
+t6 [shell]: produced=1 faces=7 volume=7982.8318530717943
+t7 byIndexGhost: plain box, [face 0]: produced=1 faces=6 volume=7999.9999999999982
+t7 byShapeForeign [fillet, foreign]: produced=1 faces=6 volume=7999.9999999999982
+t7 byShape [fillet]: produced=1 faces=6 volume=7999.9999999999982
+t7 byIndex [face filletIndex]: produced=1 faces=6 volume=7999.9999999999982

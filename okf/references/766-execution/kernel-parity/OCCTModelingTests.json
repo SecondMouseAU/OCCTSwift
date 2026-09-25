@@ -2,9 +2,18 @@
   {
     "test_name": "Modeling domain kernel parity",
     "bridge_function": "OCCTModelingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
   },
   {
@@ -406,5 +415,368 @@
       "differences": []
     },
     "status": "N/A"
+  },
+  {
+    "test_name": "Issue 578: which faces defeaturing will accept::foreignFaceInMixedRequestFails",
+    "bridge_function": "OCCTShapeDefeature",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "[fillet]": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        },
+        "[fillet, foreign]": {
+          "produced": false,
+          "faces": null,
+          "volume": null
+        },
+        "[foreign, fillet]": {
+          "produced": false,
+          "faces": null,
+          "volume": null
+        },
+        "[foreign]": {
+          "produced": false,
+          "faces": null,
+          "volume": null
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "[fillet]": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        },
+        "[fillet, foreign]": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        },
+        "[foreign, fillet]": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        },
+        "[foreign]": {
+          "produced": false,
+          "faces": null,
+          "volume": null
+        }
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE (#578): the bridge fails a request that names a face this shape does not have, in either order, and returns nil. The kernel ignores the foreign face (BRepAlgoAPI_Defeaturing.hxx: faces that do not belong are ignored), so [fillet, foreign] and [foreign, fillet] both succeed and remove the real face, 6 faces, with no warning: the silent half-success the refusal exists to prevent.",
+        "[fillet] alone agrees (6 faces, volume 7999.9999999999982) and [foreign] alone agrees (no shape: the kernel has nothing to remove)."
+      ]
+    },
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, per request: whether a shape came back, its face count and its volume, for the 20 mm box with one edge filleted (7 faces, volume 7982.8318530717943). Bridge values are what the test observed, read from a temporary print of the shape each request returned (run once and reverted, not committed; volume at %.17g). Kernel values are from Scripts/repro/766-modeling-issue578-defeature-face-membership/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which hands BRepAlgoAPI_Defeaturing (SetShape, AddFacesToRemove, Build; a result only when IsDone and the shape is not null, as occtDefeaturePerform) the faces each request explodes to, the way the bridge would with its #578 membership check absent. Requests: the fillet face, the fillet face with a face of an 11 mm box, the two in the other order, and the foreign face alone.",
+    "probe": "Scripts/repro/766-modeling-issue578-defeature-face-membership/"
+  },
+  {
+    "test_name": "Issue 578: which faces defeaturing will accept::mixedCarrierFails",
+    "bridge_function": "OCCTShapeDefeature",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "compound(fillet, foreign)": {
+          "produced": false,
+          "faces": null,
+          "volume": null
+        },
+        "compound(fillet)": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "compound(fillet, foreign)": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        },
+        "compound(fillet)": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        }
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE (#578): the bridge explodes each carrier and fails the call when any face it contributes is not this shape's, so a compound of the fillet face and a foreign face returns nil. The kernel explodes the same compound, ignores the foreign face and removes the real one (6 faces).",
+        "compound(fillet) agrees, and equals the bare fillet face's removal (6 faces, volume 7999.9999999999982)."
+      ]
+    },
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, per request: whether a shape came back, its face count and its volume, for the 20 mm box with one edge filleted (7 faces, volume 7982.8318530717943). Bridge values are what the test observed, read from a temporary print of the shape each request returned (run once and reverted, not committed; volume at %.17g). Kernel values are from Scripts/repro/766-modeling-issue578-defeature-face-membership/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which hands BRepAlgoAPI_Defeaturing (SetShape, AddFacesToRemove, Build; a result only when IsDone and the shape is not null, as occtDefeaturePerform) the faces each request explodes to, the way the bridge would with its #578 membership check absent. Requests: a compound of the fillet face and a foreign face, and a compound of the fillet face alone.",
+    "probe": "Scripts/repro/766-modeling-issue578-defeature-face-membership/"
+  },
+  {
+    "test_name": "Issue 578: which faces defeaturing will accept::membershipIsIdentityNotGeometry",
+    "bridge_function": "OCCTShapeDefeature",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "[twin fillet]": {
+          "produced": false,
+          "faces": null,
+          "volume": null
+        },
+        "[fillet, twin fillet]": {
+          "produced": false,
+          "faces": null,
+          "volume": null
+        },
+        "[fillet]": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "[twin fillet]": {
+          "produced": false,
+          "faces": null,
+          "volume": null
+        },
+        "[fillet, twin fillet]": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        },
+        "[fillet]": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        }
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE (#578): membership is identity (IsSame), not geometry, so an identically built twin's fillet face is foreign. The bridge returns nil for [fillet, twin fillet]; the kernel ignores the twin's face and removes the real one (6 faces).",
+        "[twin fillet] alone agrees (no shape: the kernel finds no face of this shape to remove) and [fillet] agrees (6 faces, volume 7999.9999999999982)."
+      ]
+    },
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, per request: whether a shape came back, its face count and its volume, for the 20 mm box with one edge filleted (7 faces, volume 7982.8318530717943). Bridge values are what the test observed, read from a temporary print of the shape each request returned (run once and reverted, not committed; volume at %.17g). Kernel values are from Scripts/repro/766-modeling-issue578-defeature-face-membership/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which hands BRepAlgoAPI_Defeaturing (SetShape, AddFacesToRemove, Build; a result only when IsDone and the shape is not null, as occtDefeaturePerform) the faces each request explodes to, the way the bridge would with its #578 membership check absent. Requests: the twin's fillet face alone, this shape's fillet face with the twin's, and this shape's fillet face alone. The twin's face is not IsSame as this shape's (probe line t3 twin).",
+    "probe": "Scripts/repro/766-modeling-issue578-defeature-face-membership/"
+  },
+  {
+    "test_name": "Issue 578: which faces defeaturing will accept::elementWithNoFaceFails",
+    "bridge_function": "OCCTShapeDefeature",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "[edge]": {
+          "produced": false,
+          "faces": null,
+          "volume": null
+        },
+        "[fillet, edge]": {
+          "produced": false,
+          "faces": null,
+          "volume": null
+        },
+        "[fillet, vertex]": {
+          "produced": false,
+          "faces": null,
+          "volume": null
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "[edge]": {
+          "produced": false,
+          "faces": null,
+          "volume": null
+        },
+        "[fillet, edge]": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        },
+        "[fillet, vertex]": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        }
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE (#578): an element that carries no face names nothing to remove. The bridge returns nil for the fillet face with an edge and for the fillet face with a vertex; the kernel skips the edge or vertex and removes the fillet face (6 faces).",
+        "[edge] alone agrees (no shape: nothing to remove)."
+      ]
+    },
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, per request: whether a shape came back, its face count and its volume, for the 20 mm box with one edge filleted (7 faces, volume 7982.8318530717943). Bridge values are what the test observed, read from a temporary print of the shape each request returned (run once and reverted, not committed; volume at %.17g). Kernel values are from Scripts/repro/766-modeling-issue578-defeature-face-membership/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which hands BRepAlgoAPI_Defeaturing (SetShape, AddFacesToRemove, Build; a result only when IsDone and the shape is not null, as occtDefeaturePerform) the faces each request explodes to, the way the bridge would with its #578 membership check absent. Requests: an edge of the shape alone, the fillet face with that edge, and the fillet face with a vertex of the shape.",
+    "probe": "Scripts/repro/766-modeling-issue578-defeature-face-membership/"
+  },
+  {
+    "test_name": "Issue 578: which faces defeaturing will accept::reversedFaceStillBelongs",
+    "bridge_function": "OCCTShapeDefeature",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "[fillet reversed]": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        },
+        "[fillet]": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "[fillet reversed]": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        },
+        "[fillet]": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, per request: whether a shape came back, its face count and its volume, for the 20 mm box with one edge filleted (7 faces, volume 7982.8318530717943). Bridge values are what the test observed, read from a temporary print of the shape each request returned (run once and reverted, not committed; volume at %.17g). Kernel values are from Scripts/repro/766-modeling-issue578-defeature-face-membership/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which hands BRepAlgoAPI_Defeaturing (SetShape, AddFacesToRemove, Build; a result only when IsDone and the shape is not null, as occtDefeaturePerform) the faces each request explodes to, the way the bridge would with its #578 membership check absent. Requests: the fillet face reversed and the fillet face. The reversed face is IsSame and not IsEqual to the original (probe line t5), which is why the bridge's membership check accepts it; the test asserts the two removals are the same, and both sides agree.",
+    "probe": "Scripts/repro/766-modeling-issue578-defeature-face-membership/"
+  },
+  {
+    "test_name": "Issue 578: which faces defeaturing will accept::wholeShapeCarriersAreAccepted",
+    "bridge_function": "OCCTShapeDefeature",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "[solid]": {
+          "produced": true,
+          "faces": 7,
+          "volume": 7982.831853071794
+        },
+        "[shell]": {
+          "produced": true,
+          "faces": 7,
+          "volume": 7982.831853071794
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "[solid]": {
+          "produced": true,
+          "faces": 7,
+          "volume": 7982.831853071794
+        },
+        "[shell]": {
+          "produced": true,
+          "faces": 7,
+          "volume": 7982.831853071794
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, per request: whether a shape came back, its face count and its volume, for the 20 mm box with one edge filleted (7 faces, volume 7982.8318530717943). Bridge values are what the test observed, read from a temporary print of the shape each request returned (run once and reverted, not committed; volume at %.17g). Kernel values are from Scripts/repro/766-modeling-issue578-defeature-face-membership/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which hands BRepAlgoAPI_Defeaturing (SetShape, AddFacesToRemove, Build; a result only when IsDone and the shape is not null, as occtDefeaturePerform) the faces each request explodes to, the way the bridge would with its #578 membership check absent. Requests: the whole solid and its shell as face carriers. Naming every face removes nothing: both sides return the input, 7 faces and volume 7982.8318530717943.",
+    "probe": "Scripts/repro/766-modeling-issue578-defeature-face-membership/"
+  },
+  {
+    "test_name": "Issue 578: which faces defeaturing will accept::bothSpellingsRefuseAFaceThatDoesNotBelong",
+    "bridge_function": "OCCTShapeDefeature",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "byIndexGhost": {
+          "produced": false,
+          "faces": null,
+          "volume": null
+        },
+        "byShapeForeign": {
+          "produced": false,
+          "faces": null,
+          "volume": null
+        },
+        "byShape": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        },
+        "byIndex": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "byIndexGhost": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        },
+        "byShapeForeign": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        },
+        "byShape": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        },
+        "byIndex": {
+          "produced": true,
+          "faces": 6,
+          "volume": 7999.999999999998
+        }
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "EXPECTED_DIVERGENCE (#578): byIndexGhost: withoutFeatures(faces:) on the plain box with its first face and an index the plain box does not have returns nil (refused since #497). With the unresolvable index dropped the kernel removes the first face of the plain box and succeeds (6 faces, volume 7999.9999999999982).",
+        "byShapeForeign: defeature(faces:) with the fillet face and a foreign face returns nil; the kernel ignores the foreign face and removes the fillet face (6 faces).",
+        "byShape and byIndex agree, and are the same removal (6 faces, volume 7999.9999999999982)."
+      ]
+    },
+    "status": "EXPECTED_DIVERGENCE",
+    "source": "Same quantities on both sides, per request: whether a shape came back, its face count and its volume, for the 20 mm box with one edge filleted (7 faces, volume 7982.8318530717943). Bridge values are what the test observed, read from a temporary print of the shape each request returned (run once and reverted, not committed; volume at %.17g). Kernel values are from Scripts/repro/766-modeling-issue578-defeature-face-membership/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which hands BRepAlgoAPI_Defeaturing (SetShape, AddFacesToRemove, Build; a result only when IsDone and the shape is not null, as occtDefeaturePerform) the faces each request explodes to, the way the bridge would with its #578 membership check absent. Requests: the plain 20 mm box with [its first face, the last index of the filleted box]; the filleted box with [fillet face, foreign face]; and the fillet face addressed by shape and by index. For byIndexGhost the kernel request is the plain box's first face alone, what the request reduces to when the index the plain box does not have is dropped.",
+    "probe": "Scripts/repro/766-modeling-issue578-defeature-face-membership/"
   }
 ]
