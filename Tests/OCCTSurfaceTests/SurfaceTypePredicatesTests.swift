@@ -43,5 +43,8 @@ struct SurfaceTypePredicatesTests {
         }
         let c = s.continuityClass
         #expect(c == .cN || c == .c3 || c == .c2)
+        // #766: the kernel reports GeomAbs_CN for the cylinder; three accepted answers hid a
+        // wrong ordinal.
+        #expect(c == .cN)
     }
 }
