@@ -1,0 +1,6 @@
+distanceToPointOnPlane: 0
+distanceToPointAbovePlane: 7
+distanceToParallelLine: 5
+distanceToIntersectingLine: 0
+containsPointTrue: 1
+containsPointFalse: 0
