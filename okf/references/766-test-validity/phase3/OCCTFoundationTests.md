@@ -15,14 +15,8 @@
 | StepData_StepWriter AddString (patch 0009) | 22 | CR¹ |
 | Handle lifecycle tests | 20 | CR¹ |
 | Borrowed handles audit | 18 | CR¹ |
-| OSD Environment/Directory tests | 18 | WR² |
-| UnitsConversion tests | 16 | WR² |
-| ExtStringArray tests | 12 | WR² |
-| FontManager tests | 10 | WR² |
-| Color OCCT Operations | 8 | WR² |
-| Thread Safety: OCCTSerial | 6 | CR¹ |
 
-**Total**: 200 tests across ~11 suites
+**Total**: 130 tests across ~5 suites
 
 ¹ CR = Crash-Related (critical priority, kernel patches or bridge fixes preventing crashes)
 ² WR = Wrapper/Regression (wrapper behavior tests, non-crash functional validation)
@@ -73,13 +67,6 @@
 |------|-----------------|--------|-----------|------|--------|-------|
 | Foundation properties borrowed handle | Various properties views | Raw handle storage | Revert to `fileprivate let handle` |  |  | SIGSEGV (use-after-free) |
 
-### OSD Chronometer & Thread Safety
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| OCCTOSDChronometer precision | `OCCTOSDChronometer` | Wrong timing | Revert fix |  |  | Incorrect results |
-| OCCTSerial lock contention | `OCCTSerialLock` | Deadlock | Remove mutex |  |  | Hang |
-
 ---
 
 ## Progress Tracking
@@ -112,7 +99,7 @@ Probe: `Scripts/repro/766-issue1078-unicode-convert-length/` (`Resource_Unicode:
 | UnicodeUtils.convertFromUnicode at any length (#1078) | shortBufferReportsTheFullLength | `OCCTUnicodeConvertFromUnicode` | length-only query returns length + 1 | Issue1078UnicodeConvertLengthTests.swift:64 reported == len | passed (22/22 with the two sibling files) | MATCH |
 | UnicodeUtils.convertFromUnicode at any length (#1078) | malformedBufferArgumentsAreRefused | `OCCTUnicodeConvertFromUnicode` | negative maxSize returns the length, not -1 | Issue1078UnicodeConvertLengthTests.swift:80 OCCTUnicodeConvertFromUnicode("hello", &buffer, -1) == -1 | passed (22/22 with the two sibling files) | N/A: bridge-side argument validation (negative maxSize, null buffer with positive size, zero size), refused before any kernel conversion; no OCCT counterpart |
 | UnicodeUtils.convertFromUnicode at any length (#1078) | swiftAPIReturnsFullString | `OCCTUnicodeConvertFromUnicode` | UnicodeUtils.convertFromUnicode (Swift wrapper) caps the buffer at 4096 | Issue1078UnicodeConvertLengthTests.swift:93 r.count == Self.longString.count | passed (22/22 with the two sibling files) | MATCH |
-| UnicodeUtils.convertFromUnicode at any length (#1078) | swiftAPIRespectsMaxSize | `OCCTUnicodeConvertFromUnicode` | UnicodeUtils.convertFromUnicode (Swift wrapper) caps the buffer at 4096 | Issue1078UnicodeConvertLengthTests.swift:109 r.count <= 9 | passed (22/22 with the two sibling files) | MATCH |
+| UnicodeUtils.convertFromUnicode at any length (#1078) | swiftAPIRespectsMaxSize | `OCCTUnicodeConvertFromUnicode` | UnicodeUtils.convertFromUnicode (Swift wrapper) caps the buffer at 4096 | Issue1078UnicodeConvertLengthTests.swift:109 r.count <= 9 | passed (22/22 with the two sibling files) | N/A: the clamp to maxSize - 1 is done by the Swift wrapper and the bridge memcpy, not by OCCT |
 ### OCCTBridge_IO_OSDUtilities disk size/free/valid + Unicode UTF-8 (#1442), Issue1442DiskUnicodeOSDUtilitiesTests.swift, 6 tests
 Probe: `Scripts/repro/766-issue1442-disk-unicode/` (`OSD_Disk(const char*)` and `Resource_Unicode::ConvertFormatToUnicode`). Injections, applied together, restore the three #1442 defects: `OCCTDiskSize`/`OCCTDiskFree` return the raw 512-byte block count, `OCCTUnicodeConvertToUnicode` skips every code unit >= 0x80, `OCCTDiskIsValid` returns `Failed()` instead of `!Failed()`. Every test failed on the line listed. Disk figures are this machine's at probe time.
 | OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442) | diskSizeMatchesStatvfsInKB | `OCCTDiskSize` | return DiskSize() undivided (raw 512-byte blocks) | Issue1442DiskUnicodeOSDUtilitiesTests.swift:56 actual == expectedKB | passed (22/22 with the two sibling files) | MATCH |
@@ -179,11 +166,11 @@ Probe: `Scripts/repro/766-foundation-color-material/` (Quantity_Color / Quantity
 Probe: `Scripts/repro/766-foundation-material-date/` (Graphic3d_MaterialAspect, Graphic3d_PBRMaterial, Quantity_Date, Quantity_Period). Round 1 put one defect in each bridge function and turned 26 of these 27 red at once; `predefinedMaterialByIndexOutOfRange` needed its own round, because the out-of-range refusal it tests is the same line `allPredefinedMaterialsAccessible` relies on. Every test was red under the injection named and green after the revert.
 | Material OCCT Operations Tests | predefinedMaterialCount | `OCCTMaterialNumberOfMaterials` | NumberOfMaterials() + 1 (REWRITTEN: was `> 10`) | OCCTFoundationTests.swift:301 Material.predefinedMaterialCount == 24 | passed (84/84 in the nine suites, after the revert) | MATCH |
 | Material OCCT Operations Tests | predefinedMaterialName | `OCCTMaterialName` | reads MaterialName(index + 1) (REWRITTEN: was nested in `if let`) | OCCTFoundationTests.swift:306 Material.predefinedMaterialName(at: 1) == "Brass" | passed (84/84 in the nine suites, after the revert) | MATCH |
-| Material OCCT Operations Tests | predefinedMaterialNameOutOfRange | `OCCTMaterialName` | out-of-range index returns "" instead of nil | OCCTFoundationTests.swift:311 name == nil | passed (84/84 in the nine suites, after the revert) | MATCH |
+| Material OCCT Operations Tests | predefinedMaterialNameOutOfRange | `OCCTMaterialName` | out-of-range index returns "" instead of nil | OCCTFoundationTests.swift:311 name == nil | passed (84/84 in the nine suites, after the revert) | N/A: the refusal is the bridge's own index guard; Graphic3d_MaterialAspect is never called for 999 |
 | Material OCCT Operations Tests | predefinedMaterialByName | `OCCTMaterialFromName` | shininess filled from Transparency() (REWRITTEN: was nested in `if let`) | OCCTFoundationTests.swift:317 abs(brass.shininess - 0.65) < 1e-6 | passed (84/84 in the nine suites, after the revert) | MATCH |
 | Material OCCT Operations Tests | predefinedMaterialByNameInvalid | `OCCTMaterialFromName` | failed lookup falls back to material 0 | OCCTFoundationTests.swift:323 m == nil | passed (84/84 in the nine suites, after the revert) | MATCH |
 | Material OCCT Operations Tests | predefinedMaterialByIndex | `OCCTMaterialFromIndex` | shininess filled from Transparency() (REWRITTEN: was nested in `if let`) | OCCTFoundationTests.swift:330 abs(m.shininess - 0.65) < 1e-6 | passed (84/84 in the nine suites, after the revert) | MATCH |
-| Material OCCT Operations Tests | predefinedMaterialByIndexOutOfRange | `OCCTMaterialFromIndex` | round 2: an out-of-range index is clamped to 1 instead of refused | OCCTFoundationTests.swift:336 m == nil | passed (84/84 in the nine suites, after the revert) | MATCH |
+| Material OCCT Operations Tests | predefinedMaterialByIndexOutOfRange | `OCCTMaterialFromIndex` | round 2: an out-of-range index is clamped to 1 instead of refused | OCCTFoundationTests.swift:336 m == nil | passed (84/84 in the nine suites, after the revert) | N/A: the refusal is the bridge's own index guard; no Graphic3d_MaterialAspect is built for 999 |
 | Material OCCT Operations Tests | predefinedMaterialColors | `OCCTMaterialFromName` | diffuse red filled from Green() (REWRITTEN: was nested in `if let`) | OCCTFoundationTests.swift:341 abs(gold.diffuseColor.red - 0.525642991) < 1e-6 | passed (84/84 in the nine suites, after the revert) | MATCH |
 | Material OCCT Operations Tests | predefinedMaterialPBR | `OCCTMaterialFromName` | pbrIOR + 1; pbrRoughness from Roughness() (the #1419 defect) (REWRITTEN: was nested in `if let`) | OCCTFoundationTests.swift:349 abs(Double(copper.pbrRoughness) - 0.212132) < 1e-4 | passed (84/84 in the nine suites, after the revert) | MATCH |
 | Material OCCT Operations Tests | minRoughness | `OCCTMaterialMinRoughness` | MinRoughness() * 100 | OCCTFoundationTests.swift:356 mr < 0.1 | passed (84/84 in the nine suites, after the revert) | MATCH |
