@@ -94,5 +94,243 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib MakeEdge::Edge from line with parameters",
+    "bridge_function": "OCCTBRepLibMakeEdgeFromLine",
+    "bridge_output": {
+      "type": "edge",
+      "data": {
+        "length": 10,
+        "start": [
+          0,
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "length": 10,
+        "start": [
+          0,
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib MakeEdge::Edge from two points",
+    "bridge_function": "OCCTBRepLibMakeEdgeFromPoints",
+    "bridge_output": {
+      "type": "edge",
+      "data": {
+        "length": 11.575836902790225,
+        "end": [
+          10,
+          5,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "length": 11.575836902790225,
+        "end": [
+          10,
+          5,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib MakeEdge::Edge from circle arc",
+    "bridge_function": "OCCTBRepLibMakeEdgeFromCircle",
+    "bridge_output": {
+      "type": "edge",
+      "data": {
+        "length": 15.707963267948966
+      }
+    },
+    "kernel_output": {
+      "type": "edge",
+      "data": {
+        "length": 15.707963267948966
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib MakeFace::Face from plane with UV bounds",
+    "bridge_function": "OCCTBRepLibMakeFaceFromPlane",
+    "bridge_output": {
+      "type": "area",
+      "data": {
+        "area": 100
+      }
+    },
+    "kernel_output": {
+      "type": "area",
+      "data": {
+        "area": 99.99999999999999
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib MakeFace::Face from cylinder with UV bounds",
+    "bridge_function": "OCCTBRepLibMakeFaceFromCylinder",
+    "bridge_output": {
+      "type": "area",
+      "data": {
+        "area": 157.07963267948966
+      }
+    },
+    "kernel_output": {
+      "type": "area",
+      "data": {
+        "area": 157.07963267948966
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib MakeShell::Shell from plane surface",
+    "bridge_function": "OCCTBRepLibMakeShellFromPlane",
+    "bridge_output": {
+      "type": "shell",
+      "data": {
+        "faces": 1,
+        "area": 100
+      }
+    },
+    "kernel_output": {
+      "type": "shell",
+      "data": {
+        "faces": 1,
+        "area": 99.99999999999999
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib PointCloudShape::Point cloud by triangulation",
+    "bridge_function": "OCCTBRepLibPointCloudByTriangulation",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "points": 24,
+        "normals": 24
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "points": 24,
+        "normals": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib PointCloudShape::Point cloud by density",
+    "bridge_function": "OCCTBRepLibPointCloudByDensity",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "points": 600
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "points": 600
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepLib ToolTriangulatedShape::Compute normals on meshed shape",
+    "bridge_function": "OCCTBRepLibComputeNormals",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "computed": true,
+        "faces_with_normals_before": 0,
+        "faces_with_normals_after": 6,
+        "nodes_per_face": 4,
+        "max_plane_deviation": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "computed": true,
+        "faces_with_normals_before": 0,
+        "faces_with_normals_after": 6,
+        "nodes_per_face": 4,
+        "max_plane_deviation": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides: computed, whether ComputeNormals ran on at least one triangulated face; faces_with_normals_before and faces_with_normals_after, how many of the box's 6 faces carry normals; nodes_per_face; and max_plane_deviation, the largest | |n . plane| - 1 | over every node normal n against the plane normal of the face's first triangle (0 means every node normal is perpendicular to its face's plane). Bridge: on Shape.box(10, 10, 10) meshed with linearDeflection 0.1, Shape.triangulationHasNormals over the 6 faces read 0 before and 6 after Shape.computeNormals() (which returned true), each face has 4 nodes, and every triangulationNormal(at:) is the axis-aligned normal of its face (x for faces 0 and 1, y for 2 and 3, z for 4 and 5) with plane deviation 0.0 (temporary print of the rewritten test's values, not committed). Kernel: BRepMesh_IncrementalMesh(0.1, false, 0.5) on the same box, then BRepLib_ToolTriangulatedShape::ComputeNormals on every face, printed 'before: faces 6 withNormals 0', 'ComputeNormals ran on 6 faces, computed=1' and 'after: faces 6 withNormals 6 nodesPerFace 4..4 maxPlaneDeviation 0', with the same per-face normals (transcript-evidence-fix.txt). The sign of a node normal follows the surface, not the face's orientation, so faces 0 and 1 both carry +x; the test asserts the plane and not the sign. A gp_Dir is unit by construction, so unit length is not compared.",
+    "probe": "Scripts/repro/766-topology-breplib-builders/transcript-evidence-fix.txt",
+    "test_file": "Tests/OCCTTopologyTests/BRepLibToolTriangulatedShapeTests.swift",
+    "injection": "I1: ComputeNormals never called (the function still returns true); I2: ComputeNormals on the first face only; I3: node 1's normal overwritten with (1, 1, 0); I5: meshing already computes the normals",
+    "red": "BRepLibToolTriangulatedShapeTests.swift:32 face.triangulationHasNormals (I1: 6 issues, I2: 5) and :41 abs(abs(simd_dot(n, plane)) - 1) < 1e-12 (I1: 24, I2: 20, I3: 6); :26 !face.triangulationHasNormals (I5: 6)",
+    "green": "passed",
+    "note": "REWRITTEN: asserted only computeNormals() == true, which stayed green under injections I1 (nothing computed), I2 (first face only) and I3 (a wrong normal), and returned silently when the box was nil; now asserts the faces carry no normals after meshing, all 6 carry them after, and every node normal is perpendicular to its face plane"
   }
 ]
