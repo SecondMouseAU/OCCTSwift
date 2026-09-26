@@ -21,8 +21,15 @@ can legitimately differ. [`okf/references/carried-occt-patches.md`](okf/referenc
 records which patches exist and which the pin actually holds.
 
 The consequence that matters most for review: **an OS signal or a C++ exception raised inside OCCT
-cannot be caught once it reaches Swift.** `OCC_CATCH_SIGNALS` is inert in this build. A missing
-guard in the bridge is not a nil return, it is a process abort inside the consumer's application.
+cannot be caught once it reaches Swift.** A missing guard in the bridge is not a nil return, it is a
+process abort inside the consumer's application.
+
+`OCC_CATCH_SIGNALS` is **inert in bridge code and live inside OCCT**, and the distinction matters
+when judging a guard. OCCT's own translation units are compiled with `OCC_CONVERT_SIGNALS`, which
+its CMake adds on every non-Windows target, so OCCT's own sites register a handler. SwiftPM defines
+nothing for `Sources/OCCTBridge/src/*.mm`, so the same macro written in the bridge expands to
+nothing. A signal raised in an OCCT frame with none of OCCT's own sites above it is what ends the
+process (#2188, #2191, and #2763 for a mechanism claim still under review).
 
 ## Priorities, highest first
 
@@ -63,6 +70,43 @@ guard in the bridge is not a nil return, it is a process abort inside the consum
    something the repository already has is a finding
    ([policy](okf/policies/search-before-building.md)).
 
+## Review against what the change set out to do
+
+A finding is information the author does not already have. Three rules follow from that, and each
+of them exists because the opposite cost a round trip on a real PR.
+
+- **A decision documented at the site is not a finding.** If the code comment, the file header or an
+  issue number in the diff already states the trade-off and why, either say nothing or confirm it in
+  one line. Do not re-argue it. Four findings on PR #2764 were answered by a comment within ten
+  lines of the flagged line, including one rated CRITICAL whose supposed missing replacement was
+  named eight lines above the guard.
+
+  **The exception, and it is important.** Documentation at the site is no defence when it makes a
+  **checkable claim about the rest of the codebase**. The same PR's `simd_normalize` stand-in
+  justified diverging from Apple's semantics with "every one of the 62 call sites either guards the
+  length first or feeds the result to OCCT". Reviewing that was right: the sentence was false, one
+  call site depended on the behaviour being diverged from, and the divergence was silently changing
+  what a measured decision relied on. **A prose claim that quantifies the codebase is a finding
+  unless something gates it**, whatever else the comment says.
+
+- **Read the PR body's stated limitations before reporting one.** A PR that names its own known
+  trade-offs, conditions or follow-up issues has already spent the author's judgement on them. A
+  finding restating one is not new; a finding showing that a stated limitation is understated, or
+  that its issue does not actually cover it, is.
+
+- **An issue number in the diff means it is tracked, not ignored.** `#nnnn` beside a known
+  shortcoming is the repository's way of deferring deliberately. Report it only if the issue is
+  closed, or does not say what the comment claims it says.
+
+**Severity calibration.** A deliberate trade-off that is documented and filed is at most a
+SUGGESTION, never CRITICAL, however much it would matter if it were accidental. Reserve CRITICAL for
+the four things in Priorities 1 to 3 plus anything that ends the consumer's process.
+
+**WebAssembly diffs** are reviewed against [`docs/wasm-feasibility.md`](docs/wasm-feasibility.md),
+which is the plan of record and carries the Phase 0 memo and the four conditions its GO verdict
+rests on (#2175). A finding those conditions already name is not new. The port deliberately accepts
+platform divergence in two places and they are filed, not overlooked.
+
 ## Do not report these
 
 Each of these has already been decided, and raising it costs a round trip.
@@ -88,6 +132,25 @@ Each of these has already been decided, and raising it costs a round trip.
   no issue reference is worth flagging; one with a reference is not.
 - **A broad `catch (...)` at the Swift boundary.** Narrowing it would let a C++ exception reach
   Swift, which aborts the process uncatchably.
+
+**Settled by the WebAssembly port (#1689), each with an issue that owns it.** Prune an entry when its
+issue closes.
+
+- **`Shape.isSelfIntersecting(hardTimeout:)` being unavailable on WASI.** Its contract needs a second
+  thread and wasip1 non-threads has none, so no implementation of that signature can honour it. The
+  cooperative `isSelfIntersecting(timeout:)` is available on every platform and the comment beside
+  the guard names it. #2760.
+- **The WASI-only stand-in `simd` module being a subset.** It covers what `Sources/OCCTSwift`
+  measurably uses, because Apple's `simd` has no wasm build. #2759. What IS reviewable there is any
+  divergence from Apple's semantics, per the rule above.
+- **`-lsetjmp` and `-mllvm -wasm-enable-sjlj` being inert.** They are, since `-UOCC_CONVERT_SIGNALS`
+  removed every `setjmp` from the OCCT build. Retiring them touches three other measured things.
+  #2758.
+- **The threading shim adding names to namespace `std`.** Formally undefined behaviour, stated on
+  line 14 of the shim, scoped to one pinned libc++, and guarded by a compile-time check that fails
+  with a named error if that libc++ ever gains threads. #2170.
+- **`Package.swift` detecting WASI from environment variables.** SwiftPM does not expose the target
+  triple to a manifest. The comment at the site says so.
 
 ## Where to look harder
 
