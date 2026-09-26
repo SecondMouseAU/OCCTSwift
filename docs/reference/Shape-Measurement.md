@@ -1333,6 +1333,29 @@ Replaces BSpline curves and surfaces with their Bezier equivalents. Converts 2D/
 
 - **Returns:** Shape with Bezier geometry, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ShapeConvertToBezier` (via `OCCTShapeConvertToBezier`).
+- **Nothing to convert is not a failure (#2765).** A shape whose curves and surfaces are already
+  Bezier comes back unchanged rather than as `nil`, matching
+  [`convertCurves3dToBezier`](Shape-Builders-2.md#convertcurves3dtobezierlinemodecirclemodeconicmode)
+  and [`convertSurfacesToBezier`](Shape-Builders-2.md#convertsurfacestobezierplanemoderevolutionmodeextrusionmodebsplinemode).
+  `ShapeUpgrade_ShapeDivide::Perform()`, whose return value the converter forwards unchanged,
+  reports "nothing changed" rather than "failed" and leaves `Result()` holding the input shape, so
+  the bridge reads `Result()` and treats only a null result as a failure. Until #2765 this entry
+  point read that `false` as failure: converting an already-Bezier one-edge shape a second time
+  returned `nil`. Measured in `Scripts/repro/2765-convert-to-bezier-perform/`.
+- **Validity:** the result can report `isValid == false`, for the reason and with the remedy
+  documented on
+  [`convertCurves3dToBezier`](Shape-Builders-2.md#convertcurves3dtobezierlinemodecirclemodeconicmode):
+  `ShapeUpgrade` converts geometry and leaves `SameRange`/pcurve consistency to `ShapeFix`. Run
+  `shape.healed()` afterwards if a `BRepCheck`-valid result is required.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 20, depth: 30)!
+  if let bezier = box.convertedToBezier {
+      // Converting an already-converted shape is not an error.
+      let again = bezier.convertedToBezier
+      print(again != nil)  // true
+  }
+  ```
 
 ---
 

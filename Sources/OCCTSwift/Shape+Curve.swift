@@ -12,6 +12,27 @@ extension Shape {
     /// with their Bezier equivalents. Converts 2D/3D curves, surfaces, lines, circles,
     /// conics, planes, revolutions, extrusions, and BSpline entities.
     ///
+    /// A shape with nothing left to convert comes back unchanged, not as `nil` (#2765).
+    /// `ShapeUpgrade_ShapeDivide::Perform()`, whose return value this converter forwards, reports
+    /// "nothing changed" rather than "failed", and leaves its result holding the input shape, so
+    /// the bridge reads `Result()` instead. `nil` therefore means the conversion genuinely failed.
+    /// Measured in `Scripts/repro/2765-convert-to-bezier-perform/`.
+    ///
+    /// The result can report `isValid == false`: `ShapeUpgrade` converts geometry and leaves
+    /// `SameRange`/pcurve consistency to `ShapeFix`. Call ``Shape/healed()`` afterwards
+    /// if a `BRepCheck`-valid result is required. Same cause as
+    /// ``Shape/convertCurves3dToBezier(lineMode:circleMode:conicMode:)``.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
+    /// if let bezier = box.convertedToBezier {
+    ///     print(bezier.subShapeCount(ofType: ShapeType.face))  // 6
+    ///     // Converting an already-converted shape is not an error.
+    ///     let again = bezier.convertedToBezier
+    ///     print(again != nil)  // true
+    /// }
+    /// ```
+    ///
     /// - Returns: Shape with Bezier geometry, or nil on failure
     public var convertedToBezier: Shape? {
         guard let ref = OCCTShapeConvertToBezier(handle) else { return nil }
