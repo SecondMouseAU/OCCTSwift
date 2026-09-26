@@ -899,8 +899,17 @@ OCCTShapeRef OCCTShapeConvertToBezier(OCCTShapeRef shape)
     converter.SetRevolutionMode(true);
     converter.SetExtrusionMode(true);
     converter.SetBSplineMode(true);
-    if (!converter.Perform())
-      return nullptr;
+    // Perform()'s return value is deliberately not a success flag (#2765).
+    // ShapeUpgrade_ShapeConvertToBezier::Perform() forwards ShapeUpgrade_ShapeDivide::Perform()'s
+    // value unchanged, and that one ends "myResult = myContext->Apply(myShape, TopAbs_SHAPE);
+    // return !myResult.IsSame(myShape);" (the COMPOUND branch: "myResult = myShape; return
+    // false;"). So false means "nothing was converted", with myResult set to the input shape, not
+    // a failure. Its only genuine-failure false is the myShape.IsNull() guard at the top, which
+    // the null check above already covers. Result().IsNull() below is the real failure signal, per
+    // the header's own "the resulting Shape, or Null shape if not done". Measured in
+    // Scripts/repro/2765-convert-to-bezier-perform: a one-edge shape whose curve is already a
+    // Bezier returns false here with a valid Result(), and the old check turned that into nil.
+    converter.Perform();
     TopoDS_Shape result = converter.Result();
     if (result.IsNull())
       return nullptr;
@@ -1251,6 +1260,8 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeConvertSurfaceToBezier(OCCTShapeRef shape
   try
   {
     ShapeUpgrade_ShapeConvertToBezier converter(shape->shape);
+    converter.SetSurfaceConversion(true); // master switch (#2732): per-kind modes below do
+                                          // nothing without it, so Perform() was always a no-op
     converter.SetPlaneMode(planeMode ? Standard_True : Standard_False);
     converter.SetRevolutionMode(revolutionMode ? Standard_True : Standard_False);
     converter.SetExtrusionMode(extrusionMode ? Standard_True : Standard_False);
