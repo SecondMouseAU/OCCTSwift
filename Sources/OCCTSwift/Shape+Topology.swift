@@ -701,8 +701,14 @@ extension Shape {
     /// Uses ShapeUpgrade_ShapeDivideArea to split faces larger than the specified area.
     /// Useful for mesh quality control and FEA preprocessing.
     ///
+    /// A threshold no face reaches comes back as the unchanged input, which has always been this
+    /// method's behaviour. #2769 changed the other half: a genuine
+    /// `Status(ShapeExtend_FAIL)` used to be returned as a result too, and now gives `nil`. See
+    /// ``Shape/divided(at:tolerance:)`` for OCCT's rule in full.
+    ///
     /// - Parameter maxArea: Maximum face area, faces larger than this are split
-    /// - Returns: Shape with subdivided faces, or nil on failure
+    /// - Returns: Shape with subdivided faces, the unchanged input when no face exceeds `maxArea`,
+    ///   or nil on failure
     public func dividedByArea(maxArea: Double) -> Shape? {
         guard let ref = OCCTShapeDivideByArea(handle, maxArea) else { return nil }
         return Shape(handle: ref)
@@ -712,8 +718,24 @@ extension Shape {
     ///
     /// Uses ShapeUpgrade_ShapeDivideArea in splitting-by-number mode.
     ///
+    /// `parts: 1` asks for no split at all, and comes back as the unchanged input rather than as
+    /// `nil` (#2769). `ShapeUpgrade_ShapeDivide::Perform()` returning `false` means "nothing
+    /// changed", and the failure signal is that `false` together with `Status(ShapeExtend_FAIL)`, as
+    /// ``Shape/divided(at:tolerance:)`` documents in full. `parts <= 0` is still refused outright,
+    /// before OCCT sees it.
+    ///
+    /// ```swift
+    /// let cube = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(cube.dividedByParts(2)?.faceCount ?? 0)  // 12: each face halved
+    /// if let unchanged = cube.dividedByParts(1) {
+    ///     print(unchanged.isSame(as: cube))  // true: one part per face is no split
+    /// }
+    /// print(cube.dividedByParts(0) == nil)  // true: refused before OCCT sees it
+    /// ```
+    ///
     /// - Parameter parts: Target number of parts per face
-    /// - Returns: Shape with subdivided faces, or nil on failure
+    /// - Returns: Shape with subdivided faces, the unchanged input when `parts` asks for no split,
+    ///   or nil on failure
     public func dividedByParts(_ parts: Int) -> Shape? {
         guard let ref = OCCTShapeDivideByParts(handle, Int32(parts)) else { return nil }
         return Shape(handle: ref)

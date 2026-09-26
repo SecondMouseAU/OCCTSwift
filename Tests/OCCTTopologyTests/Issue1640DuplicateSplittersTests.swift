@@ -63,13 +63,15 @@ struct Issue1640DuplicateSplittersTests {
         #expect(try #require(cube.dividedByNumber(4)).isValid)
     }
 
-    @Test("a part count that cannot split anything is a refusal, not an unchanged shape")
+    @Test("a part count that cannot split anything returns the shape; 0 and below are refused")
     func dividedByPartsTrivialCounts() throws {
         let cube = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        // Measured: 1 part reaches ShapeUpgrade_ShapeDivideArea, whose Perform() returns false
-        // because there is nothing to split, and the bridge turns that into nil. 0 and negative
-        // counts are refused by the bridge before OCCT sees them.
-        #expect(cube.dividedByParts(1) == nil)
+        // 1 part reaches ShapeUpgrade_ShapeDivideArea, whose Perform() returns false because there
+        // is nothing to split. That is a no-op, not a failure, so since #2769 the unchanged cube
+        // comes back rather than nil. Pinned in Issue2769DivideAreaTests; kept here because this
+        // suite asserted the old nil.
+        #expect(cube.dividedByParts(1)?.isSame(as: cube) == true)
+        // 0 and negative counts are refused by the bridge before OCCT sees them, and still are.
         #expect(cube.dividedByParts(0) == nil)
         #expect(cube.dividedByParts(-3) == nil)
     }
@@ -90,12 +92,12 @@ struct Issue1640DuplicateSplittersTests {
         }
     }
 
-    @Test("a shape with no closed face is refused, not returned unchanged")
-    func dividedClosedFacesRefusesAShapeWithNothingToDo() throws {
+    @Test("a shape with no closed face comes back unchanged, not as a refusal")
+    func dividedClosedFacesReturnsAShapeWithNothingToDo() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         // No face of a box wraps onto itself, so ShapeUpgrade_ShapeDivideClosed::Perform() returns
-        // false and the bridge turns that into nil. Worth pinning: nil here means "nothing to do",
-        // not "the operation failed", and a caller that treats it as an error will be wrong.
-        #expect(box.dividedClosedFaces(splitPoints: 2) == nil)
+        // false. Until #2769 the bridge read that as failure and returned nil; OCCT reads it as
+        // "nothing was done", with Result() holding the input shape, so the box comes back.
+        #expect(box.dividedClosedFaces(splitPoints: 2)?.isSame(as: box) == true)
     }
 }

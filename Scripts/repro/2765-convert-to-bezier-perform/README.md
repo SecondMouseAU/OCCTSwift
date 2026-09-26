@@ -1,4 +1,11 @@
-# #2765: `ShapeUpgrade_ShapeDivide::Perform()` is not a success flag
+# #2765/#2769: reading `ShapeUpgrade_ShapeDivide::Perform()` the way OCCT reads it
+
+**#2769 superseded the conclusion #2765 drew here.** `Perform()` is not a success flag, which is
+what #2765 established and what the first half of this page shows. It does not follow that the
+return value should be ignored, which is what #2765's PR did and what #2769 corrected: OCCT's own
+callers read `Perform()` together with `Status(ShapeExtend_FAIL)`, and that pair is the rule the
+bridge now follows. The `siblings.mm` section below carries the rule, the evidence for it and the
+failure path it makes expressible.
 
 `OCCTShapeConvertToBezier` gated on `if (!converter.Perform()) return nullptr;`. That reads
 `Perform()` as "did this succeed". It is not: it is "did anything change".
@@ -79,33 +86,118 @@ reach it is a shape with no face and nothing left to convert:
   `Tests/OCCTCurveTests/Issue2765ConvertToBezierTests.swift` asserts against.
 - a single vertex.
 
-## `siblings.mm`: the sweep
+## `siblings.mm`: the sweep, and the rule #2769 settled
 
-Every other `ShapeUpgrade_ShapeDivide` subclass wrapped in the same file, run with that wrapper's
-own configuration against an input that gives it nothing to split. No subclass declares
-`Perform()` at all (only `ShapeUpgrade_ShapeDivide` and `ShapeUpgrade_ShapeConvertToBezier` do, by
-`grep` over the pinned headers), so all of them inherit the same semantics.
+**Rewritten for #2769.** #2765 asked whether a false `Perform()` was reachable and whether
+`Result()` was usable when it was. The answer was yes to both, and the conclusion drawn from it,
+that the return value should simply be ignored, was half of OCCT's own answer.
+
+OCCT reads `Perform()` and `Status(ShapeExtend_FAIL)` **together**, never either alone.
+`ShapeProcess_OperLibrary.cxx` is the production shape-processing library that STEP and IGES import
+healing runs through, and all five of its `ShapeUpgrade_ShapeDivide`-family call sites (lines 228,
+438, 525, 577 and 926 of the pinned copy) are:
+
+```cpp
+if (!tool.Perform() && tool.Status(ShapeExtend_FAIL))
+{
+  return false;                    // the failure path
+}
+ctx->RecordModification(tool.GetContext(), msg);
+ctx->SetResult(tool.Result());     // success, including when Perform() returned false
+return true;
+```
+
+`SWDRAW_ShapeUpgrade.cxx` agrees from the other side: `tool.Perform();`, then
+`TopoDS_Shape res = tool.Result();`, then `Status(...)` reported separately.
+
+So `false` on its own means "nothing was done". `false` with `Status(ShapeExtend_FAIL)`, the
+any-of-`FAIL1`..`FAIL8` aggregate from `ShapeExtend_Status.hxx`, is the failure.
+`Status(const ShapeExtend_Status)` is declared on `ShapeUpgrade_ShapeDivide` itself, so every
+wrapper has it.
+
+`siblings.mm` now records both halves, for all eleven wrappers in
+`Sources/OCCTBridge/src/OCCTBridge_Healing_Upgrade.mm` that run one of those `Perform()`
+implementations, split by the direction each one got wrong. `was:` is the answer the bridge gave
+before #2769, `now:` is OCCT's two-part test.
 
 ```
-OCCTShapeDivide (Continuity C0, box)              perform=false result-null=false differs=false -> bridge today: nil
-OCCTShapeSplitByAngle (90 deg, box)               perform=false result-null=false differs=false -> bridge today: nil
-OCCTShapeDivideClosedEdges (box)                  perform=false result-null=false differs=false -> bridge today: nil
-OCCTShapeUpgradeDivideClosed (box)                perform=false result-null=false differs=false -> bridge today: nil
-OCCTShapeUpgradeDivideClosed (cylinder, control)  perform=true  result-null=false differs=true  -> bridge today: shape
-OCCTShapeDivideByNumber (nbU=nbV=1, box)          perform=false result-null=false differs=false -> bridge today: nil
-OCCTShapeDivideByParts (nbParts=1, box)           perform=false result-null=false differs=false -> bridge today: nil
-OCCTShapeDivideByArea (maxArea=1e6, box)          perform=false result-null=false differs=false -> bridge today: shape
+#2765/#2769 sweep: ShapeUpgrade_ShapeDivide-family wrappers with nothing to do
+fixtures: box 10x20x30 (6 faces), cylinder r5 h10 (3 faces), sphere r5 (1), torus 10/3 (1), one straight edge (0)
+
+== Group A: gated on Perform() alone, so a no-op input returned nil (#2766)
+
+OCCTShapeDivide (Continuity C0, box)                 A perform=false status-fail=false result-null=false differs=false faces=6    was: nil   now: shape
+OCCTShapeSplitByAngle (90 deg, box)                  A perform=false status-fail=false result-null=false differs=false faces=6    was: nil   now: shape
+  ... same class, cylinder at 45 deg (control)       A perform=true  status-fail=false result-null=false differs=true  faces=10   was: shape now: shape
+OCCTShapeDivideClosedEdges (box)                     A perform=false status-fail=false result-null=false differs=false faces=6    was: nil   now: shape
+OCCTShapeUpgradeDivideClosed (box)                   A perform=false status-fail=false result-null=false differs=false faces=6    was: nil   now: shape
+  ... same class, cylinder (control)                 A perform=true  status-fail=false result-null=false differs=true  faces=4    was: shape now: shape
+OCCTShapeDivideByNumber (nbU=nbV=1, box)             A perform=false status-fail=false result-null=false differs=false faces=6    was: nil   now: shape
+OCCTShapeDivideByNumber (nbU=2, one edge)            A perform=false status-fail=false result-null=false differs=false faces=0    was: nil   now: shape
+OCCTShapeDivideByParts (nbParts=1, box)              A perform=false status-fail=false result-null=false differs=false faces=6    was: nil   now: shape
+
+== Group B: ignored Perform() entirely, so a FAIL came back as a result (#2769)
+
+OCCTShapeDivideByArea (maxArea=1e6, box)             B perform=false status-fail=false result-null=false differs=false faces=6    was: shape now: shape
+OCCTShapeConvertToBezier (already-Bezier edge)       B perform=false status-fail=false result-null=false differs=false faces=0    was: shape now: shape
+OCCTShapeUpgradeConvertCurves3dToBezier (all modes off, box) B perform=false status-fail=false result-null=false differs=false faces=6    was: shape now: shape
+OCCTShapeUpgradeConvertSurfaceToBezier (all modes off, box) B perform=false status-fail=false result-null=false differs=false faces=6    was: shape now: shape
+
+== Hunting a genuine Status(ShapeExtend_FAIL), which is the outcome group B lost
+
+null shape (FAIL1, unreachable through the bridge)   A perform=false status-fail=true  result-null=true  differs=false faces=-1   was: nil   now: nil
+SplitByAngle -30 deg, cylinder                       A perform=false status-fail=false result-null=false differs=false faces=3    was: nil   now: shape
+SplitByAngle 720 deg, sphere                         A perform=true  status-fail=false result-null=false differs=true  faces=1    was: shape now: shape
+SplitByAngle 1 deg, torus                            A perform=true  status-fail=false result-null=false differs=true  faces=360  was: shape now: shape
+Divide C3 on sphere, tolerance 0                     A perform=false status-fail=false result-null=false differs=false faces=1    was: nil   now: shape
+Divide C3 on sphere, tolerance -1                    A perform=false status-fail=false result-null=false differs=false faces=1    was: nil   now: shape
+Divide C3 on sphere, tolerance 1e+12                 A perform=false status-fail=false result-null=false differs=false faces=1    was: nil   now: shape
+DivideClosed on cylinder, nbSplitPoints 0            A perform=true  status-fail=false result-null=false differs=true  faces=4    was: shape now: shape
+DivideClosed on cylinder, nbSplitPoints -5           A perform=true  status-fail=false result-null=false differs=true  faces=4    was: shape now: shape
+DivideClosed on cylinder, nbSplitPoints 64           A perform=true  status-fail=false result-null=false differs=true  faces=67   was: shape now: shape
+DivideByArea on cylinder, maxArea 10                 B perform=true  status-fail=false result-null=false differs=true  faces=84   was: shape now: shape
+DivideByArea on cylinder, maxArea 1                  B perform=true  status-fail=false result-null=false differs=true  faces=820  was: shape now: shape
 ```
 
-Every one of the seven `if (!...Perform()) return nullptr;` sites is reachable with an ordinary
-box, and in every case `Result()` is the valid, unchanged input. The cylinder row is the control:
-the same class on an input it can actually split returns `true` and a changed shape, so the
-fixtures mean what their names say. `OCCTShapeDivideByArea` is the one wrapper in the file that
-already ignores `Perform()`'s return value, with a comment saying why, and it is the shape the
-other seven should take.
+Reading it:
 
-Those seven are **not** changed in #2765's PR. Each is a separate public Swift entry point with
-its own documented contract (`Shape.divided(at:tolerance:)` documents the `nil` as "no divisions
-were needed **or** on failure", so callers may be reading it as a signal), and flipping seven
-return contracts is a behaviour-change batch that deserves its own review rather than riding along
-with a one-line correctness fix. Filed as #2766.
+- **Group A**, the seven #2766 measured, gated on `Perform()` alone. Every one is reachable with an
+  ordinary box, `status-fail` is `false` on every one of those rows, and `Result()` is the valid
+  unchanged input, so `was: nil` was a no-op reported as a failure. The `control` rows are the same
+  class on an input it can genuinely split: `true`, a changed shape, more faces. They are what
+  makes the no-op fixtures mean what their names say.
+- **Group B**, the four that ignored the return value, come back `shape` either way on a no-op,
+  which is correct. What they lost is the other row: a `perform=false status-fail=true` input would
+  have been handed back as a result.
+
+## The genuine-failure input: what was tried, and what it cost
+
+The hunt section exists because the rule newly makes a failure path expressible, and a rule with no
+exercised failure path is a claim rather than a measurement. **Against the pinned kernel, no
+`Status(ShapeExtend_FAIL)` was reachable through any of the eleven wrappers.** What was tried:
+
+- **`FAIL1`**, the `myShape.IsNull()` guard at the top of `Perform()`, is the one that does fire.
+  It is the only `FAIL` these wrappers can reach from a parameter value alone, and it is
+  unreachable through the bridge: every one of the eleven rejects a null `OCCTShapeRef` before
+  constructing the tool, which is the row `null shape (FAIL1, unreachable through the bridge)`
+  records.
+- **Parameter extremes**, all of them recorded above and all `status-fail=false`: `splitByAngle` at
+  -30, 1 and 720 degrees; `divided(at: .c3)` at tolerance 0, -1 and 1e12; `dividedClosedFaces` at
+  0, -5 and 64 split points; `dividedByArea` down to a max area of 1 on a cylinder wall of area
+  ~314 (820 faces out).
+- **`maxAngle` 0 and `maxArea` 1e-6** are left out on purpose. Both ask the kernel for an unbounded
+  number of splits and neither returns; that is a different finding from the one being hunted, and
+  it hangs the probe rather than reporting anything.
+- **`FAIL2`/`FAIL3`** need the split-face or split-wire tool to fail or throw on a sub-shape, which
+  is a property of the input geometry. The cheapest attempt was a compound holding a face
+  hand-built with `BRep_Builder` and no surface at all. **It does not set `FAIL`: it SIGSEGVs**
+  (exit 139) inside `Perform()`'s `TopAbs_FACE` loop, whose `try`/`catch` catches only
+  `Standard_Failure`, so the process dies before any status is written. That case is not kept in
+  the probe, because it takes the rest of the transcript with it. The Swift API cannot construct
+  such a face, so it is not a guard this bridge needs; it is recorded because it is the reason the
+  failure path has no test.
+
+So the failure branch `if (!tool.Perform() && tool.Status(ShapeExtend_FAIL)) return nullptr;` is
+**unexercised by any test**. It is OCCT's own branch, taken from OCCT's own callers, and it is
+strictly narrower than what stood before it, so it cannot reject anything the old code accepted.
+That is the argument for it; it is not a measurement, and it is not presented as one.

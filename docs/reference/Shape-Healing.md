@@ -78,7 +78,7 @@ demonstrates. Until #438 this was one of two public entry points over that same 
 (now deprecated, forwarding here) set only the boundary criterion, leaving pcurve/surface pinned
 at the class's own C1 constructor default regardless of the requested continuity, measured
 (`Scripts/repro/cluster-d-continuity`) as a flat result across every criterion on a fixture where
-this method's own three-criteria behaviour varies (nil/4/4/25 faces at C0/C1/C2/C3).
+this method's own three-criteria behaviour varies (1/4/4/25 faces at C0/C1/C2/C3).
 
 - **Parameters:**
   - `continuity`: target minimum continuity; the shape is split at any face/edge boundary that
@@ -89,12 +89,55 @@ this method's own three-criteria behaviour varies (nil/4/4/25 faces at C0/C1/C2/
   - `tolerance`: tolerance for the continuity check. Defaults to `1e-7`
     (`Precision::Confusion()`), OCCT's own default and this method's behavior before #438 added
     the parameter.
-- **Returns:** Divided shape, or nil on failure.
+- **Returns:** Divided shape, the unchanged input when nothing needed dividing, or nil on failure.
 - **OCCT:** `ShapeUpgrade_ShapeDivideContinuity` (via `OCCTShapeDivide`).
+- **Nothing to divide is not a failure (#2769).** A shape with nothing below `continuity` comes
+  back unchanged rather than as `nil`. This is the entry point where the whole family's rule is
+  written down, because this is the one whose contract was documented the other way round:
+  `divided(at:tolerance:)` promised "`nil` if no divisions were needed **or** on failure", so a
+  caller may have been reading that `nil` as the no-op signal.
+
+  OCCT distinguishes three outcomes, and the bridge now distinguishes the same three:
+
+  | `Perform()` | `Status(ShapeExtend_FAIL)` | meaning | this method returns |
+  |---|---|---|---|
+  | `true` | `false` | something was divided | the divided shape |
+  | `false` | `false` | nothing needed dividing | the **input shape**, unchanged |
+  | `false` | `true` | the operation failed | `nil` |
+
+  The two-part test is OCCT's own, not an inference from `Perform()`'s return statement.
+  `ShapeProcess_OperLibrary.cxx` is the shape-processing library STEP and IGES import healing runs
+  through, and all five of its `ShapeUpgrade_ShapeDivide`-family call sites are
+  `if (!tool.Perform() && tool.Status(ShapeExtend_FAIL)) return false;` followed by
+  `ctx->SetResult(tool.Result());`. The DRAW commands agree from the other side
+  (`SWDRAW_ShapeUpgrade.cxx`): `Perform()`, then `Result()`, then `Status(...)` reported separately.
+  `ShapeExtend_FAIL` is the any-of-`FAIL1`..`FAIL8` aggregate from `ShapeExtend_Status.hxx`.
+
+  Every entry point over this family follows the same rule: [`splitByAngle(_:)`](#splitbyangle_),
+  [`dividedByNumber(_:)`](#dividedbynumber_),
+  [`dividedClosedEdges(splitPoints:)`](Shape-Measurement.md#dividedclosededgessplitpoints),
+  [`dividedByParts(_:)`](Shape-Measurement.md#dividedbyparts_),
+  [`dividedByArea(maxArea:)`](Shape-Measurement.md#dividedbyareamaxarea),
+  [`dividedClosedFaces(splitPoints:)`](Shape-Measurement.md#dividedclosedfacessplitpoints),
+  [`convertedToBezier`](Shape-Measurement.md#convertedtobezier),
+  [`convertCurves3dToBezier`](Shape-Builders-2.md#convertcurves3dtobezierlinemodecirclemodeconicmode)
+  and [`convertSurfacesToBezier`](Shape-Builders-2.md#convertsurfacestobezierplanemoderevolutionmodeextrusionmodebsplinemode).
+  Measured per wrapper, with all three columns above, in
+  `Scripts/repro/2765-convert-to-bezier-perform/` (`siblings.mm` and the transcript in its
+  `README.md`).
+
+  The `false`/`true` row has **no test**: against the pinned kernel no input was found that sets
+  `Status(ShapeExtend_FAIL)` through any of these entry points. The repro `README.md` records what
+  was tried.
 - **Example:**
   ```swift
   if let divided = myShape.divided(at: .c1) {
       // faces now have at least C1 continuity boundaries
+  }
+
+  let box = Shape.box(width: 10, height: 20, depth: 30)!
+  if let unchanged = box.divided(at: .c0) {
+      print(unchanged.isSame(as: box))  // true: every face of a box is already planar
   }
   ```
 
@@ -1787,8 +1830,15 @@ public func splitByAngle(_ maxAngleDegrees: Double) -> Shape?
 Useful for export to systems that cannot handle full 360° surfaces (e.g. splitting a full cylinder into quarter-cylinders).
 
 - **Parameters:** `maxAngleDegrees`, maximum surface angular span in degrees (e.g. 90 for quarter-turns).
-- **Returns:** Shape with surfaces split at angle boundaries, or nil on failure.
+- **Returns:** Shape with surfaces split at angle boundaries, the unchanged input when no surface
+  spans more than `maxAngleDegrees`, or nil on failure.
 - **OCCT:** `ShapeUpgrade_ShapeDivideAngle` (via `OCCTShapeSplitByAngle`).
+- **Nothing to split is not a failure (#2769).** An all-planar shape such as a box, which has no surface with an angular span at all, comes back unchanged rather than as `nil`:
+  `ShapeUpgrade_ShapeDivide::Perform()` returning `false` means "nothing changed", and the failure
+  signal is that `false` together with `Status(ShapeExtend_FAIL)`, which is how OCCT's own
+  `ShapeProcess_OperLibrary.cxx` reads the pair. The three outcomes, the precedent and the
+  measurement are on
+  [`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance).
 - **Example:**
   ```swift
   if let split = fullCylinder.splitByAngle(90) {
@@ -2085,7 +2135,14 @@ whichever of a face's extents is geometrically longer. Useful for mesh preparati
 surface subdivision. Requires `parts > 1`.
 
 - **Parameters:** `parts`, number of U strips per face.
-- **Returns:** Shape with divided faces, or nil if `parts ≤ 1` or on failure.
+- **Returns:** Shape with divided faces, the unchanged input when no face was split, or nil if
+  `parts ≤ 1` or on failure.
+- **Nothing to split is not a failure (#2769).** A shape the splitter finds no face to split on, such as a lone edge, comes back unchanged rather than as `nil`:
+  `ShapeUpgrade_ShapeDivide::Perform()` returning `false` means "nothing changed", and the failure
+  signal is that `false` together with `Status(ShapeExtend_FAIL)`, which is how OCCT's own
+  `ShapeProcess_OperLibrary.cxx` reads the pair. The three outcomes, the precedent and the
+  measurement are on
+  [`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance).
 - **OCCT:** `ShapeUpgrade_ShapeDivide` driving a `ShapeUpgrade_FaceDivideArea` split-face tool with
   `SetSplittingByNumber(true)`, `NbParts() = parts`, `MaxArea() = -1` and
   `SetNumbersUVSplits(parts, 1)` (via `OCCTShapeDivideByNumber`). Not
