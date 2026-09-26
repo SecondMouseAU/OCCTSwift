@@ -1,0 +1,58 @@
+# Recorded run of Scripts/repro/2256/run.sh, 2026-09-24, on the pinned toolchain.
+# Absolute paths to the temporary work directory are as produced; nothing is edited.
+# Exit status 0.
+
+>>> Swift toolchain : /Library/Developer/Toolchains/swift-6.4.0-RELEASE.xctoolchain/usr/bin
+>>> Swift SDK       : swift-6.4.0-RELEASE_wasm (wasm32-unknown-wasip1)
+>>> wasi-sdk        : /Users/elb/Projects/OCCTSwift/Libraries/wasi-sdk-34.0-arm64-macos
+>>> EH flags        : -fwasm-exceptions -mllvm -wasm-use-legacy-eh=false
+>>> OCCT headers    : /Users/elb/Projects/OCCTSwift/Libraries/OCCT.xcframework/macos-arm64/Headers
+
+=== case 1: the same nine lines as .cpp, with the pinned exception flags ===
+    ok   compiled, so nothing about the code is the problem
+=== case 2: the same nine lines as .mm, with the same flags ===
+    ok   crashed: 	Running pass 'Function Pass Manager' on module '/var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/tmp.5zqzBhRGzz/t.mm'.
+    ok            	Running pass 'WebAssembly Instruction Selection' on function '@probe'
+=== case 3: .mm, exception flags, and -fno-objc-exceptions ===
+    ok   still crashes, so turning Objective-C exceptions off is not the answer
+=== case 4: .mm with NO exception flags (this is #2171's silent-failure build) ===
+    ok   compiled clean, which is exactly the trap: no crash, and no working catch either
+=== case 5: .mm compiled as C++ (-x c++), with the exception flags ===
+    ok   compiled, and the extension never changed: the fix is the language, not the file name
+=== case 6: why, in one line of LLVM IR ===
+    .cpp personality : __gxx_wasm_personality_v0
+    .mm  personality : __gnustep_objcxx_personality_v0
+    ok   the Objective-C++ personality is not the wasm one, so the wasm EH lowering skips the
+    ok   function and leaves an invoke/landingpad the WebAssembly selector cannot select
+=== case 7: OCCTBridge_Curve3D_Curves.mm, unmodified, as Objective-C++ ===
+    ok   crashed on function '@OCCTEdgeGetCurve3D', so this is not a
+    ok   property of the nine-line probe
+=== case 8: the same file, same flags, compiled as C++ ===
+    ok   compiled to a wasm32 object
+=== case 9: that object linked and RUN: does the bridge still catch? ===
+      bridge returned null : 1
+      catch body ran       : 1
+      escaped the bridge   : 0
+      VERDICT: caught at the bridge boundary
+    ok   a Standard_ConstructionError raised by OCCT crossed into the bridge frame, its outermost
+    ok   catch (...) fired, the catch BODY ran, and the function returned its refusal
+=== case 10: the same file, still -x c++, but with NO exception flags ===
+    ok   compiled clean, no diagnostic
+      bridge returned null : 0
+      catch body ran       : 0
+      escaped the bridge   : 1
+      VERDICT: the bridge did NOT catch it
+    ok   #2171's silent failure, through a real bridge file: the catch never fired and the
+    ok   exception left the bridge. A fix that only stops the crash ships exactly this.
+=== case 11: where -x c++ lands in a SwiftPM build, and what it does to a .c ===
+    ok   baseline: with no language override, the C-only source compiles
+    cxxSettings, swiftbuild (the default)    reaches the .mm: yes | reaches the .c: no
+    cxxSettings, native (deprecated)         reaches the .mm: yes | reaches the .c: yes
+    toolset,     swiftbuild (the default)    reaches the .mm: yes | reaches the .c: no
+    toolset,     native (deprecated)         reaches the .mm: yes | reaches the .c: no
+    ok   on swiftbuild, which is what the wasm cross-build uses, neither route reaches a .c source,
+    ok   so Libraries/dummy.c is untouched by either
+    ok   on the deprecated native build system the cxxSettings route DOES reach a .c source in the
+    ok   same target, and the toolset route does not: that is why the toolset is the better home
+
+>>> all cases said what they should (0 skipped)

@@ -1,0 +1,60 @@
+OSD_Host: no <netdb.h>, no resolver and no gethostbyname() on wasm32-wasip1.
+
+NO condition was available to extend at either site, which is the exception this directory's rules
+allow and require to be stated. The only platform test in force here is the file-wide
+`#ifndef _WIN32`, and excluding WASI from it sends WASI into the Windows branch below: the same
+situation wasi-osd-chronometer.patch documents at its own include. Both guards are therefore new,
+and both spell the same test.
+
+The include is guarded AND the call site is guarded. <netdb.h> supplies both gethostbyname() and
+struct hostent, and InternetAddress() declares one of those as a local, so guarding the include
+alone would move the error rather than remove it.
+
+Nothing else in this file changes: wasi-libc supplies uname() and gethostname(), both defined in
+the Swift SDK sysroot's libc.a, so SystemVersion(), SystemId(), HostName() and MachineType() keep
+working unmodified.
+
+WHAT THE WASI BRANCH RETURNS: InternetAddress() returns an empty TCollection_AsciiString. It has
+exactly one in-tree consumer, STEPConstruct_AP203Context::DefaultPersonAndOrganization
+(STEPConstruct_AP203Context.cxx:160), which uses the address as a unique organisation id: it calls
+SearchFromEnd(".") on the result, gets -1 for an empty string, skips the concatenation and leaves
+the id as the literal "IP". A STEP file written from wasm therefore carries the organisation id
+"IP" rather than "IP<a.b.c>", and nothing else in the file changes. Keeping the existing code under
+an emulation is not an option on offer: there is no resolver on wasip1 to emulate.
+
+Issue: https://github.com/SecondMouseAU/OCCTSwift/issues/2173
+
+diff --git a/src/FoundationClasses/TKernel/OSD/OSD_Host.cxx b/src/FoundationClasses/TKernel/OSD/OSD_Host.cxx
+index ce00a9e8..947770c4 100644
+--- a/src/FoundationClasses/TKernel/OSD/OSD_Host.cxx
++++ b/src/FoundationClasses/TKernel/OSD/OSD_Host.cxx
+@@ -26,7 +26,9 @@ const OSD_WhoAmI Iam = OSD_WHost;
+   #include <cerrno>
+ 
+   #include <sys/utsname.h> // For 'uname'
+-  #include <netdb.h>       // This is for 'gethostbyname'
++  #ifndef __wasi__
++    #include <netdb.h> // This is for 'gethostbyname'
++  #endif
+   #include <unistd.h>
+   #include <cstdio>
+ 
+@@ -156,6 +158,10 @@ int OSD_Host::AvailableMemory()
+ 
+ TCollection_AsciiString OSD_Host::InternetAddress()
+ {
++  #ifdef __wasi__
++  // wasi-libc has no <netdb.h>, no resolver and no host name lookup
++  return TCollection_AsciiString();
++  #else
+   struct hostent          internet_address;
+   int                     a, b, c, d;
+   char                    buffer[16];
+@@ -177,6 +183,7 @@ TCollection_AsciiString OSD_Host::InternetAddress()
+   Sprintf(buffer, "%d.%d.%d.%d", a, b, c, d);
+   result = buffer;
+   return (result);
++  #endif
+ }
+ 
+ // =========================================================================

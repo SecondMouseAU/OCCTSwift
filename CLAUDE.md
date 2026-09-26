@@ -13,16 +13,30 @@ that stood until 2026-09-07 grew to 159 KB, 70% of it Known OCCT Bugs narrative 
 OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0.1. It exposes B-Rep solid modeling capabilities to Swift for macOS (arm64, v12+) and iOS (arm64, v15+) via a three-layer architecture: Swift public API → Objective-C++ bridge (C functions) → OCCT C++ library. Uses Swift 6 language mode (strict concurrency).
 
 **One OCCT version is in play.** `Scripts/build-occt.sh` builds `V8_0_1` and `Package.swift` pins
-the `v3.0.0` release asset, which is that same `V8_0_1` plus the carried patches that existed when
-it was built. `Scripts/patches/` holds more than the asset does, and any patch the asset lacks is
-exercised by **no CI job**, because `build-and-test` resolves the asset rather than building from
-source. Before trusting "the fix is in the kernel", run
+the `v4.0.0-kernel.1` pre-release asset, which is that same `V8_0_1` plus the carried patches that
+existed when it was built. Any patch the asset lacks is exercised by **no CI job**, because
+`build-and-test` resolves the asset rather than building from source. Before trusting "the fix is
+in the kernel", run
 `ls Scripts/patches/*.patch | wc -l` against the count in `Package.swift`'s manifest comment, and
 read [`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md) for
 why the count is necessary and not sufficient, and
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) for the current
 divergence (twenty-nine on disk, twenty-nine pinned, as of 2026-09-22: none, since the
 v4.0.0-kernel.1 repin) and what each unpinned patch leaves exposed. A divergence with a written reason is expected; one without is a finding.
+
+**The comparison runs the other way too, and nothing used to make it.** The pinned asset holds
+**thirty-one** patches: those twenty-nine, plus `0032` and the retired
+`0034-LocOpe_SplitDrafts-trim-infinite-pipe-curves-1393`, both deleted from `Scripts/patches/` but
+never reverted out of the `Libraries/occt-src` tree it was built from, since `build-occt.sh`
+applies patches idempotently and never reverts. Both are inert, and the divergence is written up in
+`Package.swift`'s pin block and in
+[`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) (#2190). Two
+consequences before you act on either number. The tree has since been cleaned, so a **local rebuild
+now yields a different checksum from the pinned asset**, which is expected and not a corrupt
+download. And `python3 Scripts/check-pinned-asset-patches.py --require-asset` is the check that
+reads the binary rather than the prose: about seven seconds over all three slices, deliberately
+**not** a `gate-scripts` script (it reads a 1.3 GB xcframework CI does not check out), and part of
+the repin step in the Release Process below.
 
 ## Build & Test Commands
 
@@ -48,11 +62,14 @@ the pinned version onto a machine with no pip or venv; see
 
 ### Static Gate Scripts
 
-Twelve gates, five censuses and one merge-history audit, all pure Python over the repo's own text.
+Fourteen gates, five censuses and one merge-history audit, all pure Python over the repo's own text.
 No OCCT, no build, no network, ~3s for the lot (a bare `census-unmeasured-values.py` run is ~13s).
 CI runs every gate, plus every `--self-test` including the censuses', in `ci.yml`'s `gate-scripts`
 job, a **required status check on `main`**. Each gate exits 1 on a defect and 0 when clean; a census
-exits 0 always, so CI runs only its `--self-test`. The rules behind the list, the gate/census
+exits 0 always, so CI runs only its `--self-test`. The job also runs one release check's
+`--self-test` and nothing else: `check-pinned-asset-patches.py` reaches a verdict like a gate, but
+reads the pinned xcframework to reach it, so its real run belongs to the pin step and it is counted
+as neither a gate nor a census. The rules behind the list, the gate/census/release-check
 distinction, the pre-commit hook and its one deliberate divergence from CI are in
 [`okf/policies/static-gates.md`](okf/policies/static-gates.md); the ruleset rules (never give the
 job a `name:` key, never require a check that has not yet reported, `main` takes PRs only) are in
@@ -70,6 +87,8 @@ python3 Scripts/count-operations.py              # README + API_REFERENCE + docs
 python3 Scripts/check-throwing-calls.py          # every throwing OCCT construction/evaluator is caught, guarded or unreachable (#1407)
 python3 Scripts/check-patch-deletes-guarded-symbol.py  # no carried patch deletes a line whose symbol a test comment guards (#2058)
 python3 Scripts/check-bridge-diagnostics.py      # every function-level bridge catch (...) records what it caught (#2077)
+python3 Scripts/check-preprocessor-balance.py     # no patch unbalances a source file's #if/#else/#endif (#2167)
+python3 Scripts/check-wasi-patch-base.py         # every patches-wasi patch was cut from the carried-patch tree (#2168)
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
 python3 Scripts/census-arguments-tuple-shapes.py # CENSUS, not a gate: @Test(arguments:) elements whose layout trips the toolchain defect (#1057)
@@ -77,6 +96,7 @@ python3 Scripts/census-comment-staleness.py      # CENSUS, not a gate: comments 
 python3 Scripts/census-api-reference-rows.py     # CENSUS, not a gate: API_REFERENCE category-row entries resolving to no declaration (#1679)
 python3 Scripts/check-inventory-prose.py        # every counted claim about the patch and gate inventories matches them (#1408)
 python3 Scripts/check-changelog-transcription.py # REPORT, not a gate yet: merges that landed with no CHANGELOG entry (#742)
+python3 Scripts/check-pinned-asset-patches.py --self-test  # RELEASE CHECK: only the self-test runs here; the real run reads the pinned asset (#2190)
 ```
 
 Run a script's `--self-test` whenever you change it: three gates were confidently wrong while
@@ -116,6 +136,33 @@ the script cannot derive. An elided placeholder is not one: `= ...`, `{ ... }`, 
 #2093 took that to zero. In CI both invocations take `--require-typecheck`, which fails the step
 rather than reporting on a population it never examined (#2098). A wrong signature *restatement* is
 a different question, and `check-docs-defaults.py` covers the enum case of it (#2145).
+
+### Pinned-Asset Patch Check
+
+```bash
+python3 Scripts/check-pinned-asset-patches.py --require-asset   # the check, at a repin (#2190)
+python3 Scripts/check-pinned-asset-patches.py --asset DIR       # ...against a locally built xcframework
+python3 Scripts/check-pinned-asset-patches.py --list            # the evidence derived per patch, no asset read
+python3 Scripts/check-pinned-asset-patches.py --self-test
+```
+
+**Outside `gate-scripts` too**, and for a harder reason than the snippet checker's: it reads a
+157 MB static archive per slice out of a 1.3 GB xcframework that CI never checks out. It is a
+**release-process step**, run at the moment `Package.swift`'s `url:`/`checksum:` move.
+
+Every other patch count in this repo compares text against text. This one compares the patch set
+against the built binary, which is the comparison nothing made until a thirty-one-patch asset
+shipped under a twenty-nine-patch label (#2190). It derives, from each patch's own diff, a shipped
+header line, a string literal, a `thread_local` wrapper symbol or a name the patch introduces, and
+looks for it in all three slices. Today: **16 confirmed, 13 not derivable, 0 absent**, plus two
+acknowledged retired patches. The thirteen are real: a patch that changes a comparison adds no name,
+and `0033` adds a name that libc++ optimises out of existence at `-O2`, so **absence of a symbol is
+never reported as absence of a patch**. A verdict the script cannot reach is printed as one it
+cannot reach. Per #2098, `--require-asset` makes a run that examined nothing fail rather than pass.
+
+A divergence with a written reason goes in its `ACKNOWLEDGED` table, keyed on the tag
+`Package.swift` pins, so it expires at the next repin instead of suppressing a finding about an
+asset nobody wrote it about.
 
 ### Compile a Ground Truth C++ Test
 
@@ -253,15 +300,24 @@ the reproducer). What a bridge author needs without opening it:
 
 - `BRepExtrema_ExtCC` crashes on parallel edges: `if (result.isParallel) { return result; }`
   before reading points. `Extrema_ExtCC::Points` itself over-reads on the same input (patch `0024`).
-- `OCC_CATCH_SIGNALS` is inert in this build (no `OCC_CONVERT_SIGNALS`). An OS signal raised
-  inside OCCT is uncatchable in-process, and so is a C++ exception that reaches the Swift boundary
-  (#345), which is why every `gp_Dir`/`gp_Ax*`/`Geom_Direction` construction from caller doubles
-  sits inside a `try`. **Do not read that as "the process always dies", measured #2750.** Once
-  `occtEnsureSignals()` has run, which any of fourteen bridge entry points does once per process,
-  OCCT's own `SegvHandler` reaches `Standard_ErrorHandler::Abort`, and with `OCC_CONVERT_SIGNALS`
-  undefined that is a plain `throw`, which unwinds on macOS arm64. The same fault therefore kills
-  one process and comes back as a caught `Standard_Failure` in another, depending on nothing the
-  caller controls. Guard the fault; never rely on either outcome.
+- `OCC_CATCH_SIGNALS` is live inside OCCT and inert in bridge code. OCCT's own translation units
+  are compiled with `OCC_CONVERT_SIGNALS`, which its CMake adds on every non-Windows target, so
+  OCCT's own sites register a handler and convert a signal into a `Standard_Failure`. SwiftPM
+  defines nothing for `Sources/OCCTBridge/src/*.mm`, so an `OCC_CATCH_SIGNALS` written in the
+  bridge expands to nothing and registers no handler. An OS signal raised in an OCCT frame with
+  none of OCCT's own sites above it is uncatchable in-process, and so is a C++ exception that
+  reaches the Swift boundary (#345), which is why every `gp_Dir`/`gp_Ax*`/`Geom_Direction`
+  construction from caller doubles sits inside a `try`.
+  **Do not read that as "the process always dies", measured #2750.** Once `occtEnsureSignals()`
+  has run, which any of fourteen bridge entry points does once per process, OCCT's own
+  `SegvHandler` reaches `Standard_ErrorHandler::Abort`, and the same fault therefore kills one
+  process and comes back as a caught `Standard_Failure` in another, depending on nothing the
+  caller controls. Guard the fault; never rely on either outcome. (#2750 attributed that to
+  `Abort` being "a plain `throw` with `OCC_CONVERT_SIGNALS` undefined". The define is present
+  for OCCT's own units, and `OSD_signal.cxx` is the only translation unit that instantiates that
+  template, so it takes the `longjmp` branch, which explains both outcomes on its own: a handler
+  is found, or `FindHandler()` returns null and it prints and calls `exit(1)`. The observation
+  stands, the mechanism is under review as #2763.)
 - **`BRepCheck_Analyzer` is not crash-safe on a shape it did not build.** `Perform()` calls
   `BRepCheck_Edge::InContext(face)`, which dereferences a failed `down_cast<GeomAdaptor_Curve>` on
   a non-degenerated **edge of a face** with no valid 3D curve and at least one pcurve (#2746).
@@ -302,6 +358,16 @@ to pick up patches. The lifecycle from GTest to upstream PR is
 [`okf/policies/upstream-occt-patch-process.md`](okf/policies/upstream-occt-patch-process.md) and
 [`okf/policies/upstream-occt-style.md`](okf/policies/upstream-occt-style.md).
 
+`Scripts/patches-wasi/*.patch` are a different sequence: WASI-only, unnumbered, not upstream-bound,
+and applied by `build-occt-wasm.sh` alone, **after** the carried set. One rule governs them, and
+[`okf/policies/wasi-patch-base.md`](okf/policies/wasi-patch-base.md) owns it: a WASI patch is
+generated by `git diff` in `Libraries/occt-src` with `Scripts/patches/` already applied, and
+verified by `git apply --check` in that same state. PR #2076 authored fifteen against a pristine
+`V8_0_1`, which is how nobody noticed that nine carried patches inject `std::mutex` into OCCT and
+that 15 of the 76 threading-dependent files are files we patch ourselves.
+`check-wasi-patch-base.py` holds the text-only part of that; its `--tree` mode runs the real
+`git apply --check` and needs a checkout, so it is not in `gate-scripts`.
+
 **Check upstream's own recent activity before starting a kernel-defect investigation**, especially
 anything touching caching, mutable or `static` state, or thread-safety. Maintainer dpasukhi is
 running a systematic "Eliminate mutable static state" PR series, roughly one a day, and his blog
@@ -330,7 +396,11 @@ is derived, never chosen: `python3 Scripts/count-operations.py`.
    [`semver-at-release`](okf/policies/semver-at-release.md). No PR touches that file.
 4. **Pin the final kernel.** Re-point `Package.swift`'s `url:`/`checksum:` at the release asset,
    check the patch count per [`pinned-kernel-patch-check`](okf/policies/pinned-kernel-patch-check.md),
-   and retire the bridge-side mitigations listed under Known OCCT Bugs above.
+   then **check the asset itself, not the count**:
+   `python3 Scripts/check-pinned-asset-patches.py --require-asset`. The count compares prose
+   against the tree and is blind to what is baked into the binary, which is how a thirty-one-patch
+   asset shipped under a twenty-nine-patch label (#2190). Finally retire the bridge-side
+   mitigations listed under Known OCCT Bugs above.
 5. **Verify.** Full `swift test`, every gate with its `--self-test`, and `Scripts/tsan-stress.sh all`
    if anything touched concurrency.
 6. **Counts.** `python3 Scripts/count-operations.py` must agree with README.md,

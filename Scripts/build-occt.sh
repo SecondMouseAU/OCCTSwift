@@ -183,6 +183,13 @@ fi
 # Retirement is driven by the pinned tag: V8_0_1 absorbed ten of them (0001-0009 and 0013), whose
 # files are gone while their README sections remain as tombstones. Survivors keep their original
 # numbers, so the sequence has gaps. That is intended, not a missing file.
+#
+# THIS LOOP ONLY APPLIES. IT NEVER REVERTS. Deleting a patch from Scripts/patches/ does not undo
+# its edits in occt-src, so a retired patch keeps shipping in every rebuild from that tree until
+# somebody reverts it by hand. That is how the v4.0.0-kernel.1 asset came to hold thirty-one
+# patches against a tree of twenty-nine (#2190). Retiring a patch means deleting the file AND
+# reverting the files it touched, and step 1 of "Shipping a rebuild" in
+# docs/guides/building-occt.md now computes the strays rather than leaving them to be eyeballed.
 if compgen -G "$SCRIPT_DIR/patches/*.patch" > /dev/null; then
     echo ">>> Applying local OCCT patches..."
     for p in "$SCRIPT_DIR"/patches/*.patch; do

@@ -54,6 +54,7 @@ See [`references/`](references/index.md): OpenCASCADE upstream and licensing (LG
 - [Upstream OCCT PRs follow OCCT's house style](policies/upstream-occt-style.md)
 - [Upstream OCCT patch process, start to finish](policies/upstream-occt-patch-process.md)
 - [Pinned kernel patch check](policies/pinned-kernel-patch-check.md)
+- [WASI patches are authored against the carried-patch tree](policies/wasi-patch-base.md)
 - [Null handle and null shape guards in the bridge](policies/null-handle-guards.md)
 - [Static gates and censuses](policies/static-gates.md)
 - [Required status checks on main](policies/required-status-checks.md)
