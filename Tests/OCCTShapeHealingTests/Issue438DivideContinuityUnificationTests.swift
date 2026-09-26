@@ -8,7 +8,7 @@ import Testing
 // pcurve/surface pinned at the class's own C1 constructor default no matter what continuity was
 // requested. Measured (Scripts/repro/cluster-d-continuity) as a flat "4 faces" from
 // `dividedByContinuity` across every criterion 0..6 on a fixture where `divided(at:)`'s own
-// three-criteria behaviour varies (nil/4/4/25 faces at C0/C1/C2/C3) -- the surface criterion, not
+// three-criteria behaviour varies (1/4/4/25 faces at C0/C1/C2/C3) -- the surface criterion, not
 // the boundary one, is what actually drives this fixture's split count.
 //
 // Fixed by widening `divided(at:)` to `divided(at:tolerance:)`, taking `ContinuityLevel` (the
@@ -64,7 +64,10 @@ struct Issue438DivideContinuityUnificationTests {
     @Test(
         "divided(at:tolerance:) varies with continuity because it sets all three criteria",
         arguments: [
-            (Shape.ContinuityLevel.c0, nil as Int?),
+            // .c0 is the no-op row: nothing on this fixture is below C0, so the divider reports
+            // "nothing changed" and hands back the input face. It was `nil` until #2769 corrected
+            // the bridge to OCCT's own two-part failure test; 1 is the input's own face count.
+            (Shape.ContinuityLevel.c0, 1 as Int?),
             (.c1, 4), (.c2, 4), (.c3, 25), (.cn, 25),
             // G1/G2 are not recognised by ShapeUpgrade_Split*Continuity::SetCriterion, which
             // falls through to its own C1 default for them (read from Libraries/occt-src), so

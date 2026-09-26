@@ -140,7 +140,7 @@ extension Shape {
     /// only the boundary criterion, leaving pcurve/surface pinned at the class's own C1
     /// constructor default regardless of the requested continuity, measured
     /// (`Scripts/repro/cluster-d-continuity`) as a flat result across every criterion on a
-    /// fixture where this method's own three-criteria behaviour varies (nil/4/4/25 faces at
+    /// fixture where this method's own three-criteria behaviour varies (1/4/4/25 faces at
     /// C0/C1/C2/C3).
     ///
     /// ```swift
@@ -155,7 +155,27 @@ extension Shape {
     ///   - tolerance: Tolerance for the continuity check. Defaults to `1e-7`
     ///     (`Precision::Confusion()`), OCCT's own default and this method's behavior before #438
     ///     added the parameter.
-    /// - Returns: Divided shape, or nil if no divisions were needed or on failure.
+    ///
+    /// ## A shape with nothing to divide comes back unchanged (#2769)
+    ///
+    /// This returned `nil` for both "nothing was below the criterion" and "the operation failed"
+    /// until #2769, and the two are different answers in OCCT. `ShapeUpgrade_ShapeDivide::Perform()`
+    /// returning `false` means "nothing changed", with `Result()` holding the input shape; the
+    /// failure signal is that `false` **together with** `Status(ShapeExtend_FAIL)`, which is how
+    /// OCCT's own shape-processing library reads the pair (`ShapeProcess_OperLibrary.cxx`, five call
+    /// sites). So `nil` now means the division genuinely failed, and a no-op returns the input.
+    /// Measured in `Scripts/repro/2765-convert-to-bezier-perform/`.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
+    /// // Every face of a box is planar, so nothing is below C0.
+    /// if let unchanged = box.divided(at: .c0) {
+    ///     print(unchanged.isSame(as: box))  // true: the input shape, not a rebuild
+    /// }
+    /// ```
+    ///
+    /// - Returns: Divided shape, the unchanged input when nothing needed dividing, or nil on
+    ///   failure.
     public func divided(at continuity: ContinuityLevel, tolerance: Double = 1e-7) -> Shape? {
         guard let handle = OCCTShapeDivide(self.handle, continuity.rawValue, tolerance) else {
             return nil
@@ -390,8 +410,15 @@ extension Shape {
     /// `OCCTShapeDivideByNumber` directly (via
     /// `import OCCTBridge`) with explicit `nbU`/`nbV`.
     ///
+    /// A shape the splitter finds nothing to split, such as one with no face at all, comes back
+    /// unchanged rather than as `nil` (#2769). `ShapeUpgrade_ShapeDivide::Perform()` returning
+    /// `false` means "nothing changed", not "failed"; the failure signal is that `false` together
+    /// with `Status(ShapeExtend_FAIL)`, which is what
+    /// ``Shape/divided(at:tolerance:)`` documents in full.
+    ///
     /// - Parameter parts: Number of strips per face
-    /// - Returns: Shape with divided faces, or nil on failure
+    /// - Returns: Shape with divided faces, the unchanged input when no face was split, or nil if
+    ///   `parts <= 1` or on failure
     public func dividedByNumber(_ parts: Int) -> Shape? {
         guard parts > 1 else { return nil }
         guard let h = OCCTShapeDivideByNumber(handle, Int32(parts), 1) else { return nil }
@@ -723,8 +750,24 @@ extension Shape {
     /// Uses ShapeUpgrade_ShapeDivideClosed to split faces that
     /// wrap around completely (e.g., cylinder lateral face).
     ///
+    /// A shape with **no** closed face comes back unchanged rather than as `nil` (#2769): a box at
+    /// any `splitPoints` is a no-op, not a failure. `ShapeUpgrade_ShapeDivide::Perform()` returning
+    /// `false` means "nothing changed", and the failure signal is that `false` together with
+    /// `Status(ShapeExtend_FAIL)`, as ``Shape/divided(at:tolerance:)`` documents in full.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 5, height: 10)!
+    /// print(cylinder.dividedClosedFaces(splitPoints: 2)?.faceCount ?? 0)  // 5: the wall becomes 3
+    ///
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// if let unchanged = box.dividedClosedFaces(splitPoints: 2) {
+    ///     print(unchanged.isSame(as: box))  // true: no face of a box wraps onto itself
+    /// }
+    /// ```
+    ///
     /// - Parameter splitPoints: Number of split points per closed face (default: 1)
-    /// - Returns: Shape with divided faces, or nil on failure
+    /// - Returns: Shape with divided faces, the unchanged input when no face is closed, or nil on
+    ///   failure
     public func dividedClosedFaces(splitPoints: Int = 1) -> Shape? {
         guard let ref = OCCTShapeUpgradeDivideClosed(handle, Int32(splitPoints)) else { return nil }
         return Shape(handle: ref)
@@ -1447,7 +1490,15 @@ extension Shape {
     ///     kernel path.
     ///   - conicMode: Convert conics to Bezier (default: true), including circles; see
     ///     `circleMode` above
-    /// - Returns: Shape with Bezier curves, or nil on failure. The result can report `isValid ==
+    /// A mode set that matches no curve on the input returns the input shape unchanged, which has
+    /// always been this method's behaviour. #2769 changed the other half: a genuine
+    /// `Status(ShapeExtend_FAIL)` used to be returned as a result too, and now gives `nil`. PR
+    /// #2743's review asked for `if (!converter.Perform()) return nullptr;` here; that would turn
+    /// the no-op into a failure, which is the defect #2769's group A fixes elsewhere. See
+    /// ``Shape/divided(at:tolerance:)`` for OCCT's rule in full.
+    ///
+    /// - Returns: Shape with Bezier curves, the unchanged input when no curve matched the mode set,
+    ///   or nil on failure. The result can report `isValid ==
     ///   false`: this converts curve geometry only, without re-deriving the affected edges'
     ///   `SameRange`/pcurve consistency, which is `ShapeFix`'s job, not `ShapeUpgrade`'s.
     public func convertCurves3dToBezier(
@@ -1472,7 +1523,13 @@ extension Shape {
     ///   - revolutionMode: Convert surfaces of revolution (default: true)
     ///   - extrusionMode: Convert extrusion surfaces (default: true)
     ///   - bsplineMode: Convert BSpline surfaces (default: true)
-    /// - Returns: Shape with Bezier surfaces, or nil on failure. The result can report `isValid
+    /// A mode set that matches no surface on the input returns the input shape unchanged, as it
+    /// always has. #2769 changed the other half: a genuine `Status(ShapeExtend_FAIL)` used to come
+    /// back as a result too, and now gives `nil`. Same correction, same reasoning, as
+    /// ``Shape/convertCurves3dToBezier(lineMode:circleMode:conicMode:)`` above.
+    ///
+    /// - Returns: Shape with Bezier surfaces, the unchanged input when no surface matched the mode
+    ///   set, or nil on failure. The result can report `isValid
     ///   == false` when a converted face's edges border another face: this converts surface
     ///   geometry only, without re-deriving pcurve consistency, which is `ShapeFix`'s job, not
     ///   `ShapeUpgrade`'s.

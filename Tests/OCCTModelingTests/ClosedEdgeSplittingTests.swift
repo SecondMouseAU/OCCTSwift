@@ -20,14 +20,13 @@ struct ClosedEdgeSplittingTests {
         }
     }
 
-    @Test("Box with no closed edges returns nil or same count")
-    func boxNoClosedEdges() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let result = box.dividedClosedEdges()
-        // Box has no closed edges. Perform() may return false, yielding nil
-        if let result {
-            #expect(result.edges().count == box.edges().count)
-        }
-        // nil is also acceptable (no work to do)
+    @Test("Box with no closed edges comes back unchanged")
+    func boxNoClosedEdges() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        // A box has no closed edge, so Perform() returns false. Since #2769 that is read as
+        // "nothing was done" rather than as a failure, and Result() (the input shape) comes back.
+        let result = try #require(box.dividedClosedEdges())
+        #expect(result.edges().count == box.edges().count)
+        #expect(result.isSame(as: box))
     }
 }
