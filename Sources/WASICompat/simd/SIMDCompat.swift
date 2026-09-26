@@ -109,16 +109,26 @@ where V.Scalar: BinaryFloatingPoint {
 
 /// The unit vector in the same direction.
 ///
-/// A zero vector normalises to itself rather than to a vector of NaNs. Apple's `simd_normalize`
-/// returns NaNs there, and every one of the 62 call sites in `Sources/OCCTSwift` either guards the
-/// length first or feeds the result to OCCT, which refuses a zero direction with a
-/// `Standard_ConstructionError` the bridge catches. Returning the input keeps that refusal legible
-/// instead of turning it into NaNs that propagate; the difference is recorded here because it IS a
-/// behavioural difference from the Apple module and a reader is entitled to know which way it goes.
+/// A zero vector normalises to a vector of NaNs, which is what Apple's `simd_normalize` does, and
+/// this divides rather than special-casing so that it gets there the same way.
+///
+/// An earlier version of this stand-in returned the zero vector unchanged, on the reasoning that
+/// every call site in `Sources/OCCTSwift` either guards the length first or feeds the result to
+/// OCCT, which refuses a zero direction. That was wrong, and the counting gate in
+/// `check-inventory-prose.py` that was written to hold the claim honest is what found it:
+/// `ConstructionLayer.swift`'s `planeShape` (#880) depends on the NaN, and says so in a comment
+/// recording a direct measurement. A placement built from `normal: .zero` produces NaN points,
+/// `BRepBuilderAPI_MakePolygon` reports a "done" wire from them anyway, and `MakeFace` then fails,
+/// which is what makes `.planeShapeFailed` the reported outcome rather than a NaN-vertexed shape
+/// silently entering the document. Returning zero there would hand `MakePolygon` four coincident
+/// points instead, and what OCCT does with those is a different question nobody has measured.
+///
+/// So this is faithful, and deliberately has no behaviour of its own to remember. A caller that
+/// wants a zero vector to survive normalisation guards its own length, where the choice is visible
+/// (#2759).
 public func simd_normalize<V: SIMD>(_ a: V) -> V
 where V.Scalar: BinaryFloatingPoint {
     let length = simd_length(a)
-    guard length != V.Scalar.zero else { return a }
     var result = a
     for index in 0..<a.scalarCount { result[index] = a[index] / length }
     return result
