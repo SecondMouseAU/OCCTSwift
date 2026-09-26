@@ -148,6 +148,8 @@ Two failures from the same day that measurement alone would not have caught, and
 ## Related
 
 - [Prove the test fails](prove-the-test-fails.md), the stronger rule for detectors and gates.
+- [Follow OCCT's own callers](follow-occt-callers.md), for the question reading the source cannot
+  answer: the callee's source says what a value is, only its callers say which value is an error.
 - [Query `context` first for OCCT / OCCTSwift docs](context-first.md), which is this policy applied
   to API signatures specifically.
 - `docs/v2.0.0-plan.md`'s census-once rule: build each census once as a committed, executable
