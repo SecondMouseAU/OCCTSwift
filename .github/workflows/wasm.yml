@@ -170,13 +170,17 @@ jobs:
             --triple "${{ steps.pins.outputs.triple }}"
             -c release
           )
-          swift build "${BUILD_ARGS[@]}"
-          # Ask SwiftPM where it put the module rather than spelling out
+          # Ask SwiftPM where the module WILL go, rather than spelling out
           # `.build/out/Products/Release-webassembly-wasm32/`. That directory name encodes the
           # build configuration and the SDK's own layout, so a hardcoded copy is wrong the first
           # time either changes, and the symptom is a "module not found" that reads like a failed
           # build rather than a wrong path.
+          #
+          # `--show-bin-path` resolves the path and does NOT build, so it goes first and the build
+          # runs once. Asking afterwards would work too and was the first draft, but it re-enters
+          # SwiftPM for a value it could have had already.
           BIN="$(swift build "${BUILD_ARGS[@]}" --show-bin-path)"
+          swift build "${BUILD_ARGS[@]}"
           MODULE="$BIN/OCCTWasmSpike.wasm"
           test -f "$MODULE" || { echo "no module at $MODULE"; ls -la "$BIN"; exit 1; }
           echo "module=$MODULE" >> "$GITHUB_OUTPUT"
