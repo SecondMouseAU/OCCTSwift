@@ -21,6 +21,25 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `OCCTShapeUpgradeSplitSurfaceAngle` removed, the second spelling of `OCCTShapeSplitByAngle` (#2771)
+
+The bridge declared and defined the same operation twice. Both built
+`ShapeUpgrade_ShapeDivideAngle(maxAngleDegrees * M_PI / 180.0, shape)` with nothing further set,
+and #1640 measured them identical on a cylinder at 45, 90 and 180 degrees (10, 6 and 4 faces from
+each). `OCCTShapeUpgradeSplitSurfaceAngle` was the copy with no Swift caller, no
+`docs/reference/` entry and a name taken from `ShapeUpgrade_SplitSurfaceAngle`, a class it never
+touched; `ShapeUpgrade_SplitSurfaceAngle` is wrapped separately and reachably by
+`OCCTSplitSurfaceAngle`. `OCCTShapeSplitByAngle` stays, behind `Shape.splitByAngle(_:)`.
+
+No Swift API changes, and the derived operation count is unchanged at 4,365: it counts public Swift
+entry points, and this was a C symbol behind none.
+
+Three counted claims naming eleven `ShapeUpgrade_ShapeDivide`-family wrappers are corrected rather
+than left to drift. The `#2769` block comment above the family says ten, and says which of #2766's
+seven group-A wrappers is no longer below it. The test suite's doc comment says the sweep was taken
+at eleven and ten run today. `Scripts/repro/2765-convert-to-bezier-perform/README.md` says the same
+above its transcript, and the transcript itself is left exactly as measured.
+
 ### WebAssembly: OCCT and the OCCTSwift API build and run on `wasm32-unknown-wasip1` (#1689)
 
 OCCT 8.0.1 compiles across all 49 toolkits for `wasm32-unknown-wasip1` and links into `libOCCT-wasm.a`, and the OCCTSwift public API runs on top of it: shapes, booleans, meshing, STEP read and write, and the bridge's error contract, verified by a spike that builds a box, fuses two solids, writes and reads back a STEP file, and checks both halves of a deliberate failure. The build is reproducible from a pinned toolchain (`Scripts/install-wasm-toolchain.sh`), needs no `.unsafeFlags` so the package stays consumable as a versioned SwiftPM dependency, and carries eleven WASI-only OCCT patches plus one force-included shim for the `std` threading names the WASI libc++ omits. Phase 0's verdict is GO with four conditions, recorded in `docs/wasm-feasibility.md`.
