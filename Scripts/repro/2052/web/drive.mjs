@@ -10,7 +10,7 @@
 // Usage: node drive.mjs <url> [--chrome /path/to/binary] [--headed] [--timeout-ms N]
 
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -25,10 +25,24 @@ if (!url) {
   process.exit(2);
 }
 
-const CHROME = flag(
-  "chrome",
+// Candidates, first that exists wins, and `--chrome <path>` overrides the lot. A single hardcoded
+// macOS path would have to be edited before this could run on a CI runner, which is where this rung
+// is headed: `ubuntu-latest` ships `/usr/bin/google-chrome` and `macos-latest` ships the .app.
+const CHROME_CANDIDATES = [
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-);
+  "/Applications/Chromium.app/Contents/MacOS/Chromium",
+  "/usr/bin/google-chrome",
+  "/usr/bin/google-chrome-stable",
+  "/usr/bin/chromium",
+  "/usr/bin/chromium-browser",
+];
+const CHROME =
+  flag("chrome", null) ?? CHROME_CANDIDATES.find((c) => existsSync(c)) ?? CHROME_CANDIDATES[0];
+if (!existsSync(CHROME)) {
+  console.error(`no Chrome at ${CHROME}. Pass --chrome <path>, or install one of:`);
+  for (const c of CHROME_CANDIDATES) console.error(`  ${c}`);
+  process.exit(2);
+}
 const HEADED = args.includes("--headed");
 const TIMEOUT_MS = Number(flag("timeout-ms", 600000));
 const PORT = Number(flag("port", 9222));
