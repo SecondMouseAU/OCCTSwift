@@ -59,6 +59,13 @@ import sys
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PIN_FILE = os.path.join("Scripts", "wasm-kernel-pin.txt")
 
+# The sentence in Package.swift's pin comment that the enumerated patch list follows. A literal,
+# and therefore a thing that can be edited out from under this gate, so `pinned_patch_numbers`
+# returns None rather than [] when it is gone and `check` reports that as its own finding.
+# check-inventory-prose.py reads the same comment with the same anchor, and self_test asserts the
+# two parsers agree, so this duplication is verified rather than merely noted.
+ANCHOR = "survive, all present in Scripts/patches/, are:"
+
 
 def read(rel, text=None):
     if text is not None:
@@ -90,9 +97,12 @@ def pinned_patch_numbers(text=None):
     count claim moving.
     """
     text = read("Package.swift", text)
-    start = text.find("survive, all present in Scripts/patches/, are:")
+    start = text.find(ANCHOR)
     if start < 0:
-        return []
+        # Fail-safe either way, since an empty list makes the count comparison below report a
+        # divergence rather than pass. But "Package.swift enumerates 0" sends the reader to the
+        # wrong place, so the caller distinguishes this and says the anchor moved.
+        return None
     numbers = []
     for line in text[start:].split("\n")[1:]:
         stripped = line.strip()
@@ -142,6 +152,14 @@ def check(pins, pinned, wasi_count):
 
     if not re.fullmatch(r"[0-9a-f]{64}", pins["OCCT_WASM_ASSET_SHA256"]):
         findings.append("OCCT_WASM_ASSET_SHA256 is not a 64-character lowercase hex digest")
+
+    if pinned is None:
+        return findings + [
+            "Package.swift's pinned-patch comment no longer contains the anchor this gate reads.\n"
+            "  looking for: %r\n"
+            "Either the comment was reworded, in which case update ANCHOR here AND in\n"
+            "check-inventory-prose.py, or the enumerated list is gone, in which case the native\n"
+            "pin is undocumented and that is the real finding." % ANCHOR]
 
     declared = int(pins["OCCT_WASM_PATCH_COUNT"])
     native = len(pinned)
@@ -209,7 +227,8 @@ def self_test():
     cases = []
 
     def case(name, expect_finding, pins, pinned=("0010", "0011"), wasi=3):
-        cases.append((name, expect_finding, pins, list(pinned), wasi))
+        cases.append((name, expect_finding, pins,
+                      None if pinned is None else list(pinned), wasi))
 
     case("a matching pin is clean", False, dict(CLEAN_PINS))
 
@@ -245,6 +264,9 @@ def self_test():
               OCCT_WASM_PARITY_ACKNOWLEDGED_AGAINST="99",
               OCCT_WASM_PARITY_ACKNOWLEDGED_REASON="long gone"))
 
+    case("a missing anchor is its own finding, not 'enumerates 0'", True,
+         dict(CLEAN_PINS), pinned=None)
+
     case("a wrong FIRST is a finding", True, dict(CLEAN_PINS, OCCT_WASM_PATCH_FIRST="0009"))
     case("a wrong LAST is a finding", True, dict(CLEAN_PINS, OCCT_WASM_PATCH_LAST="0099"))
     case("a wasi count that moved is a finding", True, dict(CLEAN_PINS), wasi=4)
@@ -261,6 +283,32 @@ def self_test():
     real = parse_pins(read(PIN_FILE))
     if "OCCT_WASM_ASSET_URL" not in real:
         failures.append("  the real %s does not parse into pins" % PIN_FILE)
+
+    # The real anchor must still be there, or every run of this gate reports the same false
+    # divergence and somebody acknowledges it to make the noise stop.
+    if pinned_patch_numbers() is None:
+        failures.append("  Package.swift no longer contains ANCHOR %r" % ANCHOR)
+
+    # This script's pinned_patch_numbers is a COPY of check-inventory-prose.py's. Two readers of one
+    # comment is one too many, and gate scripts here are deliberately standalone rather than
+    # importing each other, so the duplication is verified instead: both must return the same list
+    # for the real Package.swift. A divergence means one was edited and the other was not, which is
+    # exactly the failure a shared literal invites.
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "inventory_prose", os.path.join(REPO, "Scripts", "check-inventory-prose.py"))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        theirs = module.pinned_patch_numbers()
+        mine = pinned_patch_numbers()
+        if theirs != mine:
+            failures.append(
+                "  the two copies of pinned_patch_numbers disagree:\n"
+                "    check-inventory-prose.py: %s\n"
+                "    this script:              %s" % (theirs, mine))
+    except Exception as exc:  # pragma: no cover
+        failures.append("  could not cross-check against check-inventory-prose.py: %s" % exc)
 
     if failures:
         print("check-wasm-kernel-parity --self-test: %d FAILED" % len(failures))

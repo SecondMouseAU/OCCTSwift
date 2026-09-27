@@ -217,11 +217,19 @@ if [ "$DO_INSTALL" -eq 1 ]; then
         tar xzf "$tmp_tarball" -C "$wasi_stage"
         rm -f "$tmp_tarball"
         # Exactly one top-level entry is expected; anything else means the tarball's shape moved
-        # and a silent guess would put a half-tree where the build expects a sysroot.
-        wasi_unpacked="$(find "$wasi_stage" -mindepth 1 -maxdepth 1)"
-        if [ "$(printf '%s\n' "$wasi_unpacked" | wc -l | tr -d ' ')" != "1" ]; then
+        # and a silent guess would put a half-tree where the build expects a sysroot. Counted with
+        # -print0 and NUL-delimited reads rather than by lines, so a name containing a newline is
+        # counted as one entry rather than two, and is then moved correctly rather than splitting
+        # into a word the `mv` cannot find.
+        wasi_count=0
+        wasi_unpacked=""
+        while IFS= read -r -d '' entry; do
+            wasi_count=$((wasi_count + 1))
+            wasi_unpacked="$entry"
+        done < <(find "$wasi_stage" -mindepth 1 -maxdepth 1 -print0)
+        if [ "$wasi_count" != "1" ]; then
             rm -rf "$wasi_stage"
-            echo "ERROR: $WASI_SDK_TARBALL did not unpack to a single directory." >&2
+            echo "ERROR: $WASI_SDK_TARBALL unpacked to $wasi_count top-level entries, expected 1." >&2
             exit 1
         fi
         rm -rf "$WASI_SDK_PREFIX"

@@ -138,6 +138,12 @@ def build_toolset(wasi_sdk: Path, occt_lib_dir: Path, shim: Path | None,
     # run, the manifest's relative path already resolves and this -I names the same directory, so
     # it is a harmless duplicate. In a consumer's checkout only this one resolves. clang ignores an
     # -I naming a directory that does not exist, so neither case warns.
+    #
+    # C++ ONLY, and deliberately not on the C compiler: OCCT's headers are C++ and no C source in
+    # the graph includes one. The single C file on this path is `Libraries/dummy.c`, which exists
+    # because SwiftPM requires a target to have at least one source and which includes nothing.
+    # Adding it to the C compiler would be inert, and an inert flag on a link line is the thing
+    # #2758 exists to clean up.
     if occt_include_dir is not None:
         cxx += ["-I", str(occt_include_dir)]
     # The C compiler gets the SAME set, not just the SjLj pair. `-wasm-use-legacy-eh=false` is an

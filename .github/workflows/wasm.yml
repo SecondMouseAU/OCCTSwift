@@ -158,16 +158,29 @@ jobs:
       # flags missing compiles clean, links clean, returns correct geometry, and answers every
       # error by trapping. Only the two must-fail cases distinguish it.
       - name: Build the Phase 0 spike
+        id: spike
         env:
           OCCTSWIFT_WASI: "1"
         run: |
           set -euo pipefail
           cd Scripts/repro/2175/spike
-          swift build \
-            --toolset "$RUNNER_TEMP/toolset.json" \
-            --swift-sdk "${{ steps.pins.outputs.wasm_sdk_id }}" \
-            --triple "${{ steps.pins.outputs.triple }}" \
+          BUILD_ARGS=(
+            --toolset "$RUNNER_TEMP/toolset.json"
+            --swift-sdk "${{ steps.pins.outputs.wasm_sdk_id }}"
+            --triple "${{ steps.pins.outputs.triple }}"
             -c release
+          )
+          swift build "${BUILD_ARGS[@]}"
+          # Ask SwiftPM where it put the module rather than spelling out
+          # `.build/out/Products/Release-webassembly-wasm32/`. That directory name encodes the
+          # build configuration and the SDK's own layout, so a hardcoded copy is wrong the first
+          # time either changes, and the symptom is a "module not found" that reads like a failed
+          # build rather than a wrong path.
+          BIN="$(swift build "${BUILD_ARGS[@]}" --show-bin-path)"
+          MODULE="$BIN/OCCTWasmSpike.wasm"
+          test -f "$MODULE" || { echo "no module at $MODULE"; ls -la "$BIN"; exit 1; }
+          echo "module=$MODULE" >> "$GITHUB_OUTPUT"
+          echo "built $MODULE ($(wc -c < "$MODULE" | tr -d ' ') bytes)"
 
       - uses: actions/setup-node@v4
         with:
@@ -183,15 +196,14 @@ jobs:
         run: |
           set -euo pipefail
           cd Scripts/repro/2052
-          SPIKE_MODULE="$GITHUB_WORKSPACE/Scripts/repro/2175/spike/.build/out/Products/Release-webassembly-wasm32/OCCTWasmSpike.wasm" \
-            ./run.sh all
+          SPIKE_MODULE="${{ steps.spike.outputs.module }}" ./run.sh all
 
       - name: Record the module size
         if: always()
         run: |
           set -euo pipefail
-          MODULE=Scripts/repro/2175/spike/.build/out/Products/Release-webassembly-wasm32/OCCTWasmSpike.wasm
-          if [ -f "$MODULE" ]; then
+          MODULE="${{ steps.spike.outputs.module }}"
+          if [ -n "$MODULE" ] && [ -f "$MODULE" ]; then
             # Reported, never gated. There is no size target: #1689's 5 MB was withdrawn as
             # spurious, and #2761 holds the measurements and the untried levers. A number in the
             # log is how a regression gets noticed without anything having to pass or fail.
