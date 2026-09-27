@@ -52,6 +52,23 @@ OCCT_WASM_PATCH_LAST=0041
 # The WASI-only source changes, Scripts/patches-wasi/*.patch, which only build-occt-wasm.sh applies.
 OCCT_WASM_WASI_PATCH_COUNT=11
 
+# --- parity acknowledgement, TEMPORARY, see #2785 ---
+# The native pin moved to v4.0.0-kernel.2 (thirty patches) in `ac9dd273`, PR #2782, twenty-nine
+# SECONDS after PR #2784 published the wasm asset for kernel.1 (twenty-nine patches). Neither PR was
+# at fault: #2782 was opened before #2784 merged and could not have known a wasm asset existed, and
+# #2784's asset matched what Package.swift pinned at the moment it was published.
+#
+# So the browser is one patch behind macOS and iOS, and the missing one is
+# 0042-ShapeAnalysis-GetFaceUVBounds-null-surface-2773, a null-surface guard #2773 measured as a
+# SIGSEGV on seven cases. That is a real gap and this acknowledgement does not close it: it keeps
+# `main` green while the 69-minute rebuild happens, and #2785 is the work.
+#
+# AGAINST is the native patch count this was decided at, not a number to bump. The next native repin
+# takes it to thirty-one and the gate fires again, which is the expiry and the whole reason the
+# mechanism is shaped this way rather than as a boolean.
+OCCT_WASM_PARITY_ACKNOWLEDGED_AGAINST=30
+OCCT_WASM_PARITY_ACKNOWLEDGED_REASON=kernel.2 repin (#2782) landed 29s after the kernel.1 wasm asset was published; rebuild tracked in #2785
+
 # --- provenance ---
 # The commit whose Scripts/patches/ and Scripts/patches-wasi/ the archive was built from, so the
 # claim above can be checked rather than believed: `git show <sha>:Scripts/patches` lists them.

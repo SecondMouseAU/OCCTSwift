@@ -774,6 +774,13 @@ which is Phase 5.
   touches no wasm path), and takes a dated acknowledgement that expires when the native
   pin next moves.
 
+  **It fired on its first real occasion, twenty-nine seconds later.** The `kernel.2`
+  repin (#2782) landed immediately after the asset was published for `kernel.1`, so the
+  browser is currently one patch behind: `0042`, a null-surface guard. Neither PR was at
+  fault, which is the point, and the rebuild is #2785. The acknowledgement in
+  `Scripts/wasm-kernel-pin.txt` keeps `main` green until it lands and does not pretend
+  the gap is closed.
+
 ### Phase 2. Swift layer portability
 
 The whole layer compiles and runs as of #2175. What is left is deciding what the wasm
