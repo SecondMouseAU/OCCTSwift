@@ -120,6 +120,13 @@ wrapper has it.
 implementations, split by the direction each one got wrong. `was:` is the answer the bridge gave
 before #2769, `now:` is OCCT's two-part test.
 
+**Eleven was the count when this sweep was taken; ten run today.** #2771 deleted
+`OCCTShapeUpgradeSplitSurfaceAngle`, which built `ShapeUpgrade_ShapeDivideAngle` exactly as
+`OCCTShapeSplitByAngle` does, under a name taken from a class it never touched, with no Swift
+caller and no reference page. It is why the `OCCTShapeSplitByAngle` row below says one row covers
+the pair: there was only ever one construction to measure. Every count of eleven on this page, and
+the seven of group A, is the population as instrumented then, and is left as measured.
+
 ```
 #2765/#2769 sweep: ShapeUpgrade_ShapeDivide-family wrappers with nothing to do
 fixtures: box 10x20x30 (6 faces), cylinder r5 h10 (3 faces), sphere r5 (1), torus 10/3 (1), one straight edge (0)

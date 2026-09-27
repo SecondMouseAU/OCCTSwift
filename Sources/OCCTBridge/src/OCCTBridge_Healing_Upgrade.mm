@@ -669,7 +669,7 @@ OCCTShapeRef OCCTShapeRemoveLocations(OCCTShapeRef shape)
   }
 }
 
-// #2769: how the ShapeUpgrade_ShapeDivide family reports failure, stated once for the eleven
+// #2769: how the ShapeUpgrade_ShapeDivide family reports failure, stated once for the ten
 // wrappers below that run one of its Perform() implementations.
 //
 // ShapeUpgrade_ShapeDivide::Perform() returning false does not mean the operation failed. OCCT's
@@ -696,12 +696,14 @@ OCCTShapeRef OCCTShapeRemoveLocations(OCCTShapeRef shape)
 //
 // Each wrapper below therefore runs OCCT's two-part test. Two opposite failure modes preceded it,
 // both from reading half the pair (#2769). Seven wrappers gated on Perform() alone, so a no-op
-// input came back as nil (#2766 measured all seven). Four ignored the return value outright, so a
-// genuine ShapeExtend_FAIL came back as the input shape dressed as a result: OCCTShapeDivideByArea,
-// which had always done that, plus OCCTShapeConvertToBezier (#2767),
-// OCCTShapeUpgradeConvertCurves3dToBezier (#2753) and OCCTShapeUpgradeConvertSurfaceToBezier
-// (#2743). Measured per wrapper, with Perform(), Status(ShapeExtend_FAIL) and Result().IsNull()
-// side by side, in Scripts/repro/2765-convert-to-bezier-perform/ (siblings.mm and README.md).
+// input came back as nil (#2766 measured all seven). Six of those seven are below; the seventh was
+// OCCTShapeSplitByAngle built a second time under a wrong name, reached from nothing, and #2771
+// deleted it. Four ignored the return value outright, so a genuine ShapeExtend_FAIL came back as
+// the input shape dressed as a result: OCCTShapeDivideByArea, which had always done that, plus
+// OCCTShapeConvertToBezier (#2767), OCCTShapeUpgradeConvertCurves3dToBezier (#2753) and
+// OCCTShapeUpgradeConvertSurfaceToBezier (#2743). Measured per wrapper, with Perform(),
+// Status(ShapeExtend_FAIL) and Result().IsNull() side by side, in
+// Scripts/repro/2765-convert-to-bezier-perform/ (siblings.mm and README.md).
 
 // #438: the sole entry point behind Shape.divided(at:tolerance:) now, folding in what used to be
 // a second, narrower bridge function (OCCTShapeUpgradeDivideContinuity) behind the now-deprecated
@@ -1114,29 +1116,6 @@ OCCTShapeRef _Nullable OCCTShapeCustomTrsfModificationScale(OCCTShapeRef shape, 
     if (!modifier.IsDone())
       return nullptr;
     return new OCCTShape(modifier.ModifiedShape(shape->shape));
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return nullptr;
-  }
-}
-
-OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceAngle(OCCTShapeRef shape, double maxAngleDegrees)
-{
-  if (!shape)
-    return nullptr;
-  try
-  {
-    ShapeUpgrade_ShapeDivideAngle sd(maxAngleDegrees * M_PI / 180.0, shape->shape);
-    // Perform() false on its own is "no surface spans more than maxAngleDegrees", not a failure;
-    // the #2769 note above has OCCT's own reading of the pair.
-    if (!sd.Perform() && sd.Status(ShapeExtend_FAIL))
-      return nullptr;
-    TopoDS_Shape result = sd.Result();
-    if (result.IsNull())
-      return nullptr;
-    return new OCCTShape(result);
   }
   catch (...)
   {
