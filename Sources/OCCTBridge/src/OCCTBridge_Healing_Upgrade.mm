@@ -703,6 +703,24 @@ OCCTShapeRef OCCTShapeRemoveLocations(OCCTShapeRef shape)
 // (#2743). Measured per wrapper, with Perform(), Status(ShapeExtend_FAIL) and Result().IsNull()
 // side by side, in Scripts/repro/2765-convert-to-bezier-perform/ (siblings.mm and README.md).
 
+// #2773: every wrapper below that runs one of those Perform() implementations also refuses a shape
+// carrying a face with no surface and no edges, ahead of constructing the tool.
+//
+// ShapeUpgrade_ShapeDivide::Perform()'s TopAbs_FACE loop hands every face to
+// ShapeUpgrade_FaceDivide::SplitSurface, which calls ShapeAnalysis::GetFaceUVBounds, which
+// dereferences BRep_Tool::Surface(F, L) untested in its no-edge branch (ShapeAnalysis.cxx:280).
+// The loop sits in a try whose catch encodes ShapeExtend_FAIL2 for exactly this case, and that
+// catch fires only in a process where OSD::SetSignal has installed a handler; in one that has not,
+// and none of these functions installs one, the process dies with SIGSEGV. A .brep file
+// round-trips the state intact, so Shape.loadBREP(from:) reaches it with no BRep_Builder call
+// anywhere. Both halves of the predicate are necessary, and the measurement of each is in
+// occtShapeHasSurfacelessEdgelessFace's own comment in OCCTBridge_Internal.h and in
+// Scripts/repro/2773-shapedivide-surfaceless-face/.
+//
+// nullptr is what each of these already answers for a genuine ShapeExtend_FAIL, which is the
+// status the kernel means to set on this input, so the guard changes which processes survive and
+// not what a surviving process is told.
+
 // #438: the sole entry point behind Shape.divided(at:tolerance:) now, folding in what used to be
 // a second, narrower bridge function (OCCTShapeUpgradeDivideContinuity) behind the now-deprecated
 // Shape.dividedByContinuity(criterion:tolerance:). That second function set ONLY
@@ -715,6 +733,11 @@ OCCTShapeRef OCCTShapeRemoveLocations(OCCTShapeRef shape)
 OCCTShapeRef OCCTShapeDivide(OCCTShapeRef shape, int32_t continuity, double tolerance)
 {
   if (!shape)
+    return nullptr;
+
+  // #2773: a face with no surface and no edges faults inside
+  // ShapeAnalysis::GetFaceUVBounds; see the note above.
+  if (occtShapeHasSurfacelessEdgelessFace(shape->shape))
     return nullptr;
 
   try
@@ -794,6 +817,10 @@ OCCTShapeRef OCCTShapeSplitByAngle(OCCTShapeRef shape, double maxAngleDegrees)
 {
   if (!shape)
     return nullptr;
+  // #2773: a face with no surface and no edges faults inside
+  // ShapeAnalysis::GetFaceUVBounds; see the note above.
+  if (occtShapeHasSurfacelessEdgelessFace(shape->shape))
+    return nullptr;
   try
   {
     double                        maxAngleRadians = maxAngleDegrees * M_PI / 180.0;
@@ -817,6 +844,10 @@ OCCTShapeRef OCCTShapeSplitByAngle(OCCTShapeRef shape, double maxAngleDegrees)
 OCCTShapeRef OCCTShapeDivideByNumber(OCCTShapeRef shape, int32_t nbU, int32_t nbV)
 {
   if (!shape || nbU < 1 || nbV < 1)
+    return nullptr;
+  // #2773: a face with no surface and no edges faults inside
+  // ShapeAnalysis::GetFaceUVBounds; see the note above.
+  if (occtShapeHasSurfacelessEdgelessFace(shape->shape))
     return nullptr;
   try
   {
@@ -861,6 +892,10 @@ OCCTShapeRef OCCTShapeDivideClosedEdges(OCCTShapeRef shape, int32_t nbSplitPoint
 {
   if (!shape || nbSplitPoints < 1)
     return nullptr;
+  // #2773: a face with no surface and no edges faults inside
+  // ShapeAnalysis::GetFaceUVBounds; see the note above.
+  if (occtShapeHasSurfacelessEdgelessFace(shape->shape))
+    return nullptr;
   try
   {
     ShapeUpgrade_ShapeDivideClosedEdges divider(shape->shape);
@@ -885,6 +920,10 @@ OCCTShapeRef OCCTShapeDivideByArea(OCCTShapeRef shape, double maxArea)
 {
   if (!shape || maxArea <= 0)
     return nullptr;
+  // #2773: a face with no surface and no edges faults inside
+  // ShapeAnalysis::GetFaceUVBounds; see the note above.
+  if (occtShapeHasSurfacelessEdgelessFace(shape->shape))
+    return nullptr;
   try
   {
     ShapeUpgrade_ShapeDivideArea divider(shape->shape);
@@ -908,6 +947,10 @@ OCCTShapeRef OCCTShapeDivideByArea(OCCTShapeRef shape, double maxArea)
 OCCTShapeRef OCCTShapeDivideByParts(OCCTShapeRef shape, int32_t nbParts)
 {
   if (!shape || nbParts <= 0)
+    return nullptr;
+  // #2773: a face with no surface and no edges faults inside
+  // ShapeAnalysis::GetFaceUVBounds; see the note above.
+  if (occtShapeHasSurfacelessEdgelessFace(shape->shape))
     return nullptr;
   try
   {
@@ -936,6 +979,10 @@ OCCTShapeRef OCCTShapeDivideByParts(OCCTShapeRef shape, int32_t nbParts)
 OCCTShapeRef OCCTShapeConvertToBezier(OCCTShapeRef shape)
 {
   if (!shape)
+    return nullptr;
+  // #2773: a face with no surface and no edges faults inside
+  // ShapeAnalysis::GetFaceUVBounds; see the note above.
+  if (occtShapeHasSurfacelessEdgelessFace(shape->shape))
     return nullptr;
   try
   {
@@ -973,6 +1020,10 @@ OCCTShapeRef OCCTShapeConvertToBezier(OCCTShapeRef shape)
 OCCTShapeRef OCCTShapeUpgradeDivideClosed(OCCTShapeRef shape, int32_t nbSplitPoints)
 {
   if (!shape)
+    return nullptr;
+  // #2773: a face with no surface and no edges faults inside
+  // ShapeAnalysis::GetFaceUVBounds; see the note above.
+  if (occtShapeHasSurfacelessEdgelessFace(shape->shape))
     return nullptr;
   try
   {
@@ -1126,6 +1177,10 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceAngle(OCCTShapeRef shape, dou
 {
   if (!shape)
     return nullptr;
+  // #2773: a face with no surface and no edges faults inside
+  // ShapeAnalysis::GetFaceUVBounds; see the note above.
+  if (occtShapeHasSurfacelessEdgelessFace(shape->shape))
+    return nullptr;
   try
   {
     ShapeUpgrade_ShapeDivideAngle sd(maxAngleDegrees * M_PI / 180.0, shape->shape);
@@ -1148,6 +1203,10 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceAngle(OCCTShapeRef shape, dou
 OCCTShapeRef _Nullable OCCTShapeUpgradeFaceDivide(OCCTShapeRef faceShape)
 {
   if (!faceShape)
+    return nullptr;
+  // #2773: a face with no surface and no edges faults inside
+  // ShapeAnalysis::GetFaceUVBounds; see the note above.
+  if (occtShapeHasSurfacelessEdgelessFace(faceShape->shape))
     return nullptr;
   try
   {
@@ -1277,6 +1336,10 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeConvertCurves3dToBezier(OCCTShapeRef shap
 {
   if (!shape)
     return nullptr;
+  // #2773: a face with no surface and no edges faults inside
+  // ShapeAnalysis::GetFaceUVBounds; see the note above.
+  if (occtShapeHasSurfacelessEdgelessFace(shape->shape))
+    return nullptr;
   try
   {
     ShapeUpgrade_ShapeConvertToBezier converter(shape->shape);
@@ -1310,6 +1373,10 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeConvertSurfaceToBezier(OCCTShapeRef shape
                                                               bool         bsplineMode)
 {
   if (!shape)
+    return nullptr;
+  // #2773: a face with no surface and no edges faults inside
+  // ShapeAnalysis::GetFaceUVBounds; see the note above.
+  if (occtShapeHasSurfacelessEdgelessFace(shape->shape))
     return nullptr;
   try
   {

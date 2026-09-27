@@ -1760,6 +1760,87 @@ inline bool occtShapeHasPCurveOnlyEdge(const TopoDS_Shape& shape)
   return occtShapePCurveOnlyEdgeCount(shape, 1) > 0;
 }
 
+// === #2773: the face that takes ShapeUpgrade_ShapeDivide::Perform()'s process down ===
+//
+// The fault, read from the pinned ShapeAnalysis.cxx:274-282 and measured in
+// Scripts/repro/2773-shapedivide-surfaceless-face/:
+//
+//   TopExp_Explorer ex(FF, TopAbs_EDGE);
+//   if (!ex.More())
+//   {
+//     TopLoc_Location L;
+//     BRep_Tool::Surface(F, L)->Bounds(UMin, UMax, VMin, VMax);
+//     return;
+//   }
+//
+// ShapeAnalysis::GetFaceUVBounds dereferences the surface handle with no test, in the one branch
+// it takes when the face has no edges at all. ShapeUpgrade_FaceDivide::SplitSurface calls it on
+// every face it is given, and ShapeUpgrade_ShapeDivide::Perform()'s TopAbs_FACE loop calls
+// SplitFace->Perform() on every face of the shape, so a single surface-less, edgeless face
+// anywhere in a compound reaches it.
+//
+// SO THE PREDICATE IS: A FACE WITH NO SURFACE AND NO EDGES, and both clauses are load-bearing. A
+// surface-less face that DOES carry a wire takes the pcurve loop below instead, where every
+// ShapeAnalysis_Edge::PCurve lookup fails, Bnd_Box2d::Get throws Standard_ConstructionError on the
+// void box, and ShapeUpgrade_ShapeDivide.cxx:216's catch encodes ShapeExtend_FAIL2 exactly as the
+// kernel intends. Measured: that input returns perform=false status-fail=true FAIL2=true and never
+// faults, with or without a signal handler, so a predicate that tested the surface alone would
+// refuse a shape the kernel handles correctly.
+//
+// A .brep file is enough to reach it, which is what makes it a guard rather than a curiosity.
+// Measured, one process per row:
+//
+//                                                        no signal handler   OSD::SetSignal first
+//   compound + surface-less edgeless face, in memory      SIGSEGV, exit 139   FAIL2, no crash
+//   the same compound written and read back off disk      SIGSEGV, exit 139   FAIL2, no crash
+//   compound + surface-less face carrying a wire          FAIL2, no crash     FAIL2, no crash
+//   healthy box                                           no fault            no fault
+//
+// BRepTools::Write accepts the shape, BRepTools::Read returns it with the null surface and the zero
+// edges intact, and OCCTImportBREP has no filter, so Shape.loadBREP(from:) followed by any wrapper
+// in the population below is the whole route. STEP cannot carry it: STEPControl_Writer transfers
+// the compound as 20 entities and STEPControl_Reader gives back a compound with no faces at all.
+// IGESControl_Writer::AddShape faults on the same input, so no IGES file carrying it can be
+// produced either.
+//
+// The two columns are the #2750 race again, and here the second column is the kernel's OWN correct
+// answer: ShapeUpgrade_ShapeDivide.cxx:190's OCC_CATCH_SIGNALS is live, because OCCT's own
+// translation units are compiled with OCC_CONVERT_SIGNALS, so once a handler is installed the
+// fault is converted and line 216 encodes FAIL2. What decides which column a process is in is
+// whether OSD::SetSignal has run, which none of the guarded functions and no .brep import does.
+// Guard the fault; never rely on either outcome.
+
+/// Counts the faces of `shape` that would drive ShapeAnalysis::GetFaceUVBounds into its untested
+/// `BRep_Tool::Surface(F, L)->Bounds(...)` dereference: a face with a null surface AND no edges.
+/// `limit` stops the walk once that many have been found; pass 0 to count them all.
+inline int32_t occtShapeSurfacelessEdgelessFaceCount(const TopoDS_Shape& shape, int32_t limit)
+{
+  if (shape.IsNull())
+    return 0;
+  int32_t found = 0;
+  for (TopExp_Explorer faceExp(shape, TopAbs_FACE); faceExp.More(); faceExp.Next())
+  {
+    const TopoDS_Face& face = TopoDS::Face(faceExp.Current());
+    TopExp_Explorer    edgeExp(face, TopAbs_EDGE);
+    if (edgeExp.More())
+      continue; // GetFaceUVBounds takes its pcurve loop, which raises a catchable failure
+    TopLoc_Location loc;
+    if (!BRep_Tool::Surface(face, loc).IsNull())
+      continue; // a surface to read Bounds() from, which is the ordinary edgeless-face case
+    found++;
+    if (limit > 0 && found >= limit)
+      break;
+  }
+  return found;
+}
+
+/// Whether `shape` carries at least one such face, and so must not be handed to a
+/// ShapeUpgrade_ShapeDivide or ShapeUpgrade_FaceDivide. Short-circuits on the first one.
+inline bool occtShapeHasSurfacelessEdgelessFace(const TopoDS_Shape& shape)
+{
+  return occtShapeSurfacelessEdgelessFaceCount(shape, 1) > 0;
+}
+
 // === #502: one sub-shape enumeration ===
 //
 // "Give me this shape's sub-shapes of type T" was implemented twice, on two different OCCT

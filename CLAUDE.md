@@ -337,6 +337,18 @@ the reproducer). What a bridge author needs without opening it:
   new `BRepCheck_Analyzer`, and answer "invalid" for a whole-shape question or the site's existing
   "could not determine" for a per-sub-shape one. The predicate is **not** "has a null `Curve3D`
   representation", which is false for the shape a `.brep` round trip produces and crashes anyway.
+- **`ShapeUpgrade_ShapeDivide::Perform()` is not crash-safe on a shape it did not build.** Its
+  `TopAbs_FACE` loop hands every face to `ShapeUpgrade_FaceDivide::SplitSurface`, which calls
+  `ShapeAnalysis::GetFaceUVBounds`, which dereferences `BRep_Tool::Surface(F, L)` untested in the
+  branch it takes when the face has **no edges** (`ShapeAnalysis.cxx:280`, #2773). The loop's own
+  `catch (Standard_Failure const&)` encodes `ShapeExtend_FAIL2` for exactly this case and fires only
+  where `OSD::SetSignal` has already run, which no divide wrapper and no `.brep` import does. A
+  `.brep` round trip preserves the state exactly, so an imported shape reaches it. Guarded at all 12
+  sites in `OCCTBridge_Healing_Upgrade.mm` by `occtShapeHasSurfacelessEdgelessFace` /
+  `occtShapeSurfacelessEdgelessFaceCount` in `OCCTBridge_Internal.h`, answering the `nullptr` each
+  already gives a genuine `ShapeExtend_FAIL`. The predicate needs **both** clauses: a surface-less
+  face that carries a wire is handled correctly and must not be refused. STEP drops the face and
+  `IGESControl_Writer::AddShape` faults on it, so `.brep` is the only route in.
 - `GeomAbs_G2` is never a valid order for `BRepFill_Filling`: curvature continuity is
   `GeomAbs_C1` (ordinal 2), whatever `BRepOffsetAPI_MakeFilling.hxx` says. Test any filling change
   on both a planar and a periodic support surface, since #430 was catchable on one and an
