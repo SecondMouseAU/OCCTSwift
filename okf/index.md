@@ -49,6 +49,7 @@ See [`references/`](references/index.md): OpenCASCADE upstream and licensing (LG
 - [Documentation updates are mandatory](policies/docs-current.md)
 - [No em-dashes, banned words in prose](policies/writing-style.md)
 - [Measure, do not assume, and verify with a second construction](policies/measure-dont-assume.md)
+- [Follow OCCT's own callers, not just its signature](policies/follow-occt-callers.md)
 - [Prove the test fails](policies/prove-the-test-fails.md)
 - [Search before building](policies/search-before-building.md)
 - [Upstream OCCT PRs follow OCCT's house style](policies/upstream-occt-style.md)
