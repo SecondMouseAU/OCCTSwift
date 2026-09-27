@@ -879,7 +879,14 @@ public func dividedClosedEdges(splitPoints: Int = 1) -> Shape?
 Periodic edges (like circles) can cause issues in some algorithms. This splits each closed edge into segments.
 
 - **Parameters:** `splitPoints`, Number of split points per closed edge (default `1`, which doubles the edge count).
-- **Returns:** Shape with closed edges split, or `nil` on failure.
+- **Returns:** Shape with closed edges split, the unchanged input when no edge is closed, or `nil`
+  on failure.
+- **Nothing to split is not a failure (#2769).** A shape with no closed edge, such as a box, comes back unchanged rather than as `nil`:
+  `ShapeUpgrade_ShapeDivide::Perform()` returning `false` means "nothing changed", and the failure
+  signal is that `false` together with `Status(ShapeExtend_FAIL)`, which is how OCCT's own
+  `ShapeProcess_OperLibrary.cxx` reads the pair. The three outcomes, the precedent and the
+  measurement are on
+  [`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance).
 - **OCCT:** `ShapeUpgrade_ShapeDivideClosedEdges::SetNbSplitPoints` then `Perform()` (via
   `OCCTShapeDivideClosedEdges`). Neither `ShapeUpgrade_ShapeDivideAngle`, a different sibling of the
   same base that splits by angular span, nor `BRep_Builder`, which is not called here; both were
@@ -1099,8 +1106,13 @@ public func dividedByArea(maxArea: Double) -> Shape?
 ```
 
 - **Parameters:** `maxArea`, Maximum face area; faces larger than this are split.
-- **Returns:** Shape with subdivided faces, or `nil` on failure.
+- **Returns:** Shape with subdivided faces, the unchanged input when no face exceeds `maxArea`, or
+  `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ShapeDivideArea` (via `OCCTShapeDivideByArea`).
+- **A threshold no face reaches is not a failure**, and never was here: this was the one wrapper in
+  the family that already ignored `Perform()`. #2769 corrected the half it was missing: a genuine
+  `Status(ShapeExtend_FAIL)` used to come back as a result and now gives `nil`. OCCT's rule and the
+  measurement are on [`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance).
 
 ---
 
@@ -1123,8 +1135,18 @@ Measured on a 10 x 10 x 10 cube: `parts: 4` gives 24 faces of 25 each and `parts
 volume is preserved exactly in both cases.
 
 - **Parameters:** `parts`, Target number of parts per face.
-- **Returns:** Shape with subdivided faces, or `nil` on failure. `parts: 1` is a failure, not a
-  no-op: `ShapeUpgrade_ShapeDivideArea::Perform()` returns false when there is nothing to split.
+- **Returns:** Shape with subdivided faces, the unchanged input when `parts` asks for no split, or
+  `nil` on failure. `parts <= 0` is refused by the bridge before OCCT sees it and is `nil`.
+- **Nothing to split is not a failure (#2769).** `parts: 1`, which asks for no split at all, comes back unchanged rather than as `nil`:
+  `ShapeUpgrade_ShapeDivide::Perform()` returning `false` means "nothing changed", and the failure
+  signal is that `false` together with `Status(ShapeExtend_FAIL)`, which is how OCCT's own
+  `ShapeProcess_OperLibrary.cxx` reads the pair. The three outcomes, the precedent and the
+  measurement are on
+  [`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance).
+  Until #2769 this page said the opposite, that `parts: 1` "is a failure, not a no-op". It was
+  describing the bridge, which read `Perform()` alone, rather than OCCT. `OCCTShapeDivideByParts`
+  also had no `Result().IsNull()` check, unlike every sibling, so that gate was its only failure
+  signal; #2769 added the check.
 - **Warning:** a result that was split on **both** axes comes back `BRepCheck_Analyzer`-invalid,
   with its volume preserved exactly. On the cube, `parts: 2` is a 2 x 1 split and is valid,
   `parts: 4` is 2 x 2 and is not. It is the two-axis split rather than this entry point that does
@@ -1333,15 +1355,21 @@ Replaces BSpline curves and surfaces with their Bezier equivalents. Converts 2D/
 
 - **Returns:** Shape with Bezier geometry, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ShapeConvertToBezier` (via `OCCTShapeConvertToBezier`).
-- **Nothing to convert is not a failure (#2765).** A shape whose curves and surfaces are already
+- **Nothing to convert is not a failure (#2765), and a genuine failure is still `nil` (#2769).**
+  A shape whose curves and surfaces are already
   Bezier comes back unchanged rather than as `nil`, matching
   [`convertCurves3dToBezier`](Shape-Builders-2.md#convertcurves3dtobezierlinemodecirclemodeconicmode)
   and [`convertSurfacesToBezier`](Shape-Builders-2.md#convertsurfacestobezierplanemoderevolutionmodeextrusionmodebsplinemode).
   `ShapeUpgrade_ShapeDivide::Perform()`, whose return value the converter forwards unchanged,
   reports "nothing changed" rather than "failed" and leaves `Result()` holding the input shape, so
-  the bridge reads `Result()` and treats only a null result as a failure. Until #2765 this entry
+  the bridge reads `Result()`. Until #2765 this entry
   point read that `false` as failure: converting an already-Bezier one-edge shape a second time
-  returned `nil`. Measured in `Scripts/repro/2765-convert-to-bezier-perform/`.
+  returned `nil`. #2765 then dropped the check outright, which was the opposite half of the same
+  mistake: OCCT tests `Perform()` **together with** `Status(ShapeExtend_FAIL)`, so #2769 restored
+  the failure branch under that condition. No reachable input's answer changed between #2765 and
+  #2769. The three outcomes, the precedent and the measurement are on
+  [`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance), and the transcript is in
+  `Scripts/repro/2765-convert-to-bezier-perform/`.
 - **Validity:** the result can report `isValid == false`, for the reason and with the remedy
   documented on
   [`convertCurves3dToBezier`](Shape-Builders-2.md#convertcurves3dtobezierlinemodecirclemodeconicmode):
@@ -2697,9 +2725,16 @@ Measured on a cylinder, whose three faces are two planar caps and one closed lat
 `splitPoints` of 1, 2 and 3 give 4, 5 and 6 faces, and the volume is unchanged.
 
 - **Parameters:** `splitPoints`, Number of split points per closed face.
-- **Returns:** Shape with divided faces, or `nil` on failure. A shape with **no** closed face is a
-  `nil`, not an unchanged shape: `Perform()` returns false when there is nothing to divide, so a
-  box comes back `nil` at any `splitPoints`.
+- **Returns:** Shape with divided faces, the unchanged input when no face is closed, or `nil` on
+  failure.
+- **Nothing to divide is not a failure (#2769).** A shape with **no** closed face, such as a box at any `splitPoints`, comes back unchanged rather than as `nil`:
+  `ShapeUpgrade_ShapeDivide::Perform()` returning `false` means "nothing changed", and the failure
+  signal is that `false` together with `Status(ShapeExtend_FAIL)`, which is how OCCT's own
+  `ShapeProcess_OperLibrary.cxx` reads the pair. The three outcomes, the precedent and the
+  measurement are on
+  [`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance).
+  Until #2769 this page said the opposite, that a box "comes back `nil` at any `splitPoints`". It
+  was describing the bridge, which read `Perform()` alone, rather than OCCT.
 - **OCCT:** `ShapeUpgrade_ShapeDivideClosed` (via `OCCTShapeUpgradeDivideClosed`).
 - **Example:**
   ```swift

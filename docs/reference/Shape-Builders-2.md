@@ -692,6 +692,14 @@ public func convertCurves3dToBezier(lineMode: Bool = true, circleMode: Bool = tr
   (skip circles, convert other conics). The all-modes-at-once entry point,
   [`convertedToBezier`](Shape-Measurement.md#convertedtobezier), reports a nothing-to-convert
   input the same way since #2765.
+- **A mode set that matches nothing is not a failure, and a genuine failure is `nil` (#2769).**
+  This wrapper read no failure signal at all: it called `Perform()` and ignored the answer. That is
+  right for "nothing matched the mode set", which returns the input shape unchanged, and wrong for a
+  genuine `Status(ShapeExtend_FAIL)`, which used to come back as a result and now gives `nil`. PR
+  #2743's review asked for `if (!converter.Perform()) return nullptr;` here instead; that turns the
+  no-op into a failure, which is the defect #2769 fixes in seven other wrappers. OCCT's rule, its
+  three outcomes and the measurement are on
+  [`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance).
 - **Validity:** the result can report `isValid == false`. `ShapeUpgrade_ShapeConvertToBezier` converts curve geometry only; it does not re-derive the converted edges' `SameRange`/pcurve consistency, which `BRepCheck_Analyzer` treats as invalid on its own, without checking the actual geometric deviation any further. That is the documented split between OCCT's "ShapeUpgrade" (convert) and "ShapeFix" (repair) families, not a defect in this wrapper; run `shape.healed()` afterward if a `BRepCheck`-valid result is required.
 
 - **Example:**
@@ -723,6 +731,9 @@ public func convertSurfacesToBezier(planeMode: Bool = true, revolutionMode: Bool
   `ShapeUpgrade_ShapeDivide::Perform()` reports "nothing changed", not "failed", and this wrapper
   reads `Result()`. The all-modes-at-once entry point,
   [`convertedToBezier`](Shape-Measurement.md#convertedtobezier), behaves the same way since #2765.
+- **A genuine failure is `nil` again (#2769).** Same correction as
+  `convertCurves3dToBezier` above: reading nothing at all from `Perform()` also discarded the
+  `Status(ShapeExtend_FAIL)` half OCCT keeps, so a genuine failure was being returned as a result.
 - **Validity:** the result can report `isValid == false` when a converted face's edges border another face (e.g. a box, where every face is converted and every edge borders two of them); a single converted face bounded only by unconverted neighbors (e.g. a cylinder's end caps) stays valid. Same cause and the same non-goal for this wrapper as `convertCurves3dToBezier(lineMode:circleMode:conicMode:)` above.
 - **Example:**
   ```swift

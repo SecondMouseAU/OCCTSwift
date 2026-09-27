@@ -669,13 +669,47 @@ OCCTShapeRef OCCTShapeRemoveLocations(OCCTShapeRef shape)
   }
 }
 
+// #2769: how the ShapeUpgrade_ShapeDivide family reports failure, stated once for the eleven
+// wrappers below that run one of its Perform() implementations.
+//
+// ShapeUpgrade_ShapeDivide::Perform() returning false does not mean the operation failed. OCCT's
+// own production caller says so: ShapeProcess_OperLibrary.cxx is the shape-processing library that
+// STEP and IGES import healing runs through, and all five of its ShapeUpgrade_ShapeDivide-family
+// call sites (lines 228, 438, 525, 577 and 926 of the pinned Libraries/occt-src copy) read the
+// return value and the status together, never the return value alone:
+//
+//   if (!tool.Perform() && tool.Status(ShapeExtend_FAIL))
+//     return false;                    // the failure path
+//   ctx->RecordModification(tool.GetContext(), msg);
+//   ctx->SetResult(tool.Result());     // success, including when Perform() returned false
+//
+// SWDRAW_ShapeUpgrade.cxx agrees from the other side: it calls Perform(), takes Result(), and
+// reports Status() separately.
+//
+// So false on its own means "nothing was split", with Result() holding the valid input shape, and
+// false together with Status(ShapeExtend_FAIL), the any-of-FAIL1..FAIL8 aggregate documented in
+// ShapeExtend_Status.hxx, is the genuine failure. Status(const ShapeExtend_Status) is declared on
+// ShapeUpgrade_ShapeDivide itself, so every subclass has it; only that base and
+// ShapeUpgrade_ShapeConvertToBezier declare Perform() at all, so every other subclass inherits
+// these semantics unchanged. Result().IsNull() stays as the final check, per the base header's own
+// "Gives the resulting Shape, or Null shape if not done".
+//
+// Each wrapper below therefore runs OCCT's two-part test. Two opposite failure modes preceded it,
+// both from reading half the pair (#2769). Seven wrappers gated on Perform() alone, so a no-op
+// input came back as nil (#2766 measured all seven). Four ignored the return value outright, so a
+// genuine ShapeExtend_FAIL came back as the input shape dressed as a result: OCCTShapeDivideByArea,
+// which had always done that, plus OCCTShapeConvertToBezier (#2767),
+// OCCTShapeUpgradeConvertCurves3dToBezier (#2753) and OCCTShapeUpgradeConvertSurfaceToBezier
+// (#2743). Measured per wrapper, with Perform(), Status(ShapeExtend_FAIL) and Result().IsNull()
+// side by side, in Scripts/repro/2765-convert-to-bezier-perform/ (siblings.mm and README.md).
+
 // #438: the sole entry point behind Shape.divided(at:tolerance:) now, folding in what used to be
 // a second, narrower bridge function (OCCTShapeUpgradeDivideContinuity) behind the now-deprecated
 // Shape.dividedByContinuity(criterion:tolerance:). That second function set ONLY
 // SetBoundaryCriterion, leaving SetPCurveCriterion/SetSurfaceCriterion pinned at the class's own
 // GeomAbs_C1 constructor default regardless of the requested continuity, measured
 // (Scripts/repro/cluster-d-continuity) as a flat result across every criterion 0..6 on a fixture
-// where this function's own three-criteria version varies (nil/4/4/25 faces at C0/C1/C2/C3). Per
+// where this function's own three-criteria version varies (1/4/4/25 faces at C0/C1/C2/C3). Per
 // the OCCT shape-healing guide's own worked example, all three criteria are meant to be set
 // together to the same target continuity.
 OCCTShapeRef OCCTShapeDivide(OCCTShapeRef shape, int32_t continuity, double tolerance)
@@ -702,7 +736,9 @@ OCCTShapeRef OCCTShapeDivide(OCCTShapeRef shape, int32_t continuity, double tole
     divider.SetSurfaceCriterion(cont);
     divider.SetTolerance(tolerance);
     divider.SetSurfaceSegmentMode(Standard_True);
-    if (!divider.Perform())
+    // Perform() false on its own is "nothing dropped below the requested continuity", not a
+    // failure; the #2769 note above has OCCT's own reading of the pair.
+    if (!divider.Perform() && divider.Status(ShapeExtend_FAIL))
       return nullptr;
 
     TopoDS_Shape result = divider.Result();
@@ -762,7 +798,9 @@ OCCTShapeRef OCCTShapeSplitByAngle(OCCTShapeRef shape, double maxAngleDegrees)
   {
     double                        maxAngleRadians = maxAngleDegrees * M_PI / 180.0;
     ShapeUpgrade_ShapeDivideAngle divider(maxAngleRadians, shape->shape);
-    if (!divider.Perform())
+    // Perform() false on its own is "no surface spans more than maxAngleDegrees", not a failure;
+    // the #2769 note above has OCCT's own reading of the pair.
+    if (!divider.Perform() && divider.Status(ShapeExtend_FAIL))
       return nullptr;
     TopoDS_Shape result = divider.Result();
     if (result.IsNull())
@@ -803,7 +841,9 @@ OCCTShapeRef OCCTShapeDivideByNumber(OCCTShapeRef shape, int32_t nbU, int32_t nb
     faceDivide->MaxArea() = -1;
     faceDivide->SetNumbersUVSplits(nbU, nbV);
     divider.SetSplitFaceTool(faceDivide);
-    if (!divider.Perform())
+    // Perform() false on its own is "no face was split", not a failure; the #2769 note above
+    // has OCCT's own reading of the pair.
+    if (!divider.Perform() && divider.Status(ShapeExtend_FAIL))
       return nullptr;
     TopoDS_Shape result = divider.Result();
     if (result.IsNull())
@@ -825,7 +865,9 @@ OCCTShapeRef OCCTShapeDivideClosedEdges(OCCTShapeRef shape, int32_t nbSplitPoint
   {
     ShapeUpgrade_ShapeDivideClosedEdges divider(shape->shape);
     divider.SetNbSplitPoints(nbSplitPoints);
-    if (!divider.Perform())
+    // Perform() false on its own is "no edge was closed", not a failure; the #2769 note above
+    // has OCCT's own reading of the pair.
+    if (!divider.Perform() && divider.Status(ShapeExtend_FAIL))
       return nullptr;
     TopoDS_Shape result = divider.Result();
     if (result.IsNull())
@@ -847,8 +889,10 @@ OCCTShapeRef OCCTShapeDivideByArea(OCCTShapeRef shape, double maxArea)
   {
     ShapeUpgrade_ShapeDivideArea divider(shape->shape);
     divider.MaxArea() = maxArea;
-    divider.Perform();
-    // Result() is valid even when Perform returns false (nothing to split)
+    // Perform() false on its own is "no face exceeded maxArea", not a failure; the #2769 note above
+    // has OCCT's own reading of the pair.
+    if (!divider.Perform() && divider.Status(ShapeExtend_FAIL))
+      return nullptr;
     TopoDS_Shape result = divider.Result();
     if (result.IsNull())
       return nullptr;
@@ -870,9 +914,16 @@ OCCTShapeRef OCCTShapeDivideByParts(OCCTShapeRef shape, int32_t nbParts)
     ShapeUpgrade_ShapeDivideArea divider(shape->shape);
     divider.SetSplittingByNumber(true);
     divider.NbParts() = nbParts;
-    if (!divider.Perform())
+    // Perform() false on its own is "nbParts asked for no split", not a failure; the #2769 note
+    // above has OCCT's own reading of the pair.
+    if (!divider.Perform() && divider.Status(ShapeExtend_FAIL))
       return nullptr;
-    return new OCCTShape(divider.Result());
+    // The Result().IsNull() check every sibling has, added by #2769: this wrapper had none, so
+    // the Perform() gate was its only failure signal.
+    TopoDS_Shape result = divider.Result();
+    if (result.IsNull())
+      return nullptr;
+    return new OCCTShape(result);
   }
   catch (...)
   {
@@ -899,17 +950,13 @@ OCCTShapeRef OCCTShapeConvertToBezier(OCCTShapeRef shape)
     converter.SetRevolutionMode(true);
     converter.SetExtrusionMode(true);
     converter.SetBSplineMode(true);
-    // Perform()'s return value is deliberately not a success flag (#2765).
-    // ShapeUpgrade_ShapeConvertToBezier::Perform() forwards ShapeUpgrade_ShapeDivide::Perform()'s
-    // value unchanged, and that one ends "myResult = myContext->Apply(myShape, TopAbs_SHAPE);
-    // return !myResult.IsSame(myShape);" (the COMPOUND branch: "myResult = myShape; return
-    // false;"). So false means "nothing was converted", with myResult set to the input shape, not
-    // a failure. Its only genuine-failure false is the myShape.IsNull() guard at the top, which
-    // the null check above already covers. Result().IsNull() below is the real failure signal, per
-    // the header's own "the resulting Shape, or Null shape if not done". Measured in
-    // Scripts/repro/2765-convert-to-bezier-perform: a one-edge shape whose curve is already a
-    // Bezier returns false here with a valid Result(), and the old check turned that into nil.
-    converter.Perform();
+    // #2765 was right that a false Perform() here is "nothing was converted" rather than a
+    // failure, and wrong to drop the check outright: that also discarded the
+    // Status(ShapeExtend_FAIL) half OCCT keeps. Corrected by #2769 to OCCT's own two-part
+    // test, per the note above. ShapeUpgrade_ShapeConvertToBezier::Perform() overrides the
+    // base but forwards its return value unchanged, and inherits Status() untouched.
+    if (!converter.Perform() && converter.Status(ShapeExtend_FAIL))
+      return nullptr;
     TopoDS_Shape result = converter.Result();
     if (result.IsNull())
       return nullptr;
@@ -931,8 +978,9 @@ OCCTShapeRef OCCTShapeUpgradeDivideClosed(OCCTShapeRef shape, int32_t nbSplitPoi
   {
     ShapeUpgrade_ShapeDivideClosed divider(shape->shape);
     divider.SetNbSplitPoints(nbSplitPoints);
-    bool ok = divider.Perform();
-    if (!ok)
+    // Perform() false on its own is "no face was closed", not a failure; the #2769 note above
+    // has OCCT's own reading of the pair.
+    if (!divider.Perform() && divider.Status(ShapeExtend_FAIL))
       return nullptr;
     TopoDS_Shape result = divider.Result();
     if (result.IsNull())
@@ -1081,7 +1129,9 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceAngle(OCCTShapeRef shape, dou
   try
   {
     ShapeUpgrade_ShapeDivideAngle sd(maxAngleDegrees * M_PI / 180.0, shape->shape);
-    if (!sd.Perform())
+    // Perform() false on its own is "no surface spans more than maxAngleDegrees", not a failure;
+    // the #2769 note above has OCCT's own reading of the pair.
+    if (!sd.Perform() && sd.Status(ShapeExtend_FAIL))
       return nullptr;
     TopoDS_Shape result = sd.Result();
     if (result.IsNull())
@@ -1236,7 +1286,11 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeConvertCurves3dToBezier(OCCTShapeRef shap
     converter.Set3dCircleConversion(circleMode ? Standard_True : Standard_False);
     converter.Set3dConicConversion(conicMode ? Standard_True : Standard_False);
     converter.SetSurfaceSegmentMode(Standard_False); // curves only
-    converter.Perform();
+    // Ignoring Perform() outright was half of OCCT's test, the same gap #2769 closes in
+    // OCCTShapeConvertToBezier: a mode set that matches no curve is a false Perform() with a
+    // usable Result(), but a genuine ShapeExtend_FAIL was coming back as the input shape.
+    if (!converter.Perform() && converter.Status(ShapeExtend_FAIL))
+      return nullptr;
     TopoDS_Shape result = converter.Result();
     if (result.IsNull())
       return nullptr;
@@ -1267,7 +1321,10 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeConvertSurfaceToBezier(OCCTShapeRef shape
     converter.SetExtrusionMode(extrusionMode ? Standard_True : Standard_False);
     converter.SetBSplineMode(bsplineMode ? Standard_True : Standard_False);
     converter.SetSurfaceSegmentMode(Standard_True);
-    converter.Perform();
+    // Same correction as the sibling above, per the #2769 note: false alone is "no surface
+    // matched the mode set", false with Status(ShapeExtend_FAIL) is the failure.
+    if (!converter.Perform() && converter.Status(ShapeExtend_FAIL))
+      return nullptr;
     TopoDS_Shape result = converter.Result();
     if (result.IsNull())
       return nullptr;

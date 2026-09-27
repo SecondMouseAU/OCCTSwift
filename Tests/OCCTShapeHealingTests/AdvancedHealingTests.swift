@@ -10,13 +10,13 @@ import simd
 struct AdvancedHealingTests {
 
     @Test("Divide cylinder at C1")
-    func divideCylinder() {
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
-        let divided = cyl.divided(at: .c1)
-        // May return the same shape if no discontinuities found
-        if let divided = divided {
-            #expect(divided.isValid)
-        }
+    func divideCylinder() throws {
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
+        // A cylinder's lateral face is one smooth periodic surface, so nothing is below C1. Since
+        // #2769 that no-op returns the input shape rather than nil.
+        let divided = try #require(cyl.divided(at: .c1))
+        #expect(divided.isValid)
+        #expect(divided.isSame(as: cyl))
     }
 
     @Test("Direct faces on box")

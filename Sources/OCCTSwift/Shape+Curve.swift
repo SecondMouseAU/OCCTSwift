@@ -14,9 +14,15 @@ extension Shape {
     ///
     /// A shape with nothing left to convert comes back unchanged, not as `nil` (#2765).
     /// `ShapeUpgrade_ShapeDivide::Perform()`, whose return value this converter forwards, reports
-    /// "nothing changed" rather than "failed", and leaves its result holding the input shape, so
-    /// the bridge reads `Result()` instead. `nil` therefore means the conversion genuinely failed.
-    /// Measured in `Scripts/repro/2765-convert-to-bezier-perform/`.
+    /// "nothing changed" rather than "failed", and leaves its result holding the input shape.
+    /// `nil` therefore means the conversion genuinely failed.
+    ///
+    /// #2765 read that as a reason to ignore `Perform()` outright, and #2769 corrected it: OCCT's
+    /// own shape-processing library (`ShapeProcess_OperLibrary.cxx`, five call sites) reads
+    /// `Perform()` **together with** `Status(ShapeExtend_FAIL)`, so a `false` with that status set
+    /// is a genuine failure and is `nil` again. No reachable input's answer changed; see
+    /// ``Shape/divided(at:tolerance:)`` for the rule in full and
+    /// `Scripts/repro/2765-convert-to-bezier-perform/` for the measurement.
     ///
     /// The result can report `isValid == false`: `ShapeUpgrade` converts geometry and leaves
     /// `SameRange`/pcurve consistency to `ShapeFix`. Call ``Shape/healed()`` afterwards

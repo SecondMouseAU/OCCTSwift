@@ -27,15 +27,15 @@ struct SplitByAngleTests {
         }
     }
 
-    @Test("Split box by angle is no-op or returns nil")
-    func splitBoxNoOp() {
-        // Box faces are all planar, no angle splitting needed
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let result = box.splitByAngle(90)
-        // ShapeDivideAngle may return nil if no surfaces need splitting
-        if let r = result {
-            #expect(r.faces().count >= box.faces().count)
-        }
+    @Test("Split box by angle returns the box unchanged")
+    func splitBoxNoOp() throws {
+        // Box faces are all planar, so no angle splitting is needed. Since #2769 that is a no-op
+        // rather than a refusal: ShapeDivideAngle reports "nothing changed" and the bridge returns
+        // Result(), which is the input shape.
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let result = try #require(box.splitByAngle(90))
+        #expect(result.faces().count == box.faces().count)
+        #expect(result.isSame(as: box))
     }
 
     @Test("Split cone by 180 degrees")

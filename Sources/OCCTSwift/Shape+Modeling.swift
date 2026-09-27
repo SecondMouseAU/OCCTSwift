@@ -1176,8 +1176,24 @@ extension Shape {
     /// Useful for export to systems that cannot handle full 360° surfaces
     /// (e.g., splitting a full cylinder into quarter-cylinders with maxAngle=90).
     ///
+    /// A shape with no surface spanning more than `maxAngleDegrees`, such as an all-planar box,
+    /// comes back unchanged rather than as `nil` (#2769). `ShapeUpgrade_ShapeDivide::Perform()`
+    /// returning `false` means "nothing changed", and the failure signal is that `false` together
+    /// with `Status(ShapeExtend_FAIL)`, as ``Shape/divided(at:tolerance:)`` documents in full.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 5, height: 10)!
+    /// print(cylinder.splitByAngle(90)?.faceCount ?? 0)  // 6: two caps, four quarter walls
+    ///
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// if let unchanged = box.splitByAngle(90) {
+    ///     print(unchanged.isSame(as: box))  // true: a planar face has no angular span
+    /// }
+    /// ```
+    ///
     /// - Parameter maxAngleDegrees: Maximum angle in degrees (e.g., 90 for quarter-turns)
-    /// - Returns: Shape with surfaces split at angle boundaries, or nil on failure
+    /// - Returns: Shape with surfaces split at angle boundaries, the unchanged input when no
+    ///   surface spans more than `maxAngleDegrees`, or nil on failure
     public func splitByAngle(_ maxAngleDegrees: Double) -> Shape? {
         guard let h = OCCTShapeSplitByAngle(handle, maxAngleDegrees) else { return nil }
         return Shape(handle: h)
@@ -1881,8 +1897,14 @@ extension Shape {
     ///
     /// Periodic edges (like circles) can cause issues in some algorithms.
     /// This splits each closed edge into segments.
+    /// A shape with no closed edge, such as a box, comes back unchanged rather than as `nil`
+    /// (#2769). `ShapeUpgrade_ShapeDivide::Perform()` returning `false` means "nothing changed", and
+    /// the failure signal is that `false` together with `Status(ShapeExtend_FAIL)`, as
+    /// ``Shape/divided(at:tolerance:)`` documents in full.
+    ///
     /// - Parameter splitPoints: Number of split points per closed edge (default 1, doubles the edge count)
-    /// - Returns: Shape with closed edges split, or nil on failure
+    /// - Returns: Shape with closed edges split, the unchanged input when no edge is closed, or nil
+    ///   on failure
     public func dividedClosedEdges(splitPoints: Int = 1) -> Shape? {
         guard let h = OCCTShapeDivideClosedEdges(handle, Int32(splitPoints)) else { return nil }
         return Shape(handle: h)
