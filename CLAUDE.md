@@ -23,11 +23,12 @@ in the kernel", run
 read [`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md) for
 why the count is necessary and not sufficient, and
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) for the current
-divergence (thirty on disk, twenty-nine pinned, as of 2026-09-27: `0042` (#2773), carried after the
-v4.0.0-kernel.1 repin) and what each unpinned patch leaves exposed. A divergence with a written reason is expected; one without is a finding.
+divergence (thirty on disk, thirty pinned, as of 2026-09-27: none, since the v4.0.0-kernel.2 repin
+carried `0042` (#2773)) and what an unpinned patch would leave exposed. A divergence with a written
+reason is expected; one without is a finding.
 
 **The comparison runs the other way too, and nothing used to make it.** The pinned asset holds
-**thirty-one** patches: those twenty-nine, plus `0032` and the retired
+**thirty-two** patches: those thirty, plus `0032` and the retired
 `0034-LocOpe_SplitDrafts-trim-infinite-pipe-curves-1393`, both deleted from `Scripts/patches/` but
 never reverted out of the `Libraries/occt-src` tree it was built from, since `build-occt.sh`
 applies patches idempotently and never reverts. Both are inert, and the divergence is written up in
