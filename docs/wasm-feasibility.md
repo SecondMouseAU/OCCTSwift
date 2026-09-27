@@ -220,12 +220,21 @@ its siblings write to.
   OCCT add about 13.9 MB on top of Foundation. Moving files to `FoundationEssentials`
   is the first lever; #2761 holds the numbers.
 
-  **There is no size budget.** #1689 originally asked for 5 MB gzipped, that was
-  downgraded to a target on 2026-09-23 and withdrawn on 2026-09-25. It was never
-  like-for-like with the `occt-wasm` figure it was set against (that one is brotli,
-  OCCT alone, Emscripten), and Foundation exceeds it before any OCCT is present, so it
-  constrained the wrong component. #2761 measures and reports rather than passing or
-  failing against a number chosen before anything was built.
+  **There is no size budget, and no size target either.** #1689 originally asked for
+  5 MB gzipped. That was downgraded to a target on 2026-09-23, withdrawn on
+  2026-09-25, and the last comparisons against it were deleted on 2026-09-27 as
+  spurious. Three separate things were wrong with the figure. It was never
+  like-for-like with the `occt-wasm` figure it was set against, which is brotli, OCCT
+  alone, Emscripten. Foundation exceeds it before any OCCT is present, so it
+  constrained the wrong component. And nothing measured in the whole of Phase 0 came
+  within five times it, so keeping it relabelled every future result a failure without
+  telling anyone anything. #2761 measures and reports; it does not pass or fail against
+  a number chosen before anything was built.
+
+  **This paragraph is the only place in the repo that discusses the figure.** Prose
+  elsewhere that states a measurement as a multiple of it is stale by construction, and
+  that is the form the residue took: the number was withdrawn in three places while
+  five others went on calling it a target.
 
 ## Three paths to one wasm module
 
@@ -378,7 +387,7 @@ bridge, over OCCT, in one module, including two that must fail and do. See
 What remains open is now a short list rather than the shape of the thing: nothing has
 run in a browser (#2052), no test target has been built for wasm, there is no
 numerical parity check against the Apple kernel, and the module is 26.98 MB brotli
-and there is no size budget: #1689's 5 MB was withdrawn on 2026-09-25 (#2761).
+with no size work of any kind applied to it yet (#2761).
 
 The measurement logs are
 [`Scripts/repro/2169/README.md`](../Scripts/repro/2169/README.md),
@@ -528,10 +537,12 @@ with no diagnostic anywhere. So:
   capture stays empty**. That is OCCT's internal handlers still working, which is the half that
   disappears silently if the exception flags miss a file.
 
-#### Module size, measured (there is no budget)
+#### Module size, measured (against nothing)
 
-The target is a target and not a gate, and it did not change the verdict. The figures carry the
-Swift runtime, Foundation, the Swift layer, the bridge and whatever of OCCT six calls reach.
+These are the first figures for the whole stack, and there is nothing to read them against: the
+5 MB figure #1689 opened with is withdrawn, for the reasons under
+[What breaks in the Swift layer](#what-breaks-in-the-swift-layer). They carry the Swift runtime,
+Foundation, the Swift layer, the bridge and whatever of OCCT six calls reach.
 
 | Module | Uncompressed | `gzip -9` | `brotli -q 11` |
 |---|---|---|---|
@@ -539,10 +550,12 @@ Swift runtime, Foundation, the Swift layer, the bridge and whatever of OCCT six 
 | `HelloFoundation`, + Foundation | 60,380,095 | 20,060,965 | **13,112,239** |
 | **`OCCTWasmSpike`**, + the bridge + OCCT | **141,861,273** | 41,110,844 | **26,976,003** |
 
-**Foundation is already 2.6x over the target before any of this package is in the module.** By wasm
-section, `HelloFoundation` is 15,828,699 bytes of `CODE` and **37,615,734 bytes of `DATA`**, and
-stripping debug information moves 4,635 bytes of it, so that is internationalisation data rather
-than anything a release pipeline drops. `Sources/OCCTSwift` has 219 files that `import Foundation`.
+**Foundation is 13.11 MB brotli before any of this package is in the module**, which is the finding
+that matters: whatever the acceptable size for a browser turns out to be, most of the current one is
+not ours. By wasm section, `HelloFoundation` is 15,828,699 bytes of `CODE` and **37,615,734 bytes of
+`DATA`**, and stripping debug information moves 4,635 bytes of it, so that is internationalisation
+data rather than anything a release pipeline drops. `Sources/OCCTSwift` has 219 files that
+`import Foundation`.
 
 So the size question is not primarily an OCCT question, and no size work of any kind has been tried:
 no `wasm-opt`, no `FoundationEssentials`, no `-Osize`, no link-time inspection. That is #2761, which
@@ -593,7 +606,7 @@ the same either way. Nothing here has run in a browser; that is #2052.
 | [#2758](https://github.com/SecondMouseAU/OCCTSwift/issues/2758) | `-mllvm -wasm-enable-sjlj` and `-lsetjmp` are now inert, and four places still call them load-bearing | open, cosmetic |
 | [#2759](https://github.com/SecondMouseAU/OCCTSwift/issues/2759) | 196 of 230 Swift files `import simd`, which does not exist on wasm | **worked around here** with a WASI-only `simd` target; the shape of the real answer is open |
 | [#2760](https://github.com/SecondMouseAU/OCCTSwift/issues/2760) | `Shape.isSelfIntersecting(hardTimeout:)` needs a second thread, so it cannot exist on wasip1 non-threads | **removed here** under `#if !os(WASI)`; the API decision is open |
-| [#2761](https://github.com/SecondMouseAU/OCCTSwift/issues/2761) | module size, and Foundation being 2.6x the target on its own | open, and explicitly not a gate |
+| [#2761](https://github.com/SecondMouseAU/OCCTSwift/issues/2761) | module size, and 13.11 MB of the 26.98 MB being Foundation on its own | open, and not a gate: there is no target to gate against |
 
 Two more were fixed in place and need no issue: `OCCTBridge.h` needed `<stdbool.h>` as well as the
 `<stdint.h>` #2256 added (1,198 `unknown type name 'bool'` errors across 14 of the 18 bridge
@@ -610,9 +623,11 @@ both behaved.
 
 The conditions are things that are **not** proven and that a later phase must not assume:
 
-1. **Size is unaddressed and is the largest open risk to the product goal** (#2761). 26.98 MB brotli is
-   not shippable to a browser, 13.11 MB of it is Foundation before OCCT is involved, and nothing has
-   been tried. Phase 2 should start with `FoundationEssentials`, not finish with it.
+1. **Size is unaddressed and is the largest open risk to the product goal** (#2761). 26.98 MB brotli
+   is a lot to send a browser, 13.11 MB of it is Foundation before OCCT is involved, and nothing has
+   been tried: no `wasm-opt`, no `FoundationEssentials`, no `-Osize`. Phase 2 should start with
+   `FoundationEssentials`, not finish with it. What it should not do is set a replacement number
+   before the levers have been measured, which is how the withdrawn one came about.
 2. **Nothing has run in a browser** (#2052). Everything here is `wasmkit` on macOS. The browser
    filesystem shape is inferred, not measured, and the import list is the reason to expect it to
    hold rather than a proof that it does.
