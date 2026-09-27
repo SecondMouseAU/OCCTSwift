@@ -125,8 +125,9 @@ int main()
     report("OCCTShapeDivide (Continuity C0, box)", "A", p, d.Status(ShapeExtend_FAIL), box, r);
   }
 
-  // OCCTShapeSplitByAngle and OCCTShapeUpgradeSplitSurfaceAngle are the same construction twice,
-  // so one row covers both: nothing angular on a box.
+  // One row, because OCCTShapeSplitByAngle had a twin, OCCTShapeUpgradeSplitSurfaceAngle, that
+  // built this same construction with no further configuration; a second row would have measured
+  // it twice. #2771 deleted the twin on that evidence. Nothing angular on a box.
   {
     ShapeUpgrade_ShapeDivideAngle d(M_PI / 2.0, box);
     const bool                    p = d.Perform();

@@ -343,7 +343,7 @@ the reproducer). What a bridge author needs without opening it:
   branch it takes when the face has **no edges** (`ShapeAnalysis.cxx:280`, #2773). The loop's own
   `catch (Standard_Failure const&)` encodes `ShapeExtend_FAIL2` for exactly this case and fires only
   where `OSD::SetSignal` has already run, which no divide wrapper and no `.brep` import does. A
-  `.brep` round trip preserves the state exactly, so an imported shape reaches it. Guarded at all 12
+  `.brep` round trip preserves the state exactly, so an imported shape reaches it. Guarded at all 11
   sites in `OCCTBridge_Healing_Upgrade.mm` by `occtShapeHasSurfacelessEdgelessFace` /
   `occtShapeSurfacelessEdgelessFaceCount` in `OCCTBridge_Internal.h`, answering the `nullptr` each
   already gives a genuine `ShapeExtend_FAIL`. The predicate needs **both** clauses: a surface-less

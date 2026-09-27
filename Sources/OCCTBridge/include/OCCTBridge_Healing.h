@@ -933,15 +933,6 @@ OCCTShapeRef _Nullable OCCTShapeCustomDirectModification(OCCTShapeRef shape);
 /// @param sz Scale Z
 OCCTShapeRef _Nullable OCCTShapeCustomTrsfModificationScale(OCCTShapeRef shape, double scaleFactor);
 
-// --- ShapeUpgrade_SplitSurfaceAngle ---
-
-/// Split surfaces of revolution so each segment covers no more than maxAngle degrees.
-/// @param shape The shape to process
-/// @param maxAngleDegrees Maximum angle per segment in degrees
-/// @return The modified shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceAngle(OCCTShapeRef shape,
-                                                         double       maxAngleDegrees);
-
 // --- ShapeAnalysis_TransferParametersProj ---
 // Transfer a parameter from edge 3D curve to face 2D representation
 double OCCTShapeAnalysisTransferParam(OCCTShapeRef edgeShape,

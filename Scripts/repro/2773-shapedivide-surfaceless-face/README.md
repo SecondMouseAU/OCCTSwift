@@ -8,7 +8,7 @@ This directory holds the measurement that decides whether that matters: **whethe
 one.**
 
 It can. The verdict is **reachable**, through a `.brep` file and nothing else, and the guard that
-follows is at twelve bridge sites.
+follows is at eleven bridge sites.
 
 Run everything with `run.sh` from the repository root:
 
@@ -86,7 +86,7 @@ A plain C++ `catch (Standard_Failure const&)` in the caller does **not** see it,
 mechanism is a `longjmp` to a registered `Standard_ErrorHandler`, not a C++ throw. With no handler
 registered, `FindHandler()` returns null and OCCT prints that line and calls `exit(1)`. That is the
 mechanism `CLAUDE.md` records as under review as #2763, measured again here from the other side, and
-it is why `OCCTShapeUpgradeFaceDivide` is the worst of the twelve sites: it dies in both columns.
+it is why `OCCTShapeUpgradeFaceDivide` is the worst of the eleven sites: it dies in both columns.
 
 ## Step 1: the `.brep` round trip, which is the whole question
 
@@ -106,7 +106,7 @@ The writer accepts it, the reader accepts the file, and the face comes back with
 and the zero edges intact. Nothing is dropped and nothing is repaired, unlike #2746 where the
 writer dropped the null `Curve3D` record and the guard's predicate had to be written around that.
 The bare face on its own round-trips identically. `OCCTImportBREP` has no filter of its own, so
-`Shape.loadBREP(from:)` followed by any of the twelve wrappers is the whole route, with no
+`Shape.loadBREP(from:)` followed by any of the eleven wrappers is the whole route, with no
 `BRep_Builder` call anywhere in it.
 
 And the answer that matters: `divide-file <the reloaded shape> no` exits 139.
@@ -168,15 +168,16 @@ Twelve bridge functions, derived at `e8d1b076` from every construction of a
 | `OCCTShapeDivideByParts` | `Shape.dividedByParts(_:)` |
 | `OCCTShapeConvertToBezier` | `Shape.convertedToBezier` |
 | `OCCTShapeUpgradeDivideClosed` | `Shape.dividedClosedFaces(splitPoints:)` |
-| `OCCTShapeUpgradeSplitSurfaceAngle` | none: an orphan, which PR #2775 deletes |
 | `OCCTShapeUpgradeFaceDivide` | `Shape.divideFace()` |
 | `OCCTShapeUpgradeConvertCurves3dToBezier` | `Shape.convertCurves3dToBezier(lineMode:circleMode:conicMode:)` |
 | `OCCTShapeUpgradeConvertSurfaceToBezier` | `Shape.convertSurfacesToBezier(planeMode:revolutionMode:extrusionMode:bsplineMode:)` |
 
-Eleven of the twelve are #2769's eleven `Perform()` wrappers. The twelfth,
+Ten of the eleven are #2769's wrappers, less `OCCTShapeUpgradeSplitSurfaceAngle`, which PR #2775
+deleted as an unreached duplicate before this branch merged. The eleventh,
 `OCCTShapeUpgradeFaceDivide`, calls `ShapeUpgrade_FaceDivide::Perform()` directly and so was not in
-that count; it is the one site with no `OCC_CATCH_SIGNALS` above it at all. If PR #2775 lands first
-the count is eleven, with `OCCTShapeUpgradeSplitSurfaceAngle` gone.
+#2769's count; it is the one site with no `OCC_CATCH_SIGNALS` above it at all. The measurements below
+were taken at `e8d1b076`, when the orphan still existed and the count was twelve; deleting it removed
+a site and changed no other row.
 
 The predicate is `occtShapeHasSurfacelessEdgelessFace` in `OCCTBridge_Internal.h`, and the
 discrimination it has to make is in the `describe` case's own columns:
@@ -191,7 +192,7 @@ compound of one, with wire         type=0 faces=1 null-surface=1 edgeless=0 BOTH
 `BOTH` is the predicate. A guard written on `null-surface` alone would refuse row four, which the
 kernel handles correctly.
 
-`nullptr` is what each of the twelve already answers for a genuine `ShapeExtend_FAIL`, and `FAIL2`
+`nullptr` is what each of the eleven already answers for a genuine `ShapeExtend_FAIL`, and `FAIL2`
 is the status the kernel means to set on this input, so the guard changes which processes survive
 and not what a surviving process is told.
 
