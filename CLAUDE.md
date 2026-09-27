@@ -64,7 +64,7 @@ the pinned version onto a machine with no pip or venv; see
 
 ### Static Gate Scripts
 
-Fourteen gates, five censuses and one merge-history audit, all pure Python over the repo's own text.
+Fifteen gates, five censuses and one merge-history audit, all pure Python over the repo's own text.
 No OCCT, no build, no network, ~3s for the lot (a bare `census-unmeasured-values.py` run is ~13s).
 CI runs every gate, plus every `--self-test` including the censuses', in `ci.yml`'s `gate-scripts`
 job, a **required status check on `main`**. Each gate exits 1 on a defect and 0 when clean; a census
@@ -89,6 +89,7 @@ python3 Scripts/count-operations.py              # README + API_REFERENCE + docs
 python3 Scripts/check-throwing-calls.py          # every throwing OCCT construction/evaluator is caught, guarded or unreachable (#1407)
 python3 Scripts/check-patch-deletes-guarded-symbol.py  # no carried patch deletes a line whose symbol a test comment guards (#2058)
 python3 Scripts/check-bridge-diagnostics.py      # every function-level bridge catch (...) records what it caught (#2077)
+python3 Scripts/check-wasm-kernel-parity.py      # the wasm kernel asset carries the same patch set as the pinned native one (#2269)
 python3 Scripts/check-preprocessor-balance.py     # no patch unbalances a source file's #if/#else/#endif (#2167)
 python3 Scripts/check-wasi-patch-base.py         # every patches-wasi patch was cut from the carried-patch tree (#2168)
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)

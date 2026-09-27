@@ -15,17 +15,33 @@
 import RunnerCore
 
 enum HarnessRunner {
-    static let harnesses: [RunnableEntry] = [
-        RunnableEntry(name: "772-self-intersection",
-                      summary: "analyze(tolerance:) vs isSelfIntersecting(timeout:) cost (#772)",
-                      run: AnalyzeSelfIntersectionTiming.run),
-        RunnableEntry(name: "965-properties-lifetime",
-                      summary: "do the *Properties views keep their parent alive? (#965)",
-                      run: PropertiesLifetime.run),
-        RunnableEntry(name: "777-pocket-isopen",
-                      summary: "PocketFeature.isOpen's enclosure test, four ways (#777)",
-                      run: PocketEnclosureTiming.run),
-    ]
+    // Two of the three are `#if !os(WASI)`, and this list has to agree with them or the target does
+    // not compile for wasm at all. Both are wall-clock timing harnesses; their own files say why
+    // they are guarded rather than ported. Built up rather than written as one literal with `#if`s
+    // inside it, so the entries stay readable and the platform difference is stated once.
+    static let harnesses: [RunnableEntry] = {
+        var entries: [RunnableEntry] = [
+            RunnableEntry(
+                name: "965-properties-lifetime",
+                summary: "do the *Properties views keep their parent alive? (#965)",
+                run: PropertiesLifetime.run)
+        ]
+        #if !os(WASI)
+            entries += [
+                RunnableEntry(
+                    name: "772-self-intersection",
+                    summary: "analyze(tolerance:) vs isSelfIntersecting(timeout:) cost (#772)",
+                    run: AnalyzeSelfIntersectionTiming.run),
+                RunnableEntry(
+                    name: "777-pocket-isopen",
+                    summary: "PocketFeature.isOpen's enclosure test, four ways (#777)",
+                    run: PocketEnclosureTiming.run),
+            ]
+        #endif
+        // Sorted, so the listing printed with no argument does not depend on the order the
+        // platform-conditional block appends in.
+        return entries.sorted { $0.name < $1.name }
+    }()
 
     static func main() {
         GenericRunner.main(

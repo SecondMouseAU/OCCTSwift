@@ -424,21 +424,47 @@ be expressed safely.
 
 **In the manifest, because they have a safe spelling**: every library NAME
 (`-lOCCT-wasm`, `-lc++`, `-lc++abi`, `-lunwind`, `-lsetjmp`, `-lwasi-emulated-getpid`) as
-`.linkedLibrary`, and every define and header search path.
+`.linkedLibrary`, and every define.
 
 **In a toolset the consumer passes**, because nothing else can carry them:
 `-fwasm-exceptions -mllvm -wasm-use-legacy-eh=false`, `-mllvm -wasm-enable-sjlj`, the `-L` into
-wasi-sdk's `lib/wasm32-wasip1/eh`, and the `-L` for `libOCCT-wasm.a`.
-`Scripts/make-wasi-toolset.py` writes one, reading the exception flags from
+wasi-sdk's `lib/wasm32-wasip1/eh`, the `-L` for `libOCCT-wasm.a`, and the **`-I` for the OCCT
+headers**. `Scripts/make-wasi-toolset.py` writes one, reading the exception flags from
 `Scripts/wasm-toolchain-versions.txt` so a toolset cannot drift away from the flags the kernel was
-built with:
+built with.
+
+**The header search path is the one that moved (#2269), and it is worth saying why.** The manifest
+does carry `.headerSearchPath("occt-headers-wasm")`, which is a safe setting, and it works
+perfectly in a checkout that has run `Scripts/fetch-occt-wasm.sh` or `Scripts/build-occt-wasm.sh`.
+It resolves **inside the package**, though, and a consumer resolving OCCTSwift by version gets a
+checkout with no `Libraries/` at all, because it is gitignored. clang says nothing about an `-I`
+naming a directory that is not there, so the first symptom is
+`fatal error: 'Standard.hxx' file not found` on the first bridge translation unit, which reads like
+a broken checkout rather than a missing kernel. The toolset's `-I` names wherever the consumer
+unpacked the asset, and both spellings coexist: in this checkout they name the same directory.
+
+### The three commands
 
 ```bash
-python3 Scripts/make-wasi-toolset.py --wasi-sdk "$WASI_SDK_PREFIX" \
-    --occt-lib-dir <where libOCCT-wasm.a is> -o toolset.json
+# 1. the toolchain: swift.org Swift, its wasm SDK, and wasi-sdk. Pinned with checksums in
+#    Scripts/wasm-toolchain-versions.txt.
+Scripts/install-wasm-toolchain.sh
+
+# 2. the kernel: a 38 MB release asset, checksum-verified before it is unpacked. About 1.75 s,
+#    against the 69 minutes Scripts/build-occt-wasm.sh takes to produce the same thing.
+Scripts/fetch-occt-wasm.sh
+
+# 3. the build
+python3 Scripts/make-wasi-toolset.py --wasi-sdk "$WASI_SDK_PREFIX" -o toolset.json
 OCCTSWIFT_WASI=1 TOOLCHAINS=swift swift build --toolset toolset.json \
     --swift-sdk swift-6.4.0-RELEASE_wasm --triple wasm32-unknown-wasip1
 ```
+
+`--occt-lib-dir` and `--occt-include-dir` default to this checkout's `Libraries/` and the header
+tree beside the archive, which is where step 2 puts them, so a consumer who followed the steps
+passes neither. A consumer who put the asset somewhere else passes both. Both are checked before
+the toolset is written, rather than being left to surface as a link error at the end of a full
+build.
 
 Only `-lunwind` and the kernel archive actually need a `-L`. `libsetjmp.a` and
 `libwasi-emulated-getpid.a` are in the Swift SDK's own `WASI.sdk`, which is already the link's
@@ -719,15 +745,34 @@ which is Phase 5.
   packages `Libraries/libOCCT-wasm.a` and `Libraries/occt-headers-wasm/` (#2174, #2266).
 - ~~Drop or guard the bridge header's `#import <Foundation/Foundation.h>`.~~ Done in
   #2049, with `<stdint.h>` (#2256) and `<stdbool.h>` (#2175) restored behind it.
-- **Still open: distribution.** `xcframework` packaging is Apple-only, so wasm needs
-  its own path (a release-asset `.a` + headers, consumed through `.linkedLibrary` plus
-  a consumer-side toolset; there is no `binaryTarget` for wasm, and `unsafeFlags` is
-  not available to a package consumed by version, see
-  [How a wasm application consumes this package](#how-a-wasm-application-consumes-this-package-2048)).
-  Nothing ships the 153 MB archive or the 7,160-file header tree yet, and both are
-  gitignored, so a versioned consumer today resolves a tree that contains neither.
-  #2175's spike reaches them through a **path** dependency and therefore does not
-  exercise this.
+- ~~**Still open: distribution.**~~ **Done (#2269), 2026-09-27.** The archive and the
+  header tree ship as one 38 MB `tar.gz` attached to the **same release as the
+  `OCCT.xcframework` built from the same patch set**, so one release means one kernel
+  on both platforms. `Scripts/wasm-kernel-pin.txt` holds the URL, the sha256 and the
+  patch set; `Scripts/fetch-occt-wasm.sh` resolves it, verifies the checksum **before**
+  unpacking anything, and checks the unpacked shape afterwards. Measured: **1.75 s**
+  against the 69-minute build it replaces.
+
+  There is still no `binaryTarget` for wasm (SwiftPM takes an xcframework or a zip of
+  one, never a bare `.a`), so the fetch script is what SwiftPM does for itself on the
+  native side, written out. It is deliberately the same shape: a pinned URL, a checksum
+  verified before use, and a loud failure on a mismatch.
+
+  **The gap this closed was not only the archive.** `Package.swift`'s
+  `.headerSearchPath("occt-headers-wasm")` resolves inside the package checkout, and a
+  consumer resolving OCCTSwift by **version** gets a checkout with no `Libraries/`,
+  because it is gitignored. So every `#include <Standard.hxx>` failed regardless of
+  where the archive was published. `Scripts/make-wasi-toolset.py` now emits `-I` beside
+  the `-L` it already emitted, which is the same rule that file states for itself: a
+  flag naming a path on the machine cannot live in a published manifest.
+
+  **The rule that will be forgotten**, written down and gated rather than remembered: a
+  native repin that does not also rebuild and republish the wasm asset leaves the
+  browser on an older kernel, silently, because nothing about a macOS build touches any
+  of it. `Scripts/check-wasm-kernel-parity.py` compares the two, runs in
+  `gate-scripts` on **every** PR (the PR that has to be caught is a native repin, which
+  touches no wasm path), and takes a dated acknowledgement that expires when the native
+  pin next moves.
 
 ### Phase 2. Swift layer portability
 
@@ -766,7 +811,16 @@ JavaScriptKit reactor shape, which is Phase 5.
 - A wasm test path (the pinned `wasmkit`, or a headless browser runner) for a **subset** of the
   per-domain suites. Full parity is unrealistic initially; target the modeling +
   IO domains first.
-- A GitHub Actions matrix entry that builds the wasm slice and runs the subset.
+- ~~A GitHub Actions matrix entry that builds the wasm slice.~~ **Done (#2269):**
+  `.github/workflows/wasm.yml` is the first CI job in this repository that builds for
+  WebAssembly. It restores the pinned kernel asset rather than building OCCT, so it
+  costs minutes and not 69 of them, then builds the bridge and the Swift layer for
+  `wasm32-unknown-wasip1`, builds the Phase 0 spike, and runs #2052's six cases under
+  Node with the browser shim, which asserts. **Not a required check yet**, per
+  [`required-status-checks.md`](../okf/policies/required-status-checks.md): never
+  require a check that has not yet reported.
+- **Still open: the per-domain suites.** Six calls are not a test suite, and nothing
+  runs a `Tests/OCCT<Domain>Tests/` target for wasm.
 - **Bring this forward.** #2175 ran six calls and no test target, and Phase 2's
   remaining work changes the Swift layer's API surface. Changing an API surface with
   no wasm test coverage is how the third condition on Phase 0's GO gets violated.

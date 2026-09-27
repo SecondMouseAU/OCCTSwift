@@ -105,7 +105,7 @@ def eh_library_dir(wasi_sdk: Path) -> Path:
 
 
 def build_toolset(wasi_sdk: Path, occt_lib_dir: Path, shim: Path | None,
-                  eh_flags: list[str]) -> dict:
+                  eh_flags: list[str], occt_include_dir: Path | None = None) -> dict:
     """Assemble the toolset document."""
     cxx_common = list(eh_flags) + SJLJ_FLAGS
     # -x c++ compiles Sources/OCCTBridge/src/*.mm as C++ rather than Objective-C++. #2256 measured
@@ -128,6 +128,24 @@ def build_toolset(wasi_sdk: Path, occt_lib_dir: Path, shim: Path | None,
     cxx = list(cxx_common) + ["-x", "c++"]
     if shim is not None:
         cxx += ["-include", str(shim)]
+    # -I for the OCCT headers, for the same reason as the -L below: a CONSUMER resolving OCCTSwift
+    # by version gets a checkout with no Libraries/, because it is gitignored, so the manifest's
+    # `.headerSearchPath("occt-headers-wasm")` resolves to a directory that is not there and every
+    # `#include <Standard.hxx>` fails. The manifest cannot name the real location, because that is
+    # wherever the consumer unpacked the release asset, which is exactly this file's remit.
+    #
+    # Both spellings coexist deliberately. In THIS checkout, after Scripts/fetch-occt-wasm.sh has
+    # run, the manifest's relative path already resolves and this -I names the same directory, so
+    # it is a harmless duplicate. In a consumer's checkout only this one resolves. clang ignores an
+    # -I naming a directory that does not exist, so neither case warns.
+    #
+    # C++ ONLY, and deliberately not on the C compiler: OCCT's headers are C++ and no C source in
+    # the graph includes one. The single C file on this path is `Libraries/dummy.c`, which exists
+    # because SwiftPM requires a target to have at least one source and which includes nothing.
+    # Adding it to the C compiler would be inert, and an inert flag on a link line is the thing
+    # #2758 exists to clean up.
+    if occt_include_dir is not None:
+        cxx += ["-I", str(occt_include_dir)]
     # The C compiler gets the SAME set, not just the SjLj pair. `-wasm-use-legacy-eh=false` is an
     # -mllvm option and applies to any language, and a C object built with `-wasm-enable-sjlj`
     # without it carries the legacy encoding, which wasmkit rejects with `Illegal opcode: [6]` for
@@ -153,8 +171,29 @@ def self_test() -> int:
     failures = []
     eh = read_pin("WASM_CXX_EH_FLAGS").split()
 
-    doc = build_toolset(Path("/wasi"), Path("/libs"), Path("/shim.hpp"), eh)
+    doc = build_toolset(Path("/wasi"), Path("/libs"), Path("/shim.hpp"), eh,
+                        occt_include_dir=Path("/headers"))
     cxx = doc["cxxCompiler"]["extraCLIOptions"]
+
+    # -I for the OCCT headers must reach the C++ compiler. Without it a consumer that resolved
+    # OCCTSwift by VERSION cannot compile a single bridge file: its checkout has no Libraries/,
+    # so the manifest's relative `.headerSearchPath` names a directory that is not there, and
+    # clang is silent about a missing -I, so the first symptom is
+    # `fatal error: 'Standard.hxx' file not found`. Asserted on the pair, not on "-I" alone,
+    # because an -I with the wrong path would pass a bare membership test.
+    def has_include(opts: list[str], path: str) -> bool:
+        return any(opts[i] == "-I" and opts[i + 1] == path for i in range(len(opts) - 1))
+
+    if not has_include(cxx, "/headers"):
+        failures.append("cxxCompiler is missing -I for the OCCT headers, so a version-resolved "
+                        "consumer cannot find Standard.hxx")
+
+    # Omitted when no include dir is given, so the default stays "emit nothing" rather than a
+    # path that happens to be wrong.
+    if any(opt == "-I" for opt in
+           build_toolset(Path("/wasi"), Path("/libs"), Path("/shim.hpp"), eh)["cxxCompiler"][
+               "extraCLIOptions"]):
+        failures.append("build_toolset emitted an -I with no occt_include_dir")
 
     # The two loops below iterate the pin, so they check nothing at all if the pin went empty.
     # Assert the flag by name here, once, so that emptying or gutting WASM_CXX_EH_FLAGS fails this
@@ -245,6 +284,9 @@ def main(argv: list[str]) -> int:
                         help="wasi-sdk install prefix (default: $WASI_SDK_PREFIX)")
     parser.add_argument("--occt-lib-dir",
                         help="directory holding libOCCT-wasm.a (default: this checkout's Libraries/)")
+    parser.add_argument("--occt-include-dir",
+                        help="directory holding the OCCT headers (default: "
+                             "<occt-lib-dir>/occt-headers-wasm)")
     parser.add_argument("--no-shim", action="store_true",
                         help="do not force-include the threading shim, for a bridge that includes "
                              "it itself")
@@ -274,12 +316,24 @@ def main(argv: list[str]) -> int:
         raise SystemExit(f"error: no libOCCT-wasm.a in {occt_lib_dir}. Pass --occt-lib-dir, or "
                          f"build the kernel with Scripts/build-occt-wasm.sh.")
 
+    # Defaults beside the archive, because that is how Scripts/fetch-occt-wasm.sh unpacks the
+    # release asset and how Scripts/build-occt-wasm.sh writes it. Checked like the archive, and for
+    # the same reason: a missing -I is not a link error at the end of a build, it is `fatal error:
+    # 'Standard.hxx' file not found` on the first bridge translation unit, which reads like a
+    # broken checkout rather than a missing kernel.
+    occt_include_dir = Path(args.occt_include_dir).resolve() if args.occt_include_dir \
+        else (occt_lib_dir / "occt-headers-wasm")
+    if not occt_include_dir.is_dir():
+        raise SystemExit(f"error: no OCCT headers at {occt_include_dir}. Pass "
+                         f"--occt-include-dir, or run Scripts/fetch-occt-wasm.sh.")
+
     shim = None if args.no_shim else SHIM
     if shim is not None and not shim.is_file():
         raise SystemExit(f"error: the threading shim is not at {shim}")
 
     document = build_toolset(wasi_sdk, occt_lib_dir, shim,
-                             read_pin("WASM_CXX_EH_FLAGS").split())
+                             read_pin("WASM_CXX_EH_FLAGS").split(),
+                             occt_include_dir=occt_include_dir)
     text = json.dumps(document, indent=2) + "\n"
     if args.output:
         Path(args.output).write_text(text)
