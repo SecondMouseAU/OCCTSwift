@@ -35,7 +35,7 @@ jobs:
   #     job would be red for a reason that has nothing to do with it, which is the same as not
   #     having it. That state is fixable by bumping the pin, and is fixed today, but the
   #     separation is what makes the gate survive the next time it happens.
-  #   - ubuntu-latest, because all twenty-one are pure Python over the repo's own text: no Xcode, no
+  #   - ubuntu-latest, because all twenty-two are pure Python over the repo's own text: no Xcode, no
   #     OCCT, no swift build. A macOS runner would cost 10x the minutes to run the identical checks.
   #     The twenty-first is here as its `--self-test` alone for exactly that reason: the real run of
   #     check-pinned-asset-patches.py reads the pinned xcframework, which is not text (#2196).
@@ -44,7 +44,7 @@ jobs:
   #     shipped three gate scripts that were confidently wrong (#618, #624/#630, #626), so the
   #     detector's own fixtures are part of what CI checks, not a developer-only convenience.
   #   - `if: '!cancelled()'` on every step after the first, so one failing gate does not hide the
-  #     other twenty. Without it a contributor fixes them one CI round trip at a time. It is
+  #     other twenty-one. Without it a contributor fixes them one CI round trip at a time. It is
   #     `!cancelled()` rather than `always()` so the concurrency group's cancel-in-progress still
   #     takes effect.
   #
@@ -222,6 +222,24 @@ jobs:
       - name: check-wasi-patch-base.py
         if: '!cancelled()'
         run: python3 Scripts/check-wasi-patch-base.py
+
+      # #2269. The two platforms pin OCCT separately and nothing connected them: Package.swift
+      # names the native kernel as a binaryTarget url:/checksum: pair, while the wasm kernel is a
+      # release asset recorded in Scripts/wasm-kernel-pin.txt, because SwiftPM's binaryTarget takes
+      # an xcframework and never a bare static library. A native repin that does not also rebuild
+      # the wasm asset leaves the browser on an older kernel, silently, and a carried patch is a
+      # correctness fix.
+      #
+      # It belongs HERE and not only in wasm.yml, and that is the whole point: the PR that has to
+      # be caught is a NATIVE repin, which touches Package.swift and no wasm path at all. A check
+      # that runs only when wasm files change would never see it.
+      - name: check-wasm-kernel-parity.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-wasm-kernel-parity.py --self-test
+
+      - name: check-wasm-kernel-parity.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-wasm-kernel-parity.py
 
       # #2077. #1161's caught-exception diagnostics channel shipped with 1 of the 74 bridge .mm
       # files instrumented and was swept across the rest; this is what stops the sweep decaying.

@@ -1,0 +1,184 @@
+name: wasm
+
+# The first CI job in this repository that builds for WebAssembly.
+#
+# Until this existed, EVERY wasm measurement was a local one. `ci.yml` runs the two pure-Python
+# WASI gates and twice says a check "is deliberately NOT run in this job; the wasm build job is
+# where that belongs", referring to a job that did not exist. Meanwhile the Phase 0 spike (#2175)
+# proved the whole stack works and nothing defended it: the wasm-only code (the WASI `simd` target,
+# the `#if os(WASI)` guards, the `<stdbool.h>` the bridge headers need, the threading shim's
+# include) is exactly the kind that breaks invisibly, in a repository that merges dozens of commits
+# a week. CLAUDE.md's own rule about the carried patches applies: an artefact no job exercises is
+# an artefact nobody is checking.
+#
+# What made it affordable is #2269. Building OCCT for wasm is a 69-minute job; FETCHING the
+# published archive is under two seconds, so this job restores a pinned release asset and builds
+# only what changes: the bridge, the Swift layer and the spike.
+#
+# NOT A REQUIRED CHECK YET, deliberately. okf/policies/required-status-checks.md says never require
+# a check that has not yet reported. Promote it on `main` once it has a run history.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wasm-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wasm-build:
+    name: wasm build + spike
+    runs-on: ubuntu-latest
+    # The swift.org toolchain, not a distro one. Xcode's cannot link for wasm at all (no wasm-ld,
+    # no swift-autolink-extract) and the same is true of anything that is not the real toolchain;
+    # Scripts/wasm-toolchain-versions.txt explains the measurement. The container IS the swift.org
+    # Linux toolchain, which is the one thing Scripts/install-wasm-toolchain.sh declines to install
+    # for you, so using it here means the script's remaining steps are all that is left.
+    container: swift:6.4.0
+    timeout-minutes: 45
+
+    env:
+      # Scripts/install-wasm-toolchain.sh defaults this to <repo>/Libraries/wasi-sdk-<ver>-<arch>-<os>
+      # and honours it when set. Set once here so the cache key, the install and the toolset all name
+      # the same directory: guessing it in two places is how a cache silently misses forever.
+      WASI_SDK_PREFIX: /opt/wasi-sdk
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the pinned toolchain
+        id: pins
+        run: |
+          set -euo pipefail
+          pin() { grep -E "^$1=" Scripts/wasm-toolchain-versions.txt | head -1 | cut -d= -f2-; }
+          {
+            echo "wasm_sdk_id=$(pin SWIFT_WASM_SDK_ID)"
+            echo "wasm_sdk_url=$(pin SWIFT_WASM_SDK_URL)"
+            echo "wasm_sdk_checksum=$(pin SWIFT_WASM_SDK_CHECKSUM)"
+            echo "triple=$(pin SWIFT_WASM_TRIPLE)"
+            echo "wasi_sdk_version=$(pin WASI_SDK_VERSION)"
+          } >> "$GITHUB_OUTPUT"
+          swift --version
+
+      # Before anything is built, so a divergence between the two platforms' kernels is reported
+      # in seconds rather than after a build that would succeed anyway. It is a static check and
+      # needs neither the toolchain nor the archive.
+      - name: check-wasm-kernel-parity.py
+        run: python3 Scripts/check-wasm-kernel-parity.py
+
+      - name: check-wasm-kernel-parity.py --self-test
+        run: python3 Scripts/check-wasm-kernel-parity.py --self-test
+
+      - name: make-wasi-toolset.py --self-test
+        run: python3 Scripts/make-wasi-toolset.py --self-test
+
+      # Keyed on the checksum, not the version: the Swift SDK is pinned by BOTH in
+      # wasm-toolchain-versions.txt, and a republished artifact bundle at the same version would
+      # otherwise be served from cache and never checked again.
+      - name: Cache the Swift SDK for WebAssembly
+        id: cache-sdk
+        uses: actions/cache@v4
+        with:
+          path: ~/.swiftpm/swift-sdks
+          key: swift-sdk-${{ steps.pins.outputs.wasm_sdk_checksum }}
+
+      - name: Install the Swift SDK for WebAssembly
+        if: steps.cache-sdk.outputs.cache-hit != 'true'
+        run: |
+          swift sdk install "${{ steps.pins.outputs.wasm_sdk_url }}" \
+            --checksum "${{ steps.pins.outputs.wasm_sdk_checksum }}"
+          swift sdk list
+
+      # wasi-sdk is needed for exactly one thing the Swift SDK does not ship: a libc++abi and
+      # libunwind built WITH exception support. Without it the link fails on __cxa_throw.
+      # Scripts/install-wasm-toolchain.sh owns the URL and the per-platform checksum.
+      - name: Cache wasi-sdk
+        id: cache-wasi-sdk
+        uses: actions/cache@v4
+        with:
+          path: /opt/wasi-sdk
+          key: wasi-sdk-${{ steps.pins.outputs.wasi_sdk_version }}-${{ runner.arch }}
+
+      - name: Install wasi-sdk
+        if: steps.cache-wasi-sdk.outputs.cache-hit != 'true'
+        run: Scripts/install-wasm-toolchain.sh --no-verify
+
+      # The whole point of #2269. Two seconds against a 69-minute build, and the checksum is
+      # verified before anything is unpacked.
+      - name: Fetch the prebuilt wasm OCCT kernel
+        run: Scripts/fetch-occt-wasm.sh
+
+      - name: Generate the consumer toolset
+        run: |
+          set -euo pipefail
+          python3 Scripts/make-wasi-toolset.py \
+            --wasi-sdk "$WASI_SDK_PREFIX" \
+            -o "$RUNNER_TEMP/toolset.json"
+          cat "$RUNNER_TEMP/toolset.json"
+
+      # The bridge and the Swift layer, for wasm. This is what breaks when somebody adds an
+      # `import simd` to a new file, or a Dispatch call, or a bridge header that needs a C type
+      # only C++ has, and it is what no job caught before.
+      - name: swift build (wasm32-unknown-wasip1)
+        env:
+          OCCTSWIFT_WASI: "1"
+        run: |
+          swift build \
+            --toolset "$RUNNER_TEMP/toolset.json" \
+            --swift-sdk "${{ steps.pins.outputs.wasm_sdk_id }}" \
+            --triple "${{ steps.pins.outputs.triple }}" \
+            -c release
+
+      # Building proves it compiles and links. Running proves the kernel still works, which is a
+      # different claim and the one that matters: #2171 measured that a build with the exception
+      # flags missing compiles clean, links clean, returns correct geometry, and answers every
+      # error by trapping. Only the two must-fail cases distinguish it.
+      - name: Build the Phase 0 spike
+        env:
+          OCCTSWIFT_WASI: "1"
+        run: |
+          set -euo pipefail
+          cd Scripts/repro/2175/spike
+          swift build \
+            --toolset "$RUNNER_TEMP/toolset.json" \
+            --swift-sdk "${{ steps.pins.outputs.wasm_sdk_id }}" \
+            --triple "${{ steps.pins.outputs.triple }}" \
+            -c release
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # #2052's rung 2: the same six cases, under the browser's WASI shim with in-memory preopens,
+      # driven by the same harness the browser page imports. It asserts and exits non-zero on any
+      # failed case, so this step is the gate and not a print.
+      #
+      # Rung 3, the real browser, is deliberately NOT here yet: it needs a Chrome on the runner and
+      # its own debugging, and rung 2 catches everything a kernel or bridge regression would cause.
+      - name: Run the six cases (node + browser_wasi_shim)
+        run: |
+          set -euo pipefail
+          cd Scripts/repro/2052
+          SPIKE_MODULE="$GITHUB_WORKSPACE/Scripts/repro/2175/spike/.build/out/Products/Release-webassembly-wasm32/OCCTWasmSpike.wasm" \
+            ./run.sh all
+
+      - name: Record the module size
+        if: always()
+        run: |
+          set -euo pipefail
+          MODULE=Scripts/repro/2175/spike/.build/out/Products/Release-webassembly-wasm32/OCCTWasmSpike.wasm
+          if [ -f "$MODULE" ]; then
+            # Reported, never gated. There is no size target: #1689's 5 MB was withdrawn as
+            # spurious, and #2761 holds the measurements and the untried levers. A number in the
+            # log is how a regression gets noticed without anything having to pass or fail.
+            echo "module: $(wc -c < "$MODULE" | tr -d ' ') bytes uncompressed"
+            echo "gzip:   $(gzip -9 -c "$MODULE" | wc -c | tr -d ' ') bytes"
+          else
+            echo "no module was produced"
+          fi
