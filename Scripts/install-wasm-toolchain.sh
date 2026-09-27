@@ -203,8 +203,30 @@ if [ "$DO_INSTALL" -eq 1 ]; then
             exit 1
         fi
         echo "    checksum verified: $actual"
-        tar xzf "$tmp_tarball" -C "$(dirname "$WASI_SDK_PREFIX")"
+        # Unpack into a staging directory and MOVE, rather than extracting straight into the
+        # parent. The tarball carries its own top-level directory, `wasi-sdk-<ver>-<arch>-<os>`, so
+        # extracting into the parent lands it there whatever WASI_SDK_PREFIX says. That made the
+        # override this script advertises ("or set WASI_SDK_PREFIX") silently ineffective whenever
+        # the prefix's basename was anything else, and the line below then reported a path that
+        # did not exist. Measured in CI with WASI_SDK_PREFIX=/opt/wasi-sdk: the files landed in
+        # /opt/wasi-sdk-34.0-x86_64-linux, this script said "unpacked to /opt/wasi-sdk", and
+        # make-wasi-toolset.py failed several steps later on the missing eh directory.
+        wasi_stage="$(dirname "$WASI_SDK_PREFIX")/.wasi-sdk-stage.$$"
+        rm -rf "$wasi_stage"
+        mkdir -p "$wasi_stage"
+        tar xzf "$tmp_tarball" -C "$wasi_stage"
         rm -f "$tmp_tarball"
+        # Exactly one top-level entry is expected; anything else means the tarball's shape moved
+        # and a silent guess would put a half-tree where the build expects a sysroot.
+        wasi_unpacked="$(find "$wasi_stage" -mindepth 1 -maxdepth 1)"
+        if [ "$(printf '%s\n' "$wasi_unpacked" | wc -l | tr -d ' ')" != "1" ]; then
+            rm -rf "$wasi_stage"
+            echo "ERROR: $WASI_SDK_TARBALL did not unpack to a single directory." >&2
+            exit 1
+        fi
+        rm -rf "$WASI_SDK_PREFIX"
+        mv "$wasi_unpacked" "$WASI_SDK_PREFIX"
+        rm -rf "$wasi_stage"
         echo "    unpacked to $WASI_SDK_PREFIX"
     fi
 fi
