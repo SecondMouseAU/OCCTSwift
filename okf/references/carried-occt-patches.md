@@ -89,17 +89,26 @@ what made it safe. Tracked as [#2056](https://github.com/SecondMouseAU/OCCTSwift
 
 ## Pinned against carried
 
-`Scripts/patches/` holds thirty patches; the v4.0.0-kernel.1 asset `Package.swift` pins holds
-twenty-nine. The one it lacks, and why each matters, per
-[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
+`Scripts/patches/` holds thirty patches. The v4.0.0-kernel.2 asset `Package.swift` pins lacks none of them,
+so **there is no divergence today**, per
+[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). The table below is kept
+empty rather than deleted, because the divergence is the normal state between a patch landing and
+the next repin, and the shape of the entry is what the policy asks for:
 
 | Unpinned | What it leaves exposed |
 |---|---|
-| `0042` (#2773), carried 2026-09-27, after the repin. **Built locally and verified in the binary** the same day (all three slices, `check-pinned-asset-patches.py --asset` confirms its literal in each), but not published and not pinned, because a repin is a release step. | `ShapeAnalysis::GetFaceUVBounds`' null-surface dereference. Nothing, for a consumer of the released package: the bridge guard added by [PR #2776](https://github.com/SecondMouseAU/OCCTSwift/pull/2776) refuses the shape at twelve call sites before the kernel sees it, which is why the patch is the second half of that work rather than a substitute for it. `ci.yml`'s `build-and-test` resolves the pinned asset and so exercises the patch not at all; `kernel-integration.yml` builds it from source on the PR that adds it and on `main` afterwards, which proves it applies, compiles and regresses nothing, and cannot prove the fix reaches anyone. |
+| none | |
 
-That divergence is expected and this table is its written reason. It closes at the next repin.
+`0042` (#2773) was the last entry here. It was carried on 2026-09-27, built and verified in the
+binary the same day (all three slices, `check-pinned-asset-patches.py --asset` confirms its literal
+in each), and pinned hours later by v4.0.0-kernel.2, so it spent no release window untested. The
+bridge guard from [PR #2776](https://github.com/SecondMouseAU/OCCTSwift/pull/2776) is kept rather
+than retired with the repin: with `0042` the kernel raises for the same input the guard refuses, so
+both answer nil and the guard is redundant rather than wrong, and it still covers anyone pinning an
+older asset. `Package.swift`'s pin block records that exception against
+[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md)'s retire-the-mitigation rule.
 
-**And it holds two that we do not carry, so thirty-one in total.** Those are separate quantities
+**And it holds two that we do not carry, so thirty-two in total.** Those are separate quantities
 and collapsing them is how the divergence stayed invisible for a month: every count in this repo
 asked "does the asset lack anything", and none asked "does it hold anything extra".
 
@@ -122,12 +131,13 @@ exactly the `checksum:` `Package.swift` pins. Tracked as
 [#2190](https://github.com/SecondMouseAU/OCCTSwift/issues/2190), documented rather than rebuilt out
 because both are inert and a rebuild costs three cmake configures for no behavioural change.
 
-**The source tree has since been cleaned, and the carried set has since grown.** `occt-src` holds
-exactly the carried patches and no strays, and `Scripts/patches/` now holds thirty of them, so
-**a rebuild today produces a thirty-patch asset with a
-different checksum from the pinned one**. That is expected, not a corrupt download: if you rebuild
-and the checksum does not match, this paragraph is the reason, and the fix is to upload the new
-asset and bump both `url:` and `checksum:`.
+**Both strays belonged to v4.0.0-kernel.1, and the pin has moved off it.** v4.0.0-kernel.2 was
+built from a fresh `V8_0_1` clone rather than that tree, so neither stray is present: the
+modified-file check computes zero files that no carried patch explains, over 78. The two
+`ACKNOWLEDGED` rows in `check-pinned-asset-patches.py` stay keyed on `v4.0.0-kernel.1` and expire
+here on their own, which is what they were built to do, and if a later asset repeats either stray
+the finding comes back instead of staying suppressed. A rebuild today should now reproduce the
+pinned checksum, so a mismatch is a real difference to chase rather than an expected one.
 
 **The check that would have caught it** is `python3 Scripts/check-pinned-asset-patches.py
 --require-asset`, written for #2190 and run at the repin step. It derives evidence from each

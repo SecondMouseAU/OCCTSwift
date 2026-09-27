@@ -32,7 +32,9 @@ import sys
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 WORDS = {
-    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
+    # "none" is here so the unpinned-count sentences can read naturally at zero, which is their
+    # normal state between a repin and the next patch landing (#2773, v4.0.0-kernel.2).
+    "none": 0, "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
     "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
     "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19, "twenty": 20,
     "twenty-one": 21, "twenty-two": 22, "twenty-three": 23, "twenty-four": 24, "twenty-five": 25,
@@ -246,15 +248,17 @@ CLAIMS = [
     ("Package.swift", r"Scripts/patches/ holds ([A-Za-z-]+) patches", "patches_on_disk"),
     # #1403: three claims that existed all along and were read by nothing. Kilo's review caught the
     # first two by hand on PR #2041 after 0034 landed; the third had gone stale unnoticed.
-    # #2773: `those N are` / `that one is`, because the sentence has to stay grammatical as the
-    # count moves off zero and back. Same reason the WASI entry below tolerates a singular noun: a
-    # count going to one should fail as a count mismatch if it is wrong, never as "no sentence
-    # matches", which reads like the regex rotted rather than the prose.
-    ("Package.swift", r"and (?:those|that) (\S+) (?:are|is) the difference:", "patches_unpinned"),
+    # #2773, revised at the v4.0.0-kernel.2 repin: both files now use the same sentence shape,
+    # "lacks <count> of them", because it is grammatical at none, one and many alike. The previous
+    # pair of regexes each matched only one of those, so taking the count to zero broke both with
+    # "no sentence matches", which reads like the regex rotted rather than the prose moving. A
+    # count that is wrong should fail as a count mismatch; only a reworded sentence should fail as
+    # a missing match.
+    ("Package.swift", r"[Tt]he pinned asset lacks (\S+) of them", "patches_unpinned"),
     ("okf/references/carried-occt-patches.md",
      r"`Scripts/patches/` holds ([A-Za-z-]+) patches", "patches_on_disk"),
     ("okf/references/carried-occt-patches.md",
-     r"The (\S+) it lacks, and why each matters", "patches_unpinned"),
+     r"pins lacks (\S+) of them", "patches_unpinned"),
     ("Package.swift", r"`ls Scripts/patches/\*\.patch \| wc -l` answers (\d+)", "patches_on_disk"),
     # #2166: the WASI sequence. `Scripts/patches-wasi/` was outside this gate entirely until the
     # patch-number parser stopped being the reason, and its README said "both patches here apply
