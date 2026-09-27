@@ -21,6 +21,12 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### WebAssembly: OCCT and the OCCTSwift API build and run on `wasm32-unknown-wasip1` (#1689)
+
+OCCT 8.0.1 compiles across all 49 toolkits for `wasm32-unknown-wasip1` and links into `libOCCT-wasm.a`, and the OCCTSwift public API runs on top of it: shapes, booleans, meshing, STEP read and write, and the bridge's error contract, verified by a spike that builds a box, fuses two solids, writes and reads back a STEP file, and checks both halves of a deliberate failure. The build is reproducible from a pinned toolchain (`Scripts/install-wasm-toolchain.sh`), needs no `.unsafeFlags` so the package stays consumable as a versioned SwiftPM dependency, and carries eleven WASI-only OCCT patches plus one force-included shim for the `std` threading names the WASI libc++ omits. Phase 0's verdict is GO with four conditions, recorded in `docs/wasm-feasibility.md`.
+
+No existing platform changes. Two symbols differ on WASI only: `Shape.isSelfIntersecting(hardTimeout:)` is unavailable there because its contract requires a second thread (#2760), and a WASI-only stand-in `simd` module covers what Apple's has no wasm build for (#2759).
+
 ### Documentation: the STEP/IGES bridge surface is already serialized (#342)
 
 `OCCTSerialQueue` and `Exporter` now state that `writeSTEP`, `writeIGES`, `Shape.load(from:)` and `Document.loadSTEP` are serialized inside the bridge, so they neither need `OCCTSerial.withLock` nor gain concurrency from it. `OCCTSerialQueue` previously said the opposite, which is the file a caller reads before deciding. The mesh and BREP writers carry no such lock and the deep-copy advice still applies to them.
