@@ -48,10 +48,11 @@ Nine came back unchanged. `0001` did not: upstream's merged form also guards a *
 per-patch verdicts are in [`Scripts/patches/README.md`](../Scripts/patches/README.md) under
 "Retired patches".
 
-Patch numbers are **not** reused: the carried sequence now reads 0010-0012, 0014-0029, and the
-gaps are the retirements. `Scripts/patches/README.md:11` states the same range in its own words,
-and this copy was seven patches stale until #1018 noticed. That file is canonical; keep this line in
-step with the range it gives, or delete this line rather than let a second copy drift again.
+Patch numbers are **not** reused, and the gaps in the carried sequence are the retirements.
+[`Scripts/patches/README.md`](../Scripts/patches/README.md) states the range and is canonical. The
+range itself used to be restated here too; that copy went seven patches stale before #1018 noticed
+it, and stale again afterwards, so it is deleted rather than kept in step a third time. This line
+gives its own instruction from before the second drift: delete the copy rather than let it drift.
 
 ### Behaviour changes to watch
 

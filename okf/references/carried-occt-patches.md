@@ -59,6 +59,7 @@ without silently closing it, see
 | `0039-Interface_FileReaderData-per-instance-param-cache-1403` | `Param()`/`ChangeParam()` memoised the last record and its base offset in file-scope statics, gated by a global counter so only the newest instance could use the memo. `mutable` answers the declaration's own blocker ("Fields not possible, because Param is const") and also makes the optimisation apply at all, since any second construction disabled it for every earlier instance. `InitParams()` now invalidates the memo, which the original never needed to. 4 race reports to 0 ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | **held from upstream, not filed**: no test can demonstrate it, see the patch README | bundled OCCT includes the fix |
 | `0040-controller-one-time-init-thread-safe-1403` | Three unguarded check-then-act one-time-init flags: both `STEPControl_Controller::Init()` and `IGESControl_Controller::Init()`, plus the IGES constructor. Only STEP's *constructor* had a mutex, so this was three sites rather than the one asymmetry #1403's re-scope claimed. All become function-local statics, removing the check-then-act instead of locking it. Guarding the outermost init also serialises the whole chain beneath it, which is why six further one-time-init globals stopped being reported ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | to file | bundled OCCT includes the fix |
 | `0041-DE-registry-maps-synchronised-1403` | `listad` (`XSControl_Controller.cxx:59`) and `atemp` (`Interface_InterfaceModel.cxx:44`), two process-wide name-keyed registries mutated without synchronisation. A lock is correct here rather than relocation, because one registry per process is the design. Recursive is required: `Template()` calls `HasTemplate()` before reading the map. `astats` excluded, already covered by `0033` ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | to file | bundled OCCT includes the fix |
+| `0042-ShapeAnalysis-GetFaceUVBounds-null-surface-2773` | `ShapeAnalysis::GetFaceUVBounds` dereferences a null surface on a face with **no surface and no edges**, an uncatchable SIGSEGV landing exactly where `ShapeUpgrade_ShapeDivide`'s own `ShapeExtend_FAIL2` handler was meant to report. Raises `Standard_NullObject` instead: returning silently was measured and does not fix it, because `ShapeUpgrade_FaceDivide::SplitSurface` dereferences the same null surface eight lines later. The surface-less face **with** a wire already raised from `Bnd_Box2d::Get`, so the two input classes now agree ([#2773](https://github.com/SecondMouseAU/OCCTSwift/issues/2773)) | filed with a GTest, no companion issue | bundled OCCT includes the fix; the bridge guard from [PR #2776](https://github.com/SecondMouseAU/OCCTSwift/pull/2776) stays regardless, it protects consumers on the pinned asset |
 
 **Retired in OCCT 8.0.1** (re-pinned 2026-08-03): `0001`-`0009` and `0013`, shipped upstream as
 OCCT#1323, #1334, #1374, #1377, #1380, #1382, #1331, #1329, #1318 and #1392 respectively. Their
@@ -88,9 +89,15 @@ what made it safe. Tracked as [#2056](https://github.com/SecondMouseAU/OCCTSwift
 
 ## Pinned against carried
 
-`Scripts/patches/` holds twenty-nine patches; the v4.0.0-kernel.1 asset `Package.swift` pins holds
-twenty-nine. The zero it lacks, and why each matters, per
-[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md): **there are none.**
+`Scripts/patches/` holds thirty patches; the v4.0.0-kernel.1 asset `Package.swift` pins holds
+twenty-nine. The one it lacks, and why each matters, per
+[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
+
+| Unpinned | What it leaves exposed |
+|---|---|
+| `0042` (#2773), carried 2026-09-27, after the repin. **Built locally and verified in the binary** the same day (all three slices, `check-pinned-asset-patches.py --asset` confirms its literal in each), but not published and not pinned, because a repin is a release step. | `ShapeAnalysis::GetFaceUVBounds`' null-surface dereference. Nothing, for a consumer of the released package: the bridge guard added by [PR #2776](https://github.com/SecondMouseAU/OCCTSwift/pull/2776) refuses the shape at twelve call sites before the kernel sees it, which is why the patch is the second half of that work rather than a substitute for it. `ci.yml`'s `build-and-test` resolves the pinned asset and so exercises the patch not at all; `kernel-integration.yml` builds it from source on the PR that adds it and on `main` afterwards, which proves it applies, compiles and regresses nothing, and cannot prove the fix reaches anyone. |
+
+That divergence is expected and this table is its written reason. It closes at the next repin.
 
 **And it holds two that we do not carry, so thirty-one in total.** Those are separate quantities
 and collapsing them is how the divergence stayed invisible for a month: every count in this repo
@@ -115,8 +122,9 @@ exactly the `checksum:` `Package.swift` pins. Tracked as
 [#2190](https://github.com/SecondMouseAU/OCCTSwift/issues/2190), documented rather than rebuilt out
 because both are inert and a rebuild costs three cmake configures for no behavioural change.
 
-**The source tree has since been cleaned.** `Libraries/occt-src` now holds exactly the twenty-nine
-carried patches and no strays, so **a rebuild today produces a twenty-nine-patch asset with a
+**The source tree has since been cleaned, and the carried set has since grown.** `occt-src` holds
+exactly the carried patches and no strays, and `Scripts/patches/` now holds thirty of them, so
+**a rebuild today produces a thirty-patch asset with a
 different checksum from the pinned one**. That is expected, not a corrupt download: if you rebuild
 and the checksum does not match, this paragraph is the reason, and the fix is to upload the new
 asset and bump both `url:` and `checksum:`.

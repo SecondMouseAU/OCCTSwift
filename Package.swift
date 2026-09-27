@@ -45,7 +45,7 @@ let useLocalXCFramework: Bool = {
     return FileManager.default.fileExists(atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the twenty-nine carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the thirty carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target = isWASI
     // WASI: Use locally built static library from Scripts/build-occt-wasm.sh
@@ -212,9 +212,14 @@ let occtTarget: Target = isWASI
     // globals 0032 touches are unreachable from this bridge's call surface, measured by #1371's own
     // probe. Nothing a consumer can call behaves differently.
     //
-    // THE SOURCE TREE HAS SINCE BEEN CLEANED. Libraries/occt-src now holds exactly the twenty-nine
-    // carried patches and no strays. SO A REBUILD TODAY PRODUCES A TWENTY-NINE-PATCH ASSET WITH A
-    // DIFFERENT CHECKSUM FROM THE ONE PINNED BELOW. That is expected, not a corrupted download:
+    // THE SOURCE TREE HAS SINCE BEEN CLEANED, AND THE CARRIED SET HAS SINCE GROWN. occt-src holds
+    // exactly the carried patches and no strays, and Scripts/patches/ now holds thirty of them
+    // (0042, #2773, was added after this pin). SO A REBUILD TODAY PRODUCES A THIRTY-PATCH ASSET
+    // WITH A DIFFERENT CHECKSUM FROM THE ONE PINNED BELOW, and that rebuild HAS been done locally
+    // and verified (check-pinned-asset-patches.py --asset confirms 0042's literal in all three
+    // slices) without being published or pinned, because a repin is a release step.
+    // Its only two findings against that local build are the two ACKNOWLEDGED rows below going
+    // stale, which is the expiry those rows were designed for, not a defect. That is expected, not a corrupted download:
     // if you rebuild and the checksum does not match, this paragraph is the reason, and the fix is
     // to upload the new asset and bump BOTH url: and checksum:, never to hunt for a build
     // difference that is not there.
@@ -258,9 +263,16 @@ let occtTarget: Target = isWASI
     // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
     // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
     // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-    // Scripts/patches/ holds twenty-nine patches; the pinned asset holds the twenty-nine
-    // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 29 against a list of
-    // 29, and those zero are the difference: there is none. The two RETIRED patches the asset also
+    // Scripts/patches/ holds thirty patches; the pinned asset holds the twenty-nine
+    // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 30 against a list of
+    // 29, and that one is the difference: 0042 (#2773), carried 2026-09-27 after the repin and
+    // deliberately NOT added to the enumeration above, because that enumeration is what the asset
+    // holds and this patch is not in it. It is not a finding: okf/references/carried-occt-patches.md
+    // carries the written reason and what it leaves exposed (nothing, for a consumer of the released
+    // package: PR #2776's bridge guard refuses the shape at twelve call sites before the kernel sees
+    // it). ci.yml's build-and-test resolves this asset and so exercises 0042 not at all;
+    // kernel-integration.yml builds it from source on the PR that adds it and on main afterwards.
+    // The two RETIRED patches the asset also
     // holds are a separate quantity and are not counted here, because this count is the carried
     // set against the enumeration, which is what check-inventory-prose.py reads. Thirty-one
     // patches are in the asset; twenty-nine of them are ours to carry. Collapsing those two
