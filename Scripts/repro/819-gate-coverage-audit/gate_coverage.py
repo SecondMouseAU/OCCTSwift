@@ -21,7 +21,10 @@ Two things live here:
    `--strict` flag CI deliberately withholds, so it cannot fail the build today). That
    classification is derived structurally (self-test-only vs self-test-plus-bare, and whether a
    `--strict`-shaped flag exists and is withheld), not by matching English words in a comment, so it
-   survives a comment being reworded. `--check` cross-references the live count against the
+   survives a comment being reworded. #2196 added a fourth kind, the RELEASE CHECK: self-test-only
+   like a census, but declaring a `--require-...` flag because its real run needs an input this job
+   does not have, and reaching a verdict rather than a list. CLAUDE.md's sentence counts the first
+   three; `--check` holds it to those and prints the fourth beside it. `--check` cross-references the live count against the
    sentence in `CLAUDE.md`'s own "Static Gate Scripts" section and fails if they disagree, and
    against `Scripts/*.py` actually present on disk, so a renamed or deleted script shows up as a
    dangling reference rather than silently vanishing from the count.
@@ -69,6 +72,12 @@ SCRIPTS_DIR = os.path.join(REPO_ROOT, "Scripts")
 RUN_SCRIPT_RE = re.compile(r"run:\s*python3\s+Scripts/([A-Za-z0-9_\-]+)\.py(.*)$")
 JOB_HEADER_RE = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_-]*):\s*$")
 STRICT_FLAG_RE = re.compile(r"""(['"])--strict\1""")
+# #2196. A script the job runs ONLY as --self-test is a census unless it declares that its real run
+# needs an input this job does not have, which #2098 says such a script must declare: a
+# `--require-...` flag turning "examined nothing" into an error. That is the one structural
+# difference between a census (its bare run could run here and would exit 0 either way) and a
+# release check (its bare run cannot run here at all, and does reach a verdict).
+REQUIRE_FLAG_RE = re.compile(r"""(['"])--require-[a-z-]+\1""")
 
 
 @dataclass
@@ -122,30 +131,44 @@ def parse_gate_scripts_job(ci_yml_text: str, job_name: str = "gate-scripts") -> 
     return scripts
 
 
-def script_defines_strict_flag(path: str) -> bool:
+def _script_text(path: str) -> str:
     if not os.path.isfile(path):
-        return False
+        return ""
     try:
         with open(path, "r", encoding="utf-8") as fh:
-            text = fh.read()
+            return fh.read()
     except OSError:
-        return False
-    return bool(STRICT_FLAG_RE.search(text))
+        return ""
 
 
-def classify(scripts: "dict[str, ScriptSteps]", strict_flag_lookup) -> "dict[str, str]":
-    """GATE / CENSUS / AUDIT, derived structurally rather than from a comment's wording.
+def script_defines_strict_flag(path: str) -> bool:
+    return bool(STRICT_FLAG_RE.search(_script_text(path)))
 
-    - Only `--self-test` runs in CI -> CENSUS (the bare run, if it exists at all as a local
-      invocation, is documented to always exit 0; CI never even calls it).
+
+def script_defines_require_flag(path: str) -> bool:
+    return bool(REQUIRE_FLAG_RE.search(_script_text(path)))
+
+
+def classify(scripts: "dict[str, ScriptSteps]", strict_flag_lookup,
+             require_flag_lookup=None) -> "dict[str, str]":
+    """GATE / CENSUS / AUDIT / RELEASE-CHECK, derived structurally, not from a comment's wording.
+
+    - Only `--self-test` runs in CI, and the script declares no `--require-...` flag -> CENSUS
+      (the bare run, if it exists at all as a local invocation, is documented to always exit 0;
+      CI never even calls it).
+    - Only `--self-test` runs in CI, and the script DOES declare one -> RELEASE-CHECK (#2196): its
+      bare run reaches a verdict, but over an input this job does not have, so it is taken at the
+      release step instead. `check-pinned-asset-patches.py` is the one today.
     - Both run, and the script defines a `--strict`-shaped flag CI's bare invocation does NOT pass
       -> AUDIT (the bare run executes but is architecturally unable to fail the build today).
     - Both run, and either the script has no such flag or CI's invocation DOES pass it -> GATE.
     """
+    require_flag_lookup = (real_require_flag_lookup if require_flag_lookup is None
+                           else require_flag_lookup)
     kinds = {}
     for name, steps in scripts.items():
         if not steps.bare_ran:
-            kinds[name] = "census"
+            kinds[name] = "release-check" if require_flag_lookup(name) else "census"
             continue
         has_strict = strict_flag_lookup(name)
         strict_passed = "--strict" in steps.bare_flags
@@ -158,6 +181,10 @@ def classify(scripts: "dict[str, ScriptSteps]", strict_flag_lookup) -> "dict[str
 
 def real_strict_flag_lookup(name: str) -> bool:
     return script_defines_strict_flag(os.path.join(SCRIPTS_DIR, name + ".py"))
+
+
+def real_require_flag_lookup(name: str) -> bool:
+    return script_defines_require_flag(os.path.join(SCRIPTS_DIR, name + ".py"))
 
 
 def find_dangling_scripts(script_names, existing_names) -> list:
@@ -651,7 +678,7 @@ def summarize_dispositions():
 def render_enumeration(scripts, kinds):
     order = sorted(scripts, key=lambda n: (kinds[n], n))
     lines = []
-    for kind in ("gate", "census", "audit"):
+    for kind in ("gate", "census", "audit", "release-check"):
         names = [n for n in order if kinds[n] == kind]
         lines.append(f"{kind.upper()} ({len(names)}):")
         for n in names:
@@ -675,7 +702,7 @@ def run_report(quiet=False):
         ci_text = fh.read()
     scripts = parse_gate_scripts_job(ci_text)
     kinds = classify(scripts, real_strict_flag_lookup)
-    counts = {"gate": 0, "census": 0, "audit": 0}
+    counts = {"gate": 0, "census": 0, "audit": 0, "release-check": 0}
     for k in kinds.values():
         counts[k] += 1
 
@@ -684,7 +711,8 @@ def run_report(quiet=False):
         print(render_enumeration(scripts, kinds))
         print()
         print(f"Total: {counts['gate']} gates, {counts['census']} censuses, "
-              f"{counts['audit']} merge-history audit(s), {len(scripts)} scripts overall.")
+              f"{counts['audit']} merge-history audit(s), {counts['release-check']} release "
+              f"check(s), {len(scripts)} scripts overall.")
         print()
         print("=== Defect-class cross-reference ===")
         print(render_defect_table())
@@ -693,7 +721,8 @@ def run_report(quiet=False):
         print("Disposition summary: " + ", ".join(f"{k}={v}" for k, v in sorted(disp.items())))
     else:
         print(f"{counts['gate']} gates, {counts['census']} censuses, "
-              f"{counts['audit']} merge-history audit(s), {len(scripts)} scripts overall.")
+              f"{counts['audit']} merge-history audit(s), {counts['release-check']} release "
+              f"check(s), {len(scripts)} scripts overall.")
     return scripts, kinds
 
 
@@ -707,7 +736,7 @@ def run_check() -> int:
         ci_text = fh.read()
     scripts = parse_gate_scripts_job(ci_text)
     kinds = classify(scripts, real_strict_flag_lookup)
-    counts = {"gate": 0, "census": 0, "audit": 0}
+    counts = {"gate": 0, "census": 0, "audit": 0, "release-check": 0}
     for k in kinds.values():
         counts[k] += 1
 
@@ -740,7 +769,9 @@ def run_check() -> int:
         return 1
     print(f"OK: live enumeration ({counts['gate']} gates, {counts['census']} censuses, "
           f"{counts['audit']} audit) matches CLAUDE.md's stated count, and every referenced "
-          f"script exists on disk.")
+          f"script exists on disk. Plus {counts['release-check']} release check(s), which that "
+          f"sentence deliberately does not count; check-inventory-prose.py holds their own "
+          f"sentence to this number (#2196).")
     return 0
 
 
@@ -802,12 +833,12 @@ def self_test() -> bool:
     ci_text = _fixture(_clean_fixture_body())
     scripts = parse_gate_scripts_job(ci_text)
     kinds = classify(scripts, _clean_strict_lookup)
-    counts = {"gate": 0, "census": 0, "audit": 0}
+    counts = {"gate": 0, "census": 0, "audit": 0, "release-check": 0}
     for k in kinds.values():
         counts[k] += 1
-    if len(scripts) != 13 or counts != {"gate": 8, "census": 4, "audit": 1}:
-        failures.append(f"CLEAN fixture: expected 13 scripts / 8 gate / 4 census / 1 audit, "
-                         f"got {len(scripts)} scripts / {counts}")
+    if len(scripts) != 13 or counts != {"gate": 8, "census": 4, "audit": 1, "release-check": 0}:
+        failures.append(f"CLEAN fixture: expected 13 scripts / 8 gate / 4 census / 1 audit / "
+                         f"0 release-check, got {len(scripts)} scripts / {counts}")
     if kinds.get(CLEAN_AUDIT) != "audit":
         failures.append("CLEAN fixture: the --strict-defining, --strict-withheld script was not "
                          "classified 'audit'")
@@ -871,6 +902,38 @@ def self_test() -> bool:
         failures.append(f"STRICT-PASSED fixture: {CLEAN_AUDIT} with --strict now passed should "
                          f"reclassify as 'gate', got {kinds_f.get(CLEAN_AUDIT)!r}")
 
+    # --- Case I: #2196's fourth kind. Two scripts with IDENTICAL ci.yml shapes, self-test and
+    # --- nothing else, must classify differently on the one property that distinguishes them: the
+    # --- census cannot reach a verdict here, the release check cannot reach its INPUT here and
+    # --- says so with a --require-... flag. Both directions, so neither answer is the default.
+    release_body = _clean_fixture_body() + "\n" + _census_step("release1")
+    scripts_i = parse_gate_scripts_job(_fixture(release_body))
+    kinds_i = classify(scripts_i, _clean_strict_lookup,
+                        require_flag_lookup=lambda name: name == "release1")
+    counts_i = {"gate": 0, "census": 0, "audit": 0, "release-check": 0}
+    for k in kinds_i.values():
+        counts_i[k] += 1
+    if kinds_i.get("release1") != "release-check":
+        failures.append(f"RELEASE-CHECK fixture: a self-test-only script declaring a "
+                         f"--require-... flag should classify 'release-check', got "
+                         f"{kinds_i.get('release1')!r}")
+    if counts_i["census"] != 4:
+        failures.append(f"RELEASE-CHECK fixture: the release check inflated the census count to "
+                         f"{counts_i['census']}, which is how CLAUDE.md's sentence would go "
+                         f"stale without anyone editing it")
+    kinds_i_nodecl = classify(scripts_i, _clean_strict_lookup,
+                               require_flag_lookup=lambda name: False)
+    if kinds_i_nodecl.get("release1") != "census":
+        failures.append(f"RELEASE-CHECK fixture: the SAME ci.yml shape with no --require-... flag "
+                         f"declared should stay a census, got {kinds_i_nodecl.get('release1')!r}")
+    if not script_defines_require_flag(os.path.join(SCRIPTS_DIR,
+                                                     "check-pinned-asset-patches.py")):
+        failures.append("RELEASE-CHECK reader: check-pinned-asset-patches.py declares "
+                         "--require-asset, but the reader did not see it")
+    if script_defines_require_flag(os.path.join(SCRIPTS_DIR, "census-comment-staleness.py")):
+        failures.append("RELEASE-CHECK reader: a census was read as declaring a --require-... "
+                         "flag, so the two kinds would be indistinguishable")
+
     # --- Case G: parse_claude_md_count ----------------------------------------------------------
     correct = "blah blah Eight gates, four censuses and one merge-history audit, all pure Python"
     if parse_claude_md_count(correct) != (8, 4, 1):
@@ -908,10 +971,11 @@ def self_test() -> bool:
         for f in failures:
             print(f"SELF-TEST FAILURE: {f}")
         return False
-    print("SELF-TEST: OK (8 cases: clean enumeration, gate removed, script renamed, script "
+    print("SELF-TEST: OK (9 cases: clean enumeration, gate removed, script renamed, script "
           "added, census-grows-a-gate reclassification, audit-gains---strict reclassification, "
-          "CLAUDE.md count parsing incl. a two-digit word and an absent sentence, dangling "
-          "reference against a fixture disk listing)")
+          "release-check-vs-census on the same ci.yml shape, CLAUDE.md count parsing incl. a "
+          "two-digit word and an absent sentence, dangling reference against a fixture disk "
+          "listing)")
     return True
 
 

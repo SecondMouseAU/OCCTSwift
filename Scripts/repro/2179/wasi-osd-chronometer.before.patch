@@ -1,0 +1,32 @@
+--- a/src/FoundationClasses/TKernel/OSD/OSD_Chronometer.cxx
++++ b/src/FoundationClasses/TKernel/OSD/OSD_Chronometer.cxx
+@@ -41,6 +41,13 @@
+ 
+   #ifndef CLK_TCK
+     #define CLK_TCK CLOCKS_PER_SEC
++
++#ifdef __wasi__
++// WASI doesn't have times() or struct tms
++static clock_t times(struct tms *buf) {
++  return 0;
++}
++#endif
+   #endif
+ 
+   #if (defined(__APPLE__))
+@@ -59,11 +66,15 @@
+   static const long aCLK_TCK = CLK_TCK;
+   #endif
+ 
++#ifdef __wasi__
++  theUserSeconds = theSystemSeconds = 0.0;
++#else
+   tms aCurrentTMS{};
+   times(&aCurrentTMS);
+ 
+   theUserSeconds   = (double)aCurrentTMS.tms_utime / aCLK_TCK;
+   theSystemSeconds = (double)aCurrentTMS.tms_stime / aCLK_TCK;
++#endif
+ }
+ 
+ //=================================================================================================

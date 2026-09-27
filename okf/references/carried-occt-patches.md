@@ -92,6 +92,42 @@ what made it safe. Tracked as [#2056](https://github.com/SecondMouseAU/OCCTSwift
 twenty-nine. The zero it lacks, and why each matters, per
 [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md): **there are none.**
 
+**And it holds two that we do not carry, so thirty-one in total.** Those are separate quantities
+and collapsing them is how the divergence stayed invisible for a month: every count in this repo
+asked "does the asset lack anything", and none asked "does it hold anything extra".
+
+The two extras are retired patches that were deleted from `Scripts/patches/` but never reverted out
+of the shared `Libraries/occt-src` tree the asset was built from on 2026-09-22:
+
+| Extra in the asset | Retired | Why it is in the asset | Exposure |
+|---|---|---|---|
+| retired `0032`, TopOpeBRepBuild KPart-merge globals, #1371 | 2026-09-02, superseded by OCCT#1505/#1509 | `build-occt.sh` applies patches idempotently and **never reverts**, so a retired patch's edits survive in a working tree until somebody deletes them by hand. Nobody did. | None. `thread_local` and `static` are identical single-threaded, and the twelve globals are unreachable from this bridge's call surface, measured by #1371's own reachability probe. |
+| retired `0034-LocOpe_SplitDrafts-trim-infinite-pipe-curves-1393`, #1393 | 2026-09-08, upstream deleted the class in OCCT#1442 | The same tree, the same cause. | None. `LocOpe_SplitDrafts` has no caller anywhere: `Shape.splitDrafts` was removed in v4.0.0. |
+
+(The rows above are deliberately not keyed by a bare backticked filename: `check-inventory-prose.py`
+reads that shape as a carried-patch row and requires the file to exist in `Scripts/patches/`, which
+is exactly what these two do not.)
+
+Verified by symbol rather than inferred: `nm -C` finds `TrimInfinite(...)` in
+`LocOpe_SplitDrafts.cxx.o` and `thread-local wrapper routine for GLOBAL_*` in the three
+`TopOpeBRepBuild` objects, in all three slices, and the local `OCCT.xcframework.zip` hashes to
+exactly the `checksum:` `Package.swift` pins. Tracked as
+[#2190](https://github.com/SecondMouseAU/OCCTSwift/issues/2190), documented rather than rebuilt out
+because both are inert and a rebuild costs three cmake configures for no behavioural change.
+
+**The source tree has since been cleaned.** `Libraries/occt-src` now holds exactly the twenty-nine
+carried patches and no strays, so **a rebuild today produces a twenty-nine-patch asset with a
+different checksum from the pinned one**. That is expected, not a corrupt download: if you rebuild
+and the checksum does not match, this paragraph is the reason, and the fix is to upload the new
+asset and bump both `url:` and `checksum:`.
+
+**The check that would have caught it** is `python3 Scripts/check-pinned-asset-patches.py
+--require-asset`, written for #2190 and run at the repin step. It derives evidence from each
+patch's own diff and looks for it in all three slices, and it looks for the retired patches too,
+which is the direction nothing tested. The two rows above sit in its `ACKNOWLEDGED` table keyed on
+the tag `v4.0.0-kernel.1`, so the acknowledgement expires at the next repin rather than silently
+excusing the next asset.
+
 That is new as of 2026-09-22 and it is what the rebuild was for. Twelve patches (`0028`-`0031`,
 `0033`, `0034`, `0036`-`0041`) had been on disk and in no CI job, because `build-and-test` resolves
 the pinned asset rather than building from source. Four of the twelve were live consumer exposure

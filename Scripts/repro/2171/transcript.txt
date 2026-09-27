@@ -1,0 +1,52 @@
+>>> Scripts/wasm-toolchain-versions.txt is not on this branch yet (it arrives with #2169).
+>>> Using the values that PR measured. Delete this branch of the script once it lands.
+>>> Swift toolchain : /Library/Developer/Toolchains/swift-6.4.0-RELEASE.xctoolchain/usr/bin
+>>> Swift SDK       : swift-6.4.0-RELEASE_wasm (wasm32-unknown-wasip1)
+>>> wasi-sdk        : /Users/elb/Projects/worktrees/OCCTSwift-wasm-2169/Libraries/wasi-sdk-34.0-arm64-macos
+>>> EH flags        : -fwasm-exceptions -mllvm -wasm-use-legacy-eh=false
+
+>>> Building the probe for wasm32-unknown-wasip1...
+Building for debugging...
+[Planning deferred tasks]
+[41 / 51] ProbeSetjmp
+[44 / 51] ProbeBridge
+[44 / 51] ProbeKernel
+[47 / 51] probe-product
+[51 / 53] probe-uncaught-product
+/Users/elb/Projects/worktrees/OCCTSwift-wasm-2171/Scripts/repro/2171/standalone/Package.swift: probe-uncaught-product: clang: warning: argument unused during compilation: '-rdynamic' [-Wunused-command-line-argument]
+[53 / 53] probe-uncaught-product
+/Users/elb/Projects/worktrees/OCCTSwift-wasm-2171/Scripts/repro/2171/standalone/Package.swift: probe-product: clang: warning: argument unused during compilation: '-rdynamic' [-Wunused-command-line-argument]
+Build complete! (2.32 sec.)
+
+>>> probe.wasm
+C++ exceptions on wasm32-unknown-wasip1, in OCCT's shape:
+  catch by derived type     20  ok
+      a raise crossed a target boundary and its own type caught it
+  catch by base reference   21  ok
+      std::exception& caught a derived failure, so the type match reached the base
+  catch (...)               22  ok
+      the handler shape every OCCTBridge function's outermost catch uses
+  libc++ raised it, not us  23  ok
+      a std::out_of_range from vector::at crossed the seam between the two libc++ builds
+  through a non-EH frame    10  ok
+      10 = it propagated, but that frame's destructor did NOT run, so the frame leaked
+  try/catch in a non-EH TU  -1  ok
+      -1 = that catch never fired and the bridge's did, with no diagnostic anywhere
+  setjmp/longjmp            7  ok
+      a longjmp arrived back at its setjmp in a TU carrying the exception flags
+  leak on an all-EH path    0  ok
+      0 = every destructor ran when the whole path carried the flags
+all eight cases matched
+
+>>> probe-uncaught.wasm (a non-zero exit here IS the measurement)
+raising with no handler anywhere above...
+Error: wasm exception (payload: [WasmTypes.Value.i32(1293504)])
+    exit status: 1
+
+>>> Size of the same program with and without exceptions
+    -O0   no exceptions    641855  exceptions    837961  delta   +196106
+    -Os   no exceptions    189975  exceptions    396989  delta   +207014
+compute: 6.750000
+failure: -26
+
+Done. See README.md for what each line means.

@@ -47,9 +47,10 @@ reporting clean on a clean tree (okf/policies/prove-the-test-fails.md):
     parser's count against a second count using the SAME pattern, and the removal matrix showed it
     could never fire.
 
-WHAT THIS GATE IS NOT. It says nothing about OS signals. `OCC_CONVERT_SIGNALS` is undefined in this
-build, so `OCC_CATCH_SIGNALS` expands to nothing and a SIGSEGV/SIGBUS/SIGFPE raised inside OCCT
-reaches no `catch` clause at any coverage level. See docs/reference/Diagnostics.md.
+WHAT THIS GATE IS NOT. It says nothing about OS signals. `OCC_CONVERT_SIGNALS` is undefined for the
+bridge's own compile, not for OCCT's, so an `OCC_CATCH_SIGNALS` written in a bridge file expands to
+nothing and a SIGSEGV/SIGBUS/SIGFPE raised inside OCCT reaches no `catch` clause of the kind this
+gate counts, at any coverage level (#2188). See docs/reference/Diagnostics.md.
 
 Usage:
   Scripts/check-bridge-diagnostics.py

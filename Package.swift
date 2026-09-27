@@ -51,22 +51,30 @@ let occtTarget: Target = isWASI
     // WASI: Use locally built static library from Scripts/build-occt-wasm.sh
     // The library and headers are at Libraries/libOCCT-wasm.a and Libraries/occt-headers-wasm/
     // The `path: "Libraries"` sets the base for headerSearchPath("occt-headers-wasm") -> Libraries/occt-headers-wasm/
-    // dummy.c is required by SwiftPM (targets must have at least one source file)
+    // dummy.c is required by SwiftPM (targets must have at least one source file), and
+    // include/ is required too: SwiftPM refuses to LOAD a package whose target has no
+    // public-headers directory ("public headers (\"include\") directory path for 'OCCT' is
+    // invalid or not contained in the target"). Both are force-added past the `Libraries/` line
+    // in .gitignore, so a consumer's checkout has them.
+    //
+    // NO .unsafeFlags HERE, and none anywhere on this path. SwiftPM refuses to build any package
+    // that has them once it is resolved by VERSION, which is how an application consumes a
+    // published package; path and branch dependencies are exempt, a version requirement is not.
+    // Measured, with Scripts/repro/2048/run.sh. Everything that has no safe spelling, which is
+    // the -L for this archive, the exception flags and the SjLj flag, comes from a toolset the
+    // consumer passes to `swift build`; `Scripts/make-wasi-toolset.py` writes one.
     ? .target(
         name: "OCCT",
         path: "Libraries",
         sources: ["dummy.c"], // Required by SwiftPM; file can be empty
         cxxSettings: [
             .headerSearchPath("occt-headers-wasm"),
-            .define("__wasi__"),
             .define("OCCT_NO_DEPRECATED"),
-            .define("_WASI_EMULATED_PROCESS_CLOCKS"),
-            .define("_WASI_EMULATED_GETPID"),
         ],
         linkerSettings: [
-            .linkedLibrary("OCCT-wasm"), // links libOCCT-wasm.a from Libraries/
-            // Build directory is .build/<config>/OCCT.build/, so ../../Libraries reaches package root
-            .unsafeFlags(["-L", "../../Libraries"])
+            // The NAME is a safe setting; the -L that finds libOCCT-wasm.a is not expressible at
+            // all and is the toolset's job.
+            .linkedLibrary("OCCT-wasm"),
         ]
     )
     : useLocalXCFramework
@@ -121,14 +129,39 @@ let occtTarget: Target = isWASI
     // #585 failure shape in miniature: `ls Scripts/patches/*.patch | wc -l` agreed with the count
     // while the enumeration next to it did not.
     //
-    // ALL SEVENTEEN ARE VERIFIED PRESENT IN THE PINNED ASSET, measured rather than assumed:
+    // WHAT IS VERIFIED PRESENT IN THE PINNED ASSET, AND WHAT IS NOT. This paragraph opened "ALL
+    // SEVENTEEN ARE VERIFIED PRESENT" and described a seventeen-patch asset. It went stale at the
+    // v4.0.0-kernel.1 repin, which took the pinned set to twenty-nine, and #2190 is what caught
+    // it. The per-patch verdict is no longer kept here by hand. Run:
     //
-    //   - Eight (0010, 0011, 0012, 0014, 0015, 0016, 0021, 0024) touch a shipped .hxx. Every line
-    //     each patch adds to a header was matched, line for line, against the header inside the
-    //     built asset: 210 added lines, 0 missing.
-    //   - One (0026) is .cxx-only but adds a distinctive string literal, so it was verified
-    //     directly in the binary: the message it throws appears exactly once in each of the three
-    //     slice archives (libOCCT-macos.a, libOCCT-ios.a, libOCCT-sim.a).
+    //     python3 Scripts/check-pinned-asset-patches.py --require-asset
+    //
+    // It derives from each patch's own text a header line, a string literal, a thread_local
+    // wrapper symbol or a name the patch introduces, then looks for it in all three slices. On
+    // this asset it answers 16 confirmed, 13 not derivable, 0 absent, in about seven seconds. It
+    // also looks for the RETIRED patches, which is what nothing did before #2190. THAT is the step
+    // to run at a repin, before trusting any sentence in this block.
+    //
+    // The parts of the old breakdown that survive, because they say what the script cannot:
+    //
+    //   - Fifteen patches touch a shipped .hxx, and the xcframework ships the patched header
+    //     verbatim, so every line they add is matchable line for line: 303 added lines, 0 missing.
+    //     That is the one rule decisive in both directions, and it covers just over half the set.
+    //   - One (0026) is .cxx-only but adds a distinctive string literal, so it is verified
+    //     directly in the binary: the message it throws appears in BRepOffsetAPI_ThruSections's
+    //     object file in each of the three slice archives (libOCCT-macos.a, libOCCT-ios.a,
+    //     libOCCT-sim.a).
+    //   - Thirteen reach the binary leaving nothing a symbol table or a byte search can see. A
+    //     changed comparison, a reordered argument or a guard clause adds no name. 0033 is the
+    //     sharpest case: it adds `std::recursive_mutex& StaticsMutex()` and that name is in NO
+    //     symbol table in this asset, because libc++'s recursive_mutex constructor is constexpr,
+    //     so the function-local static needs no guard variable and the accessor inlines away at
+    //     -O2. The patch IS in the binary (Interface_Static.cxx.o holds the undefined references
+    //     to recursive_mutex::lock() that vanilla V8_0_1 has no reason to hold). Absence of a name
+    //     is not absence of a patch, which is why those thirteen get a bucket, not a verdict.
+    // And the BEHAVIOURAL evidence, which answers a different question from the symbol evidence
+    // above: whether a test exercises the fix, not whether the code is in the binary.
+    //
     //   - One (0027) is .cxx-only and adds NO string literal, signalling through myStatus instead,
     //     so nothing in the binary can be grepped for it. It is verified behaviourally by
     //     StressBuilderLifecycleTests.mismatchedSectionEdgeCountWithoutCheckFailsCleanly, which is
@@ -152,10 +185,54 @@ let occtTarget: Target = isWASI
     //     They are the only two patches in the tree with no CI coverage of any kind, which is
     //     worth knowing before trusting "the fix is in the kernel" about either.
     //
-    // Pinned to the v4.0.0-kernel.1 pre-release asset: upstream V8_0_1 plus the twenty-nine patches listed above.
-    // Byte-identical to the v3.0.0-kernel.1 pre-release asset, which is why `checksum:` below did
-    // NOT change when `url:` did; the release commit re-uploaded the same zip. Same shape v2.0.0
-    // used with its own kernel.3 asset. This is NOT the same file as the v2.0.0 asset it replaces: that one carried
+    // Pinned to the v4.0.0-kernel.1 pre-release asset: upstream V8_0_1 plus the twenty-nine patches listed above,
+    // AND TWO MORE THAT ARE NOT IN Scripts/patches/ AT ALL. Read the next paragraph before
+    // treating the enumeration above as the asset's contents.
+    //
+    // ===================================================================================
+    // THE ASSET CARRIES THIRTY-ONE PATCHES. THE TREE CARRIES TWENTY-NINE. (#2190)
+    // ===================================================================================
+    //
+    // The two extras are retired patches that were deleted from Scripts/patches/ but never
+    // reverted out of the shared Libraries/occt-src tree the asset was built from:
+    //
+    //   0032-TopOpeBRepBuild-KPart-merge-globals-thread-local-1371.patch  retired 2026-09-02
+    //   0034-LocOpe_SplitDrafts-trim-infinite-pipe-curves-1393.patch      retired 2026-09-08
+    //
+    // build-occt.sh's patch loop ONLY APPLIES; it never reverts, and it refuses to reset a dirty
+    // occt-src on purpose, so that an investigation's probe is not destroyed silently. A retired
+    // patch's edits therefore survive in a working tree until somebody reverts them by hand. Nobody
+    // did, and the 2026-09-22 build picked them up. Verified by symbol, not inferred: the asset
+    // holds `TrimInfinite(...)` in LocOpe_SplitDrafts.cxx.o and `thread-local wrapper routine for
+    // GLOBAL_*` in the three TopOpeBRepBuild objects, in all three slices.
+    //
+    // BOTH ARE INERT, which is why this is documented rather than rebuilt out. LocOpe_SplitDrafts
+    // has no caller anywhere: Shape.splitDrafts was removed in v4.0.0 and upstream deleted the
+    // class in OCCT#1442. thread_local versus static is identical single-threaded, and the twelve
+    // globals 0032 touches are unreachable from this bridge's call surface, measured by #1371's own
+    // probe. Nothing a consumer can call behaves differently.
+    //
+    // THE SOURCE TREE HAS SINCE BEEN CLEANED. Libraries/occt-src now holds exactly the twenty-nine
+    // carried patches and no strays. SO A REBUILD TODAY PRODUCES A TWENTY-NINE-PATCH ASSET WITH A
+    // DIFFERENT CHECKSUM FROM THE ONE PINNED BELOW. That is expected, not a corrupted download:
+    // if you rebuild and the checksum does not match, this paragraph is the reason, and the fix is
+    // to upload the new asset and bump BOTH url: and checksum:, never to hunt for a build
+    // difference that is not there.
+    //
+    // CLAUDE.md: "A divergence with a written reason is expected; one without is a finding." This
+    // is the written reason. Scripts/check-pinned-asset-patches.py carries the same two rows in
+    // its ACKNOWLEDGED table, keyed on the tag v4.0.0-kernel.1, so the acknowledgement expires
+    // automatically at the next repin and the finding comes back if the next asset repeats it.
+    //
+    // (A previous version of this paragraph said the asset was "byte-identical to the
+    // v3.0.0-kernel.1 pre-release asset, which is why `checksum:` below did NOT change when `url:`
+    // did". THAT WAS FALSE. The checksum changed at 64b2aec7, from 77df5a0a... to da14acb1...,
+    // which `git log -L266,266:Package.swift` shows in one command. It was a leftover from the
+    // previous pin and it is deleted rather than corrected, because nothing needs saying about a
+    // reuse that did not happen. The v2.0.0 release DID reuse its kernel.3 zip unchanged, and that
+    // is still recorded further down, where it is a true statement about a different release.)
+    //
+    // This is NOT the same file as the v2.0.0 asset it replaces: that one carried
     // fifteen, and 0026 (#905) and 0027 (#913) had landed in Scripts/patches/ since without ever
     // reaching a built kernel, so both were exercised by no CI job at all. That is the #585 shape,
     // and it is why the count check at the top of this comment is worth the ten seconds.
@@ -183,7 +260,11 @@ let occtTarget: Target = isWASI
     // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
     // Scripts/patches/ holds twenty-nine patches; the pinned asset holds the twenty-nine
     // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 29 against a list of
-    // 29, and those zero are the difference: there is none.
+    // 29, and those zero are the difference: there is none. The two RETIRED patches the asset also
+    // holds are a separate quantity and are not counted here, because this count is the carried
+    // set against the enumeration, which is what check-inventory-prose.py reads. Thirty-one
+    // patches are in the asset; twenty-nine of them are ours to carry. Collapsing those two
+    // numbers into one is how #2190 stayed invisible.
     //
     // That is new as of v4.0.0-kernel.1 and it is the point of the rebuild. Twelve patches
     // (0028-0031, 0033, 0034, 0036-0041) had been on disk and in NO CI job, because ci.yml's
@@ -199,7 +280,11 @@ let occtTarget: Target = isWASI
     //
     // KEEP THIS PARAGRAPH TRUE. If a patch is added and the asset is not rebuilt, the count above
     // stops matching and check-inventory-prose.py fails, which is what it is for (#1408). The fix
-    // is a rebuild or an honest divergence paragraph, never a hand-edited number.
+    // is a rebuild or a written divergence paragraph, never a hand-edited number. And a count that
+    // keeps matching is not the same as an asset that matches: check-inventory-prose.py compares
+    // this prose against the tree and reads no binary at all, which is exactly how the two extras
+    // above went unnoticed. Scripts/check-pinned-asset-patches.py is the half that reads the
+    // binary, and it belongs to the repin step, not to this paragraph.
     //
     // The v3.0.0 RELEASE commit re-points this pair again, at the release asset. Until then every
     // commit pins v3.0.0-kernel.1, so do NOT delete that pre-release afterwards: deleting it takes its
@@ -322,19 +407,82 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
             sources: ["src"],
             publicHeadersPath: "include",
             cxxSettings: [
+                // Compile the bridge as C++, not Objective-C++ (#2256). The 74 files in
+                // Sources/OCCTBridge/src carry a .mm extension and contain no Objective-C at all;
+                // measured across every one of them, zero @interface, @implementation,
+                // @autoreleasepool, @try, NSString, NSObject, NSArray and zero [[... alloc]. On this
+                // triple the extension is not merely inaccurate, it is fatal: the pinned clang
+                // CRASHES in WebAssembly instruction selection on a plain C++ try/catch in an
+                // Objective-C++ translation unit under -fwasm-exceptions, because clang gives such
+                // a unit the Objective-C++ personality function, the wasm EH lowering only handles
+                // the C++ one, and what survives to the selector cannot be selected. Building
+                // without the exception flags is not an alternative: that is exactly #2171's
+                // silent failure, where every outermost catch (...) stops firing with no
+                // diagnostic. Scripts/repro/2256 measures all of it, including the case where a
+                // real bridge file catches an OCCT raise on wasm with this setting and loses the
+                // catch without the flags.
+                //
+                // WHERE IT LIVES NOW. #2256 had to leave this as a `.unsafeFlags` here while
+                // #2048 was open. It is now in the consumer-side toolset that
+                // `Scripts/make-wasi-toolset.py` writes, as cxxCompiler.extraCLIOptions, because
+                // .unsafeFlags is the exact thing this path must not carry: SwiftPM refuses them
+                // for a dependency resolved by version, which is how #1689's consumer consumes
+                // this package. The toolset placement is also measured BETTER: under the
+                // deprecated `--build-system native` a cxxSettings `-x c++` reaches .c sources in
+                // the same target, while the toolset's does not.
                 // Use WASI-built OCCT headers
+                // Relative to this target's own path, Sources/OCCTBridge/src, which is what
+                // SwiftPM resolves headerSearchPath against. It is two levels up because the
+                // target's sources sit in a `src` subdirectory; moving them would break this, and
+                // SwiftPM offers no package-root-relative form.
                 .headerSearchPath("../../Libraries/occt-headers-wasm"),
+                // The threading shim, for a bridge source that includes it by name under an
+                // `#if defined(__wasi__)` guard. A guarded `#include` needs no build setting of
+                // any kind, which is why it is preferred over the `-include` flag
+                // Scripts/build-occt-wasm.sh uses for OCCT's own sources: a flag would have to
+                // come from the toolset, and a consumer who forgets it gets six errors naming
+                // std::mutex. Both mechanisms were measured to work, in
+                // Scripts/repro/2048/run.sh cases 4 and 8.
+                .headerSearchPath("../../Scripts/wasm-shims"),
                 .define("OCCT_AVAILABLE", to: "1"),
                 .define("OCCT_NO_DEPRECATED"),
-                .define("__wasi__"),
-                // WASI doesn't have full POSIX; guard Foundation imports in headers
-                .define("_WASI_EMULATED_PROCESS_CLOCKS"),
-                .define("_WASI_EMULATED_GETPID"),
+                // __wasi__ is NOT defined here: clang predefines it for this triple, measured
+                // with `clang -target wasm32-unknown-wasip1 -dM -E`, in both C and C++.
+                //
+                // Neither is _WASI_EMULATED_PROCESS_CLOCKS or _WASI_EMULATED_GETPID.
+                // Scripts/build-occt-wasm.sh passes NO emulation define (docs/WASI_GUARD_SITES.md,
+                // "CMake flags: none are passed"), and defining one here would compile the same
+                // OCCT headers under a different macro set from the archive this links against.
+                // #2179 measured the specific harm for the process clocks: the define is what
+                // broke wasi-osd-chronometer.patch, and guarding the include removed the need.
             ],
             linkerSettings: [
-                .linkedLibrary("c++"),
+                // Library NAMES are a safe setting and stay in the manifest. The -L directories
+                // that find them are not expressible at all and come from the toolset.
+                // Measured in Scripts/repro/2048/run.sh case 4: of these, only -lunwind and the
+                // kernel archive need a -L. libsetjmp.a and libwasi-emulated-getpid.a are in the
+                // Swift SDK's own WASI.sdk, which is already the link's sysroot, and libc++abi.a
+                // is there too but is the NO-EXCEPTIONS flavour, so the toolset's -L into
+                // wasi-sdk's lib/wasm32-wasip1/eh has to precede the sysroot rather than merely
+                // be present.
+                // Deliberately repeated from the OCCT target, which also declares it. A review
+                // suggested removing it here on the grounds that SwiftPM propagates a dependency's
+                // linker settings. That may well be so, and a duplicate `-l` is a no-op to the
+                // linker either way, but it cannot be checked until `libOCCT-wasm.a` exists, which
+                // is #2174. Dropping it on an untested assumption trades a harmless duplicate for
+                // an `undefined symbol` at the end of a full link. Revisit once #2174 lands.
                 .linkedLibrary("OCCT-wasm"),
-                .unsafeFlags(["-L", "../../Libraries"])
+                .linkedLibrary("c++"),
+                .linkedLibrary("c++abi"),
+                .linkedLibrary("unwind"),
+                // -fwasm-exceptions does nothing for setjmp. OCCT's own CMake defines
+                // OCC_CONVERT_SIGNALS, so OCC_CATCH_SIGNALS expands to a real setjmp inside OCCT
+                // and six TKernel objects reference __wasm_setjmp (#2172, #2188).
+                .linkedLibrary("setjmp"),
+                // OSD_Directory::BuildTemporary() and OSD_Process::ProcessId() both call getpid(),
+                // which wasi-libc declares and does not define (docs/WASI_GUARD_SITES.md). The
+                // define is deliberately absent above; the library is what the link needs.
+                .linkedLibrary("wasi-emulated-getpid"),
             ]
         )
         // Native platforms: source build with XCFramework header search paths
@@ -374,6 +522,36 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
                 .linkedLibrary("c++")
             ]
         )
+
+// The `simd` module, on WASI only (#2175).
+//
+// 196 of the 230 files in Sources/OCCTSwift open with `import simd`, and on
+// wasm32-unknown-wasip1 that is `error: no such module 'simd'`, which stops the entire Swift
+// layer before any of it is type-checked. Apple's simd is part of the Apple SDKs and there is no
+// wasm build of it.
+//
+// A target NAMED `simd`, reachable only when isWASI, answers that without editing any of the 196
+// files and without changing a single byte of what an Apple build compiles: `import simd` still
+// resolves to Apple's there, because this target is not in the graph at all. The alternative,
+// 196 `#if canImport(simd)` edits, is a mechanical diff through nearly every file in the package
+// and would still need the definitions this module carries.
+//
+// What it defines is what Sources/OCCTSwift measurably uses and no more; see the file's own
+// header for the counts and for the one behavioural difference from Apple's module
+// (`simd_normalize` of a zero vector).
+let wasiCompatTargets: [Target] =
+    isWASI
+    ? [
+        .target(
+            name: "simd",
+            path: "Sources/WASICompat/simd",
+            swiftSettings: [.swiftLanguageMode(.v6)]
+        )
+    ]
+    : []
+
+let swiftLayerDependencies: [Target.Dependency] =
+    isWASI ? ["OCCTBridge", "OCCT", "simd"] : ["OCCTBridge", "OCCT"]
 
 let package = Package(
     name: "OCCTSwift",
@@ -426,7 +604,7 @@ let package = Package(
         // build and into theirs. Transcript and reasoning in Scripts/repro/967-consumer-compile/.
         .target(
             name: "OCCTSwift",
-            dependencies: ["OCCTBridge", "OCCT"],
+            dependencies: swiftLayerDependencies,
             path: "Sources/OCCTSwift",
             swiftSettings: [
                 .swiftLanguageMode(.v6)
@@ -542,6 +720,6 @@ let package = Package(
                 .swiftLanguageMode(.v6)
             ]
         ),
-    ],
+    ] + wasiCompatTargets,
     cxxLanguageStandard: .cxx17
 )

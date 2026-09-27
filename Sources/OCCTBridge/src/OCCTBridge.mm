@@ -35,11 +35,16 @@ void OCCTSerialLockRelease(void)
 // crash report. Idempotent + thread-safe via std::once_flag.
 //
 // #1399: this comment used to end "so that signals raised inside OCCT become catchable via
-// OCC_CATCH_SIGNALS instead of aborting the host process", which is not what this build does.
-// OCC_CONVERT_SIGNALS is not defined here, so Standard_ErrorHandler.hxx expands
-// OCC_CATCH_SIGNALS to nothing and Standard_ErrorHandler::Abort throws straight from the POSIX
-// signal handler, which does not unwind. See okf/references/known-occt-bugs.md (#345) and the
-// same correction at occtEnsureSignals' declaration in OCCTBridge_Internal.h.
+// OCC_CATCH_SIGNALS instead of aborting the host process", which is not what a bridge caller
+// gets. #2188 narrowed the reason: OCC_CONVERT_SIGNALS is undefined for this file, not for
+// OCCT, whose CMake adds it on every non-Windows target. An OCC_CATCH_SIGNALS written here
+// expands to nothing and registers no handler, while OCCT's own sites register one and
+// Standard_ErrorHandler::Abort longjmps to the nearest of them; the template's body is in the
+// header, so the branch is chosen by the instantiating translation unit, and that is
+// OSD_signal.cxx, which OCCT compiles with the define. With no OCCT site above the signal,
+// FindHandler() finds nothing and Abort prints and calls exit(1). Either way the bridge cannot
+// catch it. See okf/references/known-occt-bugs.md (#345, #2188) and the same correction at
+// occtEnsureSignals' declaration in OCCTBridge_Internal.h.
 #include <OSD.hxx>
 
 void occtEnsureSignals()
@@ -64,8 +69,9 @@ void occtEnsureSignals()
 // (Standard_ConstructionError, StdFail_NotDone) and a nested inner catch still rethrowing
 // correctly to its outer one.
 //
-// NOT SIGNALS. OCC_CONVERT_SIGNALS is undefined in this build, so OCC_CATCH_SIGNALS expands to
-// nothing and an OS signal raised inside OCCT never becomes a C++ exception. Nothing in this
+// NOT SIGNALS. OCC_CONVERT_SIGNALS is undefined for the bridge's own compile, so an
+// OCC_CATCH_SIGNALS written in a bridge file expands to nothing and an OS signal raised inside
+// OCCT never becomes a C++ exception any catch block here can see (#2188). Nothing in this
 // section can see a SIGSEGV/SIGBUS/SIGFPE, and the crashes that motivated #1161 (#345, #348,
 // #484, #636, #913, #1022) are all that shape. See occtEnsureSignals above.
 #include <Standard_Failure.hxx>
