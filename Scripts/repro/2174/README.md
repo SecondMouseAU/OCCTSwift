@@ -450,8 +450,11 @@ this issue's own body warns about. At **1.89 MB brotli** it is well under that f
 Read it as a floor and not as an answer. It carries no Swift runtime, no Foundation and no bridge,
 and `wasm-ld` pulled only the OCCT that five small cases reach: a box, a volume, a mesh and a
 raise. A module that also reads and writes STEP will pull from `TKDESTEP`, `TKXSBase` and `TKXCAF`, which
-are 26.8 MB of objects and archives between them. #2175's module is the comparable measurement, and #1689's
-5 MB figure is a target rather than a gate either way.
+are 26.8 MB of objects and archives between them. #2175's module is the comparable measurement.
+
+*(Added 2026-09-27: this section originally closed by calling #1689's 5 MB "a target rather than a
+gate". That figure was withdrawn as spurious on 2026-09-25, so read the brotli column against
+`occt-wasm`'s ~4.5 MB and against nothing else. The measurements above are untouched.)*
 
 The header tree is **not** sized here. What the build script now produces is a flat copy of
 `occt-install-wasm/include/opencascade`, and packaging is blocked by the census, so no such tree

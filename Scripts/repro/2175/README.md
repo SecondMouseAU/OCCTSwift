@@ -356,10 +356,12 @@ three-line Foundation program using `URL`, `Data` and `FileManager.default.tempo
 | `HelloFoundation`, + Foundation | 60,380,095 | 20,060,965 | **13,112,239** |
 | **`OCCTWasmSpike`**, + bridge + OCCT | **141,861,273** | 41,110,844 | **26,976,003** |
 
-There is **no size budget**: #1689's 5 MB was withdrawn on 2026-09-25, having never been like-for-like with the `occt-wasm` figure it was set against and having been exceeded by Foundation alone before any OCCT. The module is 26.98 MB
-brotli, 5.4x over it. Two things have to be said about that number rather than one.
+There is **no size budget and no size target**: #1689's 5 MB was withdrawn on 2026-09-25, having
+never been like-for-like with the `occt-wasm` figure it was set against and having been exceeded by
+Foundation alone before any OCCT. The module is 26.98 MB brotli, and this log deliberately states
+no ratio to the withdrawn figure. Two things have to be said about the 26.98 MB rather than one.
 
-**Foundation is already 2.6x over the target on its own.** A SwiftWasm app that does nothing but
+**Foundation accounts for 13.11 MB of it on its own.** A SwiftWasm app that does nothing but
 print a path is 13.11 MB brotli before any of this package is in it. By section:
 
 | Section | `HelloFoundation` | `OCCTWasmSpike` |

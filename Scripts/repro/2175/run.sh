@@ -294,9 +294,10 @@ do_size() {
     echo "===================================================================="
     echo "SIZE: the distribution facts"
     echo "===================================================================="
-    echo "    brotli is the column to read against occt-wasm's published ~4.5 MB and against"
-    echo "    #1689's 5 MB target, which is a target and not a gate. Comparing a gzip number"
-    echo "    against a brotli one is the like-for-like mistake #2174's own body warns about."
+    echo "    brotli is the column to read against occt-wasm's published ~4.5 MB, which is the"
+    echo "    only figure these can be read against: #1689's 5 MB was withdrawn as spurious, so"
+    echo "    do not report a ratio to it. Comparing a gzip number against a brotli one is the"
+    echo "    like-for-like mistake #2174's own body warns about."
     echo ""
     printf '    %-24s %12s %12s %12s\n' "module" "uncompressed" "gzip -9" "brotli -q 11"
     local f name u g b
