@@ -1,5 +1,4 @@
 import Foundation
-import OCCTBridge
 import Testing
 import simd
 
@@ -26,7 +25,9 @@ import simd
 ///
 /// Measured in `Scripts/repro/2765-convert-to-bezier-perform/` (`siblings.mm` and its transcript in
 /// `README.md`), which records `Perform()`, `Status(ShapeExtend_FAIL)` and `Result().IsNull()` side
-/// by side for all eleven wrappers.
+/// by side for all eleven wrappers that ran one of those `Perform()` implementations when the sweep
+/// was taken. Ten remain: #2771 deleted `OCCTShapeUpgradeSplitSurfaceAngle`, which was
+/// `OCCTShapeSplitByAngle` built a second time under a wrong name and reached from nothing.
 @Suite("Issue #2769: nothing to do is not a failure (healing entry points)")
 struct Issue2769PerformStatusTests {
 
@@ -125,27 +126,6 @@ struct Issue2769PerformStatusTests {
         #expect(!split.isSame(as: cyl))
     }
 
-    @Test("OCCTShapeUpgradeSplitSurfaceAngle, which has no Swift caller, follows the same rule")
-    func bridgeOnlySplitSurfaceAngleReturnsTheInputWhenNothingSpansTheAngle() throws {
-        // This bridge function is `OCCTShapeSplitByAngle` a second time: both build
-        // `ShapeUpgrade_ShapeDivideAngle(maxAngleDegrees * M_PI / 180.0, shape)` with no further
-        // configuration. It has no Swift caller, no reference page and, until now, no test, so it
-        // is reached here through `import OCCTBridge`. Whether it keeps its place is #2771's
-        // question; while it exists it obeys the same rule as its twin.
-        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
-        let unchangedRef = try #require(OCCTShapeUpgradeSplitSurfaceAngle(box.handle, 90))
-        let unchanged = Shape(handle: unchangedRef)
-        #expect(unchanged.subShapes(ofType: .face).count == 6)
-        #expect(unchanged.isSame(as: box))
-
-        // Control.
-        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
-        let splitRef = try #require(OCCTShapeUpgradeSplitSurfaceAngle(cyl.handle, 45))
-        let split = Shape(handle: splitRef)
-        #expect(split.subShapes(ofType: .face).count == 10)
-        #expect(!split.isSame(as: cyl))
-    }
-
     // MARK: - Group B: the return value used to be ignored outright
 
     // These two already returned the input shape on a no-op, which is correct, and #2769 changed
@@ -188,7 +168,7 @@ struct Issue2769PerformStatusTests {
     /// `Shape.nullified` is a present `OCCTShapeRef` wrapping a null `TopoDS_Shape`, and a null
     /// shape is exactly what `ShapeUpgrade_ShapeDivide::Perform()`'s own first guard reports:
     /// `myStatus |= ShapeExtend::EncodeStatus(ShapeExtend_FAIL1); return false;`. Instrumented at
-    /// all eleven wrappers, every one of the seven entry points below measures
+    /// every wrapper, every one of the seven entry points below measures
     /// `Perform() == false, Status(ShapeExtend_FAIL) == true`, so this is the input that exercises
     /// the failure branch #2769 introduced.
     ///
