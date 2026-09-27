@@ -21,6 +21,59 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### WebAssembly: OCCT and the OCCTSwift API build and run on `wasm32-unknown-wasip1` (#1689)
+
+OCCT 8.0.1 compiles across all 49 toolkits for `wasm32-unknown-wasip1` and links into `libOCCT-wasm.a`, and the OCCTSwift public API runs on top of it: shapes, booleans, meshing, STEP read and write, and the bridge's error contract, verified by a spike that builds a box, fuses two solids, writes and reads back a STEP file, and checks both halves of a deliberate failure. The build is reproducible from a pinned toolchain (`Scripts/install-wasm-toolchain.sh`), needs no `.unsafeFlags` so the package stays consumable as a versioned SwiftPM dependency, and carries eleven WASI-only OCCT patches plus one force-included shim for the `std` threading names the WASI libc++ omits. Phase 0's verdict is GO with four conditions, recorded in `docs/wasm-feasibility.md`.
+
+No existing platform changes. Two symbols differ on WASI only: `Shape.isSelfIntersecting(hardTimeout:)` is unavailable there because its contract requires a second thread (#2760), and a WASI-only stand-in `simd` module covers what Apple's has no wasm build for (#2759).
+
+### `Perform()` is read the way OCCT reads it: eleven ShapeUpgrade wrappers, two opposite failure modes (#2766, #2769)
+
+Every wrapper of a `ShapeUpgrade_ShapeDivide`-family `Perform()` was reading half of OCCT's failure
+test. OCCT's own shape-processing library, the one STEP and IGES import healing runs through
+(`ShapeProcess_OperLibrary.cxx`, five call sites), tests
+`if (!tool.Perform() && tool.Status(ShapeExtend_FAIL))` and then takes `Result()`. So `Perform()`
+returning `false` on its own means "nothing was done", with `Result()` holding the valid input shape,
+and only `false` **together with** `Status(ShapeExtend_FAIL)` is a failure. All eleven now run that
+test, stated once as a block comment above the family.
+
+**Seven entry points stop reporting a no-op as a failure.** A shape with nothing to do comes back
+unchanged instead of as `nil`, and `isSame(as:)` confirms it is the input shape rather than a
+rebuild of it:
+
+| entry point | input that used to return `nil` |
+|---|---|
+| `Shape.divided(at:tolerance:)` | any all-planar shape, at any continuity |
+| `Shape.splitByAngle(_:)` | a box, at any angle |
+| `Shape.dividedByNumber(_:)` | a shape with no face, such as a lone edge |
+| `Shape.dividedClosedEdges(splitPoints:)` | a box, which has no closed edge |
+| `Shape.dividedByParts(_:)` | `parts: 1` |
+| `Shape.dividedClosedFaces(splitPoints:)` | a box, which has no closed face |
+| `OCCTShapeUpgradeSplitSurfaceAngle` (bridge only) | a box, at any angle |
+
+`Shape.divided(at:tolerance:)` documented that `nil` as "no divisions were needed **or** on
+failure", and the reference pages for `dividedByParts(_:)` and `dividedClosedFaces(splitPoints:)`
+documented it as a deliberate refusal. A caller reading `nil` as the no-op signal should compare
+identity instead: `if let r = shape.divided(at: .c0), r.isSame(as: shape)`. A caller reading it as
+failure needs no change, and now gets a usable shape where it used to bail.
+
+**Four entry points stop reporting a failure as a result.** `Shape.dividedByArea(maxArea:)`,
+`Shape.convertedToBezier`, `Shape.convertCurves3dToBezier(...)` and
+`Shape.convertSurfacesToBezier(...)` ignored `Perform()` outright, so a genuine
+`Status(ShapeExtend_FAIL)` was handed back as though it were a result. No reachable input's answer
+changes for a shape-valued input: measured, every no-op in this group already returned the input
+shape. A null `TopoDS_Shape` (`Shape.nullified`) does set `FAIL` and returned `nil` before and after. This corrects PR #2767, which dropped `convertedToBezier`'s check rather than
+replacing it, and the same half-fix blessed on PRs #2743 and #2753.
+
+`OCCTShapeDivideByParts` also gains the `Result().IsNull()` check every sibling already had; without
+it, the `Perform()` gate was that function's only failure signal.
+
+Measured for all eleven, with `Perform()`, `Status(ShapeExtend_FAIL)` and `Result().IsNull()` side by
+side and a control per wrapper, in `Scripts/repro/2765-convert-to-bezier-perform/`. The failure row
+itself has no test: against the pinned kernel no input reaches `Status(ShapeExtend_FAIL)` through any
+of the eleven, and that directory's `README.md` records the five things tried, including a
+hand-built surface-less face that SIGSEGVs rather than reporting a failure.
+
 ### Documentation: the STEP/IGES bridge surface is already serialized (#342)
 
 `OCCTSerialQueue` and `Exporter` now state that `writeSTEP`, `writeIGES`, `Shape.load(from:)` and `Document.loadSTEP` are serialized inside the bridge, so they neither need `OCCTSerial.withLock` nor gain concurrency from it. `OCCTSerialQueue` previously said the opposite, which is the file a caller reads before deciding. The mesh and BREP writers carry no such lock and the deep-copy advice still applies to them.
