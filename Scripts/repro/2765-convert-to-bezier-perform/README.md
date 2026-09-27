@@ -145,7 +145,7 @@ OCCTShapeUpgradeConvertSurfaceToBezier (all modes off, box) B perform=false stat
 
 == Hunting a genuine Status(ShapeExtend_FAIL), which is the outcome group B lost
 
-null shape (FAIL1, unreachable through the bridge)   A perform=false status-fail=true  result-null=true  differs=false faces=-1   was: nil   now: nil
+null shape (FAIL1, reachable via Shape.nullified)   A perform=false status-fail=true  result-null=true  differs=false faces=-1   was: nil   now: nil
 SplitByAngle -30 deg, cylinder                       A perform=false status-fail=false result-null=false differs=false faces=3    was: nil   now: shape
 SplitByAngle 720 deg, sphere                         A perform=true  status-fail=false result-null=false differs=true  faces=1    was: shape now: shape
 SplitByAngle 1 deg, torus                            A perform=true  status-fail=false result-null=false differs=true  faces=360  was: shape now: shape
@@ -173,14 +173,29 @@ Reading it:
 ## The genuine-failure input: what was tried, and what it cost
 
 The hunt section exists because the rule newly makes a failure path expressible, and a rule with no
-exercised failure path is a claim rather than a measurement. **Against the pinned kernel, no
-`Status(ShapeExtend_FAIL)` was reachable through any of the eleven wrappers.** What was tried:
+exercised failure path is a claim rather than a measurement. **`Status(ShapeExtend_FAIL)` is
+reachable, through `FAIL1`, from ordinary Swift.** An earlier revision of this page said it was not,
+on the reasoning below, and that reasoning was wrong. What was tried:
 
-- **`FAIL1`**, the `myShape.IsNull()` guard at the top of `Perform()`, is the one that does fire.
-  It is the only `FAIL` these wrappers can reach from a parameter value alone, and it is
-  unreachable through the bridge: every one of the eleven rejects a null `OCCTShapeRef` before
-  constructing the tool, which is the row `null shape (FAIL1, unreachable through the bridge)`
-  records.
+- **`FAIL1`**, the `myShape.IsNull()` guard at the top of `Perform()`, is the one that fires, and it
+  **is** reachable. The mistake was reading the wrappers' `if (!shape) return nullptr;` as a null
+  *shape* guard. It is not: it rejects a null `OCCTShapeRef`, the pointer, and says nothing about
+  the `TopoDS_Shape` inside it. None of the eleven guards with `occtShapeIsPresent`, so a present
+  handle wrapping a null `TopoDS_Shape` reaches the tool, and `Shape.nullified` is exactly that
+  handle and is public.
+
+  Measured by instrumenting all eleven call sites to print the pair: every one of the seven entry
+  points reachable from Swift reports `perform=false status-fail=true` on `box.nullified`
+  (`divided(at:)`, `splitByAngle`, `dividedByNumber`, `dividedClosedEdges`, `dividedByParts`,
+  `dividedClosedFaces`, `convertedToBezier`). `Tests/OCCTShapeHealingTests/`
+  `Issue2769PerformStatusTests.nullifiedShapeReachesTheFailureBranch` pins it.
+
+  **The branch is still not isolable, for a different reason than the one first given.** On that
+  same input `Result()` is also null (`resultNull=1`, measured in the same run), so the failure
+  branch and the `Result().IsNull()` check below it agree, and deleting the branch leaves the test
+  passing. `FAIL1` is the only `FAIL` these entry points reach from a caller and it implies a null
+  result, so no input separating the two has been found. The test pins the reachable behaviour, not
+  the branch alone, and says so in its own doc comment.
 - **Parameter extremes**, all of them recorded above and all `status-fail=false`: `splitByAngle` at
   -30, 1 and 720 degrees; `divided(at: .c3)` at tolerance 0, -1 and 1e12; `dividedClosedFaces` at
   0, -5 and 64 split points; `dividedByArea` down to a max area of 1 on a cylinder wall of area
@@ -198,6 +213,9 @@ exercised failure path is a claim rather than a measurement. **Against the pinne
   failure path has no test.
 
 So the failure branch `if (!tool.Perform() && tool.Status(ShapeExtend_FAIL)) return nullptr;` is
-**unexercised by any test**. It is OCCT's own branch, taken from OCCT's own callers, and it is
-strictly narrower than what stood before it, so it cannot reject anything the old code accepted.
-That is the argument for it; it is not a measurement, and it is not presented as one.
+**reached by a test, and not isolated by one**. `FAIL1` gets a Swift-level test through
+`Shape.nullified`; `FAIL2`/`FAIL3` remain unreached, for the SIGSEGV reason above. Beyond that
+coverage the branch rests on provenance and narrowness: it is OCCT's own branch, taken from OCCT's
+own callers, and it is strictly narrower than what stood before it, so it cannot reject anything the
+old code accepted. Those two properties are the argument, and they are not a measurement of the
+branch in isolation.

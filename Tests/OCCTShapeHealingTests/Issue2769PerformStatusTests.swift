@@ -182,4 +182,40 @@ struct Issue2769PerformStatusTests {
         #expect(!converted.isSame(as: box))
         #expect(converted.subShapes(ofType: .face).count == 6)
     }
+
+    /// The genuine-failure row of the table, which the rest of this suite does not reach.
+    ///
+    /// `Shape.nullified` is a present `OCCTShapeRef` wrapping a null `TopoDS_Shape`, and a null
+    /// shape is exactly what `ShapeUpgrade_ShapeDivide::Perform()`'s own first guard reports:
+    /// `myStatus |= ShapeExtend::EncodeStatus(ShapeExtend_FAIL1); return false;`. Instrumented at
+    /// all eleven wrappers, every one of the seven entry points below measures
+    /// `Perform() == false, Status(ShapeExtend_FAIL) == true`, so this is the input that exercises
+    /// the failure branch #2769 introduced.
+    ///
+    /// **What this test cannot prove**, stated because the distinction matters for anyone changing
+    /// the branch: `Result()` is *also* null on this input (`resultNull=1`, measured alongside the
+    /// pair above), so the failure branch and the `Result().IsNull()` check below it agree here.
+    /// Deleting the branch would leave this test passing. It pins the reachable behaviour, not the
+    /// branch in isolation, and no input has been found that separates the two: `FAIL1` is the only
+    /// FAIL these entry points can reach from a caller, and it implies a null result. See
+    /// `Scripts/repro/2765-convert-to-bezier-perform/README.md`.
+    @Test("a null TopoDS_Shape sets Status(ShapeExtend_FAIL), and every entry point returns nil")
+    func nullifiedShapeReachesTheFailureBranch() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let nullified = try #require(box.nullified)
+
+        #expect(nullified.divided(at: .c0) == nil)
+        #expect(nullified.splitByAngle(90) == nil)
+        #expect(nullified.dividedByNumber(2) == nil)
+        #expect(nullified.dividedClosedEdges(splitPoints: 2) == nil)
+        #expect(nullified.dividedByParts(2) == nil)
+        #expect(nullified.dividedClosedFaces(splitPoints: 2) == nil)
+        #expect(nullified.convertedToBezier == nil)
+
+        // The premise, so this suite says something if `nullified` ever stops being null.
+        #expect(nullified.subShapes(ofType: .face).isEmpty)
+        // And the contrast: the same calls on the shape it was derived from do not return nil.
+        #expect(box.convertedToBezier != nil)
+        #expect(box.dividedClosedFaces(splitPoints: 2) != nil)
+    }
 }
