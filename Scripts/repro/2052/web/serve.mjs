@@ -26,7 +26,13 @@ const TYPES = {
 };
 
 createServer((req, res) => {
-  // normalize() then strip any leading traversal, so a request cannot escape the staging dir.
+  // A request cannot escape the staging dir. `new URL(...).pathname` is always ABSOLUTE, and posix
+  // `normalize` drops leading `..` segments from an absolute path, so the join lands inside `root`
+  // whatever is asked for; the trailing `.replace` covers the relative case that cannot arise here.
+  // Measured 2026-09-27 rather than argued, after a review flagged it: `/../../../../etc/passwd`,
+  // `/..%2f..%2f..%2fetc/passwd`, `/a/../../../../etc/passwd`, `/%2e%2e/%2e%2e/etc/passwd`,
+  // `/../README.md` and a backslash variant all return 404, while `/harness.mjs` returns 200.
+  // It also binds 127.0.0.1 only and serves a staging directory of files this repo just wrote.
   const rel = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(/^(\.\.[/\\])+/, "");
   const path = join(root, rel === "/" ? "index.html" : rel);
   let st;
