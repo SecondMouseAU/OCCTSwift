@@ -1,0 +1,96 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Shape Healing - raise instead of dereferencing a null surface
+ in ShapeAnalysis::GetFaceUVBounds
+
+ShapeAnalysis::GetFaceUVBounds takes a shortcut when the face carries no edge:
+
+  TopExp_Explorer ex(FF, TopAbs_EDGE);
+  if (!ex.More())
+  {
+    TopLoc_Location L;
+    BRep_Tool::Surface(F, L)->Bounds(UMin, UMax, VMin, VMax);
+    return;
+  }
+
+BRep_Tool::Surface returns a null handle for a face with no surface, so a face
+that is both surface-less and edgeless dereferences null. Both clauses are
+needed: a surface-less face carrying a wire takes the pcurve loop below, where
+the bounding box stays void and Bnd_Box2d::Get raises
+Standard_ConstructionError, which is the behaviour the callers are written for.
+
+ShapeUpgrade_ShapeDivide::Perform wraps ShapeUpgrade_FaceDivide::SplitSurface,
+and so this call, in a try whose handler encodes ShapeExtend_FAIL2. The fault
+lands exactly where that handler was meant to report, and only reaches it when
+something unrelated has installed a signal handler, because OCC_CATCH_SIGNALS
+converts a signal only while an OSD signal handler is registered. With none
+registered the process dies. Measured on macOS arm64 against V8_0_1 with the
+unpatched translation unit override-linked: exit 139 on
+ShapeAnalysis::GetFaceUVBounds directly, on ShapeUpgrade_ShapeDivide::Perform
+over a compound holding such a face, and on ShapeUpgrade_FaceDivide::Perform
+called directly, which has no OCC_CATCH_SIGNALS above it at all.
+
+Raising rather than returning, for three measured reasons.
+
+The function's other failure path already raises. With edges but no pcurves the
+box stays void and Bnd_Box2d::Get raises Standard_ConstructionError, so the
+surface-less face with a wire is already reported as ShapeExtend_FAIL2. The two
+input classes now agree instead of one crashing.
+
+Returning without touching the outputs does not fix the crash, it moves it. No
+caller checks a status, because the function is void, and every caller reads the
+four doubles straight afterwards. ShapeUpgrade_FaceDivide::SplitSurface then
+dereferences the same null surface eight lines later, at
+surf->Bounds(aSUf, aSUl, aSVf, aSVl). Measured with a silent-return variant
+override-linked: ShapeAnalysis::GetFaceUVBounds returns the caller's
+uninitialised doubles unchanged, and ShapeUpgrade_ShapeDivide::Perform and
+ShapeUpgrade_FaceDivide::Perform both still exit 139.
+
+A raise is catchable unconditionally, a signal is not. An ordinary
+catch (Standard_Failure const&) sees Standard_NullObject whether or not an OSD
+signal handler was installed, which is what makes the existing FAIL2 handler
+work rather than depending on unrelated process state.
+
+With the patch, ShapeUpgrade_ShapeDivide::Perform over the compound answers
+perform=false, Status(ShapeExtend_FAIL) and Status(ShapeExtend_FAIL2), which is
+byte for byte what the surface-less-with-wire control already answered, and the
+healthy box control and ShapeFix_Shape over the same compound are unchanged.
+
+Four GTests in a new ShapeAnalysis_Test.cxx cover the raise, the
+surface-less-with-wire neighbour, the no-edge branch's own valid input (a
+spherical surface with no wires still reports the surface bounds) and a box face
+for the pcurve branch. Against the unpatched source the first takes the process
+down with signal 11; against the patched source all four pass.
+
+SecondMouseAU/OCCTSwift#2773.
+---
+ .../TKShHealing/ShapeAnalysis/ShapeAnalysis.cxx        | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis.cxx b/src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis.cxx
+--- a/src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis.cxx
++++ b/src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis.cxx
+@@ -29,6 +29,7 @@
+ #include <ShapeAnalysis_Curve.hxx>
+ #include <ShapeAnalysis_Edge.hxx>
+ #include <ShapeExtend_WireData.hxx>
++#include <Standard_NullObject.hxx>
+ #include <gp_Pnt.hxx>
+ #include <NCollection_Sequence.hxx>
+ #include <TopExp.hxx>
+@@ -276,8 +277,14 @@ void ShapeAnalysis::GetFaceUVBounds(const TopoDS_Face& F,
+   TopExp_Explorer ex(FF, TopAbs_EDGE);
+   if (!ex.More())
+   {
+-    TopLoc_Location L;
+-    BRep_Tool::Surface(F, L)->Bounds(UMin, UMax, VMin, VMax);
++    TopLoc_Location           L;
++    occ::handle<Geom_Surface> aSurf = BRep_Tool::Surface(F, L);
++    if (aSurf.IsNull())
++    {
++      // With no edges there is no pcurve to bound either, so nothing is left to report.
++      throw Standard_NullObject("ShapeAnalysis::GetFaceUVBounds: face has no surface");
++    }
++    aSurf->Bounds(UMin, UMax, VMin, VMax);
+     return;
+   }
+

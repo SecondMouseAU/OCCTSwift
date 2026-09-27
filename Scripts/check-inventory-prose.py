@@ -244,7 +244,11 @@ CLAIMS = [
     ("Package.swift", r"Scripts/patches/ holds ([A-Za-z-]+) patches", "patches_on_disk"),
     # #1403: three claims that existed all along and were read by nothing. Kilo's review caught the
     # first two by hand on PR #2041 after 0034 landed; the third had gone stale unnoticed.
-    ("Package.swift", r"and those (\S+) are the difference:", "patches_unpinned"),
+    # #2773: `those N are` / `that one is`, because the sentence has to stay grammatical as the
+    # count moves off zero and back. Same reason the WASI entry below tolerates a singular noun: a
+    # count going to one should fail as a count mismatch if it is wrong, never as "no sentence
+    # matches", which reads like the regex rotted rather than the prose.
+    ("Package.swift", r"and (?:those|that) (\S+) (?:are|is) the difference:", "patches_unpinned"),
     ("okf/references/carried-occt-patches.md",
      r"`Scripts/patches/` holds ([A-Za-z-]+) patches", "patches_on_disk"),
     ("okf/references/carried-occt-patches.md",

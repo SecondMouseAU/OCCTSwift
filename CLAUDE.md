@@ -14,14 +14,16 @@ OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0
 
 **One OCCT version is in play.** `Scripts/build-occt.sh` builds `V8_0_1` and `Package.swift` pins
 the `v4.0.0-kernel.1` pre-release asset, which is that same `V8_0_1` plus the carried patches that
-existed when it was built. Any patch the asset lacks is exercised by **no CI job**, because
-`build-and-test` resolves the asset rather than building from source. Before trusting "the fix is
+existed when it was built. Any patch the asset lacks is exercised by **no required check**, because
+`build-and-test` resolves the asset rather than building from source; `kernel-integration.yml` is
+the one job that builds an unpinned patch, and it proves the patch applies, compiles and regresses
+nothing, never that the fix reaches a consumer. Before trusting "the fix is
 in the kernel", run
 `ls Scripts/patches/*.patch | wc -l` against the count in `Package.swift`'s manifest comment, and
 read [`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md) for
 why the count is necessary and not sufficient, and
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) for the current
-divergence (twenty-nine on disk, twenty-nine pinned, as of 2026-09-22: none, since the
+divergence (thirty on disk, twenty-nine pinned, as of 2026-09-27: `0042` (#2773), carried after the
 v4.0.0-kernel.1 repin) and what each unpinned patch leaves exposed. A divergence with a written reason is expected; one without is a finding.
 
 **The comparison runs the other way too, and nothing used to make it.** The pinned asset holds

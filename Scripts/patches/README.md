@@ -11,7 +11,7 @@ for what that takes.
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0041.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0042.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -1680,6 +1680,172 @@ stopped being reported once `0033` was in the build. A second lock on the same d
 different path invites lock-order inversion for no gain.
 
 Not yet filed upstream.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0042-ShapeAnalysis-GetFaceUVBounds-null-surface-2773.patch
+
+**`ShapeAnalysis::GetFaceUVBounds` dereferences a null surface on a face with no surface and no
+edges** ([#2773](https://github.com/SecondMouseAU/OCCTSwift/issues/2773)),
+`src/ModelingAlgorithms/TKShHealing/ShapeAnalysis/ShapeAnalysis.cxx:280` in the pinned tree:
+
+```cpp
+  TopExp_Explorer ex(FF, TopAbs_EDGE);
+  if (!ex.More())
+  {
+    TopLoc_Location L;
+    BRep_Tool::Surface(F, L)->Bounds(UMin, UMax, VMin, VMax);   // no null test
+    return;
+  }
+```
+
+**Both clauses of the input are necessary.** A surface-less face carrying a wire takes the pcurve
+loop below instead, where the `Bnd_Box2d` stays void and `Bnd_Box2d::Get` raises a catchable
+`Standard_ConstructionError`, so `ShapeUpgrade_ShapeDivide` reports `ShapeExtend_FAIL2` correctly.
+Only the edgeless case reaches the dereference. That is the same narrowing
+[PR #2776](https://github.com/SecondMouseAU/OCCTSwift/pull/2776)'s bridge predicate is built on,
+and it is why the guard there tests for a surface-less **and** edgeless face rather than a null
+surface.
+
+### The behaviour chosen, and the two alternatives measured against it
+
+**The patch raises `Standard_NullObject`. It does not return silently.** Three measurements, all
+made by override-linking the changed translation unit ahead of `libOCCT-macos.a`
+(`okf/policies/upstream-occt-patch-process.md` §3), no kernel rebuild:
+
+**The function's own other failure path already raises.** `Bnd_Box2d::Get` throws
+`Standard_ConstructionError("Bnd_Box is void")` when no edge yielded a pcurve, which is how the
+surface-less-with-wire face is already reported. Raising makes the two surface-less input classes
+agree instead of leaving one of them a dead process.
+
+**Returning without touching the outputs does not fix the crash, it moves it.** The function is
+`void` and no caller checks a status; all nine call sites read the four doubles straight afterwards.
+`ShapeUpgrade_FaceDivide::SplitSurface` then dereferences the same null surface eight lines later at
+`surf->Bounds(aSUf, aSUl, aSVf, aSVl)`. Measured with a third, silent-return variant built for the
+comparison: `GetFaceUVBounds` hands back the caller's uninitialised doubles unchanged (`-1` in the
+probe, which is what the probe had put there), and both
+`ShapeUpgrade_ShapeDivide::Perform` and `ShapeUpgrade_FaceDivide::Perform` still exit 139. Silent
+return is the #726 shape and a crash, rather than either one.
+
+**A raise is catchable unconditionally; the signal is not.** `OCC_CATCH_SIGNALS` at
+`ShapeUpgrade_ShapeDivide.cxx:190` is **not** inert in this build (OCCT's own
+`adm/cmake/occt_defs_flags.cmake:48` adds `OCC_CONVERT_SIGNALS` on every non-Windows target), but it
+converts a signal only while an `OSD` signal handler is registered, and no divide wrapper and no
+`.brep` import calls `occtEnsureSignals()`. An ordinary `catch (Standard_Failure const&)` sees
+`Standard_NullObject` regardless of that process state, so the `ShapeExtend_FAIL2` handler the kernel
+already has starts working rather than depending on what an unrelated caller did earlier.
+
+[`okf/policies/follow-occt-callers.md`](../../okf/policies/follow-occt-callers.md) is the rule that
+settled this: the callee's source says what the value is, the callers say what it means, and here the
+callers say a failure is a `Standard_Failure` to be caught and encoded, not an out-parameter to be
+inspected.
+
+### Measured, one process per case, macOS arm64 against `V8_0_1`
+
+| case | unpatched | silent-return variant | patched |
+|---|---|---|---|
+| `ShapeAnalysis::GetFaceUVBounds`, surface-less edgeless face | SIGSEGV, exit 139 | returns the caller's uninitialised doubles | raises `Standard_NullObject` |
+| `ShapeUpgrade_ShapeDivide::Perform`, compound holding it | SIGSEGV, exit 139 | SIGSEGV, exit 139 | `perform=0 FAIL=1 FAIL2=1` |
+| `ShapeUpgrade_FaceDivide::Perform` directly, no `OCC_CATCH_SIGNALS` above it | SIGSEGV, exit 139 | SIGSEGV, exit 139 | raises `Standard_NullObject` |
+| control: surface-less face **carrying a wire** | `perform=0 FAIL=1 FAIL2=1` | unchanged | unchanged |
+| control: healthy box | `perform=0`, no status | unchanged | unchanged |
+| control: `ShapeFix_Shape` over the same compound | `perform=0 result-null=0` | unchanged | unchanged |
+
+Row two is the point: the patched answer is byte for byte the control in row four, which is the
+verdict the kernel already reaches for the neighbouring input.
+
+### The GTest, and proving it fails
+
+`src/ModelingAlgorithms/TKShHealing/GTests/ShapeAnalysis_Test.cxx`, four cases: the raise, the
+surface-less-with-wire neighbour (`Standard_ConstructionError`), the no-edge branch's own valid input
+(a `Geom_SphericalSurface` with no wires still reports the surface's bounds, so the branch is guarded
+rather than removed), and a box face for the pcurve branch. **It lives in the upstream PR only, not
+in this `.patch` file**, matching `0029`: the carried patch is the kernel fix, and `build-occt.sh`
+does not build OCCT's GTests.
+
+Proved per [`okf/policies/prove-the-test-fails.md`](../../okf/policies/prove-the-test-fails.md), by
+linking the same `gtest` object against each variant in turn: against the unpatched
+`ShapeAnalysis.cxx` the first case takes the process down with signal 11 (exit 139) before any
+other case runs; against the patched one, 4/4 pass.
+
+### The bridge guard stays
+
+PR #2776 guards twelve bridge functions with `occtShapeSurfacelessEdgelessFaceCount`. **That guard is
+not made redundant by this patch and must not be removed.** The pinned asset does not carry `0042`,
+so every consumer on a released OCCTSwift still meets the unpatched kernel, and the guard is what
+keeps their process alive. It becomes redundant only at a repin, and even then it is the boundary
+refusal `okf/policies/scope-boundary.md` prefers over relying on a kernel raise.
+
+### Built locally and verified in the binary, 2026-09-27
+
+Unlike most of this list, this patch was not left inert on disk. `Scripts/build-occt.sh` was run to
+completion (all three slices, ~65 min) against a **fresh** `V8_0_1` clone, and the result was checked
+three ways rather than assumed from the exit code:
+
+- **The tree it was built from.** `docs/guides/building-occt.md`'s "Shipping a rebuild" step 1:
+  all thirty patches reverse-apply, and the computed set of modified files that no carried patch
+  explains is **empty**, over 78 modified files. This is a fresh clone, so it does not carry the two
+  retired-patch strays that made the v4.0.0-kernel.1 asset a thirty-one-patch binary under a
+  twenty-nine-patch label (#2190).
+- **The fix is in the binary, by symbol.** `python3 Scripts/check-pinned-asset-patches.py --asset
+  Libraries/OCCT.xcframework --require-asset` reports `0042` **CONFIRMED PRESENT** on its `literal`
+  evidence in `macos-arm64`, `ios-arm64` and `ios-arm64-simulator`. The same string is absent from
+  the pinned asset, which is the control. Its two findings are the `0032` and `0034-LocOpe`
+  ACKNOWLEDGED rows going stale against a build that correctly lacks both, which is the expiry those
+  rows exist for.
+- **The reproducer, before and after, same probe and same fixtures.**
+  `Scripts/repro/2773-shapedivide-surfaceless-face/run.sh` was run against the SwiftPM-resolved
+  pinned asset and then against the rebuilt xcframework:
+
+| case | pinned asset | rebuilt kernel |
+|---|---|---|
+| `divide-memory no` | SIGSEGV, exit 139 | `perform=false status-fail=true FAIL2=true`, exit 0 |
+| `divide-file <compound>.brep no` | SIGSEGV, exit 139 | `FAIL2=true`, exit 0 |
+| `divide-file <bare face>.brep no` | SIGSEGV, exit 139 | `FAIL2=true`, exit 0 |
+| `facedivide-direct no` | SIGSEGV, exit 139 | `CAUGHT Standard_Failure at the CALLER: Standard_NullObject`, exit 0 |
+| `facedivide-direct yes` | exit 1, `no catch was found` | caught, exit 0 |
+| `uvbounds no` | SIGSEGV, exit 139 | `CAUGHT Standard_Failure at the CALLER`, exit 0 |
+| `uvbounds yes` | exit 1, `no catch was found` | caught, exit 0 |
+| `divide-memory-withwire`, both dispositions | `FAIL2` | unchanged |
+| `shapefix`, both dispositions | `perform=false result-null=false` | unchanged |
+| `step-write` / `step-read` | accepted, zero faces back | unchanged |
+| `iges-write` | SIGSEGV, exit 139 | **unchanged**, and expected: a separate defect in `IGESControl_Writer::AddShape`, not this one |
+
+**Every case that died now reports, and no control moved.** The two committed `.brep` fixtures came
+back byte-identical from both runs, so the regenerated inputs are the same inputs.
+
+Full `swift test` against the rebuilt kernel: **6,436 tests in 1,583 suites over all 18 targets, all
+passed**, exit 0. The interesting result is everything **else** passing, since PR #2776's guard means
+the crashing input no longer reaches the kernel from Swift at all. Run as
+`env -u OCCTSWIFT_BRIDGE_PREBUILT OCCTSWIFT_LOCAL=1 swift test`, and the archive it linked was
+confirmed local rather than the downloaded pin by symbol, not assumed.
+
+### CI coverage, and the pin
+
+**The patch is carried and locally verified, and `Package.swift` is NOT repinned at it.** A repin is
+a release step with its own policy and sequencing (`okf/policies/pinned-kernel-patch-check.md`,
+`docs/guides/building-occt.md`), and it needs a published release asset. So:
+
+`ci.yml`'s `build-and-test` resolves the **pinned** asset, which lacks `0042`, and the required
+status check therefore does not exercise the fix at all. `kernel-integration.yml` does: its trigger
+paths include `Scripts/patches/**`, so it builds OCCT from source with this patch applied and runs
+the full Swift suite against that binary, on the PR that adds it and on `main` afterwards. That
+proves the patch applies, compiles and regresses nothing. **It cannot prove the fix reaches a
+consumer**, because no released asset carries it.
+
+A repin needs: a rebuild from a tree whose only modifications are the carried patches (done),
+`python3 Scripts/check-pinned-asset-patches.py --require-asset` clean against that asset, the zip
+uploaded as a new pre-release, **both** `url:` and `checksum:` bumped, `0042` moved into
+`Package.swift`'s enumerated list (which takes `patches_pinned` to thirty and `patches_unpinned`
+back to zero), and the two stale ACKNOWLEDGED rows retired. Recorded here rather than left to be
+discovered.
+
+Filed upstream as **[OCCT#PENDING](https://github.com/Open-Cascade-SAS/OCCT/pulls)**, with the
+GTest, no companion issue. Prior art re-checked 2026-09-27: zero upstream issues and zero PRs
+mention `GetFaceUVBounds`, `dpasukhi`'s open series is Unicode strings, math robustness and
+`ApplicationFramework`, and OCCT#1514 `Data Exchange - Harden malformed input handling` (merged
+2026-09-01) touches only the OBJ, STL, VRML and STEP readers plus `Standard_ReadLineBuffer`, nothing
+in `TKShHealing`.
 
 **Retire** once the bundled OCCT includes this fix.
 
