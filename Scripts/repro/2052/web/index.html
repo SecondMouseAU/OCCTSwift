@@ -1,0 +1,148 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>#2052 OCCTSwift wasm browser run</title>
+<style>
+  body { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 2rem; max-width: 60rem; }
+  h1 { font-size: 1.1rem; }
+  #verdict { padding: .5rem .75rem; font-weight: bold; }
+  .pass { background: #d7f5dd; } .fail { background: #ffdce0; }
+  table { border-collapse: collapse; margin: 1rem 0; width: 100%; }
+  td, th { border: 1px solid #ccc; padding: .25rem .5rem; text-align: left; vertical-align: top; }
+  pre { background: #f6f8fa; padding: .75rem; overflow-x: auto; white-space: pre-wrap; }
+  .case-pass td:first-child { color: #0a7d2c; font-weight: bold; }
+  .case-fail td:first-child { color: #c1121f; font-weight: bold; }
+</style>
+
+<h1>#2052: the Phase 0 spike module, in a real browser</h1>
+<p>
+  Same module, same shim and the same <code>harness.mjs</code> the Node control runs. #2175 ran this
+  under <code>wasmkit</code>, where a preopen is a real directory on disk, and recorded the browser
+  filesystem shape as <em>inferred</em>. This measures it.
+</p>
+
+<div id="verdict">loading the module...</div>
+
+<h2>Cases</h2>
+<table id="cases"><tr><th>case</th><th>detail</th></tr></table>
+
+<h2>Environment and timings</h2>
+<table id="env"></table>
+
+<h2>The preopened filesystem after the run</h2>
+<p>
+  This is the part <code>wasmkit</code> could not show: the files exist only in JavaScript objects
+  that the page owns, so their presence here <em>is</em> the measurement.
+</p>
+<table id="fs"></table>
+<p id="bytes-out"></p>
+
+<h2>Transcript</h2>
+<pre id="log">(waiting)</pre>
+
+<script type="module">
+  import { runSpike, verdict, WORK_DIR } from "./harness.mjs";
+
+  const $ = (id) => document.getElementById(id);
+  const logLines = [];
+  const appendLog = (line) => {
+    logLines.push(line);
+    $("log").textContent = logLines.join("\n");
+  };
+
+  // `compileStreaming` is the path a real application takes, so measure that rather than a
+  // fetch-then-compile. It requires the server to send `Content-Type: application/wasm`; serve.mjs
+  // does. The fallback is here so a wrong MIME type reports itself rather than looking like a
+  // module failure.
+  async function loadModule(url) {
+    const t0 = performance.now();
+    try {
+      const m = await WebAssembly.compileStreaming(fetch(url));
+      return { module: m, ms: performance.now() - t0, path: "compileStreaming" };
+    } catch (e) {
+      appendLog(`compileStreaming failed (${e.message}), falling back to fetch + compile`);
+      const bytes = await (await fetch(url)).arrayBuffer();
+      const m = await WebAssembly.compile(bytes);
+      return { module: m, ms: performance.now() - t0, path: "fetch + compile (fallback)" };
+    }
+  }
+
+  const fetchStart = performance.now();
+  const { module, ms: loadMs, path: loadPath } = await loadModule("./OCCTWasmSpike.wasm");
+  appendLog(`${loadPath}: ${loadMs.toFixed(0)} ms`);
+
+  const run = await runSpike(module, appendLog);
+  const v = verdict(run);
+  const wallMs = performance.now() - fetchStart;
+
+  $("verdict").className = v.ok ? "pass" : "fail";
+  $("verdict").textContent = v.ok
+    ? `PASS: all six cases, exit ${run.exitCode}, no trap`
+    : `FAIL: ${v.problems.join(" | ")}`;
+
+  for (const [name, c] of Object.entries(run.cases)) {
+    const tr = $("cases").insertRow();
+    tr.className = c.passed ? "case-pass" : "case-fail";
+    tr.insertCell().textContent = `${c.passed ? "PASS" : "FAIL"} ${name}`;
+    tr.insertCell().textContent = c.detail;
+  }
+
+  const envRows = [
+    ["userAgent", navigator.userAgent],
+    ["crossOriginIsolated", String(window.crossOriginIsolated)],
+    ["SharedArrayBuffer", typeof SharedArrayBuffer === "undefined" ? "absent" : "present"],
+    ["module load", `${loadMs.toFixed(0)} ms (${loadPath})`],
+    ["instantiate", `${run.timings.instantiateMs.toFixed(0)} ms`],
+    ["run (_start)", `${run.timings.runMs.toFixed(0)} ms`],
+    ["wall clock, fetch to verdict", `${wallMs.toFixed(0)} ms`],
+    ["linear memory", `${run.memoryPages} pages = ${(run.memoryPages / 16).toFixed(1)} MiB`],
+    ["exit code", String(run.exitCode)],
+    ["trap", run.trap ?? "none"],
+  ];
+  for (const [k, val] of envRows) {
+    const tr = $("env").insertRow();
+    tr.insertCell().textContent = k;
+    tr.insertCell().textContent = val;
+  }
+
+  for (const [dir, entries] of [[WORK_DIR, run.work], ["/tmp", run.tmp]]) {
+    if (entries.length === 0) {
+      const tr = $("fs").insertRow();
+      tr.insertCell().textContent = dir;
+      tr.insertCell().textContent = "(empty)";
+      continue;
+    }
+    for (const e of entries) {
+      const tr = $("fs").insertRow();
+      tr.insertCell().textContent = `${dir}/${e.name}`;
+      tr.insertCell().textContent = `${e.bytes} bytes`;
+    }
+  }
+
+  // The thing #1689 actually asked for: STEP bytes out of the kernel and into JavaScript, with no
+  // filesystem anywhere. The guest wrote to a preopen the page owns, so the bytes are already a
+  // Uint8Array in this scope and a download is a Blob away.
+  const note = run.work.find((e) => e.name === "spike-fused.step");
+  if (note) {
+    $("bytes-out").textContent =
+      `STEP bytes reached JavaScript: ${note.bytes} bytes in ${WORK_DIR}/spike-fused.step, ` +
+      `held as a Uint8Array in the page. No filesystem was involved at any point.`;
+  }
+
+  // What the driver reads. Set last, so its presence means the whole page ran.
+  window.__RESULT__ = {
+    ...run,
+    verdict: v,
+    loadMs,
+    loadPath,
+    wallMs,
+    userAgent: navigator.userAgent,
+    // The claim #2169 made when it chose the non-threads wasip1 variant over the threads one was
+    // that the browser consumer would NOT have to serve COOP/COEP headers. These two record
+    // whether that held: `crossOriginIsolated` false with every case passing is the proof, and it
+    // is only meaningful because serve.mjs deliberately sends no isolation headers.
+    crossOriginIsolated: window.crossOriginIsolated,
+    sharedArrayBuffer: typeof SharedArrayBuffer !== "undefined",
+    hardwareConcurrency: navigator.hardwareConcurrency,
+  };
+  document.title = v.ok ? "RESULT: PASS" : "RESULT: FAIL";
+</script>
