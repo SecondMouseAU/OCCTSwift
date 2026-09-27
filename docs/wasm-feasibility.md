@@ -384,17 +384,19 @@ that in mind, and see #2758.
 bridge, over OCCT, in one module, including two that must fail and do. See
 [Phase 0](#phase-0-decision-spike-done-and-the-verdict-is-go-with-conditions).
 
-What remains open is now a short list rather than the shape of the thing: nothing has
-run in a browser (#2052), no test target has been built for wasm, there is no
-numerical parity check against the Apple kernel, and the module is 26.98 MB brotli
-with no size work of any kind applied to it yet (#2761).
+What remains open is now a short list rather than the shape of the thing: the
+browser is measured in Chrome alone and in no other engine (#2052), no test target
+has been built for wasm, there is no numerical parity check against the Apple
+kernel, nothing but us can consume the build (#2269), and the module is 26.98 MB
+brotli with no size work of any kind applied to it yet (#2761).
 
 The measurement logs are
 [`Scripts/repro/2169/README.md`](../Scripts/repro/2169/README.md),
 [`Scripts/repro/2172/README.md`](../Scripts/repro/2172/README.md),
 [`Scripts/repro/2173/README.md`](../Scripts/repro/2173/README.md),
-[`Scripts/repro/2174/README.md`](../Scripts/repro/2174/README.md) and
-[`Scripts/repro/2175/README.md`](../Scripts/repro/2175/README.md).
+[`Scripts/repro/2174/README.md`](../Scripts/repro/2174/README.md),
+[`Scripts/repro/2175/README.md`](../Scripts/repro/2175/README.md) and
+[`Scripts/repro/2052/README.md`](../Scripts/repro/2052/README.md), the browser run.
 
 ## How a wasm application consumes this package (#2048)
 
@@ -594,9 +596,10 @@ host-side. A bytes-**out** convenience already exists and already works:
 that is what `FileManager.default.temporaryDirectory` resolves to here. There is no bytes-**in**
 equivalent and there does not need to be.
 
-**Measured under `wasmkit`, where a preopen is a real directory on disk. Inferred for the browser**,
-where it is in-memory, from the shim's documented behaviour and from the import list above being
-the same either way. Nothing here has run in a browser; that is #2052.
+**Measured under `wasmkit`, where a preopen is a real directory on disk**, and, as of 2026-09-27,
+**measured in the browser too**, where it is in-memory: #2052 ran the same module in Chrome against
+`PreopenDirectory` maps the page owns, and `Exporter.writeSTEP`, `Shape.load(fromPath:)` and
+`Exporter.stepData` all worked unchanged. See [The browser, measured](#the-browser-measured-2052).
 
 #### Blockers hit
 
@@ -628,9 +631,13 @@ The conditions are things that are **not** proven and that a later phase must no
    been tried: no `wasm-opt`, no `FoundationEssentials`, no `-Osize`. Phase 2 should start with
    `FoundationEssentials`, not finish with it. What it should not do is set a replacement number
    before the levers have been measured, which is how the withdrawn one came about.
-2. **Nothing has run in a browser** (#2052). Everything here is `wasmkit` on macOS. The browser
+2. ~~**Nothing has run in a browser** (#2052). Everything here is `wasmkit` on macOS. The browser
    filesystem shape is inferred, not measured, and the import list is the reason to expect it to
-   hold rather than a proof that it does.
+   hold rather than a proof that it does.~~ **Discharged on 2026-09-27**: the same module ran in
+   Chrome 153, headless and headed, with all six cases identical to `wasmkit` down to the 36,189-byte
+   STEP file, and both inferences held. See
+   [The browser, measured](#the-browser-measured-2052). The engine coverage is now the open part:
+   Chrome only.
 3. **Six calls are not a test suite.** No per-domain test target has been built for wasm, let alone
    run, and there is no numerical parity check against the Apple kernel. Phase 4 is where that
    stops being true, and it should come earlier in the order than "after the API work" if the
@@ -659,6 +666,51 @@ and the fix is the semantically correct setting for this target rather than a wo
 > ~~Stop here and reassess if no path links the spike functions. That is the go/no-go gate.~~
 
 </details>
+
+### The browser, measured (#2052)
+
+Phase 0 returned GO with a condition that nothing had run in a browser. That is no longer true, as
+of 2026-09-27. The measurement log is
+[`Scripts/repro/2052/README.md`](../Scripts/repro/2052/README.md) and `Scripts/repro/2052/run.sh`
+reproduces it.
+
+**The same module, unmodified**, the Release build #2175 measured, sha256 `3ff64f6b...`, run in
+Chrome 153 over `@bjorn3/browser_wasi_shim` 0.4.2 with in-memory preopens. Three rungs, each
+changing one variable against the one below it, so a disagreement would have had somewhere to land:
+`wasmkit` with a real directory (#2175), Node with the shim, then the browser with the same shim and
+the same harness file.
+
+**All three agree case for case**, and identically rather than equivalently: volume 6000.0, volume
+1875.0, a **36,189-byte** STEP file, the round trip reading back its own solid, `nil` with exactly
+one `Standard_DomainError` record, and `IFSelect_RetFail` with **zero** bridge records. Exit 0, no
+trap, in every rung. The two must-fail cases are the load-bearing ones and both behaved: a trap
+would have surfaced as an uncaught `RuntimeError` in the page, and the driver reports that
+separately for the purpose.
+
+Both inferences held.
+
+- **No cross-origin isolation is needed.** `crossOriginIsolated` is **false** and
+  `SharedArrayBuffer` is **absent**, with every case passing, against a server that deliberately
+  sends no COOP or COEP headers. This confirms from the other side the reason #2169 chose the
+  non-threads `wasip1` variant: a consumer can serve this from an ordinary static host with no
+  header configuration.
+- **The in-memory preopen behaves like a real directory.** The `/work` map, which is a JavaScript
+  object the page owns, holds `spike-fused.step` at 36,189 bytes and `spike-broken.step` at 33 after
+  the run, both written by the guest, both read back by it. The harness starts from empty maps so
+  that a write reaching a readable inode is what is being shown. `Exporter.stepData` also works,
+  returning the same 36,189 bytes through `FileManager.default.temporaryDirectory`.
+
+So **STEP bytes reach JavaScript with no filesystem involved at any point**, which is what #1689
+asked for. Handing bytes in is a `File` in the map before the run; getting them out is a `Blob`.
+
+Timing, for orientation rather than as a budget: `compileStreaming` of the 141 MB module takes about
+270 ms, instantiation about 14 ms, and all six cases about 300 ms, for roughly 615 ms from fetch to
+verdict over localhost uncompressed. Linear memory settles at 652 pages, 40.8 MiB.
+
+**One engine.** Chrome 153 only, headless and headed. Firefox and Safari are untested, and Safari is
+the one to worry about, since `-fwasm-exceptions` is exactly the kind of feature it has shipped last
+before. The consumer shape is also still a WASI command module rather than a JavaScriptKit reactor,
+which is Phase 5.
 
 ### Phase 1. Build pipeline
 
@@ -702,10 +754,12 @@ by writing to `FileManager.default.temporaryDirectory` and reading back, which w
 as soon as the host preopens that directory. No MEMFS shim, no bytes-in/bytes-out
 variant of the OCCT or OCCTSwift API, no "largest API-surface task".
 
-What is left is host-side and belongs with #2052: the browser shim's
-`PreopenDirectory` of in-memory `File`s, and a documented recipe for handing bytes in
-and getting them out. That has not been run in a browser; see Phase 0's file-I/O
-finding for exactly what is measured and what is inferred.
+**#2052 then closed what was left of it**, on 2026-09-27. The browser shim's
+`PreopenDirectory` of in-memory `File`s works, all three path-taking and bytes-out
+entry points run unchanged against it, and `Scripts/repro/2052/web/harness.mjs` is
+the documented recipe for handing bytes in and getting them out. **This phase is
+done.** What remains is not file I/O: it is engine coverage beyond Chrome, and the
+JavaScriptKit reactor shape, which is Phase 5.
 
 ### Phase 4. Test + CI
 
@@ -722,8 +776,11 @@ finding for exactly what is measured and what is inferred.
 - A minimal SwiftWasm sample app (JavaScriptKit) that imports OCCTSwift, builds a
   box, fuses two shapes, and exports STEP, proving the goal end to end.
 - `Scripts/repro/2175/spike` is that app with `print` in place of JavaScriptKit and
-  `wasmkit` in place of a browser. What Phase 5 adds is the browser and the bytes
-  crossing into JavaScript.
+  `wasmkit` in place of a browser. **#2052 supplied the browser and the bytes crossing
+  into JavaScript**, so what Phase 5 still adds is JavaScriptKit and a **reactor**
+  module: #2052's is a WASI command module that runs `_start` and exits, where a real
+  app stays resident and answers calls. That difference, and engine coverage beyond
+  Chrome, are the whole of what is left here.
 
 ## Effort & risk
 
