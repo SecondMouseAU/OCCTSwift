@@ -49,8 +49,26 @@ jobs:
       # the same directory: guessing it in two places is how a cache silently misses forever.
       WASI_SDK_PREFIX: /opt/wasi-sdk
 
+    defaults:
+      run:
+        # Inside a container GitHub Actions picks `sh -e`, not bash, and every script this job runs
+        # is bash: Scripts/install-wasm-toolchain.sh, Scripts/fetch-occt-wasm.sh and
+        # Scripts/repro/2052/run.sh all use `set -o pipefail`, arrays or `[[`, none of which dash has.
+        shell: bash
+
     steps:
       - uses: actions/checkout@v4
+
+      # The swift image is a Swift toolchain on Ubuntu and nothing else: it ships no python3, and
+      # this job needs it for Scripts/make-wasi-toolset.py, which is what writes the flags the wasm
+      # build cannot get from Package.swift. Measured on this job's first run, which failed with
+      # `python3: not found` before it reached anything wasm.
+      - name: Install python3 and the fetch prerequisites
+        run: |
+          set -euo pipefail
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends python3 curl ca-certificates xz-utils
+          python3 --version
 
       - name: Read the pinned toolchain
         id: pins
