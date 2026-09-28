@@ -13,7 +13,7 @@ that stood until 2026-09-07 grew to 159 KB, 70% of it Known OCCT Bugs narrative 
 OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0.1. It exposes B-Rep solid modeling capabilities to Swift for macOS (arm64, v12+) and iOS (arm64, v15+) via a three-layer architecture: Swift public API → Objective-C++ bridge (C functions) → OCCT C++ library. Uses Swift 6 language mode (strict concurrency).
 
 **One OCCT version is in play.** `Scripts/build-occt.sh` builds `V8_0_1` and `Package.swift` pins
-the `v4.0.0-kernel.1` pre-release asset, which is that same `V8_0_1` plus the carried patches that
+the `v4.0.0-kernel.2` pre-release asset, which is that same `V8_0_1` plus the carried patches that
 existed when it was built. Any patch the asset lacks is exercised by **no required check**, because
 `build-and-test` resolves the asset rather than building from source; `kernel-integration.yml` is
 the one job that builds an unpinned patch, and it proves the patch applies, compiles and regresses
@@ -40,6 +40,21 @@ download. And `python3 Scripts/check-pinned-asset-patches.py --require-asset` is
 reads the binary rather than the prose: about seven seconds over all three slices, deliberately
 **not** a `gate-scripts` script (it reads a 1.3 GB xcframework CI does not check out), and part of
 the repin step in the Release Process below.
+
+**And there is a SECOND pinned kernel, which a repin also owes.** Since #2269 the wasm build has
+its own asset, `libOCCT-wasm.a` plus a header tree, pinned in
+[`Scripts/wasm-kernel-pin.txt`](Scripts/wasm-kernel-pin.txt) rather than in `Package.swift`, because
+SwiftPM has no `binaryTarget` for a bare static library. **A native repin that does not also rebuild
+and republish it puts macOS and the browser on different kernels**, and nothing that reads the
+xcframework would notice. `Scripts/check-wasm-kernel-parity.py` is the gate, and it runs in
+`gate-scripts` on every PR precisely because the PR that has to be caught is a native repin, which
+touches no wasm path. It takes a dated acknowledgement for the 69-minute rebuild, keyed to the native
+patch count so it expires at the next repin. It fired on its first real occasion **29 seconds** after
+the asset was published, and the browser is one patch behind today (`0042`, acknowledged, rebuild in
+#2785). The rule and that story are in
+[`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md); the current
+divergence is in
+[`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md).
 
 ## Build & Test Commands
 
