@@ -47,4 +47,4 @@ The probe and this transcript come from PR #2486, which is otherwise rejected: i
 kernel-parity rows certified nine tests that could not fail, and one round of review resolved a
 genuine bridge-versus-kernel mismatch by deleting the kernel's extra measurement rather than
 reconciling it (commit `aed802ca`). The evidence here stands on its own; the certification did not.
-See the follow-up issue for what that cost and what to reject in review next time.
+#2794 records what that cost and what to reject in review next time.
