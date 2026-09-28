@@ -154,7 +154,10 @@ struct MeshTests {
         let normals = mesh.normals
         let indices = mesh.indices
 
-        // Lengths should be consistent
+        // Lengths should be consistent. This says nothing about the *values*: `vertices` and
+        // `normals` are both sized from `vertexCount`, so these two lines passed for as long as
+        // every normal was the (0, 0, 1) placeholder (#2337). The directions are measured in
+        // `Issue2337MeshNodeNormalsTests`.
         #expect(vertices.count == normals.count)
         #expect(indices.count == mesh.triangleCount * 3)
     }
@@ -244,45 +247,11 @@ struct MeshTests {
         }
     }
 
-    @Test("Mesh boolean union")
-    func meshBooleanUnion() {
-        let box1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let box2 = Shape.box(width: 10, height: 10, depth: 10)!
-            .translated(by: SIMD3(5, 0, 0))!
-
-        let mesh1 = box1.mesh(linearDeflection: 0.5)!
-        let mesh2 = box2.mesh(linearDeflection: 0.5)!
-
-        let unionMesh = mesh1.union(with: mesh2, deflection: 0.5)
-        #expect(unionMesh != nil)
-        if let union = unionMesh {
-            #expect(union.triangleCount > 0)
-        }
-    }
-
-    @Test("Mesh boolean subtraction")
-    func meshBooleanSubtraction() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let cylinder = Shape.cylinder(radius: 3, height: 15)!
-
-        let boxMesh = box.mesh(linearDeflection: 0.5)!
-        let cylMesh = cylinder.mesh(linearDeflection: 0.5)!
-
-        let diffMesh = boxMesh.subtracting(cylMesh, deflection: 0.5)
-        #expect(diffMesh != nil)
-    }
-
-    @Test("Mesh boolean intersection")
-    func meshBooleanIntersection() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let sphere = Shape.sphere(radius: 7)!
-
-        let boxMesh = box.mesh(linearDeflection: 0.5)!
-        let sphereMesh = sphere.mesh(linearDeflection: 0.5)!
-
-        let intersectMesh = boxMesh.intersection(with: sphereMesh, deflection: 0.5)
-        #expect(intersectMesh != nil)
-    }
+    // The three "Mesh boolean" tests that used to live here asserted only `!= nil`, and an empty
+    // `Mesh` is not nil, so all three passed while the union kept both volumes, the subtraction
+    // removed nothing and the intersection came back with zero triangles (#2301). They are replaced
+    // by `Issue2301MeshBooleanContractTests`, which measures the enclosed volume and the triangle
+    // count of each result and runs the documented solid route alongside.
 }
 
 @Suite("Presentation Mesh Tests")

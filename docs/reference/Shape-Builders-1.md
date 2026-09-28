@@ -1393,6 +1393,11 @@ public func directModification() -> Shape?
 
 - **Returns:** Shape with consistently outward-oriented face normals, or `nil` on failure.
 - **OCCT:** `ShapeCustom_DirectModification` via `OCCTShapeCustomDirectModification`.
+- **Note:** `nil` also for a shape carrying a face with no surface
+  (`ShapeCustom_DirectModification.cxx:55`, #2777's line reached through a bare
+  `BRepTools_Modifier`, guarded in #2790). This is
+  [`Shape.directFaces()`](Shape-Healing.md#directfaces)'s operation under a second name; see
+  [A face with no surface](Shape-Healing.md#a-face-with-no-surface-and-which-shapecustom-operations-refuse-one).
 
 ---
 
@@ -1409,6 +1414,11 @@ Unlike the basic `scaled(by:)` transform, this propagates tolerance updates corr
 - **Parameters:** `scaleFactor`, uniform scale factor.
 - **Returns:** Scaled shape, or `nil` on failure.
 - **OCCT:** `ShapeCustom_TrsfModification` via `OCCTShapeCustomTrsfModificationScale`.
+- **Note:** deliberately **not** guarded against a face with no surface, unlike
+  [`directModification()`](#directmodification) above:
+  `BRepTools_TrsfModification::NewSurface` tests the handle itself and returns false, so this
+  operation answers for such a shape rather than refusing it, measured (#2790). See
+  [A face with no surface](Shape-Healing.md#a-face-with-no-surface-and-which-shapecustom-operations-refuse-one).
 
 ---
 

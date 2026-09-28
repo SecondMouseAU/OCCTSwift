@@ -443,6 +443,12 @@ naming a directory that is not there, so the first symptom is
 a broken checkout rather than a missing kernel. The toolset's `-I` names wherever the consumer
 unpacked the asset, and both spellings coexist: in this checkout they name the same directory.
 
+**If you are a consumer rather than a maintainer**, read
+[`guides/wasm-consumer-setup.md`](guides/wasm-consumer-setup.md) instead of this section. It is the
+same three commands with the sharp edges attached, and it is verified against a real dependent
+package rather than against this repository's own build
+([`Scripts/repro/1689/`](../Scripts/repro/1689/README.md)).
+
 ### The three commands
 
 ```bash

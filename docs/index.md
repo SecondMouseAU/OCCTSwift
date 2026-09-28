@@ -54,6 +54,9 @@ figure (interactive 3D where it helps). The **[Cookbook index](guides/cookbook/)
 - [Sharing the xcframework](guides/sharing-the-xcframework.md), one shared local copy across repos + the `Package.resolved` pin footgun (#260).
 - [Thread Safety](thread-safety.md) · [Bridge Diagnostics](reference/Diagnostics.md) · [Naming Conventions](naming-conventions.md) ·
   [Versioning (SemVer)](SEMVER.md) · [Ecosystem](ecosystem.md)
+- [Building a SwiftWasm app against OCCTSwift](guides/wasm-consumer-setup.md), the three commands a
+  CONSUMER needs, what is ready and what is not, and the three papercuts that cost an afternoon
+  each. Start here if you want the API in a browser rather than to work on the wasm support.
 - [WebAssembly feasibility](wasm-feasibility.md), the wasm32-wasip1 plan of record: what is
   proven, what is not, and the Phase 0 memo, whose verdict is GO with four conditions (#2175).
 - [WASI guard sites](WASI_GUARD_SITES.md), the `std` names the wasip1 libc++ removes, the files
