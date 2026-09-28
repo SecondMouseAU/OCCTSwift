@@ -114,28 +114,30 @@ both answer nil and the guard is redundant rather than wrong, and it still cover
 older asset. `Package.swift`'s pin block records that exception against
 [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md)'s retire-the-mitigation rule.
 
-### The wasm kernel: one patch behind, acknowledged
+### The wasm kernel: in step, as of 2026-09-28
 
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
-for a bare static library. It carries **twenty-nine** patches, `0010` to `0041`, plus the eleven in
-`Scripts/patches-wasi/`.
+for a bare static library. It carries **thirty** patches, `0010` to `0042`, plus the eleven in
+`Scripts/patches-wasi/`, and so **lacks none of them**:
 
 | Unpinned on wasm | What it leaves exposed |
 |---|---|
-| `0042-ShapeAnalysis-GetFaceUVBounds-null-surface-2773` | `ShapeAnalysis::GetFaceUVBounds` dereferences a null surface. #2773 measured it as a SIGSEGV on seven cases through `Shape.divide`, `FaceDivide` and the UV-bounds path, uncatchable in-process. On wasm the module traps; on macOS and iOS the kernel now raises and the bridge catches. |
+| none | |
 
-**Why:** PR #2784 published the asset for `v4.0.0-kernel.1` and PR #2782 repinned native to
-`v4.0.0-kernel.2` **twenty-nine seconds later**. Neither PR was at fault; #2782 predated #2784 and
-could not have known a wasm asset existed. `Scripts/check-wasm-kernel-parity.py` caught it on `main`
-within a minute, which is the first real exercise of the gate #2784 added for exactly this.
+`0042` was the entry here for one day. PR #2784 published the asset for `v4.0.0-kernel.1` and PR
+#2782 repinned native to `v4.0.0-kernel.2` **twenty-nine seconds later**, so the browser briefly
+lacked a null-surface guard #2773 measured as a SIGSEGV on seven cases.
+`Scripts/check-wasm-kernel-parity.py` caught it on `main` within a minute, PR #2786 acknowledged it
+to unblock, and the rebuild closed it.
 
-**Acknowledged, not closed.** `Scripts/wasm-kernel-pin.txt` carries
-`OCCT_WASM_PARITY_ACKNOWLEDGED_AGAINST=30` with #2785 as the reason. That keeps `main` green through
-a 69-minute rebuild and expires on the next native repin. The rebuild is #2785. The bridge-side
-guard from [PR #2776](https://github.com/SecondMouseAU/OCCTSwift/pull/2776) is what stands between a
-wasm consumer and the trap in the meantime, and is a further reason it was kept rather than retired
-at the repin.
+**Verified the way this page asks for, in both directions.** The build tree is `V8_0_1` with all
+thirty carried and all eleven WASI patches reverse-applying cleanly, and its **89 modified files
+correspond exactly 1:1** with the 89 that those forty-one patches touch, so there is nothing extra
+either. That reverse check is the one the xcframework did not have, and is how the two strays below
+stayed invisible for a month. `0042`'s own literal,
+`ShapeAnalysis::GetFaceUVBounds: face has no surface`, is present once in the published archive and
+absent from the superseded `kernel.1` one, which is the control.
 
 **And it holds two that we do not carry, so thirty-two in total.** Those are separate quantities
 and collapsing them is how the divergence stayed invisible for a month: every count in this repo
