@@ -38,11 +38,20 @@ no arguments" was not true of the capture, so each is declared in an optional `r
 beside the probe rather than normalised away for all 344. Every key takes a required `reason`, and
 a key whose pattern matches nothing is DECL-UNUSED rather than ignored.
 
+**Each key takes one of two shapes, and which one is decided by its consumer**: `cwd`, `argv` and
+`status` are read as literals and take `{"value": ..., "reason": ...}`; every other key is matched
+against lines and takes `{"pattern": <regex>, "reason": ...}`, as a list for the three that hold
+several. A declaration that offers the other shape is DECL-INVALID rather than accepted, because the
+validator used to take either and each consumer read exactly one: a `pattern`-only `argv` raised
+KeyError, and a `pattern`-only `cwd` ran the probe in the wrong directory and said nothing, which is
+the mistake two of the thirteen transcripts below were captured with (PR #2822's review).
+
     cwd             "repo-root", for a probe whose fixture path is relative to the repo root
                     (`Tests/OCCTStressTests/Fixtures/...`). Running it in its own directory turned
                     a missing fixture into `faces=0 edges=0`, which reads as a kernel divergence.
-    argv            the arguments the capture passed. Several probes are argv-driven tools whose
-                    arguments were recorded only in the transcript's own header prose.
+    argv            the arguments the capture passed, as a list of strings. Several probes are
+                    argv-driven tools whose arguments were recorded only in the transcript's own
+                    header prose. Strings, not JSON numbers: `1.50` would reach the probe as "1.5".
     rerun_keep      the capture's own line filter, as a regex: only matching rerun lines are
                     compared. `766-thread-safety` was captured through `grep -E '^[0-9]{3,4} '`.
     rerun_drop      lines the rerun prints that the capture's inputs made impossible, such as a
@@ -138,6 +147,17 @@ def normalise(text: str) -> str:
     return "\n".join(line for line in lines if line)
 
 
+def write_text(path: str, text: str) -> None:
+    """`text` into `path`, with the handle closed before anything else opens it.
+
+    The self-test writes a dozen fixture files that `clang` then reads, and `open(p, "w").write(x)`
+    leaves closing them to the refcount. That holds on CPython and is not a property to depend on
+    (PR #2822), so every write in this file goes through here.
+    """
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(text)
+
+
 def strip_header(lines: list[str]) -> list[str]:
     """Drop the leading `#` provenance block a transcript may carry.
 
@@ -160,12 +180,24 @@ def strip_header(lines: list[str]) -> list[str]:
 
 
 DECL_FILE = "reproduce.json"
-DECL_KEYS = ("cwd", "argv", "rerun_keep", "rerun_drop", "volatile", "transcript_only",
-             "transcript_tail_from", "status")
 # Every allowance is a way for a real difference to pass, so every one carries a reason that the
-# report prints. A pattern list holds {"pattern": <regex>, "reason": <why>} objects; `cwd`, `argv`,
-# `rerun_keep` and `status` hold {"value"/"pattern", "reason"}.
+# report prints. There are three shapes of entry, and which shape a key takes is decided by what
+# CONSUMES it, not by taste:
+#   PATTERN_KEYS   a list of {"pattern": <regex>, "reason": <why>} objects, matched against lines.
+#   REGEX_KEYS     one {"pattern": <regex>, "reason": <why>} object, matched against lines.
+#   VALUE_KEYS     one {"value": <literal>, "reason": <why>} object, read as a literal.
+# The validator accepted `value` OR `pattern` for every key in the last two groups while the
+# consumers read exactly one of them, which is PR #2822's CRITICAL: a `pattern`-only `argv` reached
+# `decl["argv"]["value"]` and raised KeyError, and a `pattern`-only `cwd` read as None and ran the
+# probe in the WRONG DIRECTORY, silently, which is the failure two of the thirteen transcripts this
+# script exists to adjudicate were produced by. A validator that admits a shape no consumer reads is
+# not a laxer validator, it is a validator for a different file.
 PATTERN_KEYS = ("rerun_drop", "volatile", "transcript_only")
+REGEX_KEYS = ("rerun_keep", "transcript_tail_from")
+VALUE_KEYS = ("cwd", "argv", "status")
+# Derived, not restated: a key added to one of the three groups and forgotten here would be reported
+# as an unknown key in every declaration that used it.
+DECL_KEYS = PATTERN_KEYS + REGEX_KEYS + VALUE_KEYS
 
 
 def load_declaration(d: str):
@@ -180,7 +212,8 @@ def load_declaration(d: str):
     if not os.path.isfile(path):
         return {}, []
     try:
-        decl = json.load(open(path, encoding="utf-8"))
+        with open(path, encoding="utf-8") as fh:
+            decl = json.load(fh)
     except (ValueError, OSError) as exc:
         return {}, [f"{DECL_FILE} is not readable JSON: {exc}"]
     if not isinstance(decl, dict):
@@ -199,16 +232,40 @@ def load_declaration(d: str):
                 re.compile(e["pattern"])
             except re.error as exc:
                 errors.append(f"{DECL_FILE}: {k} pattern {e['pattern']!r} does not compile: {exc}")
-    for k in ("cwd", "argv", "rerun_keep", "transcript_tail_from", "status"):
-        if k in decl:
-            e = decl[k]
-            if not isinstance(e, dict) or not e.get("reason") or (
-                    "value" not in e and "pattern" not in e):
-                errors.append(f"{DECL_FILE}: {k} needs a value (or pattern) and a reason")
-    if decl.get("cwd", {}).get("value") not in (None, "repo-root", "probe"):
-        errors.append(f"{DECL_FILE}: cwd must be \"repo-root\" or \"probe\"")
-    if decl.get("status", {}).get("value") not in (None, "not-reproducible"):
-        errors.append(f"{DECL_FILE}: the only status is \"not-reproducible\"")
+    for k in REGEX_KEYS:
+        if k not in decl:
+            continue
+        e = decl[k]
+        if not isinstance(e, dict) or not e.get("pattern") or not e.get("reason"):
+            errors.append(f"{DECL_FILE}: {k} needs a pattern and a reason")
+            continue
+        try:
+            re.compile(e["pattern"])
+        except re.error as exc:
+            errors.append(f"{DECL_FILE}: {k} pattern {e['pattern']!r} does not compile: {exc}")
+    for k in VALUE_KEYS:
+        if k not in decl:
+            continue
+        e = decl[k]
+        if not isinstance(e, dict) or "value" not in e or not e.get("reason"):
+            errors.append(f"{DECL_FILE}: {k} needs a value and a reason")
+            continue
+        # Each of the three is read as a literal by exactly one consumer, so each literal is checked
+        # here rather than where reading it wrong is silent.
+        if k == "cwd" and e["value"] not in ("repo-root", "probe"):
+            errors.append(f"{DECL_FILE}: cwd must be \"repo-root\" or \"probe\"")
+        if k == "status" and e["value"] != "not-reproducible":
+            errors.append(f"{DECL_FILE}: the only status is \"not-reproducible\"")
+        if k == "argv":
+            if not isinstance(e["value"], list):
+                errors.append(f"{DECL_FILE}: argv value must be a list of arguments, and a bare "
+                              "string would be passed one character at a time")
+            elif not all(isinstance(a, str) for a in e["value"]):
+                # A JSON number would reach the probe through `str()`, and `1.50` arrives as "1.5",
+                # which is a different argument from the one the capture passed. The capture's
+                # command line is text, so it is declared as text.
+                errors.append(f"{DECL_FILE}: every argv element must be a string, because a JSON "
+                              "number does not round-trip to the argument the capture passed")
     return decl, errors
 
 
@@ -230,7 +287,9 @@ def apply_declaration(want: list[str], got: list[str], decl: dict):
 
     keep = decl.get("rerun_keep")
     if keep:
-        rx = re.compile(keep.get("pattern", keep.get("value", "")))
+        # `pattern`, never `value`: this is compiled as a regex, and a `value` fallback compiled a
+        # literal the author never meant as one (PR #2822). The validator requires `pattern`.
+        rx = re.compile(keep["pattern"])
         kept = [l for l in got if rx.search(l)]
         if len(kept) == len(got):
             unused.append(f"rerun_keep {rx.pattern!r} dropped no rerun line ({keep['reason']})")
@@ -259,7 +318,7 @@ def apply_declaration(want: list[str], got: list[str], decl: dict):
     # still be there, so a transcript that loses it is DECL-UNUSED rather than silently truncated.
     tail = decl.get("transcript_tail_from")
     if tail:
-        rx = re.compile(tail.get("pattern", tail.get("value", "")))
+        rx = re.compile(tail["pattern"])
         at = next((i for i, l in enumerate(want) if rx.search(l)), None)
         if at is None:
             unused.append(f"transcript_tail_from {rx.pattern!r} matched no transcript line "
@@ -279,12 +338,18 @@ def apply_declaration(want: list[str], got: list[str], decl: dict):
         for i, (w, g) in enumerate(zip(want, got)):
             if w == g:
                 continue
+            # Every pattern that covers this line pair is credited, not just the first. The
+            # substitution happens once either way, and a first version stopped at the first match,
+            # so a second pattern covering the same line reported "matched 1 line, 0 differing" and
+            # read as an allowance doing nothing (PR #2822).
+            matched = False
             for e in vol:
                 rx = re.compile(e["pattern"])
                 if rx.search(w) and rx.search(g):
-                    got[i] = w
+                    matched = True
                     differing[e["pattern"]] += 1
-                    break
+            if matched:
+                got[i] = w
         for e in vol:
             rx = re.compile(e["pattern"])
             # A volatile pattern is used when it matches a line, not when that line happens to
@@ -336,7 +401,8 @@ def compile_and_run(probe: str, asset: str, workdir: str, timeout: int, decl: di
     else:
         argv_file = os.path.join(probe_dir, "argv.txt")
         if os.path.isfile(argv_file):
-            argv += [a for a in open(argv_file, encoding="utf-8").read().split() if a]
+            with open(argv_file, encoding="utf-8") as fh:
+                argv += [a for a in fh.read().split() if a]
     cwd = repo_root if decl.get("cwd", {}).get("value") == "repo-root" else probe_dir
     try:
         run = subprocess.run(argv, capture_output=True, text=True, timeout=timeout, cwd=cwd)
@@ -366,8 +432,8 @@ def check_one(d: str, asset: str, timeout: int, repo_root: str = ROOT) -> dict:
         status, out = compile_and_run(probe, asset, work, timeout, decl, repo_root)
         if status != "RAN":
             return {"name": name, "status": status, "detail": out}
-        want_lines = strip_header(
-            normalise(open(transcript, encoding="utf-8", errors="ignore").read()).split("\n"))
+        with open(transcript, encoding="utf-8", errors="ignore") as fh:
+            want_lines = strip_header(normalise(fh.read()).split("\n"))
         got_lines = normalise(out).split("\n")
         if want_lines == got_lines and not decl:
             return {"name": name, "status": "MATCH", "detail": ""}
@@ -542,7 +608,7 @@ def self_test() -> int:
         os.makedirs(empty)
         r = check_one(empty, os.path.join(d, "no-asset"), 5)
         cases.append(("a directory with no probe is MISSING", r["status"] == "MISSING"))
-        open(os.path.join(empty, "probe.mm"), "w").write("int main(){return 0;}\n")
+        write_text(os.path.join(empty, "probe.mm"), "int main(){return 0;}\n")
         r = check_one(empty, os.path.join(d, "no-asset"), 5)
         cases.append(("a probe with no transcript is MISSING", r["status"] == "MISSING"))
 
@@ -558,7 +624,7 @@ def self_test() -> int:
         # `ar` refuses to write an archive with no members, so the stand-in holds one dummy object.
         dummy_c = os.path.join(d, "dummy.c")
         dummy_o = os.path.join(d, "dummy.o")
-        open(dummy_c, "w").write("int occt_probe_self_test_dummy(void) { return 0; }\n")
+        write_text(dummy_c, "int occt_probe_self_test_dummy(void) { return 0; }\n")
         subprocess.run(["clang", "-c", dummy_c, "-o", dummy_o], capture_output=True)
         subprocess.run(["ar", "rcs", os.path.join(asset, SLICE, "lib" + LIB + ".a"), dummy_o],
                        capture_output=True)
@@ -574,10 +640,10 @@ def self_test() -> int:
             os.makedirs(p)
             src = ("#include <stdio.h>\nint main(){" + body + "return 0;}\n"
                    if name != "766-broken" else body + "\n")
-            open(os.path.join(p, "probe.mm"), "w").write(src)
-            open(os.path.join(p, "transcript.txt"), "w").write(want)
+            write_text(os.path.join(p, "probe.mm"), src)
+            write_text(os.path.join(p, "transcript.txt"), want)
         os.makedirs(os.path.join(d, "766-cwd", "inputs"))
-        open(os.path.join(d, "766-cwd", "inputs", "x.txt"), "w").write("fixture\n")
+        write_text(os.path.join(d, "766-cwd", "inputs", "x.txt"), "fixture\n")
         ok = check_one(os.path.join(d, "766-ok"), asset, 60)
         bad = check_one(os.path.join(d, "766-bad"), asset, 60)
         broken = check_one(os.path.join(d, "766-broken"), asset, 60)
@@ -611,8 +677,8 @@ def self_test() -> int:
             p = os.path.join(d, "probe-dir")
             shutil.rmtree(p, ignore_errors=True)
             os.makedirs(p)
-            open(os.path.join(p, DECL_FILE), "w").write(obj if isinstance(obj, str)
-                                                        else json.dumps(obj))
+            write_text(os.path.join(p, DECL_FILE),
+                       obj if isinstance(obj, str) else json.dumps(obj))
             return load_declaration(p)[1]
 
         cases.append(("an unknown reproduce.json key is an error",
@@ -629,6 +695,55 @@ def self_test() -> int:
                       bool(decl_errors({"cwd": {"value": "/etc", "reason": "x"}}))))
         cases.append(("a valid declaration has no errors",
                       decl_errors({"cwd": {"value": "repo-root", "reason": "fixture path"}}) == []))
+
+        # 10b. The shape of each single-entry key, which the validator used to accept either way
+        #      round while its consumer read exactly one (PR #2822's CRITICAL). The three `value`
+        #      keys reject a `pattern`, and each rejection is a defect the old validator waved
+        #      through: a `pattern`-only `argv` raised KeyError at `decl["argv"]["value"]`, a
+        #      `pattern`-only `cwd` read as None and ran the probe in the WRONG DIRECTORY with no
+        #      word about it, and a `pattern`-only `status` read as None and so as reproducible,
+        #      which compares a transcript that is not one capture of one run.
+        cases.append(("a pattern-only cwd is an error, not a silent run in the probe directory",
+                      any("cwd needs a value" in e
+                          for e in decl_errors({"cwd": {"pattern": "repo-root", "reason": "x"}}))))
+        cases.append(("a pattern-only argv is an error, not a KeyError at run time",
+                      any("argv needs a value" in e
+                          for e in decl_errors({"argv": {"pattern": "inputs", "reason": "x"}}))))
+        cases.append(("a pattern-only status is an error, not a silently reproducible transcript",
+                      any("status needs a value" in e
+                          for e in decl_errors({"status": {"pattern": "not-reproducible",
+                                                           "reason": "x"}}))))
+        #      ...and the two regex keys reject a `value`, which was being compiled as a regex.
+        cases.append(("a value-only rerun_keep is an error, because it is compiled as a regex",
+                      any("rerun_keep needs a pattern" in e
+                          for e in decl_errors({"rerun_keep": {"value": "^[0-9]+ ",
+                                                               "reason": "x"}}))))
+        cases.append(("a value-only transcript_tail_from is an error for the same reason",
+                      any("transcript_tail_from needs a pattern" in e
+                          for e in decl_errors({"transcript_tail_from": {"value": "== Part B",
+                                                                         "reason": "x"}}))))
+        cases.append(("a rerun_keep pattern that does not compile is an error, not a crash",
+                      any("does not compile" in e
+                          for e in decl_errors({"rerun_keep": {"pattern": "(", "reason": "x"}}))))
+        cases.append(("a transcript_tail_from pattern that does not compile is an error too",
+                      any("does not compile" in e
+                          for e in decl_errors({"transcript_tail_from": {"pattern": "(",
+                                                                         "reason": "x"}}))))
+        #      `argv`'s value is iterated, so a string would reach the probe one character at a time.
+        cases.append(("an argv value that is a bare string is an error",
+                      any("must be a list" in e
+                          for e in decl_errors({"argv": {"value": "inputs", "reason": "x"}}))))
+        cases.append(("an argv element that is not a string is an error",
+                      any("must be a string" in e
+                          for e in decl_errors({"argv": {"value": [1.5], "reason": "x"}}))))
+        #      A key written as a bare literal rather than an object is an error and not an
+        #      AttributeError: the old `decl.get("cwd", {}).get("value")` ran on whatever was there.
+        cases.append(("a cwd that is not an object is an error rather than a crash",
+                      bool(decl_errors({"cwd": "repo-root"}))))
+        cases.append(("a valid argv and rerun_keep declaration has no errors",
+                      decl_errors({"argv": {"value": ["inputs"], "reason": "the capture's argv"},
+                                   "rerun_keep": {"pattern": "^[0-9]{3,4} ",
+                                                  "reason": "the capture's grep"}}) == []))
 
     # 11. Each allowance, applied to lines, with the case that must still fail beside it. Every
     #     entry here is a way for a real difference to pass, which is why each has a negative twin.
@@ -647,6 +762,14 @@ def self_test() -> int:
     w, g, cov, un = apply_declaration(["a", "t=0.06 s"], ["a", "t=0.06 s"], vol)
     cases.append(("a volatile line that agrees on this run is still a used allowance",
                   w == g and cov and not un))
+    # Two patterns over one line: both are credited. Stopping at the first match reported the second
+    # as "matched 1 transcript line(s), 0 of them differing", which reads as an allowance covering a
+    # line that never differs and is the shape a reader deletes (PR #2822).
+    vol2 = {"volatile": [{"pattern": r"^t=[0-9.]+ s$", "reason": "elapsed time"},
+                         {"pattern": r"^t=", "reason": "the same line, a looser shape"}]}
+    w, g, cov, un = apply_declaration(["t=0.06 s"], ["t=0.05 s"], vol2)
+    cases.append(("two volatile patterns covering one differing line are both credited",
+                  w == g and not un and sum("1 of them differing" in c for c in cov) == 2))
 
     tonly = {"transcript_only": [{"pattern": r"^\(process terminated", "reason": "author's note"}]}
     w, g, cov, un = apply_declaration(["a", "(process terminated: SIGSEGV)"], ["a"], tonly)
@@ -686,23 +809,23 @@ def self_test() -> int:
         os.makedirs(os.path.join(asset, SLICE, "Headers"))
         dummy_c = os.path.join(d, "dummy.c")
         dummy_o = os.path.join(d, "dummy.o")
-        open(dummy_c, "w").write("int occt_probe_self_test_dummy(void) { return 0; }\n")
+        write_text(dummy_c, "int occt_probe_self_test_dummy(void) { return 0; }\n")
         subprocess.run(["clang", "-c", dummy_c, "-o", dummy_o], capture_output=True)
         subprocess.run(["ar", "rcs", os.path.join(asset, SLICE, "lib" + LIB + ".a"), dummy_o],
                        capture_output=True)
         fake_root = os.path.join(d, "fake-repo")
         os.makedirs(os.path.join(fake_root, "Tests"))
-        open(os.path.join(fake_root, "Tests", "fixture.txt"), "w").write("root fixture\n")
+        write_text(os.path.join(fake_root, "Tests", "fixture.txt"), "root fixture\n")
 
         def mk(name, body, want, decl=None):
             p = os.path.join(d, name)
             os.makedirs(p, exist_ok=True)
-            open(os.path.join(p, "probe.mm"), "w").write(
-                "#include <stdio.h>\n#include <stdlib.h>\nint main(int argc, char** argv){"
-                + body + "return 0;}\n")
-            open(os.path.join(p, "transcript.txt"), "w").write(want)
+            write_text(os.path.join(p, "probe.mm"),
+                       "#include <stdio.h>\n#include <stdlib.h>\nint main(int argc, char** argv){"
+                       + body + "return 0;}\n")
+            write_text(os.path.join(p, "transcript.txt"), want)
             if decl is not None:
-                open(os.path.join(p, DECL_FILE), "w").write(json.dumps(decl))
+                write_text(os.path.join(p, DECL_FILE), json.dumps(decl))
             return p
 
         # `cwd`: the fixture is at Tests/fixture.txt, relative to the repo root, not the probe dir.
@@ -757,7 +880,7 @@ def self_test() -> int:
 
         # An invalid declaration fails rather than being ignored.
         p = mk("766-badjson", 'printf("a\\n");', "a\n")
-        open(os.path.join(p, DECL_FILE), "w").write("{oops")
+        write_text(os.path.join(p, DECL_FILE), "{oops")
         r = check_one(p, asset, 60)
         cases.append(("an unreadable reproduce.json is DECL-INVALID",
                       r["status"] == "DECL-INVALID"))
