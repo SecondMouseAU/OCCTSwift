@@ -174,6 +174,8 @@ than as a refusal on every PR.
 from __future__ import annotations
 
 import argparse
+import contextlib
+import io
 import os
 import pathlib
 import re
@@ -618,14 +620,23 @@ MODULE_INPUT_GLOBS = (
 
 
 def newest_input(base=None, globs=MODULE_INPUT_GLOBS):
-    """`(path, mtime)` of the most recently written input to the module, or `(None, 0.0)`."""
+    """`(path, mtime)` of the most recently written input to the module, or `(None, 0.0)`.
+
+    An input whose `stat()` fails is **named on stderr** rather than passed over in silence. It
+    still does not count, and that direction is deliberate: this comparison gates a refusal, and a
+    broken symlink or a file deleted between the glob and the `stat` is not evidence that the module
+    needs rebuilding. What it is evidence of is that this function did not see the whole population,
+    and a detector that examined less than it claims has to say so out loud (#2817 review).
+    """
     root = REPO if base is None else pathlib.Path(base)
     newest_path, newest = None, 0.0
     for pattern in globs:
         for f in root.glob(pattern):
             try:
                 mtime = f.stat().st_mtime
-            except OSError:
+            except OSError as exc:
+                print(f'  note: {f} is a module input this run could not stat ({exc}), so it did '
+                      'not count toward the staleness comparison', file=sys.stderr)
                 continue
             if mtime > newest:
                 newest_path, newest = f, mtime
@@ -639,6 +650,12 @@ def module_written(module_dir):
     tracks its entries being added and removed and not their contents being rewritten. Taking the
     newest of the two errs toward calling a module current, which is the safe direction: this
     comparison gates a refusal.
+
+    A member that cannot be `stat()`ed is named on stderr and left out of the maximum, the same as an
+    unreadable input above. Note which way that errs: dropping a member can only LOWER the maximum,
+    so it makes the module read as older and a refusal more likely, never less (#2817 review, which
+    had this direction the other way round). A bundle whose own `stat()` fails is reported as absent,
+    which is the skip channel rather than this one, and is said out loud for the same reason.
     """
     path = module_dir / 'OCCTSwift.swiftmodule'
     try:
@@ -647,12 +664,16 @@ def module_written(module_dir):
         if not path.is_dir():
             return None
         times = [path.stat().st_mtime]
-    except OSError:
+    except OSError as exc:
+        print(f'  note: {path} could not be stat()ed ({exc}), so this run treats it as no module '
+              'at all rather than as a stale one', file=sys.stderr)
         return None
     for member in path.glob('*'):
         try:
             times.append(member.stat().st_mtime)
-        except OSError:
+        except OSError as exc:
+            print(f'  note: {member} is a module member this run could not stat ({exc}), so the '
+                  'staleness comparison used the rest of the bundle', file=sys.stderr)
             continue
     return max(times)
 
@@ -676,7 +697,12 @@ def stale_module_reason(module_dir, base=None, globs=MODULE_INPUT_GLOBS):
         name = path.relative_to(root)
     except ValueError:
         name = path
-    return (f'{name} was written {mtime - built:.0f}s after the OCCTSwift.swiftmodule in '
+    # `less than 1s` rather than `0s`: a source written half a second after the module is the
+    # ordinary case on a fast disk, and `was written 0s after` reads as no difference at all, which
+    # is the one thing the sentence exists to report (#2817 review).
+    delta = mtime - built
+    shown = 'less than 1s' if delta < 1 else f'{delta:.0f}s'
+    return (f'{name} was written {shown} after the OCCTSwift.swiftmodule in '
             f'{module_dir}, so that module was built from different source; run `swift build`')
 
 
@@ -1586,6 +1612,57 @@ def _self_test_staleness():
         else:
             failures += 1
             print('  FAIL  a missing module was reported as a stale one')
+
+        # A sub-second gap is reported as one. `{delta:.0f}s` printed `was written 0s after`, which
+        # reads as no difference at all, and a source rewritten half a second after the module is
+        # the ordinary case on a fast disk (#2817 review).
+        state(2000.4, 1000, 1000, 1000, 2000, 2000)
+        ran += 1
+        reason = stale_module_reason(moddir, base=base)
+        if reason is not None and 'less than 1s' in reason:
+            print('  ok    a sub-second gap is reported as "less than 1s", never as "0s"')
+        else:
+            failures += 1
+            print(f'  FAIL  a sub-second gap was not reported as such\n        got {reason!r}')
+
+        # An input this run could not stat() does not count toward the comparison, and is named on
+        # stderr rather than skipped in silence. A broken symlink is the reachable instance: glob
+        # lists it, `stat()` follows it and raises (#2817 review).
+        state(1000, 1000, 1000, 1000, 2000, 2000)
+        broken = base / 'Sources' / 'OCCTSwift' / 'Gone.swift'
+        broken.symlink_to(base / 'Sources' / 'OCCTSwift' / 'never-existed.swift')
+        noise = io.StringIO()
+        with contextlib.redirect_stderr(noise):
+            reason = stale_module_reason(moddir, base=base)
+        said = noise.getvalue()
+        ran += 1
+        if reason is None and 'Gone.swift' in said and 'could not stat' in said:
+            print('  ok    an unreadable input is named on stderr and does not force a refusal')
+        else:
+            failures += 1
+            print('  FAIL  an unreadable input was passed over in silence\n'
+                  f'        reason={reason!r} stderr={said!r}')
+        broken.unlink()
+
+        # The same for a member of the module bundle, which errs the other way: dropping a member
+        # lowers the maximum, so it can only make the module read as older.
+        broken_member = bundle / 'gone.swiftmodule'
+        broken_member.symlink_to(bundle / 'never-existed.swiftmodule')
+        # Adding an entry rewrites the bundle directory's own mtime, which `module_written` includes,
+        # so put it back where the fixture wants it before measuring.
+        stamp(bundle, 2000)
+        noise = io.StringIO()
+        with contextlib.redirect_stderr(noise):
+            built = module_written(moddir)
+        said = noise.getvalue()
+        ran += 1
+        if built == 2000 and 'gone.swiftmodule' in said and 'could not stat' in said:
+            print('  ok    an unreadable bundle member is named on stderr and the rest still count')
+        else:
+            failures += 1
+            print('  FAIL  an unreadable bundle member was passed over in silence\n'
+                  f'        built={built!r} stderr={said!r}')
+        broken_member.unlink()
     finally:
         shutil.rmtree(base, ignore_errors=True)
 
@@ -1618,15 +1695,15 @@ def self_test(require_typecheck=False):
     print('canary guard:')
     failures += _self_test_canary()
     print('stale-module detection:')
-    stale_failures, stale_cases = _self_test_staleness()
+    stale_failures, staleness_cases_run = _self_test_staleness()
     failures += stale_failures
     print('end-to-end compile:')
     compile_failures, skipped = _self_test_compile()
     failures += compile_failures
     # 7 is _self_test_dedent_and_rewrite's case count, 2 each for attribution and the canary guard.
     # The stale-module battery counts its own cases, because its last one is skipped where there is
-    # no built module.
-    total = (len(EXTRACT_CASES) + len(BODY_CASES) + len(HISTORICAL) + 7 + 2 + 2 + stale_cases
+    # no built module: `staleness_cases_run` is every case that ran in it, not the stale ones.
+    total = (len(EXTRACT_CASES) + len(BODY_CASES) + len(HISTORICAL) + 7 + 2 + 2 + staleness_cases_run
              + (0 if skipped else 2 * len(COMPILE_CASES) + 2))
     print(f'\nself-test: {total - failures} passed, {failures} failed'
           + (' (compile cases SKIPPED: no built package)' if skipped else ''))
