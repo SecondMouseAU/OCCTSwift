@@ -1,0 +1,12 @@
+[formats] Document.create(), before defineAllFormats: reading=0 writing=0
+[formats] after defineAllFormats (Bin, BinL, Xml, XmlL, BinXCAF, XmlXCAF): reading=6 writing=6 reading >= 4=true reading not empty=true writing not empty=true
+[in place] Document.create(format: "BinOcaf"): SaveAs status=0 IsSaved=true, then Save in place status=0
+[in place, no save] Document.create(format: "BinOcaf"): IsSaved=false, so the bridge guard returns -1 (Swift reads it as .failure = 3)
+[31;1mDocument has not been saved yet[0m
+[in place, no save] the kernel's own Save before any SaveAs: status=3 (ok=0) status not ok=true
+[bin ocaf] label 0:1:1: SaveAs status=0 IsSaved=true; load: Open status=0 document returned=true storage format="BinOcaf" (present=true)
+[bin xcaf] label 0:1:1: SaveAs status=0; load: Open status=0 document returned=true storage format="BinXCAF"
+[xml ocaf] label 0:1:1: SaveAs status=0; load: Open status=0 document returned=true storage format="XmlOcaf"
+[status enums] PCDM_StoreStatus: OK=0 DriverFailure=1 WriteFailure=2 Failure=3
+[status enums] PCDM_ReaderStatus: OK=0 NoDriver=1 OpenError=3 UnrecognizedFileFormat=12
+[nonexistent] Open /nonexistent/file.cbf: status=18 (ok=0) document returned=false status not ok=true

@@ -1,0 +1,17 @@
+[32;1mMesh /tmp/766-xcaf-obj-ocaf.obj
+[8 nodes] [12 2d elements]
+[read in 0.000403 s][0m
+RWObj_CafReader: Perform=true free shapes=1
+RWObj_CafWriter: Perform=true
+formats after defining Bin, BinL, Xml, XmlL, BinXCAF, XmlXCAF: reading=6 writing=6
+NewDocument(BinOcaf): StorageFormat=BinOcaf IsSaved=false NbDocuments=1
+ChangeStorageFormat(XmlOcaf): StorageFormat=XmlOcaf
+[31;1mDocument has not been saved yet[0m
+Save in place before any SaveAs: status=3 (ok=0)
+SaveAs cbf: status=0 IsSaved=true then Save in place: status=0
+Open cbf: status=0 loaded=true
+SaveAs xml: status=0 Open xml: status=0
+NewDocument(BinXCAF): StorageFormat=BinXCAF SaveAs xbf: status=0 Open xbf: status=0
+Open /nonexistent/file.cbf: status=18 loaded=false
+PCDM_StoreStatus: OK=0 DriverFailure=1 WriteFailure=2 Failure=3
+PCDM_ReaderStatus: OK=0 NoDriver=1 OpenError=3 UnrecognizedFileFormat=12
