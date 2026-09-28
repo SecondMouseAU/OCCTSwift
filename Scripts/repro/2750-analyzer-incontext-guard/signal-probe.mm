@@ -7,10 +7,12 @@
 //
 // The difference is OSD::SetSignal. The bridge calls it once per process through
 // occtEnsureSignals() (OCCTBridge.mm), from fourteen entry points, and a process-wide handler
-// outlives the call that installed it. OCCT's Unix handler raises an OSD_Signal, a Standard_Failure
-// subclass, from inside the signal handler, and BRepCheck_ParallelAnalyzer::operator() wraps every
-// InContext call in catch (Standard_Failure const&), so the fault lands as SetFailStatus rather
-// than as a dead process.
+// outlives the call that installed it. OCCT's Unix handler builds an OSD_SIGSEGV, a
+// Standard_Failure subclass, and hands it to Standard_ErrorHandler::Abort, which longjmps to the
+// nearest registered handler; BRepCheck_Analyzer.cxx wraps every InContext call in
+// try { OCC_CATCH_SIGNALS ... } catch (Standard_Failure const&), and that macro is live in an OCCT
+// translation unit, so the fault lands as SetFailStatus rather than as a dead process. The branch
+// Abort takes is measured in Scripts/repro/2763-abort-signal-mechanism/ (#2763).
 //
 // Two cases, identical but for that one call:
 //
