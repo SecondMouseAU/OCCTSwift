@@ -45,9 +45,10 @@ struct ShapeToolCompletionsTests {
             Shape.box(width: 10, height: 10, depth: 10), "Shape.box returned nil")
         let labelId = doc.addShape(box)
         try #require(labelId >= 0, "addShape refused the box, it returned \(labelId)")
+        let resolvedId = doc.findShape(box)
         try #require(
-            doc.findShape(box) == labelId,
-            "findShape resolves the box to \(doc.findShape(box)), not the \(labelId) addShape returned")
+            resolvedId == labelId,
+            "findShape resolves the box to \(resolvedId), not the \(labelId) addShape returned")
         return Fixture(doc: doc, box: box, labelId: labelId)
     }
 
@@ -102,9 +103,10 @@ struct ShapeToolCompletionsTests {
 
     /// ComputeShapes returns a `void` the bridge cannot fail, so the assertion is on the state
     /// afterwards, which is the third line the probe prints: the call returns and the label is
-    /// still the box's free, component-less label. The suite's earlier form asserted nothing here
-    /// and said so in a comment ("Just check it doesn't crash"), which made a crash the only
-    /// failure the test could report.
+    /// still the box's free, component-less label.
+    ///
+    /// The suite's earlier form asserted nothing here and said so in a comment ("Just check it
+    /// doesn't crash"), which made a crash the only failure the test could report.
     @Test("ComputeShapes leaves the label intact, IsFree still true")
     func computeShapes() throws {
         let f = try measuredBoxLabel()

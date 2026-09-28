@@ -48,3 +48,9 @@ kernel-parity rows certified nine tests that could not fail, and one round of re
 genuine bridge-versus-kernel mismatch by deleting the kernel's extra measurement rather than
 reconciling it (commit `aed802ca`). The evidence here stands on its own; the certification did not.
 #2794 records what that cost and what to reject in review next time.
+
+Review on PR #2800 trimmed the probe: two unused `TCollection_*` includes, an unused `TDF_Tool.hxx`,
+an unused `TDF_LabelSequence comps` local and a `tagLabel` helper nothing called. None of them reach
+the measurement, and the trimmed probe reproduces `transcript.txt` byte-identically against the same
+pinned `v4.0.0-kernel.2` asset. So it is #2486's probe minus dead code, not #2486's file byte for
+byte; the three lines it prints are unchanged.

@@ -6,9 +6,6 @@
 #include <TDocStd_Document.hxx>
 #include <TDF_Label.hxx>
 #include <TDF_LabelSequence.hxx>
-#include <TDF_Tool.hxx>
-#include <TCollection_AsciiString.hxx>
-#include <TCollection_ExtendedString.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
 #include <XCAFDoc_ShapeTool.hxx>
 #include <XCAFDoc_ColorTool.hxx>
@@ -29,12 +26,6 @@ static Handle(TDocStd_Document) newDoc(Handle(TDocStd_Application)& app)
   return d;
 }
 
-// getLabelForTag: tag 0 is Main, otherwise Main().FindChild(tag, create).
-static TDF_Label tagLabel(const Handle(TDocStd_Document)& d, int tag)
-{
-  return tag == 0 ? d->Main() : d->Main().FindChild(tag, Standard_True);
-}
-
 // OCCTShapeCreateBox: centred on the origin.
 static TopoDS_Shape centredBox(double w, double h, double dp)
 {
@@ -51,7 +42,7 @@ int main()
   Handle(TDocStd_Document)    d  = newDoc(app);
   Handle(XCAFDoc_ShapeTool)   st = XCAFDoc_DocumentTool::ShapeTool(d->Main());
   TDF_Label                   l  = st->AddShape(centredBox(10, 10, 10), true);
-  TDF_LabelSequence           users, comps;
+  TDF_LabelSequence           users;
   printf("IsFree=%s IsSimpleShape=%s IsComponent=%s IsCompound=%s IsSubShape=%s IsExternRef=%s\n", tf(st->IsFree(l)),
          tf(XCAFDoc_ShapeTool::IsSimpleShape(l)), tf(XCAFDoc_ShapeTool::IsComponent(l)), tf(XCAFDoc_ShapeTool::IsCompound(l)),
          tf(st->IsSubShape(l)), tf(XCAFDoc_ShapeTool::IsExternRef(l)));
