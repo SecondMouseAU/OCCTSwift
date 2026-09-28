@@ -230,8 +230,8 @@ gh pr list --state open --json number,title,headRefName
 
 For a gate over a specific file, the cheap version is to check out each candidate branch and run the
 gate, or simply to expect the red and fix it forward. Either is fine; what is not fine is being
-surprised, because the surprise lands on `main` and blocks everyone until it is resolved
-(see `feedback-ci-red-branchwide-merge-gate`).
+surprised, because `gate-scripts` is a required check on `main`, so the surprise does not land on one
+PR. It lands on `main`, and every open PR fails it until somebody resolves it.
 
 This is not an argument for turning the strict policy on. It is an argument for knowing that a gate's
 first day is the one day it cannot protect, and that the remedy is a look at the queue rather than a
