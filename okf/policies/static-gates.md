@@ -157,8 +157,8 @@ knowing before adding anything here: the budget belongs to one script, not to th
 
 **A local figure is a different number.** The same 37 invocations run on one laptop with other work
 on it measured 72 s, 159 s and 182 s across three consecutive runs, and the ordering changed as
-well: `check-changelog-transcription.py` was the largest line item locally, 22 to 46 s, and is
-0 s on the runner. Quote the runner, and say how many runs the figure came from.
+well: `check-changelog-transcription.py` was the largest line item locally, 22 to 51 s across four
+runs, and is 0 s on the runner. Quote the runner, and say how many runs the figure came from.
 
 **Re-derive it, do not trust it.** The timings are in the Actions API, one call per run:
 

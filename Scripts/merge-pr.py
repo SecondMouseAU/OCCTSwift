@@ -37,6 +37,10 @@ question for a human and none of them is a transcription.
 
 Re-running is safe: an entry already present in `docs/CHANGELOG.md` is detected and not duplicated.
 
+It checks out the PR's branch, so run it from a checkout where that branch is free. This repo is
+worked in linked worktrees, and `git checkout` refuses a branch another worktree holds; the refusal
+is loud and nothing has been written at that point, but it is the one failure worth expecting.
+
 `--self-test` proves the detector is not blind, per `okf/policies/prove-the-test-fails.md`. It
 exercises the pure half, which is all of the deciding: extraction, classification, splicing,
 trailer construction and the refusals. The impure half is four `gh`/`git` invocations printed by
