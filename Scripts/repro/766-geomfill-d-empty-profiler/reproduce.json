@@ -1,0 +1,8 @@
+{
+  "transcript_only": [
+    {
+      "pattern": "^\\[process terminated: Segmentation fault",
+      "reason": "an author's note recording the crash, not a line the probe prints. The rerun prints the one line before it and exits on signal 11, so the GeomFill_Profiler::Perform fault still reproduces against v4.0.0-kernel.2 (PR #2823)."
+    }
+  ]
+}

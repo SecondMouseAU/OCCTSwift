@@ -1,0 +1,27 @@
+{
+  "argv": {
+    "value": [
+      "nut-from-swift.brep",
+      "1.5",
+      "0",
+      "0.183",
+      "0.317",
+      "0.683",
+      "0.817",
+      "1"
+    ],
+    "reason": "the transcript's first line records the capture's own command line: the trapezoidal 12x3 cutDepth and the six profile axials, as ThreadSpec reports them, in argv[2..8]. With them the \"232 trap\" measurement reproduces byte for byte against v4.0.0-kernel.2. argv[1] is the nut BREP, which is not in the repository (see transcript_only below), so the name here is a placeholder that keeps argc at 9."
+  },
+  "rerun_drop": [
+    {
+      "pattern": "^232 nut: BREP read failed$",
+      "reason": "what the probe prints when argv[1] does not resolve, which it cannot, because the nut was serialized out of a Swift run and never committed."
+    }
+  ],
+  "transcript_only": [
+    {
+      "pattern": "^232 nut \\(BREP from Swift\\): ",
+      "reason": "the internal hex-nut goes through applyThreadCut's boolean path, so the probe re-measures the Swift-built shape rather than rebuilding it. That shape was never committed, so this measurement cannot be re-derived and nothing may cite it as verified (#2824)."
+    }
+  ]
+}

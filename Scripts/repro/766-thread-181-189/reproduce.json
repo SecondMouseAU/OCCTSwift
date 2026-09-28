@@ -1,0 +1,6 @@
+{
+  "status": {
+    "value": "not-reproducible",
+    "reason": "the transcript is not one capture of one run and cannot be compared to one. probe.mm is a five-mode CLI (brep / hlr / step / prim / meshcrest) that exits 2 with no output when given no argument, and the transcript interleaves the KERNEL lines of several invocations with the BRIDGE lines dump.swift prints. Its brep, hlr and meshcrest modes read BREPs dump.swift wrote and nobody committed. It is also an incomplete transcription: `probe prim` prints fourteen lines and the transcript holds eleven of them, dropping prim_193_shank, prim_213_shaft and prim_222_rod. The eleven it does hold reproduce byte for byte against v4.0.0-kernel.2 (PR #2823, #2824)."
+  }
+}
