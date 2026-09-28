@@ -1074,13 +1074,34 @@ bool OCCTDocumentGetLengthUnit(OCCTDocumentRef doc,
   }
 }
 
+// #2413: the layer tool belongs on the document's Layers label, not on Main().
+//
+// XCAFDoc_DocumentTool::LayerTool(acces) is exactly XCAFDoc_LayerTool::Set(LayersLabel(acces))
+// (XCAFDoc_DocumentTool.cxx:259-262), so the two spellings differ only in which label the tool
+// attaches to: the Layers label 0:1:3, or Main() itself at 0:1. XCAFDoc_LayerTool::GetLayerLabels
+// iterates the children of its own label and keeps every one that carries a name
+// (XCAFDoc_LayerTool.cxx:182-194, via IsLayer/GetLayer), and Main()'s children are the XCAF tool
+// labels, all named. So these two read functions used to enumerate the tool labels, never the
+// layers, while OCCTDocumentSetLayer and its five neighbours below wrote to 0:1:3.
+//
+// Measured, Scripts/repro/2413-layer-tool-on-main/transcript.txt: on a fresh document
+// XCAFDoc_LayerTool::Set(Main()) reports 9 "layers" named Shapes, Colors, Layers, D&GTs,
+// Materials, Views, Clipping Planes, Notes and VisMaterials, while the write side's tool at 0:1:3
+// reports 0. After SetLayer(box, "Sheet Metal") the write side reports that one layer at 0:1:3:1
+// and the read side's list does not change at all.
+//
+// XCAFDoc_DocumentTool::LayerTool(Main()) is what every OCCT caller uses, with no exception in the
+// tree: STEPCAFControl_Reader.cxx:2022, STEPCAFControl_Writer.cxx:2094,
+// IGESCAFControl_Reader.cxx:225, IGESCAFControl_Writer.cxx:529 and sixteen XDEDRAW layer commands.
+// XCAFDoc_LayerTool::Set is called by nothing but XCAFDoc_DocumentTool itself, always with
+// LayersLabel(L).
 int32_t OCCTDocumentGetLayerCount(OCCTDocumentRef doc)
 {
   if (!doc || doc->doc.IsNull())
     return 0;
   try
   {
-    Handle(XCAFDoc_LayerTool) layerTool = XCAFDoc_LayerTool::Set(doc->doc->Main());
+    Handle(XCAFDoc_LayerTool) layerTool = XCAFDoc_DocumentTool::LayerTool(doc->doc->Main());
     if (layerTool.IsNull())
       return 0;
     TDF_LabelSequence labels;
@@ -1105,7 +1126,8 @@ int32_t OCCTDocumentGetLayerName(OCCTDocumentRef doc,
     return -1;
   try
   {
-    Handle(XCAFDoc_LayerTool) layerTool = XCAFDoc_LayerTool::Set(doc->doc->Main());
+    // The Layers label, not Main(); see the #2413 comment above OCCTDocumentGetLayerCount.
+    Handle(XCAFDoc_LayerTool) layerTool = XCAFDoc_DocumentTool::LayerTool(doc->doc->Main());
     if (layerTool.IsNull())
       return -1;
     TDF_LabelSequence labels;

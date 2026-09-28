@@ -793,14 +793,25 @@ double OCCTGeomPoint3DSquareDistance(OCCTGeomPoint3DRef _Nonnull ref,
                                      OCCTGeomPoint3DRef _Nonnull other);
 void   OCCTGeomPoint3DTranslate(OCCTGeomPoint3DRef _Nonnull ref, double dx, double dy, double dz);
 
-OCCTGeomDirectionRef _Nonnull OCCTGeomDirectionCreate(double x, double y, double z);
+/// Create a unit direction from component values, normalising them.
+/// @return NULL when (x, y, z) cannot be normalised: a squared magnitude at or below
+///     `gp::Resolution()` squared, or a component OCCT counts as infinite (`|x| >= 1e100`, which
+///     takes in NaN and IEEE infinity). `Geom_Direction`'s own zero-length check is compiled out
+///     of the shipped kernel, so an unguarded call returns a direction whose coordinates are all
+///     NaN (#2331); the refusal and both thresholds are what OCCT's own
+///     `StepToGeom::MakeDirection` applies to the same input.
+OCCTGeomDirectionRef _Nullable OCCTGeomDirectionCreate(double x, double y, double z);
 void OCCTGeomDirectionRelease(OCCTGeomDirectionRef _Nonnull ref);
 void OCCTGeomDirectionCoords(OCCTGeomDirectionRef _Nonnull ref,
                              double* _Nonnull x,
                              double* _Nonnull y,
                              double* _Nonnull z);
-void OCCTGeomDirectionSetCoord(OCCTGeomDirectionRef _Nonnull ref, double x, double y, double z);
-/// Cross product of two unit directions, returns new direction.
+/// Replace the direction's components, normalising them.
+/// @return false, leaving the direction untouched, for the inputs OCCTGeomDirectionCreate
+///     refuses (#2331). It used to overwrite the direction with NaN coordinates.
+bool OCCTGeomDirectionSetCoord(OCCTGeomDirectionRef _Nonnull ref, double x, double y, double z);
+/// Cross product of two unit directions, returns new direction, or NULL when the two are
+/// parallel and the cross product therefore has no direction (#2331).
 OCCTGeomDirectionRef _Nullable OCCTGeomDirectionCrossed(OCCTGeomDirectionRef _Nonnull ref,
                                                         OCCTGeomDirectionRef _Nonnull other);
 

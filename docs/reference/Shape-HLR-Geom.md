@@ -1652,13 +1652,22 @@ The input vector is automatically normalised on construction. Use this when down
 Creates a unit direction from component values. The vector is normalised automatically.
 
 ```swift
-public init(x: Double, y: Double, z: Double)
+public init?(x: Double, y: Double, z: Double)
 ```
 
+- **Returns:** `nil` for a vector that cannot be normalised: a squared magnitude at or below
+  `gp::Resolution()` squared, or a component OCCT counts as infinite (`|x| >= 1e100`, which
+  includes `NaN` and IEEE infinity). A direction has no meaning for such an input, and the
+  refusal, plus both thresholds, is what OCCT's own `StepToGeom::MakeDirection` does with it.
+  Before #2331 this initialiser could not fail and returned a direction whose coordinates were
+  all `NaN`, because `Geom_Direction`'s zero-length check is compiled out of the shipped Release
+  kernel.
 - **OCCT:** `Geom_Direction(x, y, z)` via `OCCTGeomDirectionCreate`.
 - **Example:**
   ```swift
   let up = GeomDirection(x: 0, y: 0, z: 1)
+  let none = GeomDirection(x: 0, y: 0, z: 0)  // nil
+  print(up?.coordinates as Any, none as Any)
   ```
 
 ---
@@ -1668,8 +1677,10 @@ public init(x: Double, y: Double, z: Double)
 Creates a unit direction from a `SIMD3<Double>`.
 
 ```swift
-public init(simd: SIMD3<Double>)
+public init?(simd: SIMD3<Double>)
 ```
+
+- **Returns:** `nil` on the same inputs as `init(x:y:z:)`.
 
 ---
 
@@ -1690,9 +1701,12 @@ public var coordinates: SIMD3<Double> { get }
 Sets the direction; the new vector is automatically normalised.
 
 ```swift
-public func setCoordinates(x: Double, y: Double, z: Double)
+@discardableResult
+public func setCoordinates(x: Double, y: Double, z: Double) -> Bool
 ```
 
+- **Returns:** `false`, leaving the direction unchanged, for the inputs `init(x:y:z:)` refuses.
+  Before #2331 it returned nothing and overwrote the direction with `NaN` coordinates.
 - **OCCT:** `Geom_Direction::SetCoord` via `OCCTGeomDirectionSetCoord`.
 
 ---
@@ -1705,14 +1719,16 @@ Returns the cross product with another direction.
 public func crossed(with other: GeomDirection) -> GeomDirection?
 ```
 
-- **Returns:** A new `GeomDirection` perpendicular to both, or `nil` if the vectors are parallel (cross product is zero).
+- **Returns:** A new `GeomDirection` perpendicular to both, or `nil` if the vectors are parallel (cross product is zero). Before #2331 a parallel pair returned a non-`nil` direction whose coordinates were all `NaN`: `Geom_Direction::Cross`'s zero-norm check is compiled out of the shipped kernel just as its constructor's is, so the bridge now takes the `gp_Dir` cross product, whose identical check is inline and therefore kept.
 - **OCCT:** `Geom_Direction::Cross` via `OCCTGeomDirectionCrossed`.
 - **Example:**
   ```swift
-  let x = GeomDirection(x: 1, y: 0, z: 0)
-  let y = GeomDirection(x: 0, y: 1, z: 0)
-  if let z = x.crossed(with: y) {
-      print(z.coordinates)  // SIMD3(0, 0, 1)
+  if let x = GeomDirection(x: 1, y: 0, z: 0),
+      let y = GeomDirection(x: 0, y: 1, z: 0) {
+      if let z = x.crossed(with: y) {
+          print(z.coordinates)  // SIMD3(0, 0, 1)
+      }
+      print(x.crossed(with: x) == nil)  // true, parallel
   }
   ```
 

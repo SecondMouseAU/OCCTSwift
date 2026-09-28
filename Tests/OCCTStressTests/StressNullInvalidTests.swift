@@ -293,9 +293,14 @@ struct StressInvalidParameterTests {
         _ = m
     }
 
+    // #2331: unlike gp_Dir, Geom_Direction does not throw on the zero vector, because its
+    // zero-length check is out-of-line and so compiled out of the Release kernel under
+    // No_Exception. It returned NaN coordinates, and the bridge's (0, 0, 1) fallback in the catch
+    // was unreachable. The initialiser refuses instead. The value assertions live in
+    // Issue2331GeomDirectionZeroVectorTests (OCCTMathTests); this one holds the stress-suite's
+    // own claim, that the call does not crash and does not fabricate a direction.
     @Test func geomDirectionZeroVector() {
-        let d = GeomDirection(x: 0, y: 0, z: 0)
-        _ = d
+        #expect(GeomDirection(x: 0, y: 0, z: 0) == nil)
     }
 }
 

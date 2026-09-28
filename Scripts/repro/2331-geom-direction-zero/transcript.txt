@@ -1,0 +1,16 @@
+gp::Resolution() = 2.22507e-308
+
+Geom_Direction(0, 0, 0)                        no exception, coords=(nan, nan, nan)
+gp_Dir(0, 0, 0)                                Standard_Failure: gp_Dir() - input vector has zero norm
+Geom_Direction(1,0,0)->SetCoord(0, 0, 0)       no exception, coords=(nan, nan, nan)
+Geom_Direction(1e-200, 0, 0) sub-Resolution    no exception, coords=(nan, nan, nan)
+Geom_Direction(inf, 0, 0)                      no exception, coords=(nan, nan, nan)
+Geom_Direction(nan, 0, 0)                      no exception, coords=(nan, nan, nan)
+Geom_Direction(1,0,0)->Crossed(parallel)       no exception, non-null, vec=(nan, nan, nan)
+
+OCCT's StepToGeom::MakeDirection guard, applied to the same inputs:
+  (0, 0, 0) -> null handle
+  (1e-200, 0, 0) -> null handle
+  (0, 0, 1) -> constructed
+  (inf, 0, 0) -> null handle
+  (nan, 0, 0) -> null handle
