@@ -384,7 +384,20 @@ the reproducer). What a bridge author needs without opening it:
   upstream fix should take. Two adjacent faults were measured and are separately filed: the same
   shape kills `BRepCheck_Analyzer` when the face carries a wire (#2789, fourteen guard sites left),
   and `ShapeCustom::SweptToElementary` / `ConvertToRevolution` / `ConvertToBSpline` fault at three
-  other unlocated lines (#2790).
+  other lines, now located and guarded (#2790, below).
+- **Three more `ShapeCustom` converters fault on the same face, at their own lines, and they take the
+  same wider predicate.** `BRepTools_Modifier::FillNewSurfaceInfo` calls `NewSurface` on every face
+  with no test of anything, so the answer per operation is whether its own `BRepTools_Modification`
+  subclass tests the handle it just fetched. Three do not:
+  `ShapeCustom_SweptToElementary.cxx:59`, `ShapeCustom_ConvertToRevolution.cxx:54` and
+  `ShapeCustom_ConvertToBSpline.cxx:104` (#2790). Guarded by `occtShapeHasSurfacelessFace` at six
+  sites, four in `OCCTBridge_Healing_Fix.mm` and two in `OCCTBridge_Healing_Upgrade.mm` that drive
+  `BRepTools_Modifier` directly and so are invisible to a search for `ShapeCustom::` calls. **Two
+  subclasses do hold the test**, `ShapeCustom_BSplineRestriction.cxx:430` and
+  `BRepTools_TrsfModification.cxx:73`, which is why `ScaleShape` and `BSplineRestriction` are safe and
+  must not acquire a guard, and is the shape the upstream fix should take. Unlike #2773 there is no
+  signal disposition under which the kernel survives: `ShapeCustom::ApplyModifier` has no live
+  `OCC_CATCH_SIGNALS` above the fault.
 - `GeomAbs_G2` is never a valid order for `BRepFill_Filling`: curvature continuity is
   `GeomAbs_C1` (ordinal 2), whatever `BRepOffsetAPI_MakeFilling.hxx` says. Test any filling change
   on both a planar and a periodic support surface, since #430 was catchable on one and an

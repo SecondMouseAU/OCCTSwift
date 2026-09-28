@@ -1137,6 +1137,15 @@ OCCTShapeRef _Nullable OCCTShapeCustomDirectModification(OCCTShapeRef shape)
 {
   if (!shape)
     return nullptr;
+  // #2777's fault, reached a way #2777's own derived population missed: this function constructs
+  // ShapeCustom_DirectModification and drives BRepTools_Modifier itself rather than calling
+  // ShapeCustom::DirectFaces, and that derivation went looking for the free function. The faulting
+  // line is the same, ShapeCustom_DirectModification.cxx:55, and it is reached from
+  // BRepTools_Modifier::FillNewSurfaceInfo either way. Measured to exit 139 on all four fixtures
+  // with the modifier driven directly, in Scripts/repro/2790-shapecustom-surfaceless-face/. See
+  // occtShapeHasSurfacelessFace.
+  if (occtShapeHasSurfacelessFace(shape->shape))
+    return nullptr;
   try
   {
     Handle(ShapeCustom_DirectModification) mod = new ShapeCustom_DirectModification();
@@ -1430,8 +1439,16 @@ OCCTShapeRef _Nullable OCCTShapeConvertToBSplineAdvanced(OCCTShapeRef _Nonnull s
 {
   try
   {
-    auto&                                shape = reinterpret_cast<OCCTShape*>(shapeRef)->shape;
-    Handle(ShapeCustom_ConvertToBSpline) mod   = new ShapeCustom_ConvertToBSpline();
+    auto& shape = reinterpret_cast<OCCTShape*>(shapeRef)->shape;
+    // #2790: the third spelling of "convert surfaces to BSpline" in the bridge, and the one the
+    // issue's derivation missed, because it constructs ShapeCustom_ConvertToBSpline and drives
+    // BRepTools_Modifier here instead of calling ShapeCustom::ConvertToBSpline. The faulting line
+    // is the same either way, ShapeCustom_ConvertToBSpline.cxx:104, since BRepTools_Modifier::
+    // FillNewSurfaceInfo is the frame that calls NewSurface on every face. nullptr is what this
+    // function already answers for a modifier that did not finish. See occtShapeHasSurfacelessFace.
+    if (occtShapeHasSurfacelessFace(shape))
+      return nullptr;
+    Handle(ShapeCustom_ConvertToBSpline) mod = new ShapeCustom_ConvertToBSpline();
     mod->SetExtrusionMode(extrusionMode);
     mod->SetRevolutionMode(revolutionMode);
     mod->SetOffsetMode(offsetMode);
