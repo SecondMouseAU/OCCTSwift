@@ -2678,22 +2678,34 @@ Result of face-face distance extrema computation.
 ```swift
 public struct FaceFaceExtrema: Sendable {
     public let distance: Double
-    public let face1UV: SIMD2<Double>
-    public let face2UV: SIMD2<Double>
-    public let pointOnFace1: SIMD3<Double>
-    public let pointOnFace2: SIMD3<Double>
+    public let isParallel: Bool
+    public let face1UV: SIMD2<Double>?
+    public let face2UV: SIMD2<Double>?
+    public let pointOnFace1: SIMD3<Double>?
+    public let pointOnFace2: SIMD3<Double>?
     public let solutionCount: Int
 }
 ```
 
 | Field | Meaning |
 |---|---|
-| `distance` | The extremum distance between the two faces. |
-| `face1UV` | Parametric (u, v) location on the first face where the extremum point lies. |
-| `face2UV` | Parametric (u, v) location on the second face where the extremum point lies. |
-| `pointOnFace1` | 3D point on the first face at the extremum. |
-| `pointOnFace2` | 3D point on the second face at the extremum. |
-| `solutionCount` | Number of extrema solutions `BRepExtrema_ExtFF` found; this struct describes one of them. |
+| `distance` | The extremum distance between the two faces, or between their surfaces when `isParallel`. |
+| `isParallel` | `Extrema_ExtSS` found an equidistant family rather than isolated extrema, so no one extremum witnesses the distance. |
+| `face1UV` | Parametric (u, v) location on the first face where the extremum point lies; `nil` when `isParallel`. |
+| `face2UV` | Parametric (u, v) location on the second face where the extremum point lies; `nil` when `isParallel`. |
+| `pointOnFace1` | 3D point on the first face at the extremum; `nil` when `isParallel`. |
+| `pointOnFace2` | 3D point on the second face at the extremum; `nil` when `isParallel`. |
+| `solutionCount` | Number of extrema solutions `BRepExtrema_ExtFF` found; this struct describes one of them. `1` when `isParallel`, standing for the family. |
+
+**The four witness fields are `nil` together, and only on the parallel branch.**
+`BRepExtrema_ExtFF::Perform` appends a square distance and no points at all when the surfaces are
+parallel (`BRepExtrema_ExtFF.cxx:83-86`), so `NbExt()` is 1 while `ParameterOnFace1(1, ...)` throws
+`Standard_OutOfRange`. Until #2249 the bridge let its function-level `catch (...)` return the
+half-written struct, so `distance` was real and the four witness fields arrived as zeros that read as
+measurements. OCCT's own callers split the same way: `BRepExtrema_DistanceSS.cxx:1209` counts a
+parallel result as having no extrema, while DRAW's offset dimension
+(`ViewerTest_RelationCommands.cxx:1298-1307`) accepts only the parallel case and reads its square
+distance. Both facts are now reported.
 
 *(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
 
@@ -2714,7 +2726,21 @@ public func faceFaceExtrema(faceIndex1: Int, other: Shape, faceIndex2: Int) -> F
   - `other`: Shape containing the second face.
   - `faceIndex2`: 0-based index of the second face in `other`.
 - **Returns:** Extrema result, or `nil` on failure.
+- **Warning:** on the parallel branch the distance is between the two underlying **surfaces**, with
+  no classification against either face's trimmed region, because `BRepExtrema_ExtFF` takes that
+  branch before it reaches `BRepClass_FaceClassifier`. Two 5-cubes whose gap is 7.5 report 2.5 for a
+  pair of y caps that do not overlap in x at all. Use `minDistance(to:)` for a trimmed-region answer.
 - **OCCT:** `BRepExtrema_ExtFF` (via `OCCTBRepExtremaExtFF`).
+- **Example:**
+  ```swift
+  let box1 = Shape.box(width: 5, height: 5, depth: 5)!
+  let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 5, height: 5, depth: 5)!
+  if let e = box1.faceFaceExtrema(faceIndex1: 1, other: box2, faceIndex2: 0) {
+      e.distance        // 7.5, the offset between the facing x caps
+      e.isParallel      // true
+      e.pointOnFace1    // nil, the kernel computed no witness point
+  }
+  ```
 
 ---
 

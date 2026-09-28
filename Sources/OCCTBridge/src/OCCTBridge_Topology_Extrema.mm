@@ -788,20 +788,40 @@ OCCTFaceFaceExtremaResult OCCTBRepExtremaExtFF(OCCTShapeRef shape1,
     if (!extFF.IsDone())
       return result;
 
+    // #2249: on the parallel branch BRepExtrema_ExtFF::Perform appends one square distance and
+    // leaves myPointsOnS1/S2 empty (BRepExtrema_ExtFF.cxx:83-86), so NbExt() is 1 while
+    // ParameterOnFace1(1, ...) throws Standard_OutOfRange out of NCollection_Sequence::Value. The
+    // function-level catch below then returned the half-written struct, and distance was real
+    // while the witness points and UVs read as measured zeros.
+    //
+    // OCCT's own two callers agree on what to do, from opposite ends. BRepExtrema_DistanceSS, the
+    // production distance algorithm behind BRepExtrema_DistShapeShape, counts the parallel case as
+    // having no usable extrema and never touches a point:
+    //   BRepExtrema_DistanceSS.cxx:1209
+    //   const int NbExtrema = Ext.IsDone() ? (Ext.IsParallel() ? 0 : Ext.NbExt()) : 0;
+    // while ViewerTest_RelationCommands.cxx:1298-1307 (DRAW's `vrelation` offset dimension) accepts
+    // ONLY the parallel case and reads sqrt(SquareDistance(1)) from it, which is what the plane
+    // offset is. So the square distance is a real measurement on that branch and the points do not
+    // exist: report both facts instead of picking one.
+    result.isParallel    = extFF.IsParallel();
     result.solutionCount = extFF.NbExt();
     if (result.solutionCount >= 1)
     {
       result.distance = sqrt(extFF.SquareDistance(1));
-      extFF.ParameterOnFace1(1, result.u1, result.v1);
-      extFF.ParameterOnFace2(1, result.u2, result.v2);
-      gp_Pnt p1   = extFF.PointOnFace1(1);
-      gp_Pnt p2   = extFF.PointOnFace2(1);
-      result.pt1x = p1.X();
-      result.pt1y = p1.Y();
-      result.pt1z = p1.Z();
-      result.pt2x = p2.X();
-      result.pt2y = p2.Y();
-      result.pt2z = p2.Z();
+      if (!result.isParallel)
+      {
+        extFF.ParameterOnFace1(1, result.u1, result.v1);
+        extFF.ParameterOnFace2(1, result.u2, result.v2);
+        gp_Pnt p1               = extFF.PointOnFace1(1);
+        gp_Pnt p2               = extFF.PointOnFace2(1);
+        result.pt1x             = p1.X();
+        result.pt1y             = p1.Y();
+        result.pt1z             = p1.Z();
+        result.pt2x             = p2.X();
+        result.pt2y             = p2.Y();
+        result.pt2z             = p2.Z();
+        result.hasWitnessPoints = true;
+      }
     }
     return result;
   }

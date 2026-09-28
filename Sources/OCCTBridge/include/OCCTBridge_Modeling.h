@@ -2480,7 +2480,11 @@ typedef struct
   double  param1Last;  // Last parameter on edge 1 (same as first for vertex)
   double  param2First; // First parameter on edge 2
   double  param2Last;  // Last parameter on edge 2 (same as first for vertex)
-  double  pointX, pointY, pointZ; // Bounding point (for vertex intersections)
+  // A point on the intersection, IntTools_CommonPrt::Edge1() evaluated at the representative
+  // parameter of [param1First, param1Last]. hasPoint is false, and the three are left at zero,
+  // only when the part carries no first edge or that parameter falls outside its curve (#2251).
+  double pointX, pointY, pointZ;
+  bool   hasPoint;
 } OCCTCommonPart;
 
 /// Intersect two edges. Returns array of common parts.

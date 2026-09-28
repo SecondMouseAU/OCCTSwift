@@ -1372,6 +1372,12 @@ public var surfaceInertia: FaceSurfaceInertia { get }
   print("area:", inertia.area)
   ```
 
+Both overloads integrate over the face's own `BRepGProp_Domain`, so the wires trim the result: one
+20 x 20 face of a plate with a radius-3 hole measures 371.7256661176920, not the untrimmed patch's
+400, and agrees with `Face.area(tolerance:)` to double-precision noise. Until #2204 neither overload
+built that domain, and this one integrated the untrimmed patch while the adaptive one below
+integrated nothing at all.
+
 ---
 
 ### `Face.surfaceInertia(epsilon:)`
@@ -1386,6 +1392,13 @@ public func surfaceInertia(epsilon: Double) -> FaceSurfaceInertia
 - **Returns:** `FaceSurfaceInertia` with `area`, an optional centre of mass, and the actual
   `epsilon` achieved.
 - **OCCT:** `BRepGProp_Sinert` adaptive overload via `OCCTBRepGPropSinertAdaptive`.
+- **Example:**
+  ```swift
+  let face = Shape.sphere(radius: 10)!.faces()[0]
+  let inertia = face.surfaceInertia(epsilon: 1e-6)
+  inertia.area      // 1256.6370614359173, which is 4 * pi * 10 * 10
+  inertia.epsilon   // the error the integration actually reached, here about 4e-16
+  ```
 
 ---
 

@@ -1051,24 +1051,55 @@ extension Shape {
     // MARK: - BRepExtrema_ExtFF (Face-Face Extrema)
 
     /// Result of face-face distance extrema computation.
+    ///
+    /// The four witness fields are `nil` together, and only when ``isParallel`` is `true`. See
+    /// ``Shape/faceFaceExtrema(faceIndex1:other:faceIndex2:)`` for why.
     public struct FaceFaceExtrema: Sendable {
-        /// Minimum distance between faces.
+        /// Minimum distance between faces, or between their surfaces when ``isParallel``.
         public let distance: Double
-        /// UV parameters on face 1.
-        public let face1UV: SIMD2<Double>
-        /// UV parameters on face 2.
-        public let face2UV: SIMD2<Double>
-        /// Closest point on face 1.
-        public let pointOnFace1: SIMD3<Double>
-        /// Closest point on face 2.
-        public let pointOnFace2: SIMD3<Double>
-        /// Number of extrema solutions.
+        /// `true` when `Extrema_ExtSS` found an equidistant family rather than isolated extrema.
+        ///
+        /// The extremum is then not unique, so there is no witness point to report.
+        public let isParallel: Bool
+        /// UV parameters on face 1, `nil` when ``isParallel``.
+        public let face1UV: SIMD2<Double>?
+        /// UV parameters on face 2, `nil` when ``isParallel``.
+        public let face2UV: SIMD2<Double>?
+        /// Closest point on face 1, `nil` when ``isParallel``.
+        public let pointOnFace1: SIMD3<Double>?
+        /// Closest point on face 2, `nil` when ``isParallel``.
+        public let pointOnFace2: SIMD3<Double>?
+        /// Number of extrema solutions `BRepExtrema_ExtFF` reported.
+        ///
+        /// `1` when ``isParallel``, standing for the whole family rather than for one solution.
         public let solutionCount: Int
     }
 
     /// Compute distance extrema between two faces.
     ///
-    /// Uses BRepExtrema_ExtFF for face-face distance computation.
+    /// Uses `BRepExtrema_ExtFF`, which takes two separate routes.
+    ///
+    /// For faces at an angle it classifies each extremum against both faces and reports the
+    /// surviving ones with their points and UV parameters. For **parallel** faces the extremal
+    /// distance is attained along an equidistant family, so it appends the one square distance and
+    /// no points at all: ``FaceFaceExtrema/isParallel`` is `true`, ``FaceFaceExtrema/distance``
+    /// holds the plane offset, and the four witness fields are `nil` rather than zero (#2249).
+    ///
+    /// - Warning: on the parallel route the distance is between the two underlying **surfaces**,
+    ///   with no classification against either face's trimmed region, because that is the branch
+    ///   OCCT takes before it runs `BRepClass_FaceClassifier`. Two 5-cubes 10 apart in x report
+    ///   2.5 for their two y caps, which do not overlap in x at all. For a trimmed-region answer
+    ///   use ``minDistance(to:)``, which goes through `BRepExtrema_DistShapeShape`.
+    ///
+    /// ```swift
+    /// let box1 = Shape.box(width: 5, height: 5, depth: 5)!
+    /// let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 5, height: 5, depth: 5)!
+    /// if let e = box1.faceFaceExtrema(faceIndex1: 1, other: box2, faceIndex2: 0) {
+    ///     e.distance          // 7.5, the gap between the facing x caps
+    ///     e.isParallel        // true
+    ///     e.pointOnFace1      // nil, the kernel computed no witness point
+    /// }
+    /// ```
     ///
     /// - Parameters:
     ///   - faceIndex1: Index of first face in this shape (0-based)
@@ -1080,12 +1111,14 @@ extension Shape {
         let result = OCCTBRepExtremaExtFF(
             handle, Int32(faceIndex1), other.handle, Int32(faceIndex2))
         guard result.solutionCount > 0 else { return nil }
+        let witnessed = result.hasWitnessPoints
         return FaceFaceExtrema(
             distance: result.distance,
-            face1UV: SIMD2(result.u1, result.v1),
-            face2UV: SIMD2(result.u2, result.v2),
-            pointOnFace1: SIMD3(result.pt1x, result.pt1y, result.pt1z),
-            pointOnFace2: SIMD3(result.pt2x, result.pt2y, result.pt2z),
+            isParallel: result.isParallel,
+            face1UV: witnessed ? SIMD2(result.u1, result.v1) : nil,
+            face2UV: witnessed ? SIMD2(result.u2, result.v2) : nil,
+            pointOnFace1: witnessed ? SIMD3(result.pt1x, result.pt1y, result.pt1z) : nil,
+            pointOnFace2: witnessed ? SIMD3(result.pt2x, result.pt2y, result.pt2z) : nil,
             solutionCount: Int(result.solutionCount)
         )
     }
@@ -1670,13 +1703,30 @@ extension Shape {
         ///   `SetVertexParameter2`, so `IntTools_CommonPrt` hands back an empty `Ranges2()` and
         ///   the `0.0` its own constructor set (#1399). Read ``param1Range`` and ``point``.
         public let param2Range: (first: Double, last: Double)
-        /// Representative 3D point of the intersection.
-        public let point: SIMD3<Double>
+        /// A point on the intersection, at the representative parameter of ``param1Range``.
+        ///
+        /// For a `vertex` part that is the intersection point itself. For an `edge` part it is an
+        /// interior point of the overlap, `IntTools_Tools::IntermediatePoint` of the range, so it
+        /// lies on the edge rather than on the chord between the overlap's two ends.
+        ///
+        /// `nil` when the kernel handed back a part with no first edge, which no current entry
+        /// point produces; it is never a zero standing in for an uncomputed point (#2251).
+        public let point: SIMD3<Double>?
     }
 
     /// Intersect two edges to find common vertices and edge overlaps.
     ///
     /// Uses IntTools_EdgeEdge to compute precise intersections.
+    ///
+    /// ```swift
+    /// let a = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(2, 0, 0))!
+    /// let b = Shape.edgeFromPoints(SIMD3(1, 0, 0), SIMD3(3, 0, 0))!
+    /// if let parts = a.edgeEdgeIntersection(with: b), let p = parts.first {
+    ///     p.type         // .edge, the two are collinear and overlap
+    ///     p.param1Range  // (1, 2) on a
+    ///     p.point        // a point inside the overlap, on a
+    /// }
+    /// ```
     ///
     /// - Parameter other: Edge to intersect with
     /// - Returns: Array of common parts, or nil if intersection failed
@@ -1691,7 +1741,7 @@ extension Shape {
                 type: CommonPartType(rawValue: p.type) ?? .vertex,
                 param1Range: (p.param1First, p.param1Last),
                 param2Range: (p.param2First, p.param2Last),
-                point: SIMD3(p.pointX, p.pointY, p.pointZ)
+                point: p.hasPoint ? SIMD3(p.pointX, p.pointY, p.pointZ) : nil
             )
         }
     }
@@ -1700,18 +1750,23 @@ extension Shape {
     ///
     /// Uses `IntTools_EdgeFace` to compute edge-face intersections.
     ///
-    /// - Warning: this returns an **empty array for every input** on the current bridge, including
-    ///   an edge that genuinely crosses the face. `OCCTIntToolsEdgeFace` never calls
-    ///   `IntTools_EdgeFace::SetRange`, and `IntTools_Range`'s default is `(0, 0)`, so the whole
-    ///   computation searches a degenerate window on the edge. Measured in
-    ///   `Scripts/repro/1399-refman-coverage-unlaned/probe-transcript.txt` and tracked as
-    ///   [#1631](https://github.com/SecondMouseAU/OCCTSwift/issues/1631). `IsDone()` is `true`
-    ///   either way, so `nil` is not the signal.
+    /// - Warning: an `edge` part is **not clipped to the face**. An edge lying in the face's plane
+    ///   but running past its boundary comes back as one `edge` part covering the whole edge: the
+    ///   edge from `(5, 5, -1)` to `(5, 5, 11)` against the x = 5 face of a box spanning z in
+    ///   [-5, 5] reports ``CommonPart/param1Range`` `(0, 12)`. That is `IntTools_EdgeFace`'s own
+    ///   behaviour, recorded in #2251, not a bridge defect. ``param2Range`` is always `(0, 0)`
+    ///   here, as its own note explains.
     ///
     /// ```swift
-    /// if let parts = edge.edgeFaceIntersection(with: face) {
-    ///     for p in parts { print(p.type, p.param1Range, p.point) }  // param2Range is (0, 0)
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let edge = Shape.edgeFromPoints(SIMD3(0, 0, -10), SIMD3(0, 0, 10))!
+    /// var hits: [SIMD3<Double>] = []
+    /// for face in box.subShapes(ofType: .face) {
+    ///     for part in edge.edgeFaceIntersection(with: face) ?? [] {
+    ///         if let p = part.point { hits.append(p) }
+    ///     }
     /// }
+    /// hits.count   // 2, the z = -5 and z = 5 caps the edge runs through
     /// ```
     ///
     /// - Parameter face: Face to intersect with
@@ -1727,7 +1782,7 @@ extension Shape {
                 type: CommonPartType(rawValue: p.type) ?? .vertex,
                 param1Range: (p.param1First, p.param1Last),
                 param2Range: (p.param2First, p.param2Last),
-                point: SIMD3(p.pointX, p.pointY, p.pointZ)
+                point: p.hasPoint ? SIMD3(p.pointX, p.pointY, p.pointZ) : nil
             )
         }
     }
