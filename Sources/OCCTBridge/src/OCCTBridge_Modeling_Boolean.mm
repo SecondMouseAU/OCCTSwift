@@ -146,6 +146,7 @@
 #include <IntTools_SequenceOfCommonPrts.hxx>
 #include <IntTools_SequenceOfCurves.hxx>
 #include <IntTools_SequenceOfPntOn2Faces.hxx>
+#include <Precision.hxx>
 #include <BRepOffset_Offset.hxx>
 #include <BRepOffset_SimpleOffset.hxx>
 #include <BRepTools_Modifier.hxx>
@@ -759,13 +760,49 @@ static void fillCommonPart(const IntTools_CommonPrt& cp, OCCTCommonPart& out)
     out.param2First = cp.VertexParameter2();
     out.param2Last  = cp.VertexParameter2();
   }
-  // Bounding points
-  gp_Pnt bp1, bp2;
-  cp.BoundingPoints(bp1, bp2);
-  // Use midpoint as representative point
-  out.pointX = (bp1.X() + bp2.X()) / 2.0;
-  out.pointY = (bp1.Y() + bp2.Y()) / 2.0;
-  out.pointZ = (bp1.Z() + bp2.Z()) / 2.0;
+
+  // #2251: this used to average IntTools_CommonPrt::BoundingPoints, which are the (0, 0, 0) its own
+  // constructor set (IntTools_CommonPrt.cxx:31-32) unless something calls SetBoundingPoints. There
+  // is exactly one such call in all of OCCT, IntTools_EdgeFace.cxx:605, and nothing in OCCT reads
+  // them back, so every part IntTools_EdgeEdge produces reported the origin whatever the overlap:
+  // two collinear edges overlapping x in [1, 2] gave (0, 0, 0).
+  //
+  // What OCCT does use is the part's own range on its own edge. IntTools_EdgeFace.cxx:585 takes
+  // IntTools_Tools::IntermediatePoint(range) as a range's representative parameter and evaluates
+  // the curve there, and :601-605 fills those bounding points from myC.D0 at the range ends. Both
+  // Edge1() and Range1() are set on every part either class appends (IntTools_EdgeEdge.cxx:791,
+  // 798 and 953, IntTools_EdgeFace.cxx:509), the swapped case included, where Edge1() is the second
+  // input and Range1() is its range, so the pair is self-consistent whichever edge it names.
+  //
+  // The parameter used is the representative parameter of the range THIS struct reports, so point
+  // and param1Range cannot disagree: for a vertex part both ends are VertexParameter1 and the point
+  // sits on it, for an edge part it is OCCT's own interior parameter of Range1.
+  out.hasPoint          = false;
+  out.pointX            = 0.0;
+  out.pointY            = 0.0;
+  out.pointZ            = 0.0;
+  const TopoDS_Edge& e1 = cp.Edge1();
+  if (e1.IsNull())
+    return;
+  try
+  {
+    BRepAdaptor_Curve curve(e1);
+    const double      t = IntTools_Tools::IntermediatePoint(out.param1First, out.param1Last);
+    // A parameter outside the curve is not evaluated: Value() would extrapolate, and an
+    // extrapolated point reads as a measurement of an intersection that is not there.
+    if (t < curve.FirstParameter() - Precision::PConfusion()
+        || t > curve.LastParameter() + Precision::PConfusion())
+      return;
+    gp_Pnt p     = curve.Value(t);
+    out.pointX   = p.X();
+    out.pointY   = p.Y();
+    out.pointZ   = p.Z();
+    out.hasPoint = true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+  }
 }
 
 // MARK: - BRepFill_OffsetAncestors (v0.79)

@@ -1460,7 +1460,7 @@ public struct CommonPart: Sendable {
     public let type: CommonPartType
     public let param1Range: (first: Double, last: Double)
     public let param2Range: (first: Double, last: Double)
-    public let point: SIMD3<Double>
+    public let point: SIMD3<Double>?
 }
 ```
 
@@ -1469,7 +1469,18 @@ public struct CommonPart: Sendable {
 | `type` | `.vertex` or `.edge`: the kind of intersection found. |
 | `param1Range` | Parameter range `(first, last)` on the first edge; equal endpoints for a vertex intersection. |
 | `param2Range` | Parameter range `(first, last)` on the second edge; equal endpoints for a vertex intersection. **Only `edgeEdgeIntersection(with:)` has a second edge**, see below. |
-| `point` | Representative 3D point of the intersection. |
+| `point` | A point on the intersection, the first edge's curve evaluated at the representative parameter of `param1Range`. `nil` only if the part carries no first edge, which no current entry point produces. |
+
+**`point` used to be `(0, 0, 0)` from `edgeEdgeIntersection(with:)` and the chord midpoint from
+`edgeFaceIntersection(with:)`** (#2251). It was the midpoint of `IntTools_CommonPrt::BoundingPoints`,
+and `IntTools_EdgeFace.cxx:605` is the only line in all of OCCT that sets those, so every part
+`IntTools_EdgeEdge` produces carried the `(0, 0, 0)` of `IntTools_CommonPrt`'s own constructor,
+whatever the overlap. Nothing in OCCT reads `BoundingPoints` back. What OCCT does use is
+`IntTools_Tools::IntermediatePoint` of the part's range, evaluated on the part's own edge
+(`IntTools_EdgeFace.cxx:585`), which is what the bridge now reports: for a vertex part that is the
+intersection point, for an edge part an interior point of the overlap that lies on the edge rather
+than on the chord across it. A semicircular overlap of radius 10 used to report the circle's centre,
+a point 10 away from every point of the intersection.
 
 **`param2Range` is always `(0, 0)` from `edgeFaceIntersection(with:)`.** A face is not an edge, and
 `IntTools_EdgeFace` reflects that: `IntTools_EdgeFace.cxx` never calls `AppendRange2` or
@@ -1499,8 +1510,12 @@ public func edgeEdgeIntersection(with other: Shape) -> [CommonPart]?
 - **OCCT:** `IntTools_EdgeEdge`
 - **Example:**
   ```swift
-  if let parts = e1.edgeEdgeIntersection(with: e2) {
-      for p in parts { print(p.type, p.point) }
+  let a = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(2, 0, 0))!
+  let b = Shape.edgeFromPoints(SIMD3(1, 0, 0), SIMD3(3, 0, 0))!
+  if let parts = a.edgeEdgeIntersection(with: b), let p = parts.first {
+      p.type         // .edge, the two are collinear and overlap
+      p.param1Range  // (1, 2) on a
+      p.point        // a point inside the overlap, on a
   }
   ```
 
@@ -1516,17 +1531,32 @@ public func edgeFaceIntersection(with face: Shape) -> [CommonPart]?
 
 - **Parameters:** `face`, face to intersect with.
 - **Returns:** Array of common parts, or `nil` on failure.
-- **Warning:** this currently returns an **empty array for every input**, including an edge that
-  genuinely crosses the face. `OCCTIntToolsEdgeFace` never calls `IntTools_EdgeFace::SetRange`, and
-  `IntTools_Range`'s default is `(0, 0)`, so the search window is degenerate.
-  [#1631](https://github.com/SecondMouseAU/OCCTSwift/issues/1631) has the measurement and the fix.
+- **Warning:** an edge-type part is **not clipped to the face**. An edge lying in the face's plane but
+  running past its boundary comes back as one part covering the whole edge: from (5, 5, -1) to
+  (5, 5, 11) against the x = 5 face of a box spanning z in [-5, 5], `param1Range` is `(0, 12)` rather
+  than the `(1, 11)` the face would clip it to. That is `IntTools_EdgeFace`'s own behaviour, recorded
+  in #2251, not a bridge defect.
 - **Note:** `CommonPart.param2Range` is `(0, 0)` on this path whatever the result, see the
   `CommonPart` entry above.
 - **OCCT:** `IntTools_EdgeFace`
 - **Example:**
   ```swift
-  if let parts = edge.edgeFaceIntersection(with: face) { }
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  let edge = Shape.edgeFromPoints(SIMD3(0, 0, -10), SIMD3(0, 0, 10))!
+  var hits: [SIMD3<Double>] = []
+  for face in box.subShapes(ofType: .face) {
+      for part in edge.edgeFaceIntersection(with: face) ?? [] {
+          if let p = part.point { hits.append(p) }
+      }
+  }
+  hits.count   // 2, the z = -5 and z = 5 caps the edge runs through
   ```
+
+`OCCTIntToolsEdgeFace` used to find nothing at all, for every input, because it never called
+`IntTools_EdgeFace::SetRange` and `IntTools_Range`'s default is `(0, 0)` ([#1631]
+(https://github.com/SecondMouseAU/OCCTSwift/issues/1631)). It calls it now, from
+`BRep_Tool::Range(edge, first, last)`, and `IntToolsEdgeFaceTests.onlyCrossedFacesIntersect` pins the
+two crossings the example above finds.
 
 ---
 

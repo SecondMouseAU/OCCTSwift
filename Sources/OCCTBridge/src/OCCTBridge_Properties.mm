@@ -33,6 +33,7 @@
 #include <BRepExtrema_OverlapTool.hxx>
 #include <BRepExtrema_ShapeProximity.hxx>
 #include <BRepGProp.hxx>
+#include <BRepGProp_Domain.hxx>
 #include <BRepGProp_Face.hxx>
 #include <BRepGProp_MeshCinert.hxx>
 #include <BRepGProp_MeshProps.hxx>
@@ -1732,6 +1733,35 @@ OCCTCurveInertiaResult OCCTBRepGPropCinert(OCCTEdgeRef _Nonnull edge)
 
 // --- BRepGProp_Sinert ---
 
+// #2204: a BRepGProp_Sinert integral needs the face's own BRepGProp_Domain, and neither Sinert
+// overload builds one for you. Perform(face, eps) builds an EMPTY one
+// (BRepGProp_Sinert.cxx:96-100), so the adaptive path integrated nothing and every face answered
+// area 0; Perform(face) takes the no-domain Gauss overload, which integrates the surface over its
+// natural UV bounds and so over-reports any face the wires trim. Measured on one 20x20 plate face
+// with a radius-3 hole: 400 from Perform(face), 371.7256661176920 from OCCTFaceGetArea (which goes
+// through BRepGProp::SurfaceProperties) for the same face, the difference being the hole.
+//
+// BRepGProp::surfaceProperties (BRepGProp.cxx:225-241) is the production caller behind every
+// BRepGProp::SurfaceProperties entry point, STEP/IGES import measurement included, and it loads
+// the domain from the face whenever the face has wires:
+//
+//   BF.Load(F);
+//   bool IsNatRestr = (F.NbChildren() == 0);
+//   if (!IsNatRestr) { BD.Init(F); }
+//   if (Eps < 1.0) { G.Perform(BF, BD, Eps); Error = G.GetEpsilon(); }
+//   else           { if (IsNatRestr) G.Perform(BF); else G.Perform(BF, BD); }
+//
+// The adaptive branch passes BD unconditionally because BRepGProp_Gauss re-derives the same
+// NbChildren() == 0 test from the face itself (BRepGProp_Gauss.cxx:585-588) and ignores the domain
+// for a naturally restricted one. occtLoadFaceDomain is that rule, once.
+static bool occtLoadFaceDomain(const TopoDS_Face& face, BRepGProp_Domain& domain)
+{
+  if (face.NbChildren() == 0)
+    return false; // naturally restricted: the surface's own bounds ARE the face
+  domain.Init(face);
+  return true;
+}
+
 OCCTFaceSurfaceInertia OCCTBRepGPropSinert(OCCTFaceRef _Nonnull face)
 {
   OCCTFaceSurfaceInertia result = {};
@@ -1739,10 +1769,15 @@ OCCTFaceSurfaceInertia OCCTBRepGPropSinert(OCCTFaceRef _Nonnull face)
     return result;
   try
   {
-    BRepGProp_Face   gpropFace(TopoDS::Face(face->face));
-    BRepGProp_Sinert sinert;
+    const TopoDS_Face& f = TopoDS::Face(face->face);
+    BRepGProp_Face     gpropFace(f);
+    BRepGProp_Domain   domain;
+    BRepGProp_Sinert   sinert;
     sinert.SetLocation(gp_Pnt(0, 0, 0));
-    sinert.Perform(gpropFace);
+    if (occtLoadFaceDomain(f, domain))
+      sinert.Perform(gpropFace, domain);
+    else
+      sinert.Perform(gpropFace);
     result.mass    = sinert.Mass();
     gp_Pnt cm      = sinert.CentreOfMass();
     result.centerX = cm.X();
@@ -1763,10 +1798,13 @@ OCCTFaceSurfaceInertia OCCTBRepGPropSinertAdaptive(OCCTFaceRef _Nonnull face, do
     return result;
   try
   {
-    BRepGProp_Face   gpropFace(TopoDS::Face(face->face));
-    BRepGProp_Sinert sinert;
+    const TopoDS_Face& f = TopoDS::Face(face->face);
+    BRepGProp_Face     gpropFace(f);
+    BRepGProp_Domain   domain;
+    BRepGProp_Sinert   sinert;
     sinert.SetLocation(gp_Pnt(0, 0, 0));
-    double err     = sinert.Perform(gpropFace, epsilon);
+    occtLoadFaceDomain(f, domain);
+    double err     = sinert.Perform(gpropFace, domain, epsilon);
     result.mass    = sinert.Mass();
     result.epsilon = err;
     gp_Pnt cm      = sinert.CentreOfMass();

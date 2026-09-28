@@ -767,14 +767,21 @@ OCCTPointFaceExtremaResult OCCTBRepExtremaExtPF(double       px,
 typedef struct
 {
   double  distance;
-  double  u1, v1; // Parameters on face 1
-  double  u2, v2; // Parameters on face 2
+  double  u1, v1; // Parameters on face 1, only when hasWitnessPoints
+  double  u2, v2; // Parameters on face 2, only when hasWitnessPoints
   double  pt1x, pt1y, pt1z;
   double  pt2x, pt2y, pt2z;
   int32_t solutionCount;
+  bool    isParallel;       // Extrema_ExtSS reported an equidistant family, so no unique witness
+  bool    hasWitnessPoints; // u*/v*/pt* were read from the kernel rather than left at zero
 } OCCTFaceFaceExtremaResult;
 
 /// Compute distance extrema between two faces.
+///
+/// For parallel faces `solutionCount` is 1 and `distance` is the distance between the two
+/// underlying surfaces, but `hasWitnessPoints` is false: `BRepExtrema_ExtFF::Perform` appends a
+/// square distance and no points on that branch, so there is nothing to report (#2249).
+///
 /// @param shape1 Shape containing first face
 /// @param faceIndex1 First face index (0-based)
 /// @param shape2 Shape containing second face
