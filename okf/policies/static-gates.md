@@ -20,7 +20,7 @@ human to adjudicate, not a verdict on the tree; CI runs only its `--self-test`, 
 could never fail and so could never signal. A census that earns a better false-positive number is
 promoted by renaming it `check-` and making it exit 1; the decision is separate from the script.
 
-The five censuses today and what each is for:
+The six censuses today and what each is for:
 
 - `census-unmeasured-values.py` (#726): values returned as measurements that were never computed.
   A bare run is the slowest of the five, because sub-kind 4 walks a taint fixpoint per bridge
@@ -56,6 +56,18 @@ The five censuses today and what each is for:
   declared nowhere), abbreviations (`thruSectionsCreate` for `OCCTShapeThruSectionsCreate`) and
   category labels (`boss`), and no mechanical rule separates those from a stale entry: 79 of 2,588
   identifier-shaped entries resolve to nothing, and most of them are correct documentation.
+- `census-dead-file-statics.py` (#1628): `static` definitions in `Sources/OCCTBridge/src/*.mm` that
+  nothing in their own file calls, which is the whole reach a file-static has. It reports rather
+  than gates for a reason that is not a false-positive rate: **a dead file-static is not a defect.**
+  The compiler drops it, and `-Wunused-function` does not fire on these either, since they are
+  `static` non-inline functions the Objective-C++ unit still emits. What it costs is paid by
+  readers, by every later audit that re-reads the same body five to twelve times, and by the drift
+  the copies hide, which is a list to adjudicate rather than a verdict on the tree. Its
+  `--divergence` mode is the sharp half: a name whose dead copies disagree with its live one is a
+  fixed defect preserved verbatim next door, which is what
+  [helper-placement-by-reach](helper-placement-by-reach.md) predicted in writing and what
+  `fillCommonPart` turned out to be. Every rule in it errs towards LIVE, because its consumer is a
+  deletion pass: a false dead costs a build break and a false live costs a line.
 
 Three gates read `Scripts/patches/` and `Scripts/patches-wasi/` rather than `Sources/`, and all
 three for the same reason: `check-patch-deletes-guarded-symbol.py` (#2058), which fails when a
@@ -227,7 +239,7 @@ Two of its design choices are worth carrying to any detector that shells out to 
 
 ## Every detector proves it is not blind
 
-Fourteen of the fifteen gates, all five censuses, the merge-history audit and the release check
+Fourteen of the fifteen gates, all six censuses, the merge-history audit and the release check
 take `--self-test`, a fixture battery proving the *detector* catches each failure mode. Run it
 whenever you change one of these scripts. Three gate scripts were confidently wrong while
 reporting all clear (#618, #624/#630, #626), and a detector reporting "all clear" because it is
@@ -306,7 +318,7 @@ change to the ruleset.
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs thirty-six of `gate-scripts`' thirty-seven invocations, flag for
+`Scripts/git-hooks/pre-commit` runs thirty-seven of `gate-scripts`' thirty-eight invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the

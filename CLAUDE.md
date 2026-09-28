@@ -80,7 +80,7 @@ the pinned version onto a machine with no pip or venv; see
 
 ### Static Gate Scripts
 
-Fifteen gates, five censuses and one merge-history audit, all pure Python over the repo's own text.
+Fifteen gates, six censuses and one merge-history audit, all pure Python over the repo's own text.
 No OCCT, no build, no network, and the whole job reports in under a minute on the runner. The
 measured breakdown, and the recipe for re-deriving it rather than trusting it, are in
 [`okf/policies/static-gates.md`](okf/policies/static-gates.md): this line claimed `~3s for the lot`
@@ -116,6 +116,7 @@ python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attr
 python3 Scripts/census-arguments-tuple-shapes.py # CENSUS, not a gate: @Test(arguments:) elements whose layout trips the toolchain defect (#1057)
 python3 Scripts/census-comment-staleness.py      # CENSUS, not a gate: comments naming a symbol/flag/patch that no longer resolves (#872)
 python3 Scripts/census-api-reference-rows.py     # CENSUS, not a gate: API_REFERENCE category-row entries resolving to no declaration (#1679)
+python3 Scripts/census-dead-file-statics.py      # CENSUS, not a gate: bridge `static` definitions with no use in their own file (#1628)
 python3 Scripts/check-inventory-prose.py        # every counted claim about the patch and gate inventories matches them (#1408)
 python3 Scripts/check-changelog-transcription.py # REPORT, never a gate: merges that landed with no CHANGELOG entry (#742, #2779)
 python3 Scripts/check-pinned-asset-patches.py --self-test  # RELEASE CHECK: only the self-test runs here; the real run reads the pinned asset (#2190)

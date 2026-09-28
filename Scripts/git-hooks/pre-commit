@@ -163,6 +163,10 @@ run "census-comment-staleness.py --self-test" Scripts/census-comment-staleness.p
 # #1679's census. Self-test only, like the four above and for the same reason: a bare run lists
 # docs/API_REFERENCE.md category rows that resolve to no declaration, for a human to adjudicate.
 run "census-api-reference-rows.py --self-test" Scripts/census-api-reference-rows.py --self-test
+# #1628's census. Self-test only, like the five above and for the same reason: a bare run lists
+# `static` definitions in Sources/OCCTBridge/src with no use in their own file, for a human to
+# adjudicate, and a dead file-static is not a defect to fail a commit over.
+run "census-dead-file-statics.py --self-test" Scripts/census-dead-file-statics.py --self-test
 # #2196's release check. Self-test only, and for a different reason than the censuses above: its
 # bare run reads Libraries/OCCT.xcframework and reaches a real verdict, but that verdict belongs to
 # the pin step rather than to every commit, and a fresh clone has no asset to read. Matching CI,

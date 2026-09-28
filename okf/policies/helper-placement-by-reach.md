@@ -75,19 +75,36 @@ that sentence, one with an `IsVoid()` check and one with an `IsNull()` check.
 
 The `.mm` splits under #396 copied every file-scope helper into every file of the domain, so a
 domain's twelve files each got a definition and eleven of them are called by nobody. #1628 measured
-**441 such dead `static` definitions** across the 74 bridge files, and its own prediction is the
-point here:
+**441 such dead `static` definitions** across the 74 bridge files by grep, and its own prediction is
+the point here:
 
 > It hides drift. A fix applied to the live copy leaves eleven stale ones behind that still look
 > authoritative.
 
-That has since happened. `fillCommonPart` is defined in twelve `OCCTBridge_Modeling_*.mm` files and
+That had since happened. `fillCommonPart` was defined in twelve `OCCTBridge_Modeling_*.mm` files and
 called in exactly one, `OCCTBridge_Modeling_Boolean.mm`. #2251 rewrote the live copy, because the
 old body averaged `IntTools_CommonPrt::BoundingPoints`, which nothing in OCCT sets for the parts
 `IntTools_EdgeEdge` produces, so every part reported the origin whatever the overlap. The other
-eleven definitions are byte-identical to each other and still hold the pre-#2251 body. They are
-harmless only because they are dead, and a reader who opens one of them reads a defect that was
+eleven definitions were byte-identical to each other and still held the pre-#2251 body. They were
+harmless only because they were dead, and a reader who opened one of them read a defect that was
 fixed a file away.
+
+**Do not re-derive the population by grep.** `Scripts/census-dead-file-statics.py` is the committed
+measurement, per [static-gates](static-gates.md): 441, 425 and 407 are three figures the same
+sentence of method produced on three days, and the differences are all in the regex rather than in
+the tree. It counts **472** dead definitions where the grep counted 407, and the 65 it adds are
+three mechanical classes a "the name appears exactly once" rule cannot see: an overload set, a
+`Handle(Foo)` return type (where the grep reads `Handle` as the function name), and a helper whose
+name also appears in a comment. Nothing the grep counted is disputed; the grep's population is a
+strict subset.
+
+Its `--divergence` mode is the half that finds defects rather than tidying, and its comparison is
+**dead against live**, not dead against dead. Five names had a live copy that no longer matched its
+dead ones, `fillCommonPart` among them, and each dead body held a defect the live one had been fixed
+for: a missing `occtShapeIsPresent` guard (`occtShapePeriodicImpl`), a `[0, 0]` search domain and
+`Perform` in place of `PerformWithEndpoints` (`occtExtremaPCCurveImpl`, #1456 and #1633), a
+double-registered dimension (`occtDocumentCreateDimensionImpl`, #1481), and an error count that was
+never kept (`checkSubShape`, #2734). All thirty-eight were deleted under #1628.
 
 Counting sites therefore answers two questions at once, and they want different treatment:
 
@@ -95,6 +112,13 @@ Counting sites therefore answers two questions at once, and they want different 
 - **Dead copies** are not a correctness bug, and they are not nothing either: they cost every later
   audit, and they make a fixed defect look unfixed. Delete them where you are already touching the
   file, and never "fix" one to match, which propagates the body rather than retiring it.
+  `census-dead-file-statics.py --json` enumerates them with exact line ranges, so a deletion pass
+  deletes the population that was measured rather than one re-found by hand.
+
+**Deleting one dead helper can leave another dead**, since a dead body is the only caller of
+whatever it called. The census reports that fixpoint separately (`Dead only once the above go`),
+and deleting the thirty-eight stale definitions above moved nine definitions from live to dead.
+A deletion pass therefore re-measures after each slice instead of working from one up-front list.
 
 ## It cuts the other way: a helper with one caller is not owed one
 
