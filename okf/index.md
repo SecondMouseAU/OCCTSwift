@@ -52,6 +52,7 @@ See [`references/`](references/index.md): OpenCASCADE upstream and licensing (LG
 - [Follow OCCT's own callers, not just its signature](policies/follow-occt-callers.md)
 - [Prove the test fails](policies/prove-the-test-fails.md)
 - [Search before building](policies/search-before-building.md)
+- [Helper placement is decided by reach, not by style](policies/helper-placement-by-reach.md)
 - [Upstream OCCT PRs follow OCCT's house style](policies/upstream-occt-style.md)
 - [Upstream OCCT patch process, start to finish](policies/upstream-occt-patch-process.md)
 - [Pinned kernel patch check](policies/pinned-kernel-patch-check.md)

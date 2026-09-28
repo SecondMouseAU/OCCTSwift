@@ -109,3 +109,14 @@ while `IntTools_EdgeFace::Perform()` faults on one. Measure the consumer, never 
 assumed: all three walks key on a parameter's declared type, `OCCTDocumentRef` is in neither
 `WRAPPERS` nor `SHAPE_WRAPPERS`, and every guard path it recognises bottoms out in a literal
 `IsNull()`. A guard of that shape is reviewed by hand.
+
+## Related
+
+- [Helper placement is decided by reach](helper-placement-by-reach.md). Every shared predicate above
+  lives in `OCCTBridge_Internal.h` as `inline` rather than `static` in a `.mm`, and that is not a
+  style choice: the two times a guard of this kind went missing in this repo, a file-static helper
+  another translation unit could not reach is why (#943's bounds entry point, #957's six document
+  sites). Placement is part of the guard.
+- [Measure, do not assume](measure-dont-assume.md). Every list of sites and entry points on this
+  page is a measurement, which is why the blind spots above can be stated as "none appears today"
+  rather than as a hope.
