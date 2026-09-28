@@ -1,0 +1,6 @@
+{
+  "transcript_tail_from": {
+    "pattern": "^== Part B: kernel re-measure of the shapes the Swift run exported ==$",
+    "reason": "Part B reads a BREP per name from a directory given as argv[1], and the transcript's own header says those files were \"exported by a temporary diagnostic test (not committed)\". They are not in the repository, so those eighteen measurements cannot be re-derived by anyone, ever, and nothing may cite them as verified (#2824). Part A's ten lines reproduce byte for byte against v4.0.0-kernel.2."
+  }
+}

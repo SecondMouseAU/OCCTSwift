@@ -1,0 +1,12 @@
+{
+  "volatile": [
+    {
+      "pattern": "^statvfs\\(/\\): total512Blocks=[0-9]+ totalKB=[0-9]+ free512Blocks=[0-9]+ freeKB=[0-9]+$",
+      "reason": "free space on this machine's root volume, which no two runs share: 116267292 KB at capture and 199224316 KB on rerun. okf/references/766-test-validity/phase3/OCCTFoundationTests.md already says \"Disk figures are this machine's at probe time\"."
+    },
+    {
+      "pattern": "^OSD_Disk\\(\\\"/\\\"\\): DiskSize=[0-9]+ \\(KB=[0-9]+\\) DiskFree=[0-9]+ \\(KB=[0-9]+\\) Failed=0$",
+      "reason": "the same volume read through OSD_Disk. The #1442 evidence is that this line agrees with the statvfs line above it and that Failed is 0, which the pattern keeps; the three Unicode lines below are not volatile and are compared exactly."
+    }
+  ]
+}
