@@ -6,17 +6,14 @@ import simd
 @Suite("GeomFill_AppSurf")
 struct GeomFillAppSurfTests {
     @Test("approximate surface from sections")
-    func approximateSurface() {
-        guard let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-            let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3)
-        else {
-            Issue.record("failed to build probe curves")
-            return
-        }
-        guard let result = Surface.appSurf(curves: [c1, c2]) else {
-            Issue.record("appSurf(curves:) unexpectedly returned nil for 2 valid curves")
-            return
-        }
+    func approximateSurface() throws {
+        // The two fixtures and the result are required, not guarded: Issue.record + return also
+        // failed the test, but it read as the silent-return shape the rest of this lift removes.
+        let c1 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let c2 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let result = try #require(Surface.appSurf(curves: [c1, c2]))
         #expect(result.isDone)
         // #766: `> 0` passed any shape. GeomFill_AppSurf on the same two sections reports degree
         // (14, 1) with 15 x 2 poles and 2 x 2 knots, see Scripts/repro/766-geomfill-a/.
