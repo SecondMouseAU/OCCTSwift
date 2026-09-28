@@ -134,6 +134,34 @@ Nothing here has a measured false-positive class to discount, the way
 only toward skipping a check, the fragment rule errs only toward excusing one, and a canary in every
 `swiftc` invocation aborts the run rather than letting a blind compiler report clean.
 
+## The module it compiles against, and how it knows that module is current
+
+Stage 2 needs a built `OCCTSwift.swiftmodule`, and this script does not build one. It finds whatever
+`.build` holds, which is correct in CI (the build step runs immediately before it) and is a trap
+locally, where branches get switched all day. A module left behind by another branch makes the
+snippets look broken: an initialiser that is failable on this branch and was not on the one that
+built the module reports `initializer for conditional binding must have Optional type`, on every
+snippet that binds it, and the report names the snippet rather than the module. Three such false
+failures were reported against correct pages on PR #2799, and `swift build` followed by an unchanged
+run of this script cleared all three.
+
+So the module is compared against its own inputs (`MODULE_INPUT_GLOBS`) before anything is compiled
+against it. A module older than any input was built from different source, and the run **refuses**
+rather than reporting a verdict: the type-check stage does not run, and the exit status is 2 with or
+without `--require-typecheck`. That is stricter than the missing-module case, which stays a skip,
+and the asymmetry is the point. A missing module is a state the person running this knows about; a
+stale one is invisible, and looks exactly like a defect in the page under review.
+
+`docs/` is deliberately not an input. Editing a snippet cannot invalidate the module, and editing a
+snippet is the everyday loop here, so the refusal fires on a source edit or a branch switch and
+never on a documentation change.
+
+CI pays nothing for this: a few hundred `stat` calls, and its module is always fresh, because the
+`swift build` step ahead of it recompiles the module on every run (115 to 174 s over five runs
+measured 2026-09-28, `.build` cache restored each time). `--self-test`'s last stale-module case
+asserts exactly that on the real tree, so a misfire shows up as a named self-test failure rather
+than as a refusal on every PR.
+
 ## Usage
 
     python3 Scripts/check-doc-snippets.py              # extract, type-check, report; exit 1 on a failure
@@ -556,6 +584,102 @@ def module_arch(swiftmodule_path):
     return host if host in arches else arches[0]
 
 
+class SkipNote:
+    """Why the type-check stage cannot run, and whether that is a skip or a refusal.
+
+    `fatal` separates "there is no build" from "the build is of different source". A missing module
+    is a state the person running this already knows about, and stage 1 still reports real findings,
+    so it stays a skip that `--require-typecheck` turns into a failure in CI (#2098). A module older
+    than the sources is invisible, and every verdict computed from it is about an API the tree no
+    longer declares, so it is a refusal wherever it is found.
+    """
+
+    def __init__(self, text, fatal=False):
+        self.text = text
+        self.fatal = fatal
+
+    def __str__(self):
+        return self.text
+
+
+# The inputs to the `OCCTSwift` module, for the staleness comparison in `toolchain_args`. The Swift
+# layer and the bridge it imports, plus the manifest, which carries the language mode and the
+# settings the module is built with.
+#
+# `docs/` is absent on purpose: a snippet edit cannot invalidate the module, and it is the edit this
+# script exists to serve. Tests are absent because `swift build` does not build them.
+MODULE_INPUT_GLOBS = (
+    'Sources/OCCTSwift/**/*.swift',
+    'Sources/OCCTBridge/**/*.h',
+    'Sources/OCCTBridge/**/*.mm',
+    'Sources/OCCTBridge/**/*.modulemap',
+    'Package.swift',
+)
+
+
+def newest_input(base=None, globs=MODULE_INPUT_GLOBS):
+    """`(path, mtime)` of the most recently written input to the module, or `(None, 0.0)`."""
+    root = REPO if base is None else pathlib.Path(base)
+    newest_path, newest = None, 0.0
+    for pattern in globs:
+        for f in root.glob(pattern):
+            try:
+                mtime = f.stat().st_mtime
+            except OSError:
+                continue
+            if mtime > newest:
+                newest_path, newest = f, mtime
+    return newest_path, newest
+
+
+def module_written(module_dir):
+    """When the build last wrote `module_dir/OCCTSwift.swiftmodule`, or None if it is not there.
+
+    The newest member of the bundle rather than the bundle's own mtime, because a directory's mtime
+    tracks its entries being added and removed and not their contents being rewritten. Taking the
+    newest of the two errs toward calling a module current, which is the safe direction: this
+    comparison gates a refusal.
+    """
+    path = module_dir / 'OCCTSwift.swiftmodule'
+    try:
+        if path.is_file():
+            return path.stat().st_mtime
+        if not path.is_dir():
+            return None
+        times = [path.stat().st_mtime]
+    except OSError:
+        return None
+    for member in path.glob('*'):
+        try:
+            times.append(member.stat().st_mtime)
+        except OSError:
+            continue
+    return max(times)
+
+
+def stale_module_reason(module_dir, base=None, globs=MODULE_INPUT_GLOBS):
+    """A sentence naming the input newer than the built module, or None if the module is current.
+
+    An mtime comparison, because it is the only signal available: nothing records which sources a
+    `.swiftmodule` was built from. It errs toward refusing over a file that was rewritten with
+    identical content (a checkout of the same text, a formatter), and the remedy for that is the
+    same `swift build` the real case needs.
+    """
+    built = module_written(module_dir)
+    if built is None:
+        return None
+    path, mtime = newest_input(base, globs)
+    if path is None or mtime <= built:
+        return None
+    root = REPO if base is None else pathlib.Path(base)
+    try:
+        name = path.relative_to(root)
+    except ValueError:
+        name = path
+    return (f'{name} was written {mtime - built:.0f}s after the OCCTSwift.swiftmodule in '
+            f'{module_dir}, so that module was built from different source; run `swift build`')
+
+
 # How deep under `.build` to look for the module. `.build/out/Products/Debug` is four, so five
 # leaves room for one more nesting level without another change here.
 MODULE_SEARCH_DEPTH = 5
@@ -614,21 +738,36 @@ def toolchain_args():
         if searched:
             module_dir = searched[0]
     if module_dir is None:
-        return None, None, ('OCCTSwift.swiftmodule not found; run `swift build` first '
-                            f'(looked in {", ".join(str(c) for c in candidates)}, '
-                            f'then searched {REPO / ".build"} to depth {MODULE_SEARCH_DEPTH})')
+        return None, None, SkipNote('OCCTSwift.swiftmodule not found; run `swift build` first '
+                                    f'(looked in {", ".join(str(c) for c in candidates)}, '
+                                    f'then searched {REPO / ".build"} to depth '
+                                    f'{MODULE_SEARCH_DEPTH})')
+    # The preference above is by layout, not by age, so a stale module in `.build/debug` wins over a
+    # fresh one the search would have found. Consult the search before refusing, and refuse only
+    # when nothing under `.build` is current.
+    stale = stale_module_reason(module_dir)
+    if stale is not None:
+        for other in module_dirs():
+            if other == module_dir:
+                continue
+            if stale_module_reason(other) is None:
+                module_dir, stale = other, None
+                break
+    if stale is not None:
+        return None, None, SkipNote(stale, fatal=True)
     arch = module_arch(module_dir / 'OCCTSwift.swiftmodule')
     if arch is None:
-        return None, None, f'no *.swiftmodule inside {module_dir / "OCCTSwift.swiftmodule"}'
+        return None, None, SkipNote('no *.swiftmodule inside '
+                                    f'{module_dir / "OCCTSwift.swiftmodule"}')
     triple = f'{arch}-apple-macos{macos_deployment()}'
     modmap = REPO / 'Sources' / 'OCCTBridge' / 'include' / 'module.modulemap'
     if not modmap.is_file():
-        return None, None, f'missing {modmap.relative_to(REPO)}'
+        return None, None, SkipNote(f'missing {modmap.relative_to(REPO)}')
     try:
         sdk = subprocess.run(['xcrun', '--show-sdk-path'], capture_output=True, text=True,
                              check=True).stdout.strip()
     except (OSError, subprocess.SubprocessError) as exc:
-        return None, None, f'xcrun --show-sdk-path failed: {exc}'
+        return None, None, SkipNote(f'xcrun --show-sdk-path failed: {exc}')
     # Both, because the module sits directly in the bin path under one layout and in a `Modules/`
     # subdirectory under another, and when it is the latter the bin path itself still carries the
     # other targets' artefacts (#2098).
@@ -794,7 +933,8 @@ def check(blocks, verbose=False, keep=None, canaries=True, jobs=None, wmo=True):
         if why_not is not None:
             for f in rest:
                 results[f.name] = ('skipped', [])
-            return results, f'type-check stage SKIPPED: {why_not}'
+            label = 'REFUSED' if why_not.fatal else 'SKIPPED'
+            return results, SkipNote(f'type-check stage {label}: {why_not}', fatal=why_not.fatal)
 
         tc_raw = run_stage('-typecheck', rest, tc_args, outdir, CANARY_TYPECHECK, canaries, jobs,
                            'stage 2, type-check', verbose, wmo=wmo)
@@ -1284,7 +1424,10 @@ def _self_test_compile():
     """
     tc_args, triple, why_not = toolchain_args()
     if why_not is not None:
-        print(f'  SKIPPED  compile cases: {why_not}')
+        # A fatal reason (a module older than its inputs) is a refusal, not a skip, and
+        # `_self_test_staleness` has already reported it as a failure. Printing the word SKIPPED
+        # over it would be this script mislabelling its own view.
+        print(f'  {"REFUSED" if why_not.fatal else "SKIPPED"}  compile cases: {why_not}')
         return 0, True
     print(f'  ok    target triple derived from the built module: {triple}')
     failures = 0
@@ -1362,6 +1505,105 @@ def _self_test_canary():
     return failures
 
 
+def _self_test_staleness():
+    """Prove the stale-module detector fires on a module older than its inputs, and only then.
+
+    Returns `(failures, cases run)`. Fixtures, because the property under test is a comparison of
+    two mtimes and a fixture is the only way to control both sides of it. The glob tuple under test
+    is the shipped `MODULE_INPUT_GLOBS`, pointed at the fixture root, so a change to that tuple is
+    what these cases measure rather than a copy of it.
+
+    The last case is the real tree, and it is the one that would catch this check misfiring in CI:
+    after `swift build` the module must not read as stale, or the gate refuses on every PR. It is
+    SKIPPED where there is no built module, under `--require-typecheck`'s abort like the compile
+    cases.
+    """
+    failures = 0
+    ran = 0
+    base = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-snippets-stale-'))
+    try:
+        (base / 'Sources' / 'OCCTSwift').mkdir(parents=True)
+        (base / 'Sources' / 'OCCTBridge' / 'include').mkdir(parents=True)
+        (base / 'docs').mkdir()
+        src = base / 'Sources' / 'OCCTSwift' / 'A.swift'
+        header = base / 'Sources' / 'OCCTBridge' / 'include' / 'B.h'
+        manifest = base / 'Package.swift'
+        doc = base / 'docs' / 'a.md'
+        for f in (src, header, manifest, doc):
+            f.write_text('x\n')
+        moddir = base / 'debug'
+        bundle = moddir / 'OCCTSwift.swiftmodule'
+        bundle.mkdir(parents=True)
+        member = bundle / 'arm64-apple-macos.swiftmodule'
+        member.write_bytes(b'')
+
+        def stamp(path, when):
+            os.utime(path, (when, when))
+
+        def state(src_t, header_t, manifest_t, doc_t, bundle_t, member_t):
+            stamp(src, src_t)
+            stamp(header, header_t)
+            stamp(manifest, manifest_t)
+            stamp(doc, doc_t)
+            stamp(member, member_t)
+            stamp(bundle, bundle_t)
+
+        # (name, mtimes, predicate on the reason). A reason of None means "current".
+        cases = [
+            ('a module written after every input is current',
+             (1000, 1000, 1000, 1000, 2000, 2000),
+             lambda r: r is None),
+            ('a Swift source newer than the module is stale, and the reason names it',
+             (3000, 1000, 1000, 1000, 2000, 2000),
+             lambda r: r is not None and 'A.swift' in r),
+            ('a bridge header newer than the module is stale, and the reason names it',
+             (1000, 3000, 1000, 1000, 2000, 2000),
+             lambda r: r is not None and 'B.h' in r),
+            ('the manifest newer than the module is stale, and the reason names it',
+             (1000, 1000, 3000, 1000, 2000, 2000),
+             lambda r: r is not None and 'Package.swift' in r),
+            ('a doc newer than the module is NOT stale, so editing a snippet never refuses',
+             (1000, 1000, 1000, 9000, 2000, 2000),
+             lambda r: r is None),
+            ("the bundle's members are read, not the bundle's own mtime",
+             (1500, 1000, 1000, 1000, 1000, 2000),
+             lambda r: r is None),
+        ]
+        for name, mtimes, ok in cases:
+            state(*mtimes)
+            ran += 1
+            reason = stale_module_reason(moddir, base=base)
+            if ok(reason):
+                print(f'  ok    {name}')
+            else:
+                failures += 1
+                print(f'  FAIL  {name}\n        got {reason!r}')
+
+        # A module that is not there at all belongs to the skip channel, not to this one.
+        ran += 1
+        if stale_module_reason(base / 'nowhere', base=base) is None:
+            print('  ok    a missing module is not reported as a stale one')
+        else:
+            failures += 1
+            print('  FAIL  a missing module was reported as a stale one')
+    finally:
+        shutil.rmtree(base, ignore_errors=True)
+
+    # The real tree. `swift build` must leave a module newer than every input, or this refusal
+    # fires on every PR; asserting it here names the cause instead of leaving a bare red run.
+    _args, _triple, why_not = toolchain_args()
+    if why_not is None:
+        ran += 1
+        print('  ok    the built module in this tree is newer than every input')
+    elif why_not.fatal:
+        ran += 1
+        failures += 1
+        print(f'  FAIL  the built module in this tree reads as stale: {why_not}')
+    else:
+        print(f'  SKIPPED  real tree: {why_not}')
+    return failures, ran
+
+
 def self_test(require_typecheck=False):
     print('extraction and classification:')
     failures = _self_test_extract()
@@ -1375,11 +1617,16 @@ def self_test(require_typecheck=False):
     failures += _self_test_attribution()
     print('canary guard:')
     failures += _self_test_canary()
+    print('stale-module detection:')
+    stale_failures, stale_cases = _self_test_staleness()
+    failures += stale_failures
     print('end-to-end compile:')
     compile_failures, skipped = _self_test_compile()
     failures += compile_failures
     # 7 is _self_test_dedent_and_rewrite's case count, 2 each for attribution and the canary guard.
-    total = (len(EXTRACT_CASES) + len(BODY_CASES) + len(HISTORICAL) + 7 + 2 + 2
+    # The stale-module battery counts its own cases, because its last one is skipped where there is
+    # no built module.
+    total = (len(EXTRACT_CASES) + len(BODY_CASES) + len(HISTORICAL) + 7 + 2 + 2 + stale_cases
              + (0 if skipped else 2 * len(COMPILE_CASES) + 2))
     print(f'\nself-test: {total - failures} passed, {failures} failed'
           + (' (compile cases SKIPPED: no built package)' if skipped else ''))
@@ -1434,13 +1681,21 @@ def main():
     except BlindRun as exc:
         print(f'ABORTED: {exc}', file=sys.stderr)
         return 2
-    if note and args.require_typecheck:
+    if note and (note.fatal or args.require_typecheck):
         # A census exits 0 by design, because its output is a population to adjudicate. A census
         # that examined none of that population is not a census result, it is silence dressed as
         # one, and in CI that is a false green (#2098).
         print(f'ABORTED: {note}', file=sys.stderr)
-        print('--require-typecheck was given, so a skipped type-check stage is a failure rather '
-              'than a\n  census result. Build the package first.', file=sys.stderr)
+        if note.fatal:
+            # And a verdict reached against a module built from different source is worse than
+            # silence: it names the page under review as the defect. Refuse everywhere, not only
+            # under the CI flag.
+            print('No snippet was judged. A module built from different source reports a correct '
+                  'snippet\n  as broken, which is a finding about the module and not about the '
+                  'page.', file=sys.stderr)
+        else:
+            print('--require-typecheck was given, so a skipped type-check stage is a failure '
+                  'rather than a\n  census result. Build the package first.', file=sys.stderr)
         return 2
     if note:
         print(note)
