@@ -50,11 +50,21 @@ cases, identical but for one call:
 
 `OSD::SetSignal(Standard_False)` is exactly what the bridge's `occtEnsureSignals()` does, once per
 process, from fourteen entry points. Its `SegvHandler` calls
-`Standard_ErrorHandler::Abort(OSD_SIGSEGV(...))`, and with `OCC_CONVERT_SIGNALS` undefined, which
-is this build, `Abort` is a plain `throw theError;`. Throwing from a signal handler is undefined
-behaviour, and on macOS arm64 it unwinds: the `OSD_SIGSEGV` reaches
-`BRepCheck_ParallelAnalyzer::operator()`'s own `catch (Standard_Failure const&)`, which records
+`Standard_ErrorHandler::Abort(OSD_SIGSEGV(...))`, which `longjmp`s to the nearest registered
+handler. `BRepCheck_Analyzer.cxx` wraps every `InContext` call in
+`try { OCC_CATCH_SIGNALS ... } catch (Standard_Failure const&)`, and that macro is live there
+because `BRepCheck` is an OCCT translation unit, so the handler exists to be found: control returns
+to it, `Raise()` turns the stored `OSD_SIGSEGV` into a C++ exception, and the `catch` records
 `BRepCheck_CheckFail` and carries on.
+
+**This paragraph first said `Abort` was "a plain `throw theError;`" with `OCC_CONVERT_SIGNALS`
+undefined, and that `Perform()`'s `OCC_CATCH_SIGNALS` absorbed nothing. Both are wrong** and are
+corrected above, on #2763's reading and on four measurements against the pinned asset in
+[`Scripts/repro/2763-abort-signal-mechanism/`](../2763-abort-signal-mechanism/). The define is
+present for OCCT's own translation units, `OSD_signal.cxx` is the only one that instantiates the
+template, and a plain `catch (Standard_Failure const&)` with no handler registered does not run:
+OCCT prints "no catch was found" and calls `exit(1)`. Nothing in the table above changes, which is
+the point worth keeping: the observation was measured and the mechanism was assumed.
 
 Two things follow, and both are in the guard's favour:
 
@@ -64,5 +74,6 @@ Two things follow, and both are in the guard's favour:
    guard's predicate forced to 0 exits with signal 11; the same build running the whole suite
    survives with six failing expectations.
 2. **`OCC_CATCH_SIGNALS` being inert is not the same claim as "a signal is uncatchable".** The
-   macro is inert here, and separately OCCT's installed handler converts the signal by throwing.
+   macro is inert in bridge code, and separately OCCT's installed handler converts the signal at
+   any of OCCT's own sites, where the macro is live.
    `CLAUDE.md`'s Known OCCT Bugs bullet said the stronger thing; it is corrected in this PR.
