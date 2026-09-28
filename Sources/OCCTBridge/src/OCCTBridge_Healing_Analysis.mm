@@ -3029,6 +3029,15 @@ bool OCCTShapeIsValid(OCCTShapeRef shape)
   // same reason false is an answer rather than a stand-in.
   if (occtShapeHasPCurveOnlyEdge(shape->shape))
     return false;
+  // #2777: BRepCheck_Analyzer also faults on a face with no surface that carries a wire, a third
+  // defect of that family, and this function is the one analyzer site every IGES export reaches
+  // first: Exporter.validateExportInputs calls Shape.isValid before any writeIGES overload touches
+  // the bridge's own export function, so guarding those five without this one leaves the Swift path
+  // dying here. False is the verdict OCCT itself reaches for the same face when it has no edges and
+  // the analyzer survives (measured: IsValid false), so the guard agrees with the kernel rather
+  // than substituting for it. The other BRepCheck_Analyzer sites are #2789.
+  if (occtShapeHasSurfacelessFace(shape->shape))
+    return false;
   try
   {
     BRepCheck_Analyzer analyzer(shape->shape);

@@ -358,6 +358,13 @@ public enum Exporter {
     ///
     /// - Throws: `ExportError` if export fails
     ///
+    /// A shape carrying a face with no surface throws `ExportError.invalidShape`, on this overload and
+    /// on every other IGES one. `IGESControl_Writer::AddShape` runs a shape processor first, and the
+    /// one operation it enables, `DirectFaces`, dereferences each face's surface handle with no null
+    /// test, which took the process down rather than failing (#2777). Such a face is not
+    /// constructible through this API but a `.brep` file carries one exactly. STEP export is
+    /// unaffected: OCCT's STEP writer screens the same face itself.
+    ///
     /// ## Use Cases
     ///
     /// - Legacy CAD system compatibility

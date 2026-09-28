@@ -319,6 +319,17 @@ before calling this. Output uses AP214 schema.
 
 ## IGES Export
 
+**A face with no surface is refused before anything is written**, on every overload below and on
+`igesData(shape:)`. `IGESControl_Writer::AddShape` runs a shape processor before it transfers
+anything, and the one operation it enables, `DirectFaces`, dereferences each face's surface handle
+with no null test (`ShapeCustom_DirectModification.cxx:55`), which took the process down with
+SIGSEGV rather than failing (#2777). Such a face is not constructible through this API, but a `.brep`
+file carries one exactly, so `Shape.loadBREP(from:)` followed by any IGES export reached it. The
+export now throws `ExportError.invalidShape`, which is what it already threw for a shape OCCT's own
+`BRepCheck_Analyzer` calls invalid. STEP export is unaffected: OCCT's STEP writer screens the same
+face itself. The measurements, including the negative ones, are in
+`Scripts/repro/2777-iges-writer-surfaceless-face/`.
+
 ### `Exporter.writeIGES(shape:to:)`
 
 Writes a shape to IGES format.

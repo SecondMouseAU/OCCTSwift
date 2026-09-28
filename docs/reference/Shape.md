@@ -1261,6 +1261,12 @@ public var isValid: Bool { get }
 
 - **Returns:** `true` if the shape passes OCCT's checker; `false` otherwise.
 - **OCCT:** `BRepCheck_Analyzer` (via `OCCTShapeIsValid`).
+- **Note:** `false` is also the answer for two shapes `BRepCheck_Analyzer` itself cannot survive, both
+  reachable through a `.brep` file and neither constructible through this API: a face edge with no
+  valid 3D curve and at least one pcurve (#2746), and a face with no surface (#2777, and #2789 for the
+  analyzer's own fault). OCCT's checker calls both invalid where it manages to answer at all, so the
+  refusal agrees with the kernel rather than standing in for it. Every `Exporter` write method reaches
+  this property first, so an export of either shape throws `ExportError.invalidShape`.
 - **Example:**
   ```swift
   guard let box = Shape.box(width: 10, height: 10, depth: 10),

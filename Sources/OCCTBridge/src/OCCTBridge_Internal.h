@@ -1841,6 +1841,78 @@ inline bool occtShapeHasSurfacelessEdgelessFace(const TopoDS_Shape& shape)
   return occtShapeSurfacelessEdgelessFaceCount(shape, 1) > 0;
 }
 
+// === #2777: the same face, the wider predicate, on the export path ===
+//
+// The pair above is deliberately narrow because ShapeAnalysis::GetFaceUVBounds only faults in the
+// branch it takes for a face with NO EDGES. The IGES export path faults on the same face with no
+// such qualification, so it needs the surface clause on its own, and reusing the narrower predicate
+// would leave the with-wire half of the input space crashing.
+//
+// Three untested null-surface dereferences, all reached by an IGES export, all measured in
+// Scripts/repro/2777-iges-writer-surfaceless-face/:
+//
+//   1. IGESControl_Writer::AddShape runs XSAlgo_ShapeProcessor::ProcessShape first, and
+//      IGESControl_Writer::InitializeMissingParameters turns on exactly one operation, DirectFaces
+//      (IGESControl_Writer.cxx:355-359). That operator drives BRepTools_Modifier, whose
+//      FillNewSurfaceInfo calls ShapeCustom_DirectModification::NewSurface on EVERY face of the
+//      shape (BRepTools_Modifier.cxx:718, no edge test anywhere in it). NewSurface's first
+//      statement is S = BRep_Tool::Surface(F, L) and its second hands S to IsIndirectSurface,
+//      whose own first statement is TS->IsKind(...) on it, untested:
+//      ShapeCustom_DirectModification.cxx:55.
+//   2. BRepToIGES_BRShell::TransferFace guards the surface it reads at line 249 and then
+//      dereferences the same handle unguarded at line 382, in the "protection against faces on
+//      infinite surfaces" block. Reached when something has absorbed 1, which the writer's own
+//      ShapeProcess::Perform does once OSD::SetSignal has run.
+//   3. BRepCheck_Analyzer, which all five bridge export functions already construct to refuse an
+//      invalid shape, faults on a surface-less face that carries a wire. That is a third defect of
+//      the family, not located to a line here, and it is why the guard goes AHEAD of the analyzer.
+//
+// The predicate is the surface clause alone, and the with-wire fixture is what decided it, one
+// process per row, no OSD signal handler, on the v4.0.0-kernel.2 pin:
+//
+//                                  null-surface  edgeless  IGESControl_Writer::AddShape
+//   healthy box 10x20x30                0           0       AddShape true, Write true
+//   surface-less edgeless face          1           1       SIGSEGV, exit 139
+//   surface-less face WITH a wire       1           0       SIGSEGV, exit 139
+//
+// Row three is the one occtShapeHasSurfacelessEdgelessFace answers false for, and it crashes just
+// as hard, so that predicate is not the one to reuse here.
+//
+// OCCT's own STEP writer agrees with this predicate and not with the narrower one:
+// STEPControl_ActorWrite::hasGeometry (STEPControl_ActorWrite.cxx:190-197) returns false for a
+// TopAbs_FACE whose BRep_TFace::Surface() is null, with no edge clause, and ProcessShape is called
+// only `if (hasGeometry(aShape))` at line 1158. That is why STEP write survives all four fixtures
+// while IGES write dies on all four, measured both ways.
+
+/// Counts the faces of `shape` whose surface handle is null: the faces that drive
+/// ShapeCustom_DirectModification::NewSurface, BRepToIGES_BRShell::TransferFace and
+/// BRepCheck_Analyzer into an untested dereference, whatever edges they carry (#2777).
+/// `limit` stops the walk once that many have been found; pass 0 to count them all.
+inline int32_t occtShapeSurfacelessFaceCount(const TopoDS_Shape& shape, int32_t limit)
+{
+  if (shape.IsNull())
+    return 0;
+  int32_t found = 0;
+  for (TopExp_Explorer faceExp(shape, TopAbs_FACE); faceExp.More(); faceExp.Next())
+  {
+    const TopoDS_Face& face = TopoDS::Face(faceExp.Current());
+    TopLoc_Location    loc;
+    if (!BRep_Tool::Surface(face, loc).IsNull())
+      continue;
+    found++;
+    if (limit > 0 && found >= limit)
+      break;
+  }
+  return found;
+}
+
+/// Whether `shape` carries at least one face with no surface, and so must not be handed to an
+/// IGES export or to ShapeCustom::DirectFaces. Short-circuits on the first one.
+inline bool occtShapeHasSurfacelessFace(const TopoDS_Shape& shape)
+{
+  return occtShapeSurfacelessFaceCount(shape, 1) > 0;
+}
+
 // === #502: one sub-shape enumeration ===
 //
 // "Give me this shape's sub-shapes of type T" was implemented twice, on two different OCCT

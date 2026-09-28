@@ -368,6 +368,23 @@ the reproducer). What a bridge author needs without opening it:
   already gives a genuine `ShapeExtend_FAIL`. The predicate needs **both** clauses: a surface-less
   face that carries a wire is handled correctly and must not be refused. STEP drops the face and
   `IGESControl_Writer::AddShape` faults on it, so `.brep` is the only route in.
+- **The IGES writer is not crash-safe on the same face, and it needs the WIDER predicate.**
+  `IGESControl_Writer::AddShape` runs `XSAlgo_ShapeProcessor::ProcessShape` before it transfers
+  anything, and `InitializeMissingParameters` turns on exactly one operation, `DirectFaces`. That
+  drives `BRepTools_Modifier`, whose `FillNewSurfaceInfo` calls
+  `ShapeCustom_DirectModification::NewSurface` on **every** face with no edge test, and `NewSurface`
+  hands `BRep_Tool::Surface(F, L)` straight into `IsIndirectSurface`'s untested `TS->IsKind(...)` at
+  `ShapeCustom_DirectModification.cxx:55` (#2777). **So do not reuse
+  `occtShapeHasSurfacelessEdgelessFace` here**: a surface-less face carrying a wire exits 139 exactly
+  as an edgeless one does, measured. Use `occtShapeHasSurfacelessFace` /
+  `occtShapeSurfacelessFaceCount` in `OCCTBridge_Internal.h`, which tests the surface alone, before
+  any `IGESControl_Writer`, any `ShapeCustom::DirectFaces` and any `BRepCheck_Analyzer` on the export
+  path. OCCT's own STEP writer holds exactly that test (`STEPControl_ActorWrite::hasGeometry`, surface
+  clause only), which is why STEP write survives and IGES write does not, and which is the shape the
+  upstream fix should take. Two adjacent faults were measured and are separately filed: the same
+  shape kills `BRepCheck_Analyzer` when the face carries a wire (#2789, fourteen guard sites left),
+  and `ShapeCustom::SweptToElementary` / `ConvertToRevolution` / `ConvertToBSpline` fault at three
+  other unlocated lines (#2790).
 - `GeomAbs_G2` is never a valid order for `BRepFill_Filling`: curvature continuity is
   `GeomAbs_C1` (ordinal 2), whatever `BRepOffsetAPI_MakeFilling.hxx` says. Test any filling change
   on both a planar and a periodic support surface, since #430 was catchable on one and an
