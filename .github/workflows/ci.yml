@@ -277,12 +277,23 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/census-unmeasured-values.py --self-test
 
-      # #742's backstop for okf/policies/changelog-on-merge.md. Both invocations run, and the real
-      # one is deliberately NOT --strict yet: measured against this branch it reports 3 merges whose
-      # entries are legitimately absent, so gating today would fail CI for correct behaviour. It
-      # reports, the report is visible in the job log, and #742 records the promotion criterion (a
-      # run of real merges with no false positives). Its --self-test gates from day one, because a
-      # blind detector is the failure this whole family exists to prevent.
+      # #742's backstop for okf/policies/changelog-on-merge.md, and #2779 settled two things about
+      # it that this comment used to get wrong.
+      #
+      # It will never be --strict here, and not because of a false-positive rate. It asks a
+      # post-merge question, so on a protected base as a required check it would fail every open PR
+      # for the PREVIOUS merge's omission, which that PR's author cannot fix. The remedy went the
+      # other way instead: Scripts/merge-pr.py does the transcription as part of merging, so this is
+      # the backstop for a merge made by hand rather than the mechanism.
+      #
+      # AND ITS BARE RUN HERE EXAMINES NOTHING. default_since() looks for the commit that added the
+      # policy file, falls back to the last tag, then to the root commit; actions/checkout fetches
+      # depth 1 and no tags, so all three resolve to HEAD and the step prints "Merges audited: 0".
+      # It is left in place deliberately, because both fixes are decisions rather than tidying:
+      # fetch-depth: 0 doubles this job's cheapest step, and a --require-history flag on the #2098
+      # precedent needs that depth first or gate-scripts goes red on every PR at once. See
+      # okf/policies/static-gates.md. Its --self-test does gate from day one, because a blind
+      # detector is the failure this whole family exists to prevent.
       - name: check-changelog-transcription.py --self-test
         if: '!cancelled()'
         run: python3 Scripts/check-changelog-transcription.py --self-test

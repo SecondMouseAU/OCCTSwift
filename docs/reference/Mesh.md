@@ -131,15 +131,35 @@ public var normals: [SIMD3<Float>] { get }
 ```
 
 Each normal is a unit vector perpendicular to the surface at that vertex. Array length equals
-`vertexCount`. Normals are set during tessellation (`BRepMesh_IncrementalMesh` computes them
-from face curvature) or, for array-constructed meshes, by averaging adjacent face normals.
+`vertexCount`.
+
+`BRepMesh_IncrementalMesh` does **not** compute node normals: `Poly_Triangulation::HasNormals()` is
+false for every face it meshes. They are computed when the mesh is built, by
+`BRepLib_ToolTriangulatedShape::ComputeNormals`, which takes the normal from the surface itself
+(`GeomLib::NormEstim` at the node's UV) where UV nodes exist and from the average of the incident
+triangle normals where they do not. That is what OCCT's own consumers do: `StdPrs_ShadedShape.cxx:186`
+calls the same function immediately before shading, and `RWMesh_FaceIterator`, the glTF/OBJ/PLY export
+path, computes its own. For array-constructed meshes the normals are averaged from triangle adjacency,
+or taken verbatim when supplied.
+
+The sense matches OCCT's shaded presentation: outward for a solid built the usual way, reversed for a
+face whose orientation is `REVERSED`, and reversed again under a mirroring `TopLoc_Location`, which is
+how a shape carrying one shades as the inside-out solid it is.
+
+Until #2337 this returned `(0, 0, 1)` at every vertex of every meshed shape: the bridge pushed a
+placeholder wherever `HasNormals()` was false, which was always. `(0, 0, 1)` is still reported for a
+node whose incident triangles all cancel, which is OCCT's own answer for a normal it cannot define
+(`Poly_Triangulation.cxx:472`) and needs a degenerate triangulation to reach.
 
 - **Returns:** Normal array; `[]` if the mesh is empty.
-- **OCCT:** `OCCTMeshGetNormals`, copies the internal normal float buffer.
+- **OCCT:** `OCCTMeshGetNormals`, copies the internal normal float buffer; the values come from
+  `BRepLib_ToolTriangulatedShape::ComputeNormals` during `OCCTShapeCreateMesh`.
 - **Example:**
   ```swift
-  for n in mesh.normals {
-      // n is approximately unit-length
+  let mesh = Shape.sphere(radius: 5)!.mesh(linearDeflection: 0.5)!
+  for (vertex, normal) in zip(mesh.vertices, mesh.normals) {
+      // On a sphere centred on the origin the normal is the vertex direction.
+      print(simd_normalize(vertex), normal)
   }
   ```
 
@@ -333,22 +353,51 @@ large-coordinate mesh leaves edges unmerged and yields an open shell.
 
 ## Mesh Boolean Operations
 
+**These three are Booleans on surfaces, not on volumes.** `toShape(weldTolerance:)` sews the triangles
+into a `TopAbs_SHELL`, and `BOPAlgo_BOP` takes the dimension of its arguments
+(`BOPAlgo_BOP.cxx:145-150`), so a Boolean on two shells is the Boolean of two two-dimensional objects.
+The results are not the volume operations, and #2301 measured all three:
+
+| Operation | Inputs, deflection 0.5 | Mesh Boolean result | Volume operation |
+|---|---|---|---|
+| `union(with:)` | two 10-cubes overlapping over half their width | 72 triangles, encloses 2000 | 1500 |
+| `subtracting(_:)` | 10-cube minus cylinder r3 h15 | 120 triangles, encloses 1000 (nothing removed) | 858.63 |
+| `intersection(with:)` | 10-cube and sphere r7 | **0 triangles**, not `nil` | 959.23 |
+
+OCCT has no mesh Boolean of its own, and it never promotes a tessellated shell to a solid: its own
+mesh-to-shape path, `StlAPI_Reader::Read` through `BRepBuilderAPI_MakeShapeOnMesh`, builds a compound
+of planar faces and stops, and `BRepBuilderAPI_MakeSolid` has no production caller anywhere in OCCT's
+source tree. The promotion is therefore the caller's decision, and `Shape.solid(from:)` is where it
+lives:
+
+```swift
+// The volume operations, on the same sewn shells.
+let a = Shape.solid(from: meshA.toShape()!)!
+let b = Shape.solid(from: meshB.toShape()!)!
+let fused = a.union(b)!.mesh(linearDeflection: 0.5)!
+let drilled = a.subtracting(b)!.mesh(linearDeflection: 0.5)!
+let common = a.intersection(b)!.mesh(linearDeflection: 0.5)!
+```
+
+The inputs are tessellations either way, so the volumes that route returns are the faceted
+approximations of the exact ones: 1500 exactly for two boxes, and about 860 and 948 for the cylinder
+and sphere cases above, where the exact B-Rep answers are 858.63 and 959.23.
+
 ### `union(with:deflection:)`
 
-Performs boolean union with another mesh via a B-Rep roundtrip.
+Boolean union with another mesh, on the sewn surfaces.
 
 ```swift
 public func union(with other: Mesh, deflection: Double = 0.1) -> Mesh?
 ```
 
-Both meshes are lifted to B-Rep shells (`BRepBuilderAPI_Sewing`), the union is computed
-(`BRepAlgoAPI_Fuse`), and the result is re-tessellated at `deflection`. Because the operation
-works on tessellations, not exact B-Rep, prefer the B-Rep boolean `Shape.union(_:)` when
-exact geometry matters.
+Both meshes are sewn into shells (`BRepBuilderAPI_Sewing`), `BRepAlgoAPI_Fuse` is run on those shells,
+and the result is re-tessellated at `deflection`. The walls where the two bodies overlap survive
+instead of being consumed, which is why the enclosed volume double-counts the overlap.
 
 - **Parameters:** `other`, mesh to add; `deflection`, linear deflection for re-tessellating
   the result (default `0.1`).
-- **Returns:** Union mesh, or `nil` if conversion or the boolean operation fails.
+- **Returns:** Re-meshed surface union, or `nil` if the sewing or the Boolean failed.
 - **OCCT:** `OCCTMeshUnion` → `BRepBuilderAPI_Sewing` + `BRepAlgoAPI_Fuse` +
   `BRepMesh_IncrementalMesh`.
 - **Example:**
@@ -357,55 +406,61 @@ exact geometry matters.
         let b = Shape.cylinder(at: SIMD3(6, 6, -1), direction: SIMD3(0, 0, 1),
                                radius: 3, height: 14)?.mesh(linearDeflection: 0.3)
   else { return }
-  let joined = a.union(with: b, deflection: 0.3)
+  let joinedSurfaces = a.union(with: b, deflection: 0.3)
   ```
-- **Note:** Mesh booleans are convenient for triangle pipelines but operate on approximations.
-  For exact, valid solids prefer the B-Rep booleans and mesh the result at the end.
 
 ---
 
 ### `subtracting(_:deflection:)`
 
-Subtracts another mesh from this mesh via a B-Rep roundtrip.
+Subtracts another mesh from this one, on the sewn surfaces.
 
 ```swift
 public func subtracting(_ other: Mesh, deflection: Double = 0.1) -> Mesh?
 ```
 
-Both meshes are lifted to B-Rep shells, the subtraction is computed (`BRepAlgoAPI_Cut`), and
-the result is re-tessellated at `deflection`.
+Both meshes are sewn into shells, `BRepAlgoAPI_Cut` is run on those shells, and the result is
+re-tessellated at `deflection`. Cutting a surface with a surface splits this mesh's faces where the
+other mesh's surface crosses them; it removes no volume, because neither argument has one.
 
 - **Parameters:** `other`, mesh to subtract; `deflection`, linear deflection for
   re-tessellating the result.
-- **Returns:** Difference mesh, or `nil` on failure.
+- **Returns:** Re-meshed surface difference, or `nil` if the sewing or the Boolean failed.
 - **OCCT:** `OCCTMeshSubtract` → `BRepBuilderAPI_Sewing` + `BRepAlgoAPI_Cut` +
   `BRepMesh_IncrementalMesh`.
 - **Example:**
   ```swift
-  let cut = a.subtracting(b, deflection: 0.3)   // box with a drilled hole
+  // Splits the box's faces along the cylinder's surface. To drill the hole, use the
+  // Shape.solid(from:) route above.
+  let split = a.subtracting(b, deflection: 0.3)
   ```
 
 ---
 
 ### `intersection(with:deflection:)`
 
-Intersects this mesh with another mesh via a B-Rep roundtrip.
+Intersects this mesh with another mesh, on the sewn surfaces.
 
 ```swift
 public func intersection(with other: Mesh, deflection: Double = 0.1) -> Mesh?
 ```
 
-Both meshes are lifted to B-Rep shells, the intersection is computed (`BRepAlgoAPI_Common`),
-and the result is re-tessellated at `deflection`.
+Both meshes are sewn into shells, `BRepAlgoAPI_Common` is run on those shells, and the result is
+re-tessellated at `deflection`. Two surfaces meet along curves, so the Boolean produces edges, and
+edges have nothing to triangulate: the usual result is an **empty** mesh, which is not `nil`.
 
 - **Parameters:** `other`, mesh to intersect with; `deflection`, linear deflection for
   re-tessellating the result.
-- **Returns:** Intersection mesh, or `nil` on failure.
+- **Returns:** Re-meshed surface intersection, empty whenever the two surfaces meet only along
+  curves, or `nil` if the sewing or the Boolean failed.
 - **OCCT:** `OCCTMeshIntersect` → `BRepBuilderAPI_Sewing` + `BRepAlgoAPI_Common` +
   `BRepMesh_IncrementalMesh`.
 - **Example:**
   ```swift
-  let common = a.intersection(with: b, deflection: 0.3)
+  // Check the count: an empty result is a successful surface intersection, not a failure.
+  if let common = a.intersection(with: b, deflection: 0.3), common.triangleCount > 0 {
+      // ...
+  }
   ```
 
 ---

@@ -915,6 +915,14 @@ OCCTShapeRef OCCTShapeSweptToElementary(OCCTShapeRef shape)
   if (!shape)
     return nullptr;
 
+  // #2790: BRepTools_Modifier hands every face to ShapeCustom_SweptToElementary::NewSurface, which
+  // reads BRep_Tool::Surface(F, L) at ShapeCustom_SweptToElementary.cxx:96 and passes it straight
+  // to IsToConvert, whose own first statement dereferences it at :59. nullptr is what this function
+  // already answers for a failed operation. See occtShapeHasSurfacelessFace and the #2790 note
+  // beside it for the predicate's measurement and the other two faulting lines.
+  if (occtShapeHasSurfacelessFace(shape->shape))
+    return nullptr;
+
   try
   {
     TopoDS_Shape result = ShapeCustom::SweptToElementary(shape->shape);
@@ -932,6 +940,14 @@ OCCTShapeRef OCCTShapeSweptToElementary(OCCTShapeRef shape)
 OCCTShapeRef OCCTShapeConvertToBSpline(OCCTShapeRef shape)
 {
   if (!shape)
+    return nullptr;
+
+  // #2790: ShapeCustom_ConvertToBSpline::NewSurface dereferences the face's surface handle in its
+  // own body rather than in a helper, at ShapeCustom_ConvertToBSpline.cxx:104 (S->Bounds(U1, U2,
+  // V1, V2), two statements after the untested read at :102), and BRepTools_Modifier calls it on
+  // every face. nullptr is what this function already answers for a failed operation. See
+  // occtShapeHasSurfacelessFace and the #2790 note beside it.
+  if (occtShapeHasSurfacelessFace(shape->shape))
     return nullptr;
 
   try
@@ -1049,6 +1065,12 @@ OCCTShapeRef OCCTShapeCustomConvertToBSpline(OCCTShapeRef shape,
 {
   if (!shape)
     return nullptr;
+  // #2790: the same fault as OCCTShapeConvertToBSpline above, whose four hardcoded flags this
+  // function takes from the caller. ShapeCustom_ConvertToBSpline.cxx:104 is reached whatever the
+  // flags say, because the untested read and the dereference both sit ahead of IsToConvert. See
+  // occtShapeHasSurfacelessFace.
+  if (occtShapeHasSurfacelessFace(shape->shape))
+    return nullptr;
   try
   {
     TopoDS_Shape result =
@@ -1067,6 +1089,13 @@ OCCTShapeRef OCCTShapeCustomConvertToBSpline(OCCTShapeRef shape,
 OCCTShapeRef OCCTShapeCustomConvertToRevolution(OCCTShapeRef shape)
 {
   if (!shape)
+    return nullptr;
+  // #2790: ShapeCustom_ConvertToRevolution::NewSurface reads BRep_Tool::Surface(F, L) untested at
+  // ShapeCustom_ConvertToRevolution.cxx:86 and hands it to IsToConvert, whose occ::down_cast at :51
+  // survives a null handle because it is a dynamic_cast, so :52 takes the IsNull branch and :54
+  // dereferences it. nullptr is what this function already answers for a failed operation. See
+  // occtShapeHasSurfacelessFace.
+  if (occtShapeHasSurfacelessFace(shape->shape))
     return nullptr;
   try
   {
