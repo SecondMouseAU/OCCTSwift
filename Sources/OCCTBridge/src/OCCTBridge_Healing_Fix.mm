@@ -867,6 +867,16 @@ OCCTShapeRef OCCTShapeDirectFaces(OCCTShapeRef shape)
   if (!shape)
     return nullptr;
 
+  // #2777: ShapeCustom::DirectFaces is the operation the IGES writer runs before it transfers
+  // anything, and it faults on a face with no surface whatever edges that face carries:
+  // BRepTools_Modifier hands every face to ShapeCustom_DirectModification::NewSurface, whose
+  // S = BRep_Tool::Surface(F, L) goes straight into IsIndirectSurface's untested TS->IsKind(...) at
+  // ShapeCustom_DirectModification.cxx:55. nullptr is what this function already answers for a
+  // failed operation. See occtShapeHasSurfacelessFace; the three ShapeCustom operations with the
+  // same exposure and different faulting lines are #2790.
+  if (occtShapeHasSurfacelessFace(shape->shape))
+    return nullptr;
+
   try
   {
     TopoDS_Shape result = ShapeCustom::DirectFaces(shape->shape);
@@ -1363,6 +1373,10 @@ OCCTShapeRef OCCTShapeFixMergeSmallSolids(OCCTShapeRef shape, double widthFactor
 OCCTShapeRef OCCTShapeCustomDirectFaces(OCCTShapeRef shape)
 {
   if (!shape)
+    return nullptr;
+  // #2777: the same guard as OCCTShapeDirectFaces above, which this function duplicates. See
+  // occtShapeHasSurfacelessFace for the faulting line and the measurement.
+  if (occtShapeHasSurfacelessFace(shape->shape))
     return nullptr;
   try
   {

@@ -155,6 +155,12 @@ Applies `ShapeCustom_DirectModification` to replace indirect or offset surface r
 
 - **Returns:** Shape with canonical surfaces, or nil on failure.
 - **OCCT:** `ShapeCustom::DirectFaces` (via `OCCTShapeDirectFaces`).
+- **Note:** `nil` also for a shape carrying a face with no surface, whatever edges that face has.
+  `ShapeCustom_DirectModification::NewSurface` is called on every face and dereferences the surface
+  handle with no null test (`ShapeCustom_DirectModification.cxx:55`), so this used to take the process
+  down with SIGSEGV rather than failing (#2777). Such a face is not constructible through this API but
+  a `.brep` file carries one exactly. This is the same operation `IGESControl_Writer::AddShape` runs
+  before it transfers anything, which is why an IGES export was affected too.
 - **Example:**
   ```swift
   if let direct = imported.directFaces() {

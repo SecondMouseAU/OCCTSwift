@@ -150,12 +150,84 @@ The current divergence, in both directions, is recorded in
 manifest comment, which move when the pin moves. This policy does not restate them, because a
 restated number is a copy with no update path.
 
+## There are TWO pinned kernels, and a repin owes both
+
+Everything above is about the xcframework `Package.swift` pins for macOS and iOS. Since #2269 there
+is a **second** pinned kernel: `libOCCT-wasm.a` plus its header tree, a release asset recorded in
+[`Scripts/wasm-kernel-pin.txt`](../../Scripts/wasm-kernel-pin.txt). It is not a `binaryTarget`,
+because SwiftPM's takes an xcframework or a zip of one and never a bare static library, so the pin
+lives in that file and `Scripts/fetch-occt-wasm.sh` resolves it.
+
+**A native repin that does not also rebuild and republish the wasm asset puts the two platforms on
+different kernels.** Nothing about a macOS build, a macOS test run, `check-pinned-asset-patches.py`
+or any count in this policy would notice, because every one of them reads the xcframework. The
+carried patches are correctness fixes, so the failure mode is "fixed on macOS, still broken in the
+browser", which is both the worst way for this to go wrong and the hardest to spot.
+
+`Scripts/check-wasm-kernel-parity.py` is the gate. It compares the patch set the wasm pin declares
+against the one `Package.swift` enumerates, and it runs in `gate-scripts` on **every** PR rather than
+only when a wasm file changes. That placement is the point: **the PR that has to be caught is a
+native repin, which touches `Package.swift` and no wasm path at all.**
+
+### The acknowledgement, and why it is a count
+
+Rebuilding the wasm kernel is a **69-minute** build, so a repin that cannot do both at once is
+legitimate. The escape is two keys in the pin file:
+
+```
+OCCT_WASM_PARITY_ACKNOWLEDGED_AGAINST=<the native patch count it was decided at>
+OCCT_WASM_PARITY_ACKNOWLEDGED_REASON=<why, and what closes it>
+```
+
+`AGAINST` is **the native count at the moment the divergence was accepted, not a number to bump**.
+The next native repin moves the count, the acknowledgement goes stale, and the gate fires again.
+That is deliberately not a boolean: an acknowledgement that never expires is a suppression, and this
+repo has already been bitten by two `ACKNOWLEDGED` rows that outlived their reason (#2190). A
+missing `REASON` is refused for the same reason.
+
+The gate keeps printing both counts when it passes, so an acknowledged divergence stays visible
+rather than becoming silence.
+
+### It fired on its first real occasion, 29 seconds in
+
+Recorded because it is the argument for the gate existing, not a hypothetical. PR #2784 published the
+wasm asset for `v4.0.0-kernel.1`, twenty-nine patches. **Twenty-nine seconds later** PR #2782 repinned
+native to `v4.0.0-kernel.2`, thirty patches. Neither PR was at fault: #2782 was opened before #2784
+merged and could not have known a wasm asset existed, and #2784's asset matched what `Package.swift`
+pinned when it was published. The browser was left without `0042`, a null-surface guard #2773
+measured as a SIGSEGV on seven cases, and `main` went red within a minute. #2785 is the rebuild.
+
+**The gate does catch a repin before it merges**, and it is worth being exact about this, because the
+obvious conclusion from the story above is the wrong one. A repin PR adds a patch to
+`Package.swift`'s enumeration in its own tree, so the comparison fires on that PR's own
+`gate-scripts` run. Verified against the next repin rather than assumed: enumerating a hypothetical
+`0043` while the wasm pin stands still produces both the divergence finding and
+`An acknowledgement is present but STALE: it was written against 30 native patches and there are
+now 31`.
+
+**What let #2782 through was not the gate's placement.** `#2782`'s checks last ran on a base that did
+not yet contain this gate, `#2784` then merged and added it, and `main`'s ruleset has
+`strict_required_status_checks_policy` **false**, so a branch is not required to be up to date before
+merging and its checks never re-ran. Every gate this repo adds has that same one-time window, and it
+is not specific to wasm; see [Static gates](static-gates.md) for the mitigation.
+
+So what remains is a process point rather than a tooling one: **nothing tells the person planning a
+repin that they owe a second asset except this policy and the release step.** That is why both now
+say so.
+
 ## Release obligations
 
 The release commit that re-points `Package.swift`'s `url:`/`checksum:` runs
 `python3 Scripts/check-pinned-asset-patches.py --require-asset` against the asset it is about to
 pin, and records any acknowledged divergence in that script's `ACKNOWLEDGED` table and beside the
 pin. That step is in `CLAUDE.md`'s Release Process, at the repin.
+
+**It also rebuilds and republishes the wasm kernel**, attaches it to the same release as the
+xcframework so one release keeps meaning one kernel on both platforms, and moves every field in
+`Scripts/wasm-kernel-pin.txt`: the tag, the URL, the sha256, the byte count, the patch count and
+last number, the provenance commit and the two unpacked sizes. A rebuild means attach **and** bump
+both the URL and the digest, the same rule the xcframework follows. If it genuinely cannot happen in
+the same PR, the acknowledgement above is the route, with an issue named in its `REASON`.
 
 It also retires whatever bridge-side mitigation was covering for a patch the new kernel carries. Those are listed in the
 [Known OCCT bugs](../references/known-occt-bugs.md) rows marked "retire when repinned" and in

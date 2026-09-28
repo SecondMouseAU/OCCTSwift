@@ -210,6 +210,33 @@ This is not new; it is the sixth instance. #618, #624/#630 and #626 are the same
 of tooling earlier.
 
 
+## A new gate has a one-time window, and open PRs walk through it
+
+**The PR that adds a gate does not make already-green PRs re-run it.** `main`'s ruleset has
+`strict_required_status_checks_policy` **false**, deliberately: requiring every branch to be up to
+date before merging would mean rebasing and re-running CI on every open PR each time anything lands,
+and this repo routinely has dozens in flight. The cost of that policy is this window.
+
+Measured, on the first occasion it mattered. `check-wasm-kernel-parity.py` merged in PR #2784.
+PR #2782 had been open since before that, its checks had passed against a base with no such gate, and
+it merged **twenty-nine seconds later** and turned `main` red. The gate was correct, it would have
+failed #2782's own run, and it never got one.
+
+**So adding a gate has a step: look at the open PRs it would fail, before or just after merging it.**
+
+```bash
+gh pr list --state open --json number,title,headRefName
+```
+
+For a gate over a specific file, the cheap version is to check out each candidate branch and run the
+gate, or simply to expect the red and fix it forward. Either is fine; what is not fine is being
+surprised, because `gate-scripts` is a required check on `main`, so the surprise does not land on one
+PR. It lands on `main`, and every open PR fails it until somebody resolves it.
+
+This is not an argument for turning the strict policy on. It is an argument for knowing that a gate's
+first day is the one day it cannot protect, and that the remedy is a look at the queue rather than a
+change to the ruleset.
+
 ## The pre-commit hook
 
 `Scripts/git-hooks/pre-commit` runs thirty-six of `gate-scripts`' thirty-seven invocations, flag for

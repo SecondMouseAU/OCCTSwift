@@ -185,6 +185,11 @@ extension Shape {
 
     /// Convert geometry to direct faces (canonical surfaces).
     ///
+    /// A shape carrying a face with no surface returns `nil`, whatever edges that face has:
+    /// `ShapeCustom_DirectModification::NewSurface` runs on every face and dereferences the surface
+    /// handle with no null test, which took the process down rather than failing (#2777). Such a face
+    /// is not constructible through this API, but a `.brep` file carries one exactly.
+    ///
     /// - Returns: Shape with canonical surfaces, or nil on failure
     public func directFaces() -> Shape? {
         guard let handle = OCCTShapeDirectFaces(self.handle) else { return nil }

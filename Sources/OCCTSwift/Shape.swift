@@ -1022,6 +1022,11 @@ public final class Shape: @unchecked Sendable {
     /// print(demoted.isValid)      // true: a well-formed shell has no closure requirement
     /// print(demoted.isValidSolid) // false: this is the check that actually catches it
     /// ```
+    /// `false` is also the answer for two shapes `BRepCheck_Analyzer` itself cannot survive, both
+    /// reachable through a `.brep` file and neither constructible through this API: a face edge with
+    /// no valid 3D curve and at least one pcurve (#2746), and a face with no surface (#2777). OCCT's
+    /// checker calls both invalid wherever it manages to answer at all, so the refusal agrees with
+    /// the kernel rather than standing in for it.
     public var isValid: Bool {
         OCCTShapeIsValid(handle)
     }
