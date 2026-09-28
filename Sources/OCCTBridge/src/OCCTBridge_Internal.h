@@ -1916,11 +1916,81 @@ inline int32_t occtShapeSurfacelessFaceCount(const TopoDS_Shape& shape, int32_t 
 }
 
 /// Whether `shape` carries at least one face with no surface, and so must not be handed to an
-/// IGES export or to ShapeCustom::DirectFaces. Short-circuits on the first one.
+/// IGES export, to ShapeCustom::DirectFaces, or to any of the three ShapeCustom converters named
+/// in the #2790 note below. Short-circuits on the first one.
 inline bool occtShapeHasSurfacelessFace(const TopoDS_Shape& shape)
 {
   return occtShapeSurfacelessFaceCount(shape, 1) > 0;
 }
+
+// === #2790: the same predicate, three more lines, and the two subclasses OCCT got right ===
+//
+// The pair above is the right one for the rest of the ShapeCustom family too, and that was measured
+// per site rather than inherited, because #2777 had to kill exactly that assumption about #2773's
+// narrower pair. Every ShapeCustom operation the bridge wraps, over every fixture, no OSD signal
+// handler, on the v4.0.0-kernel.2 pin, in Scripts/repro/2790-shapecustom-surfaceless-face/:
+//
+//                          bare face   compound   face+wire   compound+wire   box
+//   SURFACELESS / BOTH       1 / 1       1 / 1       1 / 0         1 / 0       0 / 0
+//   DirectFaces (#2777)       139         139         139           139       clean
+//   SweptToElementary         139         139         139           139       clean
+//   ConvertToRevolution       139         139         139           139       clean
+//   ConvertToBSpline          139         139         139           139       clean
+//   ScaleShape              clean       clean       clean         clean       clean
+//   BSplineRestriction      clean       clean      CAUGHT        CAUGHT       clean
+//
+// The SURFACELESS row is what this pair counts and the BOTH row is what #2773's counts, so the two
+// with-wire columns are the ones that decide it: they crash exactly as hard as the edgeless ones,
+// so the surface clause alone is the predicate here as well, for all three operations, and reusing
+// #2773's pair would leave half the input space faulting.
+//
+// Three files, three lines, none of them ShapeCustom_DirectModification.cxx:55.
+// BRepTools_Modifier:: FillNewSurfaceInfo (BRepTools_Modifier.cxx:705-723) calls NewSurface on
+// every face of the shape with no test of anything, and each subclass dereferences the handle it
+// has just fetched:
+//
+//   ShapeCustom_SweptToElementary::NewSurface   :96 S = BRep_Tool::Surface(F, L), :98 IsToConvert
+//     ShapeCustom_SweptToElementary.cxx:59      S->IsKind(STANDARD_TYPE(Geom_SweptSurface))
+//   ShapeCustom_ConvertToRevolution::NewSurface :86 the same read,          :89 IsToConvert
+//     ShapeCustom_ConvertToRevolution.cxx:54 S->IsKind(STANDARD_TYPE(Geom_RectangularTrimmed...))
+//       (:51's occ::down_cast is a dynamic_cast and survives a null handle; :52 then takes the
+//        IsNull branch and :54 dereferences it)
+//   ShapeCustom_ConvertToBSpline::NewSurface    :102 the same read
+//     ShapeCustom_ConvertToBSpline.cxx:104      S->Bounds(U1, U2, V1, V2), in NewSurface itself
+//
+// Measured to the frame: calling each NewSurface directly on the bare and with-wire faces, with
+// BRep_Tool::Surface printed NULL in the same process, exits 139 for these three and returns false
+// for the two below. Nothing runs inside NewSurface before those statements, so a fault there is
+// those lines and no other.
+//
+// AND THE NEGATIVES ARE THE UPSTREAM ARGUMENT, per okf/policies/follow-occt-callers.md. Two of the
+// five subclasses hold the test the other three are missing, in the same class family:
+//
+//   ShapeCustom_BSplineRestriction.cxx:429-433   aSurface = BRep_Tool::Surface(F, L);
+//                                                if (aSurface.IsNull()) return false;
+//   BRepTools_TrsfModification.cxx:72-77         S = BRep_Tool::Surface(F, L);
+//                                                if (S.IsNull())
+//                                                  // processing cases when there is no geometry
+//                                                  return false;
+//
+// reached by ShapeCustom::BSplineRestriction and by ShapeCustom::ScaleShape (whose
+// ShapeCustom_TrsfModification::NewSurface delegates at ShapeCustom_TrsfModification.cxx:49). OCCT
+// names the case in a comment, so the kernel fix is copying a line OCCT wrote itself, three times.
+// The CAUGHT cells above are BSplineRestriction on a with-wire face raising Standard_NullObject
+// from GeomAdaptor_Surface::Load further down the modifier, which every bridge wrapper's catch
+// (...) already turns into the nullptr it documents. Those wrappers are deliberately NOT guarded.
+//
+// Unlike #2773, there is no signal disposition under which the kernel survives: with OSD::SetSignal
+// installed all three still abort with "an exception was raised, but no catch was found", because
+// ShapeCustom::ApplyModifier has no OCC_CATCH_SIGNALS of its own (the one at ShapeCustom.cxx:52 is
+// in the history helper, off this path). Guard it; there is no correct kernel outcome to wait for.
+//
+// The population is six bridge functions, not the four the issue derived, because two of them
+// construct the modification subclass and drive BRepTools_Modifier themselves instead of calling a
+// ShapeCustom:: free function: OCCTShapeConvertToBSplineAdvanced reaches
+// ShapeCustom_ConvertToBSpline.cxx:104, and OCCTShapeCustomDirectModification reaches #2777's own
+// ShapeCustom_DirectModification.cxx:55, which #2791's derivation missed for the same reason. Both
+// measured to fault on all four fixtures with the modifier driven directly.
 
 // === #502: one sub-shape enumeration ===
 //
