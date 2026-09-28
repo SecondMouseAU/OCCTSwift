@@ -51,6 +51,7 @@ Exits 2 if run from anywhere but the repository root, matching its siblings (#62
 """
 
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -205,8 +206,14 @@ def gh_json(number, fields):
     if out.returncode != 0:
         sys.stderr.write(out.stderr)
         raise SystemExit("error: could not read PR #%s" % number)
-    import json
     return json.loads(out.stdout)
+
+
+def changed_paths(number):
+    """The PR's own changed files, so the policy's "not in the diff" rule can be checked."""
+    names = subprocess.run(["gh", "pr", "diff", str(number), "--name-only"],
+                           capture_output=True, text=True)
+    return [l.strip() for l in (names.stdout or "").split("\n") if l.strip()]
 
 
 def merge_pr(number, dry, body_lines):
@@ -268,6 +275,11 @@ def main(argv=None):
         return 1
 
     if kind == "exempt":
+        if not args.allow_changelog_in_diff:
+            refusal = refuse_for_diff(changed_paths(args.number))
+            if refusal:
+                sys.stderr.write("error: %s\n" % refusal)
+                return 1
         trailer = no_changelog_trailer(payload)
         print("  section says None, so nothing is transcribed.")
         print("  merge trailer: %s" % trailer)
@@ -278,11 +290,8 @@ def main(argv=None):
         return 0
 
     entry = payload
-    names = subprocess.run(["gh", "pr", "diff", str(args.number), "--name-only"],
-                           capture_output=True, text=True)
-    paths = [l.strip() for l in (names.stdout or "").split("\n") if l.strip()]
     if not args.allow_changelog_in_diff:
-        refusal = refuse_for_diff(paths)
+        refusal = refuse_for_diff(changed_paths(args.number))
         if refusal:
             sys.stderr.write("error: %s\n" % refusal)
             return 1
@@ -325,8 +334,10 @@ def main(argv=None):
 # Self-test
 #
 # Every case is a fixture through the pure functions, and every one was run once against a broken
-# subject before landing: the removal matrix is in PR #2794's body, per
-# okf/policies/prove-the-test-fails.md.
+# subject before landing: the 14-row removal matrix is in PR #2796's body, per
+# okf/policies/prove-the-test-fails.md. One case was decorative on the first pass and was rewritten
+# rather than kept: `crlf-body-handled` asserted only that a CRLF body still classified as an entry,
+# which `line.strip()` makes true whether or not the text was normalised.
 # ------------------------------------------------------------------------------------------------
 
 BODY_ENTRY = """## What & why
