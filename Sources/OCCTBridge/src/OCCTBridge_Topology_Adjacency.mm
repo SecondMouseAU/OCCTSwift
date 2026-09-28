@@ -1187,7 +1187,12 @@ void OCCTBRepToolsDetectClosedness(OCCTShapeRef face, bool* isClosedU, bool* isC
 
 double OCCTBRepToolsEvalAndUpdateTol(OCCTShapeRef edge, OCCTShapeRef face)
 {
-  if (!edge || !face)
+  // #2812: the type test the two TopoDS:: casts below already perform, hoisted so that it also
+  // rejects a null TopoDS_Shape, which those casts pass straight through. Everything downstream
+  // dereferences it: BRep_Tool::Curve, CurveOnSurface, Surface and even the Tolerance fallback all
+  // SIGSEGV on a null shape, and the catch below cannot absorb a signal. 0.0 is the refusal this
+  // function already gave for a null pointer and for a caught exception.
+  if (!occtShapeIsType(edge, TopAbs_EDGE) || !occtShapeIsType(face, TopAbs_FACE))
     return 0.0;
   try
   {
