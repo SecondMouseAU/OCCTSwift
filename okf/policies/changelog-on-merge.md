@@ -77,11 +77,33 @@ restating it.
 
 ### If you are merging a PR
 
+**Run `python3 Scripts/merge-pr.py <n>`.** It does the whole of what this section asks, in the order
+it asks for it: extracts the `## CHANGELOG entry` block from the PR body verbatim, commits it to
+`docs/CHANGELOG.md` as the last commit on the PR's branch, pushes, and merges. A section saying
+"None" becomes a `No-Changelog:` trailer on the merge commit instead, which is the other half nobody
+remembers. `--dry-run` prints every action first and changes nothing.
+
 Merging is not complete until the entry is in the file. **Add it to the PR's own branch as the last
 commit before merging**, once no other PR is between you and the base. It has to be last, or the
 conflict this policy exists to avoid comes back.
 
 Copy the block verbatim. If it is wrong, that is a review comment on the PR, not an edit in transit.
+The script never drafts and never retypes, which is the point of extracting rather than copying:
+`feedback-changelog-transcription-repunctuation` records a hand transcription silently repunctuating
+an entry against the em-dash ban.
+
+**Why a script and not a checklist item.** #742 named the forgotten-transcription failure, built
+`Scripts/check-changelog-transcription.py` for it, and closed with a plan to promote that report to a
+required check. #2779 measured what happened instead: three of the five merges between `8740d62d` and
+`1429ff69` landed with an entry in the PR body that nobody transcribed, a fourth needed a
+`No-Changelog:` trailer and cannot gain one now, and one of the three misses was merged by an agent
+with this policy in its own context. The promotion is also not available. The report asks a
+post-merge question, so as a required check on a protected base it would fail every open PR for the
+*previous* merge's omission, which is neither that PR's fault nor something its author can fix; its
+`--verify-transcribed` half reads live PR bodies over the API and takes minutes. A step that cannot
+be forgotten is one that is not a step, so the transcription moved into the merge action rather than
+growing an enforcement mechanism in front of it. The report stays as the backstop for a merge made
+by hand, and `okf/policies/static-gates.md` records what its own CI invocation does and does not see.
 
 #### Why there is only one route now
 

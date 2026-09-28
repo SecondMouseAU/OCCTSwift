@@ -56,6 +56,7 @@
 #include <Geom_Circle.hxx>
 #include <Geom_TrimmedCurve.hxx>
 #include <GeomAPI_PointsToBSpline.hxx>
+#include <NCollection_Vec3.hxx> // occtAppendFaceTriangulation's raw node-normal read (#2337)
 #include <gp_Ax2.hxx>
 #include <gp_Circ.hxx>
 #include <gp_Dir.hxx>
@@ -83,6 +84,126 @@
 #include <memory>
 
 // MARK: - Meshing
+
+namespace
+{
+
+// #2337: append one oriented face's triangulation to `mesh`, the way OCCT's own consumers of a
+// Poly_Triangulation read one.
+//
+// Both public meshing entry points below carried this loop verbatim, and the per-vertex normal it
+// wrote was a `(0, 0, 1)` placeholder under the comment "will be computed later if needed". Nothing
+// computed it later, so Mesh.normals was (0, 0, 1) at every vertex of every meshed shape: 168
+// entries, one distinct value, for Shape.sphere(radius: 5) at deflection 0.5. Sharing the loop is
+// what keeps the fix from having to be made twice.
+//
+// Computing node normals is the *consumer's* job in OCCT, not the mesher's.
+// BRepMesh_IncrementalMesh never stores them, so HasNormals() is false for every face it meshes,
+// and each OCCT caller that wants them computes them at the point of use:
+//
+//   - StdPrs_ShadedShape.cxx:186, the production shaded-display path, calls
+//     StdPrs_ToolTriangulatedShape::ComputeNormals(aFace, aT) immediately before reading
+//     aT->Normal(aNodeIter) at :199.
+//   - IVtkOCC_ShapeMesher.cxx:73 does the same before its own node walk.
+//   - TopoDSToStep_MakeTessellatedItem.cxx:56 guards Poly::ComputeNormals with !HasNormals().
+//   - RWMesh_FaceIterator::normal (RWMesh_FaceIterator.cxx:46-77), the glTF/OBJ/PLY export path,
+//     reads a stored normal when there is one, falls back to BRepLProp on the UV node, and only
+//     then to gp::DZ().
+//
+// So this calls the class StdPrs uses (BRepLib_ToolTriangulatedShape is its non-visualization base)
+// and then copies StdPrs_ShadedShape.cxx:196-208 exactly: reverse the normal when the face is
+// REVERSED *xor* the location mirrors, then carry the location's transformation. Winding stays on
+// the orientation alone, which is what StdPrs does too at :231-241, and is #613/#614's rule below.
+//
+// ComputeNormals is a no-op on a triangulation that already carries normals, so a shape meshed
+// elsewhere, or one OCCTBRepLibComputeNormals has already run over, keeps the normals it has.
+void occtAppendFaceTriangulation(OCCTMesh* mesh, const TopoDS_Face& face, int32_t faceIndex)
+{
+  TopLoc_Location            location;
+  Handle(Poly_Triangulation) triangulation = BRep_Tool::Triangulation(face, location);
+  if (triangulation.IsNull())
+    return;
+
+  BRepLib_ToolTriangulatedShape::ComputeNormals(face, triangulation);
+
+  const gp_Trsf transformation = location.Transformation();
+  // StdPrs_ShadedShape.cxx:183: a negative determinant means the location mirrors, which flips the
+  // sense of the stored normal without flipping the triangle's winding.
+  const bool             isMirrored = transformation.VectorialPart().Determinant() < 0.0;
+  const bool             isReversed = (face.Orientation() == TopAbs_REVERSED);
+  const Standard_Integer baseIndex  = static_cast<Standard_Integer>(mesh->vertices.size() / 3);
+
+  for (Standard_Integer i = 1; i <= triangulation->NbNodes(); i++)
+  {
+    gp_Pnt point = triangulation->Node(i).Transformed(transformation);
+    mesh->vertices.push_back(static_cast<float>(point.X()));
+    mesh->vertices.push_back(static_cast<float>(point.Y()));
+    mesh->vertices.push_back(static_cast<float>(point.Z()));
+
+    // RWMesh_FaceIterator.cxx:48-58's guard, copied: read the raw float triple and check its
+    // modulus before making a direction of it, since gp_Dir's setter raises on a null vector. Its
+    // fallback is gp::DZ(), spelled out as a literal here so check-throwing-calls.py can see the
+    // constant is fixed. (0, 0, 1) is also what Poly_Triangulation::ComputeNormals substitutes for
+    // a node whose incident triangles all cancel (Poly_Triangulation.cxx:472), so it is OCCT's own
+    // answer for a normal it cannot define, reached only by a degenerate triangulation, rather than
+    // the placeholder this function used to write at every node.
+    gp_Dir                  normal(0.0, 0.0, 1.0);
+    NCollection_Vec3<float> stored;
+    triangulation->Normal(i, stored);
+    if (stored.Modulus() != 0.0f)
+    {
+      normal.SetCoord(stored.x(), stored.y(), stored.z());
+    }
+    if (isReversed != isMirrored)
+    {
+      normal.Reverse();
+    }
+    if (!location.IsIdentity())
+    {
+      normal.Transform(transformation);
+    }
+    mesh->normals.push_back(static_cast<float>(normal.X()));
+    mesh->normals.push_back(static_cast<float>(normal.Y()));
+    mesh->normals.push_back(static_cast<float>(normal.Z()));
+  }
+
+  for (Standard_Integer i = 1; i <= triangulation->NbTriangles(); i++)
+  {
+    const Poly_Triangle& triangle = triangulation->Triangle(i);
+    Standard_Integer     n1, n2, n3;
+    triangle.Get(n1, n2, n3);
+
+    // Handle face orientation
+    if (isReversed)
+    {
+      std::swap(n2, n3);
+    }
+
+    mesh->indices.push_back(baseIndex + n1 - 1);
+    mesh->indices.push_back(baseIndex + n2 - 1);
+    mesh->indices.push_back(baseIndex + n3 - 1);
+
+    // Store face index for this triangle
+    mesh->faceIndices.push_back(faceIndex);
+
+    // Compute triangle normal
+    gp_Pnt p1 = triangulation->Node(n1).Transformed(transformation);
+    gp_Pnt p2 = triangulation->Node(n2).Transformed(transformation);
+    gp_Pnt p3 = triangulation->Node(n3).Transformed(transformation);
+    gp_Vec v1(p1, p2);
+    gp_Vec v2(p1, p3);
+    gp_Vec triNormal = v1.Crossed(v2);
+    if (triNormal.Magnitude() > 1e-10)
+    {
+      triNormal.Normalize();
+    }
+    mesh->triangleNormals.push_back(static_cast<float>(triNormal.X()));
+    mesh->triangleNormals.push_back(static_cast<float>(triNormal.Y()));
+    mesh->triangleNormals.push_back(static_cast<float>(triNormal.Z()));
+  }
+}
+
+} // namespace
 
 // #613/#614: meshing is the one converted site where the two enumerations pull in opposite
 // directions, so it uses BOTH -- see occtForEachOrientedFace in OCCTBridge_Internal.h.
@@ -126,75 +247,7 @@ OCCTMeshRef OCCTShapeCreateMesh(OCCTShapeRef shape,
 
     // Extract triangles from all faces
     occtForEachOrientedFace(shape->shape, [&](const TopoDS_Face& face, int32_t faceIndex) {
-      TopLoc_Location            location;
-      Handle(Poly_Triangulation) triangulation = BRep_Tool::Triangulation(face, location);
-
-      if (!triangulation.IsNull())
-      {
-        gp_Trsf          transformation = location.Transformation();
-        Standard_Integer baseIndex      = static_cast<Standard_Integer>(mesh->vertices.size() / 3);
-
-        // Add vertices and normals
-        for (Standard_Integer i = 1; i <= triangulation->NbNodes(); i++)
-        {
-          gp_Pnt point = triangulation->Node(i).Transformed(transformation);
-          mesh->vertices.push_back(static_cast<float>(point.X()));
-          mesh->vertices.push_back(static_cast<float>(point.Y()));
-          mesh->vertices.push_back(static_cast<float>(point.Z()));
-
-          // Use normals if available
-          if (triangulation->HasNormals())
-          {
-            gp_Dir normal = triangulation->Normal(i);
-            mesh->normals.push_back(static_cast<float>(normal.X()));
-            mesh->normals.push_back(static_cast<float>(normal.Y()));
-            mesh->normals.push_back(static_cast<float>(normal.Z()));
-          }
-          else
-          {
-            // Default normal (will be computed later if needed)
-            mesh->normals.push_back(0.0f);
-            mesh->normals.push_back(0.0f);
-            mesh->normals.push_back(1.0f);
-          }
-        }
-
-        // Add triangles with face index and per-triangle normals
-        for (Standard_Integer i = 1; i <= triangulation->NbTriangles(); i++)
-        {
-          const Poly_Triangle& triangle = triangulation->Triangle(i);
-          Standard_Integer     n1, n2, n3;
-          triangle.Get(n1, n2, n3);
-
-          // Handle face orientation
-          if (face.Orientation() == TopAbs_REVERSED)
-          {
-            std::swap(n2, n3);
-          }
-
-          mesh->indices.push_back(baseIndex + n1 - 1);
-          mesh->indices.push_back(baseIndex + n2 - 1);
-          mesh->indices.push_back(baseIndex + n3 - 1);
-
-          // Store face index for this triangle
-          mesh->faceIndices.push_back(faceIndex);
-
-          // Compute triangle normal
-          gp_Pnt p1 = triangulation->Node(n1).Transformed(transformation);
-          gp_Pnt p2 = triangulation->Node(n2).Transformed(transformation);
-          gp_Pnt p3 = triangulation->Node(n3).Transformed(transformation);
-          gp_Vec v1(p1, p2);
-          gp_Vec v2(p1, p3);
-          gp_Vec triNormal = v1.Crossed(v2);
-          if (triNormal.Magnitude() > 1e-10)
-          {
-            triNormal.Normalize();
-          }
-          mesh->triangleNormals.push_back(static_cast<float>(triNormal.X()));
-          mesh->triangleNormals.push_back(static_cast<float>(triNormal.Y()));
-          mesh->triangleNormals.push_back(static_cast<float>(triNormal.Z()));
-        }
-      }
+      occtAppendFaceTriangulation(mesh, face, faceIndex);
     });
 
     return mesh;
@@ -256,71 +309,10 @@ OCCTMeshRef OCCTShapeCreateMeshWithParams(OCCTShapeRef shape, OCCTMeshParameters
 
     mesh = new OCCTMesh();
 
-    // Extract triangles from all faces (same as OCCTShapeCreateMesh, including #613/#614's
+    // Extract triangles from all faces (same helper as OCCTShapeCreateMesh, including #613/#614's
     // orientation-for-winding / map-index-for-faceIndex split -- see the note there)
     occtForEachOrientedFace(shape->shape, [&](const TopoDS_Face& face, int32_t faceIndex) {
-      TopLoc_Location            location;
-      Handle(Poly_Triangulation) triangulation = BRep_Tool::Triangulation(face, location);
-
-      if (!triangulation.IsNull())
-      {
-        gp_Trsf          transformation = location.Transformation();
-        Standard_Integer baseIndex      = static_cast<Standard_Integer>(mesh->vertices.size() / 3);
-
-        for (Standard_Integer i = 1; i <= triangulation->NbNodes(); i++)
-        {
-          gp_Pnt point = triangulation->Node(i).Transformed(transformation);
-          mesh->vertices.push_back(static_cast<float>(point.X()));
-          mesh->vertices.push_back(static_cast<float>(point.Y()));
-          mesh->vertices.push_back(static_cast<float>(point.Z()));
-
-          if (triangulation->HasNormals())
-          {
-            gp_Dir normal = triangulation->Normal(i);
-            mesh->normals.push_back(static_cast<float>(normal.X()));
-            mesh->normals.push_back(static_cast<float>(normal.Y()));
-            mesh->normals.push_back(static_cast<float>(normal.Z()));
-          }
-          else
-          {
-            mesh->normals.push_back(0.0f);
-            mesh->normals.push_back(0.0f);
-            mesh->normals.push_back(1.0f);
-          }
-        }
-
-        for (Standard_Integer i = 1; i <= triangulation->NbTriangles(); i++)
-        {
-          const Poly_Triangle& triangle = triangulation->Triangle(i);
-          Standard_Integer     n1, n2, n3;
-          triangle.Get(n1, n2, n3);
-
-          if (face.Orientation() == TopAbs_REVERSED)
-          {
-            std::swap(n2, n3);
-          }
-
-          mesh->indices.push_back(baseIndex + n1 - 1);
-          mesh->indices.push_back(baseIndex + n2 - 1);
-          mesh->indices.push_back(baseIndex + n3 - 1);
-
-          mesh->faceIndices.push_back(faceIndex);
-
-          gp_Pnt p1 = triangulation->Node(n1).Transformed(transformation);
-          gp_Pnt p2 = triangulation->Node(n2).Transformed(transformation);
-          gp_Pnt p3 = triangulation->Node(n3).Transformed(transformation);
-          gp_Vec v1(p1, p2);
-          gp_Vec v2(p1, p3);
-          gp_Vec triNormal = v1.Crossed(v2);
-          if (triNormal.Magnitude() > 1e-10)
-          {
-            triNormal.Normalize();
-          }
-          mesh->triangleNormals.push_back(static_cast<float>(triNormal.X()));
-          mesh->triangleNormals.push_back(static_cast<float>(triNormal.Y()));
-          mesh->triangleNormals.push_back(static_cast<float>(triNormal.Z()));
-        }
-      }
+      occtAppendFaceTriangulation(mesh, face, faceIndex);
     });
 
     return mesh;

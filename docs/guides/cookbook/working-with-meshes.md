@@ -70,21 +70,35 @@ for tri in mesh.trianglesWithFaces() {
 
 ## Mesh-level booleans
 
-When you only have meshes (or want to avoid B-Rep booleans), combine them directly. The `deflection`
-controls the tessellation of the result:
+`Mesh.union(with:)`, `subtracting(_:)` and `intersection(with:)` are Booleans on the sewn
+**surfaces**, not on volumes. `toShape` gives a shell, and a Boolean takes the dimension of its
+arguments, so the results are the surface operations: the union keeps the interior walls, the
+subtraction splits faces without removing anything, and the intersection is usually empty because two
+surfaces meet along curves. See [`docs/reference/Mesh.md`](../../reference/Mesh.md#mesh-boolean-operations)
+for the measured numbers and why this is faithful to OCCT rather than a defect.
 
 ```swift
 guard let a = Shape.box(width: 12, height: 12, depth: 12)?.mesh(linearDeflection: 0.3),
       let b = Shape.cylinder(at: SIMD3(6, 6, -1), direction: SIMD3(0, 0, 1),
                              radius: 3, height: 14)?.mesh(linearDeflection: 0.3) else { return }
 
-let cut   = a.subtracting(b, deflection: 0.3)     // box with a drilled hole
-let join  = a.union(with: b, deflection: 0.3)
-let common = a.intersection(with: b, deflection: 0.3)
+let splitFaces = a.subtracting(b, deflection: 0.3)      // faces split, no hole drilled
+let joinedSurfaces = a.union(with: b, deflection: 0.3)  // interior walls kept
 ```
 
-These are convenient for triangle data, but they work on tessellations, for exact, valid solids
-prefer the B-Rep [booleans](booleans.md) and mesh the result at the end.
+For the **volume** operations on mesh input, promote each sewn shell to a solid first and use the
+B-Rep [booleans](booleans.md):
+
+```swift
+guard let solidA = Shape.solid(from: a.toShape()!),
+      let solidB = Shape.solid(from: b.toShape()!) else { return }
+
+let drilled = solidA.subtracting(solidB)?.mesh(linearDeflection: 0.3)
+```
+
+The inputs are still tessellations, so the result is the faceted approximation of the exact solid
+operation. When the exact geometry is available, run the B-Rep Boolean on the shapes and mesh at the
+end instead.
 
 ## Mesh → B-Rep
 

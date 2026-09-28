@@ -9,7 +9,7 @@ This page covers geometry repair, shape upgrade, point classification, proximity
 
 ## Topics
 
-- [Advanced Healing](#advanced-healing) · [Point Classification](#point-classification) · [Shape Proximity](#shape-proximity) · [Wedge Primitive](#wedge-primitive) · [NURBS Conversion](#nurbs-conversion) · [Fast Sewing](#fast-sewing) · [Normal Projection](#normal-projection) · [Half-Space](#half-space) · [Sub-Shape Replacement](#sub-shape-replacement) · [Periodic Shapes](#periodic-shapes) · [Draft from Shape](#draft-from-shape) · [Non-Uniform Scale](#non-uniform-scale) · [Shell & Vertex Creation](#shell--vertex-creation) · [Simple Offset](#simple-offset) · [Middle Path](#middle-path) · [Fuse Edges](#fuse-edges) · [Volume from Faces](#volume-from-faces) · [Shape Contents](#shape-contents) · [Canonical Recognition](#canonical-recognition) · [Find Surface](#find-surface) · [Fix Wireframe](#fix-wireframe) · [Remove Internal Wires](#remove-internal-wires) · [Contiguous Edges](#contiguous-edges) · [Quilt Faces](#quilt-faces) · [Fix Small Faces](#fix-small-faces) · [Remove Locations](#remove-locations) · [Revolution from Curve](#revolution-from-curve) · [Linear Rib Feature](#linear-rib-feature) · [Revolution Form Feature](#revolution-form-feature) · [Draft Prism Feature](#draft-prism-feature) · [Revolution Feature](#revolution-feature) · [Face from Surface](#face-from-surface) · [Edges to Faces](#edges-to-faces) · [Shape-to-Shape Section](#shape-to-shape-section) · [Boolean Pre-Validation](#boolean-pre-validation) · [Split Shape by Wire](#split-shape-by-wire) · [Split by Angle](#split-by-angle) · [Drop Small Edges](#drop-small-edges) · [Multi-Tool Boolean Fuse](#multi-tool-boolean-fuse) · [Multi-Offset Wire](#multi-offset-wire) · [Cylindrical Projection](#cylindrical-projection) · [Same Parameter](#same-parameter) · [Conical Projection](#conical-projection) · [Encode Regularity](#encode-regularity) · [Update Tolerances](#update-tolerances) · [Divide by Number](#divide-by-number) · [Boolean with History](#boolean-with-history)
+- [Advanced Healing](#advanced-healing) · [A Face With No Surface](#a-face-with-no-surface-and-which-shapecustom-operations-refuse-one) · [Point Classification](#point-classification) · [Shape Proximity](#shape-proximity) · [Wedge Primitive](#wedge-primitive) · [NURBS Conversion](#nurbs-conversion) · [Fast Sewing](#fast-sewing) · [Normal Projection](#normal-projection) · [Half-Space](#half-space) · [Sub-Shape Replacement](#sub-shape-replacement) · [Periodic Shapes](#periodic-shapes) · [Draft from Shape](#draft-from-shape) · [Non-Uniform Scale](#non-uniform-scale) · [Shell & Vertex Creation](#shell--vertex-creation) · [Simple Offset](#simple-offset) · [Middle Path](#middle-path) · [Fuse Edges](#fuse-edges) · [Volume from Faces](#volume-from-faces) · [Shape Contents](#shape-contents) · [Canonical Recognition](#canonical-recognition) · [Find Surface](#find-surface) · [Fix Wireframe](#fix-wireframe) · [Remove Internal Wires](#remove-internal-wires) · [Contiguous Edges](#contiguous-edges) · [Quilt Faces](#quilt-faces) · [Fix Small Faces](#fix-small-faces) · [Remove Locations](#remove-locations) · [Revolution from Curve](#revolution-from-curve) · [Linear Rib Feature](#linear-rib-feature) · [Revolution Form Feature](#revolution-form-feature) · [Draft Prism Feature](#draft-prism-feature) · [Revolution Feature](#revolution-feature) · [Face from Surface](#face-from-surface) · [Edges to Faces](#edges-to-faces) · [Shape-to-Shape Section](#shape-to-shape-section) · [Boolean Pre-Validation](#boolean-pre-validation) · [Split Shape by Wire](#split-shape-by-wire) · [Split by Angle](#split-by-angle) · [Drop Small Edges](#drop-small-edges) · [Multi-Tool Boolean Fuse](#multi-tool-boolean-fuse) · [Multi-Offset Wire](#multi-offset-wire) · [Cylindrical Projection](#cylindrical-projection) · [Same Parameter](#same-parameter) · [Conical Projection](#conical-projection) · [Encode Regularity](#encode-regularity) · [Update Tolerances](#update-tolerances) · [Divide by Number](#divide-by-number) · [Boolean with History](#boolean-with-history)
 
 ---
 
@@ -183,6 +183,10 @@ Unlike `scaled(by:)` which applies a topological `gp_Trsf`, this modifies the un
 - **Parameters:** `factor`, uniform scale factor applied to all geometry definitions.
 - **Returns:** Scaled shape, or nil on failure.
 - **OCCT:** `ShapeCustom::ScaleShape` (via `OCCTShapeScaleGeometry`).
+- **Note:** deliberately **not** guarded against a face with no surface, unlike the three
+  `ShapeCustom` converters below: `BRepTools_TrsfModification::NewSurface` tests the handle itself,
+  so this answers for such a shape rather than refusing it, measured (#2790). See
+  [A face with no surface](#a-face-with-no-surface-and-which-shapecustom-operations-refuse-one).
 - **Example:**
   ```swift
   if let mmShape = inchShape.scaledGeometry(factor: 25.4) {
@@ -231,6 +235,12 @@ Continuity is fixed at C1 here; [`bsplineRestriction(tol3d:tol2d:maxDegree:maxSe
   - `maxSegments`: maximum number of BSpline segments (default 10000).
 - **Returns:** Shape with restricted BSplines, or nil on failure.
 - **OCCT:** `ShapeCustom_BSplineRestriction` (via `OCCTShapeBSplineRestriction`).
+- **Note:** deliberately **not** guarded against a face with no surface:
+  `ShapeCustom_BSplineRestriction::NewSurface` tests the handle itself and returns false, so an
+  edgeless one passes through untouched, and one carrying a wire raises a catchable
+  `Standard_NullObject` further down the modifier which becomes the documented `nil`. Measured, no
+  process death either way (#2790). See
+  [A face with no surface](#a-face-with-no-surface-and-which-shapecustom-operations-refuse-one).
 - **Example:**
   ```swift
   if let simplified = imported.bsplineRestriction(surfaceTolerance: 0.001, curveTolerance: 0.001) {
@@ -254,6 +264,9 @@ Recognises surfaces of extrusion and revolution that degenerate into planes, cyl
 - **OCCT:** `ShapeCustom_SweptToElementary` (via `OCCTShapeSweptToElementary`).
 - **Inverse:** [`withSurfacesAsRevolution()`](Shape-Measurement.md#withsurfacesasrevolution) runs
   the other direction, elementary periodic surfaces into surfaces of revolution.
+- **Note:** `nil` also for a shape carrying a face with no surface. See
+  [A face with no surface, and which `ShapeCustom` operations refuse one](#a-face-with-no-surface-and-which-shapecustom-operations-refuse-one)
+  below; the faulting line for this operation is `ShapeCustom_SweptToElementary.cxx:59` (#2790).
 - **Example:**
   ```swift
   if let canonical = swept.sweptToElementary() {
@@ -281,6 +294,17 @@ Replaces every analytic and swept surface with an equivalent BSpline/NURBS form.
   [`bsplineRestriction(surfaceTolerance:curveTolerance:maxDegree:maxSegments:)`](#bsplinerestrictionsurfacetolerancecurvetolerancemaxdegreemaxsegments)
   and [`convertedToNURBS()`](#convertedtonurbs) respectively, and neither shares this call path.
   Note the `plane: false` argument: planar faces are left alone. (#808)
+- **Note:** `nil` also for a shape carrying a face with no surface. See
+  [A face with no surface, and which `ShapeCustom` operations refuse one](#a-face-with-no-surface-and-which-shapecustom-operations-refuse-one)
+  below; the faulting line for this operation is `ShapeCustom_ConvertToBSpline.cxx:104` (#2790).
+- **Also:** this call is
+  [`withSurfacesAsBSpline(extrusion:revolution:offset:plane:)`](Shape-Measurement.md#withsurfacesasbsplineextrusionrevolutionoffsetplane)
+  at that method's own default flags, and
+  [`convertToBSplineAdvanced(_:extrusionMode:revolutionMode:offsetMode:planeMode:)`](Shape-Recognition.md#shapeconverttobsplineadvanced_extrusionmoderevolutionmodeoffsetmodeplanemode)
+  is a third spelling that reaches `ShapeCustom_ConvertToBSpline` through a bare
+  `BRepTools_Modifier` instead of `ShapeCustom::ApplyModifier`. All three were measured to agree on a
+  box, a cylinder and a compound of two cylinders (#2790); prefer the parameterised one, since this
+  one cannot reach `plane: true`.
 - **Example:**
   ```swift
   if let bspline = solid.convertedToBSpline() {
@@ -340,6 +364,38 @@ Two things this pipeline does not preserve, both inherent to sewing first:
   let part = twoBodyImport.upgraded(tolerance: 1e-6)!
   print(part.solids.count)   // 2, not 1
   ```
+
+---
+
+## A face with no surface, and which `ShapeCustom` operations refuse one
+
+A `TopoDS_Face` whose `BRep_TFace` holds no surface is not constructible through this API: it needs
+`BRep_Builder::MakeFace` with no argument. A `.brep` file carries one exactly, so
+`Shape.loadBREP(from:)` followed by one of these operations is the whole route (#2773).
+
+`BRepTools_Modifier::FillNewSurfaceInfo` calls `NewSurface` on **every** face of the shape with no
+test of anything, so each `ShapeCustom` operation's answer comes down to whether its own
+`BRepTools_Modification` subclass tests the handle it has just fetched. Three do not and used to take
+the process down with SIGSEGV; two do, and OCCT names the case in a comment. Measured on the pinned
+kernel, one process per case, in `Scripts/repro/2790-shapecustom-surfaceless-face/`:
+
+| operation | subclass, and what it does with a null surface | result |
+|---|---|---|
+| `directFaces()`, IGES export | `ShapeCustom_DirectModification.cxx:55` dereferences it | refuses (#2777) |
+| `directModification()` | the same line, reached through a bare `BRepTools_Modifier` | refuses (#2790) |
+| `sweptToElementary()` | `ShapeCustom_SweptToElementary.cxx:59` dereferences it | refuses (#2790) |
+| `withSurfacesAsRevolution()` | `ShapeCustom_ConvertToRevolution.cxx:54` dereferences it | refuses (#2790) |
+| `convertedToBSpline()` and its two siblings | `ShapeCustom_ConvertToBSpline.cxx:104` dereferences it | refuses (#2790) |
+| `scaledGeometry(factor:)`, `trsfModificationScale(_:)` | `BRepTools_TrsfModification.cxx:73` tests it | answers normally |
+| `bsplineRestriction(...)`, both overloads | `ShapeCustom_BSplineRestriction.cxx:430` tests it | answers normally |
+
+The predicate the refusals use is **the face's surface alone**, with no clause about its edges: all
+three faults hit a surface-less face carrying a wire exactly as hard as an edgeless one, unlike
+`ShapeUpgrade_ShapeDivide`'s (#2773), which handles the with-wire case correctly and must not refuse
+it. The last two rows are deliberately **not** guarded, and that is the evidence for what the kernel
+fix should be: two of the five subclasses in the same class family already hold the test the other
+three are missing, and `BRepTools_TrsfModification` labels it "processing cases when there is no
+geometry".
 
 ---
 
