@@ -84,10 +84,14 @@ and this was the one that did not. Documenting it would have told consumers to c
 code.
 
 **One MINOR is not internal, and is the largest addition in the line: a new platform.** As of
-`v4.0.0-beta.4` the package builds and runs on **`wasm32-unknown-wasip1`** (#1689, #2762). It is
-purely additive by construction. No Apple-platform consumer sees any change: every edit to
-`Sources/` is either a header include that is a no-op where Foundation already supplied it, or
-guarded behind `os(WASI)` / `isWASI`.
+`v4.0.0-beta.4` the package builds and runs on **`wasm32-unknown-wasip1`** (#1689, #2762).
+
+**The wasm work itself is additive by construction**: its edits to `Sources/` are either a header
+include that is a no-op where Foundation already supplied it, or guarded behind `os(WASI)` /
+`isWASI`, which is what #2762 states and what the full suite passing unchanged demonstrates. That is
+a claim about the wasm work, not about the release: twenty-nine `Sources/` files changed since
+beta.3 and most did so for unrelated reasons, including the Apple-platform behaviour changes
+recorded under #2186 below.
 
 On wasm the surface is the whole public API **except
 `Shape.isSelfIntersecting(hardTimeout:)`**, whose contract is a hard wall-clock deadline enforced
