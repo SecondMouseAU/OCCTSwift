@@ -36,45 +36,28 @@
 # for why a count alone is necessary and not sufficient.
 
 # --- where the asset is ---
-OCCT_WASM_RELEASE_TAG=v4.0.0-kernel.1
+OCCT_WASM_RELEASE_TAG=v4.0.0-kernel.2
 OCCT_WASM_ASSET_NAME=libOCCT-wasm.tar.gz
-OCCT_WASM_ASSET_URL=https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.1/libOCCT-wasm.tar.gz
-OCCT_WASM_ASSET_SHA256=5f8d893c837a493ef45dea7a39e0dee46a18c1d01100038ccf43cf284a2aeded
-OCCT_WASM_ASSET_BYTES=40254975
+OCCT_WASM_ASSET_URL=https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.2/libOCCT-wasm.tar.gz
+OCCT_WASM_ASSET_SHA256=65dae210ea66b56337c1398bca67fb070db49f75c4c7f6b12d310b17f17b5e94
+OCCT_WASM_ASSET_BYTES=40254925
 
 # --- what is inside it, for the parity gate ---
 # The carried patches are Scripts/patches/NNNN-*.patch. FIRST and LAST are the numbers, not an
 # assertion that every number between them exists: the gate reads the actual file list.
 OCCT_VERSION=V8_0_1
-OCCT_WASM_PATCH_COUNT=29
+OCCT_WASM_PATCH_COUNT=30
 OCCT_WASM_PATCH_FIRST=0010
-OCCT_WASM_PATCH_LAST=0041
+OCCT_WASM_PATCH_LAST=0042
 # The WASI-only source changes, Scripts/patches-wasi/*.patch, which only build-occt-wasm.sh applies.
 OCCT_WASM_WASI_PATCH_COUNT=11
-
-# --- parity acknowledgement, TEMPORARY, see #2785 ---
-# The native pin moved to v4.0.0-kernel.2 (thirty patches) in `ac9dd273`, PR #2782, twenty-nine
-# SECONDS after PR #2784 published the wasm asset for kernel.1 (twenty-nine patches). Neither PR was
-# at fault: #2782 was opened before #2784 merged and could not have known a wasm asset existed, and
-# #2784's asset matched what Package.swift pinned at the moment it was published.
-#
-# So the browser is one patch behind macOS and iOS, and the missing one is
-# 0042-ShapeAnalysis-GetFaceUVBounds-null-surface-2773, a null-surface guard #2773 measured as a
-# SIGSEGV on seven cases. That is a real gap and this acknowledgement does not close it: it keeps
-# `main` green while the 69-minute rebuild happens, and #2785 is the work.
-#
-# AGAINST is the native patch count this was decided at, not a number to bump. The next native repin
-# takes it to thirty-one and the gate fires again, which is the expiry and the whole reason the
-# mechanism is shaped this way rather than as a boolean.
-OCCT_WASM_PARITY_ACKNOWLEDGED_AGAINST=30
-OCCT_WASM_PARITY_ACKNOWLEDGED_REASON=kernel.2 repin (#2782) landed 29s after the kernel.1 wasm asset was published; rebuild tracked in #2785
 
 # --- provenance ---
 # The commit whose Scripts/patches/ and Scripts/patches-wasi/ the archive was built from, so the
 # claim above can be checked rather than believed: `git show <sha>:Scripts/patches` lists them.
-OCCT_WASM_BUILT_FROM=f58bed1659a5fca854df147ae864483f0d826f9b
-OCCT_WASM_BUILT_ON=2026-09-25
+OCCT_WASM_BUILT_FROM=46947392f4f0cb4a31ebcc27086d1d073e90bd05
+OCCT_WASM_BUILT_ON=2026-09-28
 # Unpacked sizes, so a truncated or wrong-shaped extraction is caught before a 69-minute rebuild is
 # blamed for it.
-OCCT_WASM_ARCHIVE_BYTES=153192816
+OCCT_WASM_ARCHIVE_BYTES=153195088
 OCCT_WASM_HEADER_FILES=7160

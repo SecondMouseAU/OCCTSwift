@@ -50,8 +50,8 @@ xcframework would notice. `Scripts/check-wasm-kernel-parity.py` is the gate, and
 `gate-scripts` on every PR precisely because the PR that has to be caught is a native repin, which
 touches no wasm path. It takes a dated acknowledgement for the 69-minute rebuild, keyed to the native
 patch count so it expires at the next repin. It fired on its first real occasion **29 seconds** after
-the asset was published, and the browser is one patch behind today (`0042`, acknowledged, rebuild in
-#2785). The rule and that story are in
+the asset was published; that gap (`0042`) was rebuilt and closed the next day, and both kernels are
+`v4.0.0-kernel.2` with thirty patches today. The rule and that story are in
 [`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md); the current
 divergence is in
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md).

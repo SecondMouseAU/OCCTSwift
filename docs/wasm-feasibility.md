@@ -775,11 +775,11 @@ which is Phase 5.
   pin next moves.
 
   **It fired on its first real occasion, twenty-nine seconds later.** The `kernel.2`
-  repin (#2782) landed immediately after the asset was published for `kernel.1`, so the
-  browser is currently one patch behind: `0042`, a null-surface guard. Neither PR was at
-  fault, which is the point, and the rebuild is #2785. The acknowledgement in
-  `Scripts/wasm-kernel-pin.txt` keeps `main` green until it lands and does not pretend
-  the gap is closed.
+  repin (#2782) landed immediately after the asset was published for `kernel.1`, leaving
+  the browser one patch behind: `0042`, a null-surface guard. Neither PR was at fault,
+  which is the point. It was acknowledged to unblock `main` (#2786), rebuilt the next
+  day, and both kernels are now `v4.0.0-kernel.2` with thirty patches. The whole cycle,
+  from the gate firing to the asset being republished, is #2785.
 
 ### Phase 2. Swift layer portability
 
