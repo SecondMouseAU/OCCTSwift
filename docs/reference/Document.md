@@ -733,15 +733,23 @@ Common `scale` values: `1.0` = mm, `10.0` = cm, `1000.0` = m, `25.4` = inch.
 
 ## Layers
 
+The layer table is the one the write side uses: `XCAFDoc_DocumentTool::LayerTool(Main())`, which
+lives on the document's Layers label `0:1:3`. **A freshly created document has no layers**, so
+`layerCount` is `0` and `layerNames` is empty until a file carrying layers is read or a layer is
+written. Before #2413 these two read a layer tool attached to `Main()` itself, which enumerates the
+XCAF tool labels (`Shapes`, `Colors`, `Layers`, `D&GTs`, `Materials`, `Views`, `Clipping Planes`,
+`Notes`, `VisMaterials`) as though they were layers, and never listed a real one.
+
 ### `layerCount`
 
-Number of layers in this document.
+Number of layers in this document's layer table.
 
 ```swift
 public var layerCount: Int { get }
 ```
 
-- **OCCT:** `XCAFDoc_LayerTool` (via `OCCTDocumentGetLayerCount`).
+- **Returns:** The layer count, `0` on a fresh document.
+- **OCCT:** `XCAFDoc_DocumentTool::LayerTool` + `XCAFDoc_LayerTool::GetLayerLabels` (via `OCCTDocumentGetLayerCount`).
 
 ---
 
@@ -755,13 +763,13 @@ public func layerName(at index: Int) -> String?
 
 - **Parameters:** `index`, zero-based layer index.
 - **Returns:** Layer name, or `nil` if out of range.
-- **OCCT:** `XCAFDoc_LayerTool` (via `OCCTDocumentGetLayerName`).
+- **OCCT:** `XCAFDoc_DocumentTool::LayerTool` + `XCAFDoc_LayerTool::GetLayer` (via `OCCTDocumentGetLayerName`).
 
 ---
 
 ### `layerNames`
 
-All layer names in this document.
+All layer names in this document's layer table.
 
 ```swift
 public var layerNames: [String] { get }

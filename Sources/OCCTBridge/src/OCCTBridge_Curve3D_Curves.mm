@@ -135,12 +135,14 @@
 #include <GeomConvert_CompCurveToBSplineCurve.hxx>
 #include <GeomLProp_CLProps.hxx>
 
+#include <gp.hxx>
 #include <gp_Ax1.hxx>
 #include <gp_Ax2.hxx>
 #include <gp_Dir.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Trsf.hxx>
 #include <gp_Vec.hxx>
+#include <gp_XYZ.hxx>
 
 #include <TColgp_Array1OfPnt.hxx>
 #include <TColgp_HArray1OfPnt.hxx>
@@ -1590,8 +1592,49 @@ void OCCTGeomPoint3DTranslate(OCCTGeomPoint3DRef _Nonnull ref, double dx, double
   ref->point->Transform(t);
 }
 
-OCCTGeomDirectionRef _Nonnull OCCTGeomDirectionCreate(double x, double y, double z)
+// #2331: Geom_Direction cannot be trusted to refuse a direction it cannot normalise, and the
+// three functions below all used to return NaN coordinates because of it.
+//
+// Geom_Direction's constructor and SetCoord each carry
+// `Standard_ConstructionError_Raise_if(D <= gp::Resolution(), "... zero length")`
+// (Geom_Direction.cxx), but both are out-of-line `Standard_EXPORT` members, so they compile into
+// libOCCT with `-DNo_Exception`, which Scripts/build-occt.sh gets from `CMAKE_BUILD_TYPE=Release`
+// plus the default `BUILD_RELEASE_DISABLE_EXCEPTIONS=ON` (occt_defs_flags.cmake:227). Under that
+// macro the raise expands to nothing and the division by a zero length runs. gp_Dir's identical
+// check does fire, because gp_Dir::SetCoord is inline and so compiles into THIS translation unit,
+// which has no No_Exception: that asymmetry is the whole defect, and it is why a catch block is
+// the right shape for gp_Dir and dead code for Geom_Direction.
+//
+// Measured against the pinned kernel, Scripts/repro/2331-geom-direction-zero/probe.mm:
+//
+//   Geom_Direction(0, 0, 0)                        no exception, coords=(nan, nan, nan)
+//   gp_Dir(0, 0, 0)                                Standard_Failure: gp_Dir() - zero norm
+//   Geom_Direction(1,0,0)->SetCoord(0, 0, 0)       no exception, coords=(nan, nan, nan)
+//   Geom_Direction(1e-200, 0, 0) sub-Resolution    no exception, coords=(nan, nan, nan)
+//   Geom_Direction(inf, 0, 0)                      no exception, coords=(nan, nan, nan)
+//   Geom_Direction(1,0,0)->Crossed(parallel)       no exception, non-null, vec=(nan, nan, nan)
+//
+// Refusing, rather than substituting a direction of our own, is what OCCT's own production
+// caller does. StepToGeom::MakeDirection, the STEP importer's Geom_Direction factory
+// (src/DataExchange/TKDESTEP/StepToGeom/StepToGeom.cxx:1466-1479), rejects a non-finite ratio and
+// then tests `gp_XYZ(X, Y, Z).SquareModulus() > gp::Resolution() * gp::Resolution()`, returning a
+// null handle when it fails: "sln 22.10.2001. CTS23496: Direction is not created if it has null
+// magnitude". It is the only caller in the OCCT tree that guards at all, and it records a defect
+// number for doing so. The guard below is that test, copied rather than re-derived, including
+// SquareModulus in place of the length: `sqrt(x*x + y*y + z*z)` underflows to exactly 0 for an
+// input like (1e-200, 0, 0), which a length test accepts and which still divides by zero.
+static bool occtDirectionIsNormalisable(double x, double y, double z)
 {
+  if (Precision::IsInfinite(x) || Precision::IsInfinite(y) || Precision::IsInfinite(z))
+    return false;
+  // NaN fails this comparison too, which is the answer wanted.
+  return gp_XYZ(x, y, z).SquareModulus() > gp::Resolution() * gp::Resolution();
+}
+
+OCCTGeomDirectionRef _Nullable OCCTGeomDirectionCreate(double x, double y, double z)
+{
+  if (!occtDirectionIsNormalisable(x, y, z))
+    return nullptr;
   auto* ref = new OCCTGeomDirection();
   try
   {
@@ -1600,7 +1643,8 @@ OCCTGeomDirectionRef _Nonnull OCCTGeomDirectionCreate(double x, double y, double
   catch (...)
   {
     occtRecordCaughtException(__func__);
-    ref->direction = new Geom_Direction(0, 0, 1);
+    delete ref;
+    return nullptr;
   }
   return ref;
 }
@@ -1618,9 +1662,22 @@ void OCCTGeomDirectionCoords(OCCTGeomDirectionRef _Nonnull ref, double* x, doubl
   *z       = d.Z();
 }
 
-void OCCTGeomDirectionSetCoord(OCCTGeomDirectionRef _Nonnull ref, double x, double y, double z)
+bool OCCTGeomDirectionSetCoord(OCCTGeomDirectionRef _Nonnull ref, double x, double y, double z)
 {
-  ref->direction->SetCoord(x, y, z);
+  // Same guard as OCCTGeomDirectionCreate: Geom_Direction::SetCoord's own check is compiled out
+  // of the shipped kernel, so it used to overwrite a valid direction with NaN coordinates.
+  if (!occtDirectionIsNormalisable(x, y, z))
+    return false;
+  try
+  {
+    ref->direction->SetCoord(x, y, z);
+    return true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
 }
 
 OCCTGeomDirectionRef _Nullable OCCTGeomDirectionCrossed(OCCTGeomDirectionRef _Nonnull ref,
@@ -1628,12 +1685,15 @@ OCCTGeomDirectionRef _Nullable OCCTGeomDirectionCrossed(OCCTGeomDirectionRef _No
 {
   try
   {
-    Handle(Geom_Vector) cross = ref->direction->Crossed(other->direction);
-    if (cross.IsNull())
-      return nullptr;
-    gp_Vec v          = cross->Vec();
+    // Geom_Direction::Crossed does the same `gp_Dir(gpVec.Crossed(...))` construction, but inside
+    // Geom_Direction.cxx, where No_Exception has removed gp_Dir's zero-norm check as well: on two
+    // parallel directions it returns a non-null Geom_Direction whose vector is (nan, nan, nan),
+    // not the null handle the `IsNull` test below was written for. Taking the gp_Dir cross product
+    // here instead puts that same OCCT check in a translation unit that keeps it, so a parallel
+    // pair raises Standard_ConstructionError and lands in the catch as the documented NULL.
+    gp_Dir cross      = ref->direction->Dir().Crossed(other->direction->Dir());
     auto*  result     = new OCCTGeomDirection();
-    result->direction = new Geom_Direction(v.X(), v.Y(), v.Z());
+    result->direction = new Geom_Direction(cross);
     return result;
   }
   catch (...)

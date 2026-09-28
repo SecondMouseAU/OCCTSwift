@@ -633,12 +633,15 @@ bool OCCTDocumentGetLengthUnit(OCCTDocumentRef doc,
 
 // MARK: - Document Layers (v0.31.0)
 
-/// Get the number of layers in a document.
+/// Get the number of layers in a document's layer table, the one OCCTDocumentSetLayer writes to
+/// (`XCAFDoc_DocumentTool::LayerTool`, the Layers label `0:1:3`).
 /// @param doc The document to query
-/// @return Number of layers, or 0 on failure
+/// @return Number of layers, or 0 on failure. 0 for a document that has had no layer set and was
+///     not read from a file carrying layers, which is every freshly created document: it used to
+///     report the nine XCAF tool labels instead (#2413).
 int32_t OCCTDocumentGetLayerCount(OCCTDocumentRef doc);
 
-/// Get the name of a layer by index.
+/// Get the name of a layer by index, from the same layer table as OCCTDocumentGetLayerCount.
 /// @param doc The document to query
 /// @param index Zero-based layer index
 /// @param outName Output buffer for the layer name (may be NULL if maxLen is 0)

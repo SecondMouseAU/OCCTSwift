@@ -43,12 +43,33 @@ public final class GeomPoint3D: @unchecked Sendable {
 public final class GeomDirection: @unchecked Sendable {
     public let handle: OCCTGeomDirectionRef
 
-    public init(x: Double, y: Double, z: Double) {
-        handle = OCCTGeomDirectionCreate(x, y, z)
+    /// Creates a unit direction from component values, normalising them.
+    ///
+    /// Returns `nil` for a vector that cannot be normalised: a squared magnitude at or below
+    /// `gp::Resolution()` squared, or a component OCCT counts as infinite (`|x| >= 1e100`, which
+    /// takes in `NaN` and IEEE infinity). Both thresholds are the ones OCCT's own
+    /// `StepToGeom::MakeDirection` applies. A direction has no meaning for such an input, and
+    /// `Geom_Direction` produces `(nan, nan, nan)` rather than refusing (#2331).
+    ///
+    /// ```swift
+    /// let up = GeomDirection(x: 0, y: 0, z: 1)
+    /// let none = GeomDirection(x: 0, y: 0, z: 0)  // nil
+    /// ```
+    public init?(x: Double, y: Double, z: Double) {
+        guard let ref = OCCTGeomDirectionCreate(x, y, z) else { return nil }
+        handle = ref
     }
 
-    public init(simd: SIMD3<Double>) {
-        handle = OCCTGeomDirectionCreate(simd.x, simd.y, simd.z)
+    /// Creates a unit direction from a `SIMD3<Double>`, normalising it.
+    ///
+    /// Returns `nil` on the same inputs as ``init(x:y:z:)``.
+    ///
+    /// ```swift
+    /// let d = GeomDirection(simd: SIMD3(1, 1, 0))
+    /// ```
+    public init?(simd: SIMD3<Double>) {
+        guard let ref = OCCTGeomDirectionCreate(simd.x, simd.y, simd.z) else { return nil }
+        handle = ref
     }
 
     internal init(handle: OCCTGeomDirectionRef) {
@@ -65,7 +86,20 @@ public final class GeomDirection: @unchecked Sendable {
         return SIMD3(x, y, z)
     }
 
-    public func setCoordinates(x: Double, y: Double, z: Double) {
+    /// Replaces the direction's components, normalising them.
+    ///
+    /// - Returns: `false`, leaving the direction unchanged, for the inputs ``init(x:y:z:)``
+    ///   refuses. It used to overwrite the direction with `(nan, nan, nan)` (#2331).
+    ///
+    /// ```swift
+    /// if let d = GeomDirection(x: 1, y: 0, z: 0) {
+    ///     let moved = d.setCoordinates(x: 0, y: 1, z: 0)  // true
+    ///     let kept = d.setCoordinates(x: 0, y: 0, z: 0)  // false, d is still (0, 1, 0)
+    ///     print(moved, kept, d.coordinates)
+    /// }
+    /// ```
+    @discardableResult
+    public func setCoordinates(x: Double, y: Double, z: Double) -> Bool {
         OCCTGeomDirectionSetCoord(handle, x, y, z)
     }
 

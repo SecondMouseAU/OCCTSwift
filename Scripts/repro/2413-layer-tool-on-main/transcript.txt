@@ -1,0 +1,47 @@
+Main() = 0:1
+
+=== fresh document, read side taken first ===
+XCAFDoc_LayerTool::Set(Main())  [what the READ side used]
+  tool label 0:1, 9 layer(s)
+    [0] 0:1:1 length=6 name="Shapes"
+    [1] 0:1:2 length=6 name="Colors"
+    [2] 0:1:3 length=6 name="Layers"
+    [3] 0:1:4 length=5 name="D&GTs"
+    [4] 0:1:5 length=9 name="Materials"
+    [5] 0:1:7 length=5 name="Views"
+    [6] 0:1:8 length=15 name="Clipping Planes"
+    [7] 0:1:9 length=5 name="Notes"
+    [8] 0:1:10 length=12 name="VisMaterials"
+
+LayersLabel(Main()) = 0:1:3
+
+=== fresh document, after the other tool labels exist ===
+XCAFDoc_LayerTool::Set(Main())  [what the READ side used]
+  tool label 0:1, 9 layer(s)
+    [0] 0:1:1 length=6 name="Shapes"
+    [1] 0:1:2 length=6 name="Colors"
+    [2] 0:1:3 length=6 name="Layers"
+    [3] 0:1:4 length=5 name="D&GTs"
+    [4] 0:1:5 length=9 name="Materials"
+    [5] 0:1:7 length=5 name="Views"
+    [6] 0:1:8 length=15 name="Clipping Planes"
+    [7] 0:1:9 length=5 name="Notes"
+    [8] 0:1:10 length=12 name="VisMaterials"
+XCAFDoc_DocumentTool::LayerTool(Main())  [what the WRITE side uses]
+  tool label 0:1:3, 0 layer(s)
+
+=== after SetLayer(box, "Sheet Metal") through DocumentTool::LayerTool ===
+XCAFDoc_LayerTool::Set(Main())  [what the READ side used]
+  tool label 0:1, 9 layer(s)
+    [0] 0:1:1 length=6 name="Shapes"
+    [1] 0:1:2 length=6 name="Colors"
+    [2] 0:1:3 length=6 name="Layers"
+    [3] 0:1:4 length=5 name="D&GTs"
+    [4] 0:1:5 length=9 name="Materials"
+    [5] 0:1:7 length=5 name="Views"
+    [6] 0:1:8 length=15 name="Clipping Planes"
+    [7] 0:1:9 length=5 name="Notes"
+    [8] 0:1:10 length=12 name="VisMaterials"
+XCAFDoc_DocumentTool::LayerTool(Main())  [what the WRITE side uses]
+  tool label 0:1:3, 1 layer(s)
+    [0] 0:1:3:1 length=11 name="Sheet Metal"

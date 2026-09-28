@@ -379,7 +379,11 @@ extension Document {
 // MARK: - Layers (v0.31.0)
 
 extension Document {
-    /// Number of layers in this document.
+    /// Number of layers in this document's layer table.
+    ///
+    /// `0` for a freshly created document: an XCAF document starts with an empty layer table, and
+    /// layers arrive either from a file that carries them or from a write through
+    /// `OCCTDocumentSetLayer`. This used to count the nine XCAF tool labels instead (#2413).
     public var layerCount: Int {
         Int(OCCTDocumentGetLayerCount(handle))
     }
@@ -397,7 +401,9 @@ extension Document {
         return Self.string(fromCString: buf)
     }
 
-    /// All layer names in this document.
+    /// All layer names in this document's layer table.
+    ///
+    /// Empty for a freshly created document, for the reason ``layerCount`` gives.
     public var layerNames: [String] {
         (0..<layerCount).compactMap { layerName(at: $0) }
     }

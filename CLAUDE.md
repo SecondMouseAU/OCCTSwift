@@ -336,6 +336,12 @@ the reproducer). What a bridge author needs without opening it:
   none of OCCT's own sites above it is uncatchable in-process, and so is a C++ exception that
   reaches the Swift boundary (#345), which is why every `gp_Dir`/`gp_Ax*`/`Geom_Direction`
   construction from caller doubles sits inside a `try`.
+  **A `try` is necessary and not sufficient, and `Geom_Direction` is the case that shows it
+  (#2331).** `No_Exception` is defined for OCCT's own units, so a `Raise_if` in an *out-of-line*
+  kernel member is compiled away: `Geom_Direction`'s constructor, `SetCoord` and `Crossed` all
+  return `(nan, nan, nan)` for a direction they cannot normalise and never throw, while `gp_Dir`'s
+  identical check fires because it is inline and compiles into the bridge's own unit. Guard the
+  magnitude before the call, the way `StepToGeom::MakeDirection` does.
   **Do not read that as "the process always dies", measured #2750.** Once `occtEnsureSignals()`
   has run, which any of fourteen bridge entry points does once per process, OCCT's own
   `SegvHandler` reaches `Standard_ErrorHandler::Abort`, and the same fault therefore kills one
