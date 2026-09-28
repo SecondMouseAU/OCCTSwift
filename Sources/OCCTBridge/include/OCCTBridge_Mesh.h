@@ -12,6 +12,14 @@
 
 // MARK: - Meshing
 
+/// Mesh a shape and extract every face's triangulation into one buffer.
+///
+/// Node normals are computed here, by BRepLib_ToolTriangulatedShape::ComputeNormals, because
+/// BRepMesh_IncrementalMesh does not store them and OCCT's own consumers compute their own
+/// (StdPrs_ShadedShape.cxx:186, RWMesh_FaceIterator::normal). Their sense follows
+/// StdPrs_ShadedShape.cxx:199-208: reversed for a REVERSED face xor a mirroring location, then
+/// carried through the location's transformation. Before #2337 this wrote a (0, 0, 1) placeholder
+/// at every node of every shape.
 OCCTMeshRef OCCTShapeCreateMesh(OCCTShapeRef shape,
                                 double       linearDeflection,
                                 double       angularDeflection);
@@ -144,17 +152,33 @@ OCCTShapeRef OCCTMeshToShapeWithTolerance(OCCTMeshRef mesh, double weldTolerance
 
 // MARK: - Mesh Booleans (via B-Rep roundtrip)
 
-/// Perform boolean union on two meshes
+// #2301: these three are Booleans on SURFACES, not on volumes, and that is faithful rather than
+// broken. OCCTMeshToShape sews the triangles into a TopAbs_SHELL, BOPAlgo_BOP takes the dimension
+// of its arguments (BOPAlgo_BOP.cxx:145-150), and a shell is two-dimensional. Measured at
+// deflection 0.5: the union of two 10-cubes overlapping over half their width encloses 2000 rather
+// than 1500, the cut of a 10-cube by a cylinder r3 h15 encloses 1000 (nothing removed) rather than
+// 858.63, and the common of a 10-cube and a sphere r7 has zero triangles rather than enclosing
+// 959.23.
+//
+// Promoting the shell to a solid first is not done here, because no OCCT caller does it:
+// StlAPI_Reader::Read goes through BRepBuilderAPI_MakeShapeOnMesh, which emits a compound of planar
+// faces and stops, and BRepBuilderAPI_MakeSolid has no production caller in OCCT's tree at all. The
+// promotion is the caller's, through OCCTShapeCreateSolidFromShell / Shape.solid(from:), which is
+// what the Swift doc comments and docs/reference/Mesh.md point at.
+
+/// Boolean union of two meshes, on their sewn shells (a surface union; see the note above)
 /// @param mesh1 First mesh
 /// @param mesh2 Second mesh
 /// @param deflection Deflection for re-meshing result
-/// @return Result mesh, or NULL on failure
+/// @return Result mesh, or NULL if the sewing or the Boolean failed
 OCCTMeshRef OCCTMeshUnion(OCCTMeshRef mesh1, OCCTMeshRef mesh2, double deflection);
 
-/// Perform boolean subtraction on two meshes (mesh1 - mesh2)
+/// Boolean subtraction of two meshes (mesh1 - mesh2), on their sewn shells. Splits mesh1's faces
+/// along mesh2's surface; removes no volume, because neither argument has one.
 OCCTMeshRef OCCTMeshSubtract(OCCTMeshRef mesh1, OCCTMeshRef mesh2, double deflection);
 
-/// Perform boolean intersection on two meshes
+/// Boolean intersection of two meshes, on their sewn shells. Two surfaces meet along curves, so the
+/// usual result is an EMPTY mesh rather than NULL.
 OCCTMeshRef OCCTMeshIntersect(OCCTMeshRef mesh1, OCCTMeshRef mesh2, double deflection);
 
 // MARK: - Mesh Access
@@ -177,9 +201,13 @@ bool OCCTDeflectionIsConsistent(double current, double required, bool allowDecre
 
 // --- BRepLib_ToolTriangulatedShape ---
 
-/// Compute normals on the triangulation of a shape's faces.
-/// The shape must be meshed first.
-/// @return true if normals were computed on at least one face
+/// Compute normals on the triangulation of a shape's faces, in place.
+/// The shape must be meshed first. This is a no-op on a face whose triangulation already carries
+/// normals, which since #2337 includes every face OCCTShapeCreateMesh has walked: that function
+/// calls the same OCCT entry point itself, so this one is for a shape triangulated by another route
+/// (a .brep or STEP import, BRepMesh_IncrementalMesh called directly) whose normals a caller wants
+/// stored on the shape rather than read out through a Mesh.
+/// @return true if at least one face carried a triangulation to compute normals on
 bool OCCTBRepLibComputeNormals(OCCTShapeRef shape);
 
 // --- BRepLib_PointCloudShape ---

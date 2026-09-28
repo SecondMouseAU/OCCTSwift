@@ -23,10 +23,15 @@ guard let mesh = box.mesh(linearDeflection: 0.1) else { return }
 mesh.vertexCount          // Int
 mesh.triangleCount        // Int
 mesh.vertices             // [SIMD3<Float>]
-mesh.normals              // [SIMD3<Float>] (per-vertex)
+mesh.normals              // [SIMD3<Float>] (per-vertex, outward, unit length)
 mesh.indices              // [UInt32], every 3 = one triangle
 // indices.count == triangleCount * 3
 ```
+
+`BRepMesh_IncrementalMesh` stores no node normals, so `normals` is computed at mesh time by
+`BRepLib_ToolTriangulatedShape::ComputeNormals`, the same call `StdPrs_ShadedShape` makes before
+shading: from the surface itself where the triangulation has UV nodes, and from the average of the
+incident triangle normals where it does not. Before #2337 every entry was `(0, 0, 1)`.
 
 The `Mesh` also exposes `boundingBox`, `size`, `center`, raw interleaved `vertexData`/`normalData`
 (ready for a GPU buffer), and `trianglesWithFaces()`, per-triangle access that carries the **source
