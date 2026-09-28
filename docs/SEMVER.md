@@ -48,12 +48,12 @@ The cohort moved to v1.0.0 on 2026-05-07 alongside [OCCT 8.0.0 GA](https://githu
 and to v2.0.0 under Rule 2, on the accumulated breaks recorded below. v3.0.0 is a further
 Rule 2 major on a much smaller set: the kernel does not move, and the breaks are listed
 below. v4.0.0 is a third Rule 2 major, on fifteen breaks across 196 merged pull requests,
-and is in pre-release as `v4.0.0-beta.3`.
+and is in pre-release as `v4.0.0-beta.4`.
 
 #### v4.0.0
 
 **A major by Rule 2, on a much larger set than v3.0.0.** OCCT does not move: the kernel stays at
-`V8_0_1`, rebuilt as `v4.0.0-kernel.1` to carry all twenty-nine patches where the v3.0.0 asset
+`V8_0_1`, rebuilt as `v4.0.0-kernel.2` to carry all thirty patches where the v3.0.0 asset
 carried seventeen. A kernel rebuild is a MINOR trigger at most and forces nothing on its own. What
 forces the major is Rule 2, carried by **fifteen** breaking changes across 196 merged pull requests.
 
@@ -82,6 +82,33 @@ here, so the release assembly is where it surfaced. Every other MAJOR in this se
 verified against the current source rather than taken from its PR body: fourteen of fifteen held,
 and this was the one that did not. Documenting it would have told consumers to change working
 code.
+
+**One MINOR is not internal, and is the largest addition in the line: a new platform.** As of
+`v4.0.0-beta.4` the package builds and runs on **`wasm32-unknown-wasip1`** (#1689, #2762). It is
+purely additive by construction. No Apple-platform consumer sees any change: every edit to
+`Sources/` is either a header include that is a no-op where Foundation already supplied it, or
+guarded behind `os(WASI)` / `isWASI`.
+
+On wasm the surface is the whole public API **except
+`Shape.isSelfIntersecting(hardTimeout:)`**, whose contract is a hard wall-clock deadline enforced
+from a second thread and which therefore cannot exist on a single-threaded target. A caller wanting
+a bound there uses `isSelfIntersecting(timeout:)`, which exists on every platform and whose bound is
+cooperative. That difference is the one thing a cross-platform consumer discovers at compile time,
+and the decision about it is open (#2760).
+
+Two things a consumer should know before pinning this beta for wasm. The kernel is a **separate
+release asset**, `libOCCT-wasm.tar.gz`, fetched by `Scripts/fetch-occt-wasm.sh` rather than resolved
+by SwiftPM, because there is no `binaryTarget` for a bare static library; and the build needs a
+consumer-side toolset, which `Scripts/make-wasi-toolset.py` writes. The recipe is
+[`guides/wasm-consumer-setup.md`](guides/wasm-consumer-setup.md). **Module size is unaddressed**, at
+about 27 MB brotli with none of #2761's levers tried.
+
+**A second MINOR, on Apple platforms**, from retiring three mitigations the kernel repin made
+obsolete (#2186): `Document.datum(at:)` and the datum mutators now succeed on a datum carrying an
+annotation point with no annotation plane where they returned `nil`/`false`, `dimTolToolToleranceCount`
+returns the real count where it returned `0`, and `rescaleGeometry` no longer refuses such a
+document. Each is a wrong or withheld answer becoming a correct one, so nothing that worked stops
+working, but a caller asserting on the old refusal will see the new value.
 
 Everything else in this release is internal: the bridge and Swift correctness sweeps (#1413,
 #1551), the data-exchange thread-safety series (#1403), and the gate work. Read the entries in
