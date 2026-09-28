@@ -642,6 +642,12 @@ bool OCCTExportIGESProgress(OCCTShapeRef              shape,
     // BRepCheck_No3DCurve, so the guard reaches the same refusal one step earlier.
     if (occtShapeHasPCurveOnlyEdge(shape->shape))
       return false;
+    // #2777: a face with no surface faults on the way out, whatever edges it carries. The writer
+    // reaches three untested dereferences of that handle and the BRepCheck_Analyzer below is one of
+    // them, so the guard sits ahead of it. The shape is invalid either way, which is the refusal
+    // this function already gives an analyzer-invalid one. See occtShapeHasSurfacelessFace.
+    if (occtShapeHasSurfacelessFace(shape->shape))
+      return false;
     BRepCheck_Analyzer analyzer(shape->shape);
     if (!analyzer.IsValid())
       return false;
@@ -781,6 +787,12 @@ bool OCCTExportIGESWithUnit(OCCTShapeRef shape, const char* path, const char* un
     // BRepCheck_No3DCurve, so the guard reaches the same refusal one step earlier.
     if (occtShapeHasPCurveOnlyEdge(shape->shape))
       return false;
+    // #2777: a face with no surface faults on the way out, whatever edges it carries. The writer
+    // reaches three untested dereferences of that handle and the BRepCheck_Analyzer below is one of
+    // them, so the guard sits ahead of it. The shape is invalid either way, which is the refusal
+    // this function already gives an analyzer-invalid one. See occtShapeHasSurfacelessFace.
+    if (occtShapeHasSurfacelessFace(shape->shape))
+      return false;
     BRepCheck_Analyzer analyzer(shape->shape);
     if (!analyzer.IsValid())
       return false;
@@ -810,6 +822,12 @@ bool OCCTExportIGESBRepMode(OCCTShapeRef shape, const char* path)
     // and this export already refuses an invalid shape. Such an edge IS invalid, by OCCT's own
     // BRepCheck_No3DCurve, so the guard reaches the same refusal one step earlier.
     if (occtShapeHasPCurveOnlyEdge(shape->shape))
+      return false;
+    // #2777: a face with no surface faults on the way out, whatever edges it carries. The writer
+    // reaches three untested dereferences of that handle and the BRepCheck_Analyzer below is one of
+    // them, so the guard sits ahead of it. The shape is invalid either way, which is the refusal
+    // this function already gives an analyzer-invalid one. See occtShapeHasSurfacelessFace.
+    if (occtShapeHasSurfacelessFace(shape->shape))
       return false;
     BRepCheck_Analyzer analyzer(shape->shape);
     if (!analyzer.IsValid())
@@ -844,6 +862,11 @@ bool OCCTExportIGESMultiShape(const OCCTShapeRef* shapes, int32_t count, const c
       // #2750: this one shape faults inside the analyzer (#2746) and is invalid by OCCT's own
       // BRepCheck_No3DCurve, so it is skipped exactly as an analyzer-invalid shape already is.
       if (occtShapeHasPCurveOnlyEdge(shapes[i]->shape))
+        continue;
+      // #2777: a face with no surface faults on the way out, whatever edges it carries, and the
+      // analyzer below is one of the three sites that dereference the handle. Skipped exactly as an
+      // analyzer-invalid shape already is. See occtShapeHasSurfacelessFace.
+      if (occtShapeHasSurfacelessFace(shapes[i]->shape))
         continue;
       BRepCheck_Analyzer analyzer(shapes[i]->shape);
       if (!analyzer.IsValid())
@@ -982,6 +1005,12 @@ bool OCCTExportIGES(OCCTShapeRef shape, const char* path)
     // and this export already refuses an invalid shape. Such an edge IS invalid, by OCCT's own
     // BRepCheck_No3DCurve, so the guard reaches the same refusal one step earlier.
     if (occtShapeHasPCurveOnlyEdge(shape->shape))
+      return false;
+    // #2777: a face with no surface faults on the way out, whatever edges it carries. The writer
+    // reaches three untested dereferences of that handle and the BRepCheck_Analyzer below is one of
+    // them, so the guard sits ahead of it. The shape is invalid either way, which is the refusal
+    // this function already gives an analyzer-invalid one. See occtShapeHasSurfacelessFace.
+    if (occtShapeHasSurfacelessFace(shape->shape))
       return false;
     BRepCheck_Analyzer analyzer(shape->shape);
     if (!analyzer.IsValid())
