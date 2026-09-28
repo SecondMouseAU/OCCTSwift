@@ -26,7 +26,14 @@ PASS  mesh (three.js)         130 verts, 116 tris, 348 indices, 130 normals, max
 failures: 0
 ```
 
-Module: 141,227,748 bytes uncompressed, 41,097,103 gzip.
+Module: **141,227,748** bytes uncompressed, **41,097,103** gzip, **26,990,019** brotli.
+
+**An application's module is not meaningfully bigger than this repo's own spike**, which is worth
+stating because it retires a suspicion rather than confirming one. `OCCTWasmSpike` is 26,976,003
+brotli; this is 26,990,019, a difference of **14 KB in 27 MB**, and it does strictly more (a
+cylinder, a boolean, and a full mesh with vertex, index and normal buffers). So the size is the
+runtime, Foundation, the Swift layer, the bridge and the OCCT the linker reaches, essentially none
+of it the consumer's own code, and the spike's figures were never an artefact of being artificial.
 
 ## The case that had never run
 

@@ -26,8 +26,10 @@ repository's own builds. What that probe does is in
 - **No release carries any of this yet.** Every file below landed on `main` after `v4.0.0-beta.3`
   was cut. Until a release includes them you must depend on a **branch or a revision**, which means
   no semantic versioning. This is the main reason to wait if you can.
-- **Module size.** A small app doing the whole list above is about **141 MB uncompressed and 41 MB
-  gzipped**. About 13 MB of the compressed total is Foundation, before any OCCT. Nothing has been
+- **Module size.** A small app doing the whole list above is about **141 MB uncompressed, 41 MB
+  gzipped, 27 MB brotli**, and an application's module is within 14 KB of this repository's own
+  probe, so almost none of that is your code. About 13 MB of the compressed total is Foundation,
+  before any OCCT. Nothing has been
   optimised yet; [#2761](https://github.com/SecondMouseAU/OCCTSwift/issues/2761) holds the
   measurements and the untried levers. **If your budget is well under that, do the size work before
   the integration, not after.**
