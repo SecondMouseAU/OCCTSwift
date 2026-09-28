@@ -86,6 +86,25 @@ one, teach the checker the shape in the same PR. An `ALLOWED` entry is keyed `(f
 with no argument index and no re-validation, so it exempts every argument of that function and
 every later change to it.
 
+**A shape taught by halves is a blind spot too** (#2812). `SHAPE_CAST_DECL`, added by #1513 for the
+split-statement cast `TopoDS_Edge e = TopoDS::Edge(x->shape);`, demanded whitespace after the type
+name, so it matched the value declaration and not the reference one,
+`const TopoDS_Edge& e = TopoDS::Edge(x->shape);`, which is the majority spelling in this bridge: 53
+sites against 109. Seven unguarded parameter sites across four functions sat behind it, every one
+reaching an entry point **already** in `SHAPE_DEREF_QUALIFIED` and every one measured to SIGSEGV,
+while the gate printed that every bridge function guards its shape as well as its pointer. So when
+you teach the checker a shape, count the spellings of it in the tree instead of matching the one in
+front of you, and put both directions in `--self-test`. Still blind, and measured to hide nothing
+today: assignment to a variable declared on an earlier line,
+`v1 = TopoDS::Vertex(vertexShape->shape);`, six sites in three files.
+`Scripts/repro/2812-null-shape-cast-reference-spelling/` carries that census and the probe behind it.
+
+**A guard the sibling needs is not a guard this function needs** (#2812 again, the lead that found
+the above). `OCCTIntToolsEdgeFace` guards both arguments and `OCCTIntToolsEdgeEdge`, next to it in
+the same file, guards neither. That reads as an oversight and is not one: `IntTools_EdgeEdge`'s
+constructor and `Perform()` both cope with a null `TopoDS_Edge` and answer `IsDone() == false`,
+while `IntTools_EdgeFace::Perform()` faults on one. Measure the consumer, never the neighbour.
+
 **It cannot catch a structural guard on a `TDF_Label`** (#1022/#1030), measured rather than
 assumed: all three walks key on a parameter's declared type, `OCCTDocumentRef` is in neither
 `WRAPPERS` nor `SHAPE_WRAPPERS`, and every guard path it recognises bottoms out in a literal

@@ -308,6 +308,24 @@ another `TopoDS::` cast) or `edge` handed through a further alias before its own
 `shape_cast_aliases()` only matches a cast whose source is `ptr` itself (a tracked wrapper-pointer
 alias), not another `shape_cast_aliases()` name; no known instance in this tree today.
 
+#1513 TAUGHT THE SPELLING AND MISSED THE MAJORITY OF IT, FOUND BY #2812. `SHAPE_CAST_DECL` opened
+with a word boundary, `TopoDS_` and one or more whitespace characters, so it demanded whitespace
+immediately after the type name and matched only the VALUE declaration. The bridge writes the
+REFERENCE form more often:
+`const TopoDS_Edge& e = TopoDS::Edge(edge->shape);` is 53 sites against the value form's 109, and
+behind those 53 sat seven unguarded parameter sites in four functions
+(`OCCTBRepToolsEvalAndUpdateTol`, `OCCTBRepToolCurveOnSurface`, `OCCTBRepToolDegenerated`,
+`OCCTBRepToolRangeOnFace`), every one reaching an entry point ALREADY in
+`SHAPE_DEREF_QUALIFIED` - so this was not the open tail of unmeasured consumers, it was the walk
+failing to deliver a shape to a table that already knew the answer, while printing "all bridge
+functions guard the shape as well as the wrapper pointer". Fixtures `SS`/`ST` are the round trip.
+STILL BLIND, and measured rather than assumed to be empty: assignment to a variable DECLARED
+EARLIER, `v1 = TopoDS::Vertex(vertex1Shape->shape);`, 6 sites (three files, all in `try` blocks
+whose locals are declared above them). Making the type prefix optional reports those 6 and finds
+nothing new, so they are recorded here rather than matched, since dropping the type prefix also
+matches an out-parameter store such as `*outEdge = TopoDS::Edge(x->shape);` and would start
+tracking a name the function does not own.
+
 WHAT THIS WALK CANNOT SEE, same standard as the two above: a hazard reached inside a helper this
 bridge writes (only a helper that GUARDS is recognised, not one that USES); a hazard on a
 `TopoDS_Shape` obtained from somewhere other than a wrapper argument, which is the #656 shape
@@ -1086,8 +1104,18 @@ def shape_wrapper_params(params):
 # `ctext` (casts blanked) but NOT `TopoDS::` casts - `strip_casts()` only blanks
 # reinterpret_cast/static_cast/const_cast/dynamic_cast and the `(OCCT*)` C-style form, so the
 # literal `TopoDS::Edge(...)` text this regex needs is still there.
+#
+# #2812: `\s*&?\s+` rather than `\s+` after the type name, because the REFERENCE spelling
+# `const TopoDS_Edge& e = TopoDS::Edge(edge->shape);` puts a `&` where the original demanded
+# whitespace, and that is the majority spelling for this form in the bridge: 53 sites against 109
+# of the value form, hiding seven parameter sites across four functions that reach
+# BRep_Tool::Curve/CurveOnSurface/Degenerated/Range, all four already in SHAPE_DEREF_QUALIFIED and
+# all four measured to SIGSEGV on a null shape (Scripts/repro/2812-null-shape-cast-reference-
+# spelling). A reference to a `TopoDS_Shape` subclass stands for the shape exactly as a copy does,
+# so the alias tracking below needs no other change. The `const` needs no spelling: `\b` anchors on
+# `TopoDS_`, which is why `const TopoDS_Face host = TopoDS::Face(face->shape);` already matched.
 SHAPE_CAST_DECL = re.compile(
-    r'\bTopoDS_\w+\s+(\w+)\s*=\s*TopoDS::(?:' + '|'.join(SHAPE_TRANSPARENT_CASTS) + r')\s*'
+    r'\bTopoDS_\w+\s*&?\s+(\w+)\s*=\s*TopoDS::(?:' + '|'.join(SHAPE_TRANSPARENT_CASTS) + r')\s*'
     r'\(\s*(\w+)\s*(?:\[[^\]]*\])?\s*->\s*(\w+)\s*\)\s*;')
 
 
@@ -1633,6 +1661,18 @@ double OCCTFixtureSQ(OCCTShapeRef shape) {
     BRepAdaptor_Curve bac(edge);
     return bac.FirstParameter();
 }''', 'shape'),
+    # #2812: SQ's own majority spelling. `const TopoDS_Edge&` puts a `&` where SQ's regex demanded
+    # whitespace, so #1513 taught the split-statement form and matched the minority of it. This is
+    # OCCTBRepToolDegenerated's literal body, one of the four functions the widening reported.
+    ('the split-statement cast declared as a REFERENCE, `const TopoDS_Edge& e = '
+     'TopoDS::Edge(...)`, consumed by a measured dereferencer in a later statement', '''
+bool OCCTFixtureSS(OCCTShapeRef edge) {
+    if (!edge) return false;
+    try {
+        const TopoDS_Edge& e = TopoDS::Edge(edge->shape);
+        return BRep_Tool::Degenerated(e);
+    } catch (...) { return false; }
+}''', 'shape'),
 ]
 
 # The other failure mode, and the one #624/#630 was: a detector taught indirection can start
@@ -1653,6 +1693,22 @@ double OCCTFixtureSR(OCCTShapeRef shape) {
     TopoDS_Edge edge = TopoDS::Edge(shape->shape);
     BRepAdaptor_Curve bac(edge);
     return bac.FirstParameter();
+}''', 'shape'),
+    # #2812, SS's guarded counterpart, and the shape the four fixed functions now have: the type
+    # test the cast performs, hoisted into occtShapeIsType() where it refuses instead of throwing.
+    ('the same reference-declared cast, guarded with occtShapeIsType before the try', '''
+inline bool occtShapeIsPresent(OCCTShapeRef shape) {
+    return shape && !shape->shape.IsNull();
+}
+inline bool occtShapeIsType(OCCTShapeRef shape, TopAbs_ShapeEnum type) {
+    return occtShapeIsPresent(shape) && shape->shape.ShapeType() == type;
+}
+bool OCCTFixtureST(OCCTShapeRef edge) {
+    if (!occtShapeIsType(edge, TopAbs_EDGE)) return false;
+    try {
+        const TopoDS_Edge& e = TopoDS::Edge(edge->shape);
+        return BRep_Tool::Degenerated(e);
+    } catch (...) { return false; }
 }''', 'shape'),
     # #1035's own SH: this is what stops the outward walk being noise. The cast is transparent
     # here too, but BRepBndLib::Add and TopExp::MapShapes were both MEASURED to cope with a null

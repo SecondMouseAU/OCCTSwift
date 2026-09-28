@@ -2913,7 +2913,10 @@ OCCTCurve2DRef OCCTBRepToolCurveOnSurface(OCCTShapeRef edge,
                                           double*      outFirst,
                                           double*      outLast)
 {
-  if (!edge || !face)
+  // #2812: the type test the casts below perform, hoisted so it also rejects a null TopoDS_Shape,
+  // which TopoDS::Edge/Face pass through unchanged. BRep_Tool::CurveOnSurface then SIGSEGVs, a
+  // signal the catch below cannot absorb. nullptr is this function's existing refusal.
+  if (!occtShapeIsType(edge, TopAbs_EDGE) || !occtShapeIsType(face, TopAbs_FACE))
     return nullptr;
   try
   {
@@ -3006,7 +3009,10 @@ int32_t OCCTBRepToolMaxContinuity(OCCTShapeRef edge)
 
 bool OCCTBRepToolDegenerated(OCCTShapeRef edge)
 {
-  if (!edge)
+  // #2812: BRep_Tool::Degenerated reads the edge's TShape without a null test, so a null
+  // TopoDS_Shape (which TopoDS::Edge hands through) is an uncatchable signal rather than the
+  // Standard_TypeMismatch a wrong-typed shape raises. false is the existing refusal.
+  if (!occtShapeIsType(edge, TopAbs_EDGE))
     return false;
   try
   {
@@ -3041,7 +3047,10 @@ bool OCCTBRepToolRangeOnFace(OCCTShapeRef edge,
                              double*      outFirst,
                              double*      outLast)
 {
-  if (!edge || !face)
+  // #2812: BRep_Tool::Range dereferences both shapes, so a null TopoDS_Shape on either is an
+  // uncatchable signal. false is the existing refusal, and leaves outFirst/outLast untouched
+  // rather than writing a 0 that reads as a measured range.
+  if (!occtShapeIsType(edge, TopAbs_EDGE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
