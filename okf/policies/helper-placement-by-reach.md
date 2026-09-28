@@ -108,12 +108,32 @@ never kept (`checkSubShape`, #2734). All thirty-eight were deleted under #1628.
 
 Counting sites therefore answers two questions at once, and they want different treatment:
 
-- **Reachable copies** are the duplication. Route them through one `inline` helper.
+- **Reachable copies** are the duplication. Route them through one `inline` helper. The census's own
+  output separates them: a name with **more than one live copy** is reachable duplication and takes
+  the hoist, a name with exactly one is one-file reach and keeps `static`. Nine names had more than
+  one live copy after the stale sets went, and six of them moved to `OCCTBridge_Internal.h` under
+  #1628 (`occtQuiltShells`, `mapBRepCheckStatus`, `getLabelForTag`,
+  `occtDimensionApplyTolerance`, `occtNearestProjectionOnCurve3d`, `clearCancelOut`).
 - **Dead copies** are not a correctness bug, and they are not nothing either: they cost every later
   audit, and they make a fixed defect look unfixed. Delete them where you are already touching the
   file, and never "fix" one to match, which propagates the body rather than retiring it.
   `census-dead-file-statics.py --json` enumerates them with exact line ranges, so a deletion pass
   deletes the population that was measured rather than one re-found by hand.
+
+**A hoist can be blocked by a duplicated file-local TYPE, and nothing measures those.** The splits
+copied file-scope `struct`s and `class`es into every file of a domain exactly as they copied
+functions, and three of the nine reachable-duplication helpers cannot move until their type does:
+
+- `setCancelOut` names `BridgeProgressIndicator`, a `Message_ProgressIndicator` subclass defined in
+  seven `OCCTBridge_IO_*.mm` files. Moving an ODR-sensitive polymorphic class into a header every
+  bridge translation unit includes is a decision of its own, not a step in a deletion pass.
+- `occtAnalyzeShellOrientation` names `OCCTShellOrientationScan`, a `struct` defined in seven
+  `OCCTBridge_Healing_*.mm` files.
+- `occtSignedWireAreaInPlane` calls `occtSampleWirePoints`, itself twelve copies. Hoisting one
+  without the other moves the reach problem rather than solving it.
+
+`census-dead-file-statics.py` covers functions only, and says so, so a type is invisible to it and to
+every count on this page. Ask about types separately before concluding a domain is clean.
 
 **Deleting one dead helper can leave another dead**, since a dead body is the only caller of
 whatever it called. The census reports that fixpoint separately (`Dead only once the above go`),

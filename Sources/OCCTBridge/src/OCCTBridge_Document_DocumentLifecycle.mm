@@ -279,36 +279,6 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
     outObj);
 }
 
-/// Apply a plus/minus tolerance pair to a dimension object, and report whether the object kept it.
-///
-/// Both setters return false, and change nothing, when the dimension is already a range.
-/// Discarding that reported success for a call that did nothing (#996). Neither is
-/// short-circuited, so the two arguments stay symmetric rather than one being applied and one
-/// not. That is safe for the rejection this project has actually measured, a range dimension,
-/// where both refuse: see Scripts/repro/996-gdt-read-surface/. It is NOT a general guarantee
-/// that OCCT rejects the pair atomically on every path, and no such guarantee is documented
-/// upstream. The readback is what makes the caller's answer correct either way: verify rather than
-/// trust the return pair, since a partial application would otherwise be reported as a clean
-/// failure and the caller could not tell it from a no-op.
-///
-/// This file's own copy has exactly one live caller: the create path immediately below, run from
-/// OCCTDocumentCreateDimensionWithTolerance. OCCTDocumentSetDimensionTolerance, the other spelling
-/// of "apply a tolerance" the defect #1056 is about, is a different function in
-/// OCCTBridge_Document_GDT.mm, calling that file's own byte-identical copy of this one, not this
-/// one (#1481, which is also why this whole shared-helpers block exists identically in six
-/// OCCTBridge_Document_*.mm files: a leftover of #1380's mechanical split that duplicated it
-/// everywhere without pruning per-file reachability). In every file but this one and GDT.mm, both
-/// this function and occtDocumentCreateDimensionImpl below are dead code: defined, never called.
-static bool occtDimensionApplyTolerance(const Handle(XCAFDimTolObjects_DimensionObject)& dimObj,
-                                        double                                           lowerTol,
-                                        double                                           upperTol)
-{
-  const bool lowerOk = dimObj->SetLowerTolValue(lowerTol);
-  const bool upperOk = dimObj->SetUpperTolValue(upperTol);
-  return lowerOk && upperOk && dimObj->GetLowerTolValue() == lowerTol
-         && dimObj->GetUpperTolValue() == upperTol;
-}
-
 /// Shared by OCCTDocumentCreateDimension and OCCTDocumentCreateDimensionWithTolerance.
 ///
 /// The whole object, tolerance pair included, is built and checked before AddDimension() is called,
@@ -613,15 +583,6 @@ struct OCCTNoteObject
 {
   Handle(XCAFNoteObjects_NoteObject) obj;
 };
-
-// Helper to get label from document ref + tag (duplicate of main bridge's helper, ODR-safe across
-// TUs)
-static TDF_Label getLabelForTag(OCCTDocumentRef document, int tag)
-{
-  if (tag == 0)
-    return document->doc->Main();
-  return document->doc->Main().FindChild(tag, Standard_True);
-}
 
 // #964: the walk's upper bound. Reaching it means the count is a floor, not a measurement,
 // which `outTruncated` reports so a caller can tell the two apart.

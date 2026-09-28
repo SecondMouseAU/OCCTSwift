@@ -72,6 +72,7 @@
 #include <XCAFDoc_ColorTool.hxx>
 #include <XCAFDoc_VisMaterialTool.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
+#include <XCAFDimTolObjects_DimensionObject.hxx> // #1628: occtDimensionApplyTolerance
 #include <TDF_Label.hxx>
 #include <TNaming_Scope.hxx>
 // The rest serve the shared algorithm helpers at the bottom of this header
@@ -81,6 +82,7 @@
 #include <BRepOffsetAPI_MakeFilling.hxx>
 #include <BRep_Builder.hxx> // #1190: occtAddShapeIfPresent's guard-then-add helper
 #include <BRepCheck_Analyzer.hxx>
+#include <BRepCheck_Status.hxx> // #1628: mapBRepCheckStatus, hoisted here from two .mm files
 #include <BRepCheck_Result.hxx>
 #include <BRepCheck_ListOfStatus.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
@@ -88,6 +90,7 @@
 #include <BRepBndLib.hxx> // #943: same
 #include <BRepFeat_MakeCylindricalHole.hxx>
 #include <BRepOffsetAPI_MakePipeShell.hxx>
+#include <BRepTools_Quilt.hxx> // #1628: occtQuiltShells, hoisted here from two .mm files
 #include <TopoDS_Wire.hxx>
 #include <BRepFeat_Status.hxx>
 #include <Precision.hxx>
@@ -3709,6 +3712,201 @@ inline bool occtRecordReturnStatus(IFSelect_ReturnStatus theStatus, OCCTReturnSt
 {
   occtSetReturnStatus(theOut, static_cast<OCCTReturnStatus>(static_cast<int>(theStatus)));
   return theStatus == IFSelect_RetDone;
+}
+
+// MARK: - Helpers hoisted out of the .mm splits, because more than one file reaches them (#1628)
+//
+// Six helpers the `.mm` splits under #396 copied into every file of a domain, each of which is
+// called from MORE THAN ONE of those files. Reach is what decides placement, not style, so they
+// belong here as `inline` rather than `static` in whichever file happened to be open:
+// okf/policies/helper-placement-by-reach.md, whose "Why" is #943 and #957, two guards lost in
+// exactly this way. Every copy was byte-identical when this moved, verified by
+// Scripts/repro/1628-dead-file-statics/, so nothing here changes behaviour at any site.
+
+//! Adds every shape in `shapes` to `quilt` and returns its shells, or a null shape as soon as one
+//! input handle is absent, so the caller cannot read shells built from a partial set.
+//!
+//! #1628: it was `static` in twelve `OCCTBridge_Modeling_*.mm` files, reachable in two of them
+//! (`_Boolean.mm` and `_SolidPrimitives.mm`) and dead in the other ten. Two files holding the logic
+//! reachably is what decides the placement, per okf/policies/helper-placement-by-reach.md: a
+//! file-static cannot converge, and `occtShapePeriodicImpl` and `fillCommonPart` are what that
+//! costs when one live copy is later fixed.
+inline TopoDS_Shape occtQuiltShells(BRepTools_Quilt&    quilt,
+                                    const OCCTShapeRef* shapes,
+                                    int32_t             count)
+{
+  for (int32_t i = 0; i < count; i++)
+  {
+    if (!shapes[i])
+      return TopoDS_Shape();
+    quilt.Add(shapes[i]->shape);
+  }
+  return quilt.Shells();
+}
+
+//! Maps one `BRepCheck_Status` to its `OCCTCheckStatus`. `default:` answers `OCCTCheckCheckFail`,
+//! which is what an unrecognised kernel status means to a caller: the check did not conclude.
+//!
+//! #1628: it was `static` in seven `OCCTBridge_Healing_*.mm` files, reachable in
+//! `_Analysis.mm` and `_Fix.mm`. A 37-case switch mapping two enums to each other is the shape
+//! where a copy silently loses a case, and seven copies is seven places for that to happen.
+inline OCCTCheckStatus mapBRepCheckStatus(BRepCheck_Status status)
+{
+  switch (status)
+  {
+    case BRepCheck_NoError:
+      return OCCTCheckNoError;
+    case BRepCheck_InvalidPointOnCurve:
+      return OCCTCheckInvalidPointOnCurve;
+    case BRepCheck_InvalidPointOnCurveOnSurface:
+      return OCCTCheckInvalidPointOnCurveOnSurface;
+    case BRepCheck_InvalidPointOnSurface:
+      return OCCTCheckInvalidPointOnSurface;
+    case BRepCheck_No3DCurve:
+      return OCCTCheckNo3DCurve;
+    case BRepCheck_Multiple3DCurve:
+      return OCCTCheckMultiple3DCurve;
+    case BRepCheck_Invalid3DCurve:
+      return OCCTCheckInvalid3DCurve;
+    case BRepCheck_NoCurveOnSurface:
+      return OCCTCheckNoCurveOnSurface;
+    case BRepCheck_InvalidCurveOnSurface:
+      return OCCTCheckInvalidCurveOnSurface;
+    case BRepCheck_InvalidCurveOnClosedSurface:
+      return OCCTCheckInvalidCurveOnClosedSurface;
+    case BRepCheck_InvalidSameRangeFlag:
+      return OCCTCheckInvalidSameRangeFlag;
+    case BRepCheck_InvalidSameParameterFlag:
+      return OCCTCheckInvalidSameParameterFlag;
+    case BRepCheck_InvalidDegeneratedFlag:
+      return OCCTCheckInvalidDegeneratedFlag;
+    case BRepCheck_FreeEdge:
+      return OCCTCheckFreeEdge;
+    case BRepCheck_InvalidMultiConnexity:
+      return OCCTCheckInvalidMultiConnexity;
+    case BRepCheck_InvalidRange:
+      return OCCTCheckInvalidRange;
+    case BRepCheck_EmptyWire:
+      return OCCTCheckEmptyWire;
+    case BRepCheck_RedundantEdge:
+      return OCCTCheckRedundantEdge;
+    case BRepCheck_SelfIntersectingWire:
+      return OCCTCheckSelfIntersectingWire;
+    case BRepCheck_NoSurface:
+      return OCCTCheckNoSurface;
+    case BRepCheck_InvalidWire:
+      return OCCTCheckInvalidWire;
+    case BRepCheck_RedundantWire:
+      return OCCTCheckRedundantWire;
+    case BRepCheck_IntersectingWires:
+      return OCCTCheckIntersectingWires;
+    case BRepCheck_InvalidImbricationOfWires:
+      return OCCTCheckInvalidImbricationOfWires;
+    case BRepCheck_EmptyShell:
+      return OCCTCheckEmptyShell;
+    case BRepCheck_RedundantFace:
+      return OCCTCheckRedundantFace;
+    case BRepCheck_InvalidImbricationOfShells:
+      return OCCTCheckInvalidImbricationOfShells;
+    case BRepCheck_UnorientableShape:
+      return OCCTCheckUnorientableShape;
+    case BRepCheck_NotClosed:
+      return OCCTCheckNotClosed;
+    case BRepCheck_NotConnected:
+      return OCCTCheckNotConnected;
+    case BRepCheck_SubshapeNotInShape:
+      return OCCTCheckSubshapeNotInShape;
+    case BRepCheck_BadOrientation:
+      return OCCTCheckBadOrientation;
+    case BRepCheck_BadOrientationOfSubshape:
+      return OCCTCheckBadOrientationOfSubshape;
+    case BRepCheck_InvalidPolygonOnTriangulation:
+      return OCCTCheckInvalidPolygonOnTriangulation;
+    case BRepCheck_InvalidToleranceValue:
+      return OCCTCheckInvalidToleranceValue;
+    case BRepCheck_EnclosedRegion:
+      return OCCTCheckEnclosedRegion;
+    case BRepCheck_CheckFail:
+      return OCCTCheckCheckFail;
+    default:
+      return OCCTCheckCheckFail;
+  }
+}
+
+//! The document label a caller's tag names: tag 0 is the root, any other tag is that child of the
+//! root, created on demand.
+//!
+//! #1628: it was `static` in six `OCCTBridge_Document_*.mm` files, reachable in `_Attributes.mm`
+//! and `_DocumentLifecycle.mm`. `Standard_True` is the create-if-absent argument, and it is the
+//! kind of flag a second copy gets wrong.
+inline TDF_Label getLabelForTag(OCCTDocumentRef document, int tag)
+{
+  if (tag == 0)
+    return document->doc->Main();
+  return document->doc->Main().FindChild(tag, Standard_True);
+}
+
+//! Sets both tolerance values on a dimension object and reports whether the kernel kept them, by
+//! reading them back rather than trusting the setters' own return.
+//!
+//! #1628: it was `static` in six `OCCTBridge_Document_*.mm` files, reachable in `_GDT.mm` and
+//! `_DocumentLifecycle.mm`. The read-back is exactly the sort of check #957's six diverged copies
+//! had lost.
+inline bool occtDimensionApplyTolerance(const Handle(XCAFDimTolObjects_DimensionObject)& dimObj,
+                                        double                                           lowerTol,
+                                        double                                           upperTol)
+{
+  const bool lowerOk = dimObj->SetLowerTolValue(lowerTol);
+  const bool upperOk = dimObj->SetUpperTolValue(upperTol);
+  return lowerOk && upperOk && dimObj->GetLowerTolValue() == lowerTol
+         && dimObj->GetUpperTolValue() == upperTol;
+}
+
+//! The nearest point on a whole 3D curve, over the curve's own parameter range, via
+//! `occtNearestPointOnCurveRange` above.
+//!
+//! #1628: it was `static` in six `OCCTBridge_Curve3D_*.mm` files, reachable in `_Curves.mm` and
+//! `_Conversion.mm`. Note the handle guard it opens with, which is the one
+//! okf/policies/null-handle-guards.md requires and the one a copy loses: the dead copies of
+//! `occtShapePeriodicImpl` retired under #1628 had lost precisely that.
+inline bool occtNearestProjectionOnCurve3d(OCCTCurve3DRef curve,
+                                           const gp_Pnt&  point,
+                                           gp_Pnt*        outNearest,
+                                           double*        outParameter,
+                                           double*        outDistance)
+{
+  if (!curve || curve->curve.IsNull())
+    return false;
+  try
+  {
+    return occtNearestPointOnCurveRange(curve->curve,
+                                        point,
+                                        curve->curve->FirstParameter(),
+                                        curve->curve->LastParameter(),
+                                        Precision::Confusion(),
+                                        outNearest,
+                                        outParameter,
+                                        outDistance);
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
+}
+
+//! Writes `false` into a caller's cancellation flag when it asked for one.
+//!
+//! #1628: it was `static inline` in seven `OCCTBridge_IO_*.mm` files, reachable in three
+//! (`_IgesFormat.mm`, `_MeshFormats.mm`, `_StepFormat.mm`). Its sibling `setCancelOut` CANNOT move
+//! here yet and deliberately stays put: it names `BridgeProgressIndicator`, a file-local
+//! `Message_ProgressIndicator` subclass the same splits duplicated into every IO file, so hoisting
+//! the helper means hoisting an ODR-sensitive class first. That is a separate decision, recorded
+//! rather than taken here.
+inline void clearCancelOut(bool* outCancelled)
+{
+  if (outCancelled)
+    *outCancelled = false;
 }
 
 #endif /* OCCTBridge_Internal_h */
