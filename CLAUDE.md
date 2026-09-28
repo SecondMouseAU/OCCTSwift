@@ -279,6 +279,15 @@ input, never a value that reads as a measurement. `check-null-handle-guards.py` 
 where the guard is required, where it is noise, the alias shapes the checker knows and the ones it
 is blind to are in [`okf/policies/null-handle-guards.md`](okf/policies/null-handle-guards.md).
 
+**Where an extracted helper lives is a correctness decision, not a style one.** A `static` helper in
+a `.mm` reaches that translation unit and nothing else, so a copy of the same logic in another `.mm`
+cannot converge on it. Count the sites across every file before extracting, and put the helper in
+`OCCTBridge_Internal.h` as `inline` the moment more than one file holds it. That placement is why
+#943's bounds entry point and #957's six document sites each lost a guard their siblings kept, the
+second one inside the pass that was auditing for it. The rule, the grep that settles it, and the
+case for declining a one-caller helper are in
+[`okf/policies/helper-placement-by-reach.md`](okf/policies/helper-placement-by-reach.md).
+
 ## Naming Conventions
 
 - Bridge functions: `OCCTShape...`, `OCCTWire...`, `OCCTFace...`, `OCCTEdge...`

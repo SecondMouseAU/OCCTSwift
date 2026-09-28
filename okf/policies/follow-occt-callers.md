@@ -134,5 +134,8 @@ One call site in one DRAW command is a hint.
   the signature does not tell you.
 - [Stay faithful to OCCT](scope-boundary.md): the same fidelity rule applied to which features
   belong here at all.
+- [Helper placement is decided by reach](helper-placement-by-reach.md): "say it once, centrally"
+  applied to the code rather than to the comment, and the reason a shared rule put in a file-static
+  helper reaches only one translation unit's worth of callers.
 - [`okf/references/known-occt-bugs.md`](../references/known-occt-bugs.md): where a genuine kernel
   defect gets recorded once the callers have been checked.
