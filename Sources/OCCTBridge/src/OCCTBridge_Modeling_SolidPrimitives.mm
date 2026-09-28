@@ -727,39 +727,6 @@ struct OCCTCellsBuilder
 // MARK: - IntTools EdgeEdge / EdgeFace / FaceFace / FClass2d (v0.70)
 // MARK: - BOPAlgo BuilderFace / BuilderSolid / ShellSplitter / EdgesToWires / WiresToFaces (v0.70)
 // MARK: - BOPTools NormalOnEdge / PointInFace / IsEmptyShape / IsOpenShell (v0.70)
-static void fillCommonPart(const IntTools_CommonPrt& cp, OCCTCommonPart& out)
-{
-  out.type          = (cp.Type() == TopAbs_VERTEX) ? 0 : 1;
-  IntTools_Range r1 = cp.Range1();
-  out.param1First   = r1.First();
-  out.param1Last    = r1.Last();
-  // Range2 is a sequence; use first element if available
-  if (cp.Ranges2().Length() > 0)
-  {
-    out.param2First = cp.Ranges2()(1).First();
-    out.param2Last  = cp.Ranges2()(1).Last();
-  }
-  else
-  {
-    out.param2First = cp.VertexParameter2();
-    out.param2Last  = cp.VertexParameter2();
-  }
-  if (cp.Type() == TopAbs_VERTEX)
-  {
-    out.param1First = cp.VertexParameter1();
-    out.param1Last  = cp.VertexParameter1();
-    out.param2First = cp.VertexParameter2();
-    out.param2Last  = cp.VertexParameter2();
-  }
-  // Bounding points
-  gp_Pnt bp1, bp2;
-  cp.BoundingPoints(bp1, bp2);
-  // Use midpoint as representative point
-  out.pointX = (bp1.X() + bp2.X()) / 2.0;
-  out.pointY = (bp1.Y() + bp2.Y()) / 2.0;
-  out.pointZ = (bp1.Z() + bp2.Z()) / 2.0;
-}
-
 // MARK: - BRepFill_OffsetAncestors (v0.79)
 // --- BRepFill_OffsetAncestors ---
 struct OffsetAncestorsOpaque

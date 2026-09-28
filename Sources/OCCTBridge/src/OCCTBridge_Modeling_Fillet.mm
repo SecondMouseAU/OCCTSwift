@@ -328,57 +328,6 @@ static bool occtDrawingReachAlongDirection(const TopoDS_Shape& shape,
   return true;
 }
 
-// #794: shared helper for ShapeMakePeriodic / ShapeRepeat
-static OCCTShapeRef occtShapePeriodicImpl(OCCTShapeRef shape,
-                                          bool         xPeriodic,
-                                          double       xPeriod,
-                                          int32_t      xTimes,
-                                          bool         yPeriodic,
-                                          double       yPeriod,
-                                          int32_t      yTimes,
-                                          bool         zPeriodic,
-                                          double       zPeriod,
-                                          int32_t      zTimes,
-                                          bool         useRepeatedShape)
-{
-  if (!shape)
-    return nullptr;
-  try
-  {
-    BOPAlgo_MakePeriodic maker;
-    maker.SetShape(shape->shape);
-    if (xPeriodic)
-      maker.MakeXPeriodic(true, xPeriod);
-    if (yPeriodic)
-      maker.MakeYPeriodic(true, yPeriod);
-    if (zPeriodic)
-      maker.MakeZPeriodic(true, zPeriod);
-    maker.Perform();
-    if (maker.HasErrors())
-      return nullptr;
-
-    if (useRepeatedShape)
-    {
-      if (xPeriodic && xTimes > 0)
-        maker.XRepeat(xTimes);
-      if (yPeriodic && yTimes > 0)
-        maker.YRepeat(yTimes);
-      if (zPeriodic && zTimes > 0)
-        maker.ZRepeat(zTimes);
-      return new OCCTShape(maker.RepeatedShape());
-    }
-    else
-    {
-      return new OCCTShape(maker.Shape());
-    }
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return nullptr;
-  }
-}
-
 // #974: OCCTShapeQuilt and OCCTShapeQuiltWithHistory (further down this file) fed the same quilt
 // the same way and differed only in what they assembled afterwards, so the feeding loop and the
 // shell it takes live here once. The quilt is the caller's, not this helper's: the history variant
@@ -726,39 +675,6 @@ struct OCCTCellsBuilder
 // MARK: - IntTools EdgeEdge / EdgeFace / FaceFace / FClass2d (v0.70)
 // MARK: - BOPAlgo BuilderFace / BuilderSolid / ShellSplitter / EdgesToWires / WiresToFaces (v0.70)
 // MARK: - BOPTools NormalOnEdge / PointInFace / IsEmptyShape / IsOpenShell (v0.70)
-static void fillCommonPart(const IntTools_CommonPrt& cp, OCCTCommonPart& out)
-{
-  out.type          = (cp.Type() == TopAbs_VERTEX) ? 0 : 1;
-  IntTools_Range r1 = cp.Range1();
-  out.param1First   = r1.First();
-  out.param1Last    = r1.Last();
-  // Range2 is a sequence; use first element if available
-  if (cp.Ranges2().Length() > 0)
-  {
-    out.param2First = cp.Ranges2()(1).First();
-    out.param2Last  = cp.Ranges2()(1).Last();
-  }
-  else
-  {
-    out.param2First = cp.VertexParameter2();
-    out.param2Last  = cp.VertexParameter2();
-  }
-  if (cp.Type() == TopAbs_VERTEX)
-  {
-    out.param1First = cp.VertexParameter1();
-    out.param1Last  = cp.VertexParameter1();
-    out.param2First = cp.VertexParameter2();
-    out.param2Last  = cp.VertexParameter2();
-  }
-  // Bounding points
-  gp_Pnt bp1, bp2;
-  cp.BoundingPoints(bp1, bp2);
-  // Use midpoint as representative point
-  out.pointX = (bp1.X() + bp2.X()) / 2.0;
-  out.pointY = (bp1.Y() + bp2.Y()) / 2.0;
-  out.pointZ = (bp1.Z() + bp2.Z()) / 2.0;
-}
-
 // MARK: - BRepFill_OffsetAncestors (v0.79)
 // --- BRepFill_OffsetAncestors ---
 struct OffsetAncestorsOpaque

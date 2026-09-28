@@ -338,57 +338,6 @@ static bool occtDrawingReachAlongDirection(const TopoDS_Shape& shape,
   return true;
 }
 
-// #794: shared helper for ShapeMakePeriodic / ShapeRepeat
-static OCCTShapeRef occtShapePeriodicImpl(OCCTShapeRef shape,
-                                          bool         xPeriodic,
-                                          double       xPeriod,
-                                          int32_t      xTimes,
-                                          bool         yPeriodic,
-                                          double       yPeriod,
-                                          int32_t      yTimes,
-                                          bool         zPeriodic,
-                                          double       zPeriod,
-                                          int32_t      zTimes,
-                                          bool         useRepeatedShape)
-{
-  if (!shape)
-    return nullptr;
-  try
-  {
-    BOPAlgo_MakePeriodic maker;
-    maker.SetShape(shape->shape);
-    if (xPeriodic)
-      maker.MakeXPeriodic(true, xPeriod);
-    if (yPeriodic)
-      maker.MakeYPeriodic(true, yPeriod);
-    if (zPeriodic)
-      maker.MakeZPeriodic(true, zPeriod);
-    maker.Perform();
-    if (maker.HasErrors())
-      return nullptr;
-
-    if (useRepeatedShape)
-    {
-      if (xPeriodic && xTimes > 0)
-        maker.XRepeat(xTimes);
-      if (yPeriodic && yTimes > 0)
-        maker.YRepeat(yTimes);
-      if (zPeriodic && zTimes > 0)
-        maker.ZRepeat(zTimes);
-      return new OCCTShape(maker.RepeatedShape());
-    }
-    else
-    {
-      return new OCCTShape(maker.Shape());
-    }
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return nullptr;
-  }
-}
-
 // #974: OCCTShapeQuilt and OCCTShapeQuiltWithHistory (further down this file) fed the same quilt
 // the same way and differed only in what they assembled afterwards, so the feeding loop and the
 // shell it takes live here once. The quilt is the caller's, not this helper's: the history variant

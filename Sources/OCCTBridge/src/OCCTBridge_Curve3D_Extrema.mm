@@ -453,55 +453,6 @@ struct OCCTProjOnCurve
   GeomAPI_ProjectPointOnCurve proj;
 };
 
-// #794: shared helper for ExtremaPC (whole curve vs bounded)
-static int32_t occtExtremaPCCurveImpl(OCCTCurve3DRef curve,
-                                      double         px,
-                                      double         py,
-                                      double         pz,
-                                      double*        outParams,
-                                      double*        outDistances,
-                                      double*        outPx,
-                                      double*        outPy,
-                                      double*        outPz,
-                                      int32_t        maxResults,
-                                      double         uMin,
-                                      double         uMax,
-                                      bool           hasBounds)
-{
-  if (!curve || curve->curve.IsNull() || !outParams || !outDistances || maxResults <= 0)
-    return 0;
-  try
-  {
-    // ExtremaPC_Curve has deleted copy/move, so construct directly
-    ExtremaPC_Curve extPC(hasBounds ? curve->curve : curve->curve,
-                          hasBounds ? uMin : 0,
-                          hasBounds ? uMax : 0);
-    if (!extPC.IsInitialized())
-      return 0;
-    const auto& result = extPC.Perform(gp_Pnt(px, py, pz), 1e-9);
-    if (!result.IsDone())
-      return 0;
-    int n = std::min((int)result.NbExt(), (int)maxResults);
-    for (int i = 0; i < n; i++)
-    {
-      outParams[i]    = result[i].Parameter;
-      outDistances[i] = std::sqrt(result[i].SquareDistance);
-      if (outPx)
-        outPx[i] = result[i].Point.X();
-      if (outPy)
-        outPy[i] = result[i].Point.Y();
-      if (outPz)
-        outPz[i] = result[i].Point.Z();
-    }
-    return n;
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return 0;
-  }
-}
-
 // --- Approx_BSplineApproxInterp (reimplemented on GeomAPI_PointsToBSpline) ---
 //
 // OCCT 8.0.0p1 removed Approx_BSplineApproxInterp. The C ABI here is preserved, but the
