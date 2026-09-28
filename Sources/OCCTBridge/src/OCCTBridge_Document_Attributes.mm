@@ -283,33 +283,6 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
     outObj);
 }
 
-/// Apply a plus/minus tolerance pair to a dimension object, and report whether the object kept it.
-///
-/// Both setters return false, and change nothing, when the dimension is already a range.
-/// Discarding that reported success for a call that did nothing (#996). Neither is
-/// short-circuited, so the two arguments stay symmetric rather than one being applied and one
-/// not. That is safe for the rejection this project has actually measured, a range dimension,
-/// where both refuse: see Scripts/repro/996-gdt-read-surface/. It is NOT a general guarantee
-/// that OCCT rejects the pair atomically on every path, and no such guarantee is documented
-/// upstream. The readback is what makes the caller's answer correct either way: verify rather than
-/// trust the return pair, since a partial application would otherwise be reported as a clean
-/// failure and the caller could not tell it from a no-op.
-///
-/// One copy, two callers: OCCTDocumentSetDimensionTolerance and the create path this file's
-/// occtDocumentCreateDimensionImpl runs. Both are in this file and nothing outside it applies a
-/// tolerance, so file-static is the right reach. The two spellings of the operation disagreeing
-/// about what counts as applied is the defect #1056 is about, so they share the test rather than
-/// each carrying their own.
-static bool occtDimensionApplyTolerance(const Handle(XCAFDimTolObjects_DimensionObject)& dimObj,
-                                        double                                           lowerTol,
-                                        double                                           upperTol)
-{
-  const bool lowerOk = dimObj->SetLowerTolValue(lowerTol);
-  const bool upperOk = dimObj->SetUpperTolValue(upperTol);
-  return lowerOk && upperOk && dimObj->GetLowerTolValue() == lowerTol
-         && dimObj->GetUpperTolValue() == upperTol;
-}
-
 // Every value in a modifier array has to name a real enumerator before any of the array is stored,
 // because an out-of-range one is appended, written through and read back verbatim. Checked up front
 // rather than inside the append loop, so a rejected array leaves the document untouched (#1037).
@@ -539,15 +512,6 @@ struct OCCTNoteObject
 {
   Handle(XCAFNoteObjects_NoteObject) obj;
 };
-
-// Helper to get label from document ref + tag (duplicate of main bridge's helper, ODR-safe across
-// TUs)
-static TDF_Label getLabelForTag(OCCTDocumentRef document, int tag)
-{
-  if (tag == 0)
-    return document->doc->Main();
-  return document->doc->Main().FindChild(tag, Standard_True);
-}
 
 // #964: the walk's upper bound. Reaching it means the count is a floor, not a measurement,
 // which `outTruncated` reports so a caller can tell the two apart.

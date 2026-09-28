@@ -167,12 +167,6 @@ private:
 
 DEFINE_STANDARD_HANDLE(BridgeProgressIndicator, Message_ProgressIndicator)
 
-static inline void clearCancelOut(bool* outCancelled)
-{
-  if (outCancelled)
-    *outCancelled = false;
-}
-
 // Report a cancelled call as cancelled whichever exit it takes (#525).
 //
 // The explicit UserBreak() checkpoints are not the only way out of these functions: an aborted

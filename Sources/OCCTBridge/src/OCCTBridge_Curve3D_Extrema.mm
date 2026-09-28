@@ -390,64 +390,6 @@ struct OCCTQuaternion
   gp_Quaternion q;
 };
 
-// One nearest-point answer behind every entry point that wants the nearest solution over the
-// curve's whole range: OCCTCurve3DNearestParameter and OCCTExtremaLocateOnCurve's full-range
-// fallback.
-//
-// #500 unified them onto a single GeomAPI_ProjectPointOnCurve construction. #615 makes that
-// construction the RIGHT one: GeomAPI reports extrema, not minima, so LowerDistance is not the
-// nearest point and NbPoints() == 0 is not "no nearest point". Measured on the geometry #539 named,
-// a half circle of radius 5 queried from (0, -6, 0): this reported the far side of the arc, 11
-// away, where OCCTCurve3DProjectPoint -- converted by #539, same promise, same curve, same point --
-// reported the true nearest at 7.81; and on a segment trimmed to [3, 8] queried at (100, 0, 0) it
-// reported nothing at all where the converted sibling reported the segment's own end, 92 away. So
-// the two spellings disagreed about which point is nearest AND about whether there is one.
-//
-// Both are now the same answer because both are now the same helper. See
-// occtNearestPointOnCurveRange (OCCTBridge_Internal.h) for what each of its three candidate sources
-// contributes and why none of them suffices alone.
-//
-// CONSEQUENCE, and it is the point rather than a side effect: this no longer returns false for a
-// point with no perpendicular foot. A point beyond the end of a bounded curve is nearest to that
-// end, and a circle's centre is equidistant from every point on it, so both now answer -- with a
-// real parameter and a true distance. False is left meaning what it means for the converted
-// siblings: no curve to answer about. Precision::Confusion() is the projection precision, matching
-// the two converted entry points that likewise take none from their caller:
-// OCCTEdgeProjectPoint (OCCTBridge_Properties.mm) and OCCTBRepExtremaExtPC
-// (OCCTBridge_Topology.mm). Nothing in THIS file set that precedent -- OCCTCurve3DProjectPoint,
-// the only other local caller of the helper, is handed a precision by its own caller.
-//
-// Not routed through here, and why: OCCTExtremaLocateOnCurve's PRIMARY search deliberately reports
-// a windowed extremum near a caller-supplied guess (see there, and note that "near" is the window,
-// not a ranking); OCCTExtremaPointCurve and OCCTProjOnCurve* need every extremum, not the nearest;
-// OCCTEdgeProjectPoint (OCCTBridge_Properties.mm) reaches the same shared helper by its own route,
-// from BRep_Tool::Curve's range rather than a Geom_Curve's.
-static bool occtNearestProjectionOnCurve3d(OCCTCurve3DRef curve,
-                                           const gp_Pnt&  point,
-                                           gp_Pnt*        outNearest,
-                                           double*        outParameter,
-                                           double*        outDistance)
-{
-  if (!curve || curve->curve.IsNull())
-    return false;
-  try
-  {
-    return occtNearestPointOnCurveRange(curve->curve,
-                                        point,
-                                        curve->curve->FirstParameter(),
-                                        curve->curve->LastParameter(),
-                                        Precision::Confusion(),
-                                        outNearest,
-                                        outParameter,
-                                        outDistance);
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return false;
-  }
-}
-
 struct OCCTProjOnCurve
 {
   GeomAPI_ProjectPointOnCurve proj;

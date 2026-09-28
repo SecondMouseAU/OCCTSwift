@@ -328,33 +328,6 @@ static bool occtDrawingReachAlongDirection(const TopoDS_Shape& shape,
   return true;
 }
 
-// #974: OCCTShapeQuilt and OCCTShapeQuiltWithHistory (further down this file) fed the same quilt
-// the same way and differed only in what they assembled afterwards, so the feeding loop and the
-// shell it takes live here once. The quilt is the caller's, not this helper's: the history variant
-// reads it again after this returns (IsCopied/Copy), so it is passed by reference rather than
-// created here.
-//
-// File-static rather than shared through OCCTBridge_Internal.h because BRepTools_Quilt has exactly
-// these two call sites, both in this file: measured by grep over Sources/OCCTBridge, the class
-// appears in no other .mm and in no header. Move it to OCCTBridge_Internal.h as `inline` the
-// moment a second file quilts, since a static copy in another translation unit is one that can
-// never converge on this one (#943, #957).
-//
-// Returns a null shape when an entry is null or the quilt produced nothing. Both callers turn
-// either into a null return, which is what they did as separate copies.
-static TopoDS_Shape occtQuiltShells(BRepTools_Quilt&    quilt,
-                                    const OCCTShapeRef* shapes,
-                                    int32_t             count)
-{
-  for (int32_t i = 0; i < count; i++)
-  {
-    if (!shapes[i])
-      return TopoDS_Shape();
-    quilt.Add(shapes[i]->shape);
-  }
-  return quilt.Shells();
-}
-
 // OCCTBooleanHistory struct definition
 struct OCCTBooleanHistory
 {
