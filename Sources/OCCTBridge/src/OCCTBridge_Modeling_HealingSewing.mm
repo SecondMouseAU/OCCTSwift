@@ -1075,6 +1075,11 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurfaceWire(OCCTSurfaceRef surface, OCCTWire
     fixer.Perform();
     TopoDS_Face fixed = fixer.Face();
     BRepLib::BuildCurves3d(fixed);
+    // #2750: BuildCurves3d can leave an edge with its projected pcurve and no 3D curve, which is
+    // the one input BRepCheck_Analyzer faults on (#2746). That face is not one this function
+    // can hand back: nullptr is what it already answers for an analyzer-invalid face.
+    if (occtShapeHasPCurveOnlyEdge(fixed))
+      return nullptr;
     BRepCheck_Analyzer chk(fixed);
     if (!chk.IsValid())
       return nullptr;
@@ -1132,6 +1137,11 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurfaceWireWithHoles(OCCTSurfaceRef     surf
       fixer.Perform();
       TopoDS_Face fixed = fixer.Face();
       BRepLib::BuildCurves3d(fixed);
+      // #2750: see OCCTShapeCreateFaceFromSurfaceWire above (#2746). A face in that state is not
+      // accepted, so this attempt falls through to the other winding exactly as an
+      // analyzer-invalid face does.
+      if (occtShapeHasPCurveOnlyEdge(fixed))
+        continue;
       if (BRepCheck_Analyzer(fixed).IsValid())
         return new OCCTShape(fixed);
     }
@@ -1398,7 +1408,10 @@ OCCTShapeRef OCCTMakeFaceAddHole(OCCTShapeRef face, OCCTShapeRef wire)
       return mf.IsDone() ? mf.Face() : TopoDS_Face();
     };
     TopoDS_Face holed = build(reverse);
-    if (holed.IsNull() || !BRepCheck_Analyzer(holed).IsValid())
+    // #2750: occtShapeHasPCurveOnlyEdge before each analyzer, because a host face whose edges
+    // lost their 3D curves faults inside it (#2746). It reads as "not a usable face", which is
+    // the verdict this function already reaches for an analyzer-invalid build.
+    if (holed.IsNull() || occtShapeHasPCurveOnlyEdge(holed) || !BRepCheck_Analyzer(holed).IsValid())
     {
       // Non-planar host, or a winding test that couldn't decide: take the other orientation
       // when it is the one that yields a valid face. If NEITHER does, the wire is not a usable
@@ -1407,7 +1420,7 @@ OCCTShapeRef OCCTMakeFaceAddHole(OCCTShapeRef face, OCCTShapeRef wire)
       // function cannot fix. That is the same call the degenerate guard above makes, and what
       // #234 established: a non-nil invalid face is exactly what breaks the caller later.
       TopoDS_Face alt = build(!reverse);
-      if (alt.IsNull() || !BRepCheck_Analyzer(alt).IsValid())
+      if (alt.IsNull() || occtShapeHasPCurveOnlyEdge(alt) || !BRepCheck_Analyzer(alt).IsValid())
         return nullptr;
       holed = alt;
     }
@@ -1539,6 +1552,13 @@ int32_t OCCTMakeEdgeError(OCCTShapeRef edge)
   // 0 = valid, nonzero = error
   if (!edge)
     return -1;
+  // #2750: an edge of a face with no valid 3D curve and a pcurve faults inside BRepCheck_Analyzer
+  // (#2746). A bare TopoDS_Edge, which is what this entry point is handed, carries no face and so
+  // cannot reach the fault; the guard is here for the shape a caller passes that is not an edge.
+  // 1 is the error code this function already uses, and the predicate measured a real error, so
+  // -1 ("could not check") would not be what happened.
+  if (occtShapeHasPCurveOnlyEdge(edge->shape))
+    return 1;
   try
   {
     BRepCheck_Analyzer analyzer(edge->shape);

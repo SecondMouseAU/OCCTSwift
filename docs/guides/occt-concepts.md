@@ -220,9 +220,10 @@ let rounded = shape.filleted(radius: 2.0)
 let beveled = shape.chamfered(distance: 1.0)
 // Creates flat cut at 45° along edges
 
-// Shell: Hollow out a solid
-let hollow = shape.shelled(thickness: 1.0)
-// Removes interior, leaving walls of given thickness
+// Shell: Hollow out a solid, leaving one face open
+let hollow = shape.shelled(thickness: -1.0, openFaces: shape.upwardFaces())
+// Negative thickness shells inward, leaving walls of the given thickness;
+// positive shells outward instead (matches offset(by:) below)
 
 // Offset: Expand/shrink all faces
 let bigger = shape.offset(by: 0.5)

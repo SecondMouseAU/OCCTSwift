@@ -701,8 +701,14 @@ extension Shape {
     /// Uses ShapeUpgrade_ShapeDivideArea to split faces larger than the specified area.
     /// Useful for mesh quality control and FEA preprocessing.
     ///
+    /// A threshold no face reaches comes back as the unchanged input, which has always been this
+    /// method's behaviour. #2769 changed the other half: a genuine
+    /// `Status(ShapeExtend_FAIL)` used to be returned as a result too, and now gives `nil`. See
+    /// ``Shape/divided(at:tolerance:)`` for OCCT's rule in full.
+    ///
     /// - Parameter maxArea: Maximum face area, faces larger than this are split
-    /// - Returns: Shape with subdivided faces, or nil on failure
+    /// - Returns: Shape with subdivided faces, the unchanged input when no face exceeds `maxArea`,
+    ///   or nil on failure
     public func dividedByArea(maxArea: Double) -> Shape? {
         guard let ref = OCCTShapeDivideByArea(handle, maxArea) else { return nil }
         return Shape(handle: ref)
@@ -712,8 +718,24 @@ extension Shape {
     ///
     /// Uses ShapeUpgrade_ShapeDivideArea in splitting-by-number mode.
     ///
+    /// `parts: 1` asks for no split at all, and comes back as the unchanged input rather than as
+    /// `nil` (#2769). `ShapeUpgrade_ShapeDivide::Perform()` returning `false` means "nothing
+    /// changed", and the failure signal is that `false` together with `Status(ShapeExtend_FAIL)`, as
+    /// ``Shape/divided(at:tolerance:)`` documents in full. `parts <= 0` is still refused outright,
+    /// before OCCT sees it.
+    ///
+    /// ```swift
+    /// let cube = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(cube.dividedByParts(2)?.faceCount ?? 0)  // 12: each face halved
+    /// if let unchanged = cube.dividedByParts(1) {
+    ///     print(unchanged.isSame(as: cube))  // true: one part per face is no split
+    /// }
+    /// print(cube.dividedByParts(0) == nil)  // true: refused before OCCT sees it
+    /// ```
+    ///
     /// - Parameter parts: Target number of parts per face
-    /// - Returns: Shape with subdivided faces, or nil on failure
+    /// - Returns: Shape with subdivided faces, the unchanged input when `parts` asks for no split,
+    ///   or nil on failure
     public func dividedByParts(_ parts: Int) -> Shape? {
         guard let ref = OCCTShapeDivideByParts(handle, Int32(parts)) else { return nil }
         return Shape(handle: ref)
@@ -1114,7 +1136,9 @@ extension Shape {
     /// - Parameters:
     ///   - type: Type of sub-shape to check
     ///   - index: 0-based index of the sub-shape
-    /// - Returns: true if the sub-shape is valid
+    /// - Returns: true if the sub-shape is valid. False is also the answer when the parent shape
+    ///   cannot be handed to `BRepCheck_Analyzer` at all (#2750), which is a property of the
+    ///   parent rather than of the sub-shape named here. Tracked as #2755.
     public func isSubShapeValid(type: ShapeType, at index: Int) -> Bool {
         OCCTBRepCheckSubShapeValid(handle, Int32(type.rawValue), Int32(index))
     }
@@ -1136,7 +1160,35 @@ extension Shape {
 
     // MARK: - BRepCheck per sub-shape type
 
-    /// Check validity of an edge by index.
+    /// Check the structural validity of an edge by index, using only the edge's own data.
+    ///
+    /// Runs `BRepCheck_Edge::Minimum()`, which never looks at this shape's other sub-shapes: it
+    /// checks only the edge's own curve and flag bookkeeping. Measured (#2747;
+    /// `Scripts/repro/2747-brepcheck-minimum-coverage/`), `isValid` can go `false` for exactly
+    /// four faults: no 3D curve representation, more than one 3D curve representation, the
+    /// `SameParameter` flag set without `SameRange`, and a parameter range that is inverted or
+    /// inconsistent with the curve's own domain.
+    ///
+    /// **What it cannot detect** is everything that needs the owning shape: whether the curve
+    /// agrees with its vertices, whether it deviates from a surface it should lie on, or how many
+    /// faces it borders. Those live in `BRepCheck_Edge::InContext(_:)`, which this method never
+    /// calls, both because `checkSubShape` (the shared bridge helper) only calls `Minimum()` and
+    /// because `InContext` itself raises an uncatchable SIGSEGV on some inputs in this build
+    /// (#2746). None of the four faults `Minimum()` can catch arise from a shape built end to end
+    /// through this package's own `Shape`/`Wire`/`Edge` API, which never sets those flags or
+    /// curve representations directly; they are realistic for an edge read from an imported file.
+    /// Read `isValid == true` as "this edge's own bookkeeping is self-consistent", not as "this
+    /// edge is geometrically valid".
+    ///
+    /// ```swift
+    /// if let box = Shape.box(width: 10, height: 10, depth: 10) {
+    ///     let check = box.checkEdge(at: 0)
+    ///     print(check.isValid)  // true: an edge built by OCCTSwift's own API always passes
+    /// }
+    /// ```
+    ///
+    /// - Parameter index: 0-based edge index, in the same enumeration as ``edges()``.
+    /// - Returns: Check result; see the limitation above before reading `isValid` as a full check.
     public func checkEdge(at index: Int) -> CheckResult {
         let result = OCCTCheckEdge(handle, Int32(index))
         let status = CheckStatus(rawValue: Int32(result.firstError.rawValue))
@@ -1199,7 +1251,35 @@ extension Shape {
         )
     }
 
-    /// Check validity of a vertex by index.
+    /// Check the structural validity of a vertex by index.
+    ///
+    /// Cannot report an error, for any input.
+    ///
+    /// Runs `BRepCheck_Vertex::Minimum()`, whose entire body is `Append(BRepCheck_NoError)` with
+    /// no condition at all (Libraries/occt-src's `BRepCheck_Vertex.cxx`, unpatched in this build).
+    /// No vertex, however malformed, can make it report anything else: `isValid` from this method
+    /// is always `true`. Measured on an ordinary vertex, a negative-tolerance vertex and a huge-
+    /// coordinate zero-tolerance vertex, all `NoError` (#2747;
+    /// `Scripts/repro/2747-brepcheck-minimum-coverage/`), consistent with the source having no
+    /// branch to take.
+    ///
+    /// Every real per-vertex check OCCT has (does the vertex's point agree with the curve or
+    /// surface it sits on, `BRepCheck_InvalidPointOnCurve` and its siblings) lives in
+    /// `BRepCheck_Vertex::InContext(_:)`, which this method never calls, both because
+    /// `checkSubShape` (the shared bridge helper) only calls `Minimum()` and because `InContext`
+    /// itself raises an uncatchable SIGSEGV on some inputs in this build (#2746). Do not read
+    /// `isValid == true` from this method as "this vertex is valid": it carries no information,
+    /// since it is the only value this method can ever return.
+    ///
+    /// ```swift
+    /// if let box = Shape.box(width: 10, height: 10, depth: 10) {
+    ///     let check = box.checkVertex(at: 0)
+    ///     print(check.isValid)  // true, and always true, whatever the vertex
+    /// }
+    /// ```
+    ///
+    /// - Parameter index: 0-based vertex index, in the same enumeration as ``vertices()``.
+    /// - Returns: `isValid` is always `true`.
     public func checkVertex(at index: Int) -> CheckResult {
         let result = OCCTCheckVertex(handle, Int32(index))
         let status = CheckStatus(rawValue: Int32(result.firstError.rawValue))
@@ -2743,17 +2823,19 @@ extension Shape {
 
     /// Check status of a face within this shape.
     ///
-    /// Returns BRepCheck_Status (0=NoError).
+    /// Returns a `BRepCheck_Status` value (0 = no error), or -1 when the check could not be run:
+    /// a null input, no result for that sub-shape, or a shape carrying the edge state that
+    /// crashes `BRepCheck_Analyzer` (#2750).
     public func checkFaceStatus(face: Shape) -> Int {
         Int(OCCTCheckFaceStatus(handle, face.handle))
     }
 
-    /// Check status of an edge within this shape.
+    /// Check status of an edge within this shape, or -1 when the check could not be run.
     public func checkEdgeStatus(edge: Shape) -> Int {
         Int(OCCTCheckEdgeStatus(handle, edge.handle))
     }
 
-    /// Check status of a vertex within this shape.
+    /// Check status of a vertex within this shape, or -1 when the check could not be run.
     public func checkVertexStatus(vertex: Shape) -> Int {
         Int(OCCTCheckVertexStatus(handle, vertex.handle))
     }

@@ -637,6 +637,11 @@ bool OCCTExportIGESProgress(OCCTShapeRef              shape,
   opencascade::handle<BridgeProgressIndicator> indicator;
   try
   {
+    // #2750: BRepCheck_Analyzer faults on a face edge with no valid 3D curve and a pcurve (#2746),
+    // and this export already refuses an invalid shape. Such an edge IS invalid, by OCCT's own
+    // BRepCheck_No3DCurve, so the guard reaches the same refusal one step earlier.
+    if (occtShapeHasPCurveOnlyEdge(shape->shape))
+      return false;
     BRepCheck_Analyzer analyzer(shape->shape);
     if (!analyzer.IsValid())
       return false;
@@ -771,6 +776,11 @@ bool OCCTExportIGESWithUnit(OCCTShapeRef shape, const char* path, const char* un
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
+    // #2750: BRepCheck_Analyzer faults on a face edge with no valid 3D curve and a pcurve (#2746),
+    // and this export already refuses an invalid shape. Such an edge IS invalid, by OCCT's own
+    // BRepCheck_No3DCurve, so the guard reaches the same refusal one step earlier.
+    if (occtShapeHasPCurveOnlyEdge(shape->shape))
+      return false;
     BRepCheck_Analyzer analyzer(shape->shape);
     if (!analyzer.IsValid())
       return false;
@@ -796,6 +806,11 @@ bool OCCTExportIGESBRepMode(OCCTShapeRef shape, const char* path)
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
+    // #2750: BRepCheck_Analyzer faults on a face edge with no valid 3D curve and a pcurve (#2746),
+    // and this export already refuses an invalid shape. Such an edge IS invalid, by OCCT's own
+    // BRepCheck_No3DCurve, so the guard reaches the same refusal one step earlier.
+    if (occtShapeHasPCurveOnlyEdge(shape->shape))
+      return false;
     BRepCheck_Analyzer analyzer(shape->shape);
     if (!analyzer.IsValid())
       return false;
@@ -825,7 +840,11 @@ bool OCCTExportIGESMultiShape(const OCCTShapeRef* shapes, int32_t count, const c
     {
       if (!shapes[i] || shapes[i]->shape.IsNull())
         continue;
-      // Validate each shape before adding to IGES writer
+      // Validate each shape before adding to IGES writer.
+      // #2750: this one shape faults inside the analyzer (#2746) and is invalid by OCCT's own
+      // BRepCheck_No3DCurve, so it is skipped exactly as an analyzer-invalid shape already is.
+      if (occtShapeHasPCurveOnlyEdge(shapes[i]->shape))
+        continue;
       BRepCheck_Analyzer analyzer(shapes[i]->shape);
       if (!analyzer.IsValid())
         continue;
@@ -959,6 +978,11 @@ bool OCCTExportIGES(OCCTShapeRef shape, const char* path)
   {
     // Validate shape before IGES export, since the OCCT translator can segfault on
     // invalid geometry
+    // #2750: BRepCheck_Analyzer faults on a face edge with no valid 3D curve and a pcurve (#2746),
+    // and this export already refuses an invalid shape. Such an edge IS invalid, by OCCT's own
+    // BRepCheck_No3DCurve, so the guard reaches the same refusal one step earlier.
+    if (occtShapeHasPCurveOnlyEdge(shape->shape))
+      return false;
     BRepCheck_Analyzer analyzer(shape->shape);
     if (!analyzer.IsValid())
       return false;

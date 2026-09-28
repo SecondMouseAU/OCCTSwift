@@ -995,19 +995,22 @@ Each entry specifies an edge, a reference face adjacent to that edge, a distance
 
 ### `shelled(thickness:)`
 
-Create a hollow shell by removing material from the inside.
+Offset an open shell or face, via `BRepOffsetAPI_MakeThickSolid::MakeThickSolidBySimple`.
 
 ```swift
 public func shelled(thickness: Double) -> Shape?
 ```
 
-- **Parameters:** `thickness`, wall thickness (positive = shell walls of this thickness).
-- **Returns:** Hollow shell, or `nil` on failure.
-- **OCCT:** `BRepOffsetAPI_MakeThickSolid`.
+- **Parameters:** `thickness`, offset distance passed straight through to the underlying OCCT call.
+- **Returns:** The offset shape, or `nil` on failure.
+- **OCCT:** `BRepOffsetAPI_MakeThickSolid` (via `OCCTShapeShell`).
+- **Warning:** `MakeThickSolidBySimple` takes a non-closed shell or face as input, not a closed solid, per OCCT's own header comment. Measured on a closed box, cylinder and sphere at several thicknesses and both signs, this always returns `nil` on a closed solid ([#2739](https://github.com/SecondMouseAU/OCCTSwift/issues/2739)). Use [`shelled(thickness:openFaces:)`](Shape-Features.md#shelledthicknessopenfaces) with at least one open face to hollow a closed solid.
 - **Warning:** The offset surfaces this produces (`Geom_OffsetSurface`) can hang the mesher unboundedly on pathological input, see the warning on [`mesh(linearDeflection:angularDeflection:)`](#meshlineardeflectionangulardeflection) ([#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286)).
 - **Example:**
   ```swift
-  if let shell = Shape.box(width: 10, height: 10, depth: 10)?.shelled(thickness: 1) { }
+  // Returns nil: `box` is a closed solid, and this overload only accepts an open
+  // shell or face (#2739). Use shelled(thickness:openFaces:) to hollow a closed solid.
+  let shell = Shape.box(width: 10, height: 10, depth: 10)?.shelled(thickness: 1)
   ```
 
 ---
@@ -1023,11 +1026,11 @@ public func hollowed(removingFaces faceIndices: [Int],
                      joinType: OffsetJoinType = .arc) -> Shape?
 ```
 
-Where `shelled(thickness:)` closes the solid entirely, this is the open-box case: pass the 0-based indices of the faces to remove. Returns `nil` if `faceIndices` is empty.
+Pass the 0-based indices of the faces to remove; they become the openings. Returns `nil` if `faceIndices` is empty.
 
 - **Parameters:**
   - `faceIndices`: 0-based indices of the faces to remove (they become openings).
-  - `thickness`: wall thickness (positive = offset inward).
+  - `thickness`: wall thickness (positive = outward, negative = inward), matching `offset(by:)` and [`shelled(thickness:openFaces:)`](Shape-Features.md#shelledthicknessopenfaces) ([#2736](https://github.com/SecondMouseAU/OCCTSwift/issues/2736)).
   - `tolerance`: tolerance for the operation (default `1e-3`).
   - `joinType`: how to join offset edges (default `.arc`).
 - **Returns:** Hollowed solid, or `nil` on failure.

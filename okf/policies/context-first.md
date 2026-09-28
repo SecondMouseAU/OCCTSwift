@@ -85,3 +85,8 @@ else. Check the reported file count against what you expected.
 
 Ecosystem standard: see
 [OKF-STANDARD.md](https://github.com/SecondMouseAU/ecosystem/blob/main/OKF-STANDARD.md).
+
+## Related
+
+- [Follow OCCT's own callers](follow-occt-callers.md). Looking a signature up is this policy; what
+  the signature does not tell you, such as which return value counts as a failure, is that one.

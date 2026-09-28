@@ -490,6 +490,24 @@ public func createLabel(parent: AssemblyNode? = nil) -> AssemblyNode?
 - **Returns:** `AssemblyNode` representing the new label, or `nil` on failure.
 - **OCCT:** `TDF_Label::NewChild` (via `OCCTDocumentCreateLabel`).
 
+On an XCAF document (every `Document` this package creates is one), `XCAFDoc_DocumentTool`
+reserves fixed tags 1-5 and 7-10 under the main label for its own tool labels (ShapesLabel,
+ColorsLabel, LayersLabel, DGTsLabel, MaterialsLabel, ViewsLabel, ClippingPlanesLabel, NotesLabel,
+VisMaterialLabel; tag 6 is unused), created independently of `TDF_Label`'s own tag counter. Before
+#2730, a fresh document's main label had no `TDF_TagSource` attribute, so the counter `NewChild()`
+creates lazily started at 1 and its first calls returned the tool labels themselves (already
+holding attributes) instead of new ones. `createLabel(parent: nil)` now seeds that counter to 10
+before the first call, so every label it returns lands above every tag `XCAFDoc_DocumentTool`
+reserves, in any order relative to a lazy tool accessor (`findLayer(_:)` and every other API
+backed by `XCAFDoc_DocumentTool::LayerTool`/`DimTolTool`/`MaterialTool`/`ViewTool`/
+`ClippingPlaneTool`/`NotesTool`). This does not apply to `createLabel(parent:)` with an explicit
+non-root parent: a label you already hold has no such reservation on its own children.
+
+See `Scripts/repro/2730-createlabel-tagsource/probe.mm` for the measurements (the reserved tag
+set, the seed's order-independence, and that the tag counter survives a native OCAF save/reload
+unchanged, so a document loaded from disk is covered by the same seed-at-point-of-use logic with
+no separate code path).
+
 ---
 
 ### `recordNaming(on:evolution:oldShape:newShape:)`

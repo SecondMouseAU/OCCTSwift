@@ -418,6 +418,52 @@ like a `const` query. Every other flagged class's unsafe surface is an ordinary,
 mutator (a setter, a re-callable `perform()`/`build()`) and kept its conformance with a corrected
 or strengthened doc comment instead, matching every other builder-style wrapper in this package.
 
+## CI's intermittent startup crash, evidence collection (issue #2714)
+
+`swift test` in `ci.yml`'s `swift build + test (macOS)` job intermittently dies within the first
+seconds, before a single test has finished: an uncatchable SIGSEGV, or once SIGBUS, with about
+7,600 of the suite's 6,388 tests started at once and zero finished. Roughly 1-3% of runs. The log
+alone carries no backtrace and no test attribution, so nothing in it localizes the fault, which is
+why it went uninvestigated after the earlier #920/#922 pair closed with a different root cause
+(patch `0027`, `BRepOffsetAPI_ThruSections`' `CreateSmoothed` heap corruption) that does not apply
+here. See [issue #2714](https://github.com/SecondMouseAU/OCCTSwift/issues/2714) for the full
+occurrence table and analysis. **This section documents evidence collection, not a fix: the cause
+is still open.**
+
+**What the job now collects, on any failure of that job:**
+
+- The `swift test` step's own output is captured to a file rather than only the step's console, so
+  the next step can grep it.
+- **A crash report, if macOS wrote one.** `~/Library/Logs/DiagnosticReports/*` and
+  `/Library/Logs/DiagnosticReports/*` are uploaded as a build artifact
+  (`diagnostic-reports-<run>-<attempt>`, 30-day retention). macOS's crash reporter records the
+  faulting thread's backtrace and every thread's stack, which the plain log never has; one captured
+  report is likely enough to tell whether the fault is inside OCCT, the bridge, or the Swift Testing
+  harness.
+- **A job-summary note when the failure matches #2714's signature**: `no catch was found` or
+  `unexpected signal code` in the captured log, together with zero `✔`/`✘` lines (nothing finished
+  before the process died). This only records the match for whoever is tracking occurrences; it
+  does not retry the job and does not change whether the job is reported as failed.
+
+**What to dispatch if you are investigating this.** `.github/workflows/malloc-scribble-stress.yml`
+(`workflow_dispatch` only, an `iterations` input, default 5) runs the CI job's own shape, the whole
+suite in one `OCCTSwiftPackageTests` process, in a loop with `MallocScribble=1
+MallocPreScribble=1 MallocGuardEdges=1 MallocErrorAbort=1`. Malloc scribbling tends to turn a
+use-after-free into a reliable, earlier crash instead of an occasional one, because a freed block is
+overwritten with a repeating pattern rather than left looking valid, and a guarded allocation aborts
+on an out-of-bounds write instead of silently corrupting a neighbor. The issue's own estimate is
+that a useful sample is 50 or more iterations; dispatch with a low count first to confirm the
+workflow itself runs, then raise it. It reports pass/fail per iteration in the job summary and
+uploads both the per-iteration logs and any crash reports, the same collection this section
+describes for the main CI job.
+
+Beyond that, #2714 lists further, more expensive steps not built here: bisecting the concurrency
+(`swift test --num-workers 1` in the same kind of loop, to tell a race in the initial burst from
+deterministic corruption), reproducing on the exact CI Xcode toolchain locally, and running
+`Scripts/tsan-stress.sh` against the whole monolithic bundle rather than per-domain. Check upstream
+OCCT's own recent activity (see `CLAUDE.md`'s note on the mutable-static-state PR series) before
+starting a kernel-global investigation by hand.
+
 ## ThreadSanitizer gate for concurrency-touching changes
 
 Every thread-safety kernel bug this project has found and fixed (#298, #341, #344, #349, #353,

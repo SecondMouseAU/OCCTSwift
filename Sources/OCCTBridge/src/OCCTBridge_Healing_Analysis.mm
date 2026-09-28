@@ -635,9 +635,21 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance)
 
   try
   {
-    // Use BRepCheck_Analyzer for comprehensive validation
-    BRepCheck_Analyzer analyzer(shape->shape, true);
-    result.hasInvalidTopology = !analyzer.IsValid();
+    // Use BRepCheck_Analyzer for comprehensive validation.
+    // #2750: a face edge with no valid 3D curve and a pcurve faults inside BRepCheck_Analyzer
+    // (#2746), so measure it with the predicate instead of the analyzer. The verdict is the same
+    // one the analyzer would give: such an edge is what BRepCheck_No3DCurve describes. Only this
+    // one field is affected, so the rest of the analysis below still runs and still reports its
+    // own measurements rather than the all-zero result an early return would hand back.
+    if (occtShapeHasPCurveOnlyEdge(shape->shape))
+    {
+      result.hasInvalidTopology = true;
+    }
+    else
+    {
+      BRepCheck_Analyzer analyzer(shape->shape, true);
+      result.hasInvalidTopology = !analyzer.IsValid();
+    }
 
     // Count small edges using ShapeAnalysis_ShapeTolerance
     ShapeAnalysis_ShapeTolerance shapeTol;
@@ -1129,6 +1141,21 @@ OCCTShapeCheckResult OCCTCheckShape(OCCTShapeRef shape)
     result.firstError = OCCTCheckCheckFail;
     return result;
   }
+  // #2750: BRepCheck_Analyzer faults on a face edge with no valid 3D curve and a pcurve (#2746).
+  // This struct has a refusal channel (isValid false, firstError OCCTCheckCheckFail) and it is
+  // not the right answer: the predicate is a measurement, and an edge in that state is exactly
+  // what BRepCheck_No3DCurve names, so report the error rather than a failure to look.
+  // errorCount is the real number of such edges, not a stand-in 1.
+  {
+    const int32_t pcurveOnly = occtShapePCurveOnlyEdgeCount(shape->shape, 0);
+    if (pcurveOnly > 0)
+    {
+      result.isValid    = false;
+      result.errorCount = pcurveOnly;
+      result.firstError = OCCTCheckNo3DCurve;
+      return result;
+    }
+  }
   try
   {
     BRepCheck_Analyzer analyzer(shape->shape, true);
@@ -1235,6 +1262,20 @@ int32_t OCCTCheckShapeDetailed(OCCTShapeRef     shape,
 {
   if (!shape || !outStatuses || maxStatuses <= 0)
     return 0;
+  // #2750: same guard, same reasoning as OCCTCheckShape above (#2746). This entry point returns a
+  // list of statuses, so it reports one BRepCheck_No3DCurve per offending edge rather than 0,
+  // which would read as "checked, nothing wrong".
+  {
+    const int32_t pcurveOnly = occtShapePCurveOnlyEdgeCount(shape->shape, maxStatuses);
+    if (pcurveOnly > 0)
+    {
+      for (int32_t i = 0; i < pcurveOnly; i++)
+      {
+        outStatuses[i] = OCCTCheckNo3DCurve;
+      }
+      return pcurveOnly;
+    }
+  }
   try
   {
     BRepCheck_Analyzer analyzer(shape->shape, true);
@@ -1279,6 +1320,12 @@ bool OCCTBRepCheckAnalyzerIsValid(OCCTShapeRef shape, bool geometryChecks)
 {
   if (!shape)
     return false;
+  // #2750: refuse the analyzer on the one shape that faults inside it (#2746). false is the
+  // answer, not a fallback: a non-degenerated edge with no valid 3D curve is invalid by OCCT's
+  // own BRepCheck_No3DCurve, so the guard and the analyzer agree on the verdict. This entry point
+  // has no channel for "could not check" and does not need one here.
+  if (occtShapeHasPCurveOnlyEdge(shape->shape))
+    return false;
   try
   {
     BRepCheck_Analyzer analyzer(shape->shape, geometryChecks);
@@ -1296,6 +1343,13 @@ bool OCCTBRepCheckSubShapeValid(OCCTShapeRef parentShape,
                                 int32_t      subShapeIndex)
 {
   if (!parentShape)
+    return false;
+  // #2750: the analyzer walks the WHOLE parent shape whichever sub-shape is asked after, so an
+  // offending edge anywhere in it crashes this call (#2746). Unlike the whole-shape predicates
+  // above, false here is a claim about `subShapeIndex` that the guard has not measured: the named
+  // sub-shape may be perfectly sound. It is returned because this entry point's Bool has no
+  // refusal channel, and not crashing is worth more than the precision. Filed as #2755.
+  if (occtShapeHasPCurveOnlyEdge(parentShape->shape))
     return false;
   try
   {
@@ -2970,6 +3024,10 @@ bool OCCTWireAnalyzerIsReady(OCCTWireAnalyzerRef analyzer)
 bool OCCTShapeIsValid(OCCTShapeRef shape)
 {
   if (!shape)
+    return false;
+  // #2750: see OCCTBRepCheckAnalyzerIsValid above (#2746). Same predicate, same verdict, and the
+  // same reason false is an answer rather than a stand-in.
+  if (occtShapeHasPCurveOnlyEdge(shape->shape))
     return false;
   try
   {

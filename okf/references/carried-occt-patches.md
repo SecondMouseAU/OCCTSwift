@@ -59,6 +59,7 @@ without silently closing it, see
 | `0039-Interface_FileReaderData-per-instance-param-cache-1403` | `Param()`/`ChangeParam()` memoised the last record and its base offset in file-scope statics, gated by a global counter so only the newest instance could use the memo. `mutable` answers the declaration's own blocker ("Fields not possible, because Param is const") and also makes the optimisation apply at all, since any second construction disabled it for every earlier instance. `InitParams()` now invalidates the memo, which the original never needed to. 4 race reports to 0 ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | **held from upstream, not filed**: no test can demonstrate it, see the patch README | bundled OCCT includes the fix |
 | `0040-controller-one-time-init-thread-safe-1403` | Three unguarded check-then-act one-time-init flags: both `STEPControl_Controller::Init()` and `IGESControl_Controller::Init()`, plus the IGES constructor. Only STEP's *constructor* had a mutex, so this was three sites rather than the one asymmetry #1403's re-scope claimed. All become function-local statics, removing the check-then-act instead of locking it. Guarding the outermost init also serialises the whole chain beneath it, which is why six further one-time-init globals stopped being reported ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | to file | bundled OCCT includes the fix |
 | `0041-DE-registry-maps-synchronised-1403` | `listad` (`XSControl_Controller.cxx:59`) and `atemp` (`Interface_InterfaceModel.cxx:44`), two process-wide name-keyed registries mutated without synchronisation. A lock is correct here rather than relocation, because one registry per process is the design. Recursive is required: `Template()` calls `HasTemplate()` before reading the map. `astats` excluded, already covered by `0033` ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | to file | bundled OCCT includes the fix |
+| `0042-ShapeAnalysis-GetFaceUVBounds-null-surface-2773` | `ShapeAnalysis::GetFaceUVBounds` dereferences a null surface on a face with **no surface and no edges**, an uncatchable SIGSEGV landing exactly where `ShapeUpgrade_ShapeDivide`'s own `ShapeExtend_FAIL2` handler was meant to report. Raises `Standard_NullObject` instead: returning silently was measured and does not fix it, because `ShapeUpgrade_FaceDivide::SplitSurface` dereferences the same null surface eight lines later. The surface-less face **with** a wire already raised from `Bnd_Box2d::Get`, so the two input classes now agree ([#2773](https://github.com/SecondMouseAU/OCCTSwift/issues/2773)) | **authored and held, not filed.** Branch `SecondMouseAU/OCCT:fix/2773-getfaceuvbounds-null-surface` (`83d03b1f`), one commit, three files, with a GTest, ahead 1 / behind 0 of `master`. Held by a standing decision (2026-09-28) until the patch has been tested against OCCT 8.0.2, which was due 25 September and has not landed: upstream's newest tag is still `V8_0_1`. Submitting against `master` now risks filing against a tree 8.0.2 changes under it. Submit from `upstream/occt`, where direnv loads the scoped token; the ecosystem PAT cannot create a cross-repo PR and returns 403 | bundled OCCT includes the fix; the bridge guard from [PR #2776](https://github.com/SecondMouseAU/OCCTSwift/pull/2776) stays regardless, it protects consumers on the pinned asset |
 
 **Retired in OCCT 8.0.1** (re-pinned 2026-08-03): `0001`-`0009` and `0013`, shipped upstream as
 OCCT#1323, #1334, #1374, #1377, #1380, #1382, #1331, #1329, #1318 and #1392 respectively. Their
@@ -88,9 +89,62 @@ what made it safe. Tracked as [#2056](https://github.com/SecondMouseAU/OCCTSwift
 
 ## Pinned against carried
 
-`Scripts/patches/` holds twenty-nine patches; the v4.0.0-kernel.1 asset `Package.swift` pins holds
-twenty-nine. The zero it lacks, and why each matters, per
-[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md): **there are none.**
+`Scripts/patches/` holds thirty patches. The v4.0.0-kernel.2 asset `Package.swift` pins lacks none of them,
+so **there is no divergence today**, per
+[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). The table below is kept
+empty rather than deleted, because the divergence is the normal state between a patch landing and
+the next repin, and the shape of the entry is what the policy asks for:
+
+| Unpinned | What it leaves exposed |
+|---|---|
+| none | |
+
+`0042` (#2773) was the last entry here. It was carried on 2026-09-27, built and verified in the
+binary the same day (all three slices, `check-pinned-asset-patches.py --asset` confirms its literal
+in each), and pinned hours later by v4.0.0-kernel.2, so it spent no release window untested. The
+bridge guard from [PR #2776](https://github.com/SecondMouseAU/OCCTSwift/pull/2776) is kept rather
+than retired with the repin: with `0042` the kernel raises for the same input the guard refuses, so
+both answer nil and the guard is redundant rather than wrong, and it still covers anyone pinning an
+older asset. `Package.swift`'s pin block records that exception against
+[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md)'s retire-the-mitigation rule.
+
+**And it holds two that we do not carry, so thirty-two in total.** Those are separate quantities
+and collapsing them is how the divergence stayed invisible for a month: every count in this repo
+asked "does the asset lack anything", and none asked "does it hold anything extra".
+
+The two extras are retired patches that were deleted from `Scripts/patches/` but never reverted out
+of the shared `Libraries/occt-src` tree the asset was built from on 2026-09-22:
+
+| Extra in the asset | Retired | Why it is in the asset | Exposure |
+|---|---|---|---|
+| retired `0032`, TopOpeBRepBuild KPart-merge globals, #1371 | 2026-09-02, superseded by OCCT#1505/#1509 | `build-occt.sh` applies patches idempotently and **never reverts**, so a retired patch's edits survive in a working tree until somebody deletes them by hand. Nobody did. | None. `thread_local` and `static` are identical single-threaded, and the twelve globals are unreachable from this bridge's call surface, measured by #1371's own reachability probe. |
+| retired `0034-LocOpe_SplitDrafts-trim-infinite-pipe-curves-1393`, #1393 | 2026-09-08, upstream deleted the class in OCCT#1442 | The same tree, the same cause. | None. `LocOpe_SplitDrafts` has no caller anywhere: `Shape.splitDrafts` was removed in v4.0.0. |
+
+(The rows above are deliberately not keyed by a bare backticked filename: `check-inventory-prose.py`
+reads that shape as a carried-patch row and requires the file to exist in `Scripts/patches/`, which
+is exactly what these two do not.)
+
+Verified by symbol rather than inferred: `nm -C` finds `TrimInfinite(...)` in
+`LocOpe_SplitDrafts.cxx.o` and `thread-local wrapper routine for GLOBAL_*` in the three
+`TopOpeBRepBuild` objects, in all three slices, and the local `OCCT.xcframework.zip` hashes to
+exactly the `checksum:` `Package.swift` pins. Tracked as
+[#2190](https://github.com/SecondMouseAU/OCCTSwift/issues/2190), documented rather than rebuilt out
+because both are inert and a rebuild costs three cmake configures for no behavioural change.
+
+**Both strays belonged to v4.0.0-kernel.1, and the pin has moved off it.** v4.0.0-kernel.2 was
+built from a fresh `V8_0_1` clone rather than that tree, so neither stray is present: the
+modified-file check computes zero files that no carried patch explains, over 78. The two
+`ACKNOWLEDGED` rows in `check-pinned-asset-patches.py` stay keyed on `v4.0.0-kernel.1` and expire
+here on their own, which is what they were built to do, and if a later asset repeats either stray
+the finding comes back instead of staying suppressed. A rebuild today should now reproduce the
+pinned checksum, so a mismatch is a real difference to chase rather than an expected one.
+
+**The check that would have caught it** is `python3 Scripts/check-pinned-asset-patches.py
+--require-asset`, written for #2190 and run at the repin step. It derives evidence from each
+patch's own diff and looks for it in all three slices, and it looks for the retired patches too,
+which is the direction nothing tested. The two rows above sit in its `ACKNOWLEDGED` table keyed on
+the tag `v4.0.0-kernel.1`, so the acknowledgement expires at the next repin rather than silently
+excusing the next asset.
 
 That is new as of 2026-09-22 and it is what the rebuild was for. Twelve patches (`0028`-`0031`,
 `0033`, `0034`, `0036`-`0041`) had been on disk and in no CI job, because `build-and-test` resolves

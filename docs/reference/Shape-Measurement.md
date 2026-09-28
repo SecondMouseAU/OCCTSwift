@@ -879,7 +879,14 @@ public func dividedClosedEdges(splitPoints: Int = 1) -> Shape?
 Periodic edges (like circles) can cause issues in some algorithms. This splits each closed edge into segments.
 
 - **Parameters:** `splitPoints`, Number of split points per closed edge (default `1`, which doubles the edge count).
-- **Returns:** Shape with closed edges split, or `nil` on failure.
+- **Returns:** Shape with closed edges split, the unchanged input when no edge is closed, or `nil`
+  on failure.
+- **Nothing to split is not a failure (#2769).** A shape with no closed edge, such as a box, comes back unchanged rather than as `nil`:
+  `ShapeUpgrade_ShapeDivide::Perform()` returning `false` means "nothing changed", and the failure
+  signal is that `false` together with `Status(ShapeExtend_FAIL)`, which is how OCCT's own
+  `ShapeProcess_OperLibrary.cxx` reads the pair. The three outcomes, the precedent and the
+  measurement are on
+  [`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance).
 - **OCCT:** `ShapeUpgrade_ShapeDivideClosedEdges::SetNbSplitPoints` then `Perform()` (via
   `OCCTShapeDivideClosedEdges`). Neither `ShapeUpgrade_ShapeDivideAngle`, a different sibling of the
   same base that splits by angular span, nor `BRep_Builder`, which is not called here; both were
@@ -1099,8 +1106,13 @@ public func dividedByArea(maxArea: Double) -> Shape?
 ```
 
 - **Parameters:** `maxArea`, Maximum face area; faces larger than this are split.
-- **Returns:** Shape with subdivided faces, or `nil` on failure.
+- **Returns:** Shape with subdivided faces, the unchanged input when no face exceeds `maxArea`, or
+  `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ShapeDivideArea` (via `OCCTShapeDivideByArea`).
+- **A threshold no face reaches is not a failure**, and never was here: this was the one wrapper in
+  the family that already ignored `Perform()`. #2769 corrected the half it was missing: a genuine
+  `Status(ShapeExtend_FAIL)` used to come back as a result and now gives `nil`. OCCT's rule and the
+  measurement are on [`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance).
 
 ---
 
@@ -1123,8 +1135,18 @@ Measured on a 10 x 10 x 10 cube: `parts: 4` gives 24 faces of 25 each and `parts
 volume is preserved exactly in both cases.
 
 - **Parameters:** `parts`, Target number of parts per face.
-- **Returns:** Shape with subdivided faces, or `nil` on failure. `parts: 1` is a failure, not a
-  no-op: `ShapeUpgrade_ShapeDivideArea::Perform()` returns false when there is nothing to split.
+- **Returns:** Shape with subdivided faces, the unchanged input when `parts` asks for no split, or
+  `nil` on failure. `parts <= 0` is refused by the bridge before OCCT sees it and is `nil`.
+- **Nothing to split is not a failure (#2769).** `parts: 1`, which asks for no split at all, comes back unchanged rather than as `nil`:
+  `ShapeUpgrade_ShapeDivide::Perform()` returning `false` means "nothing changed", and the failure
+  signal is that `false` together with `Status(ShapeExtend_FAIL)`, which is how OCCT's own
+  `ShapeProcess_OperLibrary.cxx` reads the pair. The three outcomes, the precedent and the
+  measurement are on
+  [`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance).
+  Until #2769 this page said the opposite, that `parts: 1` "is a failure, not a no-op". It was
+  describing the bridge, which read `Perform()` alone, rather than OCCT. `OCCTShapeDivideByParts`
+  also had no `Result().IsNull()` check, unlike every sibling, so that gate was its only failure
+  signal; #2769 added the check.
 - **Warning:** a result that was split on **both** axes comes back `BRepCheck_Analyzer`-invalid,
   with its volume preserved exactly. On the cube, `parts: 2` is a 2 x 1 split and is valid,
   `parts: 4` is 2 x 2 and is not. It is the two-axis split rather than this entry point that does
@@ -1333,6 +1355,35 @@ Replaces BSpline curves and surfaces with their Bezier equivalents. Converts 2D/
 
 - **Returns:** Shape with Bezier geometry, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ShapeConvertToBezier` (via `OCCTShapeConvertToBezier`).
+- **Nothing to convert is not a failure (#2765), and a genuine failure is still `nil` (#2769).**
+  A shape whose curves and surfaces are already
+  Bezier comes back unchanged rather than as `nil`, matching
+  [`convertCurves3dToBezier`](Shape-Builders-2.md#convertcurves3dtobezierlinemodecirclemodeconicmode)
+  and [`convertSurfacesToBezier`](Shape-Builders-2.md#convertsurfacestobezierplanemoderevolutionmodeextrusionmodebsplinemode).
+  `ShapeUpgrade_ShapeDivide::Perform()`, whose return value the converter forwards unchanged,
+  reports "nothing changed" rather than "failed" and leaves `Result()` holding the input shape, so
+  the bridge reads `Result()`. Until #2765 this entry
+  point read that `false` as failure: converting an already-Bezier one-edge shape a second time
+  returned `nil`. #2765 then dropped the check outright, which was the opposite half of the same
+  mistake: OCCT tests `Perform()` **together with** `Status(ShapeExtend_FAIL)`, so #2769 restored
+  the failure branch under that condition. No reachable input's answer changed between #2765 and
+  #2769. The three outcomes, the precedent and the measurement are on
+  [`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance), and the transcript is in
+  `Scripts/repro/2765-convert-to-bezier-perform/`.
+- **Validity:** the result can report `isValid == false`, for the reason and with the remedy
+  documented on
+  [`convertCurves3dToBezier`](Shape-Builders-2.md#convertcurves3dtobezierlinemodecirclemodeconicmode):
+  `ShapeUpgrade` converts geometry and leaves `SameRange`/pcurve consistency to `ShapeFix`. Run
+  `shape.healed()` afterwards if a `BRepCheck`-valid result is required.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 20, depth: 30)!
+  if let bezier = box.convertedToBezier {
+      // Converting an already-converted shape is not an error.
+      let again = bezier.convertedToBezier
+      print(again != nil)  // true
+  }
+  ```
 
 ---
 
@@ -2296,14 +2347,45 @@ and the local enum removed (#844); `ShapeType`'s raw values already match the re
 
 ### `checkEdge(at:)`
 
-Check validity of an edge by index.
+Check the structural validity of an edge by index, using only the edge's own data.
 
 ```swift
 public func checkEdge(at index: Int) -> CheckResult
 ```
 
+Runs `BRepCheck_Edge::Minimum()`, which never looks at this shape's other sub-shapes. Measured
+(#2747, `Scripts/repro/2747-brepcheck-minimum-coverage/`), `isValid` can go `false` for exactly
+four faults, all read directly from the edge's own `BRep_TEdge` data:
+
+- No 3D curve representation, or more than one.
+- The `SameParameter` flag set without `SameRange`.
+- A parameter range that is inverted (`Last <= First`) or inconsistent with the curve's own
+  domain or periodicity.
+- The `Degenerated` flag set while a real 3D curve is still attached, though this one is only
+  reachable by mutating the `TopoDS_Edge`'s `BRep_TEdge` directly: the only public route to the
+  flag, `BRep_Builder::Degenerated`, nulls the 3D curve as a side effect, which removes the
+  precondition the check itself needs.
+
+None of these four arise from a shape built end to end through this package's own
+`Shape`/`Wire`/`Edge` API, which never sets those flags or curve representations directly; they
+are realistic for an edge read from an imported file.
+
+**What it cannot detect**: whether the curve agrees with its vertices, whether it deviates from a
+surface it should lie on, or how many faces it borders. Those live in
+`BRepCheck_Edge::InContext(_:)`, which this method never calls, both because `checkSubShape` (the
+shared bridge helper) only calls `Minimum()` and because `InContext` itself raises an uncatchable
+SIGSEGV on some inputs in this build (#2746). Read `isValid == true` as "this edge's own
+bookkeeping is self-consistent", not as "this edge is geometrically valid".
+
+```swift
+if let box = Shape.box(width: 10, height: 10, depth: 10) {
+    let check = box.checkEdge(at: 0)
+    print(check.isValid)  // true: an edge built by OCCTSwift's own API always passes
+}
+```
+
 - **Parameters:** `index`, 0-based edge index.
-- **Returns:** Check result for the specified edge.
+- **Returns:** Check result; see the limitation above before reading `isValid` as a full check.
 - **OCCT:** `BRepCheck_Edge` (via `OCCTCheckEdge`).
 
 ---
@@ -2334,12 +2416,33 @@ public func checkShell(at index: Int) -> CheckResult
 
 ### `checkVertex(at:)`
 
-Check validity of a vertex by index.
+Check the structural validity of a vertex by index. Cannot report an error, for any input.
 
 ```swift
 public func checkVertex(at index: Int) -> CheckResult
 ```
 
+`BRepCheck_Vertex::Minimum()`'s entire body is `Append(BRepCheck_NoError)` with no condition at
+all. No vertex, however malformed, can make it report anything else: `isValid` from this method is
+always `true`. Measured on an ordinary vertex, a negative-tolerance vertex and a huge-coordinate
+zero-tolerance vertex, all `NoError` (#2747, `Scripts/repro/2747-brepcheck-minimum-coverage/`),
+consistent with the source having no branch to take.
+
+Every real per-vertex check OCCT has (does the vertex's point agree with the curve or surface it
+sits on, `BRepCheck_InvalidPointOnCurve` and its siblings) lives in
+`BRepCheck_Vertex::InContext(_:)`, which this method never calls, both because `checkSubShape`
+only calls `Minimum()` and because `InContext` itself raises an uncatchable SIGSEGV on some inputs
+in this build (#2746). Do not read `isValid == true` from this method as "this vertex is valid":
+it carries no information, since it is the only value this method can ever return.
+
+```swift
+if let box = Shape.box(width: 10, height: 10, depth: 10) {
+    let check = box.checkVertex(at: 0)
+    print(check.isValid)  // true, and always true, whatever the vertex
+}
+```
+
+- **Returns:** `isValid` is always `true`.
 - **OCCT:** `BRepCheck_Vertex` (via `OCCTCheckVertex`).
 
 ---
@@ -2622,9 +2725,16 @@ Measured on a cylinder, whose three faces are two planar caps and one closed lat
 `splitPoints` of 1, 2 and 3 give 4, 5 and 6 faces, and the volume is unchanged.
 
 - **Parameters:** `splitPoints`, Number of split points per closed face.
-- **Returns:** Shape with divided faces, or `nil` on failure. A shape with **no** closed face is a
-  `nil`, not an unchanged shape: `Perform()` returns false when there is nothing to divide, so a
-  box comes back `nil` at any `splitPoints`.
+- **Returns:** Shape with divided faces, the unchanged input when no face is closed, or `nil` on
+  failure.
+- **Nothing to divide is not a failure (#2769).** A shape with **no** closed face, such as a box at any `splitPoints`, comes back unchanged rather than as `nil`:
+  `ShapeUpgrade_ShapeDivide::Perform()` returning `false` means "nothing changed", and the failure
+  signal is that `false` together with `Status(ShapeExtend_FAIL)`, which is how OCCT's own
+  `ShapeProcess_OperLibrary.cxx` reads the pair. The three outcomes, the precedent and the
+  measurement are on
+  [`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance).
+  Until #2769 this page said the opposite, that a box "comes back `nil` at any `splitPoints`". It
+  was describing the bridge, which read `Perform()` alone, rather than OCCT.
 - **OCCT:** `ShapeUpgrade_ShapeDivideClosed` (via `OCCTShapeUpgradeDivideClosed`).
 - **Example:**
   ```swift

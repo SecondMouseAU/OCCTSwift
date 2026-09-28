@@ -1,0 +1,9 @@
+=== Fixture 1: exactly coincident shared face ===
+(a) both-as-arguments, no tools, glue on: IsDone=false HasErrors=true
+(b) argument+tool, glue on: IsDone=true HasErrors=false solids=1 faces=10 volume=2000
+(c) argument+tool, glue off (plain fuse): IsDone=true HasErrors=false solids=1 faces=10 volume=2000
+(d) legacy two-arg ctor fallback, no fuzzy/glue: IsDone=true HasErrors=false solids=1 faces=10 volume=2000
+=== Fixture 2: gap=5e-05 tolerance=0.001 ===
+(e) gap fixture, argument+tool, glue+fuzzy(tolerance): IsDone=true HasErrors=false solids=1 faces=10 volume=2000
+(f) gap fixture, argument+tool, glue off, fuzzy(tolerance): IsDone=true HasErrors=false solids=1 faces=10 volume=2000
+(g) gap fixture, legacy two-arg ctor fallback, no fuzzy/glue: IsDone=true HasErrors=false solids=2 faces=12 volume=2000

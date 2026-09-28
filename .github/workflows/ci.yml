@@ -39,14 +39,16 @@ jobs:
   #     job would be red for a reason that has nothing to do with it, which is the same as not
   #     having it. That state is fixable by bumping the pin, and is fixed today, but the
   #     separation is what makes the gate survive the next time it happens.
-  #   - ubuntu-latest, because all eighteen are pure Python over the repo's own text: no Xcode, no
+  #   - ubuntu-latest, because all twenty-two are pure Python over the repo's own text: no Xcode, no
   #     OCCT, no swift build. A macOS runner would cost 10x the minutes to run the identical checks.
+  #     The twenty-first is here as its `--self-test` alone for exactly that reason: the real run of
+  #     check-pinned-asset-patches.py reads the pinned xcframework, which is not text (#2196).
   #   - each script's --self-test runs alongside its real invocation. A gate whose detector is
   #     wrong reports "all clear" just as confidently as a gate whose subject is clean; this branch
   #     shipped three gate scripts that were confidently wrong (#618, #624/#630, #626), so the
   #     detector's own fixtures are part of what CI checks, not a developer-only convenience.
   #   - `if: '!cancelled()'` on every step after the first, so one failing gate does not hide the
-  #     other seventeen. Without it a contributor fixes them one CI round trip at a time. It is
+  #     other twenty-one. Without it a contributor fixes them one CI round trip at a time. It is
   #     `!cancelled()` rather than `always()` so the concurrency group's cancel-in-progress still
   #     takes effect.
   #
@@ -196,6 +198,53 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/check-patch-deletes-guarded-symbol.py
 
+      # #2167, from PR #2076: three of its fifteen WASI patches left an OCCT source file that no
+      # compiler could preprocess, on EVERY platform rather than only WASI, behind a green check
+      # reading "all 14 patches apply cleanly". Applying cleanly and preprocessing are different
+      # properties. This reads the patch text for directive deltas, so like its #2058 sibling it
+      # needs no Libraries/occt-src and belongs here. Its deeper --tree mode does need a checkout
+      # and is deliberately NOT run in this job; the wasm build job is where that belongs.
+      - name: check-preprocessor-balance.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-preprocessor-balance.py --self-test
+
+      - name: check-preprocessor-balance.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-preprocessor-balance.py
+
+      # #2168, from the same PR #2076: its fifteen WASI patches were authored against a pristine
+      # V8_0_1 and verified by applying them to one, which is not the tree build-occt-wasm.sh
+      # patches. Nine carried patches inject std::mutex into OCCT, so 15 of the 76
+      # threading-dependent files are files we patch ourselves, and none of that is visible from
+      # vanilla. This reads both patch sets as text, so like its two siblings above it needs no
+      # Libraries/occt-src. The --tree mode runs the real `git apply --check` with the carried set
+      # applied and is deliberately NOT here; the wasm build job is where that belongs.
+      - name: check-wasi-patch-base.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-wasi-patch-base.py --self-test
+
+      - name: check-wasi-patch-base.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-wasi-patch-base.py
+
+      # #2269. The two platforms pin OCCT separately and nothing connected them: Package.swift
+      # names the native kernel as a binaryTarget url:/checksum: pair, while the wasm kernel is a
+      # release asset recorded in Scripts/wasm-kernel-pin.txt, because SwiftPM's binaryTarget takes
+      # an xcframework and never a bare static library. A native repin that does not also rebuild
+      # the wasm asset leaves the browser on an older kernel, silently, and a carried patch is a
+      # correctness fix.
+      #
+      # It belongs HERE and not only in wasm.yml, and that is the whole point: the PR that has to
+      # be caught is a NATIVE repin, which touches Package.swift and no wasm path at all. A check
+      # that runs only when wasm files change would never see it.
+      - name: check-wasm-kernel-parity.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-wasm-kernel-parity.py --self-test
+
+      - name: check-wasm-kernel-parity.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-wasm-kernel-parity.py
+
       # #2077. #1161's caught-exception diagnostics channel shipped with 1 of the 74 bridge .mm
       # files instrumented and was swept across the rest; this is what stops the sweep decaying.
       # A new bridge function written with a bare `catch (...) { return nullptr; }` returns a nil
@@ -284,6 +333,25 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/census-api-reference-rows.py --self-test
 
+      # #2196. The one RELEASE CHECK in this job, and the only entry here whose bare run is not a
+      # thing this runner could do: check-pinned-asset-patches.py reads Libraries/OCCT.xcframework,
+      # 157 MB of static archive per slice across three slices, which nothing checks out here and
+      # which this job's whole property is not needing. Its real verdict is taken at the pin step
+      # (CLAUDE.md's Release Process, okf/policies/pinned-kernel-patch-check.md), where the
+      # question is live.
+      #
+      # Its --self-test is a different thing: pure Python, no asset, 0.4 s, and it is the half that
+      # can rot between pins. A detector consulted once a release is the one whose blindness costs
+      # most, because a false clean there is what #2190 actually was: every count agreed with every
+      # other count and the asset shipped with two patches nobody had reverted.
+      #
+      # Counted as neither a gate nor a census, in ci.yml's own comment above and in CLAUDE.md:
+      # a gate's bare run gates here and this one is absent, a census's bare run exits 0 whatever
+      # it finds and this one reaches a verdict. See okf/policies/static-gates.md.
+      - name: check-pinned-asset-patches.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-pinned-asset-patches.py --self-test
+
   build-and-test:
     name: swift build + test (macOS)
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -324,8 +392,71 @@ jobs:
       - name: check-doc-snippets (every fenced Swift snippet type-checks)
         run: python3 Scripts/check-doc-snippets.py --require-typecheck
 
+      # #2714: this single process runs all 6,388 tests in one `OCCTSwiftPackageTests` bundle
+      # (the whole point of this job, see the header comment), and about once in forty runs it
+      # dies from an uncatchable SIGSEGV/SIGBUS before a single test finishes. `tee`ing to a file
+      # rather than only letting `swift test` print to the step's own log is what lets the
+      # detection step below grep it; the default macOS/Linux `run:` shell already invokes
+      # `bash --noprofile --norc -eo pipefail {0}`, so this step still fails on `swift test`'s own
+      # exit code, `tee` does not hide it.
       - name: swift test
-        run: swift test
+        run: swift test 2>&1 | tee swift-test-output.log
+
+      # #2714 step 1: "the evidence that has been missing since #922." The log above carries no
+      # backtrace and no test attribution when the process dies this way, which is exactly what
+      # has blocked root-causing it. macOS writes a crash report with the faulting thread's
+      # backtrace and every thread's stack to one of these two directories; one captured report
+      # likely settles library-versus-harness. The path is a glob (`/*`, not the bare directory),
+      # so this is a no-op, not a failure, both when a directory is absent and when an ordinary
+      # test-assertion failure leaves it empty; `if-no-files-found: ignore` says the same for the
+      # upload step itself.
+      - name: Upload crash diagnostic reports (#2714)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: diagnostic-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ~/Library/Logs/DiagnosticReports/*
+            /Library/Logs/DiagnosticReports/*
+          if-no-files-found: ignore
+          retention-days: 30
+
+      # #2714 step 7, reporting half only: no automatic re-run (out of scope for this PR, see the
+      # issue). Signature: an uncatchable SIGSEGV/SIGBUS ("no catch was found" or "unexpected
+      # signal code") together with zero finished tests (no `✔`/`✘` line, because nothing
+      # completed before the process died). Recording the match in the job summary is what lets
+      # #2714's occurrences table keep growing without a human reading a raw log. `set +e` and the
+      # trailing `exit 0` mean this step can never itself fail the job or change its outcome: it
+      # only runs after `swift test` already has, via `if: failure()`, and it does not retry
+      # anything.
+      - name: Detect the #2714 startup-crash signature
+        if: failure()
+        run: |
+          set +e
+          log=swift-test-output.log
+          if [ -f "$log" ] && grep -qE 'no catch was found|unexpected signal code' "$log" \
+              && ! grep -qE '✔|✘' "$log"; then
+            {
+              echo '## #2714 startup-crash signature detected'
+              echo
+              echo 'This run matches the pattern tracked in'
+              echo '[#2714](https://github.com/SecondMouseAU/OCCTSwift/issues/2714): an uncatchable'
+              echo 'SIGSEGV/SIGBUS ("no catch was found" or "unexpected signal code") with zero'
+              echo '`✔`/`✘` lines, meaning zero tests finished before the process died.'
+              echo
+              echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+              echo "Commit: ${GITHUB_SHA}"
+              echo
+              echo 'Matched line(s):'
+              echo '```'
+              grep -E 'no catch was found|unexpected signal code|SIGSEGV|SIGBUS|Address' "$log" | head -20
+              echo '```'
+              echo
+              echo 'Add this occurrence to the table in #2714. This step does not retry the job;'
+              echo 'the job still fails.'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit 0
 
   ios-simulator-build:
     name: swift build (iOS Simulator, smoke)

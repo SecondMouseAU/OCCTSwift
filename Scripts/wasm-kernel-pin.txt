@@ -1,0 +1,80 @@
+# The prebuilt wasm OCCT kernel this repo consumes, in one place every wasm script reads.
+#
+# The native side pins its kernel in Package.swift, as a binaryTarget url:/checksum: pair. The wasm
+# side cannot: SwiftPM's binaryTarget takes an xcframework or a zip of one, never a bare static
+# library, and there is no wasm equivalent. So the pin lives here, and Scripts/fetch-occt-wasm.sh
+# is what resolves it.
+#
+# Format: comment and blank lines are ignored; every other line is KEY=value, with no quoting and
+# no shell expansion. Parse it, do not source it: it is data, not code. Same rule as
+# Scripts/wasm-toolchain-versions.txt, deliberately, so one parser reads both.
+#
+# WHAT IS IN THE ASSET
+#
+# A tar.gz of exactly two things, both produced by Scripts/build-occt-wasm.sh:
+#
+#   libOCCT-wasm.a        the combined archive, all 49 toolkits
+#   occt-headers-wasm/    the flat header tree the bridge compiles against
+#
+# Both are gitignored build outputs (see .gitignore's `Libraries/` rules), which is the whole reason
+# this file exists: before it, a consumer who resolved OCCTSwift by version got a checkout with
+# neither, and the only route to a wasm build was a 69-minute local OCCT build plus a wasi-sdk and
+# a Swift wasm SDK install.
+#
+# WHY IT HANGS OFF A KERNEL RELEASE TAG
+#
+# The asset is attached to the SAME release as the OCCT.xcframework built from the SAME patch set,
+# so one release means one kernel, on both platforms. That is what makes the parity check below
+# mechanical rather than a matter of remembering.
+#
+# THE RULE, AND IT IS THE ONE THAT WILL BE FORGOTTEN
+#
+# A repin of the native kernel that does not also rebuild and republish this asset leaves the two
+# platforms on different kernels, silently, because nothing about a Swift build for macOS touches
+# any of this. Scripts/check-wasm-kernel-parity.py is the gate for that, and it compares the patch
+# set below against the one Package.swift enumerates. See okf/policies/pinned-kernel-patch-check.md
+# for why a count alone is necessary and not sufficient.
+
+# --- where the asset is ---
+OCCT_WASM_RELEASE_TAG=v4.0.0-kernel.1
+OCCT_WASM_ASSET_NAME=libOCCT-wasm.tar.gz
+OCCT_WASM_ASSET_URL=https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.1/libOCCT-wasm.tar.gz
+OCCT_WASM_ASSET_SHA256=5f8d893c837a493ef45dea7a39e0dee46a18c1d01100038ccf43cf284a2aeded
+OCCT_WASM_ASSET_BYTES=40254975
+
+# --- what is inside it, for the parity gate ---
+# The carried patches are Scripts/patches/NNNN-*.patch. FIRST and LAST are the numbers, not an
+# assertion that every number between them exists: the gate reads the actual file list.
+OCCT_VERSION=V8_0_1
+OCCT_WASM_PATCH_COUNT=29
+OCCT_WASM_PATCH_FIRST=0010
+OCCT_WASM_PATCH_LAST=0041
+# The WASI-only source changes, Scripts/patches-wasi/*.patch, which only build-occt-wasm.sh applies.
+OCCT_WASM_WASI_PATCH_COUNT=11
+
+# --- parity acknowledgement, TEMPORARY, see #2785 ---
+# The native pin moved to v4.0.0-kernel.2 (thirty patches) in `ac9dd273`, PR #2782, twenty-nine
+# SECONDS after PR #2784 published the wasm asset for kernel.1 (twenty-nine patches). Neither PR was
+# at fault: #2782 was opened before #2784 merged and could not have known a wasm asset existed, and
+# #2784's asset matched what Package.swift pinned at the moment it was published.
+#
+# So the browser is one patch behind macOS and iOS, and the missing one is
+# 0042-ShapeAnalysis-GetFaceUVBounds-null-surface-2773, a null-surface guard #2773 measured as a
+# SIGSEGV on seven cases. That is a real gap and this acknowledgement does not close it: it keeps
+# `main` green while the 69-minute rebuild happens, and #2785 is the work.
+#
+# AGAINST is the native patch count this was decided at, not a number to bump. The next native repin
+# takes it to thirty-one and the gate fires again, which is the expiry and the whole reason the
+# mechanism is shaped this way rather than as a boolean.
+OCCT_WASM_PARITY_ACKNOWLEDGED_AGAINST=30
+OCCT_WASM_PARITY_ACKNOWLEDGED_REASON=kernel.2 repin (#2782) landed 29s after the kernel.1 wasm asset was published; rebuild tracked in #2785
+
+# --- provenance ---
+# The commit whose Scripts/patches/ and Scripts/patches-wasi/ the archive was built from, so the
+# claim above can be checked rather than believed: `git show <sha>:Scripts/patches` lists them.
+OCCT_WASM_BUILT_FROM=f58bed1659a5fca854df147ae864483f0d826f9b
+OCCT_WASM_BUILT_ON=2026-09-25
+# Unpacked sizes, so a truncated or wrong-shaped extraction is caught before a 69-minute rebuild is
+# blamed for it.
+OCCT_WASM_ARCHIVE_BYTES=153192816
+OCCT_WASM_HEADER_FILES=7160

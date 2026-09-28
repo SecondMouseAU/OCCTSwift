@@ -1,0 +1,49 @@
+Standard_StackTrace: no <execinfo.h> and no backtrace() on wasm32-wasip1.
+
+EXTENDS the two conditions already there, one token each, and adds no new structure:
+
+  * the include chain's `#elif !defined(_WIN32) && !(defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)`
+    gains `&& !defined(__wasi__)`, so WASI stops selecting <execinfo.h>. No arm then matches and
+    nothing is included, which is exactly how that chain already handles iOS.
+  * the body chain's `#elif defined(OCCT_UWP) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)`
+    gains `|| defined(__wasi__)`. That arm already exists and already says the right thing for a
+    platform with no backtrace.
+
+WHAT THE WASI BRANCH RETURNS: Standard::StackTrace() sends
+"Standard::StackTrace() is not implemented for this platform" as a Message_Trace and returns false,
+leaving theBuffer as the caller passed it. That is the branch OCCT_UWP, iOS, Android and QNX
+already take. Every in-tree caller is safe with it:
+
+  * Standard_Failure.cxx:87 appends the buffer only inside `if (Standard::StackTrace(...))`, so a
+    false return leaves the failure message exactly as it would be with
+    OSD::SetSignalStackTraceLength(0), which is the default.
+  * OSD_signal.cxx's two handlers memset their buffer before the call and pass it on whatever the
+    result, so an untouched buffer is an empty string. Neither is reachable on WASI in any case:
+    wasi-osd-signal.patch installs no handler there.
+
+Nothing in the tree parses the buffer or asserts on a frame count.
+
+Issue: https://github.com/SecondMouseAU/OCCTSwift/issues/2173
+
+diff --git a/src/FoundationClasses/TKernel/Standard/Standard_StackTrace.cxx b/src/FoundationClasses/TKernel/Standard/Standard_StackTrace.cxx
+index 5a65692d..cf08ae5f 100644
+--- a/src/FoundationClasses/TKernel/Standard/Standard_StackTrace.cxx
++++ b/src/FoundationClasses/TKernel/Standard/Standard_StackTrace.cxx
+@@ -30,7 +30,7 @@
+ // #include <unwind.h>
+ #elif defined(__QNX__)
+ // #include <backtrace.h> // requires linking to libbacktrace
+-#elif !defined(_WIN32) && !(defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
++#elif !defined(_WIN32) && !defined(__wasi__) && !(defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
+   #include <execinfo.h>
+ #elif defined(_WIN32) && !defined(OCCT_UWP)
+ 
+@@ -206,7 +206,7 @@ bool Standard::StackTrace(char*     theBuffer,
+   // bt_get_backtrace()
+   Message::SendTrace("Standard::StackTrace() is not implemented for this platform");
+   return false;
+-#elif defined(OCCT_UWP) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
++#elif defined(OCCT_UWP) || defined(__wasi__) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
+   Message::SendTrace("Standard::StackTrace() is not implemented for this platform");
+   return false;
+ #elif defined(_WIN32)

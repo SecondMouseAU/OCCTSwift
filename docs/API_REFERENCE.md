@@ -670,7 +670,7 @@ into one `nil` ([#1067](https://github.com/SecondMouseAU/OCCTSwift/issues/1067))
 #### Topological Naming (v0.25.0)
 | Swift API | OCCT Class |
 |-----------|------------|
-| `document.createLabel(parent:)` | `TDF_TagSource::NewTag` |
+| `document.createLabel(parent:)` | `TDF_Label::NewChild` (`TDF_TagSource::NewTag`); on the document root, the tag source is seeded past every tag `XCAFDoc_DocumentTool` reserves before the first call, so the label is never a ShapeTool/ColorTool/etc. label (#2730) |
 | `document.recordNaming(on:evolution:oldShape:newShape:)` | `TNaming_Builder` |
 | `document.currentShape(on:)` | `TNaming_Tool::CurrentShape` |
 | `document.storedShape(on:)` | `TNaming_Tool::GetShape` |

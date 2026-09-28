@@ -531,6 +531,14 @@ bool OCCTShapeIsValidSolid(OCCTShapeRef shape)
 {
   if (!occtShapeIsType(shape, TopAbs_SOLID))
     return false;
+  // #2750: an edge of a face with no valid 3D curve and a pcurve faults inside BRepCheck_Analyzer
+  // (#2746). This function calls occtEnsureSignals() below, so the fault would be converted and
+  // absorbed rather than fatal here, and the answer would still be false; the guard is what stops
+  // that answer depending on a throw out of a signal handler. Such a solid is not valid, which is
+  // this predicate's own answer for every other input it refuses. The OCC_CATCH_SIGNALS below is
+  // inert in this build and plays no part either way.
+  if (occtShapeHasPCurveOnlyEdge(shape->shape))
+    return false;
   occtEnsureSignals();
   try
   {

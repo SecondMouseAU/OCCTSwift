@@ -1,0 +1,20 @@
+=== Fixture 1: exactly coincident shared face (fuzzy=1e-06) ===
+(1-off)  GlueOff : IsDone=true HasErrors=false solids=1 faces=10 volume=2000 avgUs=6420 (n=200)
+(1-shift)GlueShift: IsDone=true HasErrors=false solids=1 faces=10 volume=2000 avgUs=6258 (n=200)
+(1-full) GlueFull: IsDone=true HasErrors=false solids=1 faces=10 volume=2000 avgUs=4734 (n=200)
+=== Fixture 2: gap=5e-05 tolerance=0.001 ===
+(2-off)  GlueOff : IsDone=true HasErrors=false solids=1 faces=10 volume=2000 avgUs=5390 (n=200)
+(2-shift)GlueShift: IsDone=true HasErrors=false solids=1 faces=10 volume=2000 avgUs=3871 (n=200)
+(2-full) GlueFull: IsDone=true HasErrors=false solids=1 faces=10 volume=2000 avgUs=3348 (n=200)
+=== Fixture 3: gap=1 tolerance=0.001 (not coincident at all) ===
+(3-off)  GlueOff : IsDone=true HasErrors=false solids=2 faces=12 volume=2000 avgUs=1322 (n=200)
+(3-shift)GlueShift: IsDone=true HasErrors=false solids=2 faces=12 volume=2000 avgUs=1323 (n=200)
+(3-full) GlueFull: IsDone=true HasErrors=false solids=2 faces=12 volume=2000 avgUs=1118 (n=200)
+=== Fixture 4 (supplementary): 12x12 coincident-face grid, fuzzy=1e-06 ===
+(4-off)  GlueOff : IsDone=true HasErrors=false solids=144 faces=1440 volume=288 avgUs=1243626 (n=20)
+(4-shift)GlueShift: IsDone=true HasErrors=false solids=144 faces=1440 volume=288 avgUs=1127416 (n=20)
+(4-full) GlueFull: IsDone=true HasErrors=false solids=144 faces=1440 volume=288 avgUs=810598 (n=20)
+=== Fixture 5 (supplementary): partial face overlap (shift=3 of 10), fuzzy=1e-06 ===
+(5-off)  GlueOff : IsDone=true HasErrors=false solids=1 faces=12 volume=2000 avgUs=4545 (n=200)
+(5-shift)GlueShift: IsDone=true HasErrors=false solids=1 faces=12 volume=2000 avgUs=3944 (n=200)
+(5-full) GlueFull: IsDone=true HasErrors=false solids=1 faces=12 volume=2000 avgUs=2953 (n=200)

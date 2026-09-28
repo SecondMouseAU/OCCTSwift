@@ -2356,20 +2356,38 @@ OCCTShapeRef OCCTShapeGlue(OCCTShapeRef shape1, OCCTShapeRef shape2, double tole
 
   try
   {
-    // Use BRepAlgoAPI_Fuse with glue option for coincident faces
+    // Use BRepAlgoAPI_Fuse with glue option for coincident faces. A boolean needs one
+    // shape as the argument and the other as the tool (#2735): putting both into
+    // SetArguments with no SetTools left the operation with nothing to fuse the
+    // argument against, so it reported errors on every input and this function always
+    // took the fallback below, silently, regardless of geometry.
+    //
+    // GlueFull, not GlueShift (#2749): BOPAlgo_GlueEnum.hxx documents GlueShift for
+    // PARTIAL face coincidence (faces overlap but are split) and GlueFull for FULL
+    // coincidence (no split at all), which is this function's own contract ("faces
+    // that perfectly align"). Scripts/repro/2749-glue-mode-choice/probe.mm measured
+    // both across five fixtures: identical solids/faces/volume on every one, including
+    // a genuinely non-coincident input and a genuine partial-overlap input, and
+    // GlueFull was the faster of the two in 6 of 6 runs once a fixture was large
+    // enough to move past scheduler noise (a two-box fuse is microseconds either way).
     BRepAlgoAPI_Fuse fuse;
-    fuse.SetGlue(BOPAlgo_GlueShift); // Enable gluing mode
+    fuse.SetGlue(BOPAlgo_GlueFull); // Enable gluing mode
     fuse.SetFuzzyValue(tolerance);
 
     TopTools_ListOfShape args;
     args.Append(shape1->shape);
-    args.Append(shape2->shape);
     fuse.SetArguments(args);
+
+    TopTools_ListOfShape tools;
+    tools.Append(shape2->shape);
+    fuse.SetTools(tools);
 
     fuse.Build();
     if (!fuse.IsDone())
     {
-      // Fallback to regular fuse
+      // A genuine glue failure now, not the missing-tools setup bug above: fall back to
+      // a plain fuse so a caller still gets a result for geometry the glue-mode fuse
+      // could not handle, same as before #2735's fix.
       BRepAlgoAPI_Fuse regularFuse(shape1->shape, shape2->shape);
       if (!regularFuse.IsDone())
         return nullptr;

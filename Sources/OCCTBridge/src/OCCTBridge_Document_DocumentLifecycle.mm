@@ -1159,6 +1159,34 @@ int32_t OCCTDocumentCreateDimensionWithTolerance(OCCTDocumentRef doc,
   return occtDocumentCreateDimensionImpl(doc, shapeLabelId, type, value, true, lowerTol, upperTol);
 }
 
+// #2730: XCAFDoc_DocumentTool reserves fixed tags 1-10 under Main() for its own tool labels
+// (ShapesLabel=1, ColorsLabel=2, LayersLabel=3, DGTsLabel=4, MaterialsLabel=5, ViewsLabel=7,
+// ClippingPlanesLabel=8, NotesLabel=9, VisMaterialLabel=10; tag 6 unused), each created via
+// Main().FindChild(<fixed tag>, true), independent of any TDF_TagSource -- measured directly
+// against the pinned OCCT 8.0.1 headers and at runtime in Scripts/repro/2730-createlabel-tagsource
+// /probe.mm, not assumed from the header's doc comments alone. A fresh document's Main has no
+// TDF_TagSource attribute, so TDF_Label::NewChild() creates one lazily starting the counter at 0,
+// and its first calls land on tags a tool has already claimed (or will claim later -- FindChild
+// with create=true returns whichever label is already at that tag, so the collision goes both
+// ways depending on call order).
+static const int kXCAFDocumentToolReservedMainTag = 10; // XCAFDoc_DocumentTool::VisMaterialLabel
+
+// Seeds Main()'s TDF_TagSource past every tag XCAFDoc_DocumentTool reserves, so every label
+// NewChild() hands back lands at tag 11+, strictly above the fixed 1-10 range, whatever order
+// createLabel() and the lazy XCAFDoc_DocumentTool accessors run in. Idempotent (only raises an
+// already-lower counter, never lowers one), so it is safe to call on every createLabel(), on a
+// freshly created document, one read from STEP/IGES, or one reloaded from a native OCAF file
+// whose TDF_TagSource -- ordinary persisted attribute state -- already reflects genuine
+// createLabel() labels from an earlier session (probe Part 6).
+static void occtSeedTagSourcePastXCAFReservedTags(const TDF_Label& mainLabel)
+{
+  Handle(TDF_TagSource) tagSource = TDF_TagSource::Set(mainLabel);
+  if (tagSource->Get() < kXCAFDocumentToolReservedMainTag)
+  {
+    tagSource->Set(kXCAFDocumentToolReservedMainTag);
+  }
+}
+
 int64_t OCCTDocumentCreateLabel(OCCTDocumentRef doc, int64_t parentLabelId)
 {
   if (!doc || doc->doc.IsNull())
@@ -1176,6 +1204,13 @@ int64_t OCCTDocumentCreateLabel(OCCTDocumentRef doc, int64_t parentLabelId)
       parentLabel = doc->getLabel(parentLabelId);
       if (parentLabel.IsNull())
         return -1;
+    }
+    // #2730: only Main() carries XCAFDoc_DocumentTool's reserved tags; a label a caller already
+    // reached (e.g. via the assembly tree's .root) can equal Main() through the positive-id
+    // branch above too, so this checks the resolved label rather than parentLabelId's sign.
+    if (parentLabel.IsEqual(doc->doc->Main()))
+    {
+      occtSeedTagSourcePastXCAFReservedTags(parentLabel);
     }
     TDF_Label newLabel = parentLabel.NewChild();
     return doc->registerLabel(newLabel);

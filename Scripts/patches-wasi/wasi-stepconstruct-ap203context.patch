@@ -1,0 +1,100 @@
+STEPConstruct_AP203Context: no <pwd.h>, no user database and no timezone tables on wasm32-wasip1.
+
+Two of the three sites EXTEND a condition that is already there. Upstream excludes Windows, Android
+and Emscripten from the user-database surface, and spells the same test twice:
+
+  * `#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__)` around
+    `#include <pwd.h>` at :63 gains `&& !defined(__wasi__)`
+  * the same condition around the `getpwnam()` block in DefaultPersonAndOrganization() at :178
+    gains it too
+
+The third site joins the `#if`/`#elif`/`#else` chain DefaultDateAndTime() already uses to pick a UTC
+offset, as a new `#elif defined(__wasi__)` arm inside that one structure rather than as a block
+beside it. No arm in the chain fits WASI: `_MSC_VER` is Windows, the `__FreeBSD__` arm is gated on a
+version macro upstream will retire (and reaching the same zero by a different route would make WASI
+depend on that gate outliving it), and the `#else` reads `timezone`, which wasi-libc keeps inside
+`__wasilibc_unmodified_upstream` under the comment "WASI has no timezone tables", along with
+`tzset()`, `tzname` and `daylight`.
+
+Guarding the include alone is not enough here, twice over, and each was found by compiling rather
+than by reading: a missing header is a fatal diagnostic, so closing `<pwd.h>` uncovered `getpwnam()`
+at :181, and closing that uncovered `timezone` at :125. Three sites, one file, one error at a time.
+
+WHAT THE WASI BRANCH RETURNS:
+
+  * DefaultPersonAndOrganization() builds its person from `OSD_Process::UserName()` with no gecos
+    lookup, which is what the Windows, Android and Emscripten arms already do. On WASI `UserName()`
+    returns an empty string (`wasi-osd-process.patch`) and `OSD_Host::InternetAddress()` returns one
+    too (`wasi-osd-host.patch`), so the record written is ORGANIZATION id `IP`, name `Unspecified`,
+    and PERSON id `IP,` with an empty first and last name. `wasi-osd-process.patch`'s own header
+    already names this call site and records that outcome: a STEP file written from wasm carries an
+    empty author.
+  * `"Unknown"` was considered for the empty-user-name case and rejected. It is the `else` arm of
+    the very block WASI now skips, so keeping it would mean nesting a second condition inside a
+    block WASI does not enter, which is the parallel structure `docs/WASI_GUARD_SITES.md` rules out.
+    It would also diverge from Emscripten, where an empty user name already yields an empty name.
+    An empty name says the runtime has no user; `Unknown` is a given name that no person has, in a
+    PERSON record a consumer may display or index.
+  * DefaultDateAndTime() reports a UTC offset of exactly zero, so `ahead_or_behind` is
+    `StepBasic_aobExact` and both hour and minute components are 0. This is not a fallback. A
+    wasip1 instance has no local zone, and `OSD_Process::SystemDate()`, which supplies the calendar
+    date and local time beside this offset, reads `localtime()`, which wasi-libc resolves to UTC for
+    the same reason. The timestamp and the offset therefore agree; any other offset would make them
+    disagree.
+
+WHY THAT IS SAFE FOR EVERY IN-TREE CALLER:
+
+The class has exactly one in-tree consumer, `STEPConstruct_ContextTool`, which holds one by value as
+`theAP203` and, only when `IsAP203()` (that is, `write.step.schema` is AP203), appends its creator,
+design owner, design supplier, classification officer, security, creation date, classification date,
+approval, approver and approval date-time to the model. Nothing reads any of those values back,
+parses them, or requires a name to be non-empty: they are written to the file as they stand. Both
+defaults are settable as well, through `SetDefaultPersonAndOrganization()` and
+`SetDefaultDateAndTime()`, so an application that does have an identity or a zone supplies it and
+never reaches either branch.
+
+This is not an incidental file. `STEPConstruct_ContextTool` references it unconditionally and the
+STEP writer pulls that, so before this patch a module that writes STEP did not link: 20 undefined
+symbols, every one a member of this class, all referenced from `STEPConstruct_ContextTool.cxx.obj`.
+Measured in `Scripts/repro/2174/README.md` and asserted by `Scripts/repro/2174/run.sh link`.
+
+VERIFIED, other than by the WASI build: preprocessing the pre-image and the post-image of this file
+for native macOS with otherwise identical flags produces an identical token stream, so none of the
+three guards changes anything on any platform that was already compiling it.
+
+No `Applies-After:` trailer: no carried patch in `Scripts/patches/` touches this file.
+
+Issue: https://github.com/SecondMouseAU/OCCTSwift/issues/2266
+
+diff --git a/src/DataExchange/TKDESTEP/STEPConstruct/STEPConstruct_AP203Context.cxx b/src/DataExchange/TKDESTEP/STEPConstruct/STEPConstruct_AP203Context.cxx
+index ad7ce1c0..98d61589 100644
+--- a/src/DataExchange/TKDESTEP/STEPConstruct/STEPConstruct_AP203Context.cxx
++++ b/src/DataExchange/TKDESTEP/STEPConstruct/STEPConstruct_AP203Context.cxx
+@@ -60,7 +60,7 @@
+ #include <StepAP203_ApprovedItem.hxx>
+ #include <StepBasic_ProductCategory.hxx>
+ 
+-#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__)
++#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__) && !defined(__wasi__)
+   #include <pwd.h>
+ #endif
+ 
+@@ -121,6 +121,9 @@ occ::handle<StepBasic_DateAndTime> STEPConstruct_AP203Context::DefaultDateAndTim
+     time_t     time_clock  = time(NULL);
+     struct tm* time_struct = localtime(&time_clock);
+     int        shift       = int(time_struct->tm_gmtoff);
++#elif defined(__wasi__)
++    // wasi-libc has no timezone tables, so localtime() is UTC and the offset is exactly zero
++    int shift = 0;
+ #else
+     int shift = int(timezone);
+ #endif
+@@ -175,7 +178,7 @@ occ::handle<StepBasic_PersonAndOrganization> STEPConstruct_AP203Context::
+     // construct person`s name
+     OSD_Process             sys;
+     TCollection_AsciiString user(sys.UserName());
+-#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__)
++#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__) && !defined(__wasi__)
+     if (!user.IsEmpty())
+     {
+       struct passwd* aPwd = getpwnam(user.ToCString());
