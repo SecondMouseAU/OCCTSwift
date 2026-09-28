@@ -1803,7 +1803,9 @@ OCCTFaceSurfaceInertia OCCTBRepGPropSinertAdaptive(OCCTFaceRef _Nonnull face, do
     BRepGProp_Domain   domain;
     BRepGProp_Sinert   sinert;
     sinert.SetLocation(gp_Pnt(0, 0, 0));
-    occtLoadFaceDomain(f, domain);
+    // Discarded deliberately: the adaptive overload passes the domain either way, because
+    // BRepGProp_Gauss re-derives NbChildren() == 0 itself. See the note above the helper.
+    (void)occtLoadFaceDomain(f, domain);
     double err     = sinert.Perform(gpropFace, domain, epsilon);
     result.mass    = sinert.Mass();
     result.epsilon = err;
