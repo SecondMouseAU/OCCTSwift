@@ -24,7 +24,7 @@ files.
 A helper placed by reach is one decision point. A helper placed by whichever file happened to be
 open is a decision point plus however many copies could not reach it.
 
-## Why: the same defect twice, two days apart
+## Why: the same defect twice, a day apart
 
 **1. `occtComputeBoundingBox`, and the one bounds entry point with no `IsVoid()` guard.** The
 helper was file-static in `OCCTBridge_Topology.mm`, where it served `OCCTShapeBoundingBox` and
