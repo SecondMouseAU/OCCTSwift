@@ -209,7 +209,7 @@ There was never a false-positive argument against gating it. Nothing here has a 
 false-positive class to discount the way `census-doc-occt-attribution.py` has its 41%: the compiler
 adjudicates. It was volume, and volume is fixable.
 
-Two of its design choices are worth carrying to any detector that shells out to a compiler:
+Three of its design choices are worth carrying to any detector that shells out to a compiler:
 
 - **It compiles rather than parsing.** #1675 holds two attempts at a regex that matched argument
   labels against declarations, and a record of how each reported a real API as missing. A Swift
@@ -224,6 +224,17 @@ Two of its design choices are worth carrying to any detector that shells out to 
   architecture was derived from the built module but whose deployment version was dropped: `swiftc`
   rejected the target before reading a file, produced no per-file diagnostic, and the canary turned
   what would have been "3,096 snippets clean" into an abort.
+- **It checks the age of the build artefact it reads and does not produce.** It compiles against
+  whatever `OCCTSwift.swiftmodule` sits in `.build` and never builds one, which is right in CI, where
+  the build step runs immediately before it, and a trap on a machine that switches branches: a module
+  built from other source reports a correct snippet as broken, and the report names the page rather
+  than the module. Three such false failures were taken for defects on PR #2799 before `swift build`
+  cleared all three. A module older than its own inputs is now **refused**, exit 2 with or without
+  `--require-typecheck`, while a missing module stays the #2098 skip, because a missing build is
+  visible to whoever has none and a stale one is invisible to everybody (#2816). The general form:
+  **a detector that reads an artefact it does not produce owes a freshness check on it**, and the
+  freshness check owes a self-test case run against the real tree, so a misfire arrives as a named
+  failure rather than as a refusal on every PR.
 
 ## Every detector proves it is not blind
 
