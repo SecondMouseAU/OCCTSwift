@@ -912,6 +912,11 @@ public func withSurfacesAsBSpline(extrusion: Bool = true, revolution: Bool = tru
   - `plane`: Convert planar surfaces (default `false`).
 - **Returns:** Shape with converted surfaces, or `nil` on failure.
 - **OCCT:** `ShapeCustom::ConvertToBSpline` (via `OCCTShapeCustomConvertToBSpline`).
+- **Note:** `nil` also for a shape carrying a face with no surface, at every flag setting, since the
+  fault sits ahead of the flag test (`ShapeCustom_ConvertToBSpline.cxx:104`, #2790). See
+  [A face with no surface](Shape-Healing.md#a-face-with-no-surface-and-which-shapecustom-operations-refuse-one).
+- **Also:** [`convertedToBSpline()`](Shape-Healing.md#convertedtobspline) is this call with the four
+  flags fixed at these same defaults, so it can never reach `plane: true`; prefer this one.
 
 ---
 
@@ -938,6 +943,9 @@ said the opposite. It is removed; this is the spelling that survives.
 - **Returns:** Shape whose elementary periodic surfaces are now surfaces of revolution, or `nil` on
   failure.
 - **OCCT:** `ShapeCustom::ConvertToRevolution` (via `OCCTShapeCustomConvertToRevolution`).
+- **Note:** `nil` also for a shape carrying a face with no surface
+  (`ShapeCustom_ConvertToRevolution.cxx:54`, #2790). See
+  [A face with no surface](Shape-Healing.md#a-face-with-no-surface-and-which-shapecustom-operations-refuse-one).
 - **Example:**
   ```swift
   if let asRevolution = Shape.cylinder(radius: 5, height: 10)?.withSurfacesAsRevolution() {

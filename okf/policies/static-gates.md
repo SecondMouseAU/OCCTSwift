@@ -23,8 +23,11 @@ promoted by renaming it `check-` and making it exit 1; the decision is separate 
 The five censuses today and what each is for:
 
 - `census-unmeasured-values.py` (#726): values returned as measurements that were never computed.
-  A bare run is ~13 s because sub-kind 4 walks a taint fixpoint per bridge function; the
-  `--self-test` stays under a second.
+  A bare run is the slowest of the five, because sub-kind 4 walks a taint fixpoint per bridge
+  function; CI never makes that run, and times the `--self-test` at under a second. The `~13 s`
+  this line used to give was a laptop figure with no method recorded, and re-measuring it in #2203
+  produced 21, 60 and 75 s on three consecutive runs of one loaded laptop, which is why there is no
+  number here now. See "How long the job takes" below for the figure that is measurable.
 - `census-doc-occt-attribution.py` (#928): docs attributing a method to an OCCT class its bridge
   function never reaches, #807's over-coverage detector. The class-existence half wants
   `Libraries/OCCT.xcframework`'s pinned headers and reports SKIPPED without them, the normal case in
@@ -78,7 +81,30 @@ states plainly what that leaves uncaught. Its `--tree` mode is the real check an
 `--require-tree` on the same #2098 precedent.
 
 `check-changelog-transcription.py` is a third kind, a **report**: it audits the branch's merge
-history for merges that landed with no CHANGELOG entry, and is not yet a gate.
+history for merges that landed with no CHANGELOG entry, and is not a gate.
+
+**Two things about it, both measured in #2779, and the second is the one to act on.**
+
+It cannot become a gate in the form #742 proposed, and the reason is structural rather than a
+false-positive rate. It asks a post-merge question, and on a base with a required check nothing
+lands between two merges, so wired in as a required check it would fail every open PR for the
+*previous* merge's omission, which is neither that PR's fault nor something its author can fix.
+#2779 measured three such omissions in five consecutive merges, which would have reddened all 31
+other open PRs. Its `--verify-transcribed` half cannot gate either: it reads live PR bodies over the
+GitHub API and took over two minutes, against this job's defining property.
+
+**And its run in CI examines nothing.** `default_since()` looks for the commit that added
+`okf/policies/changelog-on-merge.md`, falls back to the last tag, then to the root commit.
+`actions/checkout` fetches depth 1 and no tags, so all three resolve to HEAD, and the step prints
+`Merges audited since <HEAD sha>: 0` and passes. Measured on run 36366497846 and reproducible on
+every run before it. That is this page's own opening argument met in practice: a green step that
+examined nothing looks exactly like a clean tree. The step is left in place in #2779 rather than
+quietly fixed, because the two candidate fixes are both real decisions. `fetch-depth: 0` would give
+the report its history and roughly double the job's cheapest step; a `--require-history` flag on the
+#2098 precedent would turn the false green into a loud red and needs the depth change first, or
+`gate-scripts` goes red on every PR at once. The merge-time route #2779 built is what makes the
+report a backstop rather than the mechanism, so neither fix is urgent, and neither should be made by
+accident.
 
 ## The fourth kind: a release check
 
@@ -111,6 +137,47 @@ does.** A detector consulted once per release is the one whose blindness is most
 between two pins would reveal it, and the run it would be wrong on is the one nobody can repeat
 cheaply. #2190 is what that costs. Every count in the repo agreed with every other count, all of
 them comparing prose to prose, and the asset shipped carrying two patches nobody had reverted.
+
+## How long the job takes, and how to re-derive it
+
+**Measured 2026-09-28 from the runner's own step timings, over the 21 most recent successful
+`gate-scripts` jobs that ran the current 44-step list.** A laptop measurement would answer a
+different question: what this job costs is what it costs a PR, and `ubuntu-latest` is where that is
+decided.
+
+| | min | median | max |
+|---|---|---|---|
+| the 37 script invocations, summed | 26 s | **44 s** | 47 s |
+| the job, including checkout and `setup-python` | 33 s | **52 s** | 58 s |
+
+**One script is two thirds of it.** `check-throwing-calls.py` runs a median 14 s bare and 15 s for
+its `--self-test`, about 30 of the 44. `check-null-handle-guards.py` is 4 s. Every other invocation
+is at or under 2 s and most are under 1. That is the useful shape of the number, and it is worth
+knowing before adding anything here: the budget belongs to one script, not to the list.
+
+**A local figure is a different number.** The same 37 invocations run on one laptop with other work
+on it measured 72 s, 159 s and 182 s across three consecutive runs, and the ordering changed as
+well: `check-changelog-transcription.py` was the largest line item locally, 22 to 51 s across four
+runs, and is 0 s on the runner. Quote the runner, and say how many runs the figure came from.
+
+**Re-derive it, do not trust it.** The timings are in the Actions API, one call per run:
+
+```bash
+gh api /repos/SecondMouseAU/OCCTSwift/actions/runs/<run-id>/jobs \
+  --jq '.jobs[] | select(.name=="gate-scripts")
+        | {steps: (.steps | length), each: [.steps[] | {(.name): (.started_at + " " + .completed_at)}]}'
+```
+
+Two things make a single run misleading. Step timestamps are whole seconds, so a dozen runs or more
+are needed before a median means anything, and a run from before the newest gate landed was a
+shorter list, so compare `steps | length` against the current job before pooling.
+
+**Why the figure is load-bearing rather than trivia.** It is part of why this job is separate from
+the ones that build, and part of why `check-doc-snippets.py` and `check-pinned-asset-patches.py` are
+outside it. `CLAUDE.md` used to carry it as `~3s for the lot`, which was true when written, was
+about fifteen times off by the time #2203 caught it, and was read as an argument the whole time. So
+`CLAUDE.md` now says only "under a minute on the runner", which survives another script being added,
+and the precise numbers live here with their method and their date attached.
 
 ## The one gate outside `gate-scripts`
 

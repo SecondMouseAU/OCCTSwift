@@ -305,8 +305,28 @@ public final class Mesh: @unchecked Sendable {
 
     /// Vertex normals as array of SIMD3<Float>.
     ///
-    /// Each normal is a unit vector perpendicular to the surface at that vertex.
-    /// Array length equals `vertexCount`.
+    /// Each normal is a unit vector perpendicular to the surface at that vertex, taken from the
+    /// surface itself (`GeomLib::NormEstim` at the node's UV) where the triangulation carries UV
+    /// nodes, and from the average of the incident triangle normals where it does not. Array length
+    /// equals `vertexCount`.
+    ///
+    /// The sense is the same one OCCT's own shaded presentation uses: outward for a solid built the
+    /// usual way, reversed for a face whose orientation is `REVERSED`, and reversed again for a
+    /// mirroring location, which is how a shape carrying a mirroring `TopLoc_Location` shades as the
+    /// inside-out solid it is. A node whose incident triangles all cancel, which needs a degenerate
+    /// triangulation, reports `(0, 0, 1)`, OCCT's own answer for a normal it cannot define.
+    ///
+    /// `BRepMesh_IncrementalMesh` does not itself store node normals, so these are computed when the
+    /// mesh is built, exactly as `StdPrs_ShadedShape` computes them before shading. Before #2337
+    /// this property returned `(0, 0, 1)` at every vertex of every meshed shape.
+    ///
+    /// ```swift
+    /// let mesh = Shape.sphere(radius: 5)!.mesh(linearDeflection: 0.5)!
+    /// for (vertex, normal) in zip(mesh.vertices, mesh.normals) {
+    ///     // On a sphere centred on the origin the normal is the vertex direction.
+    ///     print(simd_normalize(vertex), normal)
+    /// }
+    /// ```
     public var normals: [SIMD3<Float>] {
         let count = vertexCount
         guard count > 0 else { return [] }
@@ -482,15 +502,44 @@ public final class Mesh: @unchecked Sendable {
 
     // MARK: - Mesh Boolean Operations
 
-    /// Perform boolean union with another mesh.
+    // #2301: the three methods below are Booleans on **surfaces**, not on volumes, and each says so
+    // in its own doc comment because each is reached on its own. The shared reasoning, once:
+    //
+    // OCCT has no mesh Boolean. These wrap no OCCT entry point; they compose `BRepBuilderAPI_Sewing`,
+    // `BRepAlgoAPI_Fuse`/`Cut`/`Common` and `BRepMesh_IncrementalMesh`. `toShape()` sews the triangles
+    // into a shell, `BOPAlgo_BOP` takes the dimension of its arguments (`BOPAlgo_BOP.cxx:145-150`),
+    // and a shell is two-dimensional, so what comes back is the Boolean of two surfaces.
+    //
+    // Promoting the shell to a solid first is a step OCCT itself never takes: its own mesh-to-shape
+    // path, `StlAPI_Reader::Read` through `BRepBuilderAPI_MakeShapeOnMesh`, emits a compound of
+    // planar faces and stops, and `BRepBuilderAPI_MakeSolid` has no production caller anywhere in
+    // OCCT's tree. So the promotion stays the caller's decision, and every doc comment here points
+    // at `Shape.solid(from:)` for it.
+
+    /// Boolean union with another mesh, on the sewn **surfaces** rather than on volumes.
     ///
-    /// This operation uses a B-Rep roundtrip: both meshes are converted
-    /// to B-Rep shapes, the union is computed, and the result is re-meshed.
+    /// Both meshes are sewn into shells with ``toShape(weldTolerance:)``, `BRepAlgoAPI_Fuse` is run
+    /// on those shells, and the result is re-meshed. A shell is two-dimensional, and a Boolean takes
+    /// the dimension of its arguments, so this is the union of two surfaces: the walls where the two
+    /// bodies overlap survive in the result instead of being consumed.
+    ///
+    /// - Warning: This is not the volume union. Measured on two 10-unit cubes overlapping over half
+    ///   their width, at deflection 0.5: 72 triangles enclosing 2000 cubic units, where the volume
+    ///   union encloses 1500.
+    ///
+    /// For the volume union, promote each shell to a solid with ``Shape/solid(from:)`` and use
+    /// ``Shape/union(_:fuzzyValue:glue:timeout:)``:
+    ///
+    /// ```swift
+    /// let a = Shape.solid(from: meshA.toShape()!)!
+    /// let b = Shape.solid(from: meshB.toShape()!)!
+    /// let fused = a.union(b)!.mesh(linearDeflection: 0.5)!
+    /// ```
     ///
     /// - Parameters:
     ///   - other: The mesh to union with
     ///   - deflection: Deflection for re-meshing the result (default: 0.1)
-    /// - Returns: The union mesh, or `nil` on failure
+    /// - Returns: The re-meshed surface union, or `nil` if the sewing or the Boolean failed
     public func union(with other: Mesh, deflection: Double = 0.1) -> Mesh? {
         guard let resultHandle = OCCTMeshUnion(handle, other.handle, deflection) else {
             return nil
@@ -498,15 +547,31 @@ public final class Mesh: @unchecked Sendable {
         return Mesh(handle: resultHandle)
     }
 
-    /// Subtract another mesh from this mesh.
+    /// Subtract another mesh from this one, on the sewn **surfaces** rather than on volumes.
     ///
-    /// This operation uses a B-Rep roundtrip: both meshes are converted
-    /// to B-Rep shapes, the subtraction is computed, and the result is re-meshed.
+    /// Both meshes are sewn into shells with ``toShape(weldTolerance:)``, `BRepAlgoAPI_Cut` is run on
+    /// those shells, and the result is re-meshed. Cutting a surface with a surface splits this mesh's
+    /// faces where the other mesh's surface crosses them; it removes no volume, because there is no
+    /// volume in either argument to remove.
+    ///
+    /// - Warning: This is not the volume difference. Measured on a 10-unit cube minus a cylinder of
+    ///   radius 3 and height 15, at deflection 0.5: the triangle count rises from 12 to 120 and the
+    ///   enclosed volume stays at the whole cube, 1000 cubic units, where the volume difference
+    ///   encloses 858.63.
+    ///
+    /// For the volume difference, promote each shell to a solid with ``Shape/solid(from:)`` and use
+    /// ``Shape/subtracting(_:fuzzyValue:glue:timeout:)``:
+    ///
+    /// ```swift
+    /// let part = Shape.solid(from: partMesh.toShape()!)!
+    /// let tool = Shape.solid(from: toolMesh.toShape()!)!
+    /// let drilled = part.subtracting(tool)!.mesh(linearDeflection: 0.5)!
+    /// ```
     ///
     /// - Parameters:
     ///   - other: The mesh to subtract
     ///   - deflection: Deflection for re-meshing the result (default: 0.1)
-    /// - Returns: The difference mesh, or `nil` on failure
+    /// - Returns: The re-meshed surface difference, or `nil` if the sewing or the Boolean failed
     public func subtracting(_ other: Mesh, deflection: Double = 0.1) -> Mesh? {
         guard let resultHandle = OCCTMeshSubtract(handle, other.handle, deflection) else {
             return nil
@@ -514,15 +579,30 @@ public final class Mesh: @unchecked Sendable {
         return Mesh(handle: resultHandle)
     }
 
-    /// Intersect with another mesh.
+    /// Intersect with another mesh, on the sewn **surfaces** rather than on volumes.
     ///
-    /// This operation uses a B-Rep roundtrip: both meshes are converted
-    /// to B-Rep shapes, the intersection is computed, and the result is re-meshed.
+    /// Both meshes are sewn into shells with ``toShape(weldTolerance:)``, `BRepAlgoAPI_Common` is run
+    /// on those shells, and the result is re-meshed. Two surfaces meet along curves, so the Boolean
+    /// produces edges, and edges have nothing to triangulate.
+    ///
+    /// - Warning: This is not the volume intersection, and it usually returns an **empty** mesh
+    ///   rather than `nil`. Measured on a 10-unit cube and a sphere of radius 7, at deflection 0.5:
+    ///   zero triangles and zero vertices, where the volume intersection encloses 959.23 cubic units.
+    ///
+    /// For the volume intersection, promote each shell to a solid with ``Shape/solid(from:)`` and use
+    /// ``Shape/intersection(_:fuzzyValue:glue:timeout:)``:
+    ///
+    /// ```swift
+    /// let a = Shape.solid(from: meshA.toShape()!)!
+    /// let b = Shape.solid(from: meshB.toShape()!)!
+    /// let common = a.intersection(b)!.mesh(linearDeflection: 0.5)!
+    /// ```
     ///
     /// - Parameters:
     ///   - other: The mesh to intersect with
     ///   - deflection: Deflection for re-meshing the result (default: 0.1)
-    /// - Returns: The intersection mesh, or `nil` on failure
+    /// - Returns: The re-meshed surface intersection, which is empty whenever the two surfaces meet
+    ///   only along curves, or `nil` if the sewing or the Boolean failed
     public func intersection(with other: Mesh, deflection: Double = 0.1) -> Mesh? {
         guard let resultHandle = OCCTMeshIntersect(handle, other.handle, deflection) else {
             return nil

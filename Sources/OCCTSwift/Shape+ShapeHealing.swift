@@ -201,6 +201,10 @@ extension Shape {
     /// Unlike `scaled(by:)` which applies a geometric transform, this modifies the
     /// underlying surface and curve definitions.
     ///
+    /// Not guarded against a face with no surface, unlike ``directFaces()``:
+    /// `ShapeCustom::ScaleShape` reaches `BRepTools_TrsfModification::NewSurface`, which tests the
+    /// handle itself. Measured (#2790).
+    ///
     /// - Parameter factor: Scale factor
     /// - Returns: Scaled shape, or nil on failure
     public func scaledGeometry(factor: Double) -> Shape? {
@@ -230,6 +234,13 @@ extension Shape {
     ///   - curveTolerance: Tolerance for curve approximation (default: 0.01)
     ///   - maxDegree: Maximum degree for BSpline restriction (default: 9)
     ///   - maxSegments: Maximum number of segments (default: 10000)
+    /// Not guarded against a face with no surface, and deliberately so:
+    /// `ShapeCustom_BSplineRestriction::NewSurface` tests the handle itself and returns false, so an
+    /// edgeless one passes through untouched, and one carrying a wire raises a catchable
+    /// `Standard_NullObject` further down the modifier which the bridge turns into `nil`. Measured,
+    /// no process death either way (#2790), unlike ``sweptToElementary()`` and
+    /// ``convertedToBSpline()``.
+    ///
     /// - Returns: Shape with restricted BSplines, or nil on failure
     public func bsplineRestriction(
         surfaceTolerance: Double = 0.01,
@@ -247,6 +258,18 @@ extension Shape {
 
     /// Convert swept surfaces to elementary (canonical) surfaces.
     ///
+    /// ```swift
+    /// if let canonical = swept.sweptToElementary() {
+    ///     // a cylindrical extrusion is now a true Geom_CylindricalSurface
+    /// }
+    /// ```
+    ///
+    /// Returns `nil` for a shape carrying a face with no surface, whatever edges that face has:
+    /// `ShapeCustom_SweptToElementary::NewSurface` is called on every face and dereferences the
+    /// surface handle with no null test (`ShapeCustom_SweptToElementary.cxx:59`), so this used to
+    /// take the process down with SIGSEGV rather than failing (#2790). Such a face is not
+    /// constructible through this API but a `.brep` file carries one exactly.
+    ///
     /// - Returns: Shape with elementary surfaces, or nil on failure
     public func sweptToElementary() -> Shape? {
         guard let handle = OCCTShapeSweptToElementary(self.handle) else { return nil }
@@ -254,6 +277,21 @@ extension Shape {
     }
 
     /// Convert all surfaces to BSpline.
+    ///
+    /// ```swift
+    /// if let bspline = solid.convertedToBSpline() {
+    ///     // every non-planar face is now backed by a Geom_BSplineSurface
+    /// }
+    /// ```
+    ///
+    /// This is ``withSurfacesAsBSpline(extrusion:revolution:offset:plane:)`` with the four flags
+    /// fixed at that method's own defaults, so it can never reach `plane: true`; prefer the
+    /// parameterised spelling.
+    ///
+    /// Returns `nil` for a shape carrying a face with no surface:
+    /// `ShapeCustom_ConvertToBSpline::NewSurface` reads the surface handle untested and calls
+    /// `Bounds` on it two statements later (`ShapeCustom_ConvertToBSpline.cxx:104`), so this used to
+    /// take the process down with SIGSEGV rather than failing (#2790).
     ///
     /// - Returns: Shape with BSpline surfaces, or nil on failure
     public func convertedToBSpline() -> Shape? {
@@ -578,6 +616,17 @@ extension Shape {
     ///   - revolution: Convert revolution surfaces (default true)
     ///   - offset: Convert offset surfaces (default true)
     ///   - plane: Convert planar surfaces (default false)
+    ///
+    /// ```swift
+    /// if let bspline = solid.withSurfacesAsBSpline(plane: true) {
+    ///     // planar faces are converted too, which the defaults leave alone
+    /// }
+    /// ```
+    ///
+    /// Returns `nil` for a shape carrying a face with no surface, at every flag setting, because the
+    /// untested dereference at `ShapeCustom_ConvertToBSpline.cxx:104` sits ahead of the flag test.
+    /// It used to take the process down with SIGSEGV instead (#2790).
+    ///
     /// - Returns: Shape with surfaces converted, or nil on failure
     public func withSurfacesAsBSpline(
         extrusion: Bool = true, revolution: Bool = true,
@@ -607,6 +656,12 @@ extension Shape {
     ///     print(kinds)
     /// }
     /// ```
+    ///
+    /// Returns `nil` for a shape carrying a face with no surface:
+    /// `ShapeCustom_ConvertToRevolution::NewSurface` reads the handle untested and hands it to
+    /// `IsToConvert`, whose `occ::down_cast` survives a null handle and whose next statement
+    /// dereferences it (`ShapeCustom_ConvertToRevolution.cxx:54`). It used to take the process down
+    /// with SIGSEGV instead (#2790).
     ///
     /// - Returns: Shape whose elementary periodic surfaces are now surfaces of revolution, or nil
     ///   on failure.
@@ -1004,6 +1059,10 @@ extension Shape {
     ///   - degreePriority: If true, prioritize degree over segments (default: true)
     ///   - rational: Allow rational BSplines (default: false)
     ///   - parameters: Which geometry kinds may be converted (default: OCCT's own defaults)
+    /// Not guarded against a face with no surface: `ShapeCustom_BSplineRestriction::NewSurface`
+    /// tests the handle itself, so such a shape is answered for rather than refused. Measured
+    /// (#2790).
+    ///
     /// - Returns: Simplified shape, or nil on failure
     public func bsplineRestriction(
         tol3d: Double = 0.01, tol2d: Double = 0.01,
@@ -1256,6 +1315,17 @@ extension Shape {
     // MARK: ShapeCustom_DirectModification
 
     /// Orient face normals outward using ShapeCustom_DirectModification.
+    ///
+    /// ```swift
+    /// if let oriented = imported.directModification() {
+    ///     print(oriented.contents.faces)
+    /// }
+    /// ```
+    ///
+    /// This is ``directFaces()``'s operation driven through a bare `BRepTools_Modifier`, so it shares
+    /// that method's fault and its guard: `nil` for a shape carrying a face with no surface, because
+    /// `ShapeCustom_DirectModification::NewSurface` dereferences the handle with no null test
+    /// (`ShapeCustom_DirectModification.cxx:55`, #2777, guarded here in #2790).
     public func directModification() -> Shape? {
         guard let h = OCCTShapeCustomDirectModification(handle) else { return nil }
         return Shape(handle: h)
@@ -1264,6 +1334,16 @@ extension Shape {
     // MARK: ShapeCustom_TrsfModification
 
     /// Apply a uniform scale with proper tolerance handling via ShapeCustom_TrsfModification.
+    ///
+    /// ```swift
+    /// if let scaled = part.trsfModificationScale(25.4) {
+    ///     print(scaled.boundingBox?.max ?? .zero)
+    /// }
+    /// ```
+    ///
+    /// Unlike ``directModification()``, this is **not** guarded against a face with no surface:
+    /// `BRepTools_TrsfModification::NewSurface` tests the handle itself and returns false, so such a
+    /// shape comes back rather than being refused. Measured (#2790).
     public func trsfModificationScale(_ scaleFactor: Double) -> Shape? {
         guard let h = OCCTShapeCustomTrsfModificationScale(handle, scaleFactor) else { return nil }
         return Shape(handle: h)
@@ -1631,6 +1711,21 @@ extension Shape {
     }
 
     /// Convert surfaces to BSpline with per-type control.
+    ///
+    /// ```swift
+    /// if let bspline = Shape.convertToBSplineAdvanced(solid, planeMode: true) {
+    ///     print(bspline.contents.faces)
+    /// }
+    /// ```
+    ///
+    /// The third spelling of this conversion in the API, and the one that drives
+    /// `ShapeCustom_ConvertToBSpline` through a bare `BRepTools_Modifier` rather than through
+    /// `ShapeCustom::ApplyModifier`, which orients the input `TopAbs_FORWARD` and walks a compound
+    /// child by child. The three were measured to agree on a box, a cylinder and a compound of two
+    /// cylinders (#2790); prefer ``withSurfacesAsBSpline(extrusion:revolution:offset:plane:)``.
+    ///
+    /// Returns `nil` for a shape carrying a face with no surface, at every flag setting, for the same
+    /// reason: `ShapeCustom_ConvertToBSpline.cxx:104`. It used to take the process down (#2790).
     public static func convertToBSplineAdvanced(
         _ shape: Shape,
         extrusionMode: Bool = true,

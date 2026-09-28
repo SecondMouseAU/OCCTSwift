@@ -903,6 +903,17 @@ public static func convertToBSplineAdvanced(_ shape: Shape,
 - **Parameters:** `extrusionMode`, convert extrusion surfaces; `revolutionMode`, convert revolution surfaces; `offsetMode`, convert offset surfaces; `planeMode`, convert planes.
 - **Returns:** Shape with BSpline surfaces, or `nil` on failure.
 - **OCCT:** `ShapeCustom_ConvertToBSpline` applied with `BRepTools_Modifier` via `OCCTShapeConvertToBSplineAdvanced`.
+- **Note:** `nil` also for a shape carrying a face with no surface, at every flag setting
+  (`ShapeCustom_ConvertToBSpline.cxx:104`, #2790). See
+  [A face with no surface](Shape-Healing.md#a-face-with-no-surface-and-which-shapecustom-operations-refuse-one).
+- **Also:** this is the third bridge spelling of the same conversion. It reaches
+  `ShapeCustom_ConvertToBSpline` through a bare `BRepTools_Modifier` rather than through
+  `ShapeCustom::ApplyModifier`, which is the only difference: `ApplyModifier` orients the input
+  `TopAbs_FORWARD` and walks a compound child by child, keeping a map so a sub-shape shared between
+  assembly children is converted once. The three spellings were measured to agree on a box, a
+  cylinder and a compound of two cylinders (#2790); prefer
+  [`withSurfacesAsBSpline(extrusion:revolution:offset:plane:)`](Shape-Measurement.md#withsurfacesasbsplineextrusionrevolutionoffsetplane),
+  which takes the `ApplyModifier` route.
 
 ---
 
