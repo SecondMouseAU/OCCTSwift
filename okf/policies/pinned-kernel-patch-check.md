@@ -197,10 +197,23 @@ merged and could not have known a wasm asset existed, and #2784's asset matched 
 pinned when it was published. The browser was left without `0042`, a null-surface guard #2773
 measured as a SIGSEGV on seven cases, and `main` went red within a minute. #2785 is the rebuild.
 
-**The gate is the backstop, not the process.** Nothing tells the person doing a repin that they owe
-the wasm asset except this policy and a gate failing after they merge. #2785 carries the options for
-closing that, of which making the gate read the PR's own diff is the only one that cannot be
-forgotten.
+**The gate does catch a repin before it merges**, and it is worth being exact about this, because the
+obvious conclusion from the story above is the wrong one. A repin PR adds a patch to
+`Package.swift`'s enumeration in its own tree, so the comparison fires on that PR's own
+`gate-scripts` run. Verified against the next repin rather than assumed: enumerating a hypothetical
+`0043` while the wasm pin stands still produces both the divergence finding and
+`An acknowledgement is present but STALE: it was written against 30 native patches and there are
+now 31`.
+
+**What let #2782 through was not the gate's placement.** `#2782`'s checks last ran on a base that did
+not yet contain this gate, `#2784` then merged and added it, and `main`'s ruleset has
+`strict_required_status_checks_policy` **false**, so a branch is not required to be up to date before
+merging and its checks never re-ran. Every gate this repo adds has that same one-time window, and it
+is not specific to wasm; see [Static gates](static-gates.md) for the mitigation.
+
+So what remains is a process point rather than a tooling one: **nothing tells the person planning a
+repin that they owe a second asset except this policy and the release step.** That is why both now
+say so.
 
 ## Release obligations
 
