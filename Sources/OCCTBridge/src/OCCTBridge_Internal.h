@@ -1643,10 +1643,19 @@ inline bool occtShapeIsType(OCCTShapeRef shape, TopAbs_ShapeEnum type)
 // What the fault DOES is a race the caller does not control, measured in
 // Scripts/repro/2750-analyzer-incontext-guard/signal-probe.mm: after occtEnsureSignals() has run,
 // which any of fourteen bridge entry points does once per process, OCCT's SegvHandler reaches
-// Standard_ErrorHandler::Abort, which is a plain `throw` with OCC_CONVERT_SIGNALS undefined, and
-// BRepCheck_ParallelAnalyzer's own catch (Standard_Failure const&) records BRepCheck_CheckFail.
-// Before it, the process dies with SIGSEGV. One wrong answer, one dead process, same input.
-// Perform()'s OCC_CATCH_SIGNALS is inert here either way and absorbs nothing.
+// Standard_ErrorHandler::Abort, which longjmps to the nearest registered handler, and
+// BRepCheck_Analyzer.cxx's own `try { OCC_CATCH_SIGNALS ... } catch (Standard_Failure const&)`
+// around every InContext call is one, so the fault lands as BRepCheck_CheckFail. Before
+// occtEnsureSignals(), the process dies with SIGSEGV. One wrong answer, one dead process, same
+// input.
+//
+// #2763 corrected two claims here, both measured in Scripts/repro/2763-abort-signal-mechanism/
+// against the pinned asset. Abort is not "a plain `throw` with OCC_CONVERT_SIGNALS undefined":
+// OSD_signal.cxx is the only translation unit that instantiates the template and OCCT compiles it
+// with the define, so it longjmps, or prints and calls exit(1) when FindHandler() finds nothing.
+// And Perform()'s OCC_CATCH_SIGNALS does not "absorb nothing": it is live, because BRepCheck is an
+// OCCT translation unit, and it is the whole reason the analyzer survives. Inert is what a bridge
+// OCC_CATCH_SIGNALS is, which is why a fault with no OCCT site above it still ends the process.
 //
 // The fault, read from the pinned BRepCheck_Edge.cxx:488-489 and measured in
 // Scripts/repro/2746-brepcheck-incontext-sigsegv/:

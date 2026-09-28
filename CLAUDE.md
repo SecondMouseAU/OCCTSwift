@@ -81,7 +81,10 @@ the pinned version onto a machine with no pip or venv; see
 ### Static Gate Scripts
 
 Fifteen gates, five censuses and one merge-history audit, all pure Python over the repo's own text.
-No OCCT, no build, no network, ~3s for the lot (a bare `census-unmeasured-values.py` run is ~13s).
+No OCCT, no build, no network, and the whole job reports in under a minute on the runner. The
+measured breakdown, and the recipe for re-deriving it rather than trusting it, are in
+[`okf/policies/static-gates.md`](okf/policies/static-gates.md): this line claimed `~3s for the lot`
+while the measured figure was about fifteen times that, and nothing checked it (#2203).
 CI runs every gate, plus every `--self-test` including the censuses', in `ci.yml`'s `gate-scripts`
 job, a **required status check on `main`**. Each gate exits 1 on a defect and 0 when clean; a census
 exits 0 always, so CI runs only its `--self-test`. The job also runs one release check's
@@ -114,7 +117,7 @@ python3 Scripts/census-arguments-tuple-shapes.py # CENSUS, not a gate: @Test(arg
 python3 Scripts/census-comment-staleness.py      # CENSUS, not a gate: comments naming a symbol/flag/patch that no longer resolves (#872)
 python3 Scripts/census-api-reference-rows.py     # CENSUS, not a gate: API_REFERENCE category-row entries resolving to no declaration (#1679)
 python3 Scripts/check-inventory-prose.py        # every counted claim about the patch and gate inventories matches them (#1408)
-python3 Scripts/check-changelog-transcription.py # REPORT, not a gate yet: merges that landed with no CHANGELOG entry (#742)
+python3 Scripts/check-changelog-transcription.py # REPORT, never a gate: merges that landed with no CHANGELOG entry (#742, #2779)
 python3 Scripts/check-pinned-asset-patches.py --self-test  # RELEASE CHECK: only the self-test runs here; the real run reads the pinned asset (#2190)
 ```
 
@@ -125,6 +128,21 @@ on the option. Four scripts exit 2 if run from anywhere but the repo root (#625)
 **Optional pre-commit hook**: `ln -s ../../Scripts/git-hooks/pre-commit .git/hooks/pre-commit` in
 the main checkout, or `git config core.hooksPath Scripts/git-hooks` in a linked worktree (its
 `.git` is a file, so the symlink fails). CI is the authority; the hook is the preview.
+
+### Merging a PR
+
+```bash
+python3 Scripts/merge-pr.py <n> --dry-run   # print every action, change nothing
+python3 Scripts/merge-pr.py <n>             # transcribe the entry onto the branch, push, merge
+```
+
+**Use it rather than merging by hand.** It extracts the `## CHANGELOG entry` block from the PR body
+verbatim, commits it to `docs/CHANGELOG.md` as the last commit on the PR's branch, and merges; a
+section saying "None" becomes a `No-Changelog:` trailer on the merge commit instead. That is exactly
+what [`changelog-on-merge`](okf/policies/changelog-on-merge.md) asks a merger to do, and three of
+five consecutive merges did not do it (#2779). `check-changelog-transcription.py` stays as the
+backstop for a merge made without it, and is not a gate: it asks a post-merge question, so as a
+required check it would fail every open PR for the previous merge's omission.
 
 ### Doc Snippet Type-Check
 
@@ -340,12 +358,12 @@ the reproducer). What a bridge author needs without opening it:
   has run, which any of fourteen bridge entry points does once per process, OCCT's own
   `SegvHandler` reaches `Standard_ErrorHandler::Abort`, and the same fault therefore kills one
   process and comes back as a caught `Standard_Failure` in another, depending on nothing the
-  caller controls. Guard the fault; never rely on either outcome. (#2750 attributed that to
-  `Abort` being "a plain `throw` with `OCC_CONVERT_SIGNALS` undefined". The define is present
-  for OCCT's own units, and `OSD_signal.cxx` is the only translation unit that instantiates that
-  template, so it takes the `longjmp` branch, which explains both outcomes on its own: a handler
-  is found, or `FindHandler()` returns null and it prints and calls `exit(1)`. The observation
-  stands, the mechanism is under review as #2763.)
+  caller controls. Guard the fault; never rely on either outcome. The mechanism is the `longjmp`
+  branch: `OSD_signal.cxx` is the only translation unit that instantiates that template and OCCT
+  compiles it with the define, so `Abort` longjmps to the nearest handler an OCCT site registered,
+  or prints and calls `exit(1)` when `FindHandler()` finds none. Measured against the pinned asset
+  four ways in [`Scripts/repro/2763-abort-signal-mechanism/`](Scripts/repro/2763-abort-signal-mechanism/),
+  which also retires #2750's "plain `throw` with `OCC_CONVERT_SIGNALS` undefined" (#2763).
 - **`BRepCheck_Analyzer` is not crash-safe on a shape it did not build.** `Perform()` calls
   `BRepCheck_Edge::InContext(face)`, which dereferences a failed `down_cast<GeomAdaptor_Curve>` on
   a non-degenerated **edge of a face** with no valid 3D curve and at least one pcurve (#2746).
