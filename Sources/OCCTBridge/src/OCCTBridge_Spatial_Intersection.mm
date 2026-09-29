@@ -143,29 +143,6 @@ struct OCCTKDTree
 // #794: shared helper for polynomial solvers (Quadratic/Cubic/Quartic)
 // Uses template parameter pack to handle different constructor arities
 template <typename... Args>
-static OCCTPolynomialRoots occtSolvePolynomial(Args... args)
-{
-  OCCTPolynomialRoots result;
-  result.count    = 0;
-  result.roots[0] = result.roots[1] = result.roots[2] = result.roots[3] = 0.0;
-  try
-  {
-    math_DirectPolynomialRoots solver(args...);
-    if (!solver.IsDone())
-      return result;
-    result.count = std::min(solver.NbSolutions(), 4);
-    for (int i = 0; i < result.count; i++)
-    {
-      result.roots[i] = solver.Value(i + 1);
-    }
-    std::sort(result.roots, result.roots + result.count);
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-  }
-  return result;
-}
 
 struct OCCTIntrvInterval
 {
@@ -196,18 +173,6 @@ struct OCCTBndSphere
 {
   Bnd_Sphere sphere;
 };
-
-static void fillBounds6(const Bnd_Box& box, double* bounds6)
-{
-  double x0, y0, z0, x1, y1, z1;
-  box.Get(x0, y0, z0, x1, y1, z1);
-  bounds6[0] = x0;
-  bounds6[1] = y0;
-  bounds6[2] = z0;
-  bounds6[3] = x1;
-  bounds6[4] = y1;
-  bounds6[5] = z1;
-}
 
 struct OCCTIntfTool
 {
