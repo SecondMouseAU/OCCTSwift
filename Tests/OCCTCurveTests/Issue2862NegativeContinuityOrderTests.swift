@@ -11,7 +11,7 @@ import simd
 ///
 /// The refusal is `false`, which is what these wrappers already return for a null handle. The
 /// in-range answer is asserted alongside it, so a guard that refuses everything fails too.
-@Suite("#2862 — negative continuity order")
+@Suite("#2862: negative continuity order")
 struct Issue2862NegativeContinuityOrderTests {
 
     /// Written as one test walking a list rather than @Test(arguments:), because an argument element

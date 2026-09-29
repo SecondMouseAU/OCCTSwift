@@ -7,7 +7,7 @@ import simd
 /// class implementing `IsCNu`/`IsCNv` behind these wrappers, so the pinned Release kernel compiles it
 /// out and `isCNu(-1)` returned `true`. The refusal is `false`, which is what these wrappers already
 /// return for a null handle; the in-range answer is asserted alongside it.
-@Suite("#2862 — negative continuity order on Surface")
+@Suite("#2862: negative continuity order on Surface")
 struct Issue2862NegativeContinuityOrderSurfaceTests {
 
     /// Written as one test walking a list rather than @Test(arguments:), because an argument element
