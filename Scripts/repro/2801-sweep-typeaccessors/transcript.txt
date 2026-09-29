@@ -1,0 +1,201 @@
+#2801 sweep, "wrong kind of object" accessor cluster.
+Transcript. Every line below is machine output, pasted unedited.
+
+Worktree: $WT
+HEAD:     2c2f723f (Merge pull request #2832, census/2801-compiled-out-validation)
+Date:     2026-09-29
+
+KERNEL PROVENANCE (read this before trusting a decisive mode):
+  Libraries/OCCT.xcframework is a symlink to the MAIN checkout's tree,
+  /Users/elb/Projects/OCCTSwift/Libraries/OCCT.xcframework, whose
+  macos-arm64/libOCCT-macos.a is dated 2026-09-22 18:28 (157,577,464 bytes).
+  That is a LOCALLY BUILT kernel, not a download of the pinned asset. The main
+  checkout's Package.swift pins v4.0.0-kernel.1; this worktree's pins
+  v4.0.0-kernel.2. The decisive modes (8, 12, 13, 15) should be re-run against
+  the pinned v4.0.0-kernel.2 asset before they are quoted as its behaviour.
+  OCCT source read for every claim: Libraries/occt-src (OCCT 8.0.1).
+
+COMPILE LINE (run from the worktree root; exit 0, no diagnostics):
+
+  clang++ -std=c++17 -ObjC++ -w \
+    -I"Libraries/OCCT.xcframework/macos-arm64/Headers" \
+    -L"Libraries/OCCT.xcframework/macos-arm64" \
+    -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
+    Scripts/repro/2801-sweep-typeaccessors/probe.mm -o /tmp/probe-type-2801
+
+Two members named in #2801's cluster table could not be probed at all:
+GeomAdaptor_Curve::LocalContinuity and Geom2dAdaptor_Curve::LocalContinuity are
+PRIVATE in 8.0.1 (GeomAdaptor_Curve.hxx:273, Geom2dAdaptor_Curve.hxx:251), so no
+caller outside the class can reach them. The probe records that rather than
+testing it; the compile error that established it is the evidence.
+
+Each mode was run in its own process. "exit=" is that process's status.
+139 = SIGSEGV, 134 = SIGABRT.
+
+$ /tmp/probe-type-2801 1
+== mode 1 ==
+Geom_Line.Period()                             no throw, value=4e+100 (IsPeriodic=0)
+Geom_BSplineCurve(non-periodic).Period()       no throw, value=1 (IsPeriodic=0, span=1)
+Geom_TrimmedCurve(of non-periodic).Period()    no throw, value=1
+Geom2d_Line.Period()                           no throw, value=4e+100
+== mode 1 finished ==
+exit=0
+
+$ /tmp/probe-type-2801 2
+== mode 2 ==
+Geom_Plane.UPeriod()                           no throw, value=4e+100
+Geom_Plane.VPeriod()                           no throw, value=4e+100
+Geom_CylindricalSurface.VPeriod() (V not periodic) no throw, value=4e+100
+Geom_RectangularTrimmedSurface(plane).UPeriod() no throw, value=4e+100
+GeomAdaptor_Surface(plane).UPeriod()           no throw, value=4e+100
+== mode 2 finished ==
+exit=0
+
+$ /tmp/probe-type-2801 3
+== mode 3 ==
+GetType()=0 (GeomAbs_Line=0)
+GeomAdaptor_Curve(line).Circle()               std::exception(St18bad_variant_access): bad_variant_access
+GeomAdaptor_Curve(line).Ellipse()              std::exception(St18bad_variant_access): bad_variant_access
+GeomAdaptor_Curve(line).Hyperbola()            std::exception(St18bad_variant_access): bad_variant_access
+GeomAdaptor_Curve(line).Parabola()             std::exception(St18bad_variant_access): bad_variant_access
+== mode 3 finished ==
+exit=0
+
+$ /tmp/probe-type-2801 4
+== mode 4 ==
+GeomAdaptor_Curve(circle).Line()               std::exception(St18bad_variant_access): bad_variant_access
+GeomAdaptor_Curve(bspline).Circle()            std::exception(St18bad_variant_access): bad_variant_access
+== mode 4 finished ==
+exit=0
+
+$ /tmp/probe-type-2801 5
+== mode 5 ==
+Geom2dAdaptor_Curve(line).Circle()             std::exception(St18bad_variant_access): bad_variant_access
+== mode 5 finished ==
+exit=0
+
+$ /tmp/probe-type-2801 6
+== mode 6 ==
+Geom_Hyperbola(a=0).Eccentricity()             no throw, value=inf
+Geom_Hyperbola(a=0).Parameter()                no throw, value=inf
+Geom2d_Hyperbola(a=1e-300).Eccentricity()      no throw, value=1e+300
+Geom2d_Hyperbola(a=1e-300).Parameter()         no throw, value=1e+300
+== mode 6 finished ==
+exit=0
+
+$ /tmp/probe-type-2801 7
+== mode 7 ==
+Geom_TrimmedCurve.IsCN(-1)                     no throw, 1
+Geom_BSplineCurve.IsCN(-1)                     no throw, 1
+Geom_BSplineCurve.IsCN(INT_MIN)                no throw, 1
+Geom_OffsetCurve.IsCN(-1)                      no throw, 1
+Geom_RectangularTrimmedSurface.IsCNu(-1)       no throw, 1
+Geom2d_TrimmedCurve.IsCN(-1)                   no throw, 1
+== mode 7 finished ==
+exit=0
+
+$ /tmp/probe-type-2801 8
+== mode 8 ==
+GetType()=1
+Adaptor3d_CurveOnSurface(on cylinder).BSpline() /opt/homebrew/bin/bash: line 37: 66161 Segmentation fault: 11     /tmp/probe-type-2801 $m 2>&1
+exit=139
+
+$ /tmp/probe-type-2801 9
+== mode 9 ==
+BRepTools_Quilt(empty).Copy(face)              Standard_Failure(Standard_NoSuchObject): NCollection_IndexedDataMap::FindFromKey
+BRepTools_Quilt(has f1).Copy(f2)               Standard_Failure(Standard_NoSuchObject): NCollection_IndexedDataMap::FindFromKey
+== mode 9 finished ==
+exit=0
+
+$ /tmp/probe-type-2801 10
+== mode 10 ==
+BRepTools_Substitution(empty).Copy(face)       Standard_Failure(Standard_NoSuchObject): NCollection_DataMap::Find
+BRepTools_Substitution.Substitute(same key twice) no throw (silently rebound)
+BRepTools_Substitution.Copy(f2) (not a key)    Standard_Failure(Standard_NoSuchObject): NCollection_DataMap::Find
+== mode 10 finished ==
+exit=0
+
+$ /tmp/probe-type-2801 11
+== mode 11 ==
+GeomPlate_BuildAveragePlane(collinear)         IsPlane=1 IsLine=0 ... Plane() no throw, null=0 Line() no throw, null=1
+== mode 11 finished ==
+exit=0
+
+$ /tmp/probe-type-2801 12
+== mode 12 ==
+Geom2dAdaptor_Curve(line).BSpline() alone      no throw, null=1
+GeomAdaptor_Surface(cylinder).Plane() alone    Standard_Failure(Standard_NoSuchObject): GeomAdaptor_Surface::Plane
+about to call Adaptor3d_CurveOnSurface::BSpline()
+/opt/homebrew/bin/bash: line 37: 66167 Segmentation fault: 11     /tmp/probe-type-2801 $m 2>&1
+exit=139
+
+$ /tmp/probe-type-2801 13
+== mode 13 ==
+about to call Adaptor3d_CurveOnSurface::Bezier()
+/opt/homebrew/bin/bash: line 37: 66168 Segmentation fault: 11     /tmp/probe-type-2801 $m 2>&1
+exit=139
+
+$ /tmp/probe-type-2801 14
+== mode 14 ==
+GetType()=8 (OtherCurve=8)
+Adaptor3d_CurveOnSurface(other).Circle()       no throw, radius=1.79769e+308 loc=(0,0,0)
+Adaptor3d_CurveOnSurface(other).Line()         no throw, loc=(0,0,0) dir=(0,0,1)
+== mode 14 finished ==
+exit=0
+
+$ /tmp/probe-type-2801 15
+== mode 15 ==
+surface type=0 (Plane=0), curve type=0
+about to call BSpline() on a line-pcurve over a PLANE
+/opt/homebrew/bin/bash: line 37: 66172 Segmentation fault: 11     /tmp/probe-type-2801 $m 2>&1
+exit=139
+
+
+================================================================================
+WHAT EACH MODE ESTABLISHES (a reading of the output above, not output)
+
+ 1  Geom_Curve::Period() / Geom2d_Curve::Period() on a non-periodic curve does
+    not raise. It returns LastParameter() - FirstParameter(). On an unbounded
+    curve that is 4e+100 (2 * Precision::Infinite()), obviously wrong; on a
+    BOUNDED non-periodic BSpline it is the parameter span, 1.0 here, which is
+    indistinguishable from a real period. That is the dangerous half.
+ 2  Geom_Surface::UPeriod()/VPeriod(), Geom_RectangularTrimmedSurface's
+    overrides and GeomAdaptor_Surface's wrapper all behave the same way: 4e+100.
+ 3  GeomAdaptor_Curve::Circle/Ellipse/Hyperbola/Parabola on the wrong type do
+    NOT return a fabricated value and do NOT raise Standard_NoSuchObject. The
+    line after the compiled-out guard is std::get<T> on a std::variant, so they
+    throw std::bad_variant_access: LIVE, but NOT a Standard_Failure. A
+    catch (Standard_Failure&) would miss it; catch (...) catches it.
+ 4  Same, both directions (Line() on a circle, Circle() on a BSpline).
+ 5  Geom2dAdaptor_Curve behaves identically to its 3d sibling.
+ 6  Geom_Hyperbola::Eccentricity()/Parameter() with majorRadius == 0 return inf.
+    Geom2d_Hyperbola's guard is `<= gp::Resolution()`, and a majorRadius of
+    1e-300 passes the bridge's own `> 0` test and fails OCCT's, returning 1e+300.
+ 7  IsCN(N)/IsCNu(N) with a negative N returns TRUE for every class tested,
+    including INT_MIN. No fault, no raise; a fabricated boolean.
+ 8  Adaptor3d_CurveOnSurface::BSpline() on a non-planar support surface is an
+    UNCATCHABLE SIGSEGV. 12 and 13 isolate it; 15 is the important one.
+ 9  BRepTools_Quilt::Copy on a shape it never copied is a LIVE
+    Standard_NoSuchObject from NCollection_IndexedDataMap::FindFromKey's literal
+    throw, on an empty quilt as well as a populated one. lookup() tests IsEmpty()
+    with a plain `if`, so the compiled-out _Raise_if costs nothing here.
+10  BRepTools_Substitution::Copy likewise, via NCollection_DataMap::Find.
+    Substitute() on a key already bound silently rebinds instead of raising
+    Standard_ConstructionError.
+11  GeomPlate_BuildAveragePlane hands back a NULL handle from the accessor whose
+    predicate is false, not a raise. A caller testing IsNull() is unaffected.
+12  Isolates mode 8's faulting call, and names the cause:
+    Geom2dAdaptor_Curve::BSpline() has NO check of any kind (it returns a null
+    handle when the variant holds no BSplineData), while its 3d sibling
+    GeomAdaptor_Curve::BSpline() has a literal throw. Adaptor3d_CurveOnSurface
+    calls the 2d one and dereferences the result.
+13  Bezier() faults the same way, via down_cast returning null.
+14  Circle() on a GeomAbs_OtherCurve curve-on-surface returns a
+    default-constructed gp_Circ whose Radius() is 1.79769e+308 (RealLast), and
+    Line() the default gp_Lin at the origin along +Z. Fabricated measurements,
+    no raise, no fault: myCirc/myLin are plain members, not a variant.
+15  THE GUARD IS INSUFFICIENT EVEN WHEN LIVE. The support surface here IS a
+    plane, so the compiled-out _Raise_if would have passed, and BSpline() still
+    faults because the pcurve is a line. So this is an OCCT defect in its own
+    right, independent of No_Exception, and restoring
+    BUILD_RELEASE_DISABLE_EXCEPTIONS would not fix it.

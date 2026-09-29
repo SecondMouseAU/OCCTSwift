@@ -1,0 +1,1262 @@
+#2801 sweep, cluster: domain guards on conversion and filling
+===========================================================
+
+Kernel under test: Libraries/OCCT.xcframework/macos-arm64/libOCCT-macos.a, dated 22 Sep 18:28,
+which is a LOCAL build in the main checkout, not a freshly downloaded release asset. Package.swift
+pins the v4.0.0-kernel.1 asset URL. Every decisive result below should be re-run against the
+pinned asset before it is filed.
+
+Source read from Libraries/occt-src (OCCT 8.0.1 + carried patches).
+
+Compile line
+------------
+clang++ -std=c++17 -ObjC++ -w \
+  -I"Libraries/OCCT.xcframework/macos-arm64/Headers" \
+  -L"Libraries/OCCT.xcframework/macos-arm64" \
+  -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
+  Scripts/repro/2801-sweep-convert/probe.mm -o /tmp/probe-conv
+
+Each mode runs in its own process. Exit 139 is SIGSEGV, 134 is SIGABRT.
+
+================================================================
+== mode 1 ==
+  Convert_EllipseToBSplineCurve(major=20, minor=10, u1=0, u2=3.14159) delta=3.14159
+    conv: NbPoles=5 NbKnots=3 Degree=2
+    pole[1] = (20, 0) w=1
+    pole[2] = (20, 10) w=0.707107
+    pole[3] = (1.22465e-15, 10) w=1
+    pole[4] = (-20, 10) w=0.707107
+    pole[5] = (-20, 1.22465e-15) w=1
+    knot[1] = 0 mult=3
+    knot[2] = 1.5708 mult=2
+    knot[3] = 3.14159 mult=3
+  RESULT: non-null curve, FirstParameter=0 LastParameter=3.14159
+== mode 1 returned normally ==
+exit=0
+================================================================
+== mode 2 ==
+  Convert_EllipseToBSplineCurve(major=20, minor=10, u1=3.14159, u2=0) delta=-3.14159
+    conv: NbPoles=1 NbKnots=1 Degree=2
+    pole[1] = (-20, 1.22465e-15) w=1
+    knot[1] = 3.14159 mult=3
+  THREW Standard_Failure: BSpline curve: at least 2 poles required
+== mode 2 returned normally ==
+exit=0
+================================================================
+== mode 3 ==
+  Convert_EllipseToBSplineCurve(major=20, minor=10, u1=1, u2=1) delta=0
+    conv: NbPoles=3 NbKnots=2 Degree=2
+    pole[1] = (10.806, 8.41471) w=1
+    pole[2] = (10.806, 8.41471) w=1
+    pole[3] = (10.806, 8.41471) w=1
+    knot[1] = 1 mult=3
+    knot[2] = 1 mult=3
+  THREW Standard_Failure: BSpline curve: Knots interval values too close
+== mode 3 returned normally ==
+exit=0
+================================================================
+== mode 4 ==
+  Convert_EllipseToBSplineCurve(major=20, minor=10, u1=0, u2=100) delta=100
+    conv: NbPoles=79 NbKnots=40 Degree=2
+    pole[1] = (20, 0) w=1
+    pole[2] = (20, 33.6648) w=0.284749
+    pole[3] = (-16.7567, 5.45923) w=1
+    pole[4] = (-53.5134, -22.7463) w=0.284749
+    pole[5] = (8.07873, -9.14787) w=1
+    pole[6] = (69.6709, 4.45056) w=0.284749
+    pole[7] = (3.21941, 9.86959) w=1
+    pole[8] = (-63.2321, 15.2886) w=0.284749
+    pole[9] = (-13.4734, -7.39032) w=1
+    pole[10] = (36.2853, -30.0693) w=0.284749
+    pole[11] = (19.3576, 2.51415) w=1
+    pole[12] = (2.42992, 35.0976) w=0.284749
+    pole[13] = (-18.9635, 3.17743) w=1
+    pole[14] = (-40.357, -28.7427) w=0.284749
+    pole[15] = (12.4191, -7.83848) w=1
+    pole[16] = (65.1951, 13.0658) w=0.284749
+    pole[17] = (-1.84673, 9.95728) w=1
+    pole[18] = (-68.8886, 6.84879) w=0.284749
+    pole[19] = (-9.32455, -8.84665) w=1
+    pole[20] = (50.2395, -24.5421) w=0.284749
+    pole[21] = (17.4716, 4.86679) w=1
+    pole[22] = (-15.2963, 34.2757) w=0.284749
+    pole[23] = (-19.9521, 0.691504) w=1
+    pole[24] = (-24.608, -32.8927) w=0.284749
+    pole[25] = (15.9616, -6.02553) w=1
+    pole[26] = (56.5312, 20.8416) w=0.284749
+    pole[27] = (-6.79424, 9.4053) w=1
+    pole[28] = (-70.1196, -2.03102) w=0.284749
+    pole[29] = (-4.57668, -9.73465) w=1
+    pole[30] = (60.9663, -17.4383) w=0.284749
+    pole[31] = (14.4632, 6.90678) w=1
+    pole[32] = (-32.0398, 31.2519) w=0.284749
+    pole[33] = (-19.659, -1.83884) w=1
+    pole[34] = (-7.27813, -34.9295) w=0.284749
+    pole[35] = (18.4787, -3.82549) w=1
+    pole[36] = (44.2355, 27.2786) w=0.284749
+    pole[37] = (-11.3053, 8.2491) w=1
+    pole[38] = (-66.8461, -10.7804) w=0.284749
+    pole[39] = (0.46521, -9.99729) w=1
+    pole[40] = (67.7765, -9.21424) w=0.284749
+    pole[41] = (10.5257, 8.50307) w=1
+    pole[42] = (-46.725, 26.2204) w=0.284749
+    pole[43] = (-18.1029, -4.25106) w=1
+    pole[44] = (10.5193, -34.7225) w=0.284749
+    pole[45] = (19.8087, -1.3797) w=1
+    pole[46] = (29.0982, 31.9631) w=0.284749
+    pole[47] = (-15.09, 6.56298) w=1
+    pole[48] = (-59.2782, -18.8371) w=0.284749
+    pole[49] = (5.47721, -9.61769) w=1
+    pole[50] = (70.2327, -0.398245) w=0.284749
+    pole[51] = (5.91203, 9.55311) w=1
+    pole[52] = (-58.4086, 19.5045) w=0.284749
+    pole[53] = (-15.3838, -6.39018) w=1
+    pole[54] = (27.6409, -32.2848) w=0.284749
+    pole[55] = (19.8662, 1.15473) w=1
+    pole[56] = (12.0915, 34.5943) w=0.284749
+    pole[57] = (-17.9054, 4.45524) w=1
+    pole[58] = (-47.9023, -25.6838) w=0.284749
+    pole[59] = (10.1373, -8.62024) w=1
+    pole[60] = (68.177, 8.44333) w=0.284749
+    pole[61] = (0.918539, 9.98945) w=1
+    pole[62] = (-66.3399, 11.5356) w=0.284749
+    pole[63] = (-11.6765, -8.11879) w=1
+    pole[64] = (42.9869, -27.7731) w=0.284749
+    pole[65] = (18.6475, 3.61497) w=1
+    pole[66] = (-5.69195, 35.0031) w=0.284749
+    pole[67] = (-19.5705, 2.06129) w=1
+    pole[68] = (-33.449, -30.8805) w=0.284749
+    pole[69] = (14.1463, -7.06901) w=1
+    pole[70] = (61.7415, 16.7425) w=0.284749
+    pole[71] = (-4.13396, 9.78405) w=1
+    pole[72] = (-70.0095, 2.8256) w=0.284749
+    pole[73] = (-7.21909, -9.32584) w=1
+    pole[74] = (55.5713, -21.4773) w=0.284749
+    pole[75] = (16.2308, 5.84298) w=1
+    pole[76] = (-23.1097, 33.1632) w=0.284749
+    pole[77] = (-19.9784, -0.465084) w=1
+    pole[78] = (-16.847, -34.0934) w=0.284749
+    pole[79] = (17.2464, -5.06366) w=1
+    knot[1] = 0 mult=3
+    knot[2] = 2.5641 mult=2
+    knot[3] = 5.12821 mult=2
+    knot[4] = 7.69231 mult=2
+    knot[5] = 10.2564 mult=2
+    knot[6] = 12.8205 mult=2
+    knot[7] = 15.3846 mult=2
+    knot[8] = 17.9487 mult=2
+    knot[9] = 20.5128 mult=2
+    knot[10] = 23.0769 mult=2
+    knot[11] = 25.641 mult=2
+    knot[12] = 28.2051 mult=2
+    knot[13] = 30.7692 mult=2
+    knot[14] = 33.3333 mult=2
+    knot[15] = 35.8974 mult=2
+    knot[16] = 38.4615 mult=2
+    knot[17] = 41.0256 mult=2
+    knot[18] = 43.5897 mult=2
+    knot[19] = 46.1538 mult=2
+    knot[20] = 48.7179 mult=2
+    knot[21] = 51.2821 mult=2
+    knot[22] = 53.8462 mult=2
+    knot[23] = 56.4103 mult=2
+    knot[24] = 58.9744 mult=2
+    knot[25] = 61.5385 mult=2
+    knot[26] = 64.1026 mult=2
+    knot[27] = 66.6667 mult=2
+    knot[28] = 69.2308 mult=2
+    knot[29] = 71.7949 mult=2
+    knot[30] = 74.359 mult=2
+    knot[31] = 76.9231 mult=2
+    knot[32] = 79.4872 mult=2
+    knot[33] = 82.0513 mult=2
+    knot[34] = 84.6154 mult=2
+    knot[35] = 87.1795 mult=2
+    knot[36] = 89.7436 mult=2
+    knot[37] = 92.3077 mult=2
+    knot[38] = 94.8718 mult=2
+    knot[39] = 97.4359 mult=2
+    knot[40] = 100 mult=3
+  RESULT: non-null curve, FirstParameter=0 LastParameter=100
+== mode 4 returned normally ==
+exit=0
+================================================================
+== mode 10 ==
+  Convert_HyperbolaToBSplineCurve(major=10, minor=5, u1=-1, u2=1)
+    conv: NbPoles=3 NbKnots=2 Degree=2
+    pole[1] = (15.4308, -5.87601) w=1
+    pole[2] = (6.48054, 0) w=1.54308
+    pole[3] = (15.4308, 5.87601) w=1
+    knot[1] = -1 mult=3
+    knot[2] = 1 mult=3
+  RESULT: non-null curve, Value(first) = (15.4308, -5.87601)
+== mode 10 returned normally ==
+exit=0
+================================================================
+== mode 11 ==
+  Convert_HyperbolaToBSplineCurve(major=10, minor=5, u1=1, u2=1)
+    conv: NbPoles=3 NbKnots=2 Degree=2
+    pole[1] = (15.4308, 5.87601) w=1
+    pole[2] = (nan, nan) w=1
+    pole[3] = (15.4308, 5.87601) w=1
+    knot[1] = 1 mult=3
+    knot[2] = 1 mult=3
+  THREW Standard_Failure: BSpline curve: Knots interval values too close
+== mode 11 returned normally ==
+exit=0
+================================================================
+== mode 12 ==
+  Convert_HyperbolaToBSplineCurve(major=10, minor=5, u1=0, u2=800)
+    conv: NbPoles=3 NbKnots=2 Degree=2
+    pole[1] = (10, 0) w=1
+    pole[2] = (nan, nan) w=2.61073e+173
+    pole[3] = (nan, nan) w=1
+    knot[1] = 0 mult=3
+    knot[2] = 800 mult=3
+  RESULT: non-null curve, Value(first) = (nan, nan)
+== mode 12 returned normally ==
+exit=0
+================================================================
+== mode 13 ==
+  Convert_HyperbolaToBSplineCurve(major=10, minor=5, u1=0, u2=400)
+    conv: NbPoles=3 NbKnots=2 Degree=2
+    pole[1] = (10, 0) w=1
+    pole[2] = (10, 5) w=3.61299e+86
+    pole[3] = (2.61073e+174, 1.30537e+174) w=1
+    knot[1] = 0 mult=3
+    knot[2] = 400 mult=3
+  RESULT: non-null curve, Value(first) = (10, 0)
+== mode 13 returned normally ==
+exit=0
+================================================================
+== mode 20 ==
+  Convert_ParabolaToBSplineCurve(focal=5, u1=-2, u2=2)
+    conv: NbPoles=3 NbKnots=2 Degree=2
+    pole[1] = (0.2, -2) w=1
+    pole[2] = (-0.2, 0) w=1
+    pole[3] = (0.2, 2) w=1
+    knot[1] = -2 mult=3
+    knot[2] = 2 mult=3
+  RESULT: non-null curve
+== mode 20 returned normally ==
+exit=0
+================================================================
+== mode 21 ==
+  Convert_ParabolaToBSplineCurve(focal=5, u1=1, u2=1)
+    conv: NbPoles=3 NbKnots=2 Degree=2
+    pole[1] = (0.05, 1) w=1
+    pole[2] = (0.05, 1) w=1
+    pole[3] = (0.05, 1) w=1
+    knot[1] = 1 mult=3
+    knot[2] = 1 mult=3
+  THREW Standard_Failure: BSpline curve: Knots interval values too close
+== mode 21 returned normally ==
+exit=0
+================================================================
+== mode 30 ==
+  Convert_CircleToBSplineCurve(radius=5, u1=0, u2=3.14159)  [CONTROL: literal throw]
+    conv: NbPoles=5 NbKnots=3 Degree=2
+    pole[1] = (5, 0) w=1
+    pole[2] = (5, 5) w=0.707107
+    pole[3] = (3.06162e-16, 5) w=1
+    pole[4] = (-5, 5) w=0.707107
+    pole[5] = (-5, 6.12323e-16) w=1
+    knot[1] = 0 mult=3
+    knot[2] = 1.5708 mult=2
+    knot[3] = 3.14159 mult=3
+  RESULT: non-null curve
+== mode 30 returned normally ==
+exit=0
+================================================================
+== mode 31 ==
+  Convert_CircleToBSplineCurve(radius=5, u1=1, u2=1)  [CONTROL: literal throw]
+  THREW Standard_Failure: Convert_CircleToBSplineCurve
+== mode 31 returned normally ==
+exit=0
+================================================================
+== mode 32 ==
+  Convert_CircleToBSplineCurve(radius=5, u1=0, u2=100)  [CONTROL: literal throw]
+  THREW Standard_Failure: Convert_CircleToBSplineCurve
+== mode 32 returned normally ==
+exit=0
+================================================================
+== mode 40 ==
+  Convert_CylinderToBSplineSurface(r=5, u1=0, u2=3.14159, v1=0, v2=10) deltaU=3.14159
+    arrays are sized for TheNbUPoles=9 / TheNbUKnots=5 at construction
+    conv: NbUPoles=5 NbVPoles=2 NbUKnots=3 NbVKnots=2 UDeg=2 VDeg=1
+    uknot[1] = 0 mult=3
+    uknot[2] = 1.5708 mult=2
+    uknot[3] = 3.14159 mult=3
+    vknot[1] = 0 mult=2
+    vknot[2] = 10 mult=2
+    pole(1,1) = (5, 0, 0) w=1
+    pole(1,2) = (5, 0, 10) w=1
+    pole(2,1) = (5, 5, 0) w=0.707107
+    pole(2,2) = (5, 5, 10) w=0.707107
+    pole(3,1) = (3.06162e-16, 5, 0) w=1
+    pole(3,2) = (3.06162e-16, 5, 10) w=1
+    pole(4,1) = (-5, 5, 0) w=0.707107
+    pole(4,2) = (-5, 5, 10) w=0.707107
+    pole(5,1) = (-5, 6.12323e-16, 0) w=1
+    pole(5,2) = (-5, 6.12323e-16, 10) w=1
+  RESULT: non-null surface
+== mode 40 returned normally ==
+exit=0
+================================================================
+== mode 41 ==
+  Convert_CylinderToBSplineSurface(r=5, u1=0, u2=100, v1=0, v2=10) deltaU=100
+    arrays are sized for TheNbUPoles=9 / TheNbUKnots=5 at construction
+    conv: NbUPoles=79 NbVPoles=2 NbUKnots=40 NbVKnots=2 UDeg=2 VDeg=1
+    uknot[1] = 0 mult=0
+    uknot[2] = 2.5641 mult=1072693248
+    uknot[3] = 5.12821 mult=0
+    uknot[4] = 7.69231 mult=1072693248
+    uknot[5] = 10.2564 mult=-1096120371
+    uknot[6] = 12.8205 mult=1070741845
+    uknot[7] = 0 mult=-1096120371
+    uknot[8] = 0 mult=1070741845
+    uknot[9] = 0 mult=0
+    uknot[10] = 0 mult=0
+    uknot[11] = 0 mult=0
+    uknot[12] = 0 mult=0
+    uknot[13] = 0 mult=0
+    uknot[14] = 0 mult=0
+    uknot[15] = 0 mult=0
+    uknot[16] = 0 mult=0
+    uknot[17] = 0 mult=0
+    uknot[18] = 0 mult=0
+    uknot[19] = 0 mult=0
+    uknot[20] = 0 mult=0
+    uknot[21] = 0 mult=0
+    uknot[22] = 0 mult=0
+    uknot[23] = 0 mult=0
+    uknot[24] = 0 mult=0
+    uknot[25] = 0 mult=0
+    uknot[26] = 0 mult=0
+    uknot[27] = 0 mult=0
+    uknot[28] = 0 mult=0
+    uknot[29] = 0 mult=0
+    uknot[30] = 0 mult=0
+    uknot[31] = 0 mult=0
+    uknot[32] = 0 mult=0
+    uknot[33] = 0 mult=0
+    uknot[34] = 0 mult=0
+    uknot[35] = 0 mult=0
+    uknot[36] = 0 mult=0
+    uknot[37] = 0 mult=0
+    uknot[38] = 0 mult=0
+    uknot[39] = 0 mult=0
+    uknot[40] = 0 mult=0
+    vknot[1] = 0 mult=2
+    vknot[2] = 10 mult=2
+    pole(1,1) = (5, 0, 0) w=1
+    pole(1,2) = (5, 0, 10) w=1
+    pole(2,1) = (5, 16.8324, 0) w=0.284749
+    pole(2,2) = (5, 16.8324, 10) w=0.284749
+    pole(3,1) = (-4.18918, 2.72961, 0) w=1
+    pole(3,2) = (-4.18918, 2.72961, 10) w=1
+    pole(4,1) = (-13.3784, -11.3731, 0) w=0.284749
+    pole(4,2) = (-13.3784, -11.3731, 10) w=0.284749
+    pole(5,1) = (2.01968, -4.57393, 0) w=1
+    pole(5,2) = (2.01968, -4.57393, 10) w=1
+    pole(6,1) = (17.4177, 2.22528, 0) w=0.284749
+    pole(6,2) = (17.4177, 2.22528, 10) w=0.284749
+    pole(7,1) = (0.804853, 4.9348, 0) w=1
+    pole(7,2) = (0.804853, 4.9348, 10) w=1
+    pole(8,1) = (-15.808, 7.64431, 0) w=0.284749
+    pole(8,2) = (-15.808, 7.64431, 10) w=0.284749
+    pole(9,1) = (-3.36835, -3.69516, 0) w=1
+    pole(9,2) = (-3.36835, -3.69516, 10) w=1
+    pole(10,1) = (0, 0, 0) w=0.284749
+    pole(10,2) = (0, 0, 0) w=0.284749
+    pole(11,1) = (0, 0, 0) w=1
+    pole(11,2) = (0, 0, 0) w=1
+    pole(12,1) = (0, 0, 0) w=0.284749
+    pole(12,2) = (0, 0, 0) w=0.284749
+    pole(13,1) = (0, 0, 0) w=1
+    pole(13,2) = (0, 0, 0) w=1
+    pole(14,1) = (0, 0, 0) w=0.284749
+    pole(14,2) = (0, 0, 0) w=0.284749
+    pole(15,1) = (0, 0, 0) w=1
+    pole(15,2) = (0, 0, 0) w=1
+    pole(16,1) = (0, 0, 0) w=0.284749
+    pole(16,2) = (0, 0, 0) w=0.284749
+    pole(17,1) = (0, 0, 0) w=1
+    pole(17,2) = (0, 0, 0) w=1
+    pole(18,1) = (0, 0, 0) w=0.284749
+    pole(18,2) = (0, 0, 0) w=0.284749
+    pole(19,1) = (0, 0, 0) w=1
+    pole(19,2) = (0, 0, 0) w=1
+    pole(20,1) = (0, 0, 0) w=0.284749
+    pole(20,2) = (0, 0, 0) w=0.284749
+    pole(21,1) = (0, 0, 0) w=1
+    pole(21,2) = (0, 0, 0) w=1
+    pole(22,1) = (0, 0, 0) w=0.284749
+    pole(22,2) = (0, 0, 0) w=0.284749
+    pole(23,1) = (0, 0, 0) w=1
+    pole(23,2) = (0, 0, 0) w=1
+    pole(24,1) = (0, 0, 0) w=0.284749
+    pole(24,2) = (0, 0, 0) w=0.284749
+    pole(25,1) = (0, 0, 0) w=1
+    pole(25,2) = (0, 0, 0) w=1
+    pole(26,1) = (0, 0, 0) w=0.284749
+    pole(26,2) = (0, 0, 0) w=0.284749
+    pole(27,1) = (0, 0, 0) w=1
+    pole(27,2) = (0, 0, 0) w=1
+    pole(28,1) = (0, 0, 0) w=0.284749
+    pole(28,2) = (0, 0, 0) w=0.284749
+    pole(29,1) = (0, 0, 0) w=1
+    pole(29,2) = (0, 0, 0) w=1
+    pole(30,1) = (0, 0, 0) w=0.284749
+    pole(30,2) = (0, 0, 0) w=0.284749
+    pole(31,1) = (0, 0, 0) w=1
+    pole(31,2) = (0, 0, 0) w=1
+    pole(32,1) = (0, 0, 0) w=0.284749
+    pole(32,2) = (0, 0, 0) w=0.284749
+    pole(33,1) = (0, 0, 0) w=1
+    pole(33,2) = (0, 0, 0) w=1
+    pole(34,1) = (0, 0, 0) w=0.284749
+    pole(34,2) = (0, 0, 0) w=0.284749
+    pole(35,1) = (0, 0, 0) w=1
+    pole(35,2) = (0, 0, 0) w=1
+    pole(36,1) = (0, 0, 0) w=0.284749
+    pole(36,2) = (0, 0, 0) w=0.284749
+    pole(37,1) = (0, 0, 0) w=1
+    pole(37,2) = (0, 0, 0) w=1
+    pole(38,1) = (0, 0, 0) w=0.284749
+    pole(38,2) = (0, 0, 0) w=0.284749
+    pole(39,1) = (0, 0, 0) w=1
+    pole(39,2) = (0, 0, 0) w=1
+    pole(40,1) = (0, 0, 0) w=0.284749
+    pole(40,2) = (0, 0, 0) w=0.284749
+    pole(41,1) = (0, 0, 0) w=1
+    pole(41,2) = (0, 0, 0) w=1
+    pole(42,1) = (0, 0, 0) w=0.284749
+    pole(42,2) = (0, 0, 0) w=0.284749
+    pole(43,1) = (0, 0, 0) w=1
+    pole(43,2) = (0, 0, 0) w=1
+    pole(44,1) = (0, 0, 0) w=0.284749
+    pole(44,2) = (0, 0, 0) w=0.284749
+    pole(45,1) = (0, 0, 0) w=1
+    pole(45,2) = (0, 0, 0) w=1
+    pole(46,1) = (0, 0, 0) w=0.284749
+    pole(46,2) = (0, 0, 0) w=0.284749
+    pole(47,1) = (0, 0, 0) w=1
+    pole(47,2) = (0, 0, 0) w=1
+    pole(48,1) = (0, 0, 0) w=0.284749
+    pole(48,2) = (0, 0, 0) w=0.284749
+    pole(49,1) = (0, 0, 0) w=1
+    pole(49,2) = (0, 0, 0) w=1
+    pole(50,1) = (0, 0, 0) w=0.284749
+    pole(50,2) = (0, 0, 0) w=0.284749
+    pole(51,1) = (0, 0, 0) w=1
+    pole(51,2) = (0, 0, 0) w=1
+    pole(52,1) = (0, 0, 0) w=0.284749
+    pole(52,2) = (0, 0, 0) w=0.284749
+    pole(53,1) = (0, 0, 0) w=1
+    pole(53,2) = (0, 0, 0) w=1
+    pole(54,1) = (0, 0, 0) w=0.284749
+    pole(54,2) = (0, 0, 0) w=0.284749
+    pole(55,1) = (0, 0, 0) w=1
+    pole(55,2) = (0, 0, 0) w=1
+    pole(56,1) = (0, 0, 0) w=0.284749
+    pole(56,2) = (0, 0, 0) w=0.284749
+    pole(57,1) = (0, 0, 0) w=1
+    pole(57,2) = (0, 0, 0) w=1
+    pole(58,1) = (0, 0, 0) w=0.284749
+    pole(58,2) = (0, 0, 0) w=0.284749
+    pole(59,1) = (0, 0, 0) w=1
+    pole(59,2) = (0, 0, 0) w=1
+    pole(60,1) = (0, 0, 0) w=0.284749
+    pole(60,2) = (0, 0, 0) w=0.284749
+    pole(61,1) = (0, 0, 0) w=1
+    pole(61,2) = (0, 0, 0) w=1
+    pole(62,1) = (0, 0, 0) w=0.284749
+    pole(62,2) = (0, 0, 0) w=0.284749
+    pole(63,1) = (0, 0, 0) w=1
+    pole(63,2) = (0, 0, 0) w=1
+    pole(64,1) = (0, 0, 0) w=0.284749
+    pole(64,2) = (0, 0, 0) w=0.284749
+    pole(65,1) = (0, 0, 0) w=1
+    pole(65,2) = (0, 0, 0) w=1
+    pole(66,1) = (0, 0, 0) w=0.284749
+    pole(66,2) = (0, 0, 0) w=0.284749
+    pole(67,1) = (0, 0, 0) w=1
+    pole(67,2) = (0, 0, 0) w=1
+    pole(68,1) = (0, 0, 0) w=13.6393
+    pole(68,2) = (0, 0, 0) w=10
+    pole(69,1) = (0, 0, 0) w=-2.82632
+    pole(69,2) = (0, 0, 0) w=4.12455
+    pole(70,1) = (0, 0, 0) w=0
+    pole(70,2) = (0, 0, 0) w=-2.82632
+    pole(71,1) = (0, 0, 0) w=4.12455
+    pole(71,2) = (0, 0, 0) w=10
+    pole(72,1) = (0, 0, 0) w=-16.7115
+    pole(72,2) = (0, 0, 0) w=-5.39018
+    pole(73,1) = (0, 0, 0) w=0
+    pole(73,2) = (0, 0, 0) w=-16.7115
+    pole(74,1) = (0, 0, 0) w=-5.39018
+    pole(74,2) = (0, 0, 0) w=10
+    pole(75,1) = (0, 0, 0) w=0.116302
+    pole(75,2) = (0, 0, 0) w=-4.99865
+    pole(76,1) = (0, 0, 0) w=0
+    pole(76,2) = (0, 0, 0) w=0.116302
+    pole(77,1) = (0, 0, 0) w=-4.99865
+    pole(77,2) = (0, 0, 0) w=10
+    pole(78,1) = (0, 0, 0) w=16.9441
+    pole(78,2) = (0, 0, 0) w=-4.60712
+    pole(79,1) = (0, 0, 0) w=0
+    pole(79,2) = (0, 0, 0) w=16.9441
+  THREW Standard_Failure: Geom_BSplineSurface: Weights values too small
+== mode 41 returned normally ==
+exit=0
+================================================================
+== mode 42 ==
+  Convert_CylinderToBSplineSurface(r=5, u1=0, u2=-100, v1=0, v2=10) deltaU=-100
+    arrays are sized for TheNbUPoles=9 / TheNbUKnots=5 at construction
+exit=139
+================================================================
+== mode 43 ==
+  Convert_CylinderToBSplineSurface(r=5, u1=0, u2=-1, v1=0, v2=10) deltaU=-1
+    arrays are sized for TheNbUPoles=9 / TheNbUKnots=5 at construction
+    conv: NbUPoles=3 NbVPoles=2 NbUKnots=2 NbVKnots=2 UDeg=2 VDeg=1
+    uknot[1] = 0 mult=3
+    uknot[2] = -1 mult=3
+    vknot[1] = 0 mult=2
+    vknot[2] = 10 mult=2
+    pole(1,1) = (5, 0, 0) w=1
+    pole(1,2) = (5, 0, 10) w=1
+    pole(2,1) = (5, -2.73151, 0) w=0.877583
+    pole(2,2) = (5, -2.73151, 10) w=0.877583
+    pole(3,1) = (2.70151, -4.20735, 0) w=1
+    pole(3,2) = (2.70151, -4.20735, 10) w=1
+  THREW Standard_Failure: Geom_BSplineSurface: UKnots interval values too close
+== mode 43 returned normally ==
+exit=0
+================================================================
+== mode 44 ==
+  Convert_CylinderToBSplineSurface(r=5, u1=0, u2=3.14159, v1=5, v2=5) deltaU=3.14159
+    arrays are sized for TheNbUPoles=9 / TheNbUKnots=5 at construction
+    conv: NbUPoles=5 NbVPoles=2 NbUKnots=3 NbVKnots=2 UDeg=2 VDeg=1
+    uknot[1] = 0 mult=3
+    uknot[2] = 1.5708 mult=2
+    uknot[3] = 3.14159 mult=3
+    vknot[1] = 5 mult=2
+    vknot[2] = 5 mult=2
+    pole(1,1) = (5, 0, 5) w=1
+    pole(1,2) = (5, 0, 5) w=1
+    pole(2,1) = (5, 5, 5) w=0.707107
+    pole(2,2) = (5, 5, 5) w=0.707107
+    pole(3,1) = (3.06162e-16, 5, 5) w=1
+    pole(3,2) = (3.06162e-16, 5, 5) w=1
+    pole(4,1) = (-5, 5, 5) w=0.707107
+    pole(4,2) = (-5, 5, 5) w=0.707107
+    pole(5,1) = (-5, 6.12323e-16, 5) w=1
+    pole(5,2) = (-5, 6.12323e-16, 5) w=1
+  THREW Standard_Failure: Geom_BSplineSurface: VKnots interval values too close
+== mode 44 returned normally ==
+exit=0
+================================================================
+== mode 45 ==
+  Convert_CylinderToBSplineSurface(r=5, u1=0, u2=7, v1=0, v2=10) deltaU=7
+    arrays are sized for TheNbUPoles=9 / TheNbUKnots=5 at construction
+    conv: NbUPoles=7 NbVPoles=2 NbUKnots=4 NbVKnots=2 UDeg=2 VDeg=1
+    uknot[1] = 0 mult=3
+    uknot[2] = 2.33333 mult=2
+    uknot[3] = 4.66667 mult=2
+    uknot[4] = 7 mult=3
+    vknot[1] = 0 mult=2
+    vknot[2] = 10 mult=2
+    pole(1,1) = (5, 0, 0) w=1
+    pole(1,2) = (5, 0, 10) w=1
+    pole(2,1) = (5, 11.6913, 0) w=0.393219
+    pole(2,2) = (5, 11.6913, 10) w=0.393219
+    pole(3,1) = (-3.45379, 3.61543, 0) w=1
+    pole(3,2) = (-3.45379, 3.61543, 10) w=1
+    pole(4,1) = (-11.9076, -4.46041, 0) w=0.393219
+    pole(4,2) = (-11.9076, -4.46041, 10) w=0.393219
+    pole(5,1) = (-0.228532, -4.99477, 0) w=1
+    pole(5,2) = (-0.228532, -4.99477, 10) w=1
+    pole(6,1) = (11.4505, -5.52914, 0) w=0.393219
+    pole(6,2) = (11.4505, -5.52914, 10) w=0.393219
+    pole(7,1) = (3.76951, 3.28493, 0) w=1
+    pole(7,2) = (3.76951, 3.28493, 10) w=1
+  RESULT: non-null surface
+== mode 45 returned normally ==
+exit=0
+================================================================
+== mode 46 ==
+  Convert_CylinderToBSplineSurface(r=5, u1=6.28319, u2=0, v1=0, v2=10) deltaU=-6.28319
+    arrays are sized for TheNbUPoles=9 / TheNbUKnots=5 at construction
+exit=139
+================================================================
+== mode 47 ==
+  Convert_CylinderToBSplineSurface(r=5, u1=3.14159, u2=0, v1=0, v2=10) deltaU=-3.14159
+    arrays are sized for TheNbUPoles=9 / TheNbUKnots=5 at construction
+    conv: NbUPoles=1 NbVPoles=2 NbUKnots=1 NbVKnots=2 UDeg=2 VDeg=1
+    uknot[1] = nan mult=4
+    vknot[1] = 0 mult=2
+    vknot[2] = 10 mult=2
+    pole(1,1) = (-5, 6.12323e-16, 0) w=1
+    pole(1,2) = (-5, 6.12323e-16, 10) w=1
+  THREW Standard_Failure: Geom_BSplineSurface: at least 2 poles required
+== mode 47 returned normally ==
+exit=0
+================================================================
+== mode 48 ==
+  Convert_CylinderToBSplineSurface(r=5, u1=0, u2=-5, v1=0, v2=10) deltaU=-5
+    arrays are sized for TheNbUPoles=9 / TheNbUKnots=5 at construction
+    conv: NbUPoles=1 NbVPoles=2 NbUKnots=1 NbVKnots=2 UDeg=2 VDeg=1
+    uknot[1] = nan mult=4
+    vknot[1] = 0 mult=2
+    vknot[2] = 10 mult=2
+    pole(1,1) = (5, 0, 0) w=1
+    pole(1,2) = (5, 0, 10) w=1
+  THREW Standard_Failure: Geom_BSplineSurface: at least 2 poles required
+== mode 48 returned normally ==
+exit=0
+================================================================
+== mode 49 ==
+  Convert_CylinderToBSplineSurface(r=5, u1=0, u2=-5.3, v1=0, v2=10) deltaU=-5.3
+    arrays are sized for TheNbUPoles=9 / TheNbUKnots=5 at construction
+exit=139
+================================================================
+== mode 50 ==
+  Convert_ConeToBSplineSurface(semiAngle=0.3, refRadius=5, u1=0, u2=3.14159, v1=0, v2=10) deltaU=3.14159
+    conv: NbUPoles=5 NbVPoles=2 NbUKnots=3 NbVKnots=2 UDeg=2 VDeg=1
+    uknot[1] = 0 mult=3
+    uknot[2] = 1.5708 mult=2
+    uknot[3] = 3.14159 mult=3
+    vknot[1] = 0 mult=2
+    vknot[2] = 10 mult=2
+    pole(1,1) = (5, 0, 0) w=1
+    pole(1,2) = (7.9552, 0, 9.55336) w=1
+    pole(2,1) = (5, 5, 0) w=0.707107
+    pole(2,2) = (7.9552, 7.9552, 9.55336) w=0.707107
+    pole(3,1) = (3.06162e-16, 5, 0) w=1
+    pole(3,2) = (4.87116e-16, 7.9552, 9.55336) w=1
+    pole(4,1) = (-5, 5, 0) w=0.707107
+    pole(4,2) = (-7.9552, 7.9552, 9.55336) w=0.707107
+    pole(5,1) = (-5, 6.12323e-16, 0) w=1
+    pole(5,2) = (-7.9552, 9.74231e-16, 9.55336) w=1
+  RESULT: non-null surface
+== mode 50 returned normally ==
+exit=0
+================================================================
+== mode 51 ==
+  Convert_ConeToBSplineSurface(semiAngle=0.3, refRadius=5, u1=0, u2=100, v1=0, v2=10) deltaU=100
+    conv: NbUPoles=79 NbVPoles=2 NbUKnots=40 NbVKnots=2 UDeg=2 VDeg=1
+    uknot[1] = 0 mult=1321528401
+    uknot[2] = 2.5641 mult=1076806892
+    uknot[3] = 5.12821 mult=770891566
+    uknot[4] = 7.69231 mult=1077015263
+    uknot[5] = 10.2564 mult=881018933
+    uknot[6] = 12.8205 mult=1077183304
+    uknot[7] = 0 mult=991146300
+    uknot[8] = 0 mult=1077351345
+    uknot[9] = 0 mult=0
+    uknot[10] = 0 mult=0
+    uknot[11] = 0 mult=0
+    uknot[12] = 0 mult=0
+    uknot[13] = 0 mult=0
+    uknot[14] = 0 mult=0
+    uknot[15] = 0 mult=0
+    uknot[16] = 0 mult=0
+    uknot[17] = 0 mult=0
+    uknot[18] = 0 mult=0
+    uknot[19] = 0 mult=0
+    uknot[20] = 0 mult=0
+    uknot[21] = 0 mult=0
+    uknot[22] = 0 mult=0
+    uknot[23] = 0 mult=0
+    uknot[24] = 0 mult=0
+    uknot[25] = 0 mult=0
+    uknot[26] = 0 mult=0
+    uknot[27] = 0 mult=0
+    uknot[28] = 0 mult=0
+    uknot[29] = 0 mult=0
+    uknot[30] = 0 mult=0
+    uknot[31] = 0 mult=0
+    uknot[32] = 0 mult=0
+    uknot[33] = 0 mult=0
+    uknot[34] = 0 mult=0
+    uknot[35] = 0 mult=0
+    uknot[36] = 0 mult=0
+    uknot[37] = 0 mult=0
+    uknot[38] = 0 mult=0
+    uknot[39] = 0 mult=0
+    uknot[40] = 0 mult=0
+    vknot[1] = 0 mult=2
+    vknot[2] = 10 mult=2
+    pole(1,1) = (5, 0, 0) w=1
+    pole(1,2) = (7.9552, 0, 9.55336) w=1
+    pole(2,1) = (5, 16.8324, 0) w=0.284749
+    pole(2,2) = (7.9552, 26.781, 9.55336) w=0.284749
+    pole(3,1) = (-4.18918, 2.72961, 0) w=1
+    pole(3,2) = (-6.66515, 4.34293, 9.55336) w=1
+    pole(4,1) = (-13.3784, -11.3731, 0) w=0.284749
+    pole(4,2) = (-21.2855, -18.0951, 9.55336) w=0.284749
+    pole(5,1) = (2.01968, -4.57393, 0) w=1
+    pole(5,2) = (3.2134, -7.27732, 9.55336) w=1
+    pole(6,1) = (17.4177, 2.22528, 0) w=0.284749
+    pole(6,2) = (27.7123, 3.54051, 9.55336) w=0.284749
+    pole(7,1) = (0.804853, 4.9348, 0) w=1
+    pole(7,2) = (1.28055, 7.85146, 9.55336) w=1
+    pole(8,1) = (-15.808, 7.64431, 0) w=0.284749
+    pole(8,2) = (-25.1512, 12.1624, 9.55336) w=0.284749
+    pole(9,1) = (-3.36835, -3.69516, 0) w=1
+    pole(9,2) = (-5.35918, -5.87915, 9.55336) w=1
+    pole(10,1) = (0, 0, 0) w=0
+    pole(10,2) = (0, 0, 0) w=0
+    pole(11,1) = (0, 0, 0) w=0
+    pole(11,2) = (0, 0, 0) w=0
+    pole(12,1) = (0, 0, 0) w=0
+    pole(12,2) = (0, 0, 0) w=0
+    pole(13,1) = (0, 0, 0) w=0
+    pole(13,2) = (0, 0, 0) w=0
+    pole(14,1) = (0, 0, 0) w=0
+    pole(14,2) = (0, 0, 0) w=0
+    pole(15,1) = (0, 0, 0) w=0
+    pole(15,2) = (0, 0, 0) w=0
+    pole(16,1) = (0, 0, 0) w=0
+    pole(16,2) = (0, 0, 0) w=0
+    pole(17,1) = (0, 0, 0) w=0
+    pole(17,2) = (0, 0, 0) w=0
+    pole(18,1) = (0, 0, 0) w=0
+    pole(18,2) = (0, 0, 0) w=0
+    pole(19,1) = (0, 0, 0) w=0
+    pole(19,2) = (0, 0, 0) w=0
+    pole(20,1) = (0, 0, 0) w=0
+    pole(20,2) = (0, 0, 0) w=0
+    pole(21,1) = (0, 0, 0) w=0
+    pole(21,2) = (0, 0, 0) w=0
+    pole(22,1) = (0, 0, 0) w=0
+    pole(22,2) = (0, 0, 0) w=0
+    pole(23,1) = (0, 0, 0) w=0
+    pole(23,2) = (0, 0, 0) w=0
+    pole(24,1) = (0, 0, 0) w=0
+    pole(24,2) = (0, 0, 0) w=0
+    pole(25,1) = (0, 0, 0) w=0
+    pole(25,2) = (0, 0, 0) w=0
+    pole(26,1) = (0, 0, 0) w=0
+    pole(26,2) = (0, 0, 0) w=0
+    pole(27,1) = (0, 0, 0) w=0
+    pole(27,2) = (0, 0, 0) w=0
+    pole(28,1) = (0, 0, 0) w=0
+    pole(28,2) = (0, 0, 0) w=0
+    pole(29,1) = (0, 0, 0) w=0
+    pole(29,2) = (0, 0, 0) w=0
+    pole(30,1) = (0, 0, 0) w=0
+    pole(30,2) = (0, 0, 0) w=0
+    pole(31,1) = (0, 0, 0) w=0
+    pole(31,2) = (0, 0, 0) w=0
+    pole(32,1) = (0, 0, 0) w=0
+    pole(32,2) = (0, 0, 0) w=0
+    pole(33,1) = (0, 0, 0) w=0
+    pole(33,2) = (0, 0, 0) w=0
+    pole(34,1) = (0, 0, 0) w=0
+    pole(34,2) = (0, 0, 0) w=0
+    pole(35,1) = (0, 0, 0) w=0
+    pole(35,2) = (0, 0, 0) w=0
+    pole(36,1) = (0, 0, 0) w=0
+    pole(36,2) = (0, 0, 0) w=0
+    pole(37,1) = (0, 0, 0) w=0
+    pole(37,2) = (0, 0, 0) w=0
+    pole(38,1) = (0, 0, 0) w=0
+    pole(38,2) = (0, 0, 0) w=0
+    pole(39,1) = (0, 0, 0) w=0
+    pole(39,2) = (0, 0, 0) w=0
+    pole(40,1) = (0, 0, 0) w=0
+    pole(40,2) = (0, 0, 0) w=0
+    pole(41,1) = (0, 0, 0) w=0
+    pole(41,2) = (0, 0, 0) w=0
+    pole(42,1) = (0, 0, 0) w=0
+    pole(42,2) = (0, 0, 0) w=0
+    pole(43,1) = (0, 0, 0) w=0
+    pole(43,2) = (0, 0, 0) w=0
+    pole(44,1) = (0, 0, 0) w=0
+    pole(44,2) = (0, 0, 0) w=0
+    pole(45,1) = (0, 0, 0) w=0
+    pole(45,2) = (0, 0, 0) w=0
+    pole(46,1) = (0, 0, 0) w=0
+    pole(46,2) = (0, 0, 0) w=0
+    pole(47,1) = (0, 0, 0) w=0
+    pole(47,2) = (0, 0, 0) w=0
+    pole(48,1) = (0, 0, 0) w=0
+    pole(48,2) = (0, 0, 0) w=0
+    pole(49,1) = (0, 0, 0) w=0
+    pole(49,2) = (0, 0, 0) w=0
+    pole(50,1) = (0, 0, 0) w=0
+    pole(50,2) = (0, 0, 0) w=0
+    pole(51,1) = (0, 0, 0) w=0
+    pole(51,2) = (0, 0, 0) w=0
+    pole(52,1) = (0, 0, 0) w=0
+    pole(52,2) = (0, 0, 0) w=0
+    pole(53,1) = (0, 0, 0) w=0
+    pole(53,2) = (0, 0, 0) w=0
+    pole(54,1) = (0, 0, 0) w=0
+    pole(54,2) = (0, 0, 0) w=0
+    pole(55,1) = (0, 0, 0) w=0
+    pole(55,2) = (0, 0, 0) w=0
+    pole(56,1) = (0, 0, 0) w=0
+    pole(56,2) = (0, 0, 0) w=0
+    pole(57,1) = (0, 0, 0) w=0
+    pole(57,2) = (0, 0, 0) w=0
+    pole(58,1) = (0, 0, 0) w=0
+    pole(58,2) = (0, 0, 0) w=0
+    pole(59,1) = (0, 0, 0) w=0
+    pole(59,2) = (0, 0, 0) w=0
+    pole(60,1) = (0, 0, 0) w=0
+    pole(60,2) = (0, 0, 0) w=0
+    pole(61,1) = (0, 0, 0) w=0
+    pole(61,2) = (0, 0, 0) w=0
+    pole(62,1) = (0, 0, 0) w=0
+    pole(62,2) = (0, 0, 0) w=0
+    pole(63,1) = (0, 0, 0) w=0
+    pole(63,2) = (0, 0, 0) w=0
+    pole(64,1) = (0, 0, 0) w=0
+    pole(64,2) = (0, 0, 0) w=0
+    pole(65,1) = (0, 0, 0) w=0
+    pole(65,2) = (0, 0, 0) w=0
+    pole(66,1) = (0, 0, 0) w=0
+    pole(66,2) = (0, 0, 0) w=0
+    pole(67,1) = (0, 0, 0) w=0
+    pole(67,2) = (0, 0, 0) w=0
+    pole(68,1) = (0, 0, 0) w=0
+    pole(68,2) = (0, 0, 0) w=0
+    pole(69,1) = (0, 0, 0) w=0
+    pole(69,2) = (0, 0, 0) w=0
+    pole(70,1) = (0, 0, 0) w=0
+    pole(70,2) = (0, 0, 0) w=0
+    pole(71,1) = (0, 0, 0) w=0
+    pole(71,2) = (0, 0, 0) w=0
+    pole(72,1) = (0, 0, 0) w=0
+    pole(72,2) = (0, 0, 0) w=0
+    pole(73,1) = (0, 0, 0) w=0
+    pole(73,2) = (0, 0, 0) w=0
+    pole(74,1) = (0, 0, 0) w=0
+    pole(74,2) = (0, 0, 0) w=0
+    pole(75,1) = (0, 0, 0) w=0
+    pole(75,2) = (0, 0, 0) w=0
+    pole(76,1) = (0, 0, 0) w=0
+    pole(76,2) = (0, 0, 0) w=0
+    pole(77,1) = (0, 0, 0) w=0
+    pole(77,2) = (0, 0, 0) w=0
+    pole(78,1) = (0, 0, 0) w=0
+    pole(78,2) = (0, 0, 0) w=0
+    pole(79,1) = (0, 0, 0) w=0
+    pole(79,2) = (0, 0, 0) w=0
+  THREW Standard_Failure: Geom_BSplineSurface: Weights values too small
+== mode 51 returned normally ==
+exit=0
+================================================================
+== mode 52 ==
+  Convert_ConeToBSplineSurface(semiAngle=0.3, refRadius=5, u1=0, u2=-100, v1=0, v2=10) deltaU=-100
+exit=139
+================================================================
+== mode 53 ==
+  Convert_ConeToBSplineSurface(semiAngle=0.3, refRadius=5, u1=0, u2=3.14159, v1=5, v2=5) deltaU=3.14159
+    conv: NbUPoles=5 NbVPoles=2 NbUKnots=3 NbVKnots=2 UDeg=2 VDeg=1
+    uknot[1] = 0 mult=3
+    uknot[2] = 1.5708 mult=2
+    uknot[3] = 3.14159 mult=3
+    vknot[1] = 5 mult=2
+    vknot[2] = 5 mult=2
+    pole(1,1) = (6.4776, 0, 4.77668) w=1
+    pole(1,2) = (6.4776, 0, 4.77668) w=1
+    pole(2,1) = (6.4776, 6.4776, 4.77668) w=0.707107
+    pole(2,2) = (6.4776, 6.4776, 4.77668) w=0.707107
+    pole(3,1) = (3.96639e-16, 6.4776, 4.77668) w=1
+    pole(3,2) = (3.96639e-16, 6.4776, 4.77668) w=1
+    pole(4,1) = (-6.4776, 6.4776, 4.77668) w=0.707107
+    pole(4,2) = (-6.4776, 6.4776, 4.77668) w=0.707107
+    pole(5,1) = (-6.4776, 7.93277e-16, 4.77668) w=1
+    pole(5,2) = (-6.4776, 7.93277e-16, 4.77668) w=1
+  THREW Standard_Failure: Geom_BSplineSurface: VKnots interval values too close
+== mode 53 returned normally ==
+exit=0
+================================================================
+== mode 54 ==
+  Convert_ConeToBSplineSurface(semiAngle=0.3, refRadius=5, u1=0, u2=7, v1=0, v2=10) deltaU=7
+    conv: NbUPoles=7 NbVPoles=2 NbUKnots=4 NbVKnots=2 UDeg=2 VDeg=1
+    uknot[1] = 0 mult=3
+    uknot[2] = 2.33333 mult=2
+    uknot[3] = 4.66667 mult=2
+    uknot[4] = 7 mult=3
+    vknot[1] = 0 mult=2
+    vknot[2] = 10 mult=2
+    pole(1,1) = (5, 0, 0) w=1
+    pole(1,2) = (7.9552, 0, 9.55336) w=1
+    pole(2,1) = (5, 11.6913, 0) w=0.393219
+    pole(2,2) = (7.9552, 18.6013, 9.55336) w=0.393219
+    pole(3,1) = (-3.45379, 3.61543, 0) w=1
+    pole(3,2) = (-5.49512, 5.75229, 9.55336) w=1
+    pole(4,1) = (-11.9076, -4.46041, 0) w=0.393219
+    pole(4,2) = (-18.9454, -7.09669, 9.55336) w=0.393219
+    pole(5,1) = (-0.228532, -4.99477, 0) w=1
+    pole(5,2) = (-0.363604, -7.94689, 9.55336) w=1
+    pole(6,1) = (11.4505, -5.52914, 0) w=0.393219
+    pole(6,2) = (18.2182, -8.79709, 9.55336) w=0.393219
+    pole(7,1) = (3.76951, 3.28493, 0) w=1
+    pole(7,2) = (5.99744, 5.22646, 9.55336) w=1
+  RESULT: non-null surface
+== mode 54 returned normally ==
+exit=0
+================================================================
+== mode 55 ==
+  Convert_ConeToBSplineSurface(semiAngle=0.3, refRadius=5, u1=6.28319, u2=0, v1=0, v2=10) deltaU=-6.28319
+exit=139
+================================================================
+== mode 56 ==
+  Convert_ConeToBSplineSurface(semiAngle=0.3, refRadius=5, u1=3.14159, u2=0, v1=0, v2=10) deltaU=-3.14159
+    conv: NbUPoles=1 NbVPoles=2 NbUKnots=1 NbVKnots=2 UDeg=2 VDeg=1
+    uknot[1] = nan mult=4
+    vknot[1] = 0 mult=2
+    vknot[2] = 10 mult=2
+    pole(1,1) = (-5, 6.12323e-16, 0) w=1
+    pole(1,2) = (-7.9552, 9.74231e-16, 9.55336) w=1
+  THREW Standard_Failure: Geom_BSplineSurface: at least 2 poles required
+== mode 56 returned normally ==
+exit=0
+================================================================
+== mode 57 ==
+  Convert_CylinderToBSplineSurface(r=5, u1=0, u2=11, v1=0, v2=10) deltaU=11
+    arrays are sized for TheNbUPoles=9 / TheNbUKnots=5 at construction
+    conv: NbUPoles=11 NbVPoles=2 NbUKnots=6 NbVKnots=2 UDeg=2 VDeg=1
+    uknot[1] = 0 mult=3
+    uknot[2] = 2.2 mult=2
+    uknot[3] = 4.4 mult=2
+    uknot[4] = 6.6 mult=2
+    uknot[5] = 8.8 mult=2
+    uknot[6] = 11 mult=3
+    vknot[1] = 0 mult=2
+    vknot[2] = 10 mult=2
+    pole(1,1) = (5, 0, 0) w=1
+    pole(1,2) = (5, 0, 10) w=1
+    pole(2,1) = (5, 9.8238, 0) w=0.453596
+    pole(2,2) = (5, 9.8238, 10) w=0.453596
+    pole(3,1) = (-2.94251, 4.04248, 0) w=1
+    pole(3,2) = (-2.94251, 4.04248, 10) w=1
+    pole(4,1) = (-10.885, -1.73883, 0) w=0.453596
+    pole(4,2) = (-10.885, -1.73883, 10) w=0.453596
+    pole(5,1) = (-1.53666, -4.75801, 0) w=1
+    pole(5,2) = (-1.53666, -4.75801, 10) w=1
+    pole(6,1) = (7.81168, -7.77719, 0) w=0.453596
+    pole(6,2) = (7.81168, -7.77719, 10) w=0.453596
+    pole(7,1) = (4.75116, 1.55771, 0) w=1
+    pole(7,2) = (4.75116, 1.55771, 10) w=1
+    pole(8,1) = (1.69064, 10.8926, 0) w=0.453596
+    pole(8,2) = (1.69064, 10.8926, 10) w=0.453596
+    pole(9,1) = (-4.05547, 2.92459, 0) w=1
+    pole(9,2) = (-4.05547, 2.92459, 10) w=1
+    pole(10,1) = (0, 0, 0) w=0
+    pole(10,2) = (0, 0, 0) w=0
+    pole(11,1) = (0, 0, 0) w=0
+    pole(11,2) = (0, 0, 0) w=0
+  THREW Standard_Failure: Geom_BSplineSurface: Weights values too small
+== mode 57 returned normally ==
+exit=0
+================================================================
+== mode 58 ==
+  Convert_ConeToBSplineSurface(semiAngle=0.3, refRadius=5, u1=0, u2=11, v1=0, v2=10) deltaU=11
+    conv: NbUPoles=11 NbVPoles=2 NbUKnots=6 NbVKnots=2 UDeg=2 VDeg=1
+    uknot[1] = 0 mult=3
+    uknot[2] = 2.2 mult=2
+    uknot[3] = 4.4 mult=2
+    uknot[4] = 6.6 mult=2
+    uknot[5] = 8.8 mult=2
+    uknot[6] = 11 mult=3
+    vknot[1] = 0 mult=2
+    vknot[2] = 10 mult=2
+    pole(1,1) = (5, 0, 0) w=1
+    pole(1,2) = (7.9552, 0, 9.55336) w=1
+    pole(2,1) = (5, 9.8238, 0) w=0.453596
+    pole(2,2) = (7.9552, 15.6301, 9.55336) w=0.453596
+    pole(3,1) = (-2.94251, 4.04248, 0) w=1
+    pole(3,2) = (-4.68165, 6.43175, 9.55336) w=1
+    pole(4,1) = (-10.885, -1.73883, 0) w=0.453596
+    pole(4,2) = (-17.3185, -2.76656, 9.55336) w=0.453596
+    pole(5,1) = (-1.53666, -4.75801, 0) w=1
+    pole(5,2) = (-2.4449, -7.57019, 9.55336) w=1
+    pole(6,1) = (7.81168, -7.77719, 0) w=0.453596
+    pole(6,2) = (12.4287, -12.3738, 9.55336) w=0.453596
+    pole(7,1) = (4.75116, 1.55771, 0) w=1
+    pole(7,2) = (7.55929, 2.47837, 9.55336) w=1
+    pole(8,1) = (1.69064, 10.8926, 0) w=0.453596
+    pole(8,2) = (2.68988, 17.3306, 9.55336) w=0.453596
+    pole(9,1) = (-4.05547, 2.92459, 0) w=1
+    pole(9,2) = (-6.45241, 4.65313, 9.55336) w=1
+    pole(10,1) = (0, 0, 0) w=0
+    pole(10,2) = (0, 0, 0) w=0
+    pole(11,1) = (0, 0, 0) w=0
+    pole(11,2) = (0, 0, 0) w=0
+  THREW Standard_Failure: Geom_BSplineSurface: Weights values too small
+== mode 58 returned normally ==
+exit=0
+================================================================
+== mode 60 ==
+  GCPnts_TangentialDeflection(BRepAdaptor_Curve(circular edge), ang=0.1, curv=0.1, minPts=2)
+  RESULT: NbPoints = 33
+  Value(1) = (10, 0, 0)  Parameter(1) = 0
+  Parameter(33) = 3.14159 (last)
+== mode 60 returned normally ==
+exit=0
+================================================================
+== mode 61 ==
+  GCPnts_TangentialDeflection(BRepAdaptor_Curve(circular edge), ang=0.1, curv=0, minPts=2)
+  RESULT: NbPoints = 1000001
+  Value(1) = (10, 0, 0)  Parameter(1) = 0
+  Parameter(1000001) = 3.14159 (last)
+  the bridge truncates to maxPoints=10000: Parameter(10000) = 0.0314128, i.e. 1.00% of the
+  arc, returned to Swift as a sampling of the whole edge with no error signal
+== mode 61 returned normally ==
+exit=0
+================================================================
+== mode 62 ==
+  GCPnts_TangentialDeflection(BRepAdaptor_Curve(circular edge), ang=0, curv=0.1, minPts=2)
+  RESULT: NbPoints = 1000001
+  Value(1) = (10, 0, 0)  Parameter(1) = 0
+  Parameter(1000001) = 3.14159 (last)
+  the bridge truncates to maxPoints=10000: Parameter(10000) = 0.0314128, i.e. 1.00% of the
+  arc, returned to Swift as a sampling of the whole edge with no error signal
+== mode 62 returned normally ==
+exit=0
+================================================================
+== mode 63 ==
+  GCPnts_TangentialDeflection(BRepAdaptor_Curve(circular edge), ang=0, curv=0, minPts=2)
+  RESULT: NbPoints = 1000001
+  Value(1) = (10, 0, 0)  Parameter(1) = 0
+  Parameter(1000001) = 3.14159 (last)
+  the bridge truncates to maxPoints=10000: Parameter(10000) = 0.0314128, i.e. 1.00% of the
+  arc, returned to Swift as a sampling of the whole edge with no error signal
+== mode 63 returned normally ==
+exit=0
+================================================================
+== mode 64 ==
+  GCPnts_TangentialDeflection(BRepAdaptor_Curve(circular edge), ang=-1, curv=-1, minPts=2)
+  RESULT: NbPoints = 2
+  Value(1) = (10, 0, 0)  Parameter(1) = 0
+  Parameter(2) = 3.14159 (last)
+== mode 64 returned normally ==
+exit=0
+================================================================
+== mode 65 ==
+  GCPnts_TangentialDeflection(BRepAdaptor_Curve(circular edge), ang=0.1, curv=1e-12, minPts=2)
+  RESULT: NbPoints = 1000001
+  Value(1) = (10, 0, 0)  Parameter(1) = 0
+  Parameter(1000001) = 3.14159 (last)
+  the bridge truncates to maxPoints=10000: Parameter(10000) = 0.0314128, i.e. 1.00% of the
+  arc, returned to Swift as a sampling of the whole edge with no error signal
+== mode 65 returned normally ==
+exit=0
+================================================================
+== mode 70 ==
+  GeomFill_Stretch(four NCollection_Array1<gp_Pnt> of length 4)
+  RESULT: NbUPoles=4 NbVPoles=4 isRational=0
+== mode 70 returned normally ==
+exit=0
+================================================================
+== mode 71 ==
+  GeomFill_Stretch(four NCollection_Array1<gp_Pnt> of length 2)
+  RESULT: NbUPoles=2 NbVPoles=2 isRational=0
+== mode 71 returned normally ==
+exit=0
+================================================================
+== mode 72 ==
+  GeomFill_Stretch(four NCollection_Array1<gp_Pnt> of length 1)
+  RESULT: NbUPoles=1 NbVPoles=1 isRational=0
+== mode 72 returned normally ==
+exit=0
+================================================================
+== mode 73 ==
+  GeomFill_Stretch(four NCollection_Array1<gp_Pnt> of length 0)
+  RESULT: NbUPoles=0 NbVPoles=0 isRational=0
+== mode 73 returned normally ==
+exit=0
+================================================================
+== mode 74 ==
+  GeomFill_Stretch(four NCollection_Array1<gp_Pnt> of length -1)
+exit=139
+================================================================
+== mode 80 ==
+  GeomFill_Profiler::KnotsAndMults into arrays of length 2 (curves added: 1)
+    after Perform: NbKnots=2 NbPoles=3 Degree=2
+  RESULT: returned normally; knots = 0 1  mults = 3 3
+== mode 80 returned normally ==
+exit=0
+================================================================
+== mode 81 ==
+  GeomFill_Profiler::KnotsAndMults into arrays of length 1 (curves added: 1)
+    after Perform: NbKnots=2 NbPoles=3 Degree=2
+  RESULT: returned normally; knots = 0  mults = 3
+== mode 81 returned normally ==
+exit=0
+================================================================
+== mode 82 ==
+  GeomFill_Profiler::KnotsAndMults into arrays of length 2 (curves added: 0)
+  THREW Standard_Failure: GeomFill_Profiler::Degree
+== mode 82 returned normally ==
+exit=0
+================================================================
+== mode 90 ==
+  GeomConvert::SurfaceToBSplineSurface(Geom_RectangularTrimmedSurface(cylinder r=5, u1=0, u2=3.14159, v1=0, v2=10))
+    the trim normalised to U [0, 3.14159] V [0, 10], deltaU = 3.14159
+  RESULT: non-null surface, NbUPoles=5 NbVPoles=2
+== mode 90 returned normally ==
+exit=0
+================================================================
+== mode 91 ==
+  GeomConvert::SurfaceToBSplineSurface(Geom_RectangularTrimmedSurface(cylinder r=5, u1=6.28319, u2=0, v1=0, v2=10))
+    the trim normalised to U [0, 6.28319] V [0, 10], deltaU = 6.28319
+  RESULT: non-null surface, NbUPoles=6 NbVPoles=2
+== mode 91 returned normally ==
+exit=0
+================================================================
+== mode 92 ==
+  GeomConvert::SurfaceToBSplineSurface(Geom_RectangularTrimmedSurface(cylinder r=5, u1=3.14159, u2=0, v1=0, v2=10))
+    the trim normalised to U [3.14159, 6.28319] V [0, 10], deltaU = 3.14159
+  RESULT: non-null surface, NbUPoles=5 NbVPoles=2
+== mode 92 returned normally ==
+exit=0
+================================================================
+== mode 93 ==
+  GeomConvert::SurfaceToBSplineSurface(Geom_RectangularTrimmedSurface(cylinder r=5, u1=1, u2=1, v1=0, v2=10))
+  THREW Standard_Failure: Geom_RectangularTrimmedSurface::U1==U2
+== mode 93 returned normally ==
+exit=0
+================================================================
+== mode 95 ==
+  Geom2dConvert::CurveToBSplineCurve(trimmed Geom2d_Hyperbola(10, 5))
+    FirstParameter=-1 LastParameter=1
+  RESULT: non-null curve, NbPoles=3
+    pole[1] = (15.4308, -5.87601) w=1
+    pole[2] = (6.48054, 0) w=1.54308
+    pole[3] = (15.4308, 5.87601) w=1
+    Value(first) = (15.4308, -5.87601)
+== mode 95 returned normally ==
+exit=0
+================================================================
+== mode 96 ==
+  Geom2dConvert::CurveToBSplineCurve(UNTRIMMED Geom2d_Hyperbola(10, 5)  [bounds are -inf..+inf])
+    FirstParameter=-2e+100 LastParameter=2e+100
+  THREW Standard_Failure: 
+== mode 96 returned normally ==
+exit=0
+================================================================
+== mode 97 ==
+  Geom2dConvert::CurveToBSplineCurve(trimmed Geom2d_Hyperbola(10, 5))
+    FirstParameter=0 LastParameter=800
+  RESULT: non-null curve, NbPoles=3
+    pole[1] = (10, 0) w=1
+    pole[2] = (nan, nan) w=2.61073e+173
+    pole[3] = (nan, nan) w=1
+    Value(first) = (nan, nan)
+== mode 97 returned normally ==
+exit=0
+================================================================
+SUMMARY
+================================================================
+
+SIGSEGV, uncatchable (exit 139): modes 42, 46, 49, 52, 55, 74
+
+  42/46/49  Convert_CylinderToBSplineSurface(Cyl, U1, U2, V1, V2) with U2 - U1 <= -5*pi/3
+  52/55     Convert_ConeToBSplineSurface(C, U1, U2, V1, V2)       with U2 - U1 <= -5*pi/3
+  74        GeomFill_Stretch with four arrays of length -1 (not reachable from Swift)
+
+  Why -5*pi/3: the ctor computes nbUSpans = trunc(1.2 * deltaU / pi) + 1 and the base-class
+  arrays are sized TheNbUPoles = 9 / TheNbUKnots = 5. deltaU <= -5.23599 makes
+  1.2*deltaU/pi <= -2, so nbUSpans <= -1, myNbUPoles <= -1 and myNbUKnots <= 0. The ctor then
+  executes myUMults(myNbUKnots)++ at index 0 or below on a 1-based NCollection_Array1 and
+  Finalize() resizes to a negative length. The refusal that would have stopped this is
+  Standard_DomainError_Raise_if(... || (deltaU < 0.)) at Convert_CylinderToBSplineSurface.cxx:83
+  and Convert_ConeToBSplineSurface.cxx:94, both compiled out.
+
+  deltaU in (-5.236, 0): nbUSpans is 0 or 1, the sizes stay non-negative, and the bad result is
+  caught one layer down by Geom_BSplineSurface's own LITERAL throw (modes 43, 47, 48, 56).
+
+Heap out-of-bounds write with no crash (exit 0): modes 41, 51, 57, 58
+
+  deltaU >= 10.472 makes nbUSpans >= 5 and myNbUPoles >= 11, and ComputePoles writes
+  Poles(2i, j) / Poles(2i+1, j) up to that index into the 9x2 array before Finalize() resizes it.
+  Mode 51 reads the corruption straight back: conv.UMultiplicities() yields
+  mult=1321528401, 1076806892, 770891566 ... which are double bit patterns, not multiplicities.
+  Geom_BSplineSurface then refuses the weights, so the visible result is nullptr.
+
+Fabricated value returned as a measurement (exit 0, non-null result):
+
+  45, 54  Convert_Cylinder/ConeToBSplineSurface with deltaU = 7 (just over 2pi): a non-null
+          surface whose poles sit 12.7 from the axis of a radius-5 cylinder, self-overlapping
+          in U. The dead check's `deltaU > 2*M_PI` clause was the only refusal.
+  12, 13  Convert_HyperbolaToBSplineCurve with |U2-U1| large: sinh(UL-UF) overflows, x = inf/inf,
+          the curve comes back non-null and Value(first) is (nan, nan). NOT what the dead check
+          was about (|U2-U1| >= Epsilon(0.) holds), so this is a separate NaN route on the same
+          entry point.
+  97      the same NaN curve reached INDIRECTLY, through
+          Geom2dConvert::CurveToBSplineCurve(Geom2d_TrimmedCurve(hyperbola, 0, 800)).
+  61-63   GCPnts_TangentialDeflection with a zero deflection: NbPoints jumps from 33 to
+    , 65   1,000,001 on the same half-circle. The bridge truncates to maxPoints and hands Swift
+          the first 10,000, which cover Parameter <= 0.0314, i.e. 1.00% of the arc, presented as
+          a sampling of the whole edge.
+
+CONTROL, the check that is LIVE (modes 31, 32):
+
+  Convert_CircleToBSplineCurve.cxx:129 writes `throw Standard_DomainError(...)` rather than
+  Standard_DomainError_Raise_if, and no macro gates a throw statement. Both the delta == 0 and
+  the delta > 2pi cases throw, the bridge's catch (...) turns them into nullptr, and
+  Curve2D.fromCircleArc returns nil. This is why the same bridge helper is safe for circles and
+  not for ellipses.
+
+Caught one layer down by a LIVE literal throw, so not findings (exit 0, nullptr):
+
+  2, 3    Convert_EllipseToBSplineCurve delta <= 0: Geom2d_BSplineCurve refuses
+          ("at least 2 poles required" / "Knots interval values too close")
+  11      Convert_HyperbolaToBSplineCurve U1 == U2: the NaN pole is built, and the identical
+          knots are refused before it escapes
+  21      Convert_ParabolaToBSplineCurve U1 == U2: same
+  44, 53  V1 == V2 on either surface: "VKnots interval values too close"
+  93      Geom_RectangularTrimmedSurface refuses U1 == U2 with a literal throw
+
+Indirect reach, measured safe (modes 90-92):
+
+  GeomConvert::SurfaceToBSplineSurface reaches the same five-argument cylinder/cone ctor, passing
+  the trimmed surface's Bounds(). Geom_RectangularTrimmedSurface::SetTrim normalises U1 > U2 into
+  utrim1 < utrim2 (Geom_RectangularTrimmedSurface.cxx:255-266) and throws literally on U1 == U2,
+  so a negative deltaU cannot arrive by that route. Mode 91 passes u1 = 2pi, u2 = 0, the exact
+  input that SIGSEGVs through Surface.fromCylinder, and gets a normalised U [0, 2pi] and a
+  non-null surface.
+
+Reachable only with input the bridge cannot construct:
+
+  4       Convert_EllipseToBSplineCurve delta = 100: a non-null 79-pole curve over [0, 100].
+          The curve base class starts from a 0-sized array and BuildCosAndSin resizes it, so
+          there is no out-of-bounds write here. The result winds the ellipse ~16 times, which is
+          a wrong-shaped answer rather than a fabricated number.
+  70-73   GeomFill_Stretch with count 0..4: Surface.stretchFill guards count >= 2 and equal
+          lengths in Swift, so only 70/71 are reachable.
+  80-82   GeomFill_Profiler::KnotsAndMults: the bridge never calls it (only AddCurve/Perform).
+          Mode 81 shows the dead check's consequence anyway: it silently under-fills a short
+          destination array rather than crashing.
+
+================================================================================
+RE-VERIFICATION AGAINST THE PINNED ASSET
+================================================================================
+The run above used the developer checkout's Libraries/OCCT.xcframework, a locally built kernel.
+Re-run below against the PINNED v4.0.0-kernel.2 asset, downloaded fresh and checksum-verified
+against Package.swift (18b181cc27778520fa2912ac2abb38038800b70e48d2fe1cf7fedcc61414d1c3).
+
+mode 31, 32   exit=0    CONTROL: Convert_CircleToBSplineCurve's literal throw, live, both refused
+mode 42       exit=139  SIGSEGV   Convert_CylinderToBSplineSurface, u1=2pi u2=0
+mode 46       exit=139  SIGSEGV   Surface.fromCylinder, same arguments
+mode 49       exit=139  SIGSEGV   Convert_ConeToBSplineSurface
+mode 52, 55   exit=139  SIGSEGV   Surface.fromCone
+mode 43, 47   exit=0    the safe (-5.236, 0) band, caught by Geom_BSplineSurface's literal throw
+mode 45, 54   exit=0    fabricated surface, NbUPoles=7, poles 11.7 to 12.7 from a radius-5 axis
+mode 41, 51   exit=0    heap OOB write; UMultiplicities() reads back 1072693248, -1096120371,
+                        1070741845, which are double bit patterns rather than multiplicities
+mode 61, 62   exit=0    NbPoints=1000001; bridge truncates to 10000, Parameter(10000)=0.0314128,
+                        1.00% of the arc, returned as a sampling of the whole edge
+mode 90, 91   exit=0    the INDIRECT route through GeomConvert::SurfaceToBSplineSurface is safe:
+                        Geom_RectangularTrimmedSurface::SetTrim normalises U1 > U2 and throws
+                        literally on U1 == U2
+
+Identical to the first pass on every mode, including both controls and the negative result.
