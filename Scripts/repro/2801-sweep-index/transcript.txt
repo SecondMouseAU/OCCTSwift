@@ -1,0 +1,68 @@
++ clang++ -std=c++17 -ObjC++ -w -I$PINNED/OCCT.xcframework/macos-arm64/Headers -L$PINNED/OCCT.xcframework/macos-arm64 -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ /tmp/claude-501/-Users-elb-Projects-OCCTSwift/6dacf3d4-31b4-4152-b346-186edc47e3d7/scratchpad/wt-2801-sweep/Scripts/repro/2801-sweep-index/probe.mm -o /var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T//probe-2801-sweep-index
++ set +x
+----- mode 0
+mode 0
+  NbSegments()=1  (beginOnCurve is double[6])
+  BeginParam(1) ... returned 10
+  EndParam(1) ... returned 11
+mode 0 survived
+exit=0
+----- mode 1
+mode 1
+  NbSegments()=1  (beginOnCurve is double[6])
+  BeginParam(6) ... returned 0
+mode 1 survived
+exit=0
+----- mode 2
+mode 2
+  NbSegments()=1  (beginOnCurve is double[6])
+  BeginParam(7) ... returned 11
+mode 2 survived
+exit=0
+----- mode 3
+mode 3
+  NbSegments()=1  (beginOnCurve is double[6])
+  BeginParam(0) ... returned 4.24399e-314
+mode 3 survived
+exit=0
+----- mode 4
+mode 4
+  NbSegments()=1  (beginOnCurve is double[6])
+  BeginParam(100000000) ... returned -5.38862e-110
+mode 4 survived
+exit=0
+----- mode 5
+mode 5
+  NbSegments()=1  (beginOnCurve is double[6])
+  BeginParam(1000000000) ... ./run.sh: line 22: 45728 Bus error: 10              "$BIN" "$m" 2>&1
+exit=138
+----- mode 6
+mode 6
+  NbSegments()=1  (beginOnCurve is double[6])
+  BeginParam(-1000000000) ... ./run.sh: line 22: 45729 Segmentation fault: 11     "$BIN" "$m" 2>&1
+exit=139
+----- mode 7
+mode 7
+  NbSegments()=1  (beginOnCurve is double[6])
+  BeginParam(-2147483647) ... ./run.sh: line 22: 45731 Segmentation fault: 11     "$BIN" "$m" 2>&1
+exit=139
+----- mode 10
+mode 10
+  NbDeletedFaces()=0
+  DeletedFace(0) ... ./run.sh: line 22: 45734 Segmentation fault: 11     "$BIN" "$m" 2>&1
+exit=139
+----- mode 11
+mode 11
+  NbDeletedFaces()=0
+  DeletedFace(1) ... ./run.sh: line 22: 45737 Segmentation fault: 11     "$BIN" "$m" 2>&1
+exit=139
+----- mode 12
+mode 12
+  NbDeletedFaces()=0
+  DeletedFace(1000) ... ./run.sh: line 22: 45739 Segmentation fault: 11     "$BIN" "$m" 2>&1
+exit=139
+----- mode 13
+mode 13
+  NbDeletedFaces()=0
+  DeletedFace(-1) ... ./run.sh: line 22: 45741 Segmentation fault: 11     "$BIN" "$m" 2>&1
+exit=139

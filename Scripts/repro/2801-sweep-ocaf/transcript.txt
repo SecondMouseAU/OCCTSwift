@@ -1,0 +1,82 @@
++ clang++ -std=c++17 -ObjC++ -w -I$PINNED/OCCT.xcframework/macos-arm64/Headers -L$PINNED/OCCT.xcframework/macos-arm64 -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ $WT/Scripts/repro/2801-sweep-ocaf/probe.mm -o /var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T//probe-2801-sweep-ocaf
++ set +x
+----- mode 0
+mode 0
+  Lower()=1 Upper()=4
+  SetValue(1, 424242) ... returned
+  read back Value(1) = 424242
+  in-range contents after the write: [1]=424242 [2]=0 [3]=0 [4]=0
+mode 0 survived
+exit=0
+----- mode 1
+mode 1
+  Lower()=1 Upper()=4
+  SetValue(5, 424242) ... returned
+  read back Value(5) = 424242
+  in-range contents after the write: [1]=0 [2]=0 [3]=0 [4]=0
+mode 1 survived
+exit=0
+----- mode 2
+mode 2
+  Lower()=1 Upper()=4
+  SetValue(0, 424242) ... returned
+  read back Value(0) = 424242
+  in-range contents after the write: [1]=0 [2]=0 [3]=0 [4]=0
+mode 2 survived
+exit=0
+----- mode 3
+mode 3
+  Lower()=1 Upper()=4
+  SetValue(1000000, 424242) ... returned
+  read back Value(1000000) = 424242
+  in-range contents after the write: [1]=0 [2]=0 [3]=0 [4]=0
+mode 3 survived
+exit=0
+----- mode 4
+mode 4
+  Lower()=1 Upper()=4
+  SetValue(-1000000, 424242) ... ./run.sh: line 22: 53453 Segmentation fault: 11     "$BIN" "$m" 2>&1
+exit=139
+----- mode 5
+mode 5
+  Lower()=1 Upper()=4
+  SetValue(-2147483647, 424242) ... ./run.sh: line 22: 53454 Segmentation fault: 11     "$BIN" "$m" 2>&1
+exit=139
+----- mode 10
+mode 10
+  Set(label, lower=1, upper=0) ... returned
+  Lower()=1 Upper()=0
+  SetValue(1, 7) ... ./run.sh: line 22: 53456 Segmentation fault: 11     "$BIN" "$m" 2>&1
+exit=139
+----- mode 11
+mode 11
+  Set(label, lower=10, upper=1) ... ./run.sh: line 22: 53458 Segmentation fault: 11     "$BIN" "$m" 2>&1
+exit=139
+----- mode 12
+mode 12
+  Set(label, lower=0, upper=-1000000) ... ./run.sh: line 22: 53460 Segmentation fault: 11     "$BIN" "$m" 2>&1
+exit=139
+----- mode 13
+mode 13
+  Set(label, lower=2147483647, upper=-2147483648) ... returned
+  Lower()=2147483647 Upper()=-2147483648
+  SetValue(2147483647, 7) ... returned, Value(2147483647)=7
+mode 13 survived
+exit=0
+----- mode 20
+mode 20
+  Lower()=1 Upper()=4
+  SetValue(1, 3.5) ... returned, Value(1)=3.5
+mode 20 survived
+exit=0
+----- mode 21
+mode 21
+  Lower()=1 Upper()=4
+  SetValue(1000000, 3.5) ... returned, Value(1000000)=3.5
+mode 21 survived
+exit=0
+----- mode 22
+mode 22
+  Lower()=1 Upper()=4
+  SetValue(-2147483647, 3.5) ... ./run.sh: line 22: 53466 Segmentation fault: 11     "$BIN" "$m" 2>&1
+exit=139
