@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Full multi-result curve-surface intersection using GeomAPI_IntCS.

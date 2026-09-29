@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 
 /// The edges of a chosen set of face occurrences, indexed so a boundary edge can be tested for
 /// membership by `TopoDS_Shape::IsSame`.

@@ -17,6 +17,17 @@ audit rather than being guessed:
 A construction whose arguments are all numeric literals is exempt: its outcome is fixed at compile
 time and visible in the line itself, so gp_Dir(0, 0, 1) is not a hazard the caller can trip.
 
+This gate deliberately does NOT know which of those checks the pinned kernel actually contains, and
+the decision is recorded rather than left to be re-derived. Most of them it does not: the kernel is
+built Release, Release defines No_Exception, and every <Exception>_Raise_if in an OCCT .cxx is
+therefore empty, so Geom_Direction's constructor returns nan where gp_Dir's identical inline check
+throws (#2331, #2801). Teaching this gate that distinction would mean it stops requiring a try where
+the check is compiled out, which removes protection on the strength of a build flag that can change
+and makes the verdict depend on a derived map of a source tree CI does not check out. The advice
+around the gate is what changed instead: a try is necessary and NOT sufficient, and the value must be
+guarded before the call. See okf/policies/occt-validation-is-compiled-out.md, and
+Scripts/census-compiled-out-validation.py for the measurement.
+
 The unwind boundary is the bridge's exported entry point, not each function, so the check follows
 the call chain rather than stopping at the enclosing body. An exported OCCT* function must catch
 for itself. A file-local helper is covered when EVERY call of it, in the file that defines it, is

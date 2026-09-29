@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 
 /// Image pixel map wrapping OCCT Image_AlienPixMap.
 ///

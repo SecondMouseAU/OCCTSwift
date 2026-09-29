@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import simd
 
 // MARK: - Bill of materials + balloon callouts (#87, v0.150)
@@ -134,7 +134,7 @@ public struct BillOfMaterials: Sendable, Hashable, Codable {
                 item.description,
                 String(item.quantity),
                 item.material ?? "",
-                item.mass.map { String(format: "%.2f", $0) } ?? "",
+                item.mass.map { String(cFormat: "%.2f", $0) } ?? "",
                 item.notes ?? "",
             ]
             renderRow(

@@ -1,18 +1,6 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
-
-// The platform C library, named because this file uses it directly (free, sin, cos, sqrt and
-// the like). `import Foundation` happens to re-export it on Apple platforms, so these were in
-// scope by accident rather than by declaration; FoundationEssentials does not, which is how
-// #2761 found them. Naming it here is correct independently of that work.
-#if canImport(Darwin)
-    import Darwin
-#elseif canImport(WASILibc)
-    import WASILibc
-#elseif canImport(Glibc)
-    import Glibc
-#endif
 
 /// XDE Document for loading STEP files with assembly structure,
 /// names, colors, and materials.
@@ -1698,20 +1686,47 @@ extension Document {
 
 // MARK: - TDataStd_ExtStringArray
 
+/// Call `body` with a C array of NUL-terminated UTF-8 copies of `values`, valid for its duration.
+///
+/// Replaces `(str as NSString).utf8String!`, which was wrong twice over. `utf8String` returns a
+/// pointer owned by the bridged `NSString` and documented as valid only "for a limited time", and
+/// nothing here retained that string: the pointers were collected into an array that outlived the
+/// `map` closure, so these calls worked only because the autorelease pool had not drained yet. That
+/// is undefined behaviour on Apple platforms, independent of wasm. It was also `NSString`, which is
+/// Objective-C bridging and does not exist off Apple platforms.
+///
+/// This copies into one contiguous buffer and hands out interior pointers, so every pointer is
+/// owned by a buffer that provably outlives `body` and nothing depends on an autorelease pool.
+private func withCStringArray<R>(
+    _ values: [String], _ body: (UnsafePointer<UnsafePointer<CChar>>) -> R
+) -> R {
+    var flat: [CChar] = []
+    var offsets: [Int] = []
+    offsets.reserveCapacity(values.count)
+    for value in values {
+        offsets.append(flat.count)
+        // utf8CString includes the terminating NUL, which is what the bridge expects.
+        flat.append(contentsOf: value.utf8CString)
+    }
+    return flat.withUnsafeBufferPointer { base in
+        // An empty `values` gives an empty `flat`, whose baseAddress may be nil; the pointer array
+        // is then empty too and the bridge is handed a count of zero.
+        let start = base.baseAddress ?? UnsafePointer<CChar>(bitPattern: -1)!
+        let pointers = offsets.map { UnsafePointer<CChar>(start + $0) }
+        return pointers.withUnsafeBufferPointer { buf in
+            body(buf.baseAddress ?? UnsafePointer<UnsafePointer<CChar>>(bitPattern: -1)!)
+        }
+    }
+}
+
 extension Document {
     /// Set an extended string array attribute on a label.
     public func setExtStringArray(tag: Int, values: [String]) -> Bool {
-        var result = false
         let count = values.count
-        let cStrings: [UnsafePointer<CChar>] = values.map { str in
-            (str as NSString).utf8String!
+        return withCStringArray(values) { pointers in
+            OCCTDocumentSetExtStringArray(
+                handle, Int32(tag), 1, Int32(count), pointers, Int32(count))
         }
-        cStrings.withUnsafeBufferPointer { buf in
-            result = OCCTDocumentSetExtStringArray(
-                handle, Int32(tag), 1, Int32(count),
-                buf.baseAddress!, Int32(count))
-        }
-        return result
     }
 
     /// Get an extended string array element by index (1-based).
@@ -1740,17 +1755,10 @@ extension Document {
 extension Document {
     /// Set an extended string list attribute on a label.
     public func setExtStringList(tag: Int, values: [String]) -> Bool {
-        var result = false
         let count = values.count
-        let cStrings: [UnsafePointer<CChar>] = values.map { str in
-            (str as NSString).utf8String!
+        return withCStringArray(values) { pointers in
+            OCCTDocumentSetExtStringList(handle, Int32(tag), pointers, Int32(count))
         }
-        cStrings.withUnsafeBufferPointer { buf in
-            result = OCCTDocumentSetExtStringList(
-                handle, Int32(tag),
-                buf.baseAddress!, Int32(count))
-        }
-        return result
     }
 
     /// Get the count of an extended string list.
