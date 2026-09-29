@@ -1809,11 +1809,32 @@ extension Surface {
     /// Uses GeomAPI_ExtremaSurfaceSurface to find the closest pair of points
     /// between two surfaces within the given UV bounds.
     ///
+    /// ```swift
+    /// let a = Surface.sphere(center: SIMD3(0, 0, 0), radius: 3)!
+    /// let b = Surface.sphere(center: SIMD3(20, 0, 0), radius: 5)!
+    /// a.extrema(to: b)?.distance      // 12.0, and point1 / point2 are the touching pair
+    ///
+    /// // Parallel surfaces have no discrete nearest pair, so this refuses (#2840):
+    /// let p1 = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))!
+    /// let p2 = Surface.plane(origin: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1))!
+    /// p1.extrema(to: p2)              // nil, even though the gap is a well-defined 5
+    /// ```
+    ///
+    /// **Parallel surfaces return `nil` (#2840), and the gap they do not report is real.** Where the
+    /// two surfaces are everywhere equidistant, OCCT reports a distance and no point pair:
+    /// `Extrema_ExtSS`'s parallel branch fills its distance sequence and leaves its two point
+    /// sequences empty, while `NbExtrema()` counts the distances, so the count says there is a
+    /// nearest pair to read and there is not. Reading it faults uncatchably on this build, which is
+    /// measured in `Scripts/repro/2831/probe.mm`, so this refuses instead. ``SurfaceExtremaResult``
+    /// has no shape for a distance without points; #2840 holds both the kernel fix and that API
+    /// decision.
+    ///
     /// - Parameters:
     ///   - other: The other surface
     ///   - uvBounds1: UV bounds on this surface (uMin, uMax, vMin, vMax). Uses full surface bounds if nil.
     ///   - uvBounds2: UV bounds on the other surface. Uses full surface bounds if nil.
-    /// - Returns: The extrema result, or nil if computation fails
+    /// - Returns: The extrema result, or `nil` if the computation fails, if the surfaces have no
+    ///   discrete extremum in the given bounds, or if they are parallel (#2840).
     public func extrema(
         to other: Surface,
         uvBounds1: (uMin: Double, uMax: Double, vMin: Double, vMax: Double)? = nil,
