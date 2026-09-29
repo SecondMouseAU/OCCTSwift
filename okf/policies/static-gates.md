@@ -20,7 +20,7 @@ human to adjudicate, not a verdict on the tree; CI runs only its `--self-test`, 
 could never fail and so could never signal. A census that earns a better false-positive number is
 promoted by renaming it `check-` and making it exit 1; the decision is separate from the script.
 
-The six censuses today and what each is for:
+The seven censuses today and what each is for:
 
 - `census-unmeasured-values.py` (#726): values returned as measurements that were never computed.
   A bare run is the slowest of the five, because sub-kind 4 walks a taint fixpoint per bridge
@@ -68,6 +68,20 @@ The six censuses today and what each is for:
   [helper-placement-by-reach](helper-placement-by-reach.md) predicted in writing and what
   `fillCommonPart` turned out to be. Every rule in it errs towards LIVE, because its consumer is a
   deletion pass: a false dead costs a build break and a false live costs a line.
+- `census-compiled-out-validation.py` (#2801): bridge `try`/`catch` protection resting on an OCCT
+  validity check that `No_Exception` removed from the kernel, and result accessors read without the
+  `IsDone` test that is now the only guard left. It reports rather than gates because the verdict on
+  each site is whether the `catch` had another reason to exist, which is a reading. Two things about
+  it are worth copying. It reads a **committed derived map**, `Scripts/occt-raise-if-map.txt`, on the
+  `census-doc-occt-attribution.py` precedent: the facts it needs live in `Libraries/occt-src`, which
+  nothing checks out, so `--write-table` derives them once and `--reverify-table` re-derives and
+  diffs at an OCCT version bump, skipping without the tree unless `--require-occt-src`. And its
+  plausibility assertions earned their place before it reported anything: a hand-written whitelist of
+  "inert" `gp_` value types was wrong about 8 of its 18 entries, and the assertion that the map must
+  contradict none of them rejected the run rather than producing a number built on it. The rate is in
+  [occt-validation-is-compiled-out](occt-validation-is-compiled-out.md), with the story of how its
+  first version reported 89 findings that were an artefact of reusing a gate's regex for a census's
+  question.
 
 Three gates read `Scripts/patches/` and `Scripts/patches-wasi/` rather than `Sources/`, and all
 three for the same reason: `check-patch-deletes-guarded-symbol.py` (#2058), which fails when a
@@ -250,7 +264,7 @@ Three of its design choices are worth carrying to any detector that shells out t
 
 ## Every detector proves it is not blind
 
-Fourteen of the fifteen gates, all six censuses, the merge-history audit and the release check
+Fourteen of the fifteen gates, all seven censuses, the merge-history audit and the release check
 take `--self-test`, a fixture battery proving the *detector* catches each failure mode. Run it
 whenever you change one of these scripts. Three gate scripts were confidently wrong while
 reporting all clear (#618, #624/#630, #626), and a detector reporting "all clear" because it is
@@ -329,7 +343,7 @@ change to the ruleset.
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs thirty-seven of `gate-scripts`' thirty-eight invocations, flag for
+`Scripts/git-hooks/pre-commit` runs thirty-eight of `gate-scripts`' thirty-nine invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the

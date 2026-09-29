@@ -50,6 +50,7 @@ See [`references/`](references/index.md): OpenCASCADE upstream and licensing (LG
 - [No em-dashes, banned words in prose](policies/writing-style.md)
 - [Measure, do not assume, and verify with a second construction](policies/measure-dont-assume.md)
 - [Follow OCCT's own callers, not just its signature](policies/follow-occt-callers.md)
+- [OCCT's validity checks are compiled out of the kernel we ship](policies/occt-validation-is-compiled-out.md)
 - [Prove the test fails](policies/prove-the-test-fails.md)
 - [Search before building](policies/search-before-building.md)
 - [Helper placement is decided by reach, not by style](policies/helper-placement-by-reach.md)

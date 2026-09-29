@@ -80,7 +80,7 @@ the pinned version onto a machine with no pip or venv; see
 
 ### Static Gate Scripts
 
-Fifteen gates, six censuses and one merge-history audit, all pure Python over the repo's own text.
+Fifteen gates, seven censuses and one merge-history audit, all pure Python over the repo's own text.
 No OCCT, no build, no network, and the whole job reports in under a minute on the runner. The
 measured breakdown, and the recipe for re-deriving it rather than trusting it, are in
 [`okf/policies/static-gates.md`](okf/policies/static-gates.md): this line claimed `~3s for the lot`
@@ -117,6 +117,7 @@ python3 Scripts/census-arguments-tuple-shapes.py # CENSUS, not a gate: @Test(arg
 python3 Scripts/census-comment-staleness.py      # CENSUS, not a gate: comments naming a symbol/flag/patch that no longer resolves (#872)
 python3 Scripts/census-api-reference-rows.py     # CENSUS, not a gate: API_REFERENCE category-row entries resolving to no declaration (#1679)
 python3 Scripts/census-dead-file-statics.py      # CENSUS, not a gate: bridge `static` definitions with no use in their own file (#1628)
+python3 Scripts/census-compiled-out-validation.py # CENSUS, not a gate: bridge protection resting on an OCCT check No_Exception removed (#2801)
 python3 Scripts/check-inventory-prose.py        # every counted claim about the patch and gate inventories matches them (#1408)
 python3 Scripts/check-changelog-transcription.py # REPORT, never a gate: merges that landed with no CHANGELOG entry (#742, #2779)
 python3 Scripts/check-pinned-asset-patches.py --self-test  # RELEASE CHECK: only the self-test runs here; the real run reads the pinned asset (#2190)
@@ -376,12 +377,18 @@ the reproducer). What a bridge author needs without opening it:
   none of OCCT's own sites above it is uncatchable in-process, and so is a C++ exception that
   reaches the Swift boundary (#345), which is why every `gp_Dir`/`gp_Ax*`/`Geom_Direction`
   construction from caller doubles sits inside a `try`.
-  **A `try` is necessary and not sufficient, and `Geom_Direction` is the case that shows it
-  (#2331).** `No_Exception` is defined for OCCT's own units, so a `Raise_if` in an *out-of-line*
-  kernel member is compiled away: `Geom_Direction`'s constructor, `SetCoord` and `Crossed` all
-  return `(nan, nan, nan)` for a direction they cannot normalise and never throw, while `gp_Dir`'s
-  identical check fires because it is inline and compiles into the bridge's own unit. Guard the
-  magnitude before the call, the way `StepToGeom::MakeDirection` does.
+  **A `try` is necessary and not sufficient, and 828 of OCCT's validity checks are not in the
+  kernel at all (#2801).** `No_Exception` is defined for OCCT's own units, so every
+  `<Exception>_Raise_if` in a `.cxx` is compiled away and 462 inline ones survive. Which of the two
+  a member is, nothing in its signature or its documentation says. **And an inline check is live
+  only where the bridge itself expands it**: `gp_Ax2(P, N, Vx)` documents ConstructionError, has no
+  check of its own, and reaches one by building a `gp_Dir` inside `gp_Ax2.cxx`, so it never raises,
+  measured. `Geom_Direction` returns `(nan, nan, nan)` (#2331) and `gp_Dir` throws. The largest
+  class is `StdFail_NotDone`, 122 out-of-line against 30 inline, so **test `IsDone()` or
+  `Status()` before any `Value()`/`Shape()`/`Solid()`**, which otherwise hands back a null. Guard
+  the value before the call, keep the `try`, and read
+  [`okf/policies/occt-validation-is-compiled-out.md`](okf/policies/occt-validation-is-compiled-out.md),
+  which also records the decision to leave `BUILD_RELEASE_DISABLE_EXCEPTIONS` ON.
   **Do not read that as "the process always dies", measured #2750.** Once `occtEnsureSignals()`
   has run, which any of fourteen bridge entry points does once per process, OCCT's own
   `SegvHandler` reaches `Standard_ErrorHandler::Abort`, and the same fault therefore kills one
