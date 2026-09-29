@@ -63,6 +63,30 @@ extension SewingBuilder {
     public var nbDeletedFaces: Int { Int(OCCTSewingNbDeletedFaces(ref)) }
 
     /// Get a deleted face by index (1-based).
+    ///
+    /// Valid indices are `1...nbDeletedFaces`, which `BRepBuilderAPI_Sewing` stores as an
+    /// `NCollection_IndexedMap`: its `FindKey` requires `1 <= index <= Size()`, and OCCT's own
+    /// caller of that member walks `for (int i = 1; i <= Extent(); ++i)`. Anything outside that
+    /// range answers `nil`. A well-formed sewing usually deletes nothing, so `nbDeletedFaces` is
+    /// `0` and every index is out of range; asking for face `1` anyway used to be an uncatchable
+    /// SIGSEGV, because the bound `BRepBuilderAPI_Sewing::DeletedFace` documents is compiled out of
+    /// the kernel this package ships (#2856).
+    ///
+    /// ```swift
+    /// guard let sewing = SewingBuilder(tolerance: 1e-6),
+    ///     let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
+    /// sewing.add(box)
+    /// sewing.perform()
+    /// print(sewing.nbDeletedFaces)                             // 0 for a clean sewing
+    /// if sewing.nbDeletedFaces > 0 {
+    ///     for i in 1...sewing.nbDeletedFaces { print(sewing.deletedFace(at: i) != nil) }
+    /// }
+    /// print(sewing.deletedFace(at: sewing.nbDeletedFaces + 1) == nil)  // true, refused
+    /// ```
+    ///
+    /// - Parameter index: A 1-based index in `1...nbDeletedFaces`.
+    /// - Returns: The face the sewing dropped, or `nil` when the index is out of range or the
+    ///   entry is a null shape.
     public func deletedFace(at index: Int) -> Shape? {
         guard let r = OCCTSewingDeletedFace(ref, Int32(index)) else { return nil }
         return Shape(handle: r)

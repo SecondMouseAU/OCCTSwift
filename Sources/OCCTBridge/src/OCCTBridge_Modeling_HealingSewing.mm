@@ -1687,6 +1687,19 @@ OCCTShapeRef OCCTSewingDeletedFace(OCCTSewingRef sewing, int32_t index)
     return nullptr;
   try
   {
+    // The bound OCCTSewingIsMultipleEdge above already applies, and the one BRepBuilderAPI_Sewing's
+    // own container demands. DeletedFace's Standard_OutOfRange_Raise_if is out-of-line
+    // (BRepBuilderAPI_Sewing.cxx:2443) and so absent from the kernel we link, and it is wrong
+    // anyway: it permits index 0, which myLittleFace rejects. myLittleFace is an
+    // NCollection_IndexedMap, whose FindKey requires 1 <= index <= Size()
+    // (NCollection_IndexedMap.hxx:583); OCCT's own caller of that member,
+    // NCollection_IndexedMap::Assign at :302, walks `for (int i = 1; i <= Extent(); ++i)`, which
+    // settles the range as 1-based and inclusive of NbDeletedFaces(). FindKey's inline check is
+    // expanded inside BRepBuilderAPI_Sewing.cxx, an OCCT unit compiled -DNo_Exception, so it is
+    // compiled out at that depth too: without this test every index is an uncatchable SIGSEGV on a
+    // sewing that deleted nothing, which is the normal outcome (#2856).
+    if (index < 1 || index > (int32_t)sewing->sewing.NbDeletedFaces())
+      return nullptr;
     const TopoDS_Face& f = sewing->sewing.DeletedFace(index);
     if (f.IsNull())
       return nullptr;

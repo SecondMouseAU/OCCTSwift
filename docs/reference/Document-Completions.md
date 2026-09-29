@@ -635,13 +635,21 @@ Get a deleted face by 1-based index.
 public func deletedFace(at index: Int) -> Shape?
 ```
 
-- **Parameters:** `index`, 1-based index.
-- **Returns:** The deleted face shape, or `nil` if the index is out of range.
+- **Parameters:** `index`, 1-based index in `1...nbDeletedFaces`.
+- **Returns:** The deleted face shape, or `nil` if the index is out of range. That bound is the
+  bridge's own test. `BRepBuilderAPI_Sewing::DeletedFace`'s `Standard_OutOfRange_Raise_if` is
+  out-of-line, so it is absent from the kernel this package links, and the inline check on the
+  `NCollection_IndexedMap` beneath it is expanded inside that same OCCT `.cxx` and compiled out
+  along with it. Until #2856 every index was an uncatchable SIGSEGV on a sewing that deleted
+  nothing, which is the normal outcome for a well-formed input.
 - **OCCT:** `BRepBuilderAPI_Sewing::DeletedFace`.
 - **Example:**
   ```swift
-  for i in 1...sewer.nbDeletedFaces {
-      if let df = sewer.deletedFace(at: i) { print(df.typeName ?? "") }
+  // nbDeletedFaces is 0 for a clean sewing, so guard the range before forming it.
+  if sewer.nbDeletedFaces > 0 {
+      for i in 1...sewer.nbDeletedFaces {
+          if let df = sewer.deletedFace(at: i) { print(df.typeName ?? "") }
+      }
   }
   ```
 

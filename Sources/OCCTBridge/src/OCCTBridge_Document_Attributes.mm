@@ -743,6 +743,12 @@ bool OCCTDocumentInitIntegerArray(OCCTDocumentRef doc,
     TDF_Label label = doc->getLabel(labelId);
     if (label.IsNull())
       return false;
+    // TDataStd_IntegerArray::Init's Standard_RangeError_Raise_if(upper < lower) is out-of-line in
+    // TDataStd_IntegerArray.cxx, so it is absent from the kernel we link and Set() builds an
+    // NCollection_HArray1 with a wrapped size instead of refusing (#2855, mode 11: lower 10,
+    // upper 1 is an uncatchable SIGSEGV inside Set itself).
+    if (upper < lower)
+      return false;
     TDataStd_IntegerArray::Set(label, lower, upper);
     return true;
   }
@@ -767,6 +773,14 @@ bool OCCTDocumentSetIntegerArrayValue(OCCTDocumentRef doc,
       return false;
     Handle(TDataStd_IntegerArray) attr;
     if (!label.FindAttribute(TDataStd_IntegerArray::GetID(), attr))
+      return false;
+    // The same bound OCCTDocumentGetIntegerArrayValue tests below. TDataStd_IntegerArray::SetValue
+    // checks nothing itself and forwards to NCollection_Array1::SetValue, whose inline
+    // Standard_OutOfRange_Raise_if is expanded inside TDataStd_IntegerArray.cxx, an OCCT unit
+    // compiled -DNo_Exception, so it is compiled out at that depth. Without this test an
+    // out-of-range index is a silent heap write that returns true (#2855, mode 3: ~4 MB past a
+    // four-element buffer).
+    if (index < attr->Lower() || index > attr->Upper())
       return false;
     attr->SetValue(index, value);
     return true;
@@ -840,6 +854,10 @@ bool OCCTDocumentInitRealArray(OCCTDocumentRef doc, int64_t labelId, int32_t low
     TDF_Label label = doc->getLabel(labelId);
     if (label.IsNull())
       return false;
+    // TDataStd_RealArray::Init carries the same out-of-line, and therefore absent,
+    // Standard_RangeError_Raise_if(upper < lower) as its integer sibling (#2855).
+    if (upper < lower)
+      return false;
     TDataStd_RealArray::Set(label, lower, upper);
     return true;
   }
@@ -864,6 +882,11 @@ bool OCCTDocumentSetRealArrayValue(OCCTDocumentRef doc,
       return false;
     Handle(TDataStd_RealArray) attr;
     if (!label.FindAttribute(TDataStd_RealArray::GetID(), attr))
+      return false;
+    // The same bound OCCTDocumentGetRealArrayValue tests below, and for the same reason as the
+    // integer setter above: every check between here and myPointer[aPos] is compiled out (#2855,
+    // mode 21).
+    if (index < attr->Lower() || index > attr->Upper())
       return false;
     attr->SetValue(index, value);
     return true;
