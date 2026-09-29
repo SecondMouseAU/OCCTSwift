@@ -606,8 +606,12 @@ def main():
             print(message, file=sys.stderr)
             if not args.require_pinned_asset:
                 print("  --reverify-headers and --write-manifest describe the PINNED kernel's "
-                      "enums, so they require a proven asset. Run `swift package resolve` and "
-                      "re-run.", file=sys.stderr)
+                      "enums, so they require a proven asset. Either run `swift package resolve` "
+                      "and re-run, which puts the pinned xcframework under .build/artifacts/ "
+                      "where this resolves it, or point --asset DIR at an xcframework that can "
+                      "itself be proven: keep OCCT.xcframework.zip beside it, or use a path "
+                      ".build/workspace-state.json records. --asset alone does not make an asset "
+                      "pinned, it only chooses which one is asked about.", file=sys.stderr)
             return 2
         headers = os.path.join(ident.path, identity_helper.DEFAULT_SLICE, "Headers")
 

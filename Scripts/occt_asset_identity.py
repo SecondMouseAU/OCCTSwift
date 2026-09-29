@@ -91,10 +91,32 @@ SLICE_ARCHIVES = {
     "ios-arm64-simulator": "libOCCT-sim.a",
 }
 
+# These two read `Package.swift`, which is this repo's own file in a shape `swift build` will not
+# reformat, so the regexes stay regexes rather than becoming a Swift parser. What matters is not that
+# they are clever but that a regex which silently stopped matching would make **every** asset
+# `unverifiable` while reading as caution, which is the same failure class as a gate's floor: an
+# answer about a population that was never examined. So `identify()` checks that they matched at all
+# and names `Package.swift` when they did not, and `self_test()` case 2 runs them against the real
+# manifest on every PR. That pair is cheaper than a parser and catches more: a reformatting this
+# regex could not survive would fail loudly at the manifest rather than quietly at the asset.
 PIN_URL_RE = re.compile(
     r'url:\s*"https://[^"]*/releases/download/([^/]+)/OCCT\.xcframework\.zip"'
 )
 PIN_SUM_RE = re.compile(r'checksum:\s*"([0-9a-f]{64})"')
+
+MANIFEST_UNREADABLE = (
+    "Package.swift is present but its binaryTarget pin did not parse in full: tag=%s checksum=%s. "
+    "This is a finding about the MANIFEST rather than about the asset at %s, and it is reported "
+    "instead of a verdict because both halves are missing from what a verdict would say: with no "
+    "checksum nothing can be compared, and with no tag a PINNED asset would be named after nothing "
+    "and keyed for acknowledgement on its archive hash instead of on the pin. PIN_URL_RE and "
+    "PIN_SUM_RE in Scripts/occt_asset_identity.py read the `url:` and `checksum:` lines; a "
+    "reformatted manifest needs them updated."
+)
+MANIFEST_MISSING = (
+    "No Package.swift at %s, so there is no pin to compare anything against and the asset at %s "
+    "cannot be shown to be one."
+)
 
 PINNED = "pinned"
 NOT_PINNED = "not-pinned"
@@ -273,7 +295,30 @@ def identify(repo: str = ".", explicit: str | None = None, slice_dir: str = DEFA
     identity = AssetIdentity(path, origin, UNVERIFIABLE, "", tag, checksum, sha, size,
                              tuple(looked))
 
+    # 0. Did the pin parse at all? Without this, a `Package.swift` the regexes stopped matching sends
+    #    every asset down branch 3 as `unverifiable`, or worse down branch 2 as NOT-PINNED with a
+    #    message blaming a stale `.build`, which is a positive disproof drawn from a value never read.
+    #    Name the manifest instead: `--require-pinned-asset` then refuses with the real cause.
+    if not (tag and checksum):
+        manifest = os.path.join(repo, "Package.swift")
+        identity.verdict = UNVERIFIABLE
+        identity.reason = (
+            MANIFEST_UNREADABLE % (tag or "unparsed", checksum or "unparsed", path)
+            if os.path.isfile(manifest)
+            else MANIFEST_MISSING % (manifest, path)
+        )
+        return identity
+
     # 1. A zip beside it is the direct comparison, and the only one that survives without SwiftPM.
+    #    Beside it, and nowhere else, deliberately: `docs/guides/building-occt.md` builds the release
+    #    asset with `cd Libraries && zip -r -y -q OCCT.xcframework.zip OCCT.xcframework`, so the zip a
+    #    release step hashes is this repo's documented sibling, and extracting a downloaded zip in
+    #    place puts it in the same relation. Searching upward, or taking a `--zip` flag, would add
+    #    paths no procedure here produces while widening what counts as proof of the pin, which is the
+    #    one verdict that must not be reachable by accident. The two locations a zip is NOT beside the
+    #    asset are both already covered: SwiftPM's own download is settled by branch 2's record, which
+    #    is stronger, and an unrelated layout is `unverifiable`, which is a real answer and the whole
+    #    of #2818. A `--zip` flag is the fix IF a workflow ever needs it; none does today.
     zip_path = os.path.join(os.path.dirname(os.path.abspath(path)), "OCCT.xcframework.zip")
     if os.path.isfile(zip_path) and checksum:
         actual = sha256_file(zip_path)
@@ -536,6 +581,41 @@ def self_test(repo: str = REPO_ROOT) -> list[str]:
     if "not shown to be" in "\n".join(clean.banner()):
         failures.append("a proven asset's banner carries a caveat it does not need")
 
+    # 10b. #2833's review of the pin regexes. The answer is not a cleverer regex but a check that
+    #      they matched at all: a `Package.swift` these two stop reading must produce a finding about
+    #      the MANIFEST, not a quiet `unverifiable` about the asset, and above all not the NOT-PINNED
+    #      "your .build predates the repin" that branch 2 used to reach with a checksum it never read.
+    #      That second half is the one worth the fixture: it is a positive disproof drawn from None.
+    for label, manifest_text in (("no checksum:", 'url: "https://h/releases/download/v9/'
+                                                  'OCCT.xcframework.zip"\n'),
+                                 ("no url:", 'checksum: "%s"\n' % good),
+                                 ("reformatted", 'url:"https://h/x.zip"\nchecksum:"%s"\n' % good)):
+        with tempfile.TemporaryDirectory() as root:
+            asset = scaffold(root, pin_sum=good)
+            with open(os.path.join(root, "Package.swift"), "w") as fh:
+                fh.write(manifest_text)
+            os.makedirs(os.path.join(root, ".build"), exist_ok=True)
+            with open(os.path.join(root, WORKSPACE_STATE), "w") as fh:
+                json.dump({"version": 7, "object": {"artifacts": [
+                    {"path": asset, "source": {
+                        "type": "remote", "checksum": good,
+                        "url": "https://h/releases/download/v9.9.9/OCCT.xcframework.zip"}}]}}, fh)
+            ident = identify(root)
+            if ident.verdict != UNVERIFIABLE:
+                failures.append(f"a manifest with {label} reported {ident.verdict}, expected "
+                                f"{UNVERIFIABLE}; a pin that did not parse must not reach a verdict "
+                                f"about the asset")
+            if "Package.swift" not in ident.reason or "PIN_URL_RE" not in ident.reason:
+                failures.append(f"a manifest with {label} blamed the asset rather than the "
+                                f"manifest: {ident.reason}")
+    #      ...and a repo with no manifest at all says so rather than falling through the same branch.
+    with tempfile.TemporaryDirectory() as root:
+        scaffold(root, pin_sum=good)
+        os.remove(os.path.join(root, "Package.swift"))
+        ident = identify(root)
+        if ident.verdict != UNVERIFIABLE or "No Package.swift" not in ident.reason:
+            failures.append(f"a repo with no Package.swift reported {ident.verdict}: {ident.reason}")
+
     # 11. `--asset` as an override versus left at its default. A caller that passes the default
     #     must still get the fallback, or #2818's SKIPPED comes straight back.
     ns = argparse.Namespace(asset=LIBRARIES_ASSET)
@@ -563,10 +643,10 @@ def main() -> int:
             print(f"SELF-TEST FAILURE: {line}")
         if failures:
             return 1
-        print("SELF-TEST: OK (12 cases: pin parse, real pin, workspace-state parse x2, absent, "
+        print("SELF-TEST: OK (16 cases: pin parse, real pin, workspace-state parse x2, absent, "
               "unverifiable, zip pinned/not-pinned, workspace-state pinned/stale, a record "
-              "outside the glob, Libraries precedence, refusal matrix, banner caveat, --asset "
-              "override)")
+              "outside the glob, Libraries precedence, refusal matrix, banner caveat, unparsed "
+              "pin x3, missing manifest, --asset override)")
         return 0
 
     identity = identify(".", explicit_from(args))

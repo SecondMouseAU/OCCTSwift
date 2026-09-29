@@ -57,11 +57,31 @@ type definition's body and the direction of the error is a missed divergence, no
 ## Validating the view, not just the verdict
 
 `okf/policies/static-gates.md` records three gates that were confidently wrong while reporting all
-clear, so this one sizes its own population two ways and refuses to report when they disagree: the
-parser's definition count is compared against a deliberately dumber line scan (a
-`struct`/`class`/`union`/`enum` at column 0 whose line does not end in `;`), and any line the dumb
-scan claims and the parser does not is named. That check is what would catch a regex that stopped
-matching, rather than a fixture nobody thought to write.
+clear, so this one refuses to report unless two independent statements hold.
+
+**1. The two scans agree, line for line.** The parser (`TYPE_DEF`) is checked against a deliberately
+dumber line scan (`LOOSE_HEAD`: a `struct`/`class`/`union`/`enum` at column 0 whose line does not end
+in `;`) in both directions: every line the dumb scan claims must carry exactly one parsed definition,
+and every parsed definition must sit on a line the dumb scan claimed. All 623 column-0 type lines in
+the bridge today are the same OCCT shape, keyword and name with the brace on the next line, so the
+two totals are equal and the equality is exact rather than approximate. The two reconciliations that
+would break it are a definition written entirely on one line and two definitions sharing a line;
+neither exists, clang-format does not produce either, and both are named by file and line rather than
+folded into a number.
+
+**2. A canary is found.** `canary()` runs the whole comparison over two fixed strings that differ by
+one field, on every bare invocation, and the run aborts if the parser does not find both definitions
+or `divergent()` does not report the disagreement. That is the `static-gates.md` canary rule with its
+sign flipped: a compiler canary must fail, and a parser canary must match.
+
+**What this replaced, because the shape is worth naming.** Until #2833 the second statement was
+`if definitions < 100: abort`, an absolute floor on the population. That floor aborts precisely when
+the refactor this script's own output recommends succeeds: hoisting a duplicated type into
+`OCCTBridge_Internal.h` is what `okf/policies/helper-placement-by-reach.md` asks for, and what the OK
+message below tells the reader to do, and each hoist removes file-scope definitions from the `.mm`
+files. A gate that fails on the legitimate direction of travel gets deleted rather than understood.
+An agreement floor has no such direction: hoisting drops both counts together, and the fully hoisted
+end state is nothing to compare rather than a blind scan, which the report says in those words.
 """
 from __future__ import annotations
 
@@ -108,6 +128,15 @@ DEAD_STATICS = _load_dead_file_statics()
 # `;` of a `struct Foo;` or the `=` of a `struct Foo bar = {...};`. That is the lesson
 # `census-dead-file-statics.py` records for `STATIC_DECL`: a character class matching newlines will
 # pair one declaration's head with the next construct's brace unless the terminators are excluded.
+#
+# Anything BEFORE the keyword is out of scope for this regex and for `LOOSE_HEAD` both, so such a
+# definition is silently not compared rather than reported: `template <...> struct Foo`,
+# `[[nodiscard]] struct Foo`, `alignas(16) struct Foo`. Measured across the 74 bridge `.mm` files and
+# the 16 headers on 2026-09-29: **zero** `[[...]]` attributes and **zero** `alignas` anywhere, and 33
+# column-0 `template` heads of which every one introduces a function rather than a type. So the
+# population this cannot see is empty, which is why the answer is a self-test case pinning the
+# limitation (case 14) rather than a wider regex: widening it would add a branch no input exercises,
+# and the self-test fails the day the loose scan starts claiming one of these shapes.
 TYPE_DEF = re.compile(
     r"^(?P<keyword>struct|class|union|enum)"
     r"(?:\s+(?:class|struct))?"  # `enum class`, `enum struct`
@@ -236,12 +265,119 @@ def scan_file(path: str, raw: str) -> dict:
         d["tokens"] = len(tokens.split())
         d["file"] = path
     claimed = loose_heads(structural)
-    parsed_lines = {d["line"] for d in defs}
+    claimed_lines = {line for line, _ in claimed}
+    per_line = collections.Counter(d["line"] for d in defs)
     return {
         "definitions": defs,
-        "unparsed": [(line, text) for line, text in claimed if line not in parsed_lines],
+        # The dumb scan claimed a line the parser did not match: a definition never compared.
+        "unparsed": [(line, text) for line, text in claimed if line not in per_line],
+        # The reverse direction. The parser matched a line the dumb scan never claimed, or matched
+        # one line twice, so the two views no longer size the same population.
+        "unclaimed": [(d["line"], d["keyword"] + " " + d["name"])
+                      for d in defs if d["line"] not in claimed_lines],
+        "crowded": [(line, count) for line, count in sorted(per_line.items()) if count > 1],
         "loose": len(claimed),
     }
+
+
+CANARY_NAME = "OCCTOdrCanaryType"
+CANARY_FILES = {
+    "canary-a.mm": "struct %s\n{\n  int a;\n};\n" % CANARY_NAME,
+    "canary-b.mm": "struct %s\n{\n  int a;\n  int b;\n};\n" % CANARY_NAME,
+}
+
+
+def canary() -> list[str]:
+    """Run the whole comparison over fixed text that MUST report one divergence. Problems, or [].
+
+    `static-gates.md`'s canary rule, with its sign flipped. A detector that shells out to a compiler
+    carries an input the compiler cannot miss and aborts when it comes back clean; a detector that
+    parses carries an input its parser cannot miss and aborts when the parser comes back empty. This
+    is the statement the old `definitions < 100` floor was reaching for, made about text this script
+    owns rather than about the size of the tree, so no refactor of the bridge can move it: hoisting
+    every duplicated type into `OCCTBridge_Internal.h` leaves the canary exactly as it is.
+
+    It covers more than `TYPE_DEF`. A `body_end()` that stopped matching braces, a digest that
+    collapsed, or a `divergent()` whose file-count guard swallowed everything would each report the
+    real tree as clean and are each caught here.
+    """
+    problems: list[str] = []
+    by_name: dict[str, list[dict]] = collections.defaultdict(list)
+    for path, raw in CANARY_FILES.items():
+        result = scan_file(path, raw)
+        if "error" in result:
+            problems.append(f"canary {path}: scan errored: {result['error']}")
+            continue
+        names = [d["name"] for d in result["definitions"]]
+        if names != [CANARY_NAME]:
+            problems.append(
+                f"canary {path}: the parser found {names or 'nothing'}, expected "
+                f"[{CANARY_NAME!r}]"
+            )
+        if result["unparsed"] or result["unclaimed"] or result["crowded"]:
+            problems.append(
+                f"canary {path}: the two scans disagree on fixed text "
+                f"(unparsed={result['unparsed']}, unclaimed={result['unclaimed']}, "
+                f"crowded={result['crowded']})"
+            )
+        for d in result["definitions"]:
+            by_name[d["name"]].append(d)
+    fixture = {"by_name": dict(by_name)}
+    if set(duplicated(fixture)) != {CANARY_NAME}:
+        problems.append(
+            f"canary: duplicated()={sorted(duplicated(fixture))}, expected [{CANARY_NAME!r}]"
+        )
+    if set(divergent(fixture)) != {CANARY_NAME}:
+        problems.append(
+            f"canary: divergent()={sorted(divergent(fixture))}, expected [{CANARY_NAME!r}]; two "
+            f"definitions differing by a field were not reported, so a real divergence would not be "
+            f"either"
+        )
+    return problems
+
+
+def view_problems(report: dict) -> list[str]:
+    """Why this run's view of the tree is not plausible, or [] when the two scans agree.
+
+    Validate the view, not only the verdict (`static-gates.md`). Both directions, because each
+    catches something the other cannot: a line the dumb scan claims and the parser missed is a
+    definition this gate never compared, and a definition the dumb scan never claimed means the two
+    are no longer sizing the same population, which is what makes their agreement evidence.
+    """
+    problems: list[str] = []
+    if report["unparsed"]:
+        rows = "\n".join(
+            f"  {row['file']}:{row['line']}  {row['text'][:100]}" for row in report["unparsed"][:20]
+        )
+        problems.append(
+            f"{len(report['unparsed'])} column-0 type definition line(s) the parser did not match, "
+            f"so they were never compared:\n{rows}"
+        )
+    if report["unclaimed"]:
+        rows = "\n".join(
+            f"  {row['file']}:{row['line']}  {row['text'][:100]}" for row in report["unclaimed"][:20]
+        )
+        problems.append(
+            f"{len(report['unclaimed'])} parsed definition(s) on a line the loose scan never "
+            f"claimed, so the two scans no longer size the same population. Every one of the "
+            f"bridge's column-0 type lines is keyword-and-name with the brace on the next line; a "
+            f"definition written entirely on one line is the shape that reaches here, and the loose "
+            f"scan has to learn it:\n{rows}"
+        )
+    if report["crowded"]:
+        rows = "\n".join(f"  {row['file']}:{row['line']}  {row['count']} definitions"
+                         for row in report["crowded"][:20])
+        problems.append(
+            f"{len(report['crowded'])} line(s) carrying more than one parsed definition, which the "
+            f"loose scan counts once:\n{rows}"
+        )
+    if not problems and report["definitions"] != report["loose_heads"]:
+        problems.append(
+            f"the two scans reconcile line for line yet their totals differ "
+            f"({report['definitions']} parsed, {report['loose_heads']} claimed); the arithmetic "
+            f"above is wrong"
+        )
+    return problems
 
 
 def run_scan() -> dict:
@@ -249,12 +385,20 @@ def run_scan() -> dict:
     if not files:
         print(f"ABORT: no .mm files under {SRC_DIR}", file=sys.stderr)
         sys.exit(2)
+    problems = canary()
+    if problems:
+        print("ABORT: the parser canary did not come back:", file=sys.stderr)
+        for line in problems:
+            print(f"  {line}", file=sys.stderr)
+        sys.exit(2)
     report: dict = {
         "files": len(files),
         "definitions": 0,
         "loose_heads": 0,
         "by_name": collections.defaultdict(list),
         "unparsed": [],
+        "unclaimed": [],
+        "crowded": [],
     }
     for path in files:
         with open(path, encoding="utf-8") as fh:
@@ -267,28 +411,20 @@ def run_scan() -> dict:
         report["loose_heads"] += result["loose"]
         for line, text in result["unparsed"]:
             report["unparsed"].append({"file": path, "line": line, "text": text})
+        for line, text in result["unclaimed"]:
+            report["unclaimed"].append({"file": path, "line": line, "text": text})
+        for line, count in result["crowded"]:
+            report["crowded"].append({"file": path, "line": line, "count": count})
         for d in result["definitions"]:
             report["by_name"][d["name"]].append(d)
     report["by_name"] = dict(report["by_name"])
 
-    # Validate the view, not only the verdict (static-gates.md). A line the dumb scan claims and
-    # the parser missed is a definition this gate never compared, and "no divergence" from a parser
-    # that read nothing looks exactly like a clean tree.
-    if report["unparsed"]:
-        print(
-            f"ABORT: {len(report['unparsed'])} column-0 type definition line(s) the parser did not "
-            f"match, so they were never compared:",
-            file=sys.stderr,
-        )
-        for row in report["unparsed"][:20]:
-            print(f"  {row['file']}:{row['line']}  {row['text'][:100]}", file=sys.stderr)
-        sys.exit(2)
-    if report["definitions"] < 100:
-        print(
-            f"ABORT: only {report['definitions']} file-scope type definitions across "
-            f"{len(files)} files; the definition scan is not seeing the tree",
-            file=sys.stderr,
-        )
+    problems = view_problems(report)
+    if problems:
+        print("ABORT: the two scans disagree about what is in the tree, so no verdict is "
+              "reported:", file=sys.stderr)
+        for line in problems:
+            print(line, file=sys.stderr)
         sys.exit(2)
     return report
 
@@ -324,6 +460,7 @@ def print_report(report: dict, args) -> int:
                 {
                     "files": report["files"],
                     "definitions": report["definitions"],
+                    "loose_heads": report["loose_heads"],
                     "duplicated_names": sorted(dups),
                     "duplicated_definitions": dup_definitions,
                     "divergent": {
@@ -347,10 +484,23 @@ def print_report(report: dict, args) -> int:
         print()
 
     print(f"Bridge .mm files scanned:              {report['files']}")
-    print(f"File-scope type definitions:           {report['definitions']}")
+    print(f"File-scope type definitions:           {report['definitions']}"
+          f"  (loose scan agrees: {report['loose_heads']})")
     print(f"  distinct type names:                 {len(report['by_name'])}")
     print(f"  names defined in more than one file: {len(dups)}  across {dup_definitions} definitions")
     print()
+
+    if not report["definitions"]:
+        # The fully hoisted end state, and not a blind scan: the canary proves the parser still
+        # matches a definition, and the loose scan claims nothing either. A `.mm` file with no
+        # file-scope type cannot disagree with another about one.
+        print(
+            "OK: no bridge .mm file defines a type at file scope any more, so there is nothing for "
+            "two\ntranslation units to disagree about. The parser canary still matched, so this is "
+            "the end state\nokf/policies/helper-placement-by-reach.md asks for rather than a scan "
+            "that saw nothing."
+        )
+        return 0
 
     if not bad:
         print(
@@ -385,7 +535,8 @@ def self_test() -> bool:
 
     def collect(files: dict[str, str]) -> dict:
         report = {"files": len(files), "definitions": 0, "loose_heads": 0,
-                  "by_name": collections.defaultdict(list), "unparsed": [], "defs": []}
+                  "by_name": collections.defaultdict(list), "unparsed": [], "unclaimed": [],
+                  "crowded": [], "defs": []}
         for path, raw in files.items():
             result = scan_file(path, raw)
             if "error" in result:
@@ -395,6 +546,10 @@ def self_test() -> bool:
             report["loose_heads"] += result["loose"]
             for line, text in result["unparsed"]:
                 report["unparsed"].append({"file": path, "line": line, "text": text})
+            for line, text in result["unclaimed"]:
+                report["unclaimed"].append({"file": path, "line": line, "text": text})
+            for line, count in result["crowded"]:
+                report["crowded"].append({"file": path, "line": line, "count": count})
             for d in result["definitions"]:
                 report["by_name"][d["name"]].append(d)
                 report["defs"].append(d)
@@ -577,6 +732,79 @@ def self_test() -> bool:
             "an anonymous column-0 type was neither parsed nor reported as unparsed, so the view "
             "check cannot fire"
         )
+    #     An ATTRIBUTE or `alignas` before the keyword is the same stated limitation as `template`,
+    #     and #2833's review asked for the regex to learn it. Measured first: zero `[[...]]` and zero
+    #     `alignas` across the 74 `.mm` files and the 16 headers, so widening TYPE_DEF would add a
+    #     branch nothing exercises. This pins the limitation instead, in both directions: the shape is
+    #     not parsed, and it is not claimed by the loose scan either, so it is silently uncompared
+    #     rather than a false ABORT. The day the bridge acquires one, `check-bridge-type-odr` has to
+    #     learn it, and this case is what says so.
+    for attributed in ("[[nodiscard]] struct Attributed\n{\n  int v;\n};\n",
+                       "alignas(16) struct Aligned\n{\n  int v;\n};\n"):
+        shape = scan_file("a.mm", attributed)
+        if shape["definitions"]:
+            failures.append(
+                f"an attributed definition is now parsed ({attributed.splitlines()[0]}), so the "
+                f"limitation this case pins is gone and the comment on TYPE_DEF is stale"
+            )
+        if shape["unparsed"] or shape["unclaimed"]:
+            failures.append(
+                f"an attributed definition now reaches the view check "
+                f"({attributed.splitlines()[0]}): unparsed={shape['unparsed']}, "
+                f"unclaimed={shape['unclaimed']}. TYPE_DEF has to learn the shape, or the gate "
+                f"ABORTs on legal code"
+            )
+
+    # 14b. #2833's CRITICAL. The plausibility check replacing the `definitions < 100` floor, and the
+    #      two properties it needs: it still catches a parser that matches nothing, and it does NOT
+    #      fire on the legitimate direction of travel, which is types moving into
+    #      OCCTBridge_Internal.h until no `.mm` defines one.
+    hoisted = collect({"a.mm": "int f(void)\n{\n  return 0;\n}\n",
+                       "b.mm": "#include \"OCCTBridge_Internal.h\"\nint g(void)\n{\n  return 1;\n}\n"})
+    if view_problems(hoisted):
+        failures.append(
+            f"a fully hoisted bridge, the end state helper-placement-by-reach.md asks for, was "
+            f"reported as an implausible view: {view_problems(hoisted)}"
+        )
+    if hoisted["definitions"] or hoisted["loose_heads"]:
+        failures.append(
+            f"the hoisted fixture is not actually empty: {hoisted['definitions']} definitions, "
+            f"{hoisted['loose_heads']} loose heads"
+        )
+    #      ...and a parser that matches nothing over a tree that HAS types is still caught, which is
+    #      the whole job the floor was doing. Driven by neutering TYPE_DEF rather than by a fixture,
+    #      because a regex that stops matching is the failure mode and no fixture can stand in for it.
+    saved = globals()["TYPE_DEF"]
+    try:
+        globals()["TYPE_DEF"] = re.compile(r"^(?!)", re.M)  # matches nothing, ever
+        blinded = collect({"a.mm": same, "b.mm": same})
+        if not view_problems(blinded):
+            failures.append(
+                "TYPE_DEF matching nothing over a tree with two type definitions was reported as a "
+                "plausible view; the replacement for the `definitions < 100` floor does not do the "
+                "job the floor did"
+            )
+        blind_canary = canary()
+        if not blind_canary:
+            failures.append(
+                "the canary came back clean with TYPE_DEF matching nothing, so it cannot catch a "
+                "parser that goes blind against a tree that has also been emptied"
+            )
+    finally:
+        globals()["TYPE_DEF"] = saved
+    #      The canary passes against the real parser, and it is what covers the one case the
+    #      two-scan agreement cannot: both scans blind at once, which agrees at zero.
+    if canary():
+        failures.append(f"the canary does not come back against the real parser: {canary()}")
+    #      A definition written on one line is the shape that breaks the equality in the other
+    #      direction, and it must be NAMED rather than counted: the loose scan skips a line ending in
+    #      `;`, the parser matches it, so the two stop sizing the same population.
+    one_liner = collect({"a.mm": "struct Inline { int a; };\n"})
+    if not one_liner["unclaimed"] or not view_problems(one_liner):
+        failures.append(
+            f"a one-line type definition did not reach the view check: "
+            f"unclaimed={one_liner['unclaimed']}, problems={view_problems(one_liner)}"
+        )
 
     # 15. Guard sanity: the shared stripper and the token normaliser each do what the rules above
     #     assume, proved directly rather than only through a fixture's verdict.
@@ -601,10 +829,11 @@ def self_test() -> bool:
             print(f"SELF-TEST FAILURE: {line}")
         return False
     print(
-        "SELF-TEST: OK (21 cases: identical copies, added field, reordered members, "
+        "SELF-TEST: OK (28 cases: identical copies, added field, reordered members, "
         "clang-format alignment, comment, string literal x2, #2080 comment shape, single "
         "definition, one file twice, forward declaration x2, brace-initialised variable, real "
-        "bridge shapes, nested type, brace in a literal, view check x3, normaliser sanity x4, "
+        "bridge shapes, nested type, brace in a literal, view check x3, attributed definition x2, "
+        "fully hoisted tree, blinded parser x2, canary, one-line definition, normaliser sanity x4, "
         "real tree)"
     )
     return True

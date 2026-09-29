@@ -342,6 +342,22 @@ than report clean when it is not.** The assertion is cheap and specific to what 
   skipping is right locally, because a contributor without a build still wants partial results while
   a green CI step that examined nothing is a false green.
 - Reading a population you can size independently? Compare the two and fail on a large divergence.
+- **Parsing?** Carry a canary the parser cannot miss, and abort when it comes back *empty*. The
+  compiler canary's sign, flipped: a compiler canary must fail and a parser canary must match.
+  `check-bridge-type-odr.py` does this, and it is what covers the one case two independent scans
+  cannot, which is both going blind at once and agreeing at zero.
+
+**And the plausibility check must not be trippable by the refactor the detector recommends.**
+`check-bridge-type-odr.py` shipped with `if definitions < 100: abort`, a floor on the absolute size
+of its population. Its own output tells the reader to hoist a duplicated type into
+`OCCTBridge_Internal.h`, which is what [helper-placement-by-reach](helper-placement-by-reach.md) asks
+for, and every hoist removes file-scope definitions from the `.mm` files, so the gate would have
+aborted precisely when the work it advocates succeeded, with a message blaming its own parser
+(#2833). A floor on **agreement between two independent measurements** has no such direction:
+hoisting moves both measurements together, and the fully hoisted end state is nothing to compare
+rather than a scan that saw nothing, which the report then says in those words. Prefer an agreement
+floor and a canary to a magic number, and where a magic number is unavoidable, ask which legitimate
+change would cross it.
 
 The distinction worth holding: **a wrong answer is a bug, an answer about a population that was
 never examined is a lie.** The first gets found. The second is invisible precisely when it matters,
