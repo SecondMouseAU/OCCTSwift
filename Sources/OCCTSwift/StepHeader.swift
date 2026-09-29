@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// A STEP file header manager for reading and writing header fields

@@ -92,7 +92,7 @@ a single line in code the package does not control.
 
 So in your own target:
 
-```swift
+```swift no-typecheck: an import block, which is only valid at file scope
 #if canImport(FoundationEssentials)
     import FoundationEssentials
 #else
@@ -118,7 +118,7 @@ and expect to meet the same gaps this package did. `FoundationEssentials` **has*
 And name the C library explicitly, because `Foundation` re-exports it and `FoundationEssentials`
 does not. `free`, `exit`, `sin`, `cos`, `sqrt` and friends all come from there:
 
-```swift
+```swift no-typecheck: an import block, which is only valid at file scope
 #if canImport(Darwin)
     import Darwin
 #elseif canImport(WASILibc)

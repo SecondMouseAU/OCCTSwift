@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Value-type wrapper for XCAFDoc_AssemblyItemId (represented as a string path).

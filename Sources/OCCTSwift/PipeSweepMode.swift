@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Sweep mode for advanced pipe creation.

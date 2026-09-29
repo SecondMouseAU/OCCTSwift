@@ -32,8 +32,8 @@
 //  independent shape graphs that can be safely processed on separate threads.
 //
 
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 
 /// Thread safety utilities for OCCT operations.
 ///

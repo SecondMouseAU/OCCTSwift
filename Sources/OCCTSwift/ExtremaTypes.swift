@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Result of an elementary extrema computation.

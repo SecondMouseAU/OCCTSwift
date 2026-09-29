@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 
 /// A multi-edge `Wire` treated as a single, continuously-parameterized curve
 /// (`BRepAdaptor_CompCurve`), so you can measure its total length and sample

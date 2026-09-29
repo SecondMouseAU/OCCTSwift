@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// A sampled point from tangential deflection.

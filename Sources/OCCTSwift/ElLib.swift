@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Static utility for evaluating elementary curves (line, circle, ellipse) at parameters.

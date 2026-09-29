@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// 2D projection of a 3D shape using Hidden Line Removal (HLR).

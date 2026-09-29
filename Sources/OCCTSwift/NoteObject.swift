@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Wrapper for XCAFNoteObjects_NoteObject — note annotation data.

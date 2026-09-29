@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 
 /// Time period (interval) wrapping OCCT Quantity_Period.
 ///

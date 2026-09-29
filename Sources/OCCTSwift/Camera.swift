@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// A 3D camera backed by OpenCASCADE Graphic3d_Camera.

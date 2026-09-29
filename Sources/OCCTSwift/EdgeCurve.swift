@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 
 /// A single `Edge` as an **arc-length-parameterized** curve (`BRepAdaptor_Curve`).
 ///

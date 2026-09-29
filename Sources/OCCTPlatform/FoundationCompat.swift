@@ -13,7 +13,6 @@
 //  they stand in for. These outputs feed STEP, DXF, SVG and PDF writers, where a decimal comma from
 //  a European locale would produce a malformed file rather than a differently formatted one.
 
-
 extension String {
     /// `String(format:)`, spelled so both platforms can provide it.
     ///
@@ -21,10 +20,17 @@ extension String {
     /// which is where Foundation's implementation ends up too, so the bytes match.
     public init(cFormat format: String, _ arguments: CVarArg...) {
         #if canImport(FoundationEssentials)
-            // 256 covers every call site in this package by a wide margin; the longest is a PDF
-            // cross-reference entry at twenty bytes. `vsnprintf` always NUL-terminates within the
-            // buffer it is given, so a longer result truncates rather than running off the end.
-            var buffer = [CChar](repeating: 0, count: 256)
+            // Measure first, then format: C99 has `vsnprintf` return the length it WOULD have
+            // written and write nothing when the buffer is null and the size zero, so the second
+            // call cannot truncate. A fixed buffer would have been large enough for every call
+            // site in this package today, which is exactly the kind of assumption a later call
+            // site breaks silently.
+            let needed = withVaList(arguments) { vsnprintf(nil, 0, format, $0) }
+            guard needed >= 0 else {
+                self = ""
+                return
+            }
+            var buffer = [CChar](repeating: 0, count: Int(needed) + 1)
             _ = withVaList(arguments) { vaList in
                 buffer.withUnsafeMutableBufferPointer { out in
                     vsnprintf(out.baseAddress!, out.count, format, vaList)
@@ -64,8 +70,9 @@ extension StringProtocol {
     /// available on the wasm path and every call site in this package passes `.whitespaces`.
     public func trimmingWhitespace() -> String {
         #if canImport(FoundationEssentials)
-            guard let first = self.firstIndex(where: { !$0.isWhitespace }) else { return "" }
-            let last = self.lastIndex(where: { !$0.isWhitespace })!
+            guard let first = self.firstIndex(where: { !$0.isWhitespace }),
+                let last = self.lastIndex(where: { !$0.isWhitespace })
+            else { return "" }
             return String(self[first...last])
         #else
             return trimmingCharacters(in: .whitespaces)

@@ -5,8 +5,8 @@
 //  Graph-based B-Rep topology representation (OCCT BRepGraph)
 //
 
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 
 /// A graph-based representation of B-Rep topology.
 ///

@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Builder for creating fillets on edges of a shape, wrapping BRepFilletAPI_MakeFillet.

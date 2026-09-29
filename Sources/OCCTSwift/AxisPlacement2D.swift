@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// A 2D axis placement backed by `Geom2d_AxisPlacement`.

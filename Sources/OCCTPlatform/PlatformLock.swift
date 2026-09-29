@@ -1,11 +1,7 @@
 #if canImport(FoundationEssentials)
     import FoundationEssentials
 #else
-    #if canImport(FoundationEssentials)
-    import FoundationEssentials
-#else
     import Foundation
-#endif
 #endif
 
 /// The lock the Swift layer's internal mutable state uses, chosen per platform.
@@ -27,6 +23,8 @@
 
 #if canImport(FoundationEssentials)
 
+    /// A no-op lock for single-threaded wasm.
+    ///
     /// `NSLock`'s shape for `wasm32-unknown-wasip1` in the **non-threads** configuration, where the
     /// lock has nothing to exclude.
     ///

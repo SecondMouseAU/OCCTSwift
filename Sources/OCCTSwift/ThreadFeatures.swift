@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 // MARK: - Thread feature API (#66, v0.139 Thread Form v2)

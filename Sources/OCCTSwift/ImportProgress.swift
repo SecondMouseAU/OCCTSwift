@@ -7,8 +7,8 @@
 // Driver: issue #98 / OCCTSwiftTools' CADFileLoader.load(from:format:) async
 // API needs a progress + cancel channel for GUI consumers.
 
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 
 /// Progress + cancellation channel for long-running OCCT import operations.
 ///

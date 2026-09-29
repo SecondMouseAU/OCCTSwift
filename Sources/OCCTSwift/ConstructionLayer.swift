@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 // MARK: - XCAF CONSTRUCTION layer persistence (#72 D1, v0.143)

@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// A 3D coordinate system (right- or left-handed), wrapping gp_Ax3.

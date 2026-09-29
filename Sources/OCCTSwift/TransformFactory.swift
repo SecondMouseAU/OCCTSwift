@@ -1,5 +1,5 @@
-import OCCTPlatform
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Shared validation for ``TransformMatrix3D`` and ``Matrix12Grouped``, both of which wrap a
