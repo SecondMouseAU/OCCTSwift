@@ -9,7 +9,7 @@ import simd
 /// either signature or header comment distinguishes them.
 ///
 /// The assertion is on the refusal value, not on the absence of a crash.
-@Suite("#2859 — Bezier surface pole index bounds")
+@Suite("#2859: Bezier surface pole index bounds")
 struct Issue2859BezierSurfacePoleBoundsTests {
 
     /// A 3x4 grid with no pole at the origin, so a fabricated `SIMD3(0, 0, 0)` cannot be mistaken

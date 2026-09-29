@@ -20,7 +20,7 @@ import simd
 /// The assertions are on the refusal value, `nil`, and on the in-range conversion still working.
 /// `Convert_CircleToBSplineCurve` is the control: it writes the same precondition as a literal
 /// `throw`, which no macro gates, so `Curve2D.fromCircleArc` has always refused the same input.
-@Suite("#2861 — cylinder and cone converter parameter range")
+@Suite("#2861: cylinder and cone converter parameter range")
 struct Issue2861ConvertElementaryRangeTests {
 
     @Test("fromCylinder converts an in-range patch and refuses every out-of-range one")

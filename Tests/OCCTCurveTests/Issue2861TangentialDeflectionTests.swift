@@ -17,7 +17,7 @@ import simd
 ///
 /// `OCCTGCPntsTangentialDeflectionCurve`, the standalone-curve twin, carries the same guard but has
 /// no Swift caller today, so it is exercised only through the bridge's own C API.
-@Suite("#2861 — tangential deflection bounds")
+@Suite("#2861: tangential deflection bounds")
 struct Issue2861TangentialDeflectionTests {
 
     private func curvedEdge() -> Edge? {

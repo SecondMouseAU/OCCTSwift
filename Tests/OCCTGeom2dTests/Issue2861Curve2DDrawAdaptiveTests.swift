@@ -7,7 +7,7 @@ import simd
 /// `GCPnts_TangentialDeflection` whose deflection precondition the pinned Release kernel compiles
 /// out. The refusal is an empty result, which is what this entry point already returns for a null
 /// curve or a capacity of zero.
-@Suite("#2861 — Curve2D.drawAdaptive deflection bounds")
+@Suite("#2861: Curve2D.drawAdaptive deflection bounds")
 struct Issue2861Curve2DDrawAdaptiveTests {
 
     @Test("drawAdaptive samples with valid deflections and refuses tiny ones")

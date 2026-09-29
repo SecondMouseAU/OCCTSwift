@@ -12,7 +12,7 @@ import simd
 /// aborted in only 5 of 20 identical runs, so a clean run proves nothing about whether the input was
 /// rejected. Each test also asserts the in-range behaviour, so a guard that refuses everything fails
 /// too.
-@Suite("#2859 — Curve2D Bezier index and degree bounds")
+@Suite("#2859: Curve2D Bezier index and degree bounds")
 struct Issue2859Curve2DBezierBoundsTests {
 
     /// A 4-pole cubic whose poles are all non-zero, so a fabricated `SIMD2(0, 0)` cannot be mistaken
