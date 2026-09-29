@@ -1353,15 +1353,51 @@ public enum BezierFillStyle: Int32, Sendable {
 extension Surface {
     /// Create a Bezier surface by filling 4 Bezier boundary curves.
     ///
-    /// The four curves must be Bezier curves forming a closed boundary.
+    /// All four curves must be Bezier (`Curve3D.bezier(poles:weights:)`), and together they must
+    /// form a **closed loop**. They do not have to be given in loop order, and they do not have to
+    /// run the same way round it: `GeomFill_BezierCurves` arranges them itself, walking them head
+    /// to tail at `Precision::Confusion()` (1e-7) and reversing whichever curve runs backwards.
+    /// Only `c1` is pinned, and its own direction becomes the surface's U direction; the other
+    /// three may be passed in any order and either direction and give the same surface.
+    ///
+    /// A set that does **not** close returns `nil`. OCCT refuses it too, with
+    /// `Standard_ConstructionError` ("Courbes non jointives"), but that refusal is compiled out of
+    /// the kernel this package ships, where it was an uncatchable crash until #2829 restored it in
+    /// the bridge. See ``bsplineFill(curves:style:)`` for the same behaviour on BSpline curves.
+    ///
+    /// ```swift
+    /// // Four sides of a square, deliberately scrambled and part-reversed.
+    /// let a = SIMD3<Double>(0, 0, 0), b = SIMD3<Double>(10, 0, 0)
+    /// let c = SIMD3<Double>(10, 10, 0), d = SIMD3<Double>(0, 10, 0)
+    /// func side(_ p: SIMD3<Double>, _ q: SIMD3<Double>) -> Curve3D? {
+    ///     let step = (q - p) / 3
+    ///     return Curve3D.bezier(poles: [p, p + step, p + step * 2, q])
+    /// }
+    /// if let bottom = side(a, b), let topBackwards = side(d, c),
+    ///     let leftBackwards = side(a, d), let rightBackwards = side(c, b),
+    ///     let surface = Surface.bezierFill(
+    ///         bottom, topBackwards, leftBackwards, rightBackwards, style: .coons)
+    /// {
+    ///     print(surface.point(atU: 0, v: 0))   // (0.0, 0.0, 0.0), the a corner
+    /// }
+    ///
+    /// // The same four sides with the top lifted clear of every corner: no loop, no surface.
+    /// if let bottom = side(a, b), let right = side(b, c), let left = side(d, a),
+    ///     let floating = side(SIMD3(10, 10, 5), SIMD3(0, 10, 5))
+    /// {
+    ///     print(Surface.bezierFill(bottom, right, floating, left) == nil)   // true
+    /// }
+    /// ```
     ///
     /// - Parameters:
-    ///   - c1: First boundary curve
-    ///   - c2: Second boundary curve
-    ///   - c3: Third boundary curve
-    ///   - c4: Fourth boundary curve
-    ///   - style: Filling style
-    /// - Returns: Bezier surface, or nil on failure
+    ///   - c1: First boundary curve. Its direction becomes U.
+    ///   - c2: Second boundary curve, in any position round the loop and either direction.
+    ///   - c3: Third boundary curve, likewise.
+    ///   - c4: Fourth boundary curve, likewise.
+    ///   - style: Filling style. `.coons` raises every side to at least degree 3 first, so it has
+    ///     no minimum pole count of its own here.
+    /// - Returns: Bezier surface, or `nil` if any curve is not Bezier, the four do not close a
+    ///   loop, or the fill fails.
     public static func bezierFill(
         _ c1: Curve3D, _ c2: Curve3D, _ c3: Curve3D, _ c4: Curve3D,
         style: BezierFillStyle = .stretch
@@ -1666,15 +1702,34 @@ extension Surface {
 
     /// Create a BSpline surface from 2 boundary curves.
     ///
-    /// Uses GeomFill_BSplineCurves to construct a surface spanning between two
-    /// BSpline curves. The curves must be BSpline (created via `Curve3D.bspline` or
-    /// `Curve3D.interpolate`).
+    /// Uses `GeomFill_BSplineCurves` to construct a surface spanning between two curves. Each is
+    /// converted to a BSpline first, so any `Curve3D` will do.
+    ///
+    /// **`.stretch` and `.coons` treat the two curves as opposite edges; `.curved` treats them as
+    /// two sides meeting at a corner and returns `nil` if they share no endpoint.** OCCT runs no
+    /// `Arrange` on a pair, and its `.curved` branch refuses a disjoint pair with a real
+    /// `throw Standard_OutOfRange` that this package turns into `nil`. The default here is `.coons`,
+    /// so switching an otherwise working call to `.curved` can start returning `nil` on the same two
+    /// curves. Measured in `Scripts/repro/2829-geomfill-arrange-guard/`, section `[I]`.
+    ///
+    /// ```swift
+    /// let along = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(5, 0, 2), SIMD3(10, 0, 0)])
+    /// let apart = Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(5, 10, 2), SIMD3(10, 10, 0)])
+    /// if let along, let apart {
+    ///     // Opposite edges: fine for .stretch and .coons.
+    ///     print(Surface.bsplineFill(curve1: along, curve2: apart, style: .stretch) != nil)  // true
+    ///     // The same pair shares no endpoint, so .curved has no corner to work from.
+    ///     print(Surface.bsplineFill(curve1: along, curve2: apart, style: .curved) == nil)   // true
+    /// }
+    /// ```
     ///
     /// - Parameters:
     ///   - curve1: First boundary curve
     ///   - curve2: Second boundary curve
-    ///   - style: Filling style (default: .coons)
-    /// - Returns: BSpline surface, or nil if curves are not BSpline or fill fails
+    ///   - style: Filling style (default: `.coons`). `.curved` additionally requires the two curves
+    ///     to share an endpoint.
+    /// - Returns: BSpline surface, or `nil` if the fill fails, including a `.curved` request for two
+    ///   curves that share no endpoint
     public static func bsplineFill(curve1: Curve3D, curve2: Curve3D, style: FillStyle = .coons)
         -> Surface?
     {
@@ -1687,13 +1742,50 @@ extension Surface {
 
     /// Create a BSpline surface from 4 boundary curves.
     ///
-    /// Uses GeomFill_BSplineCurves to construct a surface bounded by four BSpline curves
-    /// forming a closed boundary. The curves must be connected end-to-end in order.
+    /// Uses `GeomFill_BSplineCurves` to construct a surface bounded by four curves that together
+    /// form a **closed loop**. Each curve is converted to a BSpline first, so any `Curve3D` will
+    /// do.
+    ///
+    /// **The four are not required to be in loop order, and not required to run the same way round
+    /// it.** `GeomFill_BSplineCurves` arranges them itself: a private `Arrange` walks them head to
+    /// tail at `Precision::Confusion()` (1e-7), swapping slots and reversing whichever curve runs
+    /// backwards, then aligns their degrees and knots. Only `curves.0` is pinned, and its own
+    /// direction becomes the surface's U direction. Passing the other three in any of the 6 orders
+    /// and any of the 8 direction combinations gives the same surface, measured over all 384 of
+    /// them in `Scripts/repro/2829-geomfill-arrange-guard/`.
+    ///
+    /// A set that does **not** close returns `nil`. OCCT refuses it too, with
+    /// `Standard_ConstructionError` ("Courbes non jointives"), but that refusal is compiled out of
+    /// the kernel this package ships (`-DNo_Exception` in a Release OCCT build), where a
+    /// non-joining set was an uncatchable crash until #2829 restored the check in the bridge. One
+    /// side collapsed to a point is still accepted, which is how a triangular patch is expressed.
+    ///
+    /// `.coons` additionally needs at least 4 poles per direction once the knots are aligned and
+    /// returns `nil` below that, so a boundary of straight two-pole segments or a three-pole arc
+    /// needs `.curved` or `.stretch`.
+    ///
+    /// ```swift
+    /// // A quarter patch on a cylinder of radius 5: two arcs on a periodic support, two seams.
+    /// let p0 = SIMD3<Double>(5, 0, 0), p1 = SIMD3<Double>(0, 5, 0)
+    /// let p2 = SIMD3<Double>(0, 5, 8), p3 = SIMD3<Double>(5, 0, 8)
+    /// let mid = 5 * 0.7071067811865476
+    /// if let bottom = Curve3D.arc(through: p0, SIMD3(mid, mid, 0), p1),
+    ///     let top = Curve3D.arc(through: p3, SIMD3(mid, mid, 8), p2),
+    ///     let left = Curve3D.bezier(poles: [p1, p2]),
+    ///     let right = Curve3D.bezier(poles: [p3, p0]),
+    ///     // Slots in no particular order; Arrange sorts them out.
+    ///     let surface = Surface.bsplineFill(curves: (bottom, top, right, left), style: .curved)
+    /// {
+    ///     print(surface.point(atU: 0, v: 0))   // (5.0, 0.0, 0.0), the p0 corner
+    /// }
+    /// ```
     ///
     /// - Parameters:
-    ///   - curves: Four boundary curves in order (bottom, right, top, left)
-    ///   - style: Filling style (default: .coons)
-    /// - Returns: BSpline surface, or nil on failure
+    ///   - curves: The four boundary curves. They must close a loop within 1e-7; their order and
+    ///     individual directions do not matter, except that `curves.0`'s direction becomes U.
+    ///   - style: Filling style (default: `.coons`, which needs at least 4 poles per direction)
+    /// - Returns: BSpline surface, or `nil` if the four curves do not close a loop, `.coons` was
+    ///   asked for too few poles, or the fill fails.
     public static func bsplineFill(
         curves: (Curve3D, Curve3D, Curve3D, Curve3D), style: FillStyle = .coons
     ) -> Surface? {

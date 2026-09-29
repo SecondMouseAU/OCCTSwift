@@ -1,0 +1,191 @@
+#2829 ground truth: GeomFill_BSplineCurves / GeomFill_BezierCurves arrange and refuse four
+boundary curves, and what the kernel we ship does instead of refusing.
+
+Built and run 2026-09-29 against the PINNED asset, v4.0.0-kernel.2
+(.build/artifacts/<pkg>/OCCT/OCCT.xcframework/macos-arm64), not the local Libraries/ build:
+
+  clang++ -std=c++17 -ObjC++ -w -I"$L/Headers" -L"$L" -lOCCT-macos \
+    -framework Foundation -framework AppKit -lz -lc++ probe.mm -o probe
+
+Each section runs as its own process (probe <A..J>) because three of them crash.
+
+WHAT IT SETTLES
+
+1. Arrange() really does arrange. Section [B] passes the same four square edges in a scrambled
+   slot order AND with three of the four reversed, and gets corner-for-corner the same surface
+   as the canonical order in [A]. Section [F] confirms it over all 24 permutations x 16 direction
+   flips: 384/384 accepted. So "connected end-to-end in order (bottom, right, top, left)", which
+   is what Surface.bsplineFill(curves:) documented, is not a requirement OCCT imposes.
+
+2. The refusal OCCT documents is COMPILED OUT of our kernel. Init() ends with
+   Standard_ConstructionError_Raise_if(!IsOK, "... Courbes non jointives")
+   (GeomFill_BSplineCurves.cxx:287, GeomFill_BezierCurves.cxx:209). Scripts/build-occt.sh
+   configures -DCMAKE_BUILD_TYPE=Release, OCCT's BUILD_RELEASE_DISABLE_EXCEPTIONS defaults to ON
+   (CMakeLists.txt:194-196) and adds -DNo_Exception (adm/cmake/occt_defs_flags.cmake:226-228),
+   and Standard_ConstructionError.hxx:24-30 then expands that macro to nothing. The `bool IsOK =`
+   that feeds it sits behind the same #ifndef, so Arrange()'s false is discarded and Init() reads
+   CC1->Degree() off the null handle it never filled in: sections [C], [D] and [E] are SIGSEGV
+   (exit 139), not a catchable Standard_ConstructionError. A bridge catch (...) cannot absorb it.
+
+3. Both classes, and both supports. [C] is the BSpline flavour on a planar boundary, [D] the
+   Bezier flavour on the same one, [E] the BSpline flavour on a periodic support (a quarter patch
+   on a cylinder r=5). All three crash.
+
+4. The transcribed predicate agrees with the kernel. occtGeomFillCurvesJoin in
+   OCCTBridge_Surface_Fill.mm is Arrange()'s acceptance half, endpoints only. [F] is 384/384
+   agreement on accepted input and [G] pins the tolerance: a gap of 9.9e-8 joins, 2e-7 does not,
+   which is Distance(...) < Precision::Confusion() == 1e-7.
+
+5. Two refusals that ARE real throws, so they were already reaching the bridge's catch (...):
+   Coons style with fewer than 4 poles per direction after knot alignment
+   (GeomFill_BSplineCurves.cxx:300, seen in [E]) and SetSameDistribution's PrepareInsertKnots
+   failure. Those stay as they are.
+
+6. A side collapsed to a point is accepted, by both flavours ([H]), so the guard must not refuse
+   it. The BSpline Arrange has a degenerate-curve pre-pass (GeomFill_BSplineCurves.cxx:77-91) and
+   the Bezier one does not (GeomFill_BezierCurves.cxx:118); the predicate carries the same flag.
+
+7. The TWO-curve Init is a separate contract and needs no guard ([I]). It runs no Arrange, and its
+   .curved branch refuses two curves that share no endpoint with a real
+   `throw Standard_OutOfRange("... Courbes non jointives")` (GeomFill_BSplineCurves.cxx:545), which
+   No_Exception does not touch and the bridge already turns into nil. .stretch and .coons take the
+   same two curves as opposite edges and build a surface. That asymmetry was undocumented and the
+   Swift wrapper defaults to .coons, so it is now written down rather than guarded.
+
+8. The two values the Swift doc snippets print are measured through the same calls the snippets use
+   ([J]): a Geom_BezierSurface is always 0..1 in both directions, so point(atU: 0, v: 0) is its
+   (u0, v0) corner, and the cylinder patch's own bounds are u=[0, 1.5708] v=[0, 1], so 0, 0 is its
+   corner too.
+
+================================================================ probe A
+=== #2829 ground truth: GeomFill_BSplineCurves / GeomFill_BezierCurves ===
+Precision::Confusion() = 1e-07
+
+[A] planar square, canonical head-to-tail order A->B, B->C, C->D, D->A
+  coons                              poles=4x4 deg=3x3
+      corners (u0v0)=(0.0000,0.0000,0.0000) (u1v0)=(10.0000,0.0000,0.0000)
+              (u0v1)=(0.0000,10.0000,0.0000) (u1v1)=(10.0000,10.0000,0.0000)
+  curved                             poles=4x4 deg=3x3
+      corners (u0v0)=(0.0000,0.0000,0.0000) (u1v0)=(10.0000,0.0000,0.0000)
+              (u0v1)=(0.0000,10.0000,0.0000) (u1v1)=(10.0000,10.0000,0.0000)
+  stretch                            poles=4x4 deg=3x3
+      corners (u0v0)=(0.0000,0.0000,0.0000) (u1v0)=(10.0000,0.0000,0.0000)
+              (u0v1)=(0.0000,10.0000,0.0000) (u1v1)=(10.0000,10.0000,0.0000)
+
+=== done ===
+exit=0
+
+================================================================ probe B
+=== #2829 ground truth: GeomFill_BSplineCurves / GeomFill_BezierCurves ===
+Precision::Confusion() = 1e-07
+
+[B] SAME square, scrambled order and reversed directions:
+    C1=A->B  C2=D->C (reversed top)  C3=A->D (reversed left)  C4=C->B (reversed right)
+  coons (scrambled)                  poles=4x4 deg=3x3
+      corners (u0v0)=(0.0000,0.0000,0.0000) (u1v0)=(10.0000,0.0000,0.0000)
+              (u0v1)=(0.0000,10.0000,0.0000) (u1v1)=(10.0000,10.0000,0.0000)
+  curved (scrambled)                 poles=4x4 deg=3x3
+      corners (u0v0)=(0.0000,0.0000,0.0000) (u1v0)=(10.0000,0.0000,0.0000)
+              (u0v1)=(0.0000,10.0000,0.0000) (u1v1)=(10.0000,10.0000,0.0000)
+
+=== done ===
+exit=0
+
+================================================================ probe C
+=== #2829 ground truth: GeomFill_BSplineCurves / GeomFill_BezierCurves ===
+Precision::Confusion() = 1e-07
+
+[C] NON-JOINING set: the top edge lifted to z=5 so no corner meets it.
+    my Arrange-predicate says: DOES NOT JOIN
+    now handing it to GeomFill_BSplineCurves...
+/opt/homebrew/bin/bash: line 8:  8008 Segmentation fault: 11     $P $s 2>&1
+exit=139
+
+================================================================ probe D
+=== #2829 ground truth: GeomFill_BSplineCurves / GeomFill_BezierCurves ===
+Precision::Confusion() = 1e-07
+
+[D] NON-JOINING set, Bezier flavour (GeomFill_BezierCurves).
+    my Arrange-predicate (no degenerate pre-pass) says: DOES NOT JOIN
+/opt/homebrew/bin/bash: line 8:  8010 Segmentation fault: 11     $P $s 2>&1
+exit=139
+
+================================================================ probe E
+=== #2829 ground truth: GeomFill_BSplineCurves / GeomFill_BezierCurves ===
+Precision::Confusion() = 1e-07
+
+[E] periodic support: a quarter patch on a cylinder r=5, arcs + vertical seams.
+    canonical order bottom(P0->P1), left(P1->P2), top(P3->P2), right(P3->P0)
+  coons on cylinder                  THREW Standard_ConstructionError: GeomFill_BSplineCurves: invalid filling style
+  curved, args scrambled             poles=3x4 deg=2x3
+      corners (u0v0)=(5.0000,0.0000,0.0000) (u1v0)=(0.0000,5.0000,0.0000)
+              (u0v1)=(5.0000,0.0000,8.0000) (u1v1)=(0.0000,5.0000,8.0000)
+    non-joining variant, my predicate says: DOES NOT JOIN
+/opt/homebrew/bin/bash: line 8:  8011 Segmentation fault: 11     $P $s 2>&1
+exit=139
+
+================================================================ probe F
+=== #2829 ground truth: GeomFill_BSplineCurves / GeomFill_BezierCurves ===
+Precision::Confusion() = 1e-07
+
+[F] predicate vs kernel over 24 permutations x 16 direction flips of the square
+    cases=384 agree=384 disagree=0 predicateYes=384 kernelYes=384
+
+=== done ===
+exit=0
+
+================================================================ probe G
+=== #2829 ground truth: GeomFill_BSplineCurves / GeomFill_BezierCurves ===
+Precision::Confusion() = 1e-07
+
+[G] tolerance boundary: a gap of g between the right edge and the top edge.
+    gap=0        predicate=JOINS      kernel=surface built
+    gap=5e-08    predicate=JOINS      kernel=surface built
+    gap=9.9e-08  predicate=JOINS      kernel=surface built
+    gap=2e-07    predicate=NO-JOIN    kernel=not called (C/D/E recorded the crash)
+    gap=1e-06    predicate=NO-JOIN    kernel=not called (C/D/E recorded the crash)
+
+=== done ===
+exit=0
+
+================================================================ probe H
+=== #2829 ground truth: GeomFill_BSplineCurves / GeomFill_BezierCurves ===
+Precision::Confusion() = 1e-07
+
+[H] one side degenerate (collapsed to the corner C).
+    predicate WITH degenerate pre-pass (BSpline flavour): JOINS
+    predicate WITHOUT it (Bezier flavour):                JOINS
+  bspline, degenerate side           poles=4x4 deg=3x3
+      corners (u0v0)=(0.0000,0.0000,0.0000) (u1v0)=(10.0000,0.0000,0.0000)
+              (u0v1)=(10.0000,10.0000,0.0000) (u1v1)=(10.0000,10.0000,0.0000)
+    survived [H]
+
+=== done ===
+exit=0
+
+================================================================ probe I
+=== #2829 ground truth: GeomFill_BSplineCurves / GeomFill_BezierCurves ===
+Precision::Confusion() = 1e-07
+
+[I] two-curve Init, two PARALLEL curves that share no endpoint.
+    stretch  surface=built
+    coons    surface=built
+    curved   THREW Standard_OutOfRange: GeomFill_BSplineCurves: Courbes non jointives
+    curved, sharing a start point: surface=built
+
+=== done ===
+exit=0
+
+================================================================ probe J
+=== #2829 ground truth: GeomFill_BSplineCurves / GeomFill_BezierCurves ===
+Precision::Confusion() = 1e-07
+
+[J] doc-snippet values.
+    bezier scrambled: bounds u=[0,1] v=[0,1] Value(0,0)=(0.0000,0.0000,0.0000)
+    cylinder scrambled: bounds u=[0,1.5708] v=[0,1]
+      Value(0,0)      =(5.0000,0.0000,0.0000)
+      Value(uMin,vMin)=(5.0000,0.0000,0.0000)
+
+=== done ===
+exit=0
+
