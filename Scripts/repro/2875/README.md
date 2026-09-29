@@ -1,4 +1,4 @@
-# #2875: the Bezier pole ceiling, measured at both boundaries
+# #2875: the Bezier pole ceiling, measured at every site that states one
 
 `Geom2d_BezierCurve` and `Geom_BezierCurve` state their pole ceiling three times and state it
 differently each time. This directory holds the probe that measured all three against the pinned
