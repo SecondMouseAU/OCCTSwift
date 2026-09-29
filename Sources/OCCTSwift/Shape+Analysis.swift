@@ -1965,6 +1965,11 @@ extension Shape {
     /// shrinks. It grows, staying finite and non-negative, rather than quietly staying small or
     /// misreporting high confidence right where a caller most needs a reliable number. Treat a large
     /// (or growing) ``errorReached`` as a signal to distrust ``mass``, not the reverse.
+    ///
+    /// One value of ``errorReached`` is not an error bound at all: `-1` is what OCCT sets on each of
+    /// its three failure exits (`BRepGProp_VinertGK.cxx:289`, `:430`, `:455`), and its own loop
+    /// abandons the whole shape when it sees a negative one (`BRepGProp.cxx:711-714`). Read
+    /// `errorReached < 0` as "``mass`` was not computed" (#2806).
     public struct VinertGKResult {
         public let mass: Double
         public let errorReached: Double

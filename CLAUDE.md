@@ -455,6 +455,13 @@ the reproducer). What a bridge author needs without opening it:
   merged solid; comparing the two is #367's mistake, not a kernel bug.
 - `GeomPlate_MakeApprox::ApproxError()` and `MakeFilling::G0Error()` are not gates for "accepted
   an approximation unread"; both were tried and both broke correct results (#597).
+- **A `BRepGProp_Sinert`/`Vinert`/`VinertGK` integral needs the face's own `BRepGProp_Domain`**, and
+  no overload builds one for you: without it the kernel integrates the surface over its natural UV
+  bounds (or, for `Sinert`'s adaptive overload, nothing at all), so a trimmed face over-reports
+  (#2204, #2806). `occtLoadFaceDomain` in `OCCTBridge_Properties.mm` is the rule
+  `BRepGProp::volumePropertiesFaces` and `volumePropertiesGK` apply. **And
+  `BRepGProp_Vinert`'s by-plane mass is always exactly 0** whatever you pass, because
+  `BRepGProp_Gauss::convert` discards it (#2827): do not read that 0 as a measurement.
 - **Retired at the `v4.0.0-kernel.1` repin**, all three, because the pinned asset now carries every
   carried patch: the datum lookup guard in `occtDocumentDatumObjectAt` (#1030, it was refusing a
   datum `0029` makes readable), the `Scripts/tsan.supp` lines for `TopoDS_TShape::myState`

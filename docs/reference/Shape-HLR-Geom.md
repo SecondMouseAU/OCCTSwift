@@ -1433,10 +1433,34 @@ public var volumeInertia: FaceVolumeInertia { get }
 
 - **Returns:** `FaceVolumeInertia` with signed `volume` and an optional centre of mass.
 - **OCCT:** `BRepGProp_Vinert` via `OCCTBRepGPropVinert`.
+- **Measured against the origin, and only the sum is origin-independent.** The value is the signed
+  volume swept between the face and `(0, 0, 0)`, signed by the face's own orientation, so a
+  `REVERSED` face (a hole's wall) subtracts. Move the shape and a single face's number changes; the
+  sum over a closed shape's faces does not, and equals `Shape.volume`.
+- **The trimmed region, not the natural UV patch (#2806).** `OCCTBRepGPropVinert` passed no
+  `BRepGProp_Domain`, which took `BRepGProp_Gauss`'s no-domain overload and integrated the surface
+  over its own UV bounds, so a face with a hole reported the unholed patch. It now loads the domain
+  whenever the face has wires, which is what `BRepGProp::volumePropertiesFaces`
+  (`BRepGProp.cxx:355-390`) does for every `BRepGProp::VolumeProperties` call.
+- **Orientation is handled one level down.** `BRepGProp_Face::Load` records
+  `mySReverse = (F.Orientation() == TopAbs_REVERSED)` and reverses the normal it integrates
+  (`BRepGProp_Face.cxx:196`, `:206`), and `BRepGProp_Domain::Init` takes `F.Oriented(TopAbs_FORWARD)`
+  itself (`BRepGProp_Domain.lxx:41`), so the boundary does not depend on the sense. OCCT's loop adds
+  one shape-level rule this per-face property cannot: it integrates only a `FORWARD` or `REVERSED`
+  face and skips an `INTERNAL` or `EXTERNAL` one. Summing over a shape that carries such a face
+  gives more than `Shape.volume`.
 - **Example:**
   ```swift
-  let vi = face.volumeInertia
-  print("volume contribution:", vi.volume)
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  box.faces().reduce(0) { $0 + $1.volumeInertia.volume }   // 1000, summed per face
+
+  // A trimmed face contributes its trimmed region: this plate's two 20 x 20 caps carry a
+  // radius-3 hole, and the hole's wall is a face whose contribution is negative.
+  let plate = Shape.box(width: 20, height: 20, depth: 2)!
+  let drill = Shape.cylinder(radius: 3, height: 10)!.translated(by: SIMD3(0, 0, -5))!
+  let holed = plate.subtracting(drill)!
+  holed.faces().reduce(0) { $0 + $1.volumeInertia.volume }   // 743.4513322353836
+  holed.volume                                              // 743.4513322353836, the same
   ```
 
 ---
@@ -1454,6 +1478,21 @@ public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0)
   - `planeDistance`: signed distance from origin to the plane along `planeNormal`.
 - **Returns:** `FaceVolumeInertia` measured relative to the given plane.
 - **OCCT:** `BRepGProp_Vinert(face, gp_Pln)` via `OCCTBRepGPropVinertPlane`.
+- **It returns 0 on every current kernel, and that 0 is not a measurement (#2827).** OCCT computes
+  the by-plane mass and discards it: `BRepGProp_Gauss::convert` keeps the value only when its
+  `theIsByPoint` flag is set (`BRepGProp_Gauss.cxx:494-528`), and every by-plane path, all four
+  `BRepGProp_Vinert::Perform` overloads and both `BRepGProp_Gauss::Compute` branches, reaches it with
+  that flag clear. Measured on a cube, a holed plate and a cylinder, for a plane through the origin,
+  a plane 100 away from the shape and an oblique plane: every face, exactly `0.0`. The function got
+  #2806's `BRepGProp_Domain` as well, so it becomes correct rather than merely zero as soon as a
+  pinned kernel carries the one-line fix. Use `Face.volumeInertia` meanwhile, whose by-point form is
+  measured.
+- **Example:**
+  ```swift
+  let face = Shape.box(width: 10, height: 10, depth: 10)!.faces()[0]
+  face.volumeInertia(planeNormal: SIMD3(0, 0, 1)).volume   // 0.0 on this kernel, see #2827
+  face.volumeInertia.volume                                // 166.66666666666666, measured
+  ```
 
 ---
 

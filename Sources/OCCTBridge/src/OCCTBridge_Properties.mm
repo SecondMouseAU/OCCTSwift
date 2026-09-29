@@ -1754,6 +1754,15 @@ OCCTCurveInertiaResult OCCTBRepGPropCinert(OCCTEdgeRef _Nonnull edge)
 // The adaptive branch passes BD unconditionally because BRepGProp_Gauss re-derives the same
 // NbChildren() == 0 test from the face itself (BRepGProp_Gauss.cxx:585-588) and ignores the domain
 // for a naturally restricted one. occtLoadFaceDomain is that rule, once.
+//
+// #2806: the same rule, from the same page, for BRepGProp_Vinert and BRepGProp_VinertGK.
+// volumePropertiesFaces (BRepGProp.cxx:355-390) and volumePropertiesGK (BRepGProp.cxx:698-710) are
+// the production loops behind BRepGProp::VolumeProperties and ::VolumePropertiesGK, and both load
+// the domain from the face whenever the face has wires, in the same four lines. The helper is
+// shared rather than duplicated because the rule is a property of the face, not of the integrand:
+// BRepGProp_Domain::Init(F) walks the face's own edges and takes F.Oriented(TopAbs_FORWARD)
+// itself (BRepGProp_Domain.lxx:41), so the boundary it hands the integrator does not depend on the
+// face's orientation, and neither does this test.
 static bool occtLoadFaceDomain(const TopoDS_Face& face, BRepGProp_Domain& domain)
 {
   if (face.NbChildren() == 0)
@@ -1823,6 +1832,24 @@ OCCTFaceSurfaceInertia OCCTBRepGPropSinertAdaptive(OCCTFaceRef _Nonnull face, do
 
 // --- BRepGProp_Vinert ---
 
+// #2806: what volumePropertiesFaces (BRepGProp.cxx:322-400) does about orientation, since a volume
+// integral over a face depends on the face's sense in a way an area integral does not.
+//
+// It does nothing to the integrand and nothing to the domain. The sign lives one level down, in
+// BRepGProp_Face::Load, which records mySReverse = (F.Orientation() == TopAbs_REVERSED)
+// (BRepGProp_Face.cxx:196) and reverses the normal it hands the integrator
+// (BRepGProp_Face.cxx:206), so loading the oriented face is the whole of it. The loop's own two
+// orientation acts are both shape-level and neither applies to one face measured on its own:
+//
+//   1. it integrates only a FORWARD or REVERSED face, skipping INTERNAL and EXTERNAL ones, which
+//      bound no volume;
+//   2. under SkipShared it de-duplicates FORWARD and REVERSED faces in two separate maps, so a
+//      seam face shared by two shells is counted once per sense.
+//
+// So this function stays a faithful single-face wrapper: it reports the face it was handed, with
+// the sign its orientation gives it, and the caller-visible consequence of (1) is documented on
+// Face.volumeInertia rather than reproduced here.
+
 OCCTFaceVolumeInertia OCCTBRepGPropVinert(OCCTFaceRef _Nonnull face)
 {
   OCCTFaceVolumeInertia result = {};
@@ -1830,10 +1857,15 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinert(OCCTFaceRef _Nonnull face)
     return result;
   try
   {
-    BRepGProp_Face   gpropFace(TopoDS::Face(face->face));
-    BRepGProp_Vinert vinert;
+    const TopoDS_Face& f = TopoDS::Face(face->face);
+    BRepGProp_Face     gpropFace(f);
+    BRepGProp_Domain   domain;
+    BRepGProp_Vinert   vinert;
     vinert.SetLocation(gp_Pnt(0, 0, 0));
-    vinert.Perform(gpropFace);
+    if (occtLoadFaceDomain(f, domain))
+      vinert.Perform(gpropFace, domain);
+    else
+      vinert.Perform(gpropFace);
     result.mass    = vinert.Mass();
     gp_Pnt cm      = vinert.CentreOfMass();
     result.centerX = cm.X();
@@ -1858,11 +1890,32 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
     return result;
   try
   {
-    BRepGProp_Face gpropFace(TopoDS::Face(face->face));
-    gp_Dir         normal(planeNX, planeNY, planeNZ);
+    const TopoDS_Face& f = TopoDS::Face(face->face);
+    BRepGProp_Face     gpropFace(f);
+    gp_Dir             normal(planeNX, planeNY, planeNZ);
     gp_Pln plane(gp_Pnt(normal.X() * planeDist, normal.Y() * planeDist, normal.Z() * planeDist),
                  normal);
-    BRepGProp_Vinert vinert(gpropFace, plane, gp_Pnt(0, 0, 0));
+    BRepGProp_Domain domain;
+    BRepGProp_Vinert vinert;
+    vinert.SetLocation(gp_Pnt(0, 0, 0));
+    // #2806: the same domain rule as the by-point overload above. It changes no value on this pin,
+    // because the kernel discards the by-plane mass before it reaches us (see the note below), and
+    // it is what makes the by-plane overload correct rather than merely zero once that is fixed.
+    if (occtLoadFaceDomain(f, domain))
+      vinert.Perform(gpropFace, domain, plane);
+    else
+      vinert.Perform(gpropFace, plane);
+    // #2827: BRepGProp_Vinert's by-plane mass is ALWAYS 0, in the kernel, whatever the face and
+    // whatever the plane. BRepGProp_Gauss::convert (BRepGProp_Gauss.cxx:494-528, and byte-identical
+    // on upstream master) computes the mass correctly in its four-argument form, then overwrites it
+    // in the six-argument one: `if (std::abs(theInertia.Mass) >= EPS_DIM && theIsByPoint)` keeps
+    // the value only for the by-point form, and the else branch, written for the vanishing-mass
+    // case, sets theOutMass = 0.0 and the centre of mass to (0, 0, 0) for every by-plane call. All
+    // four by-plane Perform overloads and both by-plane Compute paths funnel through it. Measured:
+    // every face of a 10-cube, of a 20x20x2 plate with a hole, and of a cylinder answers exactly
+    // 0.0, for a plane through the origin and for one 100 away from the shape. Nothing on our side
+    // can recover the value, so the bridge reports what the kernel returns and Face.volumeInertia's
+    // doc comment says it is not a measurement.
     result.mass    = vinert.Mass();
     gp_Pnt cm      = vinert.CentreOfMass();
     result.centerX = cm.X();
@@ -1896,9 +1949,21 @@ OCCTVinertGKResult OCCTBRepGPropVinertGK(OCCTShapeRef _Nonnull faceRef,
     BRepGProp_Face bface(face);
     gp_Pnt         loc(locX, locY, locZ);
 
-    BRepGProp_VinertGK vgk(bface, loc, tolerance, computeCG, false);
-    result.mass         = vgk.Mass();
-    result.errorReached = vgk.GetErrorReached();
+    // #2806: volumePropertiesGK (BRepGProp.cxx:698-710) loads the face's domain exactly as
+    // volumePropertiesFaces does, so a trimmed face was integrated over its natural UV bounds here
+    // too: the seven faces of a 20x20x2 plate with a radius-3 hole summed to 762.3008881569224
+    // against Shape.volume 743.4513322353836, the hole counted on both large faces. The
+    // constructor form is kept on both branches, since it is what this function already used and
+    // it is the same Perform underneath. OCCT's loop aborts the whole shape when Perform returns a
+    // negative error; the same signal reaches a Swift caller as errorReached == -1, which is what
+    // BRepGProp_VinertGK sets on each of its three failure exits (BRepGProp_VinertGK.cxx:289, 430,
+    // 455), so the abort is reportable here rather than reproduced.
+    BRepGProp_Domain   domain;
+    BRepGProp_VinertGK vgk = occtLoadFaceDomain(face, domain)
+                               ? BRepGProp_VinertGK(bface, domain, loc, tolerance, computeCG, false)
+                               : BRepGProp_VinertGK(bface, loc, tolerance, computeCG, false);
+    result.mass            = vgk.Mass();
+    result.errorReached    = vgk.GetErrorReached();
 
     if (computeCG)
     {

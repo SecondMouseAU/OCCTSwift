@@ -389,6 +389,16 @@ public func vinertGK(location: SIMD3<Double> = SIMD3(0, 0, 0),
   OCCT declares `GetAbsolutError()` on the same class but never defines it, so calling it fails to
   link, and deriving one from `.errorReached * .mass` would go wrong exactly in that same
   near-zero-mass branch, so the field was removed rather than kept as a second silent zero.
+- **A trimmed face is integrated over its trimmed region (#2806).** The wrapper passed no
+  `BRepGProp_Domain`, and `BRepGProp_VinertGK::PrivatePerform` reads a null domain pointer as "there
+  is only one curve to treat, the U isoline at UMax" (`BRepGProp_VinertGK.cxx:271-276`), so a face
+  with a hole reported the unholed patch: the seven faces of a 20 x 20 x 2 plate with a radius-3 hole
+  summed to 762.3008881569224 against `Shape.volume` 743.4513322353836. It now loads the domain
+  whenever the face has wires, which is what `BRepGProp::volumePropertiesGK`
+  (`BRepGProp.cxx:698-710`) does. `.errorReached` also carries the failure signal: OCCT sets it to
+  `-1` on each of its three failure exits (`BRepGProp_VinertGK.cxx:289`, `:430`, `:455`), and OCCT's
+  own loop abandons the whole shape when it sees a negative error, so treat `.errorReached < 0` as
+  "`.mass` is not a measurement" rather than as a large error.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
