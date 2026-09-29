@@ -26,8 +26,8 @@ exactly like protection. Measure it or guard the value yourself.
    #endif
    ```
 
-2. `adm/cmake/occt_defs_flags.cmake:226` adds `-DNo_Exception` to `CMAKE_CXX_FLAGS_RELEASE` (and to
-   `CMAKE_C_FLAGS_RELEASE`) when `BUILD_RELEASE_DISABLE_EXCEPTIONS` is set.
+2. `adm/cmake/occt_defs_flags.cmake:227` adds `-DNo_Exception` to `CMAKE_CXX_FLAGS_RELEASE`, and
+   `:228` to `CMAKE_C_FLAGS_RELEASE`, under the `if (BUILD_RELEASE_DISABLE_EXCEPTIONS)` at `:226`.
 3. OCCT's `CMakeLists.txt:195` defaults `BUILD_RELEASE_DISABLE_EXCEPTIONS` to **ON**.
 4. `Scripts/build-occt.sh` configures all seven of its cmake invocations `-DCMAKE_BUILD_TYPE=Release`
    and never overrides it.
