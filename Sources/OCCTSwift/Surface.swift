@@ -3545,14 +3545,24 @@ extension Surface {
         Int(OCCTSurfaceBezierContinuity(handle))
     }
 
-    /// Is the Bezier surface at least CN continuous in U?
+    /// Whether this Bezier surface has at least C^n continuity in U.
+    ///
+    /// - Parameter n: The continuity order, which must not be negative.
+    /// - Returns: `false` for a negative `n`, and `false` if the surface is null. See
+    ///   ``Curve3D/isCN(_:)`` for why a negative order is refused here rather than by OCCT (#2862).
     public func bezierIsCNu(_ n: Int) -> Bool {
-        OCCTSurfaceBezierIsCNu(handle, Int32(n))
+        guard n >= 0 else { return false }
+        return OCCTSurfaceBezierIsCNu(handle, Int32(n))
     }
 
-    /// Is the Bezier surface at least CN continuous in V?
+    /// Whether this Bezier surface has at least C^n continuity in V.
+    ///
+    /// - Parameter n: The continuity order, which must not be negative.
+    /// - Returns: `false` for a negative `n`, and `false` if the surface is null. See
+    ///   ``Curve3D/isCN(_:)`` for why a negative order is refused here rather than by OCCT (#2862).
     public func bezierIsCNv(_ n: Int) -> Bool {
-        OCCTSurfaceBezierIsCNv(handle, Int32(n))
+        guard n >= 0 else { return false }
+        return OCCTSurfaceBezierIsCNv(handle, Int32(n))
     }
 
     /// Get all poles as flat array for Bezier surface.
@@ -5350,14 +5360,24 @@ extension Surface {
 
 extension Surface {
 
-    /// Check if this surface has at least Cn continuity in the U direction.
+    /// Whether this surface has at least C^n continuity in the U direction.
+    ///
+    /// - Parameter n: The continuity order, which must not be negative.
+    /// - Returns: `false` for a negative `n`, and `false` if the surface is null. See
+    ///   ``Curve3D/isCN(_:)`` for why a negative order is refused here rather than by OCCT (#2862).
     public func isCNu(_ n: Int) -> Bool {
-        OCCTSurfaceIsCNu(handle, Int32(n))
+        guard n >= 0 else { return false }
+        return OCCTSurfaceIsCNu(handle, Int32(n))
     }
 
-    /// Check if this surface has at least Cn continuity in the V direction.
+    /// Whether this surface has at least C^n continuity in the V direction.
+    ///
+    /// - Parameter n: The continuity order, which must not be negative.
+    /// - Returns: `false` for a negative `n`, and `false` if the surface is null. See
+    ///   ``Curve3D/isCN(_:)`` for why a negative order is refused here rather than by OCCT (#2862).
     public func isCNv(_ n: Int) -> Bool {
-        OCCTSurfaceIsCNv(handle, Int32(n))
+        guard n >= 0 else { return false }
+        return OCCTSurfaceIsCNv(handle, Int32(n))
     }
 
     /// Create a U-reversed copy of this surface.
