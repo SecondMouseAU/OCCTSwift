@@ -1,0 +1,16 @@
+Bridge side of the 11 corrected TYPES records: what the OCCTCurveTests tests observe through the
+public API, printed by a temporary Swift Testing test that repeated each test's inputs (never
+committed) and run with `swift test --skip-build --filter` on the branch tip. The assertions of the
+real tests pin the same values.
+
+EVID 38 done=true isSameParameter=Optional(true)
+EVID 39 bsplineSetOrigin(index: 1)=false
+EVID 40 bezierWeights=nil
+EVID 41 setWeight=true isRational=true bezierWeights=Optional([1.0, 2.0, 1.0, 1.0])
+EVID 42 domain=0.0...10.0 point(at: mid 5.0)=SIMD3<Double>(-5.0, -5.0, 5.0)
+EVID 43 domain=0.0...10.0 point(at: 5)=SIMD3<Double>(-5.0, -5.0, 0.0)
+EVID 44 pcurveParams first=0.0 last=30.0
+EVID 45 maxDeviation=0.0
+EVID 46 maxDeviation=0.0
+EVID 47 perform_vs_optimal1=0.0 optimal1_vs_optimal10000=0.0 max=0.0
+EVID 48 convOnly_vs_thenLoosened=0.0 convOnly_vs_tightenedByProjection=0.0 max=0.0

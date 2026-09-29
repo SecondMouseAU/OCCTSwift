@@ -1,0 +1,17 @@
+cylinder r=5 h=10: 3 faces, cap area pi*25 = 78.539816339744831
+  face[0] area=314.15926535897921 centroid=(-3.5527136788005011e-16, -2.4424906541753451e-16, 5)
+  face[1] area=78.539816339744817 centroid=(5.5511151231257827e-17, 5.5511151231257827e-17, 10)
+  face[2] area=78.539816339744817 centroid=(5.5511151231257827e-17, 5.5511151231257827e-17, 0)
+cap faces (|area - pi*25| < 1e-3): 2, max |centroid x| = 5.5511151231257827e-17, max |centroid y| = 5.5511151231257827e-17
+box 10x20x30: 6 faces
+  face[0] plane origin=(-5, -10, -15) axis=(1, 0, -0)
+  face[1] plane origin=(5, -10, -15) axis=(1, 0, -0)
+  face[2] plane origin=(-5, -10, -15) axis=(-0, 1, 0)
+  face[3] plane origin=(-5, 10, -15) axis=(-0, 1, 0)
+  face[4] plane origin=(-5, -10, -15) axis=(0, 0, 1)
+  face[5] plane origin=(-5, -10, 15) axis=(0, 0, 1)
+z cap faces()[4], +Z ray from (0, 0, -50): NbPoints=1
+  [1] point=(0, 0, -15) parameter=35
+x cap faces()[0], +Z ray from (0, 0, -50): NbPoints=0
+edge (-10,1,2)-(0,1,2) vs faces()[0]: IsDone=1 NbCommonParts=1
+  part 1: type=VERTEX VertexParameter1=5 range1=(4.99999985, 5.00000015) midpoint=(-5, 1, 2)
