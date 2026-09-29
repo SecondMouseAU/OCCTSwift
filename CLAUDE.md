@@ -175,6 +175,18 @@ the script cannot derive. An elided placeholder is not one: `= ...`, `{ ... }`, 
 rather than reporting on a population it never examined (#2098). A wrong signature *restatement* is
 a different question, and `check-docs-defaults.py` covers the enum case of it (#2145).
 
+**It does not build the module it compiles against, so it checks that module's age (#2816).** A
+`.swiftmodule` another branch left in `.build` makes a correct page look broken: an initialiser that
+is failable here and was not there reports `initializer for conditional binding must have Optional
+type` on every snippet that binds it, which is exactly the three false failures reported on PR
+#2799. A module older than any of its own inputs is therefore **refused** rather than compiled
+against: exit 2 with or without `--require-typecheck`, naming the file and `swift build`. The inputs
+are `MODULE_INPUT_GLOBS`, and it is the extensions that count rather than the directories:
+`Sources/OCCTSwift/**/*.swift`, `Sources/OCCTBridge/**/*.{h,mm,modulemap}` and `Package.swift`. A
+missing module stays a skip, because a skip is visible to whoever has no build while a stale module
+is not. `docs/` is not an input, so editing a snippet never trips it, and CI never meets it, because
+the `swift build` step ahead of it recompiles the module on every run.
+
 ### Pinned-Asset Patch Check
 
 ```bash
