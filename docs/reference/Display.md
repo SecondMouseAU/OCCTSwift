@@ -1090,9 +1090,9 @@ Extracts wireframe edge polylines from the shape.
 func edgeMesh(deflection: Double = 0.1) -> EdgeMeshData?
 ```
 
-- **Parameters:** `deflection`, chord deviation tolerance (default 0.1).
+- **Parameters:** `deflection`, chord deviation tolerance (default 0.1). Must be at least `Precision::Confusion()` (1e-7); below that the result is `nil` ([#2872](https://github.com/SecondMouseAU/OCCTSwift/issues/2872)). An edge with no triangulation polygon falls back to `GCPnts_TangentialDeflection`, whose own check on the value is compiled out of the pinned Release kernel, and that fallback loop has no point ceiling, so an out-of-bounds deflection runs to an internal million-point cap per edge.
 - **Returns:** `EdgeMeshData`, or `nil` if extraction fails or produces no vertices.
-- **OCCT:** `BRepMesh_IncrementalMesh::Perform` + `TopTools_IndexedMapOfShape` + `BRep_Tool::PolygonOnTriangulation` / `Polygon3D` / `GCPnts_TangentialDeflection` (fallback).
+- **OCCT:** `BRepMesh_IncrementalMesh::Perform` + `TopTools_IndexedMapOfShape` + `BRep_Tool::PolygonOnTriangulation` / `Polygon3D` / `GCPnts_TangentialDeflection` (fallback, taking `deflection` as its linear tolerance against a fixed 0.1 rad angular one).
 - **Example:**
   ```swift
   if let wf = box.edgeMesh(deflection: 0.1) {
