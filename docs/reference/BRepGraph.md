@@ -11,7 +11,7 @@ parent: API Reference
 
 ## Topics
 
-- [Lifecycle](#lifecycle) · [Topology Counts](#topology-counts) · [Geometry Counts](#geometry-counts) · [Face Queries](#face-queries) · [Edge Queries](#edge-queries) · [Vertex Queries](#vertex-queries) · [Explorers](#explorers) · [Node Status](#node-status) · [Root Nodes](#root-nodes) · [Validate](#validate) · [Compact](#compact) · [Deduplicate](#deduplicate) · [Statistics](#statistics) · [Shape Reconstruction](#shape-reconstruction) · [Vertex Geometry](#vertex-geometry) · [Edge Geometry](#edge-geometry) · [Face Geometry](#face-geometry) · [Wire Queries](#wire-queries)
+- [Lifecycle](#lifecycle) · [Topology Counts](#topology-counts) · [Geometry Counts](#geometry-counts) · [Face Queries](#face-queries) · [Edge Queries](#edge-queries) · [Vertex Queries](#vertex-queries) · [Explorers](#explorers) · [Node Status](#node-status) · [Root Nodes](#root-nodes) · [Validate](#validate) · [Compact](#compact) · [Deduplicate](#deduplicate) · [Statistics](#statistics) · [Shape Reconstruction](#shape-reconstruction) · [Occurrence-Aware Lookup](#occurrence-aware-lookup) · [Vertex Geometry](#vertex-geometry) · [Edge Geometry](#edge-geometry) · [Face Geometry](#face-geometry) · [Wire Queries](#wire-queries)
 
 ---
 
@@ -834,7 +834,8 @@ part twice returns the same `(kind, index)` for both occurrences. That is OCCT's
 than a shortcut here: the graph stores one definition per part and carries each placement on a
 child or occurrence reference, and `BRepGraph/README.md` keeps per-occurrence context out of the
 storage model, resolving it by walking the hierarchy instead. Key a per-instance identity off the
-traversal path, never off this node.
+traversal path, never off this node: [`occurrences(ofNode:from:)`](#occurrencesofnodefrom) is the
+accessor that hands you that path (#2835).
 
 A placed shape the graph never ingested does not resolve, so this stays a lookup of the
 construction input rather than a match on `TShape` alone.
@@ -880,6 +881,143 @@ print(graph.hasNode(for: box.moved(dx: 99, dy: 0, dz: 0)!))  // false
 
 - **Parameters:** `shape`, the shape to check.
 - **OCCT:** `BRepGraph::ShapesView::HasNode(shape)`, with the same retry as `findNode(for:)`.
+
+---
+
+## Occurrence-Aware Lookup
+
+`findNode(for:)` answers the **definition** node, so the two instances of one part in a compound come
+back as the same `(kind, index)`. These accessors answer the **occurrences**: one entry per placement,
+each carrying the location composed down the traversal and the `BRepGraph_UsagePath` that tells it
+apart from its siblings.
+
+The model is the kernel's own. `BRepGraph/README.md:398` keeps occurrence context out of the storage
+model and resolves it "through explorer usage paths or layer-side resolvers", and
+`BRepGraph_ChildExplorer` "visits each occurrence. If Edge[5] is reachable through Face[0] and
+Face[1], it is visited twice with different accumulated transforms"
+(`BRepGraph_ChildExplorer.hxx:47`). Nothing here is invented: the surface is
+`BRepGraph_ChildExplorer::CurrentUsagePath()` plus `Current().Location` and `Current().Orientation`.
+
+Measured in `Scripts/repro/2835-brepgraph-occurrence-lookup/`.
+
+### `UsagePathStep`
+
+One step of the traversal path that identifies a concrete occurrence, a direct wrap of
+`BRepGraph_UsagePath::Step`.
+
+```swift
+public struct UsagePathStep: Sendable, Hashable {
+    public let node: NodeRef
+    public let refKind: RefKind?
+    public let refIndex: Int
+    public let stepIndex: Int
+}
+```
+
+All three of node, reference and sibling order are needed. Two occurrences of one part share every
+`node` on the path and differ only where the branch splits:
+
+```
+first  = Compound[0](-,step=-1) / Solid[0](ChildRef[0],step=0) / Shell[0](ShellRef[0],step=0) / Face[0](FaceRef[0],step=0)
+second = Compound[0](-,step=-1) / Solid[0](ChildRef[1],step=1) / Shell[0](ShellRef[0],step=0) / Face[0](FaceRef[0],step=0)
+```
+
+`refKind` is `nil` for a structural link that owns no reference entry (`Occurrence` to `Product`,
+`CoEdge` to `Edge`) and for the traversal's own root step, whose `stepIndex` is `-1`.
+
+> `BRepGraph_UsagePath::HashCode()` is documented to use "first step, last step, and size for O(1)
+> computation", so the two paths above **collide** on it. `UsagePathStep`/`Occurrence` therefore use
+> Swift's own synthesised hash over every step rather than wrapping `HashCode()`.
+
+### `Occurrence`
+
+```swift
+public struct Occurrence: Sendable, Hashable {
+    public let node: NodeRef
+    public let location: [Double]
+    public let orientation: Int
+    public let path: [UsagePathStep]
+}
+```
+
+`path` is the identity. `node` is not: it is the definition node, shared by every occurrence of the
+part. `location` is a 3x4 row-major matrix (12 doubles), the same layout as
+`childRefLocalLocation(_:)`, with the translation column at elements 3, 7 and 11. `orientation` is a
+`TopAbs_Orientation` ordinal (0 forward, 1 reversed, 2 internal, 3 external).
+
+### `occurrences(ofNode:from:)`
+
+Every occurrence of a node reachable from a root node, in traversal order.
+
+```swift
+public func occurrences(ofNode node: NodeRef, from root: NodeRef) -> [Occurrence]
+```
+
+**The root is not optional and there is no default.** A graph this wrapper builds has no `Product`
+and no `Occurrence` node at all, because `OCCTBRepGraphCreate` passes
+`ShapesView::Options::CreateAutoProduct = false`, so `rootNodes` and `rootProductIndices` are empty
+and cannot serve as one (measured: `Products=0 Occurrences=0 RootProductIds().Size()=0`). The root to
+pass is the node of the shape the graph was built from, which `findNode(for:)` gives you.
+
+```swift
+let box = Shape.box(width: 10, height: 8, depth: 6)!
+let placed = box.moved(dx: 50, dy: 0, dz: 0)!
+let pair = Shape.compound([box, placed])!
+let graph = BRepGraph(shape: pair)!
+let root = graph.findNode(for: pair)!
+
+let solid = graph.findNode(for: pair.subShapes(ofType: .solid)[0])!
+let occurrences = graph.occurrences(
+    ofNode: BRepGraph.NodeRef(kind: solid.kind, index: solid.index),
+    from: BRepGraph.NodeRef(kind: root.kind, index: root.index))
+print(occurrences.count)                                       // 2
+print(occurrences[0].location[3], occurrences[1].location[3])  // 0.0 50.0
+print(occurrences[0].path == occurrences[1].path)              // false
+```
+
+- **Parameters:** `node`, the definition node; `root`, the node to traverse from.
+- **Returns:** One entry per occurrence in depth-first order. Empty when the node has no occurrence
+  under `root`, and empty rather than a failure when either node is out of range, because an
+  out-of-range root makes the explorer emit nothing rather than throw (measured, block G3).
+- **OCCT:** `BRepGraph_ChildExplorer` with `TargetKind = node.kind`, plus `CurrentUsagePath()`,
+  `Current().Location` and `Current().Orientation`.
+- **Cost:** one traversal of the root's subgraph, **not** a map lookup. 0.21 ms over a compound of
+  200 instances, and the same 0.21 ms whether one definition is filtered out or every occurrence of
+  the kind is kept, because the filter saves nothing. Code that wants the occurrences of many nodes
+  should not call this once per node.
+
+### `occurrences(of:from:)`
+
+Every occurrence of a shape reachable from a root node.
+
+```swift
+public func occurrences(of shape: Shape, from root: NodeRef) -> [Occurrence]
+```
+
+Resolves `shape` with `findNode(for:)` and enumerates that node's occurrences, so a picked sub-shape
+of a placed instance answers every placement of the part it belongs to, including the one it was
+picked from.
+
+```swift
+let box = Shape.box(width: 10, height: 8, depth: 6)!
+let placed = box.moved(dx: 50, dy: 0, dz: 0)!
+let pair = Shape.compound([box, placed])!
+let graph = BRepGraph(shape: pair)!
+let root = graph.findNode(for: pair)!
+
+let pickedFace = placed.subShapes(ofType: .face)[0]
+let occurrences = graph.occurrences(
+    of: pickedFace,
+    from: BRepGraph.NodeRef(kind: root.kind, index: root.index))
+print(occurrences.count)  // 2
+```
+
+- **Parameters:** `shape`, the shape to look up; `root`, the node to traverse from.
+- **Returns:** One entry per occurrence, or an empty array when `shape` has no node.
+- **OCCT:** `BRepGraph::ShapesView::FindNode` then `BRepGraph_ChildExplorer` as above.
+
+An unplaced single part is not a special case: it has exactly one occurrence, at the identity
+(measured, block G4).
 
 ---
 
