@@ -109,12 +109,13 @@ struct StressBRepCheckInContextGuardTests {
         #expect(clean.hasInvalidTopology == false)
     }
 
-    @Test("isSubShapeValid answers false instead of crashing")
+    @Test("isSubShapeValid answers nil instead of crashing or claiming invalid")
     func isSubShapeValidDoesNotCrash() throws {
-        // The analyzer walks the whole parent shape whichever sub-shape is asked after, so this
-        // one crashed for every index. false is a claim about the named sub-shape that the guard
-        // has not measured; the missing refusal channel is filed as #2755.
-        #expect(try Self.fixture().isSubShapeValid(type: .face, at: 0) == false)
+        // The analyzer walks the whole parent shape whichever sub-shape is asked after, so this one
+        // crashed for every index. It used to answer false, which was a claim about the named
+        // sub-shape that the guard never measured; #2755 gave it the "could not determine" channel
+        // every neighbour already had, and nil is that channel.
+        #expect(try Self.fixture().isSubShapeValid(type: .face, at: 0) == nil)
         #expect(try Self.control().isSubShapeValid(type: .face, at: 0) == true)
     }
 

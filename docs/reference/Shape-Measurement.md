@@ -2337,19 +2337,45 @@ public func analyzeValidity(geometryChecks: Bool = true) -> Bool
 Check if a specific sub-shape is valid within this shape's context.
 
 ```swift
-public func isSubShapeValid(type: ShapeType, at index: Int) -> Bool
+public func isSubShapeValid(type: ShapeType, at index: Int) -> Bool?
 ```
+
+**`Bool?`, not `Bool`, since #2755, which is a source-breaking change.**
+`BRepCheck_Analyzer::Perform()` walks the whole parent shape whichever sub-shape you ask after, so a
+parent carrying either of the two shapes the analyzer cannot survive has to be refused before the
+analyzer is built, and that refusal is a statement about the parent rather than about the sub-shape you
+named. The two shapes are a non-degenerated edge of a face with no valid 3D curve and at least one
+pcurve (#2746) and a face with no surface that carries a wire (#2789); both survive a `.brep` round
+trip, so `Shape.loadBREP(from:)` is enough to produce one. Returning `false` there claimed the named
+sub-shape was invalid, which nothing had measured (the #726 shape).
+
+`nil` is that case and only that case. It is the "could not determine" channel `isInside(_:)` and
+`checkFaceStatus(face:)` already use, over the same bridge tri-state, rather than a new idiom.
+
+An index that names no sub-shape of that type still answers `false`: that is a statement about the
+index, and `checkEdge(at:)` answers over the same domain (#613, #844).
 
 Used to take a local `Shape.TopAbs_ShapeEnum` enum, a third independent mirror of the canonical
 `ShapeType` (see "Shape-Features"), used only by this one method. Switched to `ShapeType` directly
 and the local enum removed (#844); `ShapeType`'s raw values already match the real
 `TopAbs_ShapeEnum` ordinals this method's bridge call expects.
 
+```swift
+let box = Shape.box(width: 10, height: 20, depth: 30)!
+switch box.isSubShapeValid(type: .edge, at: 0) {
+case true?: print("edge 0 checked out")
+case false?: print("edge 0 is invalid, or index 0 names no edge")
+case nil: print("this shape cannot be handed to BRepCheck_Analyzer")
+}
+```
+
 - **Parameters:**
   - `type`: Type of sub-shape to check.
   - `index`: 0-based index of the sub-shape.
-- **Returns:** `true` if the sub-shape is valid.
-- **OCCT:** `BRepCheck_Analyzer` (via `OCCTBRepCheckSubShapeValid`).
+- **Returns:** `true` if the analyzer ran and reported no error, `false` if it reported one or the
+  index names no sub-shape of that type, `nil` if the parent could not be checked at all.
+- **OCCT:** `BRepCheck_Analyzer` (via `OCCTBRepCheckSubShapeValid`, which returns
+  `OCCTSubShapeValidity`).
 
 ---
 

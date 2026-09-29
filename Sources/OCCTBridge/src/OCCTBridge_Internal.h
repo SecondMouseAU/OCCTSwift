@@ -3598,7 +3598,13 @@ inline int32_t occtBRepCheckSubShapeStatus(const TopoDS_Shape& shape, const Topo
   // edge or an unrelated vertex. -1 is this function's existing "could not determine", already
   // returned for a null input and for a null BRepCheck_Result, and it is outside the
   // BRepCheck_Status range, so it cannot be misread as BRepCheck_NoError.
-  if (occtShapeHasPCurveOnlyEdge(shape))
+  //
+  // #2789: the second shape the analyzer cannot survive, a face with no surface that carries a
+  // wire, faults at BRepCheck_Edge.cxx:463 rather than at #2746's line, and reaches this call the
+  // same way (Perform() walks the whole shape whichever sub-shape is asked after). Same -1, same
+  // reasoning. This is the answer #2755 argues the Bool-returning sibling should have had all
+  // along, and it is why that sibling now returns OCCTSubShapeValidity rather than bool.
+  if (occtShapeHasPCurveOnlyEdge(shape) || occtShapeHasSurfacelessFace(shape))
     return -1;
   try
   {
