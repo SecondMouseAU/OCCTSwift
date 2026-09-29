@@ -373,6 +373,17 @@ rather than a scan that saw nothing, which the report then says in those words. 
 floor and a canary to a magic number, and where a magic number is unavoidable, ask which legitimate
 change would cross it.
 
+**Asking that question retired the second such floor the same week.**
+`census-compiled-out-validation.py`'s `derive` aborted on `if files < 5000`, a floor on the OCCT
+source files its walk found. The real tree yields 14,671, so the floor sat at 34% of the population
+and discriminated nothing: nothing plausible crosses it from above, and a tree of 5,001 files is no
+more the pinned tree than one of 4,999. What it was catching is `--occt-src` pointed at something that
+is not an OCCT source tree, which lands at 0, and two content canaries catch that while naming which
+fact was absent, so the message stops blaming the tree for the script's confusion. The sizing question
+moved to where it belonged and already was: the *consumer*, `assert_view_is_plausible`, which refuses
+to report from a map of under 500 classes. **A floor in a producer is the shape to look for.** It
+cannot act on the answer, and the check it is standing in for belongs to whoever reads the result.
+
 The distinction worth holding: **a wrong answer is a bug, an answer about a population that was
 never examined is a lie.** The first gets found. The second is invisible precisely when it matters,
 because it looks identical to success.

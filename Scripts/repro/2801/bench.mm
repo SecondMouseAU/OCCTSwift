@@ -18,7 +18,14 @@
 #include <chrono>
 #include <cstdio>
 
-static const long long N = 40000000;
+// The quantity being resolved is one `_Raise_if`, and it came out at about a tenth of a nanosecond:
+// 1.70 vs 1.57 ns/op for `gp_Dir(x, y, z)`. So the iteration count is not arbitrary and is not a
+// warm-up figure. At 1.6 ns/op these 40 million iterations are about 64 ms per bench, which puts the
+// difference being read at roughly 5 ms, comfortably above the steady_clock noise on a loaded
+// machine, and run-bench.sh interleaves three runs of each configuration on top of that. Drop it by
+// an order of magnitude and the difference is inside the noise; the reported numbers would still
+// print, which is the trap.
+static const long long ITERATIONS = 40000000;
 
 template <class F>
 static double time_ns(const char* name, F body)
@@ -27,7 +34,7 @@ static double time_ns(const char* name, F body)
   double sink = body();
   auto  end   = std::chrono::steady_clock::now();
   double ns =
-    std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() / double(N);
+    std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() / double(ITERATIONS);
   printf("  %-42s %7.3f ns/op   (sink %.3f)\n", name, ns, sink);
   return ns;
 }
@@ -45,7 +52,7 @@ int main()
   // add a branch to, which is why it is the right place to bound the cost.
   time_ns("gp_Dir(x, y, z) constructor", [] {
     double sink = 0.0;
-    for (long long i = 1; i <= N; i++)
+    for (long long i = 1; i <= ITERATIONS; i++)
     {
       gp_Dir d(double(i), 1.0, 2.0);
       sink += d.X();
@@ -58,7 +65,7 @@ int main()
   time_ns("gp_Dir::Coord(index)", [] {
     gp_Dir d(1.0, 2.0, 3.0);
     double sink = 0.0;
-    for (long long i = 1; i <= N; i++)
+    for (long long i = 1; i <= ITERATIONS; i++)
     {
       sink += d.Coord(int(i % 3) + 1);
     }
@@ -68,7 +75,7 @@ int main()
   // gp_Vec::Normalized(): the same check on a different body, via a temporary.
   time_ns("gp_Vec::Normalized()", [] {
     double sink = 0.0;
-    for (long long i = 1; i <= N; i++)
+    for (long long i = 1; i <= ITERATIONS; i++)
     {
       gp_Vec v(double(i), 1.0, 2.0);
       sink += v.Normalized().X();

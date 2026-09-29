@@ -135,6 +135,27 @@ a count accessor and want a reading, and **one tests nothing**:
 `OCCTShapeCreateHalfSpace` reads `BRepPrimAPI_MakeHalfSpace::Solid()` with no `IsDone()`, so a
 half-space the kernel declined to build is returned as a shape (#2831).
 
+**Channel two's edge is measured and printed, because a limitation with an unknown blast radius is
+mentioned rather than disclosed.** It finds accessors by name, out of the map's `members` column, and
+that column is derived by a `Class::Member` scan which cannot name every site. The map's header prints
+the count and the census prints the edge; against `v4.0.0-kernel.2`, 332 of 4,942 rows carry at least
+one site the scan could not attribute and 265 name no member at all, and of the 122 classes whose
+`StdFail_NotDone` guard is out-of-line, **three** have no accessor name at all
+(`GeomToStep_MakeRectangularTrimmedSurface`, `GeomToStep_MakeSurfaceOfLinearExtrusion`,
+`TopoDSToStep_MakeShellBasedSurfaceModel`), none of which the bridge constructs. So the cost to the
+105 today is zero, and the number is in the output so the next reader does not have to re-derive that.
+
+**Deriving that number found a defect behind it**, which is the argument for deriving it rather than
+leaving the limitation as a note. The scan's regex required at least one character before the
+qualified name, and OCCT writes every out-of-line constructor and destructor with the class name at
+column 0, so there was no word boundary to anchor on and **no constructor body was ever recognised**:
+1,274 of 5,554 sites unattributed, 720 of them in a `.cxx`. The comment explaining the fallback named
+file-static helpers, and on the measured split they are a minority of what was left even after the
+fix: 823 sites now, 524 of them in a `.hxx` where OCCT defines the member inside the class body and
+there is no `Class::` to find at all, against 281 in a `.cxx` or `.pxx` and 18 in a `.lxx`. Fixing the
+regex cut the unattributed rows from 514 to 332 and moved **no** number the census reports, which is
+itself the useful fact: the members column has one consumer, and channel one does not read it.
+
 ## The build flag: a recorded decision, not an inherited default
 
 `-DBUILD_RELEASE_DISABLE_EXCEPTIONS=OFF` restores all 828. **The decision, 2026-09-29, is to leave
@@ -160,8 +181,12 @@ into "throws" at 828 sites inside the kernel, on paths whose bridge callers were
 current behaviour, and it changes the pinned kernel for every consumer. It also lands on #2763's
 mechanism: once `occtEnsureSignals()` has run, `Standard_ErrorHandler::Abort` longjmps to whichever
 handler an OCCT site registered, so a new throw in an OCCT frame is not simply a caught
-`Standard_Failure` at the bridge boundary. Read [known-occt-bugs](../references/known-occt-bugs.md)'s
-`OCC_CATCH_SIGNALS` entry before arguing either way.
+`Standard_Failure` at the bridge boundary. Read
+[known-occt-bugs](../references/known-occt-bugs.md)'s **#2188** row, "`OCC_CATCH_SIGNALS` is inert
+here, because `OCC_CONVERT_SIGNALS` is undefined", before arguing either way: three rows on that page
+mention the macro and #2188 is the one that states the asymmetry, that OCCT's own sites do register a
+handler because `occt_defs_flags.cmake` gives every non-Windows target `-DOCC_CONVERT_SIGNALS` while
+SwiftPM gives `Sources/OCCTBridge/src/*.mm` nothing.
 
 **And the census says the flag would buy little.** Zero fabricated catches in channel one and one
 unguarded accessor in channel two is not the exposure profile that justifies a kernel-wide behaviour
@@ -193,7 +218,7 @@ person does not re-derive the argument.
   source for rule 1.
 - [measure-dont-assume](measure-dont-assume.md): the reason every number on this page has a method
   and a date attached.
-- [`okf/references/known-occt-bugs.md`](../references/known-occt-bugs.md): the
-  `OCC_CATCH_SIGNALS` entry, and #2331 as the worked example.
+- [`okf/references/known-occt-bugs.md`](../references/known-occt-bugs.md): its #2188 row for
+  `OCC_CATCH_SIGNALS`, and #2331 as the worked example.
 - #2801 (this page's issue), #2331 (the worked example), #2763 (the signal mechanism), #726 (the
   unmeasured-values programme whose shape this is).

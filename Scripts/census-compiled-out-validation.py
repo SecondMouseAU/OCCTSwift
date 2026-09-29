@@ -80,8 +80,20 @@ THROWING = _load("check_throwing_calls", "check-throwing-calls.py")
 RAISE_RE = re.compile(r"\b([A-Za-z_]\w*)_Raise_if\s*\(")
 THROW_RE = re.compile(r"\bthrow\s+([A-Z][A-Za-z0-9]*_[A-Za-z0-9_]+)\s*[({]")
 DIRECTIVE_RE = re.compile(r"^\s*#")
-MEMBER_RE = re.compile(r"^[A-Za-z_][\w:<>,\s*&~]*?\b([A-Za-z_]\w*)::(~?[A-Za-z_]\w*|operator\S*)"
-                       r"\s*\(", re.MULTILINE)
+# The prefix (a return type, `inline`, `template <...>`) is optional, because OCCT writes every
+# out-of-line constructor and destructor with the qualified name at column 0 and nothing before it:
+# `math_FunctionRoots::math_FunctionRoots(`, `gp_Dir::~gp_Dir()`. A *required* one-character prefix
+# ending at a `\b` cannot match those at all, since there is no word boundary inside the class name,
+# so every raise in an out-of-line constructor body used to reach `member_at`'s fallback. Measured
+# before the fix: 1,274 of 5,554 sites unattributed, 720 of them in a `.cxx`.
+MEMBER_RE = re.compile(r"^\s*(?:[A-Za-z_][\w:<>,\s*&~]*?\b)?([A-Za-z_]\w*)::"
+                       r"(~?[A-Za-z_]\w*|operator\S*)\s*\(", re.MULTILINE)
+
+# What the members column records for a site no member body encloses. Written rather than silently
+# folded into the class name, because channel two reads this column for accessor names and a class
+# name is not one: an unattributed `StdFail_NotDone` site is outside that channel's population, and
+# saying so is the difference between a disclosed limitation and an invisible one.
+UNATTRIBUTED = "<file-scope>"
 
 # .pxx is a private header OCCT includes from a .cxx, so its checks are compiled with the kernel's
 # flags exactly as a .cxx's are. .lxx is included from the .hxx and so is compiled with the
@@ -122,8 +134,27 @@ def enclosing_members(text):
     return spans
 
 
-def member_at(spans, offset, fallback):
-    """The innermost member body containing an offset."""
+def member_at(spans, offset, fallback=UNATTRIBUTED):
+    """The innermost member body containing an offset, or `fallback` where none encloses it.
+
+    **The fallback is a disclosed gap, not a member name.** `MEMBER_RE` finds a definition written
+    `Class::Member(...)`, which leaves two populations it cannot attribute. Measured against the
+    `v4.0.0-kernel.2` tree with the constructor fix above in place, 823 of 5,554 sites reach the
+    fallback, split:
+
+      * 524 in a `.hxx`, a member OCCT defines inside the class body rather than out of line, which
+        is how the `NCollection_*` templates and much of `math_*` are written. The fix does not reach
+        these and no regex of this shape can: there is no `Class::` to find.
+      * 281 in a `.cxx` or `.pxx` and 18 in a `.lxx`, a raise inside a file-static helper, a free
+        function or a lambda, which has no member to belong to.
+
+    `derive`'s docstring used to name only the second, which understated it. The count that matters
+    is the one `format_table` prints, and the consumer that can be biased by it is channel two: it
+    reads this column for accessor names, so an unattributed `StdFail_NotDone` site drops out of its
+    population. Measured, that costs it nothing today, because every out-of-line `StdFail_NotDone`
+    site this scan cannot attribute is in a constructor body rather than on an accessor, and a
+    constructor is not something the bridge reads a result through.
+    """
     best = None
     for start, end, member in spans:
         if start <= offset <= end and (best is None or start > best[0]):
@@ -131,7 +162,7 @@ def member_at(spans, offset, fallback):
     return best[1] if best else fallback
 
 
-def file_sites(stem, ext, raw):
+def file_sites(ext, raw):
     """[(kind, exception, member)] for one OCCT source file, and the class declarations it makes.
 
     Factored out of `derive` so the self-test can drive the real scan rather than a restatement of
@@ -163,16 +194,59 @@ def file_sites(stem, ext, raw):
                 continue  # the macro's own #define / #if, not a call of it
             if spans is None:
                 spans = enclosing_members(text)
-            sites.append((kind, match.group(1), member_at(spans, match.start(), stem)))
+            sites.append((kind, match.group(1), member_at(spans, match.start())))
     return sites, bases
+
+
+# The two facts #2331 measured by hand, one live and one dead, from two different files by two
+# different code paths through this scan. They are the parser canary
+# okf/policies/static-gates.md asks for: it must match, and coming back empty aborts the run.
+CANARIES = (("gp_Dir", "inline-raise", "#2331's measured live check"),
+            ("Geom_Direction", "outofline-raise", "#2331's measured dead check"))
+
+
+def canary_problems(table):
+    """Whatever is wrong with a derived or committed map that makes it not a map of an OCCT tree.
+
+    **This replaced a floor on the walked file count**, `if files < 5000: sys.exit(...)`, and the
+    reason is okf/policies/static-gates.md's rule after #2833: prefer an agreement floor and a canary
+    to a magic number, and where a magic number is unavoidable, name the legitimate change that would
+    cross it. Measured against the `v4.0.0-kernel.2` tree, the walk sees 14,671 files (7,085 `.hxx`,
+    6,333 `.cxx`, 865 `.pxx`, 388 `.lxx`), so the floor sat at 34% of the population and could not
+    answer either question a floor is for. Nothing plausible crosses it from above: OCCT grows across
+    versions, no carried patch deletes files, and even a restructure that moved every header out of
+    `src/` the way OCCT's generated `inc/` already holds them would leave 7,198. Nothing near it
+    discriminates either: a tree of 5,001 files is not the pinned tree and passed, while a tree of
+    4,999 is not meaningfully worse and failed, with a message blaming the tree rather than naming
+    what was missing.
+
+    What the floor was actually catching is `--occt-src` pointed at something that is not an OCCT
+    source tree, which lands at 0 files, and these two assertions catch that with a message that says
+    which fact was absent. A version bump that really did move `gp_Dir`'s check out of line would
+    abort too, and correctly: that is the news this map exists to carry, not a parser fault.
+
+    The population-size question belongs to the consumer and is already there:
+    `assert_view_is_plausible` refuses to *report* from a map holding under 500 classes or under 100
+    packages, which is the check on a thin tree, run where a thin map would do damage rather than
+    where it is written. `--reverify-table` is the agreement half, re-deriving and diffing against the
+    committed copy.
+    """
+    out = []
+    for cls, kind, what in CANARIES:
+        if kind not in table.get(cls, {}):
+            out.append("%s has no %s row, so the map cannot be of an OCCT tree: it is %s"
+                       % (cls, kind, what))
+    return out
 
 
 def derive(occt_src):
     """({class: {kind: (exceptions, members, count)}}, packages) over OCCT's raises and throws.
 
     The class is the file stem, which OCCT's one-class-per-file convention makes reliable and which
-    a `Class::Member` scan is not: a raise inside a file-static helper belongs to that unit's class
-    for this purpose, since what is being recorded is where the code was compiled.
+    a `Class::Member` scan is not: what is being recorded is where the code was compiled, and every
+    site in a translation unit was compiled with that unit's flags whichever function it sits in.
+    The *member* column is the one a `Class::Member` scan owns, and where it cannot name a member the
+    column says `<file-scope>` rather than borrowing the class name; see `member_at`.
 
     `packages` is every `Foo` of a `Foo_Bar` file the walk examined, and it is what lets the census
     tell "this class has no validity check" from "this name is not a class I looked at". Without it
@@ -197,7 +271,7 @@ def derive(occt_src):
             files += 1
             if "_" in stem:
                 packages.add(stem.split("_", 1)[0])
-            sites, file_bases = file_sites(stem, ext, raw)
+            sites, file_bases = file_sites(ext, raw)
             for cls, found in file_bases.items():
                 bases.setdefault(cls, set()).update(found)
             for kind, exception, member in sites:
@@ -206,9 +280,12 @@ def derive(occt_src):
                 excs.add(exception)
                 members.add(member)
                 entry[kind] = (excs, members, count + 1)
-    if files < 5000:
-        sys.exit("census-compiled-out-validation: only %d OCCT source files under %s; that is not "
-                 "the pinned tree" % (files, occt_src))
+    problems = canary_problems(table)
+    if problems:
+        sys.exit("census-compiled-out-validation: walked %d source file(s) under %s and the result "
+                 "is not an OCCT raise map:\n  %s\nPoint --occt-src at an OCCT *source* tree; an "
+                 "install tree has no src/ and its headers are in include/opencascade."
+                 % (files, occt_src, "\n  ".join(problems)))
     derive_delegated(occt_src, table)
     derive_inherited(table, bases)
     return table, packages
@@ -314,6 +391,13 @@ def format_table(derived):
         "# below is what separates that from a name the walk never saw, which is uncertainty rather",
         "# than inertness.",
         "#",
+        "# A members column reading <file-scope> is this scan declining to name a member, not a",
+        "# member called that: the site sits in a file-static helper, a free function, or a member",
+        "# OCCT defines inside the class body rather than as `Class::Member`, which is how the",
+        "# NCollection_ templates are written. Channel two reads this column for accessor names, so",
+        "# a StdFail_NotDone site recorded <file-scope> is outside its population; the count below",
+        "# is how much of the map that covers.",
+        "#",
         "# Regenerate after an OCCT version bump or a carried patch that touches a raise site, and",
         "# check the totals below moved the way the change predicts.",
     ]
@@ -328,6 +412,14 @@ def format_table(derived):
     for kind in KINDS:
         lines.append("# totals: %-16s %5d site(s) in %4d class(es)"
                      % (kind, totals[kind], classes[kind]))
+    rows = sum(len(entry) for entry in table.values())
+    unattributed = sum(1 for entry in table.values() for _kind, (_e, members, _c) in entry.items()
+                       if UNATTRIBUTED in members)
+    only = sum(1 for entry in table.values() for _kind, (_e, members, _c) in entry.items()
+               if members == {UNATTRIBUTED})
+    lines.append("#")
+    lines.append("# member attribution: %d of %d row(s) carry at least one <file-scope> site, %d "
+                 "name no member at all" % (unattributed, rows, only))
     lines.append("#")
     lines.append("# packages examined: %d" % len(packages))
     for i in range(0, len(sorted(packages)), 12):
@@ -370,15 +462,59 @@ def parse_table(path=TABLE):
 # half two: the census over the bridge
 # ---------------------------------------------------------------------------
 
-# Names the bridge writes that look like an OCCT class and are not one: our own exports, the
-# Handle macro, C and Foundation spellings. Nothing here is a judgement about whether a type can
-# throw; that judgement is the map's, never this list's.
-NOT_OCCT_RE = re.compile(r"^(?:OCCT\w*|occt\w+|Handle|Standard_Real|Standard_Integer|"
+OCCT_CLASS_RE = re.compile(r"\b([A-Z][A-Za-z0-9]*_[A-Za-z0-9_]+)\b")
+
+# Names `OCCT_CLASS_RE` produces that are not an OCCT class, so `classes_named` must not hand them to
+# `classify_class`, where an unrecognised name becomes `unexamined` and downgrades a verdict to
+# `mixed`. **Nothing here is a judgement about whether a type can throw**; that judgement is the
+# map's, never this list's, which is why each entry below says what it is instead of a class and not
+# whether it is inert. `OCCT_CLASS_RE` is above it because both halves of the rationale are about its
+# shape: a name it yields must start with an uppercase letter and contain an underscore, so a
+# lowercase or underscore-free spelling never reaches here and does not belong on this list.
+#
+#   OCCT\w*                our own exported C bridge surface, which is `OCCT`-prefixed by
+#                          convention: `OCCTShapeRef`, and the `OCCTBridge_<Domain>_h` include
+#                          guards. 22 of the 26 names this list excludes from the bridge today.
+#   Standard_Real          each of these is a `typedef` in `Standard_TypeDef.hxx`, not a class: no
+#   Standard_Integer       file of that stem exists, so the map has no row for it and it would read
+#   Standard_Boolean       as `unexamined` forever. `Standard_Address` is `void*`,
+#   Standard_CString       `Standard_CString` is `const char*`, `Standard_Size` is `size_t`.
+#   Standard_Size          Measured over the bridge: `Standard_Real`, `Standard_Integer`,
+#   Standard_ShortReal     `Standard_Boolean` and `Standard_ShortReal` are written; the other six
+#   Standard_Character     are prophylactic, kept because a typedef the bridge starts using would
+#   Standard_ExtCharacter  otherwise silently turn a verdict into `mixed` with no defect anywhere.
+#   Standard_Address
+#   Standard_Byte
+#   NS_\w+                 Objective-C and Core Foundation annotation macros, `NS_ASSUME_NONNULL_
+#   CF\w+                  BEGIN` and `CF_RETURNS_RETAINED`, which take the class shape and are
+#                          neither a class nor ours. Prophylactic: the bridge writes none today.
+#
+# **Measured over the population that consults this list, not one entry fires**, which is a fact
+# about the list rather than a reason to shorten it. `classes_named` is called on try-block text only,
+# so the numbers to look at are: 253 distinct class-shaped names inside the try blocks of the
+# vocabulary population, none of them excluded here; 1,114 inside every try block, of which four are
+# (`Standard_Real`, `Standard_Integer`, `Standard_Boolean`, `Standard_ShortReal`); and the 22
+# `OCCT`-prefixed names in the bridge are all `OCCTBridge_<Domain>_h` include guards, which sit at
+# file scope where no try block can reach them. So the entries are a list of spellings held against a
+# bridge that has not written them yet, and the self-test covers the mechanism with a fixture rather
+# than one case per entry, because nothing in the tree would make such a case fail on removal.
+#
+# `Handle` and `occt\w+` were here and are gone, and they are the other kind of dead: not "the tree
+# does not write it yet" but "this can never match". `OCCT_CLASS_RE` requires an underscore, which
+# bare `Handle` has none of, and an initial uppercase letter, which our lowercase internal helpers
+# (`occtShapeIsPresent`) do not have. An entry that cannot fire reads as a decision somebody took and
+# is not one.
+#
+# `Standard_Type` was here too, and it is a real OCCT class the map holds an `inherited-live` row
+# for. Excluding it was the one judgement about throwing this list is not allowed to make, and it had
+# a direction: it suppressed a live second justification and so biased a block towards `fabricated`.
+# Its single bridge mention, `Handle(Standard_Type)` in `OCCTBridge_IO_Diagnostics.mm`, is outside
+# the vocabulary population, so removing it moves no verdict; it is removed because the contract
+# above says so, not because it was costing anything.
+NOT_OCCT_RE = re.compile(r"^(?:OCCT\w*|Standard_Real|Standard_Integer|"
                          r"Standard_Boolean|Standard_CString|Standard_Size|Standard_ShortReal|"
                          r"Standard_Character|Standard_ExtCharacter|Standard_Address|"
-                         r"Standard_Byte|Standard_Type|NS_\w+|CF\w+)$")
-
-OCCT_CLASS_RE = re.compile(r"\b([A-Z][A-Za-z0-9]*_[A-Za-z0-9_]+)\b")
+                         r"Standard_Byte|NS_\w+|CF\w+)$")
 
 # The per-class verdicts that count as a second justification for a catch. `inert` and `unexamined`
 # are both an absence of rows, and keeping those two apart is the point: the first is a measurement,
@@ -591,12 +727,7 @@ def assert_view_is_plausible(table, packages, counts, paths):
     if len(table) < 500:
         problems.append("the map holds %d class(es); the pinned tree yields well over a thousand"
                         % len(table))
-    if "gp_Dir" not in table or "inline-raise" not in table.get("gp_Dir", {}):
-        problems.append("gp_Dir has no inline-raise row, so the map cannot be of an OCCT tree: it "
-                        "is #2331's measured live check")
-    if "Geom_Direction" not in table or "outofline-raise" not in table.get("Geom_Direction", {}):
-        problems.append("Geom_Direction has no outofline-raise row, so the map cannot be of an "
-                        "OCCT tree: it is #2331's measured dead check")
+    problems.extend(canary_problems(table))  # one copy, shared with derive's own abort
     if len(packages) < 100:
         problems.append("the map names %d OCCT package(s); without them every absent class reads "
                         "as unexamined and no finding can be reached" % len(packages))
@@ -673,6 +804,13 @@ def run(verbose=False):
     for guard in GUARDS:
         rate = (100.0 * nd_counts[guard] / total_nd) if total_nd else 0.0
         print("  guard %-9s %4d  %5.1f%%" % (guard, nd_counts[guard], rate))
+    nd_classes = notdone_classes(table)
+    nameless = sorted(c for c, members in nd_classes.items() if members == {UNATTRIBUTED})
+    print("  the edge of this population: %d of the %d class(es) whose NotDone guard is "
+          "out-of-line have no accessor name in the map (<file-scope>, see member_at), so a bridge "
+          "local of one cannot be reported here at all%s"
+          % (len(nameless), len(nd_classes),
+             ": " + ", ".join(nameless) if nameless else ""))
     for guard, heading in (
             ("none", "nothing in the bridge function tests the state the compiled-out check "
                      "tested, so a failed construction is read as a result:"),
@@ -808,20 +946,56 @@ def self_test():
            "  Standard_ConstructionError_Raise_if(x < 0, \"gp_Dir\");\n}\n"
            "inline void gp_Dir::SetCoord(const double x)\n{\n"
            "  Standard_OutOfRange_Raise_if(x < 0, \"gp_Dir\");\n}\n")
-    sites, _bases = file_sites("gp_Dir", ".hxx", hxx)
+    sites, _bases = file_sites(".hxx", hxx)
     case("member-attribution-by-body-not-by-proximity",
          [s[2] for s in sites] == ["gp_Dir", "SetCoord"], str(sites))
     case("header-sites-are-inline", {s[0] for s in sites} == {"inline-raise"}, str(sites))
 
     # The same file as a .cxx: the kernel compiles it with No_Exception and the check is gone.
-    sites, _bases = file_sites("gp_Dir", ".cxx", hxx)
+    sites, _bases = file_sites(".cxx", hxx)
     case("cxx-sites-are-outofline", {s[0] for s in sites} == {"outofline-raise"}, str(sites))
+
+    # An out-of-line constructor and destructor, which OCCT writes with the qualified name at column
+    # 0 and no return type. MEMBER_RE's prefix used to be mandatory, and since there is no word
+    # boundary inside the class name it could not match these at all: 1,274 of 5,554 real sites were
+    # reaching the fallback, 720 of them in a .cxx, and the StdFail_NotDone constructor check is
+    # exactly the member channel two wants named.
+    ctor = ("math_FunctionRoots::math_FunctionRoots(math_FunctionWithDerivative& F,\n"
+            "                                       const double                 a)\n{\n"
+            "  StdFail_NotDone_Raise_if(a < 0, \" \");\n}\n"
+            "math_FunctionRoots::~math_FunctionRoots()\n{\n"
+            "  Standard_OutOfRange_Raise_if(myDone, \" \");\n}\n")
+    sites, _bases = file_sites(".cxx", ctor)
+    case("out-of-line-constructor-and-destructor-are-attributed",
+         [s[2] for s in sites] == ["math_FunctionRoots", "~math_FunctionRoots"], str(sites))
+
+    # And the fallback says so rather than borrowing a plausible name, because channel two reads the
+    # members column for accessor names. The literal is asserted rather than the constant, or the
+    # case would be true of whatever the constant said, and the property that makes it safe is
+    # asserted too: it cannot be spelled as a C++ member, so it can never collide with a real one.
+    static_helper = ("static void ScanIt(const double x)\n{\n"
+                     "  StdFail_NotDone_Raise_if(x < 0, \" \");\n}\n")
+    sites, _bases = file_sites(".cxx", static_helper)
+    case("unattributable-site-is-recorded-as-file-scope",
+         [s[2] for s in sites] == ["<file-scope>"], str(sites))
+    case("the-unattributed-marker-cannot-be-a-member-name",
+         re.match(r"^[A-Za-z_]\w*$", UNATTRIBUTED) is None, UNATTRIBUTED)
+
+    # The optional prefix must not turn a qualified *call* at column 0 into a member body: the brace
+    # search rejects it because the statement's `;` arrives first. Without that, everything after
+    # such a call would be attributed to it.
+    call = ("Standard_ConstructionError::Raise(\"x\");\n"
+            "void gp_Dir::Thing(const double x)\n{\n"
+            "  Standard_OutOfRange_Raise_if(x < 0, \" \");\n}\n")
+    sites, _bases = file_sites(".cxx", call)
+    case("qualified-call-at-column-zero-is-not-a-member-body",
+         [s[2] for s in sites] == ["Thing"], str(sites))
 
     # A doc comment naming an exception is prose. OCCT's headers are full of them.
     prose = ("//! Raises Standard_ConstructionError if theN is null.\n"
              "/* throw Standard_DomainError(\"x\"); */\n"
              "void gp_Dir::Thing()\n{\n  return;\n}\n")
-    sites, _bases = file_sites("gp_Dir", ".cxx", prose)
+    sites, _bases = file_sites(".cxx", prose)
     case("doc-comments-are-not-sites", sites == [], str(sites))
 
     # The macro's own definition is not a call of it, or all 111 headers would look like raisers.
@@ -831,13 +1005,13 @@ def self_test():
               "#else\n"
               "  #define Standard_ConstructionError_Raise_if(CONDITION, MESSAGE)\n"
               "#endif\n")
-    sites, _bases = file_sites("Standard_ConstructionError", ".hxx", define)
+    sites, _bases = file_sites(".hxx", define)
     case("macro-definition-is-not-a-site",
          [s for s in sites if s[0] == "inline-raise"] == [], str(sites))
 
     # The base-class scan, which is what keeps BRepPrimAPI_MakeBox off the fabricated list.
     decl = ("class BRepPrimAPI_MakeBox : public BRepBuilderAPI_MakeShape\n{\npublic:\n};\n")
-    _sites, found_bases = file_sites("BRepPrimAPI_MakeBox", ".hxx", decl)
+    _sites, found_bases = file_sites(".hxx", decl)
     case("base-classes-are-read-from-the-header",
          found_bases == {"BRepPrimAPI_MakeBox": {"BRepBuilderAPI_MakeShape"}}, str(found_bases))
     inherit_table = {"BRepBuilderAPI_Command": {"outofline-throw": ({"StdFail_NotDone"},
@@ -935,6 +1109,42 @@ def self_test():
                                         {"try-blocks": 9999}, ["x"] * 74)
     case("plausibility-check-catches-a-map-missing-gp_Dir",
          any("gp_Dir has no inline-raise row" in p for p in problems), str(problems))
+
+    # `canary_problems` is what `derive` aborts on, in place of the file-count floor #2833's rule
+    # retired, and it is the same copy `assert_view_is_plausible` extends with. Both canaries must be
+    # load-bearing: each absence has to produce its own line, or the pair is one check wearing two
+    # names. The second is the one the old assertion pair could lose silently.
+    case("canary-passes-on-a-map-holding-both-measured-facts",
+         canary_problems(FIXTURE_TABLE) == [], str(canary_problems(FIXTURE_TABLE)))
+    case("canary-fires-on-an-empty-map", len(canary_problems({})) == 2,
+         str(canary_problems({})))
+    without_geom_direction = {k: v for k, v in FIXTURE_TABLE.items() if k != "Geom_Direction"}
+    case("canary-fires-when-the-measured-dead-check-is-absent",
+         [p for p in canary_problems(without_geom_direction)
+          if p.startswith("Geom_Direction has no outofline-raise row")] != [],
+         str(canary_problems(without_geom_direction)))
+    # An OCCT tree whose gp_Dir check had moved out of line would abort too, and that is correct: it
+    # is the news the map exists to carry, not a parser fault. The wrong instrument here was a floor
+    # on the walked file count, which sat at 34% of the real 14,671 and so answered neither question.
+    moved_out_of_line = dict(FIXTURE_TABLE, **{
+        "gp_Dir": {"outofline-raise": ({"Standard_ConstructionError"}, {"gp_Dir"}, 5)}})
+    case("canary-fires-when-the-measured-live-check-moved-out-of-line",
+         len(canary_problems(moved_out_of_line)) == 1, str(canary_problems(moved_out_of_line)))
+
+    # NOT_OCCT_RE, whose entries are each a name OCCT_CLASS_RE yields that is not an OCCT class. A
+    # `Standard_` typedef must not read as an unexamined class, which would downgrade a fabricated
+    # verdict to mixed on no evidence. One case for the mechanism, not one per entry: measured, no
+    # entry fires over the bridge's own population, so a per-entry case could not fail on removal.
+    # `OCCTShapeRef` is in the fixture as the bridge writes it and is excluded by `OCCT_CLASS_RE`
+    # before this list ever sees it, having no underscore; that is the point of the comment there.
+    typedefs = ("void OCCTThing(double x, double y, double z)\n{\n  try\n  {\n"
+                "    Handle(Geom_Direction) d = new Geom_Direction(x, y, z);\n"
+                "    Standard_Real len = 0.0;\n"
+                "    OCCTShapeRef out = nullptr;\n  }\n  catch (...)\n  {\n  }\n}\n")
+    found, _ = one(typedefs)
+    case("standard-typedefs-are-not-unexamined-classes",
+         len(found) == 1 and found[0]["verdict"] == "fabricated"
+         and found[0]["other_unknown"] == [], str(found))
 
     # The live tree, which is the run anybody reads.
     if os.path.exists(TABLE):
