@@ -1409,7 +1409,12 @@ Initialize an integer array attribute on this label.
 public func initIntegerArray(lower: Int32, upper: Int32) -> Bool
 ```
 
-- **Parameters:** `lower`, `upper`, inclusive bounds of the array.
+- **Parameters:** `lower`, `upper`, inclusive bounds of the array. `upper` must be at least `lower`.
+- **Returns:** `true` when the attribute was set; `false` when the label is null or the range is
+  reversed. The reversed-range refusal is the bridge's own:
+  `TDataStd_IntegerArray::Init`'s `Standard_RangeError_Raise_if(upper < lower)` is out-of-line and
+  absent from the kernel this package links, so `lower: 10, upper: 1` used to be an uncatchable
+  SIGSEGV inside `Set` (#2855).
 - **OCCT:** `TDataStd_IntegerArray::Init` (via `OCCTDocumentInitIntegerArray`).
 
 ---
@@ -1423,6 +1428,10 @@ Set a value in the integer array attribute.
 public func setIntegerArrayValue(at index: Int32, value: Int32) -> Bool
 ```
 
+- **Returns:** `true` when the value was stored; `false` when the label carries no integer array or
+  the index is outside `integerArrayBounds`. That bound is the bridge's own test: every range check
+  between `TDataStd_IntegerArray::SetValue` and the raw store is compiled out of the kernel this
+  package links, so the same call used to write past the array and answer `true` (#2855).
 - **OCCT:** `TDataStd_IntegerArray::SetValue` (via `OCCTDocumentSetIntegerArrayValue`).
 
 ---
@@ -1472,6 +1481,9 @@ Initialize a real array attribute on this label.
 public func initRealArray(lower: Int32, upper: Int32) -> Bool
 ```
 
+- **Parameters:** `lower`, `upper`, inclusive bounds. `upper` must be at least `lower`; a reversed
+  range answers `false` rather than reaching OCCT, for the reason given on
+  `initIntegerArray(lower:upper:)` above (#2855).
 - **OCCT:** `TDataStd_RealArray::Init` (via `OCCTDocumentInitRealArray`).
 
 ---
@@ -1485,6 +1497,8 @@ Set a value in the real array attribute.
 public func setRealArrayValue(at index: Int32, value: Double) -> Bool
 ```
 
+- **Returns:** `true` when the value was stored; `false` when the label carries no real array or the
+  index is outside `realArrayBounds`, which is the bridge's own test rather than OCCT's (#2855).
 - **OCCT:** `TDataStd_RealArray::SetValue` (via `OCCTDocumentSetRealArrayValue`).
 
 ---

@@ -158,7 +158,10 @@ struct Issue2855OCAFArrayBoundsTests {
 
         // Two four-element int arrays created back to back land close together on the heap, so a
         // write a few elements past the first is the write most likely to land in the second. The
-        // sentinel is what a silent overrun would replace.
+        // sentinel is what a silent overrun would replace. Measured: with the guard removed the
+        // overrun did NOT land on the sentinels in any run, so the sentinel check is a belt on top
+        // rather than the detector. What fails under injection is the refusal assertion in the loop
+        // below, which is true of every test in this suite.
         let sentinel: Int32 = 0x5EED_5EED
         for i in Int32(1)...4 {
             #expect(second.setIntegerArrayValue(at: i, value: sentinel))
