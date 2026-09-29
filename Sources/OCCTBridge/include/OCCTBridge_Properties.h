@@ -563,6 +563,14 @@ typedef struct
 } OCCTFaceVolumeInertia;
 
 OCCTFaceVolumeInertia OCCTBRepGPropVinert(OCCTFaceRef _Nonnull face);
+
+/// The by-plane overload. **`mass` is always 0.0 and `centerX/Y/Z` always (0, 0, 0) on every kernel
+/// this package has pinned, and neither is a measurement (#2827).** BRepGProp_Gauss::convert keeps
+/// the mass it computed only for the by-point form, so the by-plane branch reports the
+/// vanishing-mass fallback whatever the face and whatever the plane. The one-line kernel fix is
+/// carried as Scripts/patches/0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch and is not
+/// pinned; the .mm carries the derivation and the measurement. Use OCCTBRepGPropVinert, whose
+/// by-point form is correct.
 OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
                                                double planeNX,
                                                double planeNY,

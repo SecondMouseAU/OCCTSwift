@@ -1,0 +1,254 @@
+// #2827 ground truth: BRepGProp_Gauss::convert discards the by-plane mass.
+//
+// Three fixtures, three questions per fixture:
+//
+//   1. BRepGProp_Vinert BY POINT, summed per face, with the face's BRepGProp_Domain loaded, which
+//      is what #2806 gave OCCTBRepGPropVinertPlane's sibling. This is the control: it equals the
+//      shape's volume.
+//   2. BRepGProp_Vinert BY PLANE, the same loop through the gp_Pln overload. This is the defect.
+//   3. BRepGProp::VolumePropertiesGK(S, Props, thePln, ...), OCCT's own by-plane public entry
+//      point, which goes through BRepGProp_VinertGK and math_KronrodSingleIntegration rather than
+//      BRepGProp_Gauss. This is the independent construction that says what (2) should report.
+//   4. What the by-plane number MEANS, once 0043 stops discarding it, which no OCCT caller states
+//      because there is no OCCT caller: the per-face integrand is
+//
+//        dv = (n_hat . n_face) * d1 * dS,  d1 = n_hat . P - aCoeff[3]
+//
+//      (BRepGProp_Gauss.cxx:340-348, aCoeff[3] re-based on loc at BRepGProp_Vinert.cxx:279), so
+//      dv is the signed volume of the column between the surface element and the reference plane.
+//      Taking F = d1 * n_hat gives div F = n_hat . n_hat = 1, so the per-face sum over a CLOSED
+//      shell is the enclosed volume for ANY plane: the offset moves the per-face split and not the
+//      total. Taking F_x = (x * d1 - n_hat_x * d1 * d1 / 2) * n_hat gives div F_x = x, and that
+//      bracket is exactly the Ix integrand at BRepGProp_Gauss.cxx:350, so the mass-weighted sum of
+//      the per-face gravity centres is the solid's own first moment, again for any plane. The probe
+//      measures both against BRepGProp::VolumeProperties, which shares no code with this path.
+//
+// Compile (from a checkout with Libraries/OCCT.xcframework, or point -I/-L at the SwiftPM artifact
+// under .build/artifacts/<pkg>/OCCT/OCCT.xcframework):
+//
+//   clang++ -std=c++17 -ObjC++ -w \
+//     -I"Libraries/OCCT.xcframework/macos-arm64/Headers" \
+//     -L"Libraries/OCCT.xcframework/macos-arm64" \
+//     -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
+//     Scripts/repro/2827/probe.mm -o /tmp/occt_probe_2827
+
+#include <BRepAlgoAPI_Cut.hxx>
+#include <BRepGProp.hxx>
+#include <BRepGProp_Domain.hxx>
+#include <BRepGProp_Face.hxx>
+#include <BRepGProp_Vinert.hxx>
+#include <BRepPrimAPI_MakeBox.hxx>
+#include <BRepPrimAPI_MakeCylinder.hxx>
+#include <GProp_GProps.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
+#include <gp_Ax2.hxx>
+#include <gp_Pln.hxx>
+#include <gp_Trsf.hxx>
+#include <BRepBuilderAPI_Transform.hxx>
+
+#include <cstdio>
+#include <string>
+
+// The same domain load OCCTBRepGPropVinert/VinertPlane do: a face with wires is integrated over the
+// region they trim, a face with none over its natural UV bounds.
+static bool loadDomain(const TopoDS_Face& f, BRepGProp_Domain& d)
+{
+  TopExp_Explorer ex(f, TopAbs_EDGE);
+  if (!ex.More())
+    return false;
+  d.Init(f);
+  return true;
+}
+
+static void report(const char* name, const TopoDS_Shape& s, const gp_Pln& pln, const char* plnName)
+{
+  double byPoint = 0.0, byPlane = 0.0;
+  gp_XYZ byPlaneMoment(0, 0, 0);
+  int    nFaces = 0;
+  for (TopExp_Explorer ex(s, TopAbs_FACE); ex.More(); ex.Next())
+  {
+    const TopoDS_Face& f = TopoDS::Face(ex.Current());
+    ++nFaces;
+    {
+      BRepGProp_Face   gf(f);
+      BRepGProp_Domain d;
+      BRepGProp_Vinert v;
+      v.SetLocation(gp_Pnt(0, 0, 0));
+      if (loadDomain(f, d))
+        v.Perform(gf, d);
+      else
+        v.Perform(gf);
+      byPoint += v.Mass();
+    }
+    {
+      BRepGProp_Face   gf(f);
+      BRepGProp_Domain d;
+      BRepGProp_Vinert v;
+      v.SetLocation(gp_Pnt(0, 0, 0));
+      if (loadDomain(f, d))
+        v.Perform(gf, d, pln);
+      else
+        v.Perform(gf, pln);
+      byPlane += v.Mass();
+      // The first moment, so the mass-weighted centres can be summed: a zero-mass face reports the
+      // (0, 0, 0) centre the four-argument convert writes, and 0 * anything contributes nothing.
+      byPlaneMoment += v.CentreOfMass().XYZ() * v.Mass();
+    }
+  }
+
+  GProp_GProps gk;
+  double       gkErr = BRepGProp::VolumePropertiesGK(s, gk, pln, 1.0e-6, true, true, false);
+
+  GProp_GProps vp;
+  BRepGProp::VolumeProperties(s, vp, true);
+  const gp_XYZ vpMoment = vp.CentreOfMass().XYZ() * vp.Mass();
+
+  std::printf("%-34s %-22s faces=%2d\n", name, plnName, nFaces);
+  std::printf("    Vinert by point, summed        %.16g\n", byPoint);
+  std::printf("    Vinert by plane, summed        %.16g   <-- #2827\n", byPlane);
+  std::printf("    VolumePropertiesGK by plane    %.16g   (error reached %.3g)\n",
+              gk.Mass(),
+              gkErr);
+  std::printf("    VolumeProperties by point      %.16g\n", vp.Mass());
+  std::printf("    by-plane first moment, summed  (%.12g, %.12g, %.12g)\n",
+              byPlaneMoment.X(),
+              byPlaneMoment.Y(),
+              byPlaneMoment.Z());
+  std::printf("    VolumeProperties first moment  (%.12g, %.12g, %.12g)\n",
+              vpMoment.X(),
+              vpMoment.Y(),
+              vpMoment.Z());
+}
+
+// Per face, and per plane offset: the by-plane mass is affine in the offset, with slope the face's
+// signed projected area. Printed so the offset-linearity the test asserts is measured and not
+// reasoned out: for a planar face the slope is (n_hat . n_face) * area, which is +-area for a face
+// square to the plane normal and 0 for one parallel to it.
+static void reportPerFace(const char* name, const TopoDS_Shape& s, const gp_Dir& n)
+{
+  std::printf("\n%s  per face, plane normal (%g, %g, %g)\n", name, n.X(), n.Y(), n.Z());
+  std::printf("    %14s %22s %22s %22s\n", "area", "mass at d = 0", "mass at d = 1", "slope");
+  for (TopExp_Explorer ex(s, TopAbs_FACE); ex.More(); ex.Next())
+  {
+    const TopoDS_Face& f = TopoDS::Face(ex.Current());
+
+    double m[2] = {0.0, 0.0};
+    for (int i = 0; i < 2; ++i)
+    {
+      const gp_Pln     pln(gp_Pnt(n.XYZ() * double(i)), n);
+      BRepGProp_Face   gf(f);
+      BRepGProp_Domain d;
+      BRepGProp_Vinert v;
+      v.SetLocation(gp_Pnt(0, 0, 0));
+      if (loadDomain(f, d))
+        v.Perform(gf, d, pln);
+      else
+        v.Perform(gf, pln);
+      m[i] = v.Mass();
+    }
+
+    GProp_GProps area;
+    BRepGProp::SurfaceProperties(f, area);
+    std::printf("    %14.10g %22.14g %22.14g %22.14g\n",
+                area.Mass(),
+                m[0],
+                m[1],
+                m[1] - m[0]);
+  }
+}
+
+// Which affine function of P the by-plane integrand actually uses, read off a flat cap square to
+// the plane normal, where mass = (n_hat . n_face) * area * d1 exactly. Printed for a grid of
+// SetLocation points and plane offsets, because BRepGProp_Vinert.cxx:279 writes
+//
+//   aCoeff[3] = d - a*loc.X() - b*loc.Y() - c*loc.Z()
+//
+// and BRepGProp_Gauss.cxx:343 then uses -aCoeff[3], so what reaches the integrand is
+// d1 = n_hat . P - d + n_hat . loc while the signed distance to the plane is n_hat . P + d. Both
+// signs are printed rather than argued.
+static void reportSignConvention(const TopoDS_Shape& s, const gp_Dir& n)
+{
+  // The cap square to n with the largest area: for the corner-built plate that is the z = 2 face.
+  TopoDS_Face best;
+  double      bestArea = 0.0;
+  for (TopExp_Explorer ex(s, TopAbs_FACE); ex.More(); ex.Next())
+  {
+    GProp_GProps a;
+    BRepGProp::SurfaceProperties(ex.Current(), a);
+    if (a.Mass() > bestArea)
+    {
+      bestArea = a.Mass();
+      best     = TopoDS::Face(ex.Current());
+    }
+  }
+
+  std::printf("\nsign convention, on the largest cap (area %.10g)\n", bestArea);
+  std::printf("    %10s %10s %22s %16s\n", "loc.z", "plane z", "mass", "mass / area = d1");
+  const double locs[] = {0.0, 3.0};
+  const double ds[]   = {0.0, 1.0, -100.0};
+  for (double lz : locs)
+  {
+    for (double d : ds)
+    {
+      const gp_Pln     pln(gp_Pnt(n.XYZ() * d), n);
+      BRepGProp_Face   gf(best);
+      BRepGProp_Domain dom;
+      BRepGProp_Vinert v;
+      v.SetLocation(gp_Pnt(0, 0, lz));
+      if (loadDomain(best, dom))
+        v.Perform(gf, dom, pln);
+      else
+        v.Perform(gf, pln);
+      std::printf("    %10g %10g %22.14g %16.10g\n", lz, d, v.Mass(), v.Mass() / bestArea);
+    }
+  }
+}
+
+int main()
+{
+  // A 10-cube at the origin corner, so no face is coplanar with z = 0 by accident except the base.
+  TopoDS_Shape cube = BRepPrimAPI_MakeBox(gp_Pnt(0, 0, 0), 10, 10, 10).Shape();
+
+  // A 20x20x2 plate with a radius-3 hole through it.
+  TopoDS_Shape plate = BRepPrimAPI_MakeBox(gp_Pnt(0, 0, 0), 20, 20, 2).Shape();
+  TopoDS_Shape drill =
+    BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(10, 10, -5), gp_Dir(0, 0, 1)), 3, 10).Shape();
+  TopoDS_Shape holed = BRepAlgoAPI_Cut(plate, drill).Shape();
+
+  TopoDS_Shape cyl = BRepPrimAPI_MakeCylinder(5, 10).Shape();
+
+  const gp_Pln z0(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
+  const gp_Pln far(gp_Pnt(0, 0, -100), gp_Dir(0, 0, 1));
+  const gp_Pln oblique(gp_Pnt(1, 2, 3), gp_Dir(1, 2, 3));
+
+  // An off-origin copy, so the first-moment check below is not a comparison against (0, 0, 0):
+  // the plate and the cube are both centred on the origin as built.
+  gp_Trsf shift;
+  shift.SetTranslation(gp_Vec(7, -3, 2));
+  TopoDS_Shape holedShifted = BRepBuilderAPI_Transform(holed, shift, true).Shape();
+
+  report("10-cube", cube, z0, "plane z = 0");
+  report("10-cube", cube, far, "plane z = -100");
+  report("10-cube", cube, oblique, "oblique plane");
+  report("20x20x2 plate, radius-3 hole", holed, z0, "plane z = 0");
+  report("cylinder r = 5 h = 10", cyl, z0, "plane z = 0");
+  report("20x20x2 plate, off origin", holedShifted, z0, "plane z = 0");
+  report("20x20x2 plate, off origin", holedShifted, far, "plane z = -100");
+  report("20x20x2 plate, off origin", holedShifted, oblique, "oblique plane");
+
+  reportPerFace("20x20x2 plate, radius-3 hole", holed, gp_Dir(0, 0, 1));
+  reportSignConvention(holed, gp_Dir(0, 0, 1));
+
+  // And the shape-level control: the by-point volume the sums above are compared against.
+  GProp_GProps v;
+  BRepGProp::VolumeProperties(cube, v, true);
+  std::printf("\ncontrol BRepGProp::VolumeProperties  cube  %.16g\n", v.Mass());
+  GProp_GProps v2;
+  BRepGProp::VolumeProperties(holed, v2, true);
+  std::printf("control BRepGProp::VolumeProperties  plate %.16g\n", v2.Mass());
+  GProp_GProps v3;
+  BRepGProp::VolumeProperties(cyl, v3, true);
+  std::printf("control BRepGProp::VolumeProperties  cyl   %.16g\n", v3.Mass());
+  return 0;
+}
