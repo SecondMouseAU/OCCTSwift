@@ -278,6 +278,27 @@ Three of its design choices are worth carrying to any detector that shells out t
   freshness check owes a self-test case run against the real tree, so a misfire arrives as a named
   failure rather than as a refusal on every PR.
 
+**And a freshness check is only as sound as the artefact's provenance, which is #2867.** The same
+check then blocked three PRs, refusing over a module older than their sources. It was right about
+the ages and wrong about what it was looking at: the module sat at
+`.build/debug/Modules/OCCTSwift.swiftmodule`, the llbuild layout's path, and those jobs built on the
+Swift Build backend, which writes the bin root instead. One `actions/cache` key served both, so a
+module no build in any of those jobs would ever rewrite was the only one the search could find. The
+three refusals reported 1925s, 3474s and 3526s; subtract each from its own job's checkout time and
+all three give one instant, `2026-09-29T06:48:12Z`, which is what identified it as a cache artefact
+rather than that build's output. Two rules come out of it:
+
+- **Delete a cached artefact a detector will read, rather than reasoning about its age.** `ci.yml`
+  now clears every `OCCTSwift.swiftmodule` under `.build` between the cache restore and
+  `swift build`, so anything the gate finds was written during that job, after the checkout, and is
+  newer than every input by construction. That argument survives a build-system change, a layout
+  change and a cache key that outlives both; an mtime comparison against a restored artefact does
+  not. Nothing in the detector was relaxed to get there.
+- **A refusal has to say which artefact it read and when that artefact was written.** The absolute
+  time, not the delta. Reconstructing the above took arithmetic across three jobs because each run
+  printed only its own difference, which is the same class of gap as a gate reporting success over
+  an unstated population.
+
 **Freshness is one axis and identity is another, and #2818 is the second.** Four scripts read
 `Libraries/OCCT.xcframework` and decided "this is the pinned kernel" from `os.path.isdir` alone:
 `check-766-probe-reproduction.py`, `census-doc-occt-attribution.py`, `derive-gdt-enums.py` and the
@@ -354,7 +375,11 @@ than report clean when it is not.** The assertion is cheap and specific to what 
   does this, and it caught a second bug within the hour of being added.
 - Depending on a build, a clone, a checkout? Assert it is there and **fail in CI** even where
   skipping is right locally, because a contributor without a build still wants partial results while
-  a green CI step that examined nothing is a false green.
+  a green CI step that examined nothing is a false green. And when a run does skip, **state how many
+  cases ran out of how many exist**, as a headline rather than a parenthetical: `check-doc-snippets.py
+  --self-test` reported `38 passed, 1 failed (compile cases SKIPPED: no built package)` for a battery
+  of 67, five parenthesised words at the end of forty lines of `ok` (#2867). It now prints the two
+  counts on the summary line and draws a banner naming the difference and the reason.
 - Reading a population you can size independently? Compare the two and fail on a large divergence.
 - **Parsing?** Carry a canary the parser cannot miss, and abort when it comes back *empty*. The
   compiler canary's sign, flipped: a compiler canary must fail and a parser canary must match.

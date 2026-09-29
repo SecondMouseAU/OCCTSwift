@@ -846,32 +846,59 @@ extension Face {
             centerOfMass: massCentroid(mass: r.mass, x: r.centerX, y: r.centerY, z: r.centerZ))
     }
 
-    /// Compute volume inertia with reference plane.
+    /// Compute volume inertia with respect to a reference plane.
     ///
-    /// **This returns 0 on every current kernel, and the 0 is not a measurement (#2827).** OCCT
-    /// computes the by-plane mass and then discards it: `BRepGProp_Gauss::convert` keeps the value
-    /// only when its `theIsByPoint` flag is set (`BRepGProp_Gauss.cxx:494-528`), so every by-plane
-    /// `BRepGProp_Vinert` call, through any of its four overloads, reports mass `0.0` and centre of
-    /// mass `(0, 0, 0)`. Measured on a cube, a holed plate and a cylinder, for a plane through the
-    /// origin, a plane 100 away from the shape and an oblique plane: every face, exactly `0.0`.
-    /// Nothing on this side can recover it; see #2827 for the kernel patch and the API decision.
+    /// Each face's `volume` is the **signed volume of the column between the face and the reference
+    /// plane**, measured along `planeNormal`, with the sign coming from the face's own orientation.
+    /// So one face's number means nothing on its own, exactly as for ``volumeInertia``, and two
+    /// identities hold over a closed shape, neither of them depending on which plane you pass:
     ///
-    /// The function is kept, and wraps the overload OCCT's own loop would use, so it becomes correct
-    /// the moment a pinned kernel carries the fix. Until then use ``volumeInertia``, whose by-point
-    /// form is measured and correct, and subtract the plane offset yourself if you need it.
+    /// - the **sum** of `volume` over the faces is ``Shape/volume``, for any plane. The plane moves
+    ///   how the total is split between the faces and not the total.
+    /// - the **mass-weighted sum** of `centerOfMass` is the solid's first moment, so dividing it by
+    ///   ``Shape/volume`` gives ``Shape/centerOfMass``, again for any plane.
+    ///
+    /// For a planar face the integral has a closed form: `volume` is
+    /// `(planeNormal . faceNormal) * area * (planeNormal . areaCentroid + planeDistance)`, so it is
+    /// affine in `planeDistance` with slope the face's signed projected area. A face parallel to
+    /// `planeNormal` therefore contributes 0 whatever the offset.
+    ///
+    /// Until #2827 every call returned exactly `0.0` with a `nil` `centerOfMass`, on every kernel
+    /// this package had pinned: `BRepGProp_Gauss::convert` computed the mass and then overwrote it,
+    /// because it kept the value only when its `theIsByPoint` flag was set and no by-plane path sets
+    /// it. Carried patch `0043` drops that condition and is pinned from `v4.0.0-kernel.3`.
+    ///
+    /// **`planeDistance` enters with the opposite sign to the geometric distance (#2873).** The
+    /// kernel weights each element by `planeNormal . P + planeDistance` where the signed distance to
+    /// the plane is `planeNormal . P - planeDistance`, so to measure about the plane at offset `d`,
+    /// pass `-d`. Both identities above are unaffected, since they need only that the weight is
+    /// affine with gradient `planeNormal`. Measured, not inferred: `Scripts/repro/2827/probe.mm`.
     ///
     /// ```swift
-    /// let face = Shape.box(width: 10, height: 10, depth: 10)!.faces()[0]
-    /// face.volumeInertia(planeNormal: SIMD3(0, 0, 1)).volume   // 0.0 on this kernel, see #2827
-    /// face.volumeInertia.volume                                // 166.66666666666666, measured
+    /// let holed = Shape.box(width: 20, height: 20, depth: 2)!
+    ///     .subtracting(Shape.cylinder(radius: 3, height: 10)!.translated(by: SIMD3(0, 0, -5))!)!
+    ///
+    /// // The per-face sum is the volume, and the plane it is measured against does not matter.
+    /// let n = SIMD3(0.0, 0.0, 1.0)
+    /// holed.faces().reduce(0) { $0 + $1.volumeInertia(planeNormal: n).volume }
+    /// holed.faces().reduce(0) { $0 + $1.volumeInertia(planeNormal: n, planeDistance: -100).volume }
+    /// holed.volume   // all three agree: 743.4513322353836
+    ///
+    /// // One face on its own is a column, not a volume: this plate's caps are 1 from the origin,
+    /// // so with the plane through the origin each contributes its own area.
+    /// let cap = holed.faces().first { $0.area() > 300 }!
+    /// cap.volumeInertia(planeNormal: n).volume   // 371.7256661176918, and cap.area() is the same
     /// ```
     ///
     /// - Parameters:
     ///   - planeNormal: normal of the reference plane.
-    ///   - planeDistance: signed distance from the origin to the plane along `planeNormal`.
-    /// - Returns: the inertia about the reference plane. `volume` is **always `0.0`** on this
-    ///   kernel and is not a measurement (#2827); the centre of mass and the inertia matrix are
-    ///   measured and correct.
+    ///   - planeDistance: offset of the plane from the origin along `planeNormal`. It enters the
+    ///     kernel's integrand with the opposite sign to a geometric distance, so pass `-d` for the
+    ///     plane at offset `d` (#2873).
+    /// - Returns: the face's signed column volume against that plane, and the centroid of that
+    ///   column. `centerOfMass` is `nil` exactly when `volume` is 0, which is a real answer for a
+    ///   face parallel to `planeNormal` or one whose centroid lies in the plane. ``FaceVolumeInertia``
+    ///   carries no inertia matrix, so nothing here reports one.
     public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0)
         -> FaceVolumeInertia
     {
