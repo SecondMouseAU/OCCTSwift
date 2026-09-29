@@ -682,7 +682,10 @@ bool occtHasSelfIntersectingWire(const TopoDS_Shape& s)
   // it answers the same way this function's own catch (...) below already does: true, refuse the
   // operation. That is the contract here, not a claim that a self-intersecting wire was found;
   // every caller treats true as "do not proceed", and the shape is invalid either way.
-  if (occtShapeHasPCurveOnlyEdge(s))
+  //
+  // #2789: and the second such shape, a face with no surface that carries a wire, which faults at
+  // BRepCheck_Edge.cxx:463. Same answer for the same reason. See occtShapeHasSurfacelessFace.
+  if (occtShapeHasPCurveOnlyEdge(s) || occtShapeHasSurfacelessFace(s))
     return true;
   try
   {
@@ -730,7 +733,14 @@ bool occtHasSelfIntersectingWire(const TopoDS_Shape& s)
         // the face synthesized here is what first puts those edges in a face context, and so
         // what first makes them able to reach BRepCheck_Edge::InContext (#2746). Refusing the
         // operation is the same answer the outer guard and this function's catch (...) give.
-        if (occtShapeHasPCurveOnlyEdge(faceMaker.Face()))
+        // #2789: the surface clause is here for consistency with every other analyzer site and
+        // cannot fire on this input, which is worth saying rather than leaving as a puzzle.
+        // BRepLib_MakeFace's wire constructor returns IsDone() only after
+        // BRepLib_FindSurface::Found (BRepLib_MakeFace.cxx:194-198) and then builds the face with
+        // FS.Surface() at line 206, so a face this branch reaches always has one. Measured as well
+        // as read: `makefaceplane` in Scripts/repro/2789-brepcheck-analyzer-surfaceless-face/.
+        if (occtShapeHasPCurveOnlyEdge(faceMaker.Face())
+            || occtShapeHasSurfacelessFace(faceMaker.Face()))
           return true;
         BRepCheck_Analyzer wireAnalyzer(faceMaker.Face());
         if (wireAnalyzer.IsValid())

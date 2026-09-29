@@ -1133,14 +1133,39 @@ extension Shape {
 
     /// Check if a specific sub-shape is valid within this shape's context.
     ///
+    /// `BRepCheck_Analyzer::Perform()` walks the **whole** parent shape whichever sub-shape you ask
+    /// after, so a parent carrying either of the two shapes the analyzer cannot survive has to be
+    /// refused before the analyzer is built, and that refusal says nothing about the sub-shape you
+    /// named. Those two shapes are a non-degenerated edge of a face with no valid 3D curve and at
+    /// least one pcurve (#2746) and a face with no surface that carries a wire (#2789); both survive
+    /// a `.brep` round trip, so ``loadBREP(from:)`` is enough to produce one.
+    ///
+    /// `nil` is that case, and only that case. It is the same "could not determine" channel
+    /// ``isInside(_:)`` and ``checkFaceStatus(face:)`` already use, not a new one (#2755).
+    ///
+    /// An index that names no sub-shape of that type answers `false`, not `nil`: that is a statement
+    /// about the index, and ``checkEdge(at:)`` answers over the same domain (#613, #844).
+    ///
+    /// ```swift
+    /// if let box = Shape.box(width: 10, height: 20, depth: 30) {
+    ///     switch box.isSubShapeValid(type: .edge, at: 0) {
+    ///     case true?: print("edge 0 checked out")
+    ///     case false?: print("edge 0 is invalid, or index 0 names no edge")
+    ///     case nil: print("this shape cannot be handed to BRepCheck_Analyzer")
+    ///     }
+    /// }
+    /// ```
+    ///
     /// - Parameters:
     ///   - type: Type of sub-shape to check
     ///   - index: 0-based index of the sub-shape
-    /// - Returns: true if the sub-shape is valid. False is also the answer when the parent shape
-    ///   cannot be handed to `BRepCheck_Analyzer` at all (#2750), which is a property of the
-    ///   parent rather than of the sub-shape named here. Tracked as #2755.
-    public func isSubShapeValid(type: ShapeType, at index: Int) -> Bool {
-        OCCTBRepCheckSubShapeValid(handle, Int32(type.rawValue), Int32(index))
+    /// - Returns: `true` if the analyzer ran and reported no error for that sub-shape, `false` if it
+    ///   ran and reported one or the index names no sub-shape of that type, `nil` if the parent
+    ///   could not be checked at all.
+    public func isSubShapeValid(type: ShapeType, at index: Int) -> Bool? {
+        let answer = OCCTBRepCheckSubShapeValid(handle, Int32(type.rawValue), Int32(index))
+        guard answer >= 0 else { return nil }
+        return answer == OCCTSubShapeValidityValid.rawValue
     }
 
     /// A typealias for the canonical ``ShapeType`` (#844).
@@ -2824,8 +2849,9 @@ extension Shape {
     /// Check status of a face within this shape.
     ///
     /// Returns a `BRepCheck_Status` value (0 = no error), or -1 when the check could not be run:
-    /// a null input, no result for that sub-shape, or a shape carrying the edge state that
-    /// crashes `BRepCheck_Analyzer` (#2750).
+    /// a null input, no result for that sub-shape, or a shape carrying either of the two states that
+    /// crash `BRepCheck_Analyzer`, a pcurve-only face edge (#2750) or a surface-less face carrying a
+    /// wire (#2789). ``isSubShapeValid(type:at:)`` spells the same three answers as `Bool?`.
     public func checkFaceStatus(face: Shape) -> Int {
         Int(OCCTCheckFaceStatus(handle, face.handle))
     }

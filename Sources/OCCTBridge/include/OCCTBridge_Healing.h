@@ -669,15 +669,42 @@ int32_t OCCTCheckShapeDetailed(OCCTShapeRef     shape,
 /// @return true if shape is valid
 bool OCCTBRepCheckAnalyzerIsValid(OCCTShapeRef shape, bool geometryChecks);
 
+/// The three answers `OCCTBRepCheckSubShapeValid` can give (#2755).
+///
+/// Negative for "could not determine" is the encoding `occtBRepCheckSubShapeStatus` (behind
+/// `OCCTCheckFaceStatus` / `EdgeStatus` / `VertexStatus`) and `OCCTShapeIsInnerDistance` already
+/// use, so this is that idiom named rather than a second one. Swift maps it to `Bool?`.
+typedef enum
+{
+  /// The parent shape could not be handed to `BRepCheck_Analyzer` at all, so nothing was measured
+  /// about the named sub-shape. `nil` in Swift.
+  OCCTSubShapeValidityNotChecked = -1,
+  /// The analyzer ran and reported at least one non-`NoError` status for the named sub-shape, or
+  /// the index names no sub-shape of that type.
+  OCCTSubShapeValidityInvalid = 0,
+  /// The analyzer ran and reported `BRepCheck_NoError` throughout.
+  OCCTSubShapeValidityValid = 1
+} OCCTSubShapeValidity;
+
 /// Check if a specific sub-shape is valid within its parent shape context.
+///
+/// #2755: this is a TRI-STATE, not a bool. `BRepCheck_Analyzer::Perform()` walks the whole parent
+/// whichever sub-shape the caller asks after, so a parent carrying one of the two shapes the
+/// analyzer cannot survive (#2746, #2789) has to be refused before the analyzer is constructed, and
+/// the refusal is a statement about the parent rather than about the named sub-shape. `0` would
+/// claim the sub-shape is invalid, which nothing measured. The encoding is the one
+/// `occtBRepCheckSubShapeStatus` and `OCCTShapeIsInnerDistance` already use: negative for "could
+/// not determine", and it maps to `nil` in the Swift `Bool?`.
+///
 /// @param parentShape Parent shape for context
 /// @param subShapeType TopAbs_ShapeEnum type to check (0=COMPOUND, 1=COMPSOLID, 2=SOLID, 3=SHELL,
 /// 4=FACE, 5=WIRE, 6=EDGE, 7=VERTEX)
 /// @param subShapeIndex 0-based index of sub-shape of that type
-/// @return true if the sub-shape is valid
-bool OCCTBRepCheckSubShapeValid(OCCTShapeRef parentShape,
-                                int32_t      subShapeType,
-                                int32_t      subShapeIndex);
+/// @return 1 if the sub-shape is valid, 0 if it is invalid or the index names no sub-shape, -1 if
+/// the parent could not be handed to `BRepCheck_Analyzer` at all
+int32_t OCCTBRepCheckSubShapeValid(OCCTShapeRef parentShape,
+                                   int32_t      subShapeType,
+                                   int32_t      subShapeIndex);
 
 // --- BRepCheck_Edge / Wire / Shell / Vertex ---
 

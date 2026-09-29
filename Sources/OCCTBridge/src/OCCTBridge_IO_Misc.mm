@@ -531,7 +531,13 @@ bool OCCTShapeIsValidSolid(OCCTShapeRef shape)
   // that answer depending on a throw out of a signal handler. Such a solid is not valid, which is
   // this predicate's own answer for every other input it refuses. The OCC_CATCH_SIGNALS below is
   // inert in this build and plays no part either way.
-  if (occtShapeHasPCurveOnlyEdge(shape->shape))
+  // #2789: and the second shape the analyzer cannot survive, a face with no surface that carries a
+  // wire (BRepCheck_Edge.cxx:463). The occtEnsureSignals() note above applies to it as well, and
+  // was measured for it specifically: with a handler installed the analyzer's own catch absorbs the
+  // fault and answers false, without one the process exits 139, and nothing the caller controls
+  // decides which. A solid carrying such a face is not a valid closed solid, which is this
+  // predicate's own answer. See occtShapeHasSurfacelessFace.
+  if (occtShapeHasPCurveOnlyEdge(shape->shape) || occtShapeHasSurfacelessFace(shape->shape))
     return false;
   occtEnsureSignals();
   try

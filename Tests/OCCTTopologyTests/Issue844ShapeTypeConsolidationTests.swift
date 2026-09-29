@@ -24,14 +24,16 @@ struct Issue844ShapeTypeConsolidationTests {
         // Explicitly typed as ShapeType (not the deleted local Shape.TopAbs_ShapeEnum) --
         // compiles only if isSubShapeValid(type:)'s parameter really is ShapeType.
         let edgeType: ShapeType = .edge
-        #expect(box.isSubShapeValid(type: edgeType, at: 0))
+        // `== true`, not a bare condition: #2755 made the return `Bool?`, and a box is checkable, so
+        // a nil here would be a real failure rather than something to coerce away.
+        #expect(box.isSubShapeValid(type: edgeType, at: 0) == true)
 
         // A box has no compSolid sub-shape; the canonical casing (`compSolid`, not the old
         // `compsolid`) must compile and answer false rather than crash or trap.
-        #expect(!box.isSubShapeValid(type: .compSolid, at: 0))
+        #expect(box.isSubShapeValid(type: .compSolid, at: 0) == false)
 
         // Out-of-range index still refused, same as before the type change.
-        #expect(!box.isSubShapeValid(type: .edge, at: 999))
+        #expect(box.isSubShapeValid(type: .edge, at: 999) == false)
     }
 
     @Test("ShapeFilterType is a typealias for ShapeType -- interchangeable with no conversion")
