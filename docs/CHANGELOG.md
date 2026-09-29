@@ -21,6 +21,24 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The wasm module is 10.1 MB smaller, and platform conditionals live in one place (#2761)
+
+The Swift layer now builds against `FoundationEssentials` on `wasm32-unknown-wasip1`, which leaves
+out Foundation's internationalisation data. The module drops from 26.98 MB brotli to about 16.9 MB,
+with byte-identical geometry output.
+
+A new internal `OCCTPlatform` target holds every platform conditional and re-exports the right
+Foundation and C library, so the rest of the package carries none. **Apple platforms are unaffected**:
+`canImport(FoundationEssentials)` is false there, so those builds keep `Foundation` and `NSLock`
+exactly as before, and the consumer-visible API is unchanged.
+
+Consumers building for wasm must make the same import change in their own sources to keep the
+saving, which is all-or-nothing per linked module; see
+[`docs/guides/wasm-consumer-setup.md`](guides/wasm-consumer-setup.md).
+
+Also fixes a lifetime bug in `Document.setExtStringArray` and `setExtStringList`, which passed
+pointers owned by autoreleased bridged strings and worked only because the pool had not drained.
+
 ### `OCCTShapeUpgradeSplitSurfaceAngle` removed, the second spelling of `OCCTShapeSplitByAngle` (#2771)
 
 The bridge declared and defined the same operation twice. Both built
