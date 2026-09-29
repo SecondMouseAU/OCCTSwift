@@ -162,6 +162,28 @@ measured 2026-09-28, `.build` cache restored each time). `--self-test`'s last st
 asserts exactly that on the real tree, so a misfire shows up as a named self-test failure rather
 than as a refusal on every PR.
 
+**And "its module" has to be the module that build wrote, which is what #2867 was.** Three PRs were
+blocked by this refusal, every one of them naming `Sources/OCCTSwift/ZLayerSettings.swift` and a
+`.build/debug/Modules` directory, at 1925s, 3474s and 3526s. Subtract each from its own job's
+checkout time and all three give the same absolute instant, 2026-09-29T06:48:12Z: one module, inside
+one `actions/cache` entry, older than every job that read it. Each of those jobs *did* build and did
+log `Emitting module OCCTSwift`, so nothing about the build being a no-op explains it. What explains
+it is the layout: `<bin>/Modules/OCCTSwift.swiftmodule` is the llbuild path, a build on the
+Swift Build backend writes the bin root instead, and a cache shared across both leaves a module at
+the path the current build never rewrites. It was then the only module the search could find, so the
+newest-first preference and the fall-through to another current directory had nothing to fall
+through to. Reproduced here by putting a backdated bundle in `<bin>/Modules` and removing the one at
+the bin root, which gives the identical message and the identical `38 passed, 1 failed`.
+
+The remedy is upstream of this script and belongs there: `ci.yml` deletes every
+`OCCTSwift.swiftmodule` under `.build` after restoring the cache and before `swift build`, so the
+only module this script can find is one written during that job, after the checkout, and therefore
+newer than every input by construction. That argument does not depend on which build system ran or
+on what the build decided to recompile. Nothing here was weakened to accommodate it: a module older
+than its inputs is still a refusal, exactly as #2816 left it, and `module_inventory_lines` now names
+the module and its absolute write time on every outcome, so the next instance of this is one line in
+the run that refused rather than arithmetic across three that did.
+
 ## Usage
 
     python3 Scripts/check-doc-snippets.py              # extract, type-check, report; exit 1 on a failure
@@ -184,6 +206,7 @@ import platform
 import subprocess
 import sys
 import tempfile
+import time
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 
@@ -711,7 +734,7 @@ def stale_module_reason(module_dir, base=None, globs=MODULE_INPUT_GLOBS):
 MODULE_SEARCH_DEPTH = 5
 
 
-def module_dirs():
+def module_dirs(base=None):
     """Directories under `.build` holding an `OCCTSwift.swiftmodule`, most recently built first.
 
     #2098: the layout used to be guessed, from two hardcoded candidates plus
@@ -726,15 +749,71 @@ def module_dirs():
     from a different toolchain leaves both, and the one this build just wrote is the one to compile
     against.
     """
+    root = REPO if base is None else pathlib.Path(base)
     hits = []
     for depth in range(1, MODULE_SEARCH_DEPTH + 1):
         pattern = '/'.join(['.build'] + ['*'] * depth + ['OCCTSwift.swiftmodule'])
-        hits.extend(REPO.glob(pattern))
+        hits.extend(root.glob(pattern))
     ordered = []
     for hit in sorted(hits, key=lambda h: h.stat().st_mtime, reverse=True):
         if hit.parent not in ordered:
             ordered.append(hit.parent)
     return ordered
+
+
+def module_inventory_lines(base=None, globs=MODULE_INPUT_GLOBS):
+    """One line per `OCCTSwift.swiftmodule` under `.build`, saying when each was written.
+
+    #2867: the refusal named one module directory and said nothing about where that module came
+    from, and the answer was that no build in that job had written it. A cache-restored `.build`
+    held a module at the llbuild layout's `<bin>/Modules/OCCTSwift.swiftmodule`, the job's own build
+    writes the bin root instead, and that leftover was the only module the search could find. Three
+    CI jobs' refusals reported deltas of 1925s, 3474s and 3526s against their own checkout times,
+    and all three reduce to the same absolute timestamp, 06:48:12Z: one artefact inside one cache
+    entry, older than every job that read it. Establishing that took arithmetic across three runs,
+    because the run that refused printed none of it. These lines put it in the run.
+
+    The write time is absolute and in UTC, so two runs are comparable without subtracting their
+    checkout times. Physical duplicates are folded: `.build/debug` is a symlink to the bin
+    directory under both build systems shipped here, so the same module is reachable by two paths
+    and reporting it twice would read as two modules.
+    """
+    root = REPO if base is None else pathlib.Path(base)
+    _newest_path, newest = newest_input(base, globs)
+    seen = {}
+    for d in module_dirs(base):
+        bundle = d / 'OCCTSwift.swiftmodule'
+        try:
+            key = os.path.realpath(bundle)
+        except OSError:
+            key = str(bundle)
+        seen.setdefault(key, []).append(d)
+    lines = []
+    for _key, dirs in seen.items():
+        written = module_written(dirs[0])
+        when = ('unreadable' if written is None
+                else time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(written)))
+        if written is None or newest == 0.0:
+            gap = ''
+        elif written >= newest:
+            gap = f', {written - newest:.0f}s newer than the newest module input'
+        else:
+            gap = f', {newest - written:.0f}s OLDER than the newest module input'
+        shown = dirs[0]
+        try:
+            shown = shown.relative_to(root)
+        except ValueError:
+            pass
+        alias = ''
+        if len(dirs) > 1:
+            others = ', '.join(str(o) for o in dirs[1:])
+            alias = f' (also reachable as {others})'
+        lines.append(f'  module found: {shown}{alias}: written {when}{gap}')
+    if len(seen) > 1:
+        lines.append('  NOTE: more than one OCCTSwift.swiftmodule under .build. One of them is '
+                     'what the build just wrote and the rest are leftovers from another layout or '
+                     'another toolchain, which is the shape of both #2098 and #2867.')
+    return lines
 
 
 def toolchain_args():
@@ -1454,7 +1533,7 @@ def _self_test_compile():
         # `_self_test_staleness` has already reported it as a failure. Printing the word SKIPPED
         # over it would be this script mislabelling its own view.
         print(f'  {"REFUSED" if why_not.fatal else "SKIPPED"}  compile cases: {why_not}')
-        return 0, True
+        return 0, True, str(why_not)
     print(f'  ok    target triple derived from the built module: {triple}')
     failures = 0
     verdicts = {}
@@ -1489,7 +1568,7 @@ def _self_test_compile():
             print(f'  FAIL  the two compiler modes disagree on: {n} ({verdicts[n]})')
     else:
         print('  ok    -wmo and batch mode agree on every case')
-    return failures, False
+    return failures, False, None
 
 
 def _self_test_canary():
@@ -1529,6 +1608,100 @@ def _self_test_canary():
     finally:
         globals()['run_swiftc'] = real
     return failures
+
+
+def _self_test_reporting():
+    """Prove the two things a weakened or refusing run has to say out loud.
+
+    Both are reporting rather than verdicts, and both are here because #2867's evidence was
+    reconstructed from outside the runs that produced it: the case counts from a table of two jobs'
+    summary lines, and the module's identity from three jobs' deltas reduced against three checkout
+    times. Neither run said it. A case per sentence, so the sentence cannot quietly go.
+    """
+    failures = 0
+    ran = 0
+
+    ran += 1
+    if weakened_run_notice(67, 67, None) is None:
+        print('  ok    a run that ran every case draws no banner')
+    else:
+        failures += 1
+        print('  FAIL  a complete run drew the weakened-run banner')
+
+    ran += 1
+    notice = weakened_run_notice(38, 67, 'no built package')
+    if (notice is not None and '38' in notice and '67' in notice and '29' in notice
+            and 'no built package' in notice and 'WEAKENED RUN' in notice):
+        print('  ok    a weakened run names how many cases ran, how many did not, and why')
+    else:
+        failures += 1
+        print(f'  FAIL  the weakened-run banner does not name both counts\n        got {notice!r}')
+
+    base = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-snippets-inventory-'))
+    try:
+        (base / 'Sources' / 'OCCTSwift').mkdir(parents=True)
+        src = base / 'Sources' / 'OCCTSwift' / 'A.swift'
+        src.write_text('x\n')
+        os.utime(src, (3000, 3000))
+
+        def bundle_at(rel, when):
+            b = base / '.build' / rel / 'OCCTSwift.swiftmodule'
+            b.mkdir(parents=True)
+            member = b / 'arm64-apple-macos.swiftmodule'
+            member.write_bytes(b'')
+            os.utime(member, (when, when))
+            os.utime(b, (when, when))
+            return b
+
+        bundle_at('debug/Modules', 1075)
+        lines = module_inventory_lines(base=base, globs=('Sources/OCCTSwift/**/*.swift',))
+        ran += 1
+        if (len(lines) == 1 and 'debug/Modules' in lines[0] and '1925s OLDER' in lines[0]
+                and '1970-01-01T00:17:55Z' in lines[0]):
+            print('  ok    a module older than its inputs is named, with an absolute write time')
+        else:
+            failures += 1
+            print(f'  FAIL  the inventory does not name an older module as older\n        {lines}')
+
+        bundle_at('arm64-apple-macosx/debug', 4000)
+        lines = module_inventory_lines(base=base, globs=('Sources/OCCTSwift/**/*.swift',))
+        ran += 1
+        if (len(lines) == 3 and any('1000s newer' in ln for ln in lines)
+                and 'more than one OCCTSwift.swiftmodule' in lines[-1]):
+            print('  ok    two modules under one .build are both named, and the ambiguity is said')
+        else:
+            failures += 1
+            print(f'  FAIL  two modules were not reported as two\n        {lines}')
+
+        # `.build/debug` is a symlink to the bin directory under both build systems shipped here, so
+        # the same module is reachable by two paths. Reporting it twice would read as the case above.
+        alias_base = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-snippets-alias-'))
+        try:
+            (alias_base / 'Sources' / 'OCCTSwift').mkdir(parents=True)
+            asrc = alias_base / 'Sources' / 'OCCTSwift' / 'A.swift'
+            asrc.write_text('x\n')
+            os.utime(asrc, (3000, 3000))
+            real = alias_base / '.build' / 'out' / 'Products' / 'Debug'
+            real.mkdir(parents=True)
+            rb = real / 'OCCTSwift.swiftmodule'
+            rb.mkdir()
+            (rb / 'arm64-apple-macos.swiftmodule').write_bytes(b'')
+            os.utime(rb / 'arm64-apple-macos.swiftmodule', (4000, 4000))
+            os.utime(rb, (4000, 4000))
+            (alias_base / '.build' / 'debug').symlink_to(real)
+            lines = module_inventory_lines(alias_base,
+                                          globs=('Sources/OCCTSwift/**/*.swift',))
+            ran += 1
+            if len(lines) == 1 and 'also reachable as' in lines[0]:
+                print('  ok    one module reached by two paths is one module, with the alias named')
+            else:
+                failures += 1
+                print(f'  FAIL  a symlinked alias was counted as a second module\n        {lines}')
+        finally:
+            shutil.rmtree(alias_base, ignore_errors=True)
+    finally:
+        shutil.rmtree(base, ignore_errors=True)
+    return failures, ran
 
 
 def _self_test_staleness():
@@ -1678,7 +1851,52 @@ def _self_test_staleness():
         print(f'  FAIL  the built module in this tree reads as stale: {why_not}')
     else:
         print(f'  SKIPPED  real tree: {why_not}')
-    return failures, ran
+    # Which module this run read, on every outcome including the passing one. A refusal that names
+    # the module without saying when it was written cannot be told from a refusal about a module the
+    # build never wrote, and telling those apart is the whole of #2867.
+    for line in module_inventory_lines():
+        print(line)
+    return failures, ran, ran if why_not is None or why_not.fatal else ran + 1
+
+
+# How wide the weakened-run banner is drawn. Wide enough that it cannot be mistaken for one more
+# `ok` line in a scroll of forty of them, which is what the parenthetical it replaces was.
+NOTICE_RULE = '#' * 78
+
+
+def weakened_run_notice(ran, total, reason):
+    """The banner for a self-test run that could not run every case, or None when it ran them all.
+
+    **The count, not the reason, is the headline.** A run with the compile cases out checks 38
+    things where the full battery checks 67, and until #2867 it said so in five parenthesised words
+    at the end of forty lines of `ok`. That is the #2098 shape exactly: a detector reporting success
+    over a smaller population than its reader believes it covers. #2098 itself was 24 snippets of
+    3,105 and a green step, and the lesson recorded in okf/policies/static-gates.md is that the
+    report of an absent precondition has to state what was not examined, loudly enough to be read.
+
+    Separate from `--require-typecheck`, which turns this into exit 2. That flag is for CI, where a
+    weakened run is a false green; this banner is for everywhere, including the local run where
+    skipping is the right behaviour and the person still has to know which half they proved.
+    """
+    if ran >= total:
+        return None
+    lines = [NOTICE_RULE,
+             f'WEAKENED RUN: {total - ran} of {total} self-test cases DID NOT RUN. '
+             f'{ran} of {total} ran.',
+             '']
+    if reason:
+        lines.append(f'Why: {reason}')
+        lines.append('')
+    # Named rather than counted, because "28 cases" tells nobody which property went unproven. The
+    # real-tree case is deliberately not in this list: it runs, and fails, when the module is stale,
+    # and is skipped only when there is no module at all, so the count above carries it and this
+    # sentence would be wrong half the time if it claimed it.
+    lines.append('The cases that did not run are the compile battery and the target triple it')
+    lines.append('derives from the built module, so this run proves NOTHING about the type-check')
+    lines.append('path. Run `swift build` first. In CI, pass --require-typecheck, which makes this')
+    lines.append('a refusal rather than a quieter pass.')
+    lines.append(NOTICE_RULE)
+    return '\n'.join(lines)
 
 
 def self_test(require_typecheck=False):
@@ -1694,19 +1912,28 @@ def self_test(require_typecheck=False):
     failures += _self_test_attribution()
     print('canary guard:')
     failures += _self_test_canary()
+    print('reporting:')
+    report_failures, report_cases = _self_test_reporting()
+    failures += report_failures
     print('stale-module detection:')
-    stale_failures, staleness_cases_run = _self_test_staleness()
+    stale_failures, staleness_ran, staleness_total = _self_test_staleness()
     failures += stale_failures
     print('end-to-end compile:')
-    compile_failures, skipped = _self_test_compile()
+    compile_failures, skipped, skip_reason = _self_test_compile()
     failures += compile_failures
     # 7 is _self_test_dedent_and_rewrite's case count, 2 each for attribution and the canary guard.
     # The stale-module battery counts its own cases, because its last one is skipped where there is
-    # no built module: `staleness_cases_run` is every case that ran in it, not the stale ones.
-    total = (len(EXTRACT_CASES) + len(BODY_CASES) + len(HISTORICAL) + 7 + 2 + 2 + staleness_cases_run
-             + (0 if skipped else 2 * len(COMPILE_CASES) + 2))
-    print(f'\nself-test: {total - failures} passed, {failures} failed'
-          + (' (compile cases SKIPPED: no built package)' if skipped else ''))
+    # no built module, and it reports `ran` and `total` separately so the banner below can name the
+    # difference rather than leave it to be inferred from a number nobody has the other half of.
+    fixed = (len(EXTRACT_CASES) + len(BODY_CASES) + len(HISTORICAL) + 7 + 2 + 2 + report_cases)
+    compile_cases = 2 * len(COMPILE_CASES) + 2
+    ran = fixed + staleness_ran + (0 if skipped else compile_cases)
+    total = fixed + staleness_total + compile_cases
+    print(f'\nself-test: {ran - failures} passed, {failures} failed '
+          f'({ran} of {total} cases ran)')
+    notice = weakened_run_notice(ran, total, skip_reason)
+    if notice is not None:
+        print(f'\n{notice}')
     if skipped and require_typecheck:
         # #2098: in CI this skip took the battery from 51 cases to 27 and still exited 0, so the
         # step proved nothing about the compile path while looking exactly like the local pass.
@@ -1770,6 +1997,10 @@ def main():
             print('No snippet was judged. A module built from different source reports a correct '
                   'snippet\n  as broken, which is a finding about the module and not about the '
                   'page.', file=sys.stderr)
+            # And say which module, and when it was written. #2867's refusal named a directory and
+            # left "was it this build's module at all" to be answered from three jobs' logs.
+            for line in module_inventory_lines():
+                print(line, file=sys.stderr)
         else:
             print('--require-typecheck was given, so a skipped type-check stage is a failure '
                   'rather than a\n  census result. Build the package first.', file=sys.stderr)
