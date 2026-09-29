@@ -60,9 +60,10 @@ public final class MathMatrix: @unchecked Sendable {
         return out
     }
 
-    /// Stores `value` at (`row`, `col`), 1-based. Returns `false`, storing nothing, when either
-    /// index is out of range: the same indices ``value(row:col:)`` refuses, and for the same
-    /// reason (#2860).
+    /// Stores `value` at (`row`, `col`), 1-based.
+    ///
+    /// Returns `false`, storing nothing, when either index is out of range: the same indices
+    /// ``value(row:col:)`` refuses, and for the same reason (#2860).
     ///
     /// ```swift
     /// let m = MathMatrix(rows: 2, cols: 2)
@@ -97,7 +98,9 @@ public final class MathMatrix: @unchecked Sendable {
         return out
     }
 
-    /// Inverts the matrix in place. Returns `false`, changing nothing, unless it ``isSquare``.
+    /// Inverts the matrix in place.
+    ///
+    /// Returns `false`, changing nothing, unless it ``isSquare``.
     ///
     /// A 100x1 used to be a SIGBUS: `math_Matrix::Invert`'s own `math_NotSquare_Raise_if` sits in
     /// `math_Matrix.cxx` and is compiled out of the kernel this package ships, so the matrix reached
@@ -120,7 +123,9 @@ public final class MathMatrix: @unchecked Sendable {
     /// ```
     public func multiply(by scalar: Double) { OCCTMathMatrixMultiplyScalar(handle, scalar) }
 
-    /// Transposes the matrix in place. Returns `false`, changing nothing, unless it ``isSquare``.
+    /// Transposes the matrix in place.
+    ///
+    /// Returns `false`, changing nothing, unless it ``isSquare``.
     ///
     /// `math_Matrix::Transpose`'s `math_NotSquare_Raise_if` is inline, so it is live in the bridge's
     /// own translation unit and a 3x2 used to throw straight into Swift-generated frames as an
