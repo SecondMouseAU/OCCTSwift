@@ -1,6 +1,18 @@
 import Foundation
 import simd
 
+// The platform C library, named because this file uses it directly (free, sin, cos, sqrt and
+// the like). `import Foundation` happens to re-export it on Apple platforms, so these were in
+// scope by accident rather than by declaration; FoundationEssentials does not, which is how
+// #2761 found them. Naming it here is correct independently of that work.
+#if canImport(Darwin)
+    import Darwin
+#elseif canImport(WASILibc)
+    import WASILibc
+#elseif canImport(Glibc)
+    import Glibc
+#endif
+
 // MARK: - Sketch (#72 Phase 4)
 //
 // A sketch is a collection of 2D curves hosted on a ConstructionPlane, plus a
