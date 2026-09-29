@@ -23,4 +23,3 @@ struct GCMakeTrimmedConeTests {
         let _ = s
     }
 }
-

@@ -78,15 +78,16 @@ struct BRepGraphShapeReconstructionTests {
                     0, 1, 0, 6,
                     0, 0, 1, 7,
                 ]
-                guard let linked = graph.linkProducts(
-                    parentProductIndex: parentProduct,
-                    referencedProductIndex: childProduct,
-                    placement: translationMatrix)
+                guard
+                    let linked = graph.linkProducts(
+                        parentProductIndex: parentProduct,
+                        referencedProductIndex: childProduct,
+                        placement: translationMatrix)
                 else {
                     Issue.record("linkProducts nil")
                     return
                 }
-                
+
                 // Reconstruct the occurrence shape - it should have the placement applied
                 // Use occurrence DEFINITION index (linked.occurrenceIndex)
                 let occShape = graph.shape(nodeKind: .occurrence, nodeIndex: linked.occurrenceIndex)

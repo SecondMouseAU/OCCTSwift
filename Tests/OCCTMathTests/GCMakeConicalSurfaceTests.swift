@@ -36,4 +36,3 @@ struct GCMakeConicalSurfaceTests {
         let _ = s
     }
 }
-

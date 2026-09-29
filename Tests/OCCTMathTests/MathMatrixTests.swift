@@ -47,4 +47,3 @@ struct MathMatrixTests {
         #expect(m.invert())
     }
 }
-

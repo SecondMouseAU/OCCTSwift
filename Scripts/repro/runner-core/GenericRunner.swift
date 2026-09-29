@@ -46,7 +46,8 @@ public enum GenericRunner {
 
         case let requested?:
             guard let entry = entries.first(where: { $0.name == requested }) else {
-                FileHandle.standardError.write(Data("\(toolName): no such entry \"\(requested)\"\n\n".utf8))
+                FileHandle.standardError.write(
+                    Data("\(toolName): no such entry \"\(requested)\"\n\n".utf8))
                 printUsage(toolName: toolName, blurb: blurb, entries: entries)
                 exit(1)
             }
@@ -64,7 +65,9 @@ public enum GenericRunner {
         print("Available:")
         let width = entries.map(\.name.count).max() ?? 0
         for entry in entries {
-            let name = entry.name.count == width ? entry.name : entry.name + String(repeating: " ", count: width - entry.name.count)
+            let name =
+                entry.name.count == width
+                ? entry.name : entry.name + String(repeating: " ", count: width - entry.name.count)
             print("  \(name) \(entry.summary)")
         }
     }

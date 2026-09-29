@@ -20,4 +20,3 @@ struct CylindricalSurfaceTests {
         #expect(surf.handle != nil)
     }
 }
-

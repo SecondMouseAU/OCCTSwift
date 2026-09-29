@@ -161,7 +161,9 @@ struct StressAnalyzerSurfacelessFaceGuardTests {
         #expect(clean.checkFaceStatus(face: cleanFace) == 0)
     }
 
-    @Test("the boolean-validity checks refuse the shape, the two sites no grep for the analyzer found")
+    @Test(
+        "the boolean-validity checks refuse the shape, the two sites no grep for the analyzer found"
+    )
     func booleanValidityRefuses() throws {
         // BRepAlgoAPI_Check::Perform builds `BRepCheck_Analyzer(myS1)` at BRepAlgoAPI_Check.cxx:92,
         // so these two entry points construct an analyzer with no `BRepCheck_Analyzer` text anywhere

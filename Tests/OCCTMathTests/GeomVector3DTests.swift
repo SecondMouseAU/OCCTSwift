@@ -57,4 +57,3 @@ struct GeomVector3DTests {
         #expect(abs(cross.coordinates.z - 1.0) < 1e-10)
     }
 }
-

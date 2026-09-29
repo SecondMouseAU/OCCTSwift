@@ -24,4 +24,3 @@ struct TrigRootsTests {
         #expect(inf)
     }
 }
-

@@ -37,9 +37,11 @@ struct Issue1193CuttingPlaneDirectionTests {
         // A direction, not a point: projecting the basis vectors themselves back through the same
         // basis must recover the canonical axes exactly, with no origin term to leak in.
         let projectedRight = projectDirectionToPlane(
-            PerpendicularBasisGroundTruth.expectedRight, viewDirection: PerpendicularBasisGroundTruth.nearDegenerate)
+            PerpendicularBasisGroundTruth.expectedRight,
+            viewDirection: PerpendicularBasisGroundTruth.nearDegenerate)
         let projectedUp = projectDirectionToPlane(
-            PerpendicularBasisGroundTruth.expectedUp, viewDirection: PerpendicularBasisGroundTruth.nearDegenerate)
+            PerpendicularBasisGroundTruth.expectedUp,
+            viewDirection: PerpendicularBasisGroundTruth.nearDegenerate)
         #expect(abs(projectedRight.x - 1.0) < 1e-9)
         #expect(abs(projectedRight.y) < 1e-9)
         #expect(abs(projectedUp.x) < 1e-9)

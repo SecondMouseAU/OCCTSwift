@@ -47,4 +47,3 @@ struct PolynomialTests {
         #expect(abs(result.roots[3] - 3.0) < 1e-10)
     }
 }
-

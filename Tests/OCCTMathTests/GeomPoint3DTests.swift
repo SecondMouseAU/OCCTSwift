@@ -45,4 +45,3 @@ struct GeomPoint3DTests {
         #expect(abs(p.x - 11) < 1e-10)
     }
 }
-

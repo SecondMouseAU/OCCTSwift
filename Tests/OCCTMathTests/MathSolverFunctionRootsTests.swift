@@ -27,4 +27,3 @@ struct MathSolverFunctionRootsTests {
         #expect(roots.count >= 2)
     }
 }
-

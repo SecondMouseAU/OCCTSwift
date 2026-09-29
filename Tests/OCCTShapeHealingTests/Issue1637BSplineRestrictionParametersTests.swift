@@ -53,7 +53,10 @@ struct Issue1637BSplineRestrictionParametersTests {
         #expect(
             bsplineFaceCount(restricted) == 0,
             "ConvertPlane and ConvertCylindricalSurf both default to false")
-        #expect(surfaceKinds(restricted).sorted() == ["Geom_CylindricalSurface", "Geom_Plane", "Geom_Plane"])
+        #expect(
+            surfaceKinds(restricted).sorted() == [
+                "Geom_CylindricalSurface", "Geom_Plane", "Geom_Plane",
+            ])
     }
 
     @Test("allSurfaceTypes converts every face of a cylinder, a sphere and a torus")

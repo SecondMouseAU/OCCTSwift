@@ -38,4 +38,3 @@ struct Axis2PlacementTests {
         #expect(abs(ax.xDirection.y - 1) < 1e-10)
     }
 }
-

@@ -21,4 +21,3 @@ struct ConicalSurfaceTests {
         #expect(surf.handle != nil)
     }
 }
-

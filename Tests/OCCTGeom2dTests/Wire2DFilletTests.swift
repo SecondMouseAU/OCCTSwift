@@ -68,7 +68,9 @@ struct Wire2DFilletTests {
     /// algorithm (`Scripts/repro/1478-healing-blends-defects/find_fillet_fixture.mm`): with
     /// the pre-fix logic this exact fixture returns a 9-edge partial result (4 of 5 corners
     /// filleted); with the fix it correctly falls back to the unmodified 5-edge wire.
-    @Test("filletedAll2D falls back to the original wire on a mid-loop failure, not just a last-vertex one")
+    @Test(
+        "filletedAll2D falls back to the original wire on a mid-loop failure, not just a last-vertex one"
+    )
     func filletAllFallsBackOnMidLoopFailure() throws {
         let points: [SIMD2<Double>] = [
             SIMD2(0, 0),

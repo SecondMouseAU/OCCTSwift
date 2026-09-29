@@ -42,4 +42,3 @@ struct PrecisionTests {
         #expect(abs(OCCTPrecision.pConfusion - OCCTPrecision.confusion / 100.0) < 1e-15)
     }
 }
-

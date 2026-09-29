@@ -34,7 +34,8 @@ struct GeomEvalSineWaveTests {
     }
 
     @Test func sineWaveWithPhase() throws {
-        let p = try #require(GeomEval.sineWaveD0(amplitude: 1.0, omega: 1.0, phase: .pi / 2.0, u: 0.0))
+        let p = try #require(
+            GeomEval.sineWaveD0(amplitude: 1.0, omega: 1.0, phase: .pi / 2.0, u: 0.0))
         #expect(abs(p.y - 1.0) < 1e-6)  // sin(pi/2) = 1
     }
 }

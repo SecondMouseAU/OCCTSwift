@@ -52,7 +52,8 @@ struct Issue2337MeshNodeNormalsTests {
 
         // The defect signature: one distinct normal for the whole mesh.
         let distinct = Set(normals.map { "\($0.x),\($0.y),\($0.z)" })
-        #expect(distinct.count > 100, "only \(distinct.count) distinct normals over \(normals.count)")
+        #expect(
+            distinct.count > 100, "only \(distinct.count) distinct normals over \(normals.count)")
         #expect(
             !normals.allSatisfy { $0 == Self.placeholder },
             "every normal is still the (0, 0, 1) placeholder")
@@ -91,7 +92,8 @@ struct Issue2337MeshNodeNormalsTests {
         }
 
         // Six planar faces, six distinct normals. The placeholder gave one.
-        let distinct = Set(normals.map { "\(Int($0.x.rounded())),\(Int($0.y.rounded())),\(Int($0.z.rounded()))" })
+        let distinct = Set(
+            normals.map { "\(Int($0.x.rounded())),\(Int($0.y.rounded())),\(Int($0.z.rounded()))" })
         #expect(distinct.count == 6, "expected the six axis directions, got \(distinct.sorted())")
         #expect(
             distinct == ["-1,0,0", "0,-1,0", "0,0,-1", "0,0,1", "0,1,0", "1,0,0"],

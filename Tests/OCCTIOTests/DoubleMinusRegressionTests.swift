@@ -16,7 +16,7 @@ import simd
 // "correct" until now. These tests assert the property directly, so a future
 // regeneration that reintroduces the bug fails here regardless of what the golden bytes say.
 
-fileprivate func xmlAttributeValues(in content: String) -> [String] {
+private func xmlAttributeValues(in content: String) -> [String] {
     // Manual scan rather than a text-content regex: attribute values are always inside a
     // `="..."` pair, which structurally excludes a `<text>`/`<title>` element's own inner
     // text content (arbitrary user-supplied labels, which legitimately might contain "--").
@@ -33,7 +33,7 @@ fileprivate func xmlAttributeValues(in content: String) -> [String] {
     return values
 }
 
-fileprivate func pdfContentStreamNonTextTokens(_ content: String) -> String {
+private func pdfContentStreamNonTextTokens(_ content: String) -> String {
     // Strip every `(...)` string literal (the payload of a `Tj` text-show operator, the
     // only place arbitrary label text appears) before scanning; everything left is PDF
     // operators and the numbers this writer formats itself.
@@ -53,7 +53,7 @@ fileprivate func pdfContentStreamNonTextTokens(_ content: String) -> String {
     return stripped
 }
 
-fileprivate func dxfNonTextValues(_ content: String) -> [String] {
+private func dxfNonTextValues(_ content: String) -> [String] {
     // DXF alternates group-code/value line pairs; group code 1 is the TEXT entity's own
     // string payload (arbitrary label text), every other code's value is this writer's own
     // formatted number or a fixed enum-ish string (layer/linetype/style names).

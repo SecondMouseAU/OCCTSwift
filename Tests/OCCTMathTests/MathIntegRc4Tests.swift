@@ -40,4 +40,3 @@ struct MathIntegRc4Tests {
         if let r = result { #expect(abs(r.value - 2.0) < 1e-4) }
     }
 }
-

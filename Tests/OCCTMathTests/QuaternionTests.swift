@@ -70,4 +70,3 @@ struct QuaternionTests {
         #expect(abs(norm - 1.0) < 1e-10)
     }
 }
-

@@ -8,7 +8,8 @@ import simd
 struct Geom2dEvalLogSpiralTests {
 
     @Test func logSpiralD0AtZero() throws {
-        let p = try #require(Geom2dEval.logarithmicSpiralD0(scale: 1.0, growthExponent: 0.2, u: 0.0))
+        let p = try #require(
+            Geom2dEval.logarithmicSpiralD0(scale: 1.0, growthExponent: 0.2, u: 0.0))
         // At t=0: a*exp(0)*cos(0) = a = 1
         #expect(abs(p.x - 1.0) < 1e-10)
         #expect(abs(p.y) < 1e-10)
@@ -25,7 +26,8 @@ struct Geom2dEvalLogSpiralTests {
     }
 
     @Test func logSpiralD1() throws {
-        let r = try #require(Geom2dEval.logarithmicSpiralD1(scale: 1.0, growthExponent: 0.2, u: 1.0))
+        let r = try #require(
+            Geom2dEval.logarithmicSpiralD1(scale: 1.0, growthExponent: 0.2, u: 1.0))
         let speed = sqrt(r.d1.x * r.d1.x + r.d1.y * r.d1.y)
         #expect(speed > 0)
     }

@@ -88,7 +88,8 @@ struct Issue2736ShelledThicknessSignTests {
         if let volume = outcome?.result.volume {
             #expect(abs(volume - Self.outwardVolume) < Self.tolerance)
         } else {
-            #expect(Bool(false), "shelledWithFullHistory(facesToRemove:thickness: 2.0) should succeed")
+            #expect(
+                Bool(false), "shelledWithFullHistory(facesToRemove:thickness: 2.0) should succeed")
         }
     }
 
@@ -99,7 +100,8 @@ struct Issue2736ShelledThicknessSignTests {
         if let volume = outcome?.result.volume {
             #expect(abs(volume - Self.inwardVolume) < Self.tolerance)
         } else {
-            #expect(Bool(false), "shelledWithFullHistory(facesToRemove:thickness: -2.0) should succeed")
+            #expect(
+                Bool(false), "shelledWithFullHistory(facesToRemove:thickness: -2.0) should succeed")
         }
     }
 }

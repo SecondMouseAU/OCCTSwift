@@ -76,7 +76,9 @@ struct FeatureReconstructorTests {
         #expect(result.shape != nil)
     }
 
-    @Test("#1585: a second additive feature whose union totally fails is Skipped, not silently absorbed")
+    @Test(
+        "#1585: a second additive feature whose union totally fails is Skipped, not silently absorbed"
+    )
     func absorbAdditiveTotalUnionFailureIsSkipped() {
         // First feature: a real 20x20x10 box (via extrude), volume 4000.
         let box = FeatureSpec.Extrude(

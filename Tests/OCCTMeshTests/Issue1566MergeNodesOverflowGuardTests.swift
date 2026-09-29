@@ -89,7 +89,10 @@ struct Issue1566MergeNodesOverflowGuardTests {
             }
         }
 
-        #expect(nVerts == 0, "a too-small vertex buffer must fail the whole call, not report a count larger than 1 slot holds")
+        #expect(
+            nVerts == 0,
+            "a too-small vertex buffer must fail the whole call, not report a count larger than 1 slot holds"
+        )
         #expect(triCount == -1, "outTriangleCount must be left untouched when the call refuses")
     }
 
@@ -120,7 +123,10 @@ struct Issue1566MergeNodesOverflowGuardTests {
             }
         }
 
-        #expect(nVerts == 0, "a too-small index buffer must fail the whole call, not report the true (larger) triangle count while indices went unwritten")
+        #expect(
+            nVerts == 0,
+            "a too-small index buffer must fail the whole call, not report the true (larger) triangle count while indices went unwritten"
+        )
         #expect(triCount == -1, "outTriangleCount must be left untouched when the call refuses")
     }
 
@@ -143,8 +149,13 @@ struct Issue1566MergeNodesOverflowGuardTests {
             }
         }
 
-        #expect(nVerts > 0, "no outIndices buffer was requested, so a 0-capacity maxIndices must not fail the call")
-        #expect(triCount > 0, "the true triangle count is still informational when the caller didn't ask for indices at all")
+        #expect(
+            nVerts > 0,
+            "no outIndices buffer was requested, so a 0-capacity maxIndices must not fail the call")
+        #expect(
+            triCount > 0,
+            "the true triangle count is still informational when the caller didn't ask for indices at all"
+        )
     }
 
     // MARK: - The Swift-level public API surfaces the same refusal as nil

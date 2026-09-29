@@ -65,7 +65,9 @@ struct Wire2DChamferTests {
     /// `TopExp::MapShapes` pairing, this exact fixture chamfers only 2 of the 4 corners (6
     /// result edges); with the `BRepTools_WireExplorer`-based fix, it correctly finds and
     /// chamfers all 4 adjacent pairs (8 result edges).
-    @Test("chamferedAll2D pairs edges by true wire connection order, not TopExp::MapShapes insertion order")
+    @Test(
+        "chamferedAll2D pairs edges by true wire connection order, not TopExp::MapShapes insertion order"
+    )
     func chamferAllUsesWireConnectionOrderNotMapOrder() throws {
         let a = SIMD3<Double>(0, 0, 0)
         let b = SIMD3<Double>(10, 0, 0)

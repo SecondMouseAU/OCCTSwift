@@ -193,10 +193,11 @@ struct FaceSurfacePropertiesTests {
         let pc = try #require(cylFace.principalCurvatures(atU: uMid, v: vMid))
 
         // Identify the axial pair by curvature magnitude (~0), not by min/max position.
-        let (axialCurv, axialDir, circumCurv, circumDir): (Double, SIMD3<Double>, Double, SIMD3<Double>) =
-            abs(pc.kMin) < abs(pc.kMax)
-            ? (pc.kMin, pc.dirMin, pc.kMax, pc.dirMax)
-            : (pc.kMax, pc.dirMax, pc.kMin, pc.dirMin)
+        let (axialCurv, axialDir, circumCurv, circumDir):
+            (Double, SIMD3<Double>, Double, SIMD3<Double>) =
+                abs(pc.kMin) < abs(pc.kMax)
+                ? (pc.kMin, pc.dirMin, pc.kMax, pc.dirMax)
+                : (pc.kMax, pc.dirMax, pc.kMin, pc.dirMin)
 
         #expect(abs(axialCurv) < 1e-6, "the near-zero curvature should be axial, got \(axialCurv)")
         #expect(

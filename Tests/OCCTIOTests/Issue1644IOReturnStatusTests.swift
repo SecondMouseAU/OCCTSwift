@@ -53,8 +53,8 @@ struct Issue1644IOReturnStatus {
 
         var missingStatus: IOStatus?
         #expect(throws: ImportError.self) {
-            do { _ = try Shape.loadSTEP(fromPath: missing.path) } catch
-                ImportError.readFailed(_, let s)
+            do { _ = try Shape.loadSTEP(fromPath: missing.path) } catch ImportError.readFailed(
+                _, let s)
             {
                 missingStatus = s
                 throw ImportError.readFailed(path: missing.path, status: s)
@@ -62,8 +62,8 @@ struct Issue1644IOReturnStatus {
         }
         var corruptStatus: IOStatus?
         #expect(throws: ImportError.self) {
-            do { _ = try Shape.loadSTEP(fromPath: corrupt.path) } catch
-                ImportError.readFailed(_, let s)
+            do { _ = try Shape.loadSTEP(fromPath: corrupt.path) } catch ImportError.readFailed(
+                _, let s)
             {
                 corruptStatus = s
                 throw ImportError.readFailed(path: corrupt.path, status: s)

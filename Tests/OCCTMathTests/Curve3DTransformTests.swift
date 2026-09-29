@@ -91,4 +91,3 @@ struct Curve3DTransformTests {
         }
     }
 }
-

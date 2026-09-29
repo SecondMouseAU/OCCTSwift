@@ -23,4 +23,3 @@ struct HyperbolaThreePointsTests {
         }
     }
 }
-
