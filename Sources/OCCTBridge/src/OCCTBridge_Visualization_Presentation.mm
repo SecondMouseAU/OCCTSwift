@@ -591,16 +591,6 @@ bool OCCTShapeGetEdgeMesh(OCCTShapeRef shape, double deflection, OCCTEdgeMeshDat
   out->segmentStarts = nullptr;
   out->segmentCount  = 0;
 
-  // #2872: see occtValidTangentialDeflection (OCCTBridge_Internal.h). The curve fallback below
-  // hands `deflection` to GCPnts_TangentialDeflection, whose own precondition on the pair is a
-  // Standard_ConstructionError_Raise_if in the .cxx and so is absent from the pinned Release
-  // kernel. Unlike the Curve3D entry points this loop has no maxPoints ceiling, so a deflection
-  // under the bound is a run away to the sampler's internal 1e6-point cap per edge rather than a
-  // truncated fraction. The refusal is false with `out` left zeroed, which is what this function
-  // already returns for a null shape and for a shape no edge of which could be discretised.
-  if (!occtValidTangentialDeflection(kEdgeMeshFallbackAngularDeflection, deflection))
-    return false;
-
   try
   {
     BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
@@ -684,6 +674,19 @@ bool OCCTShapeGetEdgeMesh(OCCTShapeRef shape, double deflection, OCCTEdgeMeshDat
         else
         {
           // Fall back to curve discretization
+          //
+          // #2872: see occtValidTangentialDeflection (OCCTBridge_Internal.h). The sampler's own
+          // precondition on the pair is a Standard_ConstructionError_Raise_if in the .cxx and so
+          // is absent from the pinned Release kernel, and this loop has no point ceiling, unlike
+          // the Curve3D entry points PR #2870 guarded. Measured on a free circular edge with the
+          // guard removed: `deflection` NaN produced 22,216 vertices for that one edge, where a
+          // valid request gives tens. The guard sits here and not at the entry point because
+          // `deflection` has a second consumer, BRepMesh_IncrementalMesh above, whose bound is not
+          // this one. The refusal is that this edge contributes no segment, which is what the
+          // catch below already does for an edge that cannot be discretised, and a shape no edge
+          // of which contributes falls out as `false` at the allVerts.empty() check.
+          if (!occtValidTangentialDeflection(kEdgeMeshFallbackAngularDeflection, deflection))
+            continue;
           try
           {
             // #2872: the constructor is (curve, angularDeflection [radians], curvatureDeflection

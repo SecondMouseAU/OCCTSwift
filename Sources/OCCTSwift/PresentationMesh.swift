@@ -132,15 +132,16 @@ extension Shape {
 
     /// Extract edge wireframe polylines from the shape.
     ///
-    /// An edge with no triangulation polygon, a free edge for instance, falls back to adaptive
-    /// curve sampling, which takes `deflection` as its linear tolerance against a fixed 0.1 rad
-    /// angular one.
+    /// Almost every edge is served by tessellation, which meshes free edges as well as face edges.
+    /// An edge that tessellation leaves without a polygon falls back to adaptive curve sampling,
+    /// which takes `deflection` as its linear tolerance against a fixed 0.1 rad angular one, and
+    /// refuses a value below `Precision::Confusion()` (1e-7) by contributing no segment for that
+    /// edge, as it already does for an edge it cannot discretise (#2872).
     ///
-    /// - Parameter deflection: Tessellation chord deviation. Default is 0.1. Must be at least
-    ///   `Precision::Confusion()` (1e-7); below that the result is `nil` (#2872), because
-    ///   `GCPnts_TangentialDeflection`'s own check on it is compiled out of the pinned kernel and
-    ///   the fallback sampler, which has no point ceiling, runs to an internal million-point cap
-    ///   per edge instead.
+    /// - Parameter deflection: Tessellation chord deviation. Default is 0.1. A degenerate value is
+    ///   not rejected here, because it is the tessellator's parameter first; `deflection: 0` on a
+    ///   shape with a face does not return, and a NaN deflection yields thousands of tessellation
+    ///   nodes for a single edge (#2879).
     /// - Returns: Edge mesh data, or `nil` if extraction fails.
     public func edgeMesh(deflection: Double = 0.1) -> EdgeMeshData? {
         var data = OCCTEdgeMeshData()
