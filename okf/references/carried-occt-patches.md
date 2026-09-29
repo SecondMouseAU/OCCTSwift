@@ -60,6 +60,7 @@ without silently closing it, see
 | `0040-controller-one-time-init-thread-safe-1403` | Three unguarded check-then-act one-time-init flags: both `STEPControl_Controller::Init()` and `IGESControl_Controller::Init()`, plus the IGES constructor. Only STEP's *constructor* had a mutex, so this was three sites rather than the one asymmetry #1403's re-scope claimed. All become function-local statics, removing the check-then-act instead of locking it. Guarding the outermost init also serialises the whole chain beneath it, which is why six further one-time-init globals stopped being reported ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | to file | bundled OCCT includes the fix |
 | `0041-DE-registry-maps-synchronised-1403` | `listad` (`XSControl_Controller.cxx:59`) and `atemp` (`Interface_InterfaceModel.cxx:44`), two process-wide name-keyed registries mutated without synchronisation. A lock is correct here rather than relocation, because one registry per process is the design. Recursive is required: `Template()` calls `HasTemplate()` before reading the map. `astats` excluded, already covered by `0033` ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | to file | bundled OCCT includes the fix |
 | `0042-ShapeAnalysis-GetFaceUVBounds-null-surface-2773` | `ShapeAnalysis::GetFaceUVBounds` dereferences a null surface on a face with **no surface and no edges**, an uncatchable SIGSEGV landing exactly where `ShapeUpgrade_ShapeDivide`'s own `ShapeExtend_FAIL2` handler was meant to report. Raises `Standard_NullObject` instead: returning silently was measured and does not fix it, because `ShapeUpgrade_FaceDivide::SplitSurface` dereferences the same null surface eight lines later. The surface-less face **with** a wire already raised from `Bnd_Box2d::Get`, so the two input classes now agree ([#2773](https://github.com/SecondMouseAU/OCCTSwift/issues/2773)) | **authored and held, not filed.** Branch `SecondMouseAU/OCCT:fix/2773-getfaceuvbounds-null-surface` (`83d03b1f`), one commit, three files, with a GTest, ahead 1 / behind 0 of `master`. Held by a standing decision (2026-09-28) until the patch has been tested against OCCT 8.0.2, which was due 25 September and has not landed: upstream's newest tag is still `V8_0_1`. Submitting against `master` now risks filing against a tree 8.0.2 changes under it. Submit from `upstream/occt`, where direnv loads the scoped token; the ecosystem PAT cannot create a cross-repo PR and returns 403 | bundled OCCT includes the fix; the bridge guard from [PR #2776](https://github.com/SecondMouseAU/OCCTSwift/pull/2776) stays regardless, it protects consumers on the pinned asset |
+| `0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827` | `BRepGProp_Gauss::convert` computes the by-plane mass in its four-argument form and then overwrites it with `0.0`, with the gravity centre set to `(0, 0, 0)`, because the six-argument form guards the keep with `if (std::abs(theInertia.Mass) >= EPS_DIM && theIsByPoint)` and no by-plane path sets that flag. All four by-plane `BRepGProp_Vinert::Perform` overloads and both `Compute` paths reach it. Dropping `&& theIsByPoint` also makes the dead inner `else` live, and that `else` is the correct by-plane gravity centre rather than merely the reachable one: by-plane `theCoeff` is four plane coefficients, not the three-element translation the by-point branch adds. OCCT has no caller of the path (`BRepGProp.cxx:311` passes a point), so what the value means was derived from the integrand and measured: each face's mass is the signed volume of the column between it and the plane, the per-face sum over a closed shell is the enclosed volume for any plane, and the mass-weighted sum of the centres is the solid's first moment ([#2827](https://github.com/SecondMouseAU/OCCTSwift/issues/2827)) | **authored and held, not filed**, under the same standing decision as `0042`: the upstream PR waits for OCCT 8.0.2, due 2026-10-02, so the hunk is tested against the tree it will be filed against. The submission carries a second hunk for [#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873), the inverted offset sign in `BRepGProp_Vinert.cxx:279`, which this patch exposes rather than causes. Submit from `upstream/occt`, where direnv loads the scoped token | bundled OCCT includes the fix |
 
 **Retired in OCCT 8.0.1** (re-pinned 2026-08-03): `0001`-`0009` and `0013`, shipped upstream as
 OCCT#1323, #1334, #1374, #1377, #1380, #1382, #1331, #1329, #1318 and #1392 respectively. Their
@@ -95,17 +96,26 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds thirty patches. The v4.0.0-kernel.2 asset `Package.swift` pins lacks none of them,
-so **there is no divergence today**, per
-[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). The table below is kept
-empty rather than deleted, because the divergence is the normal state between a patch landing and
-the next repin, and the shape of the entry is what the policy asks for:
+`Scripts/patches/` holds thirty-one patches. The v4.0.0-kernel.3 asset `Package.swift` pins lacks none of them,
+per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
 
 | Unpinned | What it leaves exposed |
 |---|---|
 | none | |
 
-`0042` (#2773) was the last entry here. It was carried on 2026-09-27, built and verified in the
+`0043` (#2827) was the last entry here, and it was the shortest-lived: carried unbuilt on 2026-09-29
+because OCCT 8.0.2 was days out and a repin was on hold until it lands, then built and pinned the
+same day by `v4.0.0-kernel.3`, because what it left exposed was not a latent race but a value a
+caller reads: `Face.volumeInertia(planeNormal:planeDistance:)` returned a fabricated `0.0` for every
+face and every plane, and nothing on the bridge side could recover it, since the value does not exist
+by the time the bridge can read it. It is live in the binary rather than merely applied to source,
+measured the way this page asks: building against the new asset makes #2827's own regression fail at
+the same lines and values as CI's independent `kernel-integration` build, and the per-face sum now
+equals the solid's volume to the last few digits for three different reference planes. What the
+by-plane mass turned out to MEAN, which no OCCT caller states because there is no OCCT caller, is in
+`Scripts/patches/README.md`'s `0043` entry and in `Scripts/repro/2827/probe.mm`'s transcript.
+
+`0042` (#2773) was the entry before it. It was carried on 2026-09-27, built and verified in the
 binary the same day (all three slices, `check-pinned-asset-patches.py --asset` confirms its literal
 in each), and pinned hours later by v4.0.0-kernel.2, so it spent no release window untested. The
 bridge guard from [PR #2776](https://github.com/SecondMouseAU/OCCTSwift/pull/2776) is kept rather
@@ -114,16 +124,25 @@ both answer nil and the guard is redundant rather than wrong, and it still cover
 older asset. `Package.swift`'s pin block records that exception against
 [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md)'s retire-the-mitigation rule.
 
-### The wasm kernel: in step, as of 2026-09-28
+### The wasm kernel: one patch behind, as of 2026-09-29
 
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
 for a bare static library. It carries **thirty** patches, `0010` to `0042`, plus the eleven in
-`Scripts/patches-wasi/`, and so **lacks none of them**:
+`Scripts/patches-wasi/`, and native now carries thirty-one, so it **lacks one of them**:
 
 | Unpinned on wasm | What it leaves exposed |
 |---|---|
-| none | |
+| `0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827` | In the browser only, `Face.volumeInertia(planeNormal:planeDistance:)` still returns the fabricated `0.0` that `v4.0.0-kernel.3` fixed natively. No other API reaches the by-plane `BRepGProp_Vinert` path, and the by-point `Face.volumeInertia` is unaffected on both platforms |
+
+**Acknowledged, not ignored**, by `OCCT_WASM_PARITY_ACKNOWLEDGED_AGAINST=31` in
+`Scripts/wasm-kernel-pin.txt`: the wasm kernel is a 69-minute build and this repin did not take it,
+so the divergence is written down with the native count it was accepted at. That keying is the whole
+point, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md): the NEXT native
+repin makes the acknowledgement stale and `Scripts/check-wasm-kernel-parity.py` fires again, so it
+cannot become a permanent suppression the way two `ACKNOWLEDGED` rows in
+`Scripts/patches/README.md` did before #2190. What closes it is the OCCT 8.0.2 wasm rebuild, which
+is already owed: 8.0.2 is due 2026-10-02 and will rebuild both kernels from one patch set.
 
 `0042` was the entry here for one day. PR #2784 published the asset for `v4.0.0-kernel.1` and PR
 #2782 repinned native to `v4.0.0-kernel.2` **twenty-nine seconds later**, so the browser briefly
@@ -164,7 +183,8 @@ because both are inert and a rebuild costs three cmake configures for no behavio
 
 **Both strays belonged to v4.0.0-kernel.1, and the pin has moved off it.** v4.0.0-kernel.2 was
 built from a fresh `V8_0_1` clone rather than that tree, so neither stray is present: the
-modified-file check computes zero files that no carried patch explains, over 78. The two
+modified-file check computes zero files that no carried patch explains, over 78, and
+v4.0.0-kernel.3 repeats it over 79 with `0043` added. The two
 `ACKNOWLEDGED` rows in `check-pinned-asset-patches.py` stay keyed on `v4.0.0-kernel.1` and expire
 here on their own, which is what they were built to do, and if a later asset repeats either stray
 the finding comes back instead of staying suppressed. A rebuild today should now reproduce the

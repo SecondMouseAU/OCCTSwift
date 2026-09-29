@@ -419,6 +419,42 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-
 
+      # #2867. This step sits between the cache restore and the build, and it is what makes the
+      # doc-snippet gate's freshness check sound here rather than what weakens it.
+      #
+      # Three PRs (#2865, #2847, #2868) were blocked by that check refusing over
+      # `.build/debug/Modules/OCCTSwift.swiftmodule`, at 1925s, 3474s and 3526s behind their own
+      # sources. Subtract each delta from that job's checkout time and all three land on the same
+      # instant, 2026-09-29T06:48:12Z: one module inside one cache entry, written before any of the
+      # three jobs started. Each job did build, and each logged `Emitting module OCCTSwift`, so the
+      # build was not a no-op and had not skipped anything. `<bin>/Modules/OCCTSwift.swiftmodule` is
+      # the llbuild layout's path; a build on the Swift Build backend writes the bin root instead,
+      # and one cache key serving both leaves a module where the current build never rewrites it.
+      # That leftover was then the only module under `.build`, so the script's newest-first
+      # preference had nothing fresher to prefer.
+      #
+      # Deleting it costs nothing measurable: these jobs already recompile the whole OCCTSwift
+      # target on every run, so the module was being re-emitted anyway. What it buys is an argument
+      # that holds whatever SwiftPM does next: any `OCCTSwift.swiftmodule` the gate finds after this
+      # step was written during this job, after `actions/checkout`, and is therefore newer than
+      # every source in the tree. If the build writes no module at all, the gate reports a missing
+      # one and `--require-typecheck` turns that into exit 2, which is the loud answer rather than a
+      # green step over a module nobody built. See okf/policies/static-gates.md on a detector that
+      # reads an artefact it does not produce.
+      #
+      # `-maxdepth 6` is MODULE_SEARCH_DEPTH: the script's deepest pattern is
+      # `.build/*/*/*/*/*/OCCTSwift.swiftmodule`, six components under `.build`, so this reaches
+      # exactly as far as the search it is clearing and no further. `-prune` keeps find out of a
+      # bundle it is about to delete, and the `-d` test is for the cache-miss run, where there is no
+      # `.build` yet and a bare `find` would exit 1 under `bash -e`.
+      - name: Drop any OCCTSwift module the cache restored (#2867)
+        run: |
+          if [ -d .build ]; then
+            find .build -maxdepth 6 -name OCCTSwift.swiftmodule -prune -print -exec rm -rf {} +
+          else
+            echo "no .build restored, nothing to clear"
+          fi
+
       - name: swift build
         run: swift build
 

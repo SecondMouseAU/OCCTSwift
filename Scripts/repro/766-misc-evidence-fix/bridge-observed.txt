@@ -1,0 +1,75 @@
+r1|shift_min|[5.0, 6.0, 7.0]
+r1|shift_max|[4.999999999999999, 5.999999999999999, 6.999999999999999]
+r2|grouped_min|[-1.8301271189221937, -0.8301271189221936, 1.9999999]
+r2|grouped_max|[11.830127118922192, 12.830127118922194, 12.0000001]
+r2|interleaved_min|[-1.8301271189221937, -0.8301271189221936, 1.9999999]
+r2|interleaved_max|[11.830127118922192, 12.830127118922194, 12.0000001]
+r3|shift_min|[5.0, 6.0, 7.0]
+r4|min_x|-11.0000001
+r4|max_x|-0.9999999
+r5|normalised|[0.0, 0.0, 1.0]
+r5|_placement_z|[0.0, 0.0, 1.0]
+r6|extrema|1
+r6|intersections|1
+r6|split_pieces|1
+r7|split_pieces|1
+r8|curve|1
+r8|surface|1
+r21|count|1
+r9|kNearest|3
+r9|range|3
+r9|box|3
+r10|files|7
+r10|directories|2
+r10|_directory_names|".,.."
+r11|count_for_16|16
+r11|first_of_16|1.0
+r11|last_of_16|100.0
+r11|count_for_1|1
+r12|start|[0.0, 0.0, 0.0]
+r12|end|[10.0, 0.0, 0.0]
+r12|unit_start_tangent|[0.7071067811865476, 0.7071067811865476, 0.0]
+r12|unit_end_tangent|[0.7071067811865475, -0.7071067811865476, 0.0]
+r12b|unit_start_tangent|[0.7071067811865476, 0.7071067811865476, 0.0]
+r12b|unit_end_tangent|[0.7071067811865475, -0.7071067811865476, 0.0]
+r13|domain|[0.0, 1.0]
+r13|point_at_half|[5.0, 5.0, 0.0]
+r14|is_periodic|true
+r14|is_closed|true
+r14|domain_length|40.0
+r14|start|[0.0, 0.0, 0.0]
+r15|0|0
+r15|pi/2|12
+r15|pi|3
+r15|other|0
+r26|angle|1.5707963267948966
+r16|p0|0.0
+r16|p_mid|5.0
+r16|p1|10.0
+r17|p_below|0.0
+r17|p_above|10.0
+r18|point|[5.0, 7.0, 3.0]
+r19|point|[0.7071067811865476, 0.7071067811865476, 0.0]
+r20|count|2
+r22|count|3
+r23|count|0
+r24|string|"hello"
+r25|length|40.0
+r27|angle|0.0
+r28|angle|3.141592653589793
+r29|refused|true
+r30|angle|1.5707963267948966
+r31|angle|1.5707963267948966
+r32|coplanar|true
+r33|coplanar|false
+r33|_pair|"0,1"
+r34|radius|2.4999999999999996
+r35|radius|5.0
+r36|shape_built|false
+r36|_failures|"[OCCTSwift.ConstructionContext.MaterializationFailure.planeShapeFailed(OCCTSwift.ConstructionContext.PlaneID(raw: 64BEF7BA-1A27-44D6-82A2-61C807F5AD2E))]"
+r37|shape_built|false
+r37|_failures|"[OCCTSwift.ConstructionContext.MaterializationFailure.planeShapeFailed(OCCTSwift.ConstructionContext.PlaneID(raw: BAC13C0F-2976-40FA-A020-C5A04E157407))]"
+r38|volume|599.9999999999999
+r39|volume|3750.0
+r40|volume|1999.9999999999995
+r41|volume|13259.999999999996

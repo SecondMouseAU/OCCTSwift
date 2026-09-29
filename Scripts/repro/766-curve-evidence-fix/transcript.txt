@@ -1,0 +1,14 @@
+EVID 38 done=1 is_same_parameter=1 (TolReached 1.48492e+50, not asserted)
+  (SetOrigin(1) threw: Geom_BSplineCurve::SetOrigin)
+EVID 39 periodic=0 succeeded=0
+EVID 40 rational=0 weights_present=0
+EVID 41 rational=1 weights=1,2,1,1
+EVID 42 domain=[0, 10] mid=5 point_at_mid=(-5, -5, 5)
+EVID 43 domain=[0, 10] point_at_5=(-5, -5, 0)
+EVID 44 first=0 last=30
+EVID 45 max_deviation=0
+EVID 46 max_deviation=0
+EVID 47 max_deviation=0
+EVID 48 max_deviation=0
+control tol3D 1e-1 vs 1e-8 max_deviation=0.15018794079369741
+EVID 57 BRepGraph_LayerRegularity.hxx present=0
