@@ -1,0 +1,56 @@
++ clang++ -std=c++17 -ObjC++ -w -I/private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/6dacf3d4-31b4-4152-b346-186edc47e3d7/scratchpad/2860-kernel/OCCT.xcframework/macos-arm64/Headers -L/private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/6dacf3d4-31b4-4152-b346-186edc47e3d7/scratchpad/2860-kernel/OCCT.xcframework/macos-arm64 -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ /Users/elb/Projects/wt-2860-math/Scripts/repro/2860-guard-preconditions/probe.mm -o /var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T//probe-2860-guard-preconditions
++ set +x
+----- mode thresholds
+[mode thresholds]
+math_DoubleTab THE_BUFFER_SIZE is 64 doubles, math_VectorBase's is 32.
+sizeof(math_Matrix)=576 sizeof(math_Vector)=296
+  math_Matrix 2x32 = 64 elements: inline=1
+  math_Matrix 2x33 = 66 elements: inline=0
+  math_Matrix 3x2 = 6 elements: inline=1
+  math_Matrix 100x1 = 100 elements: inline=0
+  math_Matrix 8x8 = 64 elements: inline=1
+  math_Matrix 9x8 = 72 elements: inline=0
+  math_Vector 31 elements: inline=1
+  math_Vector 32 elements: inline=1
+  math_Vector 33 elements: inline=0
+exit=0
+----- mode negative-dims
+[mode negative-dims]
+  built, RowNumber=-5 ColNumber=-5
+exit=0
+----- mode zero-dims-accessors
+[mode zero-dims-accessors]
+  built 0x0, RowNumber=0 ColNumber=0
+  Transpose() on 0x0 returned
+  Determinant() on 0x0 returned 1
+  Invert() on 0x0 returned
+exit=0
+----- mode uzawa-at-threshold
+[mode uzawa-at-threshold]
+  Cont 32x32: Errinit sized 32, written to 32
+  ctor returned; IsDone=1 Value(1)=0.114286
+exit=0
+----- mode uzawa-one-past
+[mode uzawa-one-past]
+  Cont 33x32: Errinit sized 32, written to 33
+  ctor returned; IsDone=1 Value(1)=-0.0234375
+exit=0
+----- mode uzawa-heap
+[mode uzawa-heap]
+  Cont 40x33: Errinit sized 33, written to 40
+  ctor returned; IsDone=1 Value(1)=0
+exit=0
+----- mode trsf-determinant
+[mode trsf-determinant]
+  gp::Resolution() = 2.22507e-308
+  all-zero               det=0              refused-by-kernel-test=1
+  rank2-identical-rows   det=0              refused-by-kernel-test=1
+  identity               det=1              refused-by-kernel-test=0
+  uniform-scale-2        det=8              refused-by-kernel-test=0
+  tiny-but-nonzero       det=1e-15          refused-by-kernel-test=0
+exit=0
+----- mode gtrsf-singular
+[mode gtrsf-singular]
+  gtrsf vectorial determinant = 0
+  caught Standard_Failure: 21Standard_NoSuchObject
+exit=3
