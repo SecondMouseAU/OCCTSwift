@@ -814,9 +814,29 @@ extension Face {
 extension Face {
     /// Compute volume inertia contribution from this face.
     ///
+    /// This is the divergence-theorem decomposition of a volume, measured **about the world
+    /// origin**: the summand is the signed volume swept between the face and `(0, 0, 0)`, and its
+    /// sign comes from the face's own orientation, so a `REVERSED` face (a hole's wall) subtracts.
+    /// A single face's number therefore means nothing on its own, since moving the shape changes
+    /// it. The **sum** over the faces of a closed shape is origin-independent and equals
+    /// ``Shape/volume``.
+    ///
+    /// The face is integrated over the region its wires trim, not over the surface's natural UV
+    /// bounds, so a face with a hole contributes the holed patch. Until #2806 it did not: the two
+    /// large faces of the plate below each reported the whole 20 x 20 patch and the sum overshot
+    /// ``Shape/volume`` by 6 * pi, the hole counted twice.
+    ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// box.faces().reduce(0) { $0 + $1.volumeInertia.volume }   // 1000, summed per face
+    ///
+    /// // A trimmed face contributes its trimmed region. This plate's two 20 x 20 caps carry a
+    /// // radius-3 hole, and the hole's wall is one more face with a negative contribution.
+    /// let plate = Shape.box(width: 20, height: 20, depth: 2)!
+    /// let drill = Shape.cylinder(radius: 3, height: 10)!.translated(by: SIMD3(0, 0, -5))!
+    /// let holed = plate.subtracting(drill)!
+    /// holed.faces().reduce(0) { $0 + $1.volumeInertia.volume }   // 743.4513322353836
+    /// holed.volume                                              // 743.4513322353836, the same
     ///
     /// // A face whose own plane contains the reference point (the origin) contributes nothing.
     /// // Shape.box is centred on the origin, so shift it to put one face in the z = 0 plane.
@@ -825,6 +845,12 @@ extension Face {
     /// coplanar.volumeInertia.volume         // 0, a real summand
     /// coplanar.volumeInertia.centerOfMass   // nil, a zero contribution has no centroid
     /// ```
+    ///
+    /// One case where the sum is not the volume, and it is OCCT's rule rather than ours:
+    /// `BRepGProp::VolumeProperties` integrates only a `FORWARD` or `REVERSED` face and skips an
+    /// `INTERNAL` or `EXTERNAL` one, which bounds no volume (`BRepGProp.cxx:355-360`). This
+    /// property reports whatever face it is handed, so summing over a shape that carries such a
+    /// face gives more than ``Shape/volume``.
     public var volumeInertia: FaceVolumeInertia {
         let r = OCCTBRepGPropVinert(handle)
         return FaceVolumeInertia(
@@ -833,6 +859,31 @@ extension Face {
     }
 
     /// Compute volume inertia with reference plane.
+    ///
+    /// **This returns 0 on every current kernel, and the 0 is not a measurement (#2827).** OCCT
+    /// computes the by-plane mass and then discards it: `BRepGProp_Gauss::convert` keeps the value
+    /// only when its `theIsByPoint` flag is set (`BRepGProp_Gauss.cxx:494-528`), so every by-plane
+    /// `BRepGProp_Vinert` call, through any of its four overloads, reports mass `0.0` and centre of
+    /// mass `(0, 0, 0)`. Measured on a cube, a holed plate and a cylinder, for a plane through the
+    /// origin, a plane 100 away from the shape and an oblique plane: every face, exactly `0.0`.
+    /// Nothing on this side can recover it; see #2827 for the kernel patch and the API decision.
+    ///
+    /// The function is kept, and wraps the overload OCCT's own loop would use, so it becomes correct
+    /// the moment a pinned kernel carries the fix. Until then use ``volumeInertia``, whose by-point
+    /// form is measured and correct, and subtract the plane offset yourself if you need it.
+    ///
+    /// ```swift
+    /// let face = Shape.box(width: 10, height: 10, depth: 10)!.faces()[0]
+    /// face.volumeInertia(planeNormal: SIMD3(0, 0, 1)).volume   // 0.0 on this kernel, see #2827
+    /// face.volumeInertia.volume                                // 166.66666666666666, measured
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - planeNormal: normal of the reference plane.
+    ///   - planeDistance: signed distance from the origin to the plane along `planeNormal`.
+    /// - Returns: the inertia about the reference plane. `volume` is **always `0.0`** on this
+    ///   kernel and is not a measurement (#2827); the centre of mass and the inertia matrix are
+    ///   measured and correct.
     public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0)
         -> FaceVolumeInertia
     {
