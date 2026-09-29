@@ -8,6 +8,19 @@
 // 15 tests of its suite passing, and `"openShell"` was absent from `allStandardShapes()` for as
 // long as the fixture existed, because it was appended inside an `if let` whose condition was
 // never true.
+//
+// The two assertion forms below are deliberate and not interchangeable. `try #require` is for "the
+// value could not be built at all", where there is nothing to return. `#expect` is for "the value
+// was built, and this is the measurement proving it means its name": it records the defect and
+// still returns, so a matrix walking `allStandardShapes()` reports the broken fixture and keeps
+// measuring every other row. Making a measurement throw instead would abort the list at its first
+// bad row and lose every row after it, which is #2830's own defect in a new place.
+//
+// `#expect` here is not lost for sitting outside a `@Test` body. Measured on PR #2847, both in an
+// isolated package and in this target: breaking the face count below fails
+// `shellThicknessEqualsHalf()` and `shellThicknessExceedsHalf()` by name, reported at this file's
+// own line number, and `swift test` exits 1. Swift Testing tracks the current test in task-local
+// state, so a synchronous helper runs inside the calling test's context.
 
 import Foundation
 import OCCTSwift
