@@ -173,7 +173,7 @@ struct BRepGPropVinertTests {
             var measured = 0
             for face in shifted.faces() {
                 let r = face.volumeInertia(planeNormal: normal, planeDistance: distance)
-                // nil is the honest answer for a zero column, and 0 * anything adds nothing.
+                // nil is the right answer for a zero column, and 0 * anything adds nothing.
                 if let c = r.centerOfMass {
                     moment += c * r.volume
                     measured += 1
@@ -290,12 +290,13 @@ struct BRepGPropVinertTests {
             //    the sign a second way and uses neither the area nor the face's orientation.
             for distance in [0.0, 1.0, -3.0] {
                 let r = face.volumeInertia(planeNormal: normal, planeDistance: distance)
-                let centre = try #require(r.centerOfMass, "no centre at offset \(distance)")
+                #expect(r.volume != 0.0, "no column at offset \(distance), so no centre to check")
+                let centre = try #require(r.centerOfMass)
                 let midpoint = (height + distance) / 2
+                let seen = "centre \(centre) against midpoint \(midpoint)"
                 #expect(
                     abs(centre.z - midpoint) < 1e-9,
-                    "centre \(centre) against midpoint \(midpoint), cap at \(height), "
-                        + "plane at \(distance)")
+                    "\(seen), cap at \(height), plane at \(distance)")
             }
         }
         #expect(caps == 2, "found \(caps) faces over 300 in area, expected the plate's 2 caps")
