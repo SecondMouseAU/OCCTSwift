@@ -564,13 +564,16 @@ typedef struct
 
 OCCTFaceVolumeInertia OCCTBRepGPropVinert(OCCTFaceRef _Nonnull face);
 
-/// The by-plane overload. **`mass` is always 0.0 and `centerX/Y/Z` always (0, 0, 0) on every kernel
-/// this package has pinned, and neither is a measurement (#2827).** BRepGProp_Gauss::convert keeps
-/// the mass it computed only for the by-point form, so the by-plane branch reports the
-/// vanishing-mass fallback whatever the face and whatever the plane. The one-line kernel fix is
-/// carried as Scripts/patches/0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch and is not
-/// pinned; the .mm carries the derivation and the measurement. Use OCCTBRepGPropVinert, whose
-/// by-point form is correct.
+/// The by-plane overload. `mass` is the signed volume of the column between the face and the plane
+/// `planeN . X = planeDist`, and `centerX/Y/Z` is that column's centroid.
+///
+/// Two defects had to be dealt with before either was true, and the .mm carries both derivations
+/// and their measurements rather than repeating them here. **#2827**: BRepGProp_Gauss::convert
+/// computed the mass and then discarded it, so this returned exactly 0.0 with a (0, 0, 0) centre on
+/// every kernel pinned before v4.0.0-kernel.3, which is the first to carry
+/// Scripts/patches/0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch. **#2873**: the kernel
+/// measures about the plane mirrored through the origin, so the gp_Pln this function builds from
+/// planeN and planeDist is mirrored to compensate, and planeDist is an ordinary geometric offset.
 OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
                                                double planeNX,
                                                double planeNY,

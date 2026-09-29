@@ -1893,8 +1893,10 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
     const TopoDS_Face& f = TopoDS::Face(face->face);
     BRepGProp_Face     gpropFace(f);
     gp_Dir             normal(planeNX, planeNY, planeNZ);
-    gp_Pln plane(gp_Pnt(normal.X() * planeDist, normal.Y() * planeDist, normal.Z() * planeDist),
-                 normal);
+    // #2873: MIRRORED THROUGH THE ORIGIN ON PURPOSE, so that what comes back is measured about the
+    // plane at planeDist. The long comment below is the derivation and the measurement; do not
+    // "correct" this minus without reading it.
+    gp_Pln           plane(gp_Pnt(normal.XYZ() * -planeDist), normal);
     BRepGProp_Domain domain;
     BRepGProp_Vinert vinert;
     vinert.SetLocation(gp_Pnt(0, 0, 0));
@@ -1925,13 +1927,34 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
     // the enclosed volume, and the mass-weighted sum of the per-face centres is the solid's first
     // moment. Scripts/repro/2827/patched-kernel-transcript.txt is the measurement.
     //
-    // #2873, and the reason this bridge does not "fix" the plane it builds above: the kernel
-    // weights each element by n_hat . P + planeDist, not minus, and BRepGProp_Vinert.cxx:279's loc
-    // re-basing cancels out entirely. Negating planeDist here would make one overload disagree with
-    // every other BRepGProp_Vinert caller and with OCCT's own documentation of the class, so the
-    // sign is reported as the kernel computes it and documented on
-    // Face.volumeInertia(planeNormal:), and the kernel-side fix is held for the same upstream PR as
-    // 0043.
+    // #2873, and why the gp_Pln built above is mirrored through the origin. The kernel's by-plane
+    // integrand consumes theCoeff[0..3] as the plane n_hat . X = theCoeff[3] and subtracts that
+    // fourth entry, in both of OCCT's by-plane implementations: BRepGProp_Gauss.cxx:343 for
+    // BRepGProp_Vinert, BRepGProp_UFunction.cxx:99 for BRepGProp_VinertGK. What is wrong is the one
+    // conversion that fills theCoeff from a gp_Pln, at BRepGProp_Vinert.cxx:279 and at
+    // BRepGProp_VinertGK.cxx:219 and :244. gp_Pln::Coefficients answers the n_hat . X + d = 0 form,
+    // so feeding its d into an n_hat . X = ... slot inverts the offset and the result is measured
+    // about the plane mirrored through the origin.
+    //
+    // Measured, not argued: Scripts/repro/2873/transcript.txt, on a cap at z = 2. Handed the plane
+    // as-is, d1 reads 2, 3, -98, 7 for planes at z = 0, 1, -100 and 5, where the geometric signed
+    // distance is 2, 1, 102, -3, and the column's centroid comes back at z = 0.5 for the plane at
+    // z = 1, which is the midpoint to z = -1. Both implementations print the same numbers and they
+    // share no integrator, so that is a second construction rather than a re-run. SetLocation moves
+    // nothing, at the origin, at (0, 0, 3) or at (-4, 11, 2.5): the - n_hat . loc re-basing cancels
+    // the P - loc the integrand works in, exactly, which is what a distance to a plane has to do.
+    // So there is ONE defect here, the offset's sign, and not the two #2873 was filed with.
+    //
+    // This function is handed (planeNormal, planeDistance) and picks the gp_Pln that represents
+    // them, so the mirror is part of that conversion rather than a correction applied to an object
+    // a caller owns. With it, d1 is the signed distance to the plane at planeDistance for all four
+    // offsets and all three locations above, the centroid is the column's own, and both of #2827's
+    // aggregate identities stay exact.
+    //
+    // WHEN THE KERNEL IS FIXED, DELETE THE MINUS. The upstream submission carries the one-line
+    // kernel hunk alongside 0043 (Scripts/patches/README.md), and a kernel carrying it plus this
+    // mirror would measure about the mirrored plane again. BRepGPropVinertTests' two sign
+    // assertions fail in exactly that case, which is what they are for.
     result.mass    = vinert.Mass();
     gp_Pnt cm      = vinert.CentreOfMass();
     result.centerX = cm.X();

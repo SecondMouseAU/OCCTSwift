@@ -116,8 +116,9 @@ struct BRepGPropVinertTests {
     /// `Shape.volume` is `BRepGProp::VolumeProperties`, a different loop that never reaches this
     /// function, so this is a comparison against an independent construction. One face's value, by
     /// contrast, is a column volume that moves with the plane: the plate's cap answers
-    /// 371.7256661176918 through the origin and -36800.84094565149 at `planeDistance: -100`, which
-    /// is why pinning either would say nothing about whether the kernel is right.
+    /// 371.7256661176918 through the origin and 101 times that at `planeDistance: -100`, its
+    /// centroid being 1 from the origin, which is why pinning either would say nothing about
+    /// whether the kernel is right.
     ///
     /// The tolerance is looser than the by-point test's 1e-9 for a measured reason: at
     /// `planeDistance: -100` each cap's term is around 3.7e4 and they cancel down to 7.4e2, so five
@@ -191,15 +192,19 @@ struct BRepGPropVinertTests {
     /// #2827, per face rather than summed: on a **planar** face the integral has a closed form, and
     /// every quantity in it is measured somewhere else.
     ///
-    /// `volume` is `(n . nFace) * area * (n . areaCentroid + planeDistance)`, so it is affine in
-    /// `planeDistance` with slope the face's signed projected area. The slope is measured from two
-    /// offsets, `area` comes from `Face.area()` and `areaCentroid` from `surfaceInertia`, which is
-    /// `BRepGProp_Sinert` and a different computation, so nothing here is a value this test invented.
+    /// `volume` is `(n . nFace) * area * (n . areaCentroid - planeDistance)`, so it is affine in
+    /// `planeDistance` with slope **minus** the face's signed projected area. The slope is measured
+    /// from two offsets, `area` comes from `Face.area()` and `areaCentroid` from `surfaceInertia`,
+    /// which is `BRepGProp_Sinert` and a different computation, so nothing here is a value this test
+    /// invented.
     ///
-    /// The `+ planeDistance` is deliberate and is #2873: the kernel weights each element by
-    /// `n . P + d` where the signed distance to the plane is `n . P - d`, because
-    /// `BRepGProp_Vinert.cxx:279` subtracts the plane's fourth coefficient instead of adding it. This
-    /// assertion is what will fail when that is fixed, which is the point of writing it as a formula.
+    /// The minus is #2873, and it is why this is written as a formula rather than as pinned numbers.
+    /// The kernel weights each element by `n . P` minus the plane's fourth `gp_Pln` coefficient,
+    /// which belongs to the `n . X + d = 0` form and so arrives inverted, and
+    /// `OCCTBRepGPropVinertPlane` hands it the plane mirrored through the origin to undo that. This
+    /// test stood here with a `+` and passed against the mirrored convention; it fails under that
+    /// convention now, and it fails again if the bridge's mirror is left in place against a kernel
+    /// that has the fix.
     @Test("a planar face's by-plane volume is its projected area times its centroid distance (#2827)")
     func byPlaneVolumeOnAPlanarFaceHasTheClosedForm() throws {
         let holed = try holedPlate()
@@ -209,26 +214,29 @@ struct BRepGPropVinertTests {
         for face in holed.faces() {
             let at0 = face.volumeInertia(planeNormal: normal, planeDistance: 0).volume
             let at1 = face.volumeInertia(planeNormal: normal, planeDistance: 1).volume
-            let slope = at1 - at0
+            // The slope is minus the signed projected area, so the area itself is at0 - at1.
+            let projectedArea = at0 - at1
             guard let centroid = face.surfaceInertia.centerOfMass else { continue }
 
-            // The slope is the signed projected area, so on this fixture it is +-area for the two
-            // caps and 0 for the four sides and the hole's wall, all of which are parallel to z.
+            // On this fixture that is +-area for the two caps and 0 for the four sides and the
+            // hole's wall, all of which are parallel to z.
             let area = face.area()
-            if abs(slope) > 1e-9 {
+            if abs(projectedArea) > 1e-9 {
                 caps += 1
                 #expect(
-                    abs(abs(slope) - area) < 1e-9,
-                    "slope \(slope) against area \(area): not a projected area")
+                    abs(abs(projectedArea) - area) < 1e-9,
+                    "slope \(projectedArea) against area \(area): not a projected area")
             } else {
                 flats += 1
             }
 
-            // And the value itself, at both offsets, from the slope and the face's own centroid.
+            // And the value itself, at three offsets, from the projected area and the face's own
+            // centroid. Passing the offset with the wrong sign moves every cap term by twice the
+            // offset's contribution, so these three cases are what separate the two conventions.
             for distance in [0.0, 1.0, -100.0] {
                 let measured = face.volumeInertia(
                     planeNormal: normal, planeDistance: distance).volume
-                let predicted = slope * (simd_dot(normal, centroid) + distance)
+                let predicted = projectedArea * (simd_dot(normal, centroid) - distance)
                 #expect(
                     abs(measured - predicted) < 1e-9 * max(1.0, abs(predicted)),
                     "face measured \(measured), closed form \(predicted), at offset \(distance)")
@@ -236,6 +244,61 @@ struct BRepGPropVinertTests {
         }
         #expect(caps == 2, "found \(caps) faces square to z, expected the plate's 2 caps")
         #expect(flats == 5, "found \(flats) faces parallel to z, expected 5")
+    }
+
+    /// #2873: the two assertions that separate the plane the caller named from its mirror through
+    /// the origin, neither of which needs the closed form above.
+    ///
+    /// Both of OCCT's by-plane implementations weight each element by `n . P` minus the plane's
+    /// fourth `gp_Pln` coefficient (`BRepGProp_Gauss.cxx:343` for `BRepGProp_Vinert`,
+    /// `BRepGProp_UFunction.cxx:99` for `BRepGProp_VinertGK`), and the conversion that fills that
+    /// coefficient takes it from `gp_Pln::Coefficients`, which answers the `n . X + d = 0` form. So
+    /// the offset arrives inverted. `OCCTBRepGPropVinertPlane` builds the `gp_Pln` itself, from
+    /// `planeNormal` and `planeDistance`, so it builds the mirrored one and `planeDistance` behaves
+    /// as a geometric offset. Measured first, in `Scripts/repro/2873/`.
+    ///
+    /// **A test that passes under both conventions is worthless here**, which is why the fixture is
+    /// translated: with the plate as built, the caps sit at z = +-1 and every assertion below has a
+    /// mirror-symmetric twin. Shifted to z = 4 and 6, the plane at `+h` and the plane at `-h` are
+    /// 8 or 12 apart.
+    @Test("the by-plane column runs to the plane the caller named, not its mirror (#2873)")
+    func byPlaneColumnRunsToTheNamedPlane() throws {
+        let holed = try #require(try holedPlate().translated(by: SIMD3(0, 0, 5)))
+        let normal = SIMD3(0.0, 0.0, 1.0)
+        var caps = 0
+        for face in holed.faces() where face.area() > 300 {
+            caps += 1
+            let centroid = try #require(face.surfaceInertia.centerOfMass)
+            let height = simd_dot(normal, centroid)
+            let area = face.area()
+            #expect(abs(height) > 1.0, "cap at \(centroid) is too near the origin to discriminate")
+
+            // 1. The plane a cap lies in leaves no column between them. Under the mirrored
+            //    convention that happens at -height, and at +height the answer is the full
+            //    2 * height * area instead.
+            let atOwnPlane = face.volumeInertia(planeNormal: normal, planeDistance: height).volume
+            #expect(
+                abs(atOwnPlane) < 1e-9 * area,
+                "column to the cap's own plane at \(height) was \(atOwnPlane)")
+            let atMirror = face.volumeInertia(planeNormal: normal, planeDistance: -height).volume
+            let expectedMirror = 2 * abs(height) * area
+            #expect(
+                abs(abs(atMirror) - expectedMirror) < 1e-6 * expectedMirror,
+                "column to the mirrored plane was \(atMirror), expected +-\(expectedMirror)")
+
+            // 2. The column's centroid is the midpoint between the cap and the plane, which fixes
+            //    the sign a second way and uses neither the area nor the face's orientation.
+            for distance in [0.0, 1.0, -3.0] {
+                let r = face.volumeInertia(planeNormal: normal, planeDistance: distance)
+                let centre = try #require(r.centerOfMass, "no centre at offset \(distance)")
+                let midpoint = (height + distance) / 2
+                #expect(
+                    abs(centre.z - midpoint) < 1e-9,
+                    "centre \(centre) against midpoint \(midpoint), cap at \(height), "
+                        + "plane at \(distance)")
+            }
+        }
+        #expect(caps == 2, "found \(caps) faces over 300 in area, expected the plate's 2 caps")
     }
 
     /// #2806: `BRepGProp_VinertGK` had the same missing domain, and a null domain pointer means
