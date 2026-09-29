@@ -211,31 +211,6 @@
 // Shared private structs/helpers (#1380): every split file gets this identical block,
 // compiled independently per TU -- see this split's own README for why.
 
-static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef  curve,
-                                           const gp_Pnt2d& point,
-                                           gp_Pnt2d*       outNearest,
-                                           double*         outParameter,
-                                           double*         outDistance)
-{
-  if (!curve || curve->curve.IsNull())
-    return false;
-  try
-  {
-    return occtNearestPointOnCurve2dRange(curve->curve,
-                                          point,
-                                          curve->curve->FirstParameter(),
-                                          curve->curve->LastParameter(),
-                                          outNearest,
-                                          outParameter,
-                                          outDistance);
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return false;
-  }
-}
-
 struct OCCTMedialAxis
 {
   BRepMAT2d_BisectingLocus locus;
@@ -448,38 +423,6 @@ private:
   std::vector<gp_Pnt2d> myPoints;
 };
 
-// Helper: build Geom2d_BSplineCurve from Convert_ConicToBSplineCurve result
-// #801: use batch accessors (Poles/Weights/Knots/Multiplicities) instead of deprecated
-// per-index accessors (Pole/Weight/Knot/Multiplicity) on Convert_ConicToBSplineCurve.
-static OCCTCurve2DRef buildCurve2DFromConic(const Convert_ConicToBSplineCurve& conv)
-{
-  int                     np = conv.NbPoles(), nk = conv.NbKnots(), deg = conv.Degree();
-  TColgp_Array1OfPnt2d    poles(1, np);
-  TColStd_Array1OfReal    weights(1, np), knots(1, nk);
-  TColStd_Array1OfInteger mults(1, nk);
-  // Batch copy: batch accessors return NCollection_Array1 by const reference
-  const TColgp_Array1OfPnt2d&    convPoles   = conv.Poles();
-  const TColStd_Array1OfReal&    convWeights = conv.Weights();
-  const TColStd_Array1OfReal&    convKnots   = conv.Knots();
-  const TColStd_Array1OfInteger& convMults   = conv.Multiplicities();
-  for (int i = 1; i <= np; i++)
-  {
-    poles(i)   = convPoles.Value(i);
-    weights(i) = convWeights.Value(i);
-  }
-  for (int i = 1; i <= nk; i++)
-  {
-    knots(i) = convKnots.Value(i);
-    mults(i) = convMults.Value(i);
-  }
-  Handle(Geom2d_BSplineCurve) bsc = new Geom2d_BSplineCurve(poles, weights, knots, mults, deg);
-  if (bsc.IsNull())
-    return nullptr;
-  OCCTCurve2D* result = new OCCTCurve2D();
-  result->curve       = bsc;
-  return result;
-}
-
 struct OCCTHatcher
 {
   Hatch_Hatcher hatcher;
@@ -489,71 +432,6 @@ struct OCCTHatcher
   {
   }
 };
-
-// The three OCCTConic2dFrom* entry points share one failure encoding: the six coefficients are
-// zeroed and false returned. Zeroing alone could not carry it: 0 = 0 holds at every point of the
-// plane, so an all-zero result reads as a conic rather than as no answer, and a degenerate ellipse
-// produced exactly that (#514).
-static bool occtConic2dCoefficients(const IntAna2d_Conic& conic, double* coeffs)
-{
-  double A, B, C, D, E, F;
-  conic.Coefficients(A, B, C, D, E, F);
-  coeffs[0] = A;
-  coeffs[1] = B;
-  coeffs[2] = C;
-  coeffs[3] = D;
-  coeffs[4] = E;
-  coeffs[5] = F;
-  return true;
-}
-
-static bool occtConic2dFailed(double* coeffs)
-{
-  for (int i = 0; i < 6; i++)
-    coeffs[i] = 0;
-  return false;
-}
-
-// === #478: one gp_Trsf2d builder behind both Curve2D transform families ===
-//
-// Curve2D has the same two-family shape as Curve3D (#416) and Surface (#488): an in-place
-// mutating dispatcher (OCCTCurve2DTransform, taking a transformType selector) and an immutable
-// OCCTCurve2DTranslate/Rotate/Scale/MirrorAxis/MirrorPoint family that returns a transformed
-// copy. Both build the same five transformations; each family built them its own way, so the
-// two could drift, and had already drifted on the null guard below. They share this builder now,
-// mirroring occtBuildTrsf3D, which the two 3D families share from OCCTBridge_Internal.h (#995).
-//
-// The scale case is the only one whose construction changes. The dispatcher used to compose it
-// by hand as SetScaleFactor(S) + SetTranslationPart(C * (1 - S)); gp_Trsf2d::SetScale(C, S) is
-// what the immutable family reached through Geom2d_Geometry::Scale, and what occtBuildTrsf3D uses.
-// Verified equivalent before switching, over factors {2.5, 0.25, 1, -1, -3, 0, 1e-9, 1e9} x three
-// centres including (1e6, 1e-6): identical ScaleFactor(), identical TranslationPart(), identical
-// transformed coordinates, to the bit. The two disagree only on the internal gp_TrsfForm tag at
-// S = 1 (gp_Scale vs gp_Identity) and S = -1 (gp_Scale vs gp_PntMirror), which is a dispatch hint,
-// not a result: transforming a real BSpline curve through both gives identical poles.
-static bool buildTrsf2D(gp_Trsf2d& trsf, int32_t type, double p1, double p2, double p3, double p4)
-{
-  switch (type)
-  {
-    case 0: // translation (dx, dy)
-      trsf.SetTranslation(gp_Vec2d(p1, p2));
-      return true;
-    case 1: // rotation (cx, cy, angle)
-      trsf.SetRotation(gp_Pnt2d(p1, p2), p3);
-      return true;
-    case 2: // scale (cx, cy, factor)
-      trsf.SetScale(gp_Pnt2d(p1, p2), p3);
-      return true;
-    case 3: // mirror point (px, py)
-      trsf.SetMirror(gp_Pnt2d(p1, p2));
-      return true;
-    case 4: // mirror axis (ox, oy, dx, dy)
-      trsf.SetMirror(gp_Ax2d(gp_Pnt2d(p1, p2), gp_Dir2d(p3, p4)));
-      return true;
-    default:
-      return false;
-  }
-}
 
 int32_t OCCTGccCircle2d3Tan(OCCTCurve2DRef         c1,
                             int32_t                q1,
