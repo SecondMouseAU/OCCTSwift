@@ -60,7 +60,26 @@ the 205 `#define` lines nor the `#if` guarding them, which is what `--write-tabl
 **Now the part that matters more than either number. An inline check is live only at the bridge's own
 instantiation point.** Anything the bridge reaches through an out-of-line OCCT function had every
 `_Raise_if` on that path compiled out, at every depth, because every OCCT unit in between was
-compiled with `No_Exception`. What survives at depth is only a literal `throw`.
+compiled with `No_Exception`.
+
+**What survives at depth is a literal `throw`, and it is not always a `Standard_Failure`.** Measured
+over `Libraries/occt-src/src` on 2026-09-29: `throw std::` appears exactly **once**, a
+`std::runtime_error`, and `dynamic_cast` to a reference (which would throw `std::bad_cast`) appears
+in **zero** `.cxx` files, so neither is a route worth planning around. What is always available is
+**`std::bad_alloc` from any allocation**, which no macro gates and which `catch (Standard_Failure
+const&)` does not see.
+
+So the practical rule is about the **catch**, not the throw: a bridge function whose only handler is
+`catch (Standard_Failure const&)` is not exhaustive even on the paths this page says are dead, which
+is a further reason rule 3 below keeps `catch (...)`. `check-bridge-diagnostics.py` (#2077) already
+requires the function-level `catch (...)` to record what it caught.
+
+**A claim that did not survive checking, recorded so it is not re-derived:** the #2801 sweep
+reported `NCollection_Array1::at` as a standard-library survivor, on the reasoning that `at` is the
+checked accessor. It is not. `NCollection_Array1.hxx:510` and `:516` write
+`Standard_OutOfRange_Raise_if(theIndex >= mySize, "NCollection_Array1::at")`, the same macro
+`Value` and `SetValue` use, so `at` vanishes with the rest. There is no "safe accessor" on that
+class.
 
 `gp_Ax2` is the case that shows it, and it is the case `CLAUDE.md` had wrong. `gp_Ax2.hxx` documents
 "Raises ConstructionError if theN and theVx are parallel". `gp_Ax2` holds no `_Raise_if` of its own:
@@ -103,6 +122,18 @@ SwiftPM compiles the bridge and once as cmake compiled the kernel):
    the check you checked. "OCCT raises on a null direction" is true of `gp_Dir` and false of
    `Geom_Direction`, and nothing in either signature says which.
 
+   **Two same-purpose sibling pairs make the point better than that one does**, because in each the
+   two sides do the same job and differ only in spelling (measured by the #2801 sweep, 2026-09-29):
+
+   - **`Geom_BezierCurve` against `Geom2d_BezierCurve`.** The 3D class writes every index guard as a
+     literal `throw`; the 2D class writes every one of the *same* guards as the macro. Same inputs,
+     opposite behaviour: the 3D side refuses and the 2D side corrupts the heap (#2859).
+   - **`Convert_CircleToBSplineCurve` against its four siblings in the same `.mm`, sharing the same
+     helper.** The circle converter uses a literal `throw`; the others use the macro (#2861).
+
+   So "the sibling function next to mine handles this" is not evidence, and **within-file asymmetry
+   is where to look**: it found three of the sweep's seven defects.
+
 ## What the census measures, and what it found
 
 `Scripts/census-compiled-out-validation.py` has two channels and a committed derived map,
@@ -122,6 +153,15 @@ so the live inline check is the bridge's own.
 protected even where the member actually called has its check in the `.cxx`. The bias is deliberate,
 because a false finding costs a reader's time, and it is the reason to read this row as "no site is
 obviously fabricated" rather than as "every site is protected".
+
+**Two worked examples of that bias reading a real P1 as protected**, both from the #2801 sweep, and
+both cases where the fault is not in the class the map names: #2840's fault is in
+`NCollection_Sequence::Value`, not in `Extrema_ExtSS::Points`, and #2855's 4 MB out-of-bounds write
+happens in `NCollection_Array1`, not in `TDataStd_IntegerArray`. `NCollection` holds 135 of the map's
+inline sites and `math_` 128, so a class reading as protected because it reaches an inline check is
+the common case rather than the corner. **Do not use the map to conclude a site is safe.** #2858
+tracks the additions that would narrow this, and records that channel two's population is
+`StdFail_NotDone` only, 1 of the 28 exception kinds among the out-of-line sites.
 
 **That number was 89 before the script was fixed, and the fix is the lesson.** The first version
 reused `check-throwing-calls.py`'s construction regex, which takes everything up to the next `;`, so
