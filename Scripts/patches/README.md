@@ -2007,7 +2007,12 @@ upstream `master` was byte-identical on this line as of 2026-09-29 with no issue
 
 Not filed upstream yet: #2827 holds the upstream PR, per
 [`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
-and the standing hold on kernel-patch findings until 8.0.2 lands. The upstream submission is where
+and the standing hold on kernel-patch findings until 8.0.2 lands. **The submission carries a second
+hunk**, for [#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873): `aCoeff[3] = d - n . loc`
+at `BRepGProp_Vinert.cxx:279` is subtracted by the integrand, so the offset reaches it with the
+opposite sign to a geometric distance and `loc` cancels out. This patch exposes that rather than
+causing it, and the two belong in one PR because a reviewer reading the first will ask about the
+second. The upstream submission is where
 the GTest goes; the carried patch is the one-liner alone, as `0042` was.
 
 **Retire** once the bundled OCCT includes this fix.
