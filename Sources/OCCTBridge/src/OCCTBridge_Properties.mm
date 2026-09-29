@@ -1898,35 +1898,40 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
     BRepGProp_Domain domain;
     BRepGProp_Vinert vinert;
     vinert.SetLocation(gp_Pnt(0, 0, 0));
-    // #2806: the same domain rule as the by-point overload above. It changes no value on this pin,
-    // because the kernel discards the by-plane mass before it reaches us (see the note below), and
-    // it is what makes the by-plane overload correct rather than merely zero once that is fixed.
+    // #2806: the same domain rule as the by-point overload above, and since 0043 (see below) it
+    // changes the value rather than merely being ready to: without it a trimmed face is integrated
+    // over the surface's natural UV bounds and its column over-reports.
     if (occtLoadFaceDomain(f, domain))
       vinert.Perform(gpropFace, domain, plane);
     else
       vinert.Perform(gpropFace, plane);
-    // #2827: BRepGProp_Vinert's by-plane mass is ALWAYS 0, in the kernel, whatever the face and
-    // whatever the plane. BRepGProp_Gauss::convert (BRepGProp_Gauss.cxx:494-528, and byte-identical
-    // on upstream master) computes the mass correctly in its four-argument form, then overwrites it
-    // in the six-argument one: `if (std::abs(theInertia.Mass) >= EPS_DIM && theIsByPoint)` keeps
-    // the value only for the by-point form, and the else branch, written for the vanishing-mass
-    // case, sets theOutMass = 0.0 and the centre of mass to (0, 0, 0) for every by-plane call. All
-    // four by-plane Perform overloads and both by-plane Compute paths funnel through it. Measured:
-    // every face of a 10-cube, of a 20x20x2 plate with a hole, and of a cylinder answers exactly
-    // 0.0, for a plane through the origin and for one 100 away from the shape. Nothing on our side
-    // can recover the value, so the bridge reports what the kernel returns and Face.volumeInertia's
-    // doc comment says it is not a measurement.
+    // #2827: BRepGProp_Vinert's by-plane mass USED to be always exactly 0, whatever the face and
+    // whatever the plane. BRepGProp_Gauss::convert (BRepGProp_Gauss.cxx:494-528) computed it
+    // correctly in its four-argument form and then overwrote it in the six-argument one, whose
+    // `if (std::abs(theInertia.Mass) >= EPS_DIM && theIsByPoint)` kept the value only for the
+    // by-point form; the else branch, written for the vanishing-mass case, set theOutMass = 0.0 and
+    // the centre of mass to (0, 0, 0) for every by-plane call. Carried patch
+    // Scripts/patches/0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch drops the condition
+    // and is PINNED from v4.0.0-kernel.3, so what this function returns is now a measurement. A
+    // consumer resolving an older asset still gets the zero, and so does the wasm kernel until its
+    // next rebuild (Scripts/wasm-kernel-pin.txt).
     //
-    // What the value should be, measured rather than reasoned out, because OCCT has no caller of
-    // the by-plane Vinert path to copy: BRepGProp.cxx:311 is the kernel's only BRepGProp_Vinert
-    // call site and passes a point, and the by-plane public entry point
-    // BRepGProp::VolumePropertiesGK(S, Props, thePln, ...) uses BRepGProp_VinertGK and
-    // math_KronrodSingleIntegration, a separate integrator that never reaches the broken convert.
-    // Over the same three shapes it reports 999.9999999999999, 743.4513322353838 and
-    // 785.3981633974456 against by-point sums of 999.9999999999998, 743.4513322353837 and
-    // 785.3981633974482. Scripts/repro/2827/probe.mm is that measurement; the kernel one-liner is
-    // Scripts/patches/0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch, carried but NOT
-    // pinned, so nothing here changes until a repin. See okf/references/carried-occt-patches.md.
+    // What it measures, which had to be derived because OCCT has no caller of this path to copy
+    // (BRepGProp.cxx:311 is its only BRepGProp_Vinert call site and passes a point): the integrand
+    // is (n_hat . n_face) * d1 * dS with d1 affine in the point and gradient n_hat
+    // (BRepGProp_Gauss.cxx:340-348), so each face's mass is the signed volume of the column between
+    // it and the plane. Two identities follow for any plane, and both are asserted against
+    // BRepGProp::VolumeProperties in BRepGPropVinertTests: the per-face sum over a closed shell is
+    // the enclosed volume, and the mass-weighted sum of the per-face centres is the solid's first
+    // moment. Scripts/repro/2827/patched-kernel-transcript.txt is the measurement.
+    //
+    // #2873, and the reason this bridge does not "fix" the plane it builds above: the kernel
+    // weights each element by n_hat . P + planeDist, not minus, and BRepGProp_Vinert.cxx:279's loc
+    // re-basing cancels out entirely. Negating planeDist here would make one overload disagree with
+    // every other BRepGProp_Vinert caller and with OCCT's own documentation of the class, so the
+    // sign is reported as the kernel computes it and documented on
+    // Face.volumeInertia(planeNormal:), and the kernel-side fix is held for the same upstream PR as
+    // 0043.
     result.mass    = vinert.Mass();
     gp_Pnt cm      = vinert.CentreOfMass();
     result.centerX = cm.X();

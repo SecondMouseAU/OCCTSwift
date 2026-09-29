@@ -52,6 +52,14 @@ OCCT_WASM_PATCH_LAST=0042
 # The WASI-only source changes, Scripts/patches-wasi/*.patch, which only build-occt-wasm.sh applies.
 OCCT_WASM_WASI_PATCH_COUNT=11
 
+# --- the acknowledged divergence, and what closes it ---
+# AGAINST is the NATIVE patch count this divergence was accepted at, never a number to bump: the next
+# native repin makes it stale and check-wasm-kernel-parity.py fires again. Two ACKNOWLEDGED rows in
+# Scripts/patches/README.md outlived their reason before #2190 caught them, which is why this one is
+# keyed rather than dated.
+OCCT_WASM_PARITY_ACKNOWLEDGED_AGAINST=31
+OCCT_WASM_PARITY_ACKNOWLEDGED_REASON=v4.0.0-kernel.3 pinned 0043 (#2827, the by-plane BRepGProp_Vinert mass) on native without rebuilding this 69-minute wasm asset. The browser therefore still returns the fabricated 0.0 from Face.volumeInertia(planeNormal:planeDistance:); no other API reaches that path and the by-point form is unaffected. CLOSED BY the OCCT 8.0.2 rebuild, due 2026-10-02, which rebuilds both kernels from one patch set: the standing hold on repinning until 8.0.2 lands is exactly why this one was not taken now.
+
 # --- provenance ---
 # The commit whose Scripts/patches/ and Scripts/patches-wasi/ the archive was built from, so the
 # claim above can be checked rather than believed: `git show <sha>:Scripts/patches` lists them.

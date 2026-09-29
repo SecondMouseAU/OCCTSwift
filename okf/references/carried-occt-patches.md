@@ -95,12 +95,29 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds thirty-one patches. The v4.0.0-kernel.2 asset `Package.swift` pins lacks one of them,
+`Scripts/patches/` holds thirty-one patches. The v4.0.0-kernel.3 asset `Package.swift` pins lacks none of them,
 per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
 
 | Unpinned | What it leaves exposed |
 |---|---|
-| `0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827` | Every by-plane `BRepGProp_Vinert` computation reports mass `0.0` and centre of mass `(0, 0, 0)` instead of the value it computed, because `BRepGProp_Gauss::convert` gates the keep on `theIsByPoint`. One public API reaches it, `Face.volumeInertia(planeNormal:planeDistance:)`, whose `volume` is therefore always `0.0` and is not a measurement; the doc comment and `docs/reference/Shape-HLR-Geom.md` say so, and `BRepGPropVinertTests` pins the zero so the repin that fixes it fails rather than passing quietly. Nothing on the bridge side can recover the value: it does not exist by the time the bridge can read it, and recomputing the integral is out of scope. The workaround a caller has is `Face.volumeInertia`, the by-point form, which is measured and correct. **This is the only carried patch in the tree that has never been compiled.** It is carried unbuilt on purpose: OCCT 8.0.2 is days out, a repin is on hold until it lands, and an 8.0.1 rebuild for a one-liner would be discarded by 8.0.2's own rebuild. `kernel-integration.yml` is the job that first compiles it |
+| none | |
+
+`0043` (#2827) was the last entry here, and it was the shortest-lived: carried unbuilt on 2026-09-29
+because OCCT 8.0.2 was days out and a repin was on hold until it lands, then built and pinned the
+same day by `v4.0.0-kernel.3`, because what it left exposed was not a latent race but a value a
+caller reads: `Face.volumeInertia(planeNormal:planeDistance:)` returned a fabricated `0.0` for every
+face and every plane. It is live in the binary rather than merely applied to source, measured the
+way this page asks: building against the new asset makes #2827's own regression fail at the same
+lines and values as CI's independent `kernel-integration` build, and the by-plane per-face sum now
+equals the solid's volume to the last few digits for three different reference planes. What the
+by-plane mass turned out to MEAN, which no OCCT caller states because there is no OCCT caller, is in
+`Scripts/patches/README.md`'s `0043` entry and in `Scripts/repro/2827/probe.mm`'s transcript.
+
+The row the repin cleared, kept for its shape:
+
+| Cleared by v4.0.0-kernel.3 | What it left exposed while unpinned |
+|---|---|
+| `0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827` | Every by-plane `BRepGProp_Vinert` computation reported mass `0.0` and centre of mass `(0, 0, 0)` instead of the value it had computed, because `BRepGProp_Gauss::convert` gated the keep on `theIsByPoint`. One public API reaches it, `Face.volumeInertia(planeNormal:planeDistance:)`, whose `volume` was therefore always `0.0` and not a measurement. Nothing on the bridge side could recover it: the value does not exist by the time the bridge can read it, and recomputing the integral was out of scope, so the exposure lasted exactly as long as the unpinned window |
 
 `0042` (#2773) was the last entry here. It was carried on 2026-09-27, built and verified in the
 binary the same day (all three slices, `check-pinned-asset-patches.py --asset` confirms its literal
@@ -111,16 +128,25 @@ both answer nil and the guard is redundant rather than wrong, and it still cover
 older asset. `Package.swift`'s pin block records that exception against
 [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md)'s retire-the-mitigation rule.
 
-### The wasm kernel: in step, as of 2026-09-28
+### The wasm kernel: one patch behind, as of 2026-09-29
 
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
 for a bare static library. It carries **thirty** patches, `0010` to `0042`, plus the eleven in
-`Scripts/patches-wasi/`, and so **lacks none of them**:
+`Scripts/patches-wasi/`, and native now carries thirty-one, so it **lacks one of them**:
 
 | Unpinned on wasm | What it leaves exposed |
 |---|---|
-| none | |
+| `0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827` | In the browser only, `Face.volumeInertia(planeNormal:planeDistance:)` still returns the fabricated `0.0` that `v4.0.0-kernel.3` fixed natively. No other API reaches the by-plane `BRepGProp_Vinert` path, and the by-point `Face.volumeInertia` is unaffected on both platforms |
+
+**Acknowledged, not ignored**, by `OCCT_WASM_PARITY_ACKNOWLEDGED_AGAINST=31` in
+`Scripts/wasm-kernel-pin.txt`: the wasm kernel is a 69-minute build and this repin did not take it,
+so the divergence is written down with the native count it was accepted at. That keying is the whole
+point, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md): the NEXT native
+repin makes the acknowledgement stale and `Scripts/check-wasm-kernel-parity.py` fires again, so it
+cannot become a permanent suppression the way two `ACKNOWLEDGED` rows in
+`Scripts/patches/README.md` did before #2190. What closes it is the OCCT 8.0.2 wasm rebuild, which
+is already owed: 8.0.2 is due 2026-10-02 and will rebuild both kernels from one patch set.
 
 `0042` was the entry here for one day. PR #2784 published the asset for `v4.0.0-kernel.1` and PR
 #2782 repinned native to `v4.0.0-kernel.2` **twenty-nine seconds later**, so the browser briefly
@@ -161,7 +187,8 @@ because both are inert and a rebuild costs three cmake configures for no behavio
 
 **Both strays belonged to v4.0.0-kernel.1, and the pin has moved off it.** v4.0.0-kernel.2 was
 built from a fresh `V8_0_1` clone rather than that tree, so neither stray is present: the
-modified-file check computes zero files that no carried patch explains, over 78. The two
+modified-file check computes zero files that no carried patch explains, over 78, and
+v4.0.0-kernel.3 repeats it over 79 with `0043` added. The two
 `ACKNOWLEDGED` rows in `check-pinned-asset-patches.py` stay keyed on `v4.0.0-kernel.1` and expire
 here on their own, which is what they were built to do, and if a later asset repeats either stray
 the finding comes back instead of staying suppressed. A rebuild today should now reproduce the

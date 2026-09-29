@@ -23,12 +23,12 @@ in the kernel", run
 read [`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md) for
 why the count is necessary and not sufficient, and
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) for the current
-divergence (thirty-one on disk, thirty pinned, as of 2026-09-29: `0043` (#2827), carried unbuilt
-while OCCT 8.0.2 is days out) and what an unpinned patch leaves exposed. A divergence with a written
+divergence (thirty-one on disk, thirty-one pinned, as of 2026-09-29: none, since the
+`v4.0.0-kernel.3` repin) and what an unpinned patch leaves exposed. A divergence with a written
 reason is expected; one without is a finding.
 
 **The comparison runs the other way too, and nothing used to make it.** The pinned asset holds
-**thirty-two** patches: those thirty, plus `0032` and the retired
+**thirty-one** patches while `v4.0.0-kernel.1` was pinned: the twenty-nine carried then, plus `0032` and the retired
 `0034-LocOpe_SplitDrafts-trim-infinite-pipe-curves-1393`, both deleted from `Scripts/patches/` but
 never reverted out of the `Libraries/occt-src` tree it was built from, since `build-occt.sh`
 applies patches idempotently and never reverts. Both are inert, and the divergence is written up in
@@ -50,8 +50,10 @@ xcframework would notice. `Scripts/check-wasm-kernel-parity.py` is the gate, and
 `gate-scripts` on every PR precisely because the PR that has to be caught is a native repin, which
 touches no wasm path. It takes a dated acknowledgement for the 69-minute rebuild, keyed to the native
 patch count so it expires at the next repin. It fired on its first real occasion **29 seconds** after
-the asset was published; that gap (`0042`) was rebuilt and closed the next day, and both kernels are
-`v4.0.0-kernel.2` with thirty patches today. The rule and that story are in
+the asset was published; that gap (`0042`) was rebuilt and closed the next day. **They are apart
+again right now, deliberately:** native is `v4.0.0-kernel.3` with thirty-one patches, wasm is
+`v4.0.0-kernel.2` with thirty, and the acknowledgement in `Scripts/wasm-kernel-pin.txt` is keyed to
+thirty-one so it expires at the OCCT 8.0.2 rebuild that closes it. The rule and that story are in
 [`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md); the current
 divergence is in
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md).
@@ -471,9 +473,12 @@ the reproducer). What a bridge author needs without opening it:
   no overload builds one for you: without it the kernel integrates the surface over its natural UV
   bounds (or, for `Sinert`'s adaptive overload, nothing at all), so a trimmed face over-reports
   (#2204, #2806). `occtLoadFaceDomain` in `OCCTBridge_Properties.mm` is the rule
-  `BRepGProp::volumePropertiesFaces` and `volumePropertiesGK` apply. **And
-  `BRepGProp_Vinert`'s by-plane mass is always exactly 0** whatever you pass, because
-  `BRepGProp_Gauss::convert` discards it (#2827): do not read that 0 as a measurement.
+  `BRepGProp::volumePropertiesFaces` and `volumePropertiesGK` apply. **`BRepGProp_Vinert`'s by-plane
+  mass was always exactly 0** whatever you passed, because `BRepGProp_Gauss::convert` discarded it
+  (#2827); carried patch `0043` keeps it and is pinned from `v4.0.0-kernel.3`, so the by-plane
+  overload now measures the signed volume between the face and the reference plane, summing to the
+  solid's volume over a closed shell for any plane. The offset enters as `n . P + planeDistance`,
+  not minus, so a caller who wants the distance to the plane at offset `d` passes `-d` (#2873).
 - **Retired at the `v4.0.0-kernel.1` repin**, all three, because the pinned asset now carries every
   carried patch: the datum lookup guard in `occtDocumentDatumObjectAt` (#1030, it was refusing a
   datum `0029` makes readable), the `Scripts/tsan.supp` lines for `TopoDS_TShape::myState`

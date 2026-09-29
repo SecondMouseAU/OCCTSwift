@@ -1,0 +1,105 @@
+Scripts/repro/2827/probe.mm, run against the PATCHED kernel: OCCT V8_0_1 plus the thirty-one carried
+patches, which is the v4.0.0-kernel.3 asset (149,601,532 bytes, checksum
+27810c46220a77303c322bc24119e3aa1fe983707e9f88ce8455e7e9b9db82bc). macOS arm64, 2026-09-29.
+
+Compiled with the line in the probe's own header comment, against
+Libraries/OCCT.xcframework/macos-arm64.
+
+WHAT TO READ. Before 0043 every "Vinert by plane, summed" line was exactly 0. The three things this
+transcript establishes, each of them an identity the regression suite asserts rather than a number
+it copies:
+
+  1. the by-plane per-face sum equals the solid's volume, for every plane, matching
+     BRepGProp::VolumeProperties (a separate loop) and VolumePropertiesGK (a separate integrator);
+  2. the mass-weighted sum of the per-face gravity centres equals the solid's first moment, for
+     every plane, including on a fixture translated off the origin so the comparison is not against
+     (0, 0, 0);
+  3. per face, the mass is affine in the plane offset with slope the face's signed projected area:
+     +-371.72566611769 on the plate's two caps, which is +-their area, and 0 on the five faces
+     parallel to the plane normal.
+
+The last block is #2873: the offset enters the integrand with the opposite sign to the geometric
+distance, and SetLocation does not re-base it. mass / area reads d1 off a flat cap directly, and it
+answers 2, 3 and -98 for planes at z = 0, 1 and -100 against a cap at z = 2, identically for loc at
+the origin and at z = 3.
+
+--------------------------------------------------------------------------------
+10-cube                            plane z = 0            faces= 6
+    Vinert by point, summed        999.9999999999998
+    Vinert by plane, summed        1000   <-- #2827
+    VolumePropertiesGK by plane    999.9999999999999   (error reached 3.98e-16)
+    VolumeProperties by point      999.9999999999998
+    by-plane first moment, summed  (5000, 5000, 5000)
+    VolumeProperties first moment  (5000, 5000, 5000)
+10-cube                            plane z = -100         faces= 6
+    Vinert by point, summed        999.9999999999998
+    Vinert by plane, summed        1000   <-- #2827
+    VolumePropertiesGK by plane    1000.000000000002   (error reached 1.09e-14)
+    VolumeProperties by point      999.9999999999998
+    by-plane first moment, summed  (5000, 5000, 5000)
+    VolumeProperties first moment  (5000, 5000, 5000)
+10-cube                            oblique plane          faces= 6
+    Vinert by point, summed        999.9999999999998
+    Vinert by plane, summed        999.9999999999999   <-- #2827
+    VolumePropertiesGK by plane    1000   (error reached 5.55e-19)
+    VolumeProperties by point      999.9999999999998
+    by-plane first moment, summed  (5000, 5000, 5000)
+    VolumeProperties first moment  (5000, 5000, 5000)
+20x20x2 plate, radius-3 hole       plane z = 0            faces= 7
+    Vinert by point, summed        743.4513322353837
+    Vinert by plane, summed        743.4513322353836   <-- #2827
+    VolumePropertiesGK by plane    743.4513322353838   (error reached 7.86e-11)
+    VolumeProperties by point      743.4513322353836
+    by-plane first moment, summed  (7434.51332235, 7434.51332235, 743.451332235)
+    VolumeProperties first moment  (7434.51332235, 7434.51332235, 743.451332235)
+cylinder r = 5 h = 10              plane z = 0            faces= 3
+    Vinert by point, summed        785.3981633974482
+    Vinert by plane, summed        785.3981633974481   <-- #2827
+    VolumePropertiesGK by plane    785.3981633974456   (error reached 1.81e-09)
+    VolumeProperties by point      785.3981633974482
+    by-plane first moment, summed  (-1.06031202339e-13, 3.22976622916e-13, 3926.99081699)
+    VolumeProperties first moment  (-2.84217094304e-13, 1.5095621376e-13, 3926.99081699)
+20x20x2 plate, off origin          plane z = 0            faces= 7
+    Vinert by point, summed        743.4513322353838
+    Vinert by plane, summed        743.4513322353836   <-- #2827
+    VolumePropertiesGK by plane    743.4513322353838   (error reached 2.36e-10)
+    VolumeProperties by point      743.4513322353836
+    by-plane first moment, summed  (12638.672648, 5204.15932565, 2230.35399671)
+    VolumeProperties first moment  (12638.672648, 5204.15932565, 2230.35399671)
+20x20x2 plate, off origin          plane z = -100         faces= 7
+    Vinert by point, summed        743.4513322353838
+    Vinert by plane, summed        743.4513322353887   <-- #2827
+    VolumePropertiesGK by plane    743.4513322353814   (error reached 7.62e-09)
+    VolumeProperties by point      743.4513322353836
+    by-plane first moment, summed  (12638.672648, 5204.15932565, 2230.35399671)
+    VolumeProperties first moment  (12638.672648, 5204.15932565, 2230.35399671)
+20x20x2 plate, off origin          oblique plane          faces= 7
+    Vinert by point, summed        743.4513322353838
+    Vinert by plane, summed        743.4513322353831   <-- #2827
+    VolumePropertiesGK by plane    743.4513322353848   (error reached 4.64e-08)
+    VolumeProperties by point      743.4513322353836
+    by-plane first moment, summed  (12638.672648, 5204.15932565, 2230.35399671)
+    VolumeProperties first moment  (12638.672648, 5204.15932565, 2230.35399671)
+
+20x20x2 plate, radius-3 hole  per face, plane normal (0, 0, 1)
+              area          mass at d = 0          mass at d = 1                  slope
+                40                      0                      0                      0
+                40                      0                      0                      0
+       371.7256661        743.45133223538        1115.1769983531        371.72566611769
+                40                      0                      0                      0
+       371.7256661                      0       -371.72566611769       -371.72566611769
+                40                      0                      0                      0
+       37.69911184                      0                      0                      0
+
+sign convention, on the largest cap (area 371.7256661)
+         loc.z    plane z                   mass mass / area = d1
+             0          0        743.45133223538                2
+             0          1        1115.1769983531                3
+             0       -100       -36429.115279534              -98
+             3          0        743.45133223538                2
+             3          1        1115.1769983531                3
+             3       -100       -36429.115279534              -98
+
+control BRepGProp::VolumeProperties  cube  999.9999999999998
+control BRepGProp::VolumeProperties  plate 743.4513322353836
+control BRepGProp::VolumeProperties  cyl   785.3981633974482
