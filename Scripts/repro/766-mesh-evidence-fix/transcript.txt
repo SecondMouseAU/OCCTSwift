@@ -1,0 +1,6 @@
+solid Booleans meshed at 0.5 (the reference the three Mesh boolean tests are measured against):
+  union: box 10 and the same box moved +5 in x: triangleCount=28 volume=1500
+  subtraction: box 10 minus cylinder r3 h15: triangleCount=116 volume=860.00033900599146
+  intersection: box 10 and sphere r7: triangleCount=332 volume=955.41968829692473
+BRepGraph face 0 of a fresh unmeshed box, one graph:
+  Effective().Faces().Has(0): before=0 after SetCachedTriangulation=1

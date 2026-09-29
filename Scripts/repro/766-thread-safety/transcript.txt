@@ -1,0 +1,55 @@
+# #1990 thread-safety parity probe, run 2026-09-24 against the OCCT.xcframework SwiftPM resolved
+# for this branch (the pinned v4.0.0-kernel.1 asset, macos-arm64 slice).
+#
+# Build:
+#   clang++ -std=c++17 -ObjC++ -w -I<xcframework>/macos-arm64/Headers -L<xcframework>/macos-arm64 \
+#     -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
+#     Scripts/repro/766-thread-safety/probe.mm -o probe
+# Run:
+#   probe Scripts/repro/766-thread-safety/inputs
+#
+# inputs/fillet298_in1.brep and fillet298_in2.brep are the two shapes SheetMetal.Builder passed to
+# OCCTShapeFilletEdges while building the #298 U-channel, and inputs/fillet298_args.txt holds the
+# radius (1.5) and 0-based edge indices (25, then 7) it passed. They were dumped from a Swift run
+# by temporary instrumentation that was reverted before commit. "fillet1 volume" is the kernel's
+# fillet of in1; "(Swift input2 volume=...)" is the volume of in2, the shape the Swift run got
+# back from that same fillet, so the two numbers agreeing is the first parity check.
+#
+# RWObj_CafReader prints three progress lines per OBJ read. They are filtered out below
+# (grep -E '^[0-9]{3,4} ') and nothing else is.
+
+298 args: radius=1.5 idx1.size=1 idx2.size=1
+298 fillet1 volume=2809.6570826471 (Swift input2 volume=2809.6570826471)
+298 fillet2 (final) volume=2819.3141652942 solids=1 faces=18
+298 concurrent 8x25 fillets on the pinned kernel: failed=0 wrongVolume=0
+341 OBJ round trip ok=1 freeShapes+components=2 facesOfFirst=1
+341 concurrent 8x15 OBJ round trips on the pinned kernel: failed=0
+359 STEP round trip ok=1 faces=6 volume=6000.0000000000
+359 concurrent 8x15 STEP round trips, serialized like igesMutex(): failed=0
+359 concurrent 8x15 STEP round trips, unserialized: failed=0
+361 isolation: A.count=1 B.count=0 A.isValid(la)=1 B.isValid(lb)=0
+361 isolation: after B.Valid + A.Clear: A.count=0 B.count=1
+361 sequence: afterValid=1 afterValidChildren=1 afterUnvalid.isValid=0 afterClear=0
+361 fonts: count=0 first=none
+367 General Fuse faces=11 solids=3 volume=1791.6813487046
+367 concurrent 8x50, SetRunParallel(false): failed=0 wrongFaceCount=0
+367 concurrent 8x50, SetRunParallel(true): failed=0 wrongFaceCount=0
+1404 IsVerbose after SetVerbose(true)=1 after SetVerbose(false)=0 CreateNewDocument=1
+
+# The Swift side, from the same temporary observation run (values the tests observe):
+#   OBS298 volume=2819.3141652942 valid=true solids=1 faces=18
+#   OBS341 shapes=2 faces=[1, 1]
+#   OBS359 faces=6 volume=6000.0000000000
+#   OBS361 afterValid=1 afterValidChildren=1 afterUnvalid isValid=false count=0 afterClear=0
+#   OBS361font count=0 first=none
+#   OBS367 faces=11 solids=3 volume=1791.6813487046
+#   OBS1404 afterTrue=true afterFalse=false createDocument=true
+#
+# #341 at the race level (tsan_341_override.py in this directory): the 341-meshcaf harness,
+# obj_roundtrip_unique 8 25, linked against the TSan-instrumented kernel
+# (Libraries/occt-install-tsan, stamp "V8_0_1 7909b848e36e6c45"):
+#   patched kernel (0011 in):                 exit 0, 0 ThreadSanitizer warnings, ops=200 errors=0
+#   0011's TUs replaced by pre-0011 versions: 7 ThreadSanitizer warnings, ops=200 errors=0, all on
+#     XCAFDoc_ShapeTool.cxx:532 addShape / :693 SetAutoNaming / :700 AutoNaming (theAutoNaming).
+#     The process then exited on SIGABRT (-6) rather than exitcode 66, after printing
+#     "ThreadSanitizer: reported 7 warnings"; the abort is not investigated here.
