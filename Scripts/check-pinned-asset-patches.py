@@ -81,7 +81,7 @@ then dropped it: its `zip_identity()` sha256ed the zip beside the xcframework ag
 entered `problems`, so a run against a disproven asset could still exit 0. Two changes, both in
 `Scripts/occt_asset_identity.py`, which the other three #2818 scripts share:
 
-  * A verdict of NOT-PINNED is now a finding. UNVERIFIABLE is not, because it is the honest state of
+  * A verdict of NOT-PINNED is now a finding. UNVERIFIABLE is not, because it is the correct state of
     a freshly built asset at a release step, where the zip may not exist yet and where the whole
     point of the run is to check an asset that is not yet pinned. `--require-pinned-asset` makes
     UNVERIFIABLE a refusal too, for a run that must be about the pin.
@@ -710,7 +710,7 @@ def report(asset, carried, confirmed, undetermined, missing, unexpected, diverge
 
     # #2818. The identity verdict used to be printed and then dropped, so a run against an asset
     # positively shown NOT to be the pinned one could still exit 0. It is a finding now.
-    # UNVERIFIABLE is deliberately NOT one: that is the honest state of a freshly built asset at a
+    # UNVERIFIABLE is deliberately NOT one: that is the correct state of a freshly built asset at a
     # repin, where the zip may not exist yet and where the whole point of the run is to check an
     # asset that is not the pinned one yet. `--require-pinned-asset` is how a run says it must be
     # about the pin.
