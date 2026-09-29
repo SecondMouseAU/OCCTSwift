@@ -397,7 +397,38 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Find the node (kind, index) for a shape.
     ///
-    /// Returns nil if not found.
+    /// Matches on OCCT shape identity: `TShape` plus `Location`, orientation ignored. Any
+    /// sub-shape enumerated from the shape the graph was built from resolves, including the
+    /// sub-shapes of a placed instance inside a compound or an imported assembly.
+    ///
+    /// **A placed instance resolves to the definition node it instantiates.** A compound
+    /// holding one part twice has two occurrences of every sub-shape and one definition of
+    /// each, so both occurrences return the same `(kind, index)`. That is OCCT's own model:
+    /// the graph stores one definition and carries each placement on a child or occurrence
+    /// reference, and per-occurrence context is resolved by walking the hierarchy with
+    /// ``childCount(rootKind:rootIndex:targetKind:)`` and the occurrence accessors rather
+    /// than by node identity. Do not key a per-instance identity off this node (#2650).
+    ///
+    /// A placed shape the graph never ingested does not resolve, so this stays a lookup of
+    /// the construction input rather than a match on `TShape` alone.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 8, depth: 6)!
+    /// let placed = box.moved(dx: 50, dy: 0, dz: 0)!
+    /// let pair = Shape.compound([box, placed])!
+    /// let graph = BRepGraph(shape: pair)!
+    ///
+    /// // Every face of both instances resolves.
+    /// let faces = pair.subShapes(ofType: .face)
+    /// print(faces.compactMap { graph.findNode(for: $0) }.count)  // 12
+    ///
+    /// // ...and the two occurrences of one solid name one definition node.
+    /// let solids = pair.subShapes(ofType: .solid)
+    /// print(graph.findNode(for: solids[0])! == graph.findNode(for: solids[1])!)  // true
+    /// ```
+    ///
+    /// - Parameter shape: The shape to look up.
+    /// - Returns: The node for `shape`, or `nil` when the graph does not hold it.
     public func findNode(for shape: Shape) -> (kind: NodeKind, index: Int)? {
         var outKind: Int32 = -1
         var outIndex: Int32 = -1
@@ -408,6 +439,21 @@ public final class BRepGraph: @unchecked Sendable {
     }
 
     /// Check if a shape is known to the graph.
+    ///
+    /// The same predicate as ``findNode(for:)`` returning non-`nil`, on the same identity
+    /// rules: a sub-shape of a placed instance in the construction input is known, and a
+    /// placed shape the graph never ingested is not.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 8, depth: 6)!
+    /// let placed = box.moved(dx: 50, dy: 0, dz: 0)!
+    /// let graph = BRepGraph(shape: Shape.compound([box, placed])!)!
+    /// print(graph.hasNode(for: placed))                            // true
+    /// print(graph.hasNode(for: box.moved(dx: 99, dy: 0, dz: 0)!))  // false
+    /// ```
+    ///
+    /// - Parameter shape: The shape to check.
+    /// - Returns: `true` when the graph holds a node for `shape`.
     public func hasNode(for shape: Shape) -> Bool {
         OCCTBRepGraphHasNode(handle, shape.handle)
     }
