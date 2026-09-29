@@ -1,0 +1,27 @@
+selector centre (box 10, eye z 50, full camera, pixel 400,300): NbPicked=0
+selector miss (box 1, eye z 50, full camera, pixel 0,0): NbPicked=0
+selector multi left (boxes at x -20 and 20, eye z 100, pixel 384,300): NbPicked=0
+selector multi right (pixel 416,300): NbPicked=0
+selector remove (box 10 added then removed, eye z 50, camera without fov/zrange, pixel 400,300): NbPicked=0
+selector rect (box 10, eye z 50, full camera, box pick 100,100..700,500): NbPicked=0
+selector clear (two boxes added then both removed, pixel 400,300): NbPicked=0
+shapeBeyondTheEye (box x 20..30, z 1000..1010): reach along +Z=1010 focus=50 -> the bridge refuses (reach >= focus)
+shapeBeyondTheEye (box x 20..30, z 1000..1010): unguarded HLR produced a drawing: visible edges=7 x range [-1.57894747, -1.04166657]
+eyePlaneCutting (box x 20..30, z 0..10): reach along +Z=10.0000001 focus=5.5 -> the bridge refuses (reach >= focus)
+eyePlaneCutting (box x 20..30, z 0..10): unguarded HLR produced a drawing: visible edges=4 x range [-24.4444445, 20.0000001]
+eyeExactlyOnAFace (box x 20..30, z 0..10): reach along +Z=10.0000001 focus=10 -> the bridge refuses (reach >= focus)
+eyeExactlyOnAFace (box x 20..30, z 0..10): unguarded HLR produced a drawing: visible edges=4 x range [-1.12589991e+17, 20.0000001]
+projectOnSphere line (8,-2,0)-(8,2,0): IsDone=1 edges=2 min=(9.7014248545819139, -2.4253563972347387, -1.4687140604838179e-07) max=(10.000000146871416, 2.4253563972347361, 1.4687140604838179e-07)
+projectOutsideSphere line (15,-5,0)-(15,5,0): IsDone=1 edges=2 min=(9.4868326400682239, -3.1622780006052933, -3.4043691237357003e-07) max=(10.000000340436916, 3.162278000605292, 3.4043691237357003e-07)
+remove shellRemoveChild  Shells().RemoveFace(0, 99999): 0
+remove solidRemoveShell  Solids().RemoveShell(0, 99999): 0
+remove solidRemoveChild  Solids().RemoveShell(0, 99999): 0
+remove compoundRemoveChild  Compounds().RemoveChild(0, 99999): 0
+remove compSolidRemoveSolid  CompSolids().RemoveSolid(0, 99999): 0
+cameraProjection (default camera, aspect 1.5): m00=0.0013333333190530539 m11=0.0020000000949949026 m22=-0.00033333344617858529 m23=-3.3333344617858529e-07
+cameraOrthographic (eye z 100, aspect 1, z range 1..1000): perspM00=2.4142134189605713 orthoM00=0.0020000000949949026
+shapeBehindThePicturePlane (box x 20..30, z -1010..-1000, focus 50): visible x range [0.9433961264150944, 1.4285715285714287]
+fastIsometricBox (PolyAlgo, box 20x10x5, deflection 0.01) visible: edges=9 min=(-8.8388348648318456, -9.1855866354369216) max=(8.8388348648318456, 9.1855866354369216)
+fastIsometricBox (PolyAlgo, box 20x10x5, deflection 0.01) hidden: edges=3 min=(-8.8388348648318456, -7.1443451831176104) max=(8.8388348648318473, 9.1855866354369216)
+fastProjectCylinder (PolyAlgo, cylinder r5 h10 down +X, deflection 0.01) visible: edges=76 min=(-9.9999999999999995e-08, -5.0000000997066456) max=(10.000000099999999, 5.0000000997066456)
+fastProjectCylinder (PolyAlgo, cylinder r5 h10 down +X, deflection 0.01) outline: edges=4 min=(-9.9999999999999995e-08, -5.0000000997066456) max=(10.000000099999999, 5.0000000997066456)

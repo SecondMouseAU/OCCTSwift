@@ -504,7 +504,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
 | **Bridge Diagnostics** (#1161, see [Diagnostics](reference/Diagnostics.md)) | 8 | OCCTDiagnostics: capturing, records, clear, isCaptureEnabled, isLoggingEnabled, stackTraceDepth, droppedRecordCount; Record: description |
-| **Total** | **4,365** | |
+| **Total** | **4,367** | |
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
 

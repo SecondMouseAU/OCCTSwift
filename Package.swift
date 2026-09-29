@@ -45,7 +45,7 @@ let useLocalXCFramework: Bool = {
     return FileManager.default.fileExists(atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the thirty carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the thirty-one carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target = isWASI
     // WASI: Use locally built static library from Scripts/build-occt-wasm.sh
@@ -83,10 +83,10 @@ let occtTarget: Target = isWASI
             name: "OCCT",
             path: "Libraries/OCCT.xcframework"
         )
-    // OCCT V8_0_1 + the thirty carried patches listed below.
+    // OCCT V8_0_1 + the thirty-one carried patches listed below.
     //
     // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
-    // their writeups kept in Scripts/patches/README.md under "Retired patches"). The thirty that
+    // their writeups kept in Scripts/patches/README.md under "Retired patches"). The thirty-one that
     // survive, all present in Scripts/patches/, are:
     //
     //   0010  Intf_Interference O(1) tangent-zone lookup + checkpointed breaker            #319
@@ -126,6 +126,9 @@ let occtTarget: Target = isWASI
     //   0041  XSControl_Controller's listad and Interface_InterfaceModel's atemp locked  #1403
     //   0042  ShapeAnalysis::GetFaceUVBounds raises instead of dereferencing a null       #2773
     //         surface on a face that is both surface-less and edgeless
+    //   0043  BRepGProp_Gauss::convert keeps the by-plane mass instead of zeroing it      #2827
+    //         (the by-plane BRepGProp_Vinert overloads returned a fabricated 0.0; pinned by
+    //         v4.0.0-kernel.3, and Face.volumeInertia(planeNormal:) now returns a measurement)
     //
     // This list said "fifteen" above a list of eleven until the release check ran, which is the
     // #585 failure shape in miniature: `ls Scripts/patches/*.patch | wc -l` agreed with the count
@@ -187,9 +190,10 @@ let occtTarget: Target = isWASI
     //     They are the only two patches in the tree with no CI coverage of any kind, which is
     //     worth knowing before trusting "the fix is in the kernel" about either.
     //
-    // Pinned to the v4.0.0-kernel.1 pre-release asset: upstream V8_0_1 plus the thirty patches listed above,
-    // AND TWO MORE THAT ARE NOT IN Scripts/patches/ AT ALL. Read the next paragraph before
-    // treating the enumeration above as the asset's contents.
+    // Pinned to the v4.0.0-kernel.3 pre-release asset: upstream V8_0_1 plus the thirty-one patches listed above,
+    // and nothing else. That was NOT true of v4.0.0-kernel.1, which carried two patches that are
+    // not in Scripts/patches/ at all, so read the next paragraph before treating any older asset's
+    // enumeration as its contents.
     //
     // ===================================================================================
     // THE ASSET CARRIES THIRTY-ONE PATCHES. THE TREE CARRIES TWENTY-NINE. (#2190)
@@ -215,17 +219,18 @@ let occtTarget: Target = isWASI
     // probe. Nothing a consumer can call behaves differently.
     //
     // THAT DIVERGENCE IS CLOSED. The two strays above belonged to the v4.0.0-kernel.1 asset. The
-    // pin below is now v4.0.0-kernel.2, built from a FRESH V8_0_1 clone rather than the tree that
-    // carried them, so neither is present: step 1 of "Shipping a rebuild" computes zero modified
-    // files that no carried patch explains, over 78. The two ACKNOWLEDGED rows in
+    // pin below is now v4.0.0-kernel.3, built from a tree whose only modifications are the carried
+    // patches, so neither is present: step 1 of "Shipping a rebuild" computes zero modified files
+    // that no carried patch explains, over 79 (v4.0.0-kernel.2 computed the same over 78, before
+    // 0043 added its one). The two ACKNOWLEDGED rows in
     // check-pinned-asset-patches.py stay keyed on v4.0.0-kernel.1 and so expire on their own here,
     // which is what they were built to do; if a later asset repeats either stray the finding comes
     // back rather than staying suppressed.
     //
-    // Scripts/patches/ and the enumeration above now agree at thirty, and the asset carries all
-    // thirty, so there is no untested set. If you rebuild and the checksum does not match the value
-    // below, that is a real difference to investigate rather than an expected one, which is the
-    // opposite of what this paragraph said while kernel.1 was pinned.
+    // Scripts/patches/ and the asset now hold the same thirty-one, so there is no untested set.
+    // If you rebuild and the checksum does not match the value below, that is a real difference to
+    // investigate rather than an expected one, which is the opposite of what this paragraph said
+    // while kernel.1 was pinned.
     //
     // CLAUDE.md: "A divergence with a written reason is expected; one without is a finding." This
     // is the written reason. Scripts/check-pinned-asset-patches.py carries the same two rows in
@@ -266,13 +271,17 @@ let occtTarget: Target = isWASI
     // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
     // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
     // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-    // Scripts/patches/ holds thirty patches and the pinned asset holds all thirty, enumerated
-    // above. `ls Scripts/patches/*.patch | wc -l` answers 30 against a list of 30.
-    // The pinned asset lacks none of them, so there is no untested set:
-    // ci.yml's build-and-test resolves this asset, so every carried
-    // patch is now exercised by the ordinary macOS job rather than only by kernel-integration.yml on
-    // the PR that added it. 0042 (#2773) was the last one outstanding, carried 2026-09-27 and pinned
-    // the same day by v4.0.0-kernel.2.
+    // Scripts/patches/ holds thirty-one patches and the pinned asset holds all thirty-one,
+    // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 31 against a list of 31.
+    // The pinned asset lacks none of them, so there is no written divergence to give here. 0043
+    // (#2827, BRepGProp_Gauss keeps the by-plane mass) was the last one outstanding: carried
+    // 2026-09-29 unbuilt, because OCCT 8.0.2 was days out and there is a standing hold on repinning
+    // until it lands, then built and pinned the same day by v4.0.0-kernel.3 once the cost of
+    // shipping a fabricated 0.0 through Face.volumeInertia(planeNormal:planeDistance:) for that
+    // window was weighed against the rebuild. It is live in the binary, not merely applied to
+    // source: building against the new asset makes #2827's own regression fail at the same lines
+    // and values as CI's independent kernel-integration build, which is the check that separates
+    // "the patch is in the tree" from "the fix reaches a consumer".
     //
     // PR #2776's bridge guard is kept rather than retired with the repin, which is a deliberate
     // exception to the rule in okf/policies/pinned-kernel-patch-check.md that a repin retires the
@@ -280,10 +289,10 @@ let occtTarget: Target = isWASI
     // working call into a refusal, and this one does not: with 0042 the kernel raises
     // Standard_NullObject for the same input the guard refuses, so both answer nil and the guard is
     // redundant rather than wrong. It also still earns its place for anyone pinning an older asset.
-    // The two RETIRED patches the asset also
-    // holds are a separate quantity and are not counted here, because this count is the carried
-    // set against the enumeration, which is what check-inventory-prose.py reads. Thirty-two
-    // patches are in the asset; thirty of them are ours to carry. Collapsing those two
+    // The two RETIRED patches the v4.0.0-kernel.1 asset also
+    // held are a separate quantity and are not counted here, because this count is the carried
+    // set against the enumeration, which is what check-inventory-prose.py reads. Thirty-one
+    // patches were in THAT asset; twenty-nine of them were ours to carry. Collapsing those two
     // numbers into one is how #2190 stayed invisible.
     //
     // That is new as of v4.0.0-kernel.1 and it is the point of the rebuild. Twelve patches
@@ -367,8 +376,8 @@ let occtTarget: Target = isWASI
         // Remote binary xcframework for native platforms
         : .binaryTarget(
             name: "OCCT",
-            url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.2/OCCT.xcframework.zip",
-            checksum: "18b181cc27778520fa2912ac2abb38038800b70e48d2fe1cf7fedcc61414d1c3"
+            url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.3/OCCT.xcframework.zip",
+            checksum: "27810c46220a77303c322bc24119e3aa1fe983707e9f88ce8455e7e9b9db82bc"
         )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles

@@ -1,0 +1,7 @@
+createdByOutOfRange: record 0 Mapping[(0,-1)] size=1 [ (2,100) ]
+splitOf: record 0 Mapping[(4,3)] size=2 [ (4,30) (4,31) ]
+splitMapping: record 0 Mapping[(4,3)] size=3 [ (4,100) (4,101) (4,102) ]
+deletionMapping: record 0 Mapping[(2,5)] size=0 [ ]
+hasHistoryRecord: records=2 modified(face 0)=1 deleted(face 1)=1 untouched(face 2)=0
+refNotRemoved: face0=0 shell0=0 RemoveRef(face0)=1 face0 after=1
+hasRoots: roots before=0 after=1 root[0]=product 0

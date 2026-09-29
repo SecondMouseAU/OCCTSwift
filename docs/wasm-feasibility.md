@@ -784,8 +784,15 @@ which is Phase 5.
   repin (#2782) landed immediately after the asset was published for `kernel.1`, leaving
   the browser one patch behind: `0042`, a null-surface guard. Neither PR was at fault,
   which is the point. It was acknowledged to unblock `main` (#2786), rebuilt the next
-  day, and both kernels are now `v4.0.0-kernel.2` with thirty patches. The whole cycle,
-  from the gate firing to the asset being republished, is #2785.
+  day. The whole cycle, from the gate firing to the asset being republished, is #2785.
+
+  **They are apart again as of 2026-09-29, and this time on purpose.** The
+  `v4.0.0-kernel.3` repin pinned `0043` (#2827) on native without taking the 69-minute
+  wasm build, so native carries thirty-one patches and wasm thirty, and the by-plane
+  `Face.volumeInertia` still returns a fabricated `0.0` in the browser. Acknowledged in
+  `Scripts/wasm-kernel-pin.txt` against thirty-one native patches, which is the count the
+  next repin invalidates, and closed by the OCCT 8.0.2 rebuild that rebuilds both kernels
+  from one patch set.
 
 ### Phase 2. Swift layer portability
 

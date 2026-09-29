@@ -2595,6 +2595,50 @@ static BRepGraph_RefId::Kind refKindFromInt(int32_t k)
   }
 }
 
+// Inverse of refKindFromInt: an OCCT BRepGraph_RefId::Kind back to the ordinal this bridge's C
+// ABI uses. It lives next to its inverse on purpose, because the two are only correct as a pair
+// and the legacy slot is what makes them disagree: ABI ordinal 3 is the removed CoEdge kind, so
+// the ABI runs Shell 0, Face 1, Wire 2, (CoEdge 3, gone), Vertex 4, Solid 5, Child 6,
+// Occurrence 7, while BRepGraph_RefId::Kind runs Vertex 3, Solid 4, Child 5, Occurrence 6.
+// Nothing ever maps TO 3. Returns -1 for a kind this ABI has no slot for, which no 8.0.1 kind
+// hits; the fallback exists so a future kernel kind surfaces as "unknown" rather than as Shell.
+//
+// The switch names every BRepGraph_RefId::Kind and carries no default on purpose: -Wswitch then
+// reports an unhandled enumerator at compile time, so a kernel bump that adds a ref kind is a build
+// diagnostic here rather than a silent -1 found at runtime. The trailing return still answers for a
+// value outside the enumeration.
+static int32_t refKindToBridgeOrdinal(BRepGraph_RefId::Kind k)
+{
+  switch (k)
+  {
+    case BRepGraph_RefId::Kind::Shell:
+      return 0;
+    case BRepGraph_RefId::Kind::Face:
+      return 1;
+    case BRepGraph_RefId::Kind::Wire:
+      return 2;
+    case BRepGraph_RefId::Kind::Vertex:
+      return 4;
+    case BRepGraph_RefId::Kind::Solid:
+      return 5;
+    case BRepGraph_RefId::Kind::Child:
+      return 6;
+    case BRepGraph_RefId::Kind::Occurrence:
+      return 7;
+  }
+  return -1;
+}
+
+// BRepGraph_NodeId::Kind to the ordinal the C ABI uses, which is the kind's own value (the two
+// agree, unlike the ref kinds above). Product and Occurrence are named because they are node kinds
+// of 8.0.1 that a traversal can land on and that the Swift BRepGraph.NodeKind enum already spells
+// (product = 10, occurrence = 11): leaving them to the fallback made a Product step report -1,
+// which OCCTBRepGraphOccurrenceAt's caller reads as a step it cannot represent. No graph this
+// bridge builds holds either kind today, because all three creation sites set CreateAutoProduct =
+// false, so this closes a latent wrong answer rather than changing a measured one.
+//
+// No default, for the -Wswitch reason given above; the trailing return covers value 9, which
+// BRepGraph_NodeId::Kind reserves and does not name.
 static int32_t nodeKindToInt(BRepGraph_NodeId::Kind k)
 {
   switch (k)
@@ -2617,9 +2661,12 @@ static int32_t nodeKindToInt(BRepGraph_NodeId::Kind k)
       return 7;
     case BRepGraph_NodeId::Kind::CoEdge:
       return 8;
-    default:
-      return -1;
+    case BRepGraph_NodeId::Kind::Product:
+      return 10;
+    case BRepGraph_NodeId::Kind::Occurrence:
+      return 11;
   }
+  return -1;
 }
 
 // --- Product (Assembly) Queries ---
@@ -6277,4 +6324,144 @@ uint64_t OCCTBRepGraphInstanceID(OCCTBRepGraphRef graph)
   if (!graph)
     return 0;
   return graph->instanceID;
+}
+
+// MARK: - BRepGraph occurrence-aware lookup (BRepGraph_ChildExplorer usage paths)
+
+#include <BRepGraph_UsagePath.hxx>
+
+// Why this is a traversal and not a lookup.
+//
+// BRepGraph_ShapesView::FindNode answers the DEFINITION node, so the two instances of one part in
+// a compound both resolve to Solid[0] (#2650). That is the kernel's own model and the BRepGraph
+// README says where the missing half lives: "Keep occurrence-context metadata resolution out of
+// the core storage model; resolve it through explorer usage paths or layer-side resolvers"
+// (BRepGraph/README.md:398). BRepGraph_ChildExplorer is the resolver: it "visits each occurrence.
+// If Edge[5] is reachable through Face[0] and Face[1], it is visited twice with different
+// accumulated transforms" (BRepGraph_ChildExplorer.hxx:47), and CurrentUsagePath() "returns the
+// explicit concrete traversal path from the explorer root to Current()" (:329). So the identity of
+// an occurrence upstream is a BRepGraph_UsagePath, and these two functions wrap exactly that, with
+// the composed Location and Orientation the explorer already carries.
+//
+// Everything below is measured in Scripts/repro/2835-brepgraph-occurrence-lookup/, whose
+// probe-output.txt is the run:
+//
+//   - An out-of-range root emits nothing and does NOT throw (block G3), so a bad root reads as
+//     zero occurrences rather than as a caught exception.
+//   - root == target emits the root once, with a one-step path whose Ref is invalid and whose
+//     StepIndex is -1 (block G1).
+//   - An unplaced single part gives exactly one occurrence, at the identity (block G4), so these
+//     are meaningful on a part and not only on an assembly.
+//   - The cost is one traversal of the subgraph: 0.21 ms over a 200-instance compound, and the
+//     same 0.21 ms whether one definition's occurrences are filtered out or every occurrence of
+//     the kind is kept, because the filter saves nothing (block F).
+
+// Walk the occurrences of one node and hand each to theVisit, which returns false to stop.
+// Shared by the count and the accessor so the two cannot disagree about which branches count as
+// occurrences or about the traversal order the accessor's ordinal indexes into.
+template <typename Visitor>
+static void occtBRepGraphVisitOccurrences(OCCTBRepGraphRef g,
+                                          int32_t          rootKind,
+                                          int32_t          rootIndex,
+                                          int32_t          targetKind,
+                                          int32_t          targetIndex,
+                                          Visitor          theVisit)
+{
+  const BRepGraph_NodeId       root(kindFromInt(rootKind), rootIndex);
+  const BRepGraph_NodeId::Kind target = kindFromInt(targetKind);
+  for (BRepGraph_ChildExplorer explorer(g->graph, root, target); explorer.More(); explorer.Next())
+  {
+    const BRepGraphInc::NodeInstance usage = explorer.Current();
+    if ((int32_t)usage.DefId.Index != targetIndex)
+      continue;
+    if (!theVisit(explorer, usage))
+      return;
+  }
+}
+
+int32_t OCCTBRepGraphOccurrenceCount(OCCTBRepGraphRef g,
+                                     int32_t          rootKind,
+                                     int32_t          rootIndex,
+                                     int32_t          targetKind,
+                                     int32_t          targetIndex)
+{
+  if (!g || targetIndex < 0)
+    return 0;
+  try
+  {
+    int32_t count = 0;
+    occtBRepGraphVisitOccurrences(
+      g,
+      rootKind,
+      rootIndex,
+      targetKind,
+      targetIndex,
+      [&count](const BRepGraph_ChildExplorer&, const BRepGraphInc::NodeInstance&) {
+        ++count;
+        return true;
+      });
+    return count;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return 0;
+  }
+}
+
+int32_t OCCTBRepGraphOccurrenceAt(OCCTBRepGraphRef        g,
+                                  int32_t                 rootKind,
+                                  int32_t                 rootIndex,
+                                  int32_t                 targetKind,
+                                  int32_t                 targetIndex,
+                                  int32_t                 occurrenceIndex,
+                                  double*                 outMatrix,
+                                  int32_t*                outOrientation,
+                                  OCCTBRepGraphUsageStep* outSteps,
+                                  int32_t                 maxSteps)
+{
+  if (!g || !outMatrix || !outOrientation || targetIndex < 0 || occurrenceIndex < 0)
+    return -1;
+  try
+  {
+    int32_t ordinal   = 0;
+    int32_t stepCount = -1;
+    occtBRepGraphVisitOccurrences(
+      g,
+      rootKind,
+      rootIndex,
+      targetKind,
+      targetIndex,
+      [&](const BRepGraph_ChildExplorer& explorer, const BRepGraphInc::NodeInstance& usage) {
+        if (ordinal++ != occurrenceIndex)
+          return true;
+        occtMatrix12FromLocation(usage.Location, outMatrix);
+        *outOrientation                = (int32_t)usage.Orientation;
+        const BRepGraph_UsagePath path = explorer.CurrentUsagePath();
+        stepCount                      = (int32_t)path.Size();
+        if (outSteps)
+        {
+          const int32_t writable = stepCount < maxSteps ? stepCount : maxSteps;
+          for (int32_t i = 0; i < writable; ++i)
+          {
+            const BRepGraph_UsagePath::Step& step = path.Value((size_t)i);
+            OCCTBRepGraphUsageStep&          out  = outSteps[i];
+            out.nodeKind  = step.Node.IsValid() ? nodeKindToInt(step.Node.NodeKind) : -1;
+            out.nodeIndex = step.Node.IsValid() ? (int32_t)step.Node.Index : -1;
+            // A structural link owns no reference entry, and the root step has none either, so
+            // both report -1 rather than a ref that would resolve to something unrelated.
+            out.refKind   = step.Ref.IsValid() ? refKindToBridgeOrdinal(step.Ref.RefKind) : -1;
+            out.refIndex  = step.Ref.IsValid() ? (int32_t)step.Ref.Index : -1;
+            out.stepIndex = step.StepIndex;
+          }
+        }
+        return false;
+      });
+    return stepCount;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return -1;
+  }
 }

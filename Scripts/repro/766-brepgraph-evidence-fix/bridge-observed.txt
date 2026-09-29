@@ -1,0 +1,45 @@
+Bridge-side values the evidence records quote. They were printed by temporary print statements added to
+the tests (never committed) and captured from passing `swift test` runs at the branch tip. Each line is the
+Swift/bridge observation for one test; the kernel side of the same quantity is in transcript.txt here and in
+the transcripts named by each record's probe field.
+
+EVID basis n=-1.0,0.0,0.0 x=-0.0,0.0,-1.0 y=-0.0,-1.0,0.0
+EVID basis n=0.0,-1.0,0.0 x=0.0,-0.0,-1.0 y=1.0,0.0,0.0
+EVID basis n=0.0,0.0,-1.0 x=-1.0,0.0,-0.0 y=0.0,1.0,0.0
+EVID basis n=0.0,0.0,1.0 x=1.0,0.0,-0.0 y=-0.0,1.0,0.0
+EVID basis n=0.0,1.0,0.0 x=0.0,-0.0,1.0 y=1.0,0.0,-0.0
+EVID basis n=1.0,0.0,0.0 x=-0.0,0.0,1.0 y=0.0,-1.0,0.0
+EVID chained records before1=0 afterHop1=14
+EVID chained records before2=14 afterHop2=28
+EVID chained volumes 5999.0 5991.0
+EVID createdByOOB failure(TopologyResolutionError.occurrenceOutOfRange(TopologyRef.createdBy(operationName: "Op", kind: BRepGraph.NodeKind.face, occurrence: 5, leafOccurrence: Optional(0)), available: 1, requested: 5))
+EVID deletionMapping mapping=Optional([])
+EVID derivedOrSelf findDerived modified=[(2, 100)] deleted=[] untouched=[] orSelf modified=[(2, 100)] deleted=[] untouched=[(2, 2)]
+EVID faceInSolid children=[0, 1, 2, 3, 4, 5] resolved=success(BRepGraph.NodeRef(kind: BRepGraph.NodeKind.face, index: 0))
+EVID faceInSolidOOB failure(TopologyResolutionError.occurrenceOutOfRange(TopologyRef.containedIn(parent: TopologyRef.literal(BRepGraph.NodeRef(kind: BRepGraph.NodeKind.solid, index: 0)), kind: BRepGraph.NodeKind.face, occurrence: 999), available: 6, requested: 999))
+EVID forwardWalk findDerived(created)=[BRepGraph.NodeRef(kind: BRepGraph.NodeKind.face, index: 11)] resolve=success(BRepGraph.NodeRef(kind: BRepGraph.NodeKind.face, index: 11))
+EVID fullcopy face 0 -> 0 sameID=true
+EVID fullcopy face 1 -> 1 sameID=true
+EVID fullcopy face 2 -> 2 sameID=true
+EVID fullcopy face 3 -> 3 sameID=true
+EVID fullcopy face 4 -> 4 sameID=true
+EVID fullcopy face 5 -> 5 sameID=true
+EVID hasHistoryRecord modified=true deleted=true untouched=false records=2
+EVID historyDefaults enabled=true records=0
+EVID label channel-cut=11 never-happened=0
+EVID naturalRestriction box=false sphere=false
+EVID nonint records before2=1 after=1 volumes=Optional(5973.0),Optional(5973.0) findDerived=0
+EVID refNotRemoved face0=false shell0=false removed=true face0After=true
+EVID roots [(BRepGraph.NodeKind.product, 0)]
+EVID sampleNoCurve hasCurve999=false points=0
+EVID sphereEdge n=20 firstZ=-5.0 lastZ=5.0 maxDr=8.881784197001252e-16 pole0=0 pole2=0
+EVID splitMapping mapping=Optional([BRepGraph.NodeRef(kind: BRepGraph.NodeKind.edge, index: 100), BRepGraph.NodeRef(kind: BRepGraph.NodeKind.edge, index: 101), BRepGraph.NodeRef(kind: BRepGraph.NodeKind.edge, index: 102)]) op=Optional("SplitEdge")
+EVID splitOf findDerived(orig)=[BRepGraph.NodeRef(kind: BRepGraph.NodeKind.edge, index: 30), BRepGraph.NodeRef(kind: BRepGraph.NodeKind.edge, index: 31)] resolve=success(BRepGraph.NodeRef(kind: BRepGraph.NodeKind.edge, index: 31))
+EVID splitOfOOB failure(TopologyResolutionError.occurrenceOutOfRange(TopologyRef.splitOf(original: TopologyRef.literal(BRepGraph.NodeRef(kind: BRepGraph.NodeKind.edge, index: 3)), occurrence: 5), available: 2, requested: 5))
+EVID tangentCyl origin=5.0,0.0,0.0 z=1.0,0.0,0.0 expectedZ=0.0
+EVID translated face 0 -> 0 sameID=true
+EVID translated face 1 -> 1 sameID=true
+EVID translated face 2 -> 2 sameID=true
+EVID translated face 3 -> 3 sameID=true
+EVID translated face 4 -> 4 sameID=true
+EVID translated face 5 -> 5 sameID=true
