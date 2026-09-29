@@ -1,0 +1,191 @@
+Convert_CompBezierCurves2dToBSplineCurve2d, 60 cubics: poles=122 knots=61
+EF R01.nb_poles = 122
+EF R01.nb_knots = 61
+zigzag 60 points, ApproxCurve tol 1e-3 C2 100 8: done=1 MaxError=0.000889338266956 max sampled deviation (301 samples)=0.000550267508856 poles=268
+EF R02.max_sampled_deviation = 0.000550267508856
+EF R02.kernel_max_error = 0.000889338266956
+radius 0: Geom2d_Circle(ax, r) constructs=1 gce_MakeCirc2d IsDone=1
+EF R03.direct_r0 = true
+EF R03.gce_r0 = true
+radius -1: Geom2d_Circle(ax, r) constructs=0 gce_MakeCirc2d IsDone=0
+EF R03.direct_rm1 = false
+EF R03.gce_rm1 = false
+radius -5: Geom2d_Circle(ax, r) constructs=0 gce_MakeCirc2d IsDone=0
+EF R03.direct_rm5 = false
+EF R03.gce_rm5 = false
+Geom2dEval_CircleInvoluteCurve radius 0: constructor raised
+EF R04.yields_curve = false
+Geom2dEval_CircleInvoluteCurve radius -1: constructor raised
+EF R05.yields_curve = false
+circle r5 ApproxCurve tol 1e-3 C2 100 8: degree=7 poles=13
+EF R06.degree = 7
+EF R06.poles = 13
+#1407: sine amplitude 0: constructor raised; involute radius 0: constructor raised; archimedean growth 0: constructor raised
+EF R07.yields_point = false
+EF R08.yields_point = false
+EF R09.yields_point = false
+gapped: Add=[1, 0] joiner still yields a curve=1 (poles=2)
+EF R10.yields_curve = true
+out of order: Add=[1, 0, 1] joiner still yields a curve=1 (poles=3)
+EF R11.yields_curve = true
+GeomAbs_OffsetCurve=7 GeomAbs_OtherCurve=8
+EF R12.curve_type_ordinal = 8
+R13 replay, A = B: gp_Vec2d::Normalize on the perpendicular of the zero vector raises: gp_Vec2d::Normalize() - vector has zero norm
+R13.a_eq_b inputs a=(5,5) b=(5,5) c=(-55,0) d=(-45,0): no_points (the sequence raised (the bridge catch returns 0))
+EF R13.a_eq_b = "no_points"
+R13.a_eq_b_and_c_eq_d inputs a=(5,5) b=(5,5) c=(-3,-3) d=(-3,-3): no_points (the sequence raised (the bridge catch returns 0))
+EF R13.a_eq_b_and_c_eq_d = "no_points"
+R14.a_x inputs a=(nan,0) b=(0,10) c=(-55,0) d=(-45,0): no_points (the sequence raised (the bridge catch returns 0))
+EF R14.a_x = "no_points"
+R18.a_x inputs a=(inf,0) b=(0,10) c=(-55,0) d=(-45,0): hang (killed by signal 14)
+EF R18.a_x = "hang"
+R22.a_x inputs a=(-inf,0) b=(0,10) c=(-55,0) d=(-45,0): hang (killed by signal 14)
+EF R22.a_x = "hang"
+R14.a_y inputs a=(0,nan) b=(0,10) c=(-55,0) d=(-45,0): no_points (the sequence raised (the bridge catch returns 0))
+EF R14.a_y = "no_points"
+R18.a_y inputs a=(0,inf) b=(0,10) c=(-55,0) d=(-45,0): hang (killed by signal 14)
+EF R18.a_y = "hang"
+R22.a_y inputs a=(0,-inf) b=(0,10) c=(-55,0) d=(-45,0): hang (killed by signal 14)
+EF R22.a_y = "hang"
+R15.b_x inputs a=(0,0) b=(nan,10) c=(-55,0) d=(-45,0): no_points (the sequence raised (the bridge catch returns 0))
+EF R15.b_x = "no_points"
+R19.b_x inputs a=(0,0) b=(inf,10) c=(-55,0) d=(-45,0): hang (killed by signal 14)
+EF R19.b_x = "hang"
+R23.b_x inputs a=(0,0) b=(-inf,10) c=(-55,0) d=(-45,0): hang (killed by signal 14)
+EF R23.b_x = "hang"
+R15.b_y inputs a=(0,0) b=(0,nan) c=(-55,0) d=(-45,0): no_points (the sequence raised (the bridge catch returns 0))
+EF R15.b_y = "no_points"
+R19.b_y inputs a=(0,0) b=(0,inf) c=(-55,0) d=(-45,0): hang (killed by signal 14)
+EF R19.b_y = "hang"
+R23.b_y inputs a=(0,0) b=(0,-inf) c=(-55,0) d=(-45,0): hang (killed by signal 14)
+EF R23.b_y = "hang"
+R16.c_x inputs a=(0,0) b=(0,10) c=(nan,0) d=(-45,0): no_points (the sequence raised (the bridge catch returns 0))
+EF R16.c_x = "no_points"
+R20.c_x inputs a=(0,0) b=(0,10) c=(inf,0) d=(-45,0): hang (killed by signal 14)
+EF R20.c_x = "hang"
+R24.c_x inputs a=(0,0) b=(0,10) c=(-inf,0) d=(-45,0): hang (killed by signal 14)
+EF R24.c_x = "hang"
+R16.c_y inputs a=(0,0) b=(0,10) c=(-55,nan) d=(-45,0): no_points (the sequence raised (the bridge catch returns 0))
+EF R16.c_y = "no_points"
+R20.c_y inputs a=(0,0) b=(0,10) c=(-55,inf) d=(-45,0): hang (killed by signal 14)
+EF R20.c_y = "hang"
+R24.c_y inputs a=(0,0) b=(0,10) c=(-55,-inf) d=(-45,0): hang (killed by signal 14)
+EF R24.c_y = "hang"
+R17.d_x inputs a=(0,0) b=(0,10) c=(-55,0) d=(nan,0): no_points (the sequence raised (the bridge catch returns 0))
+EF R17.d_x = "no_points"
+R21.d_x inputs a=(0,0) b=(0,10) c=(-55,0) d=(inf,0): hang (killed by signal 14)
+EF R21.d_x = "hang"
+R25.d_x inputs a=(0,0) b=(0,10) c=(-55,0) d=(-inf,0): hang (killed by signal 14)
+EF R25.d_x = "hang"
+R17.d_y inputs a=(0,0) b=(0,10) c=(-55,0) d=(-45,nan): no_points (the sequence raised (the bridge catch returns 0))
+EF R17.d_y = "no_points"
+R21.d_y inputs a=(0,0) b=(0,10) c=(-55,0) d=(-45,inf): hang (killed by signal 14)
+EF R21.d_y = "hang"
+R25.d_y inputs a=(0,0) b=(0,10) c=(-55,0) d=(-45,-inf): hang (killed by signal 14)
+EF R25.d_y = "hang"
+R26.a_x inputs a=(1e+200,0) b=(0,10) c=(-55,0) d=(-45,0): hang (killed by signal 14)
+EF R26.a_x = "hang"
+R26.a_y inputs a=(0,1e+200) b=(0,10) c=(-55,0) d=(-45,0): hang (killed by signal 14)
+EF R26.a_y = "hang"
+R26.b_x inputs a=(0,0) b=(1e+200,10) c=(-55,0) d=(-45,0): hang (killed by signal 14)
+EF R26.b_x = "hang"
+R26.b_y inputs a=(0,0) b=(0,1e+200) c=(-55,0) d=(-45,0): hang (killed by signal 14)
+EF R26.b_y = "hang"
+R26.c_x inputs a=(0,0) b=(0,10) c=(1e+200,0) d=(-45,0): hang (killed by signal 14)
+EF R26.c_x = "hang"
+R26.c_y inputs a=(0,0) b=(0,10) c=(-55,1e+200) d=(-45,0): hang (killed by signal 14)
+EF R26.c_y = "hang"
+R26.d_x inputs a=(0,0) b=(0,10) c=(-55,0) d=(1e+200,0): hang (killed by signal 14)
+EF R26.d_x = "hang"
+R26.d_y inputs a=(0,0) b=(0,10) c=(-55,0) d=(-45,1e+200): hang (killed by signal 14)
+EF R26.d_y = "hang"
+R26.neg_a_x inputs a=(-1e+200,0) b=(0,10) c=(-55,0) d=(-45,0): hang (killed by signal 14)
+EF R26.neg_a_x = "hang"
+R26.neg_a_y inputs a=(0,-1e+200) b=(0,10) c=(-55,0) d=(-45,0): hang (killed by signal 14)
+EF R26.neg_a_y = "hang"
+EF R27.sine_amplitude_0 = true
+EF R27.sine_omega_0 = true
+EF R27.involute_radius_0 = true
+EF R27.archimedean_growth_0 = true
+EF R27.archimedean_initial_radius_minus1 = true
+EF R27.log_scale_0 = true
+EF R27.log_growth_0 = true
+EF R28.sine_amplitude_nan = "(nan, nan)"
+EF R28.sine_omega_nan = "(nan, nan)"
+EF R28.sine_amplitude_inf = "(nan, inf)"
+EF R28.involute_radius_nan = "(nan, nan)"
+EF R28.archimedean_initial_radius_nan = "(nan, nan)"
+EF R28.log_scale_nan = "(nan, nan)"
+EF R28.sine_d1_amplitude_nan = "(nan, nan) (nan, nan)"
+EF R29.sine_u_nan = "(nan, nan)"
+EF R29.sine_u_inf = "(nan, nan)"
+EF R29.involute_d1_u_nan = "(nan, nan) (nan, nan)"
+EF R30.log_spiral_u1000 = "(nan, nan)"
+EF R30.log_spiral_u1 = [1.46869393992, 2.28735528718]
+multi-span curve domain [0, 318.433243004]: full-curve adaptor over [f-span, l+span]=353.507365698, over [l+1, l+2]=0
+  pre-bounded adaptor over [f-span, l+span]=8082.24153603, over [l+1, l+2]=1.25897863731 (the defect #549 removed)
+EF R32.length = 353.507365698
+EF R33.length = 0
+Geom2dAPI_ExtremaCurveCurve: NbExtrema=4 sorted distances=[10, 20, 20, 30]
+EF R34.nb_extrema = 4
+EF R34.distances_sorted = [10, 20, 20, 30]
+IntTools_FClass2d tol 1e-6 at (-5e-7, 5): ON
+EF R35.state_at_default_tolerance = "ON"
+EF R36.u = [3.56876177880591e-18, 0.9777876596251667, -0.2095979310125447]
+EF R36.v = [-0.9878687021467979, 0.03254876181607849, 0.1518420410263285]
+CurveToBSplineCurve(circle r5, Convert_TgtThetaOver2_1): raised
+EF R37.tangentHalfAngle1_yields_curve = false
+CurveToBSplineCurve(circle r5, Convert_TgtThetaOver2_2): raised
+EF R37.tangentHalfAngle2_yields_curve = false
+Bisector_BisecPC maxDistance 10: empty=0 span=15.9999999992
+EF R38.span_maxDistance_10 = 15.9999999992
+Bisector_BisecPC maxDistance 100: empty=0 span=56.0000000009
+EF R38.span_maxDistance_100 = 56.0000000009
+Bisector_BisecPC maxDistance 500: empty=0 span=126.237870704
+EF R38.span_maxDistance_500 = 126.237870704
+Bisector_BisecPC maxDistance 5000: empty=0 span=399.919991999
+EF R38.span_maxDistance_5000 = 399.919991999
+Bisector_BisecPC maxDistance 1: empty=1
+EF R38.maxDistance_1_yields_curve = false
+GccAna_Circ2dBisec r0/r2=4 r3/r0=4 r0/r0=3 r3/r2=4
+EF R39.r0_r2 = 4
+EF R39.r3_r0 = 4
+EF R39.r0_r0 = 3
+EF R40.r3_r2 = 4
+GccAna_CircPnt2dBisec r0=2 r2=2; GccAna_Pnt2dBisec (0,0)-(6,0): line location x=3 direction x=-0
+EF R41.circle_r0_point_solutions = 2
+EF R41.point_bisector_line_x = 3
+EF R41.point_bisector_direction_x = 0
+EF R41.circle_r2_point_solutions = 2
+GccAna_Circ2d3Tan three circles: c1 r0=8, c1 r2=8
+EF R42.r0_r2_r2 = 8
+EF R42.r2_r2_r2 = 8
+GccAna_Circ2d3Tan circle + two points: r0=0 r2=2
+EF R43.r0 = 0
+EF R43.r2 = 2
+IntAna2d_AnaIntersection x-axis vs circle: r0 points=1 (ParamOnSecond raises: 1), r3 points=2 (ParamOnSecond finite=1)
+EF R44.r0_points = 1
+EF R44.r3_points = 2
+EF R44.r3_param2_all_finite = true
+IntAna2d_AnaIntersection circle-circle: r0 vs (3,0) r3=1; r3 vs (4,0) r3=2
+EF R45.r0_r3_points = 1
+EF R45.r3_r3_points = 2
+Extrema_ExtPElC2d (0,10) to circle: r0=0 r3=2
+EF R46.r0_extrema = 0
+EF R46.r3_extrema = 2
+GC_MakeCircle2d(center, r) IsDone: r0=1 r3=1; GC_MakeCircle2d(axis, r) IsDone: r0=1 r3=1
+EF R47.center_r0 = true
+EF R47.center_r3 = true
+EF R47.axis_r0 = true
+EF R47.axis_r3 = true
+GC_MakeCircle2d(circle, dist) radius: r0 d3=3 r5 d-5=0 r5 d-6=1 r5 d-2=3
+EF R48.r0_d3 = 3
+EF R48.r5_dm5 = 0
+EF R48.r5_dm6 = 1
+EF R48.r5_dm2 = 3
+radius -1: GccAna_Circ2dBisec raised; IntAna2d_AnaIntersection raised; Extrema_ExtPElC2d raised; GC_MakeCircle2d not done / empty; BRepBuilderAPI_MakeEdge2d raised
+EF R49.circle_bisector = true
+EF R49.circle_circle_intersection = true
+EF R49.point_circle_extrema = true
+EF R49.gce_circle = true
+EF R49.edge2d_from_circle = true

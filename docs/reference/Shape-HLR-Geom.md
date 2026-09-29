@@ -1475,23 +1475,63 @@ public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0)
 
 - **Parameters:**
   - `planeNormal`: normal of the reference plane.
-  - `planeDistance`: signed distance from origin to the plane along `planeNormal`.
-- **Returns:** `FaceVolumeInertia` measured relative to the given plane.
+  - `planeDistance`: offset of the plane from the origin along `planeNormal`. It reaches the kernel's
+    integrand with the opposite sign to a geometric distance, so pass `-d` for the plane at offset
+    `d` (#2873, measured).
+- **Returns:** a `FaceVolumeInertia` whose `volume` is the signed volume of the column between this
+  face and the reference plane, and whose `centerOfMass` is that column's centroid. `centerOfMass` is
+  `nil` exactly when `volume` is 0, which is a real answer for a face parallel to `planeNormal`.
+  `FaceVolumeInertia` carries no inertia matrix, so nothing here reports one.
 - **OCCT:** `BRepGProp_Vinert(face, gp_Pln)` via `OCCTBRepGPropVinertPlane`.
-- **It returns 0 on every current kernel, and that 0 is not a measurement (#2827).** OCCT computes
-  the by-plane mass and discards it: `BRepGProp_Gauss::convert` keeps the value only when its
-  `theIsByPoint` flag is set (`BRepGProp_Gauss.cxx:494-528`), and every by-plane path, all four
-  `BRepGProp_Vinert::Perform` overloads and both `BRepGProp_Gauss::Compute` branches, reaches it with
-  that flag clear. Measured on a cube, a holed plate and a cylinder, for a plane through the origin,
-  a plane 100 away from the shape and an oblique plane: every face, exactly `0.0`. The function got
-  #2806's `BRepGProp_Domain` as well, so it becomes correct rather than merely zero as soon as a
-  pinned kernel carries the one-line fix. Use `Face.volumeInertia` meanwhile, whose by-point form is
-  measured.
+- **What one face's number means, and the two identities that make it checkable.** The integrand is
+  `(planeNormal . faceNormal) * d1 * dS` with `d1` affine in the point and gradient `planeNormal`
+  (`BRepGProp_Gauss.cxx:340-348`), so a single face's value is a column volume and means nothing on
+  its own, exactly as for `Face.volumeInertia`. Over a closed shape, and for **any** plane:
+  - the per-face sum of `volume` is `Shape.volume`. The plane moves how the total is split between
+    the faces, not the total.
+  - the mass-weighted sum of `centerOfMass` is the solid's first moment, so dividing by `Shape.volume`
+    gives `Shape.centerOfMass`.
+
+  Both are asserted in `Tests/OCCTAnalysisTests/BRepGPropVinertTests.swift` against
+  `BRepGProp::VolumeProperties`, which shares no code with this path, on a fixture translated off the
+  origin so the second is not a comparison against `(0, 0, 0)`. For a **planar** face there is also a
+  closed form, `(planeNormal . faceNormal) * area * (planeNormal . areaCentroid + planeDistance)`, so
+  `volume` is affine in `planeDistance` with slope the face's signed projected area.
+- **It returned a fabricated 0 on every kernel before `v4.0.0-kernel.3` (#2827).** OCCT computed the
+  by-plane mass and discarded it: `BRepGProp_Gauss::convert` kept the value only when its
+  `theIsByPoint` flag was set (`BRepGProp_Gauss.cxx:494-528`), and every by-plane path, all four
+  `BRepGProp_Vinert::Perform` overloads and both `BRepGProp_Gauss::Compute` branches, reached it with
+  that flag clear. The same `else` also set the centre of mass to `(0, 0, 0)`, which
+  `FaceVolumeInertia` reports as `nil`, so neither field was a measurement. Carried patch
+  `Scripts/patches/0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch` drops the condition and is
+  pinned from `v4.0.0-kernel.3`; a consumer pinning an older asset still gets the zero. The wasm
+  kernel is one repin behind, acknowledged in `Scripts/wasm-kernel-pin.txt`.
+- **How the expected value was established**, since OCCT has no caller of this path to copy
+  (`BRepGProp.cxx:311` is its only `BRepGProp_Vinert` call site and passes a point): from the
+  integrand outwards, then measured against two independent constructions.
+  `BRepGProp::VolumePropertiesGK(S, Props, thePln, ...)` goes through `BRepGProp_VinertGK` and
+  `math_KronrodSingleIntegration`, a separate integrator, and reports `999.9999999999999`,
+  `743.4513322353838` and `785.3981633974456` over a cube, a holed plate and a cylinder; the patched
+  by-plane sums are `1000`, `743.4513322353836` and `785.3981633974481` against by-point sums of
+  `999.9999999999998`, `743.4513322353837` and `785.3981633974482`. `Scripts/repro/2827/probe.mm` is
+  the measurement and `Scripts/repro/2827/patched-kernel-transcript.txt` the transcript, and the
+  patch is recorded in
+  [`okf/references/carried-occt-patches.md`](../../okf/references/carried-occt-patches.md).
 - **Example:**
   ```swift
-  let face = Shape.box(width: 10, height: 10, depth: 10)!.faces()[0]
-  face.volumeInertia(planeNormal: SIMD3(0, 0, 1)).volume   // 0.0 on this kernel, see #2827
-  face.volumeInertia.volume                                // 166.66666666666666, measured
+  let holed = Shape.box(width: 20, height: 20, depth: 2)!
+      .subtracting(Shape.cylinder(radius: 3, height: 10)!.translated(by: SIMD3(0, 0, -5))!)!
+  let n = SIMD3(0.0, 0.0, 1.0)
+
+  // The per-face sum is the volume, whichever plane it is measured against.
+  holed.faces().reduce(0) { $0 + $1.volumeInertia(planeNormal: n).volume }
+  holed.faces().reduce(0) { $0 + $1.volumeInertia(planeNormal: n, planeDistance: -100).volume }
+  holed.volume   // all three agree: 743.4513322353836
+
+  // One face is a column: this plate's caps are 1 from the origin, so with the plane through the
+  // origin each contributes its own area.
+  let cap = holed.faces().first { $0.area() > 300 }!
+  cap.volumeInertia(planeNormal: n).volume   // 371.7256661176918, and cap.area() is the same
   ```
 
 ---

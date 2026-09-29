@@ -1534,6 +1534,64 @@ bool OCCTBRepGraphHasItemUID(OCCTBRepGraphRef _Nonnull graph,
                              int32_t  kind,
                              uint32_t counter);
 
+// MARK: - BRepGraph occurrence-aware lookup (BRepGraph_ChildExplorer usage paths)
+
+/// One step of a BRepGraph_UsagePath, the kernel's identity for a concrete traversal branch.
+///
+/// `BRepGraph_UsagePath::Step` is `{Node, Ref, StepIndex}` and all three fields are needed: two
+/// occurrences of one definition share every node on the path and differ only in the reference
+/// entry and the sibling order at the level where the branch splits. Measured on a two-instance
+/// compound in `Scripts/repro/2835-brepgraph-occurrence-lookup/probe-output.txt`, block D.
+typedef struct
+{
+  /// BRepGraph_NodeId::Kind of the node this step reaches, -1 when the step is invalid.
+  int32_t nodeKind;
+  /// Per-kind index of that node.
+  int32_t nodeIndex;
+  /// Reference kind in this bridge's ref-kind ABI (the `OCCTBRepGraphNb*Refs` numbering,
+  /// not BRepGraph_RefId::Kind's own ordinals), or -1 for a structural link that owns no
+  /// reference entry: Occurrence -> Product/topology-root, CoEdge -> Edge, and the root step.
+  int32_t refKind;
+  /// Per-kind index of that reference entry, -1 when refKind is -1.
+  int32_t refIndex;
+  /// Sibling order of this step at its level, -1 for the explorer's own root step.
+  int32_t stepIndex;
+} OCCTBRepGraphUsageStep;
+
+/// Count the occurrences of one node reachable from a root node.
+///
+/// An occurrence is one `BRepGraph_ChildExplorer` traversal branch whose current node is
+/// (targetKind, targetIndex): the kernel "visits each occurrence. If Edge[5] is reachable
+/// through Face[0] and Face[1], it is visited twice with different accumulated transforms"
+/// (BRepGraph_ChildExplorer.hxx:47). Returns 0 for an unknown root or target, which is what
+/// the explorer itself yields for an out-of-range root rather than throwing.
+int32_t OCCTBRepGraphOccurrenceCount(OCCTBRepGraphRef _Nonnull graph,
+                                     int32_t rootKind,
+                                     int32_t rootIndex,
+                                     int32_t targetKind,
+                                     int32_t targetIndex);
+
+/// Describe one occurrence of a node, by its ordinal in the traversal order
+/// OCCTBRepGraphOccurrenceCount counts.
+///
+/// Writes the location composed from the root down to the node as twelve doubles in the
+/// interleaved gp_Trsf::SetValues order the rest of this header uses, the composed
+/// TopAbs_Orientation to *outOrientation, and up to maxSteps usage-path steps to outSteps.
+///
+/// @return the usage path's full step count, which may exceed maxSteps, so a caller that
+///         wants every step can size its buffer from the return value and call again.
+///         Returns -1 when the occurrence does not exist or an argument is null.
+int32_t OCCTBRepGraphOccurrenceAt(OCCTBRepGraphRef _Nonnull graph,
+                                  int32_t rootKind,
+                                  int32_t rootIndex,
+                                  int32_t targetKind,
+                                  int32_t targetIndex,
+                                  int32_t occurrenceIndex,
+                                  double* _Nonnull outMatrix,
+                                  int32_t* _Nonnull outOrientation,
+                                  OCCTBRepGraphUsageStep* _Nullable outSteps,
+                                  int32_t maxSteps);
+
 /// Return this graph's instance id, unique among every graph this process creates, and
 /// distinct (with overwhelming probability) from ids minted by any other process.
 ///

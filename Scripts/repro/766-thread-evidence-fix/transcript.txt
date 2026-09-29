@@ -1,0 +1,6 @@
+# Output of probe.mm, run 2026-09-25 against the v4.0.0-kernel.1 asset (macos-arm64), built with the CLAUDE.md -std=c++17 line:
+#   probe Scripts/repro/766-thread-safety/inputs 2>&1 | grep -E '^[0-9]{3,4} '
+# (RWObj_CafReader prints progress lines; the grep filters those out and nothing else.)
+298 final fillet: volume=2819.3141652942 solids=1 faces=18 BRepCheck_Analyzer valid=1
+298 concurrent 8x25 fillets: failed=0 invalid=0 wrongSolidCount=0 wrongVolume=0
+341 OBJ round trip: shapes(free + components)=2 faces per shape=[1, 1]
