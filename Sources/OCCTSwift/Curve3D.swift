@@ -3703,6 +3703,23 @@ extension Curve3D {
         }
 
         /// Insert a pole after given index.
+        ///
+        /// ```swift
+        /// let bez = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 0, 0)])!
+        /// bez.bezier.insertPoleAfter(index: 1, point: SIMD3(0.5, 1, 0))   // true, now 4 poles
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - index: Where to insert, 1-based, valid over `1...poleCount`.
+        ///   - point: The new pole.
+        /// - Returns: `false` if the curve is not a 3D Bezier, if `index` is out of range, or if
+        ///   the curve already has ``Curve3D/bezierMaxDegree`` poles.
+        ///
+        /// - Note: That last ceiling is one lower than ``Curve3D/bezier(poles:weights:)``'s, which
+        ///   builds `bezierMaxDegree + 1` poles. The gap is OCCT's own: `Geom_BezierCurve`
+        ///   refuses on `nbpoles >= MaxDegree()` while its header promises a ceiling of
+        ///   `MaxDegree + 1` resulting poles. Unlike the 2D twin's, this refusal is a live
+        ///   `throw` in the kernel and is not ours to move (#2875).
         @discardableResult
         public func insertPoleAfter(index: Int, point: SIMD3<Double>) -> Bool {
             OCCTCurve3DBezierInsertPoleAfter(curve.handle, Int32(index), point.x, point.y, point.z)

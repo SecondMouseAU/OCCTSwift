@@ -2477,6 +2477,14 @@ extension Curve2D {
     ///   because `Geom2d_BezierCurve`'s own checks are compiled out of the pinned kernel: before
     ///   #2859 an out-of-range index either SIGBUSed or returned `true` after writing past the pole
     ///   array.
+    ///
+    /// - Note: The pole ceiling here is one lower than ``Curve2D/bezier(poles:weights:)``'s, which
+    ///   builds `bezierMaxDegree + 1` poles. That gap is OCCT's, in both dimensions: both
+    ///   `InsertPoleAfter` implementations refuse on `nbpoles >= MaxDegree()` while their own
+    ///   header comments promise a ceiling of `MaxDegree + 1` resulting poles, and ``Curve3D``'s
+    ///   kernel throws on the insertion this one refuses. Keeping the strict bound is what makes
+    ///   the two answer the same; do not relax it without relaxing `Geom_BezierCurve`, which
+    ///   cannot be done from the bridge (#2875).
     @discardableResult
     public func bezierInsertPoleAfter(_ index: Int, point: SIMD2<Double>) -> Bool {
         OCCTCurve2DBezierInsertPoleAfter(handle, Int32(index), point.x, point.y)
