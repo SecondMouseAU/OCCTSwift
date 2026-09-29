@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// File path parsing and manipulation utilities, wrapping OCCT's `OSD_Path`.

@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import simd
 
 // MARK: - FeatureReconstructor (#62, on #72 substrate)

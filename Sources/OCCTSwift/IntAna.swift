@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Analytic intersection algorithms for lines, planes, spheres, tori.

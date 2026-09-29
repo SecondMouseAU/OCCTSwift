@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 
 #if canImport(CoreGraphics)
     import CoreGraphics

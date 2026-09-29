@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 // BisectorPoint was declared here: a Swift struct with no public initializer and no constructor

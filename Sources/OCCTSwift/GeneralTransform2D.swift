@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// A general 2D transformation (supports non-uniform scaling/affinity), wrapping gp_GTrsf2d.

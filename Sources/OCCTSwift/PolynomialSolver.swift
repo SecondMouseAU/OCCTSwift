@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 
 /// Results from polynomial root solving.
 public struct PolynomialRoots: Sendable {

@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Iterator for line/curve–shape intersection results, wrapping `BRepIntCurveSurface_Inter`.

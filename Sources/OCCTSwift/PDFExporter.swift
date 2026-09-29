@@ -1,17 +1,5 @@
-import Foundation
+import OCCTPlatform
 import simd
-
-// The platform C library, named because this file uses it directly (free, sin, cos, sqrt and
-// the like). `import Foundation` happens to re-export it on Apple platforms, so these were in
-// scope by accident rather than by declaration; FoundationEssentials does not, which is how
-// #2761 found them. Naming it here is correct independently of that work.
-#if canImport(Darwin)
-    import Darwin
-#elseif canImport(WASILibc)
-    import WASILibc
-#elseif canImport(Glibc)
-    import Glibc
-#endif
 
 // MARK: - PDF 1.4 export (#85, v0.150)
 //
@@ -188,7 +176,7 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink, Drawing
                 /MediaBox [0 0 \(formatMM(pageSize.x)) \(formatMM(pageSize.y))] \
                 /Contents 4 0 R \
                 /Resources << /Font << /F1 5 0 R >> >> >>
-                """.replacingOccurrences(of: "\n", with: ""))
+                """.replacingLiteral("\n", with: ""))
 
         // Object 4: content stream.
         let content = buildContentStream()
@@ -208,7 +196,7 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink, Drawing
         appendAscii("xref\n0 \(offsets.count)\n")
         appendAscii("0000000000 65535 f \n")
         for i in 1..<offsets.count {
-            appendAscii(String(format: "%010d 00000 n \n", offsets[i]))
+            appendAscii(String(cFormat: "%010d 00000 n \n", offsets[i]))
         }
         appendAscii(
             "trailer\n<< /Size \(offsets.count) /Root 1 0 R >>\nstartxref\n\(xrefOffset)\n%%EOF\n")
@@ -216,7 +204,7 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink, Drawing
         do {
             try body.write(to: url)
         } catch {
-            throw PDFError.writeFailed(error.localizedDescription)
+            throw PDFError.writeFailed(error.exportDescription)
         }
     }
 

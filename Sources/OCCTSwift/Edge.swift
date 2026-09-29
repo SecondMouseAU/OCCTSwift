@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// An edge from a 3D solid shape - represents a curve between vertices.

@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 
 // MARK: - TopologyRef — references as recipes, not indices (#72 Phase 1)
 //
