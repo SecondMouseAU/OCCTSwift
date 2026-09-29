@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// A 3D solid shape backed by OpenCASCADE B-Rep geometry.
