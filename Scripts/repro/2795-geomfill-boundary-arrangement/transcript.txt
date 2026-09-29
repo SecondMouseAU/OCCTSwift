@@ -1,0 +1,62 @@
+=== GeomFill_Coons ===
+Init places P1 at V=1 and P3 at V=NPolV (indexed along U), then P2 at U=1 and
+P4 at U=NPolU (indexed along V), second loop overwriting the four corners.
+
+Coons (b1,b2,b3,b4)  [what the test fixture passes] nbU=5 nbV=5
+  (0,10,0)(2.5,10,0)(5,10,0)(7.5,10,0)(10,10,0)
+  (2.5,0,0)(5,0,0)(1.25,1.25,0)(-2.5,2.5,0)(0,2.5,0)
+  (5,0,0)(6.25,1.25,0)(2.5,2.5,0)(-1.25,3.75,0)(0,5,0)
+  (7.5,0,0)(7.5,2.5,0)(3.75,3.75,0)(0,5,0)(0,7.5,0)
+  (10,0,0)(10,2.5,0)(10,5,0)(10,7.5,0)(10,10,0)
+  uniform 5x5 flat square grid: no
+
+Coons (b1,b3,b2,b4)  [#2795's corrected arrangement] nbU=5 nbV=5
+  (0,0,0)(0,2.5,0)(0,5,0)(0,7.5,0)(0,10,0)
+  (2.5,0,0)(2.5,2.5,0)(2.5,5,0)(2.5,7.5,0)(2.5,10,0)
+  (5,0,0)(5,2.5,0)(5,5,0)(5,7.5,0)(5,10,0)
+  (7.5,0,0)(7.5,2.5,0)(7.5,5,0)(7.5,7.5,0)(7.5,10,0)
+  (10,0,0)(10,2.5,0)(10,5,0)(10,7.5,0)(10,10,0)
+  uniform 5x5 flat square grid: YES
+
+Coons (b1,b4,b2,b3) nbU=5 nbV=5
+  (10,0,0)(10,2.5,0)(10,5,0)(10,7.5,0)(10,10,0)
+  (2.5,0,0)(2.5,2.5,0)(2.5,5,0)(2.5,7.5,0)(2.5,10,0)
+  (5,0,0)(5,2.5,0)(5,5,0)(5,7.5,0)(5,10,0)
+  (7.5,0,0)(7.5,2.5,0)(7.5,5,0)(7.5,7.5,0)(7.5,10,0)
+  (0,0,0)(0,2.5,0)(0,5,0)(0,7.5,0)(0,10,0)
+  uniform 5x5 flat square grid: no
+
+=== GeomFill_Curved ===
+Init places P1 at V=1 and P3 at V=NPolV as Coons does, but then P4 at U=1 and
+P2 at U=NPolU, and only for j = 2..NPolV-1, so P1/P3 keep all four corners and
+P2(1), P2(NPolV), P4(1), P4(NPolV) are never read.
+
+Curved (b1,b2,b3,b4)  [what the test fixture passes] nbU=5 nbV=5
+  (0,0,0)(10,2.5,0)(10,5,0)(10,7.5,0)(0,0,0)
+  (2.5,0,0)(5,2.5,0)(5,3.75,0)(5,5,0)(0,2.5,0)
+  (5,0,0)(5,3.75,0)(5,5,0)(5,6.25,0)(0,5,0)
+  (7.5,0,0)(5,5,0)(5,6.25,0)(5,7.5,0)(0,7.5,0)
+  (10,0,0)(2.5,10,0)(5,10,0)(7.5,10,0)(0,10,0)
+  uniform 5x5 flat square grid: no
+
+Curved (b1,b3,b2,b4)  [#2795's arrangement, wrong for Curved] nbU=5 nbV=5
+  (0,0,0)(10,2.5,0)(10,5,0)(10,7.5,0)(0,10,0)
+  (2.5,0,0)(5,2.5,0)(5,5,0)(5,7.5,0)(2.5,10,0)
+  (5,0,0)(5,2.5,0)(5,5,0)(5,7.5,0)(5,10,0)
+  (7.5,0,0)(5,2.5,0)(5,5,0)(5,7.5,0)(7.5,10,0)
+  (10,0,0)(0,2.5,0)(0,5,0)(0,7.5,0)(10,10,0)
+  uniform 5x5 flat square grid: no
+
+Curved (b1,b4,b2,b3)  [the corrected arrangement for Curved] nbU=5 nbV=5
+  (0,0,0)(0,2.5,0)(0,5,0)(0,7.5,0)(0,10,0)
+  (2.5,0,0)(2.5,2.5,0)(2.5,5,0)(2.5,7.5,0)(2.5,10,0)
+  (5,0,0)(5,2.5,0)(5,5,0)(5,7.5,0)(5,10,0)
+  (7.5,0,0)(7.5,2.5,0)(7.5,5,0)(7.5,7.5,0)(7.5,10,0)
+  (10,0,0)(10,2.5,0)(10,5,0)(10,7.5,0)(10,10,0)
+  uniform 5x5 flat square grid: YES
+
+=== the silent corner overwrite, isolated ===
+Coons: move P2(1) off the square's (0,0,0) corner and read pole (1,1).
+  P1(1)=(0,0,0) P2(1)=(0,0,99) -> pole(1,1)=(0,0,99)  [P2 wins]
+Curved: the same disagreement, same corner.
+  P1(1)=(0,0,0) P4(1)=(0,0,99) -> pole(1,1)=(0,0,0)  [P1 wins, P4(1) unread]

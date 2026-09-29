@@ -273,17 +273,20 @@ struct Issue613IndexContractTests {
     func checkFamilyDomainMatchesEnumeration() throws {
         let box = try #require(Self.box())
 
-        // In range: both agree the sub-shape is there and valid.
+        // In range: both agree the sub-shape is there and valid. `== true` rather than a bare
+        // condition since #2755 gave isSubShapeValid a `nil` for "could not check"; a box is
+        // checkable, so nil here would be a failure and not a pass.
         for i in 0..<box.edgeCount {
             #expect(box.checkEdge(at: i).isValid, "edge \(i) should be valid")
-            #expect(box.isSubShapeValid(type: .edge, at: i))
+            #expect(box.isSubShapeValid(type: .edge, at: i) == true)
         }
         // Past the end: refused by both. A box has 24 edge occurrences, so 12...23 is exactly the
-        // window the explorer used to answer in.
+        // window the explorer used to answer in. Still `false` and deliberately not `nil`: an index
+        // that names nothing is a statement about the index, which is what this test is about.
         for i in [12, 17, 23, 24] {
             #expect(box.edge(at: i) == nil, "premise: index \(i) is past the enumeration")
             #expect(!box.checkEdge(at: i).isValid, "checkEdge answered for surplus index \(i)")
-            #expect(!box.isSubShapeValid(type: .edge, at: i))
+            #expect(box.isSubShapeValid(type: .edge, at: i) == false)
         }
     }
 

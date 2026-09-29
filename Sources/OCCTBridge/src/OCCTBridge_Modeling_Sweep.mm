@@ -2827,15 +2827,29 @@ OCCTShapeRef OCCTShapeCreateLoft(const OCCTWireRef* profiles, int32_t count, boo
   }
 }
 
+// Thicken a non-closed shell or face into a solid. A closed solid is refused, by the kernel
+// rather than by a guard here, and #2739 settled that this is the routing to keep:
+//
+//   * OCCT's own two callers of MakeThickSolidBySimple both hand it a single extracted face, with
+//     the comment "Extract a single face (non-closed shell) for MakeThickSolidBySimple"
+//     (GTests/BRepOffsetAPI_MakeThickSolid_Test.cxx:98 and :122), and read IsDone() exactly as
+//     this function does. Neither pre-tests closedness.
+//   * Re-routing onto MakeThickSolidByJoin with an empty closing-face list does not hollow
+//     anything. Measured, that returns the plain offset solid: a 20-box at +2.0 comes back as a
+//     24-box, one shell, six faces, the same geometry MakeOffsetShape::PerformByJoin returns, so
+//     the re-route would duplicate OCCTShapeOffsetByJoin rather than shell.
+//   * Hollowing needs at least one closing face, which is OCCTShapeShellWithOpenFaces, and that
+//     is what a caller wanting a hollow closed solid must use.
+//   * An explicit closedness guard here was measured and declined: BRep_Tool::IsClosed answers
+//     only for SHELL and WIRE, so it returns false for the closed TopoDS_Solid the kernel refuses.
+//
+// Evidence: Scripts/repro/2739-shelled-single-argument-routing/.
 OCCTShapeRef OCCTShapeShell(OCCTShapeRef shape, double thickness)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   try
   {
-    // Create list of faces to remove (none = hollow shell)
-    TopTools_ListOfShape facesToRemove;
-
     BRepOffsetAPI_MakeThickSolid thickSolid;
     thickSolid.MakeThickSolidBySimple(shape->shape, thickness);
     if (!thickSolid.IsDone())

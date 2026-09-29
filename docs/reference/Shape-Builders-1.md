@@ -2233,9 +2233,35 @@ public static func coonsFilling(
 
 All four boundary arrays must have the same length (≥ 2). The result is a BSpline control-point grid, not a `Shape`, use `Surface.bspline(...)` to construct a surface from it.
 
-- **Parameters:** `boundary1`–`boundary4`, point arrays for the four boundaries of the patch.
+**The four arrays are not in head-to-tail order round the patch, and they are not (bottom, top, left, right)** ([#2795](https://github.com/SecondMouseAU/OCCTSwift/issues/2795)). `GeomFill_Coons::Init` places `boundary1` and `boundary3` on the `V = first` and `V = last` edges of the pole grid, both indexed along U, and `boundary2` and `boundary4` on the `U = first` and `U = last` edges, both indexed along V. For the four sides of a quadrilateral that is `(bottom, left, top, right)`: the two sides sharing a direction go in slots 1 and 3.
+
+The four corners must agree, with `n` the shared length: `boundary1[0] == boundary2[0]`, `boundary1[n - 1] == boundary4[0]`, `boundary3[0] == boundary2[n - 1]`, `boundary3[n - 1] == boundary4[n - 1]`. **A disagreement is silent.** `Init`'s second loop runs after the first over the full V range, so `boundary2` and `boundary4` overwrite the corners `boundary1` and `boundary3` wrote, and the interior is interpolated between boundaries that do not meet. Measured, a corner moved to `(0, 0, 99)` in `boundary2` comes back as `poles[0]`, the `(u, v) = (0, 0)` corner.
+
+Poles come back row-major in U with V varying fastest, so the pole at zero-based `(u, v)` is `poles[u * nbV + v]`.
+
+- **Parameters:**
+  - `boundary1`: points along U, on the `V = first` edge.
+  - `boundary2`: points along V, on the `U = first` edge.
+  - `boundary3`: points along U, on the `V = last` edge, opposite `boundary1`.
+  - `boundary4`: points along V, on the `U = last` edge, opposite `boundary2`.
 - **Returns:** `FillingPoleGrid`, or `nil` if sizes are mismatched or computation fails.
 - **OCCT:** `GeomFill_Coons` via `OCCTGeomFillCoonsPoles`.
+- **Warning:** [`curvedFilling`](#shapecurvedfillingboundary1boundary2boundary3boundary4) uses **the opposite** arrangement for slots 2 and 4. The two are not interchangeable. OCCT's own production caller is where that is easiest to confirm: `GeomFill_BSplineCurves::Init` passes `GeomFill_Coons(P1, P4, P3, P2)` and `GeomFill_Curved(P1, P2, P3, P4)` from the same four ordered curves (`GeomFill_BSplineCurves.cxx:346` and `:349`).
+- **Neither this call nor the kernel diagnoses a disagreeing corner, and OCCT itself does not leave that to its callers.** `GeomFill_BSplineCurves::Init` runs a private `Arrange` first, which reorders and reverses the four curves into this layout at `Precision::Confusion()` and raises `Standard_ConstructionError` ("Courbes non jointives") when they do not join. `coonsFilling` and `curvedFilling` are the lower-level entry point and pass the four rows through as given, so arranging and checking them is the caller's job here.
+- **Example:**
+  ```swift
+  // A flat 10 x 10 square, in the arrangement Init wants.
+  let n = 5
+  let t = (0..<n).map { Double($0) / Double(n - 1) * 10 }
+  let bottom = t.map { SIMD3<Double>($0, 0, 0) }    // along U
+  let top = t.map { SIMD3<Double>($0, 10, 0) }      // along U, opposite bottom
+  let left = t.map { SIMD3<Double>(0, $0, 0) }      // along V
+  let right = t.map { SIMD3<Double>(10, $0, 0) }    // along V, opposite left
+
+  let grid = Shape.coonsFilling(
+      boundary1: bottom, boundary2: left, boundary3: top, boundary4: right)!
+  grid.poles[12]   // (5, 5, 0), the square's centre: a uniform 5 x 5 grid
+  ```
 
 ---
 
@@ -2252,9 +2278,33 @@ public static func curvedFilling(
 
 Similar to `coonsFilling` but uses `GeomFill_Curved` which preserves surface curvature better for curved boundaries.
 
-- **Parameters:** `boundary1`–`boundary4`, point arrays for the four boundaries.
+**`GeomFill_Curved::Init` is not the same arrangement as `coonsFilling`, and swapping the two calls silently changes the surface** ([#2795](https://github.com/SecondMouseAU/OCCTSwift/issues/2795)). Measured against the kernel: `boundary1` and `boundary3` sit on the `V = first` and `V = last` edges indexed along U, exactly as in `GeomFill_Coons`, but `boundary4` lands on the `U = first` edge and `boundary2` on the `U = last` edge, **the reverse** of `GeomFill_Coons`. For the four sides of a quadrilateral the order here is `(bottom, right, top, left)` where `coonsFilling` takes `(bottom, left, top, right)`.
+
+The corner rule is reversed too. `Init`'s second loop runs only over the interior V range, so the four corners keep `boundary1`'s and `boundary3`'s values and `boundary2[0]`, `boundary2[n - 1]`, `boundary4[0]` and `boundary4[n - 1]` are **never read at all**. Supply them consistently anyway: a corner that disagrees is dropped rather than honoured, so the boundary passed in is not the boundary that comes out.
+
+- **Parameters:**
+  - `boundary1`: points along U, on the `V = first` edge.
+  - `boundary2`: points along V, on the `U = last` edge.
+  - `boundary3`: points along U, on the `V = last` edge, opposite `boundary1`.
+  - `boundary4`: points along V, on the `U = first` edge, opposite `boundary2`.
 - **Returns:** `FillingPoleGrid`, or `nil` on failure.
 - **OCCT:** `GeomFill_Curved` via `OCCTGeomFillCurvedPoles`.
+- **Example:**
+  ```swift
+  // The same flat 10 x 10 square, in the arrangement GeomFill_Curved wants.
+  let n = 5
+  let t = (0..<n).map { Double($0) / Double(n - 1) * 10 }
+  let bottom = t.map { SIMD3<Double>($0, 0, 0) }    // along U
+  let top = t.map { SIMD3<Double>($0, 10, 0) }      // along U, opposite bottom
+  let left = t.map { SIMD3<Double>(0, $0, 0) }      // along V, the U = first edge
+  let right = t.map { SIMD3<Double>(10, $0, 0) }    // along V, the U = last edge
+
+  let grid = Shape.curvedFilling(
+      boundary1: bottom, boundary2: right, boundary3: top, boundary4: left)!
+  grid.poles[12]   // (5, 5, 0), the square's centre: a uniform 5 x 5 grid
+  ```
+
+Both arrangements for both classes are printed side by side by `Scripts/repro/2795-geomfill-boundary-arrangement/probe.mm`, which is how the difference between the two was established.
 
 ---
 

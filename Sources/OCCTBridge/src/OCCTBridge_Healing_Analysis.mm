@@ -478,7 +478,12 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance)
     // one the analyzer would give: such an edge is what BRepCheck_No3DCurve describes. Only this
     // one field is affected, so the rest of the analysis below still runs and still reports its
     // own measurements rather than the all-zero result an early return would hand back.
-    if (occtShapeHasPCurveOnlyEdge(shape->shape))
+    // #2789: and the second shape, a face with no surface that carries a wire, which faults at
+    // BRepCheck_Edge.cxx:463 rather than at #2746's line. Same verdict for the same reason:
+    // BRepCheck_Face::Minimum reports BRepCheck_NoSurface for such a face without faulting, so
+    // "invalid topology" is OCCT's own answer and not a stand-in for one. See
+    // occtShapeHasSurfacelessFace.
+    if (occtShapeHasPCurveOnlyEdge(shape->shape) || occtShapeHasSurfacelessFace(shape->shape))
     {
       result.hasInvalidTopology = true;
     }
@@ -993,6 +998,20 @@ OCCTShapeCheckResult OCCTCheckShape(OCCTShapeRef shape)
       return result;
     }
   }
+  // #2789: the same shape of answer for the second input the analyzer cannot survive, a face with
+  // no surface that carries a wire (BRepCheck_Edge.cxx:463). BRepCheck_Face::Minimum reports
+  // BRepCheck_NoSurface for such a face without faulting, measured, so OCCTCheckNoSurface is OCCT's
+  // own status for it rather than a stand-in, and the count is the real number of such faces.
+  {
+    const int32_t surfaceless = occtShapeSurfacelessFaceCount(shape->shape, 0);
+    if (surfaceless > 0)
+    {
+      result.isValid    = false;
+      result.errorCount = surfaceless;
+      result.firstError = OCCTCheckNoSurface;
+      return result;
+    }
+  }
   try
   {
     BRepCheck_Analyzer analyzer(shape->shape, true);
@@ -1113,6 +1132,20 @@ int32_t OCCTCheckShapeDetailed(OCCTShapeRef     shape,
       return pcurveOnly;
     }
   }
+  // #2789: one OCCTCheckNoSurface per surface-less face, for the second input the analyzer cannot
+  // survive, and for the same reason: that is the status BRepCheck_Face::Minimum itself reports for
+  // such a face, measured, so it is a status list and not an empty one standing in for a refusal.
+  {
+    const int32_t surfaceless = occtShapeSurfacelessFaceCount(shape->shape, maxStatuses);
+    if (surfaceless > 0)
+    {
+      for (int32_t i = 0; i < surfaceless; i++)
+      {
+        outStatuses[i] = OCCTCheckNoSurface;
+      }
+      return surfaceless;
+    }
+  }
   try
   {
     BRepCheck_Analyzer analyzer(shape->shape, true);
@@ -1161,7 +1194,12 @@ bool OCCTBRepCheckAnalyzerIsValid(OCCTShapeRef shape, bool geometryChecks)
   // answer, not a fallback: a non-degenerated edge with no valid 3D curve is invalid by OCCT's
   // own BRepCheck_No3DCurve, so the guard and the analyzer agree on the verdict. This entry point
   // has no channel for "could not check" and does not need one here.
-  if (occtShapeHasPCurveOnlyEdge(shape->shape))
+  //
+  // #2789: the same for a face with no surface that carries a wire. The `geometryChecks` argument
+  // does NOT decide this one: the faulting line, BRepCheck_Edge.cxx:463, sits outside that
+  // function's `if (myGctrl)` blocks, and the fixture exits 139 with geometric controls off,
+  // measured. So the guard is unconditional here even though the analyzer's own flag is not.
+  if (occtShapeHasPCurveOnlyEdge(shape->shape) || occtShapeHasSurfacelessFace(shape->shape))
     return false;
   try
   {
@@ -1175,19 +1213,27 @@ bool OCCTBRepCheckAnalyzerIsValid(OCCTShapeRef shape, bool geometryChecks)
   }
 }
 
-bool OCCTBRepCheckSubShapeValid(OCCTShapeRef parentShape,
-                                int32_t      subShapeType,
-                                int32_t      subShapeIndex)
+int32_t OCCTBRepCheckSubShapeValid(OCCTShapeRef parentShape,
+                                   int32_t      subShapeType,
+                                   int32_t      subShapeIndex)
 {
   if (!parentShape)
-    return false;
-  // #2750: the analyzer walks the WHOLE parent shape whichever sub-shape is asked after, so an
-  // offending edge anywhere in it crashes this call (#2746). Unlike the whole-shape predicates
-  // above, false here is a claim about `subShapeIndex` that the guard has not measured: the named
-  // sub-shape may be perfectly sound. It is returned because this entry point's Bool has no
-  // refusal channel, and not crashing is worth more than the precision. Filed as #2755.
-  if (occtShapeHasPCurveOnlyEdge(parentShape->shape))
-    return false;
+    return OCCTSubShapeValidityNotChecked;
+  // #2750, #2789: the analyzer walks the WHOLE parent shape whichever sub-shape is asked after, so
+  // either of the two shapes it cannot survive crashes this call from anywhere in the parent: an
+  // edge of a face with no valid 3D curve and a pcurve (#2746, BRepCheck_Edge.cxx's `pcurvefound`
+  // branch) or a face with no surface that carries a wire (#2789, BRepCheck_Edge.cxx:463, the
+  // branch #2746 never reaches). Both must be refused before the analyzer is constructed.
+  //
+  // #2755: the refusal is `NotChecked`, not `0`. Every other guarded site here answers a question
+  // about the whole shape, where "invalid" is a verdict the predicate establishes; this one names
+  // ONE sub-shape, and a vertex two solids away from the offending face is very likely sound. `0`
+  // would be a measurement nobody took. The tri-state is what `occtBRepCheckSubShapeStatus` in
+  // OCCTBridge_Internal.h and `OCCTShapeIsInnerDistance` already use, and Swift maps it to
+  // `Bool?`; it is not a new idiom.
+  if (occtShapeHasPCurveOnlyEdge(parentShape->shape)
+      || occtShapeHasSurfacelessFace(parentShape->shape))
+    return OCCTSubShapeValidityNotChecked;
   try
   {
     BRepCheck_Analyzer analyzer(parentShape->shape, true);
@@ -1195,14 +1241,20 @@ bool OCCTBRepCheckSubShapeValid(OCCTShapeRef parentShape,
     // #541: the shared enumeration, so this names the same sub-shape every other
     // type+index entry point does.
     TopoDS_Shape sub = occtSubShapeAt(parentShape->shape, subShapeType, subShapeIndex);
+    // An index that names no sub-shape stays `0`, deliberately, and is NOT folded into
+    // `NotChecked`: #613 and #844 both test that an out-of-range index answers "not valid" over the
+    // same index domain as `checkEdge(at:)`, and that contract is about the index rather than about
+    // the analyzer's reach.
     if (sub.IsNull())
-      return false;
-    return analyzer.IsValid(sub);
+      return OCCTSubShapeValidityInvalid;
+    return analyzer.IsValid(sub) ? OCCTSubShapeValidityValid : OCCTSubShapeValidityInvalid;
   }
   catch (...)
   {
     occtRecordCaughtException(__func__);
-    return false;
+    // A caught exception means the analyzer did not reach a verdict about this sub-shape either,
+    // which is the same thing the guard above reports.
+    return OCCTSubShapeValidityNotChecked;
   }
 }
 

@@ -71,18 +71,22 @@ the mistake two of the thirteen transcripts below were captured with (PR #2822's
                     (`766-thread-181-189` interleaves two programs' output over several
                     invocations). Verdict NOT-REPRODUCIBLE, reason printed, exit code unaffected.
 
-IT REPORTS WHICH KERNEL IT MEASURED, AND DOES NOT VERIFY THAT IT IS THE PINNED ONE
------------------------------------------------------------------------------------
-The banner prints the sha256 of the static archive the probes link against, because a DIFF-VALUES
-cannot tell "the transcript is wrong" from "I compiled against a different kernel than the
-transcript was made on", and the remedy it prints is to withdraw the records that cite it.
-Verifying that the archive IS the pinned asset is #2818, which covers four scripts; until it lands,
-read the fingerprint. The default `--asset` is the repo's own `Libraries/OCCT.xcframework`, which in
-a working checkout is routinely NOT the pinned archive: measured 2026-09-28, the main checkout's
-copy and the pinned `v4.0.0-kernel.2` asset SwiftPM resolves are different archives, and this
-script accepts either without comment. In a worktree with no `Libraries/`, point `--asset` at
-`.build/artifacts/*/OCCT/OCCT.xcframework` after `swift package resolve`, which is the pinned asset
-and is what CI links.
+IT SAYS WHICH KERNEL IT MEASURED, AND WHETHER THAT IS THE PINNED ONE
+--------------------------------------------------------------------
+A DIFF-VALUES cannot tell "the transcript is wrong" from "I compiled against a different kernel
+than the transcript was made on", and the remedy this script prints for the first is to withdraw the
+records that cite it. So it is the one script in the #2818 set where a wrong kernel costs evidence,
+and `Scripts/occt_asset_identity.py` now answers the question rather than only fingerprinting the
+answer: the banner states `PINNED`, `NOT-PINNED` or `UNVERIFIABLE`, and **the withdrawal remedy is
+printed only when identity is proven.** Where it is not, the same failures are reported with the
+kernel named as the first thing to rule out.
+
+Two things that fix changed, both measured. The default was `Libraries/OCCT.xcframework`, which in a
+working checkout is routinely not the pinned archive: on 2026-09-28 the main checkout's copy hashed
+to `e2254f34...` and the pinned `v4.0.0-kernel.2` asset to `27329ac2...`. And in a worktree with no
+`Libraries/` the run reported SKIPPED, which is not evidence about a transcript at all; the SwiftPM
+artifact under `.build/artifacts/*/OCCT/OCCT.xcframework` is now the fallback, which is the asset CI
+links. `--require-pinned-asset` refuses to report at all unless identity is proven.
 
 NOT A GATE, AND NOT FOR `gate-scripts`
 --------------------------------------
@@ -93,6 +97,7 @@ nothing exit 2 instead of reporting clean (#2098's mode). It exits 1 when any pr
 reproduce, so it can be run as a gate by hand or in a job that does have the asset.
 
     python3 Scripts/check-766-probe-reproduction.py --require-asset
+    python3 Scripts/check-766-probe-reproduction.py --require-pinned-asset
     python3 Scripts/check-766-probe-reproduction.py --dirs 766-lprop-surface-analytic
     python3 Scripts/check-766-probe-reproduction.py --asset <dir> --jobs 8
     python3 Scripts/check-766-probe-reproduction.py --self-test
@@ -104,7 +109,6 @@ import argparse
 import concurrent.futures
 import difflib
 import glob
-import hashlib
 import json
 import os
 import re
@@ -113,8 +117,11 @@ import subprocess
 import sys
 import tempfile
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import occt_asset_identity as identity_helper  # noqa: E402  (after the sys.path insert)
+
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-DEFAULT_ASSET = os.path.join("Libraries", "OCCT.xcframework")
+DEFAULT_ASSET = identity_helper.LIBRARIES_ASSET
 DEFAULT_PROBES = os.path.join("Scripts", "repro")
 SLICE = "macos-arm64"
 LIB = "OCCT-macos"
@@ -464,23 +471,16 @@ def check_one(d: str, asset: str, timeout: int, repo_root: str = ROOT) -> dict:
 def asset_fingerprint(asset: str) -> str:
     """The sha256 and size of the static archive the probes will actually link against.
 
-    This records WHICH kernel a verdict was reached against; it does not verify that the kernel is
-    the pinned one, which is #2818's job across four scripts. The distinction matters because a
-    DIFF-VALUES cannot tell "the transcript is wrong" from "I compiled against a different kernel
-    than the transcript was made on", and the printed remedy is to withdraw records. Measured on
-    2026-09-28: the pinned v4.0.0-kernel.2 asset SwiftPM resolves is
-    27329ac2d30f65ce2c319e47b599183ee4d4947e8ee86478ce557dfb4bb5b260, and the main checkout's own
-    `Libraries/OCCT.xcframework`, which is this script's DEFAULT `--asset`, is a different archive.
-    Either is silently accepted today, so a report with no fingerprint in it is not attributable.
+    This records WHICH kernel a verdict was reached against. Whether that kernel is the pinned one
+    is a different question, and `occt_asset_identity.identify()` is what answers it (#2818); a
+    fingerprint makes a past verdict attributable and can never on its own say "this is the pin",
+    because `Package.swift`'s `checksum:` is of the zip rather than of anything in the extracted
+    tree.
     """
-    lib = os.path.join(asset, SLICE, "lib" + LIB + ".a")
-    if not os.path.isfile(lib):
+    sha, size = identity_helper.archive_fingerprint(asset, SLICE)
+    if sha is None:
         return "no archive at that path, so nothing identifies what was measured"
-    h = hashlib.sha256()
-    with open(lib, "rb") as fh:
-        for chunk in iter(lambda: fh.read(1 << 20), b""):
-            h.update(chunk)
-    return f"{os.path.basename(lib)} sha256={h.hexdigest()} bytes={os.path.getsize(lib)}"
+    return f"lib{LIB}.a sha256={sha} bytes={size}"
 
 
 def probe_dirs(args) -> list[str]:
@@ -491,23 +491,32 @@ def probe_dirs(args) -> list[str]:
 
 
 def run(args) -> int:
-    asset = args.asset if os.path.isabs(args.asset) else os.path.join(ROOT, args.asset)
-    have_asset = os.path.isdir(os.path.join(asset, SLICE, "Headers"))
+    # #2818. The asset is resolved rather than assumed: an explicit --asset wins, then
+    # Libraries/OCCT.xcframework, then the artifact SwiftPM resolved into .build. The last of those
+    # is why a worktree with no Libraries/ no longer reports SKIPPED over an asset that is present,
+    # and the verdict is why a DIFF-VALUES no longer reads as a fabricated record by default.
+    ident = identity_helper.identify(ROOT, identity_helper.explicit_from(args, DEFAULT_ASSET), SLICE)
+    asset = ident.path
     dirs = [d for d in probe_dirs(args) if os.path.isdir(d)]
 
     print("check-766-probe-reproduction: recompile each probe and diff it against its transcript")
-    print(f"  asset: {asset}  ({'present' if have_asset else 'ABSENT'})")
-    print(f"  archive: {asset_fingerprint(asset)}")
+    for line in ident.banner():
+        print(line)
     print(f"  probe directories: {len(dirs)}")
 
-    if not have_asset or not dirs:
-        why = ("the xcframework is not at that path" if not have_asset
-               else "no 766-* probe directory was found")
+    refusal = identity_helper.refusal(ident, args.require_pinned_asset)
+    if refusal:
+        print(f"  ERROR: {refusal}", file=sys.stderr)
+        return 2
+
+    if not ident.present or not dirs:
+        why = (ident.reason if not ident.present
+               else "no 766-* probe directory was found.")
         if args.require_asset:
-            print(f"  ERROR: --require-asset and {why}. A clean report over a population that "
+            print(f"  ERROR: --require-asset and {why} A clean report over a population that "
                   "was never compiled is a false green, not a result.", file=sys.stderr)
             return 2
-        print(f"  SKIPPED: {why}. Pass --require-asset to make this an error.")
+        print(f"  SKIPPED: {why} Pass --require-asset to make this an error.")
         return 0
 
     results = []
@@ -545,8 +554,20 @@ def run(args) -> int:
     if bad:
         print()
         print("  A probe that does not reproduce its own transcript means the transcript is not a")
-        print("  record of this kernel. Re-run it and correct the transcript, or withdraw the")
-        print("  records that cite it. A DECL-UNUSED is the other shape of the same defect: an")
+        print("  record of this kernel.")
+        if ident.verdict == identity_helper.PINNED:
+            # Only sayable because identity was proven above. #2818: the remedy is to withdraw
+            # evidence, and reaching it against a kernel the repo does not pin would delete a sound
+            # record. Adjudicating thirteen non-reproducing transcripts (PRs #2822, #2823) had to
+            # establish that identity by hand to avoid exactly that conclusion.
+            print("  This asset IS the pinned kernel, so re-run the probe and correct the")
+            print("  transcript, or withdraw the records that cite it.")
+        else:
+            print(f"  This asset is {ident.verdict.upper()}, so the kernel is the FIRST thing to")
+            print("  rule out and no record should be withdrawn on this run. Re-run with")
+            print("  --require-pinned-asset against the pinned asset before reaching any verdict")
+            print("  about a transcript.")
+        print("  A DECL-UNUSED is the other shape of the same defect: an")
         print("  allowance in reproduce.json that covers nothing is either stale or was wrong.")
         return 1
     return 0
@@ -885,6 +906,20 @@ def self_test() -> int:
         cases.append(("an unreadable reproduce.json is DECL-INVALID",
                       r["status"] == "DECL-INVALID"))
 
+    # 13. #2818's asset identity, whose failure mode here is the most expensive in the set: an
+    #     unproven kernel reaching the "withdraw the records that cite it" remedy. The helper's own
+    #     cases are folded in rather than trusted, per static-gates.md: a detector that depends on
+    #     a sibling's logic proves it is not blind on its own run.
+    for line in identity_helper.self_test():
+        cases.append((f"asset identity: {line}", False))
+    cases.append(("the withdrawal remedy is gated on a PINNED verdict",
+                  'if ident.verdict == identity_helper.PINNED:' in
+                  open(os.path.abspath(__file__), encoding="utf-8").read()))
+    cases.append(("the real tree resolves to an asset or says why not",
+                  identity_helper.identify(ROOT, None, SLICE, fingerprint=False).verdict
+                  in (identity_helper.PINNED, identity_helper.NOT_PINNED,
+                      identity_helper.UNVERIFIABLE, identity_helper.ABSENT)))
+
     failures = 0
     for label, ok in cases:
         print(f"  {'PASS' if ok else 'FAIL'}  {label}")
@@ -896,7 +931,7 @@ def self_test() -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--asset", default=DEFAULT_ASSET, help="the OCCT.xcframework to compile against")
+    identity_helper.add_arguments(ap, DEFAULT_ASSET)
     ap.add_argument("--probes", default=DEFAULT_PROBES, help="the directory holding 766-* probes")
     ap.add_argument("--dirs", nargs="*", default=None, help="only these probe directories")
     ap.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 4) // 2))
