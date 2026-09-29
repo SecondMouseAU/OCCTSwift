@@ -39,23 +39,63 @@ struct OBJDocumentIOTests {
 
     @Test("Load OBJ with single precision")
     func loadOBJSinglePrecision() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        // #2802: the fixture is the whole point here. A box written by `Shape.writeOBJ` has
+        // float-exact coordinates, so `RWObj_CafReader::SetSinglePrecision(true)` has nothing to
+        // round and both loads returned the identical bounding box to 1e-7. This OBJ is written by
+        // hand instead, with two vertices no `float` can hold: `0.1234567890123456`, which needs
+        // more significant digits than a float's 24-bit mantissa, and a coordinate near 1e7, where
+        // the float spacing is about 1.0 so a fractional part is lost outright.
+        let obj = """
+            v 0.1234567890123456 0.9876543210987654 0.3141592653589793
+            v 10000000.1234567 0.5 0.25
+            v 1.0 2.0 3.0
+            f 1 2 3
+            """
         let tmpPath = NSTemporaryDirectory() + "swift_test_v59_obj_sp.obj"
         let url = URL(fileURLWithPath: tmpPath)
-        try box.writeOBJ(to: url)
+        try obj.write(to: url, atomically: true, encoding: .utf8)
 
-        let doc = Document.loadOBJ(from: url, singlePrecision: true)
-        #expect(doc != nil)
-        // The document loads and holds the box, which is all this test observes.
-        // Nothing here distinguishes singlePrecision: true from false: measured,
-        // both loads give the same two shapes and the same bounding box to 1e-7,
-        // because a 10 x 20 x 30 box centred on the origin has float-exact
-        // coordinates. A test that observes the parameter needs a fixture whose
-        // vertices are not representable in single precision. Tracked as the
-        // OBJ single-precision gap in #2802.
-        if let doc = doc {
-            #expect(doc.allShapes().count == 2)
+        func firstFaceNodes(singlePrecision: Bool) throws -> [SIMD3<Double>] {
+            let doc = try #require(Document.loadOBJ(from: url, singlePrecision: singlePrecision))
+            let shapes = doc.allShapes()
+            try #require(shapes.count == 1)
+            let faces = shapes[0].faces()
+            try #require(faces.count == 1)
+            let faceShape = try #require(Shape.fromFace(faces[0]))
+            let count = faceShape.triangulationNodeCount
+            try #require(count == 3)
+            // Read the stored triangulation nodes, not the bounding box: the box is inflated by
+            // the shape's tolerance and hid the difference this test exists to see.
+            return (1...count).map { faceShape.triangulationNode(at: $0) }
         }
+
+        let single = try firstFaceNodes(singlePrecision: true)
+        let double = try firstFaceNodes(singlePrecision: false)
+
+        // The double-precision load keeps the file's own digits.
+        #expect(double[0].x == 0.1234567890123456)
+        #expect(double[0].y == 0.9876543210987654)
+        #expect(double[0].z == 0.3141592653589793)
+        #expect(double[1].x == 10_000_000.1234567)
+
+        // The single-precision load stores each coordinate through a `float`, so it comes back as
+        // exactly the nearest float. Written as `Double(Float(...))` rather than as the decimal
+        // expansion so the assertion states the mechanism it is checking.
+        #expect(single[0].x == Double(Float(0.1234567890123456)))
+        #expect(single[0].y == Double(Float(0.9876543210987654)))
+        #expect(single[0].z == Double(Float(0.3141592653589793)))
+        #expect(single[1].x == 10_000_000.0)
+
+        // And the headline: the two settings disagree, by 0.1234567 on the 1e7 coordinate, which is
+        // five orders of magnitude above any tolerance either load applies. A bridge that stopped
+        // passing the flag fails here.
+        #expect(abs(single[1].x - double[1].x) > 1e-3)
+        #expect(single[0].x != double[0].x)
+
+        // The third vertex is float-exact, so it must NOT differ. Without this the test could pass
+        // on a load that perturbed every coordinate rather than rounding to float.
+        #expect(single[2] == double[2])
+
         try? FileManager.default.removeItem(atPath: tmpPath)
     }
 
