@@ -107,20 +107,15 @@ per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
 because OCCT 8.0.2 was days out and a repin was on hold until it lands, then built and pinned the
 same day by `v4.0.0-kernel.3`, because what it left exposed was not a latent race but a value a
 caller reads: `Face.volumeInertia(planeNormal:planeDistance:)` returned a fabricated `0.0` for every
-face and every plane. It is live in the binary rather than merely applied to source, measured the
-way this page asks: building against the new asset makes #2827's own regression fail at the same
-lines and values as CI's independent `kernel-integration` build, and the by-plane per-face sum now
+face and every plane, and nothing on the bridge side could recover it, since the value does not exist
+by the time the bridge can read it. It is live in the binary rather than merely applied to source,
+measured the way this page asks: building against the new asset makes #2827's own regression fail at
+the same lines and values as CI's independent `kernel-integration` build, and the per-face sum now
 equals the solid's volume to the last few digits for three different reference planes. What the
 by-plane mass turned out to MEAN, which no OCCT caller states because there is no OCCT caller, is in
 `Scripts/patches/README.md`'s `0043` entry and in `Scripts/repro/2827/probe.mm`'s transcript.
 
-The row the repin cleared, kept for its shape:
-
-| Cleared by v4.0.0-kernel.3 | What it left exposed while unpinned |
-|---|---|
-| `0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827` | Every by-plane `BRepGProp_Vinert` computation reported mass `0.0` and centre of mass `(0, 0, 0)` instead of the value it had computed, because `BRepGProp_Gauss::convert` gated the keep on `theIsByPoint`. One public API reaches it, `Face.volumeInertia(planeNormal:planeDistance:)`, whose `volume` was therefore always `0.0` and not a measurement. Nothing on the bridge side could recover it: the value does not exist by the time the bridge can read it, and recomputing the integral was out of scope, so the exposure lasted exactly as long as the unpinned window |
-
-`0042` (#2773) was the last entry here. It was carried on 2026-09-27, built and verified in the
+`0042` (#2773) was the entry before it. It was carried on 2026-09-27, built and verified in the
 binary the same day (all three slices, `check-pinned-asset-patches.py --asset` confirms its literal
 in each), and pinned hours later by v4.0.0-kernel.2, so it spent no release window untested. The
 bridge guard from [PR #2776](https://github.com/SecondMouseAU/OCCTSwift/pull/2776) is kept rather
