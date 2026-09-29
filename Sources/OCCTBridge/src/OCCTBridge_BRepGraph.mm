@@ -2601,7 +2601,12 @@ static BRepGraph_RefId::Kind refKindFromInt(int32_t k)
 // the ABI runs Shell 0, Face 1, Wire 2, (CoEdge 3, gone), Vertex 4, Solid 5, Child 6,
 // Occurrence 7, while BRepGraph_RefId::Kind runs Vertex 3, Solid 4, Child 5, Occurrence 6.
 // Nothing ever maps TO 3. Returns -1 for a kind this ABI has no slot for, which no 8.0.1 kind
-// hits; the arm exists so a future kernel kind surfaces as "unknown" rather than as Shell.
+// hits; the fallback exists so a future kernel kind surfaces as "unknown" rather than as Shell.
+//
+// The switch names every BRepGraph_RefId::Kind and carries no default on purpose: -Wswitch then
+// reports an unhandled enumerator at compile time, so a kernel bump that adds a ref kind is a build
+// diagnostic here rather than a silent -1 found at runtime. The trailing return still answers for a
+// value outside the enumeration.
 static int32_t refKindToBridgeOrdinal(BRepGraph_RefId::Kind k)
 {
   switch (k)
@@ -2620,11 +2625,20 @@ static int32_t refKindToBridgeOrdinal(BRepGraph_RefId::Kind k)
       return 6;
     case BRepGraph_RefId::Kind::Occurrence:
       return 7;
-    default:
-      return -1;
   }
+  return -1;
 }
 
+// BRepGraph_NodeId::Kind to the ordinal the C ABI uses, which is the kind's own value (the two
+// agree, unlike the ref kinds above). Product and Occurrence are named because they are node kinds
+// of 8.0.1 that a traversal can land on and that the Swift BRepGraph.NodeKind enum already spells
+// (product = 10, occurrence = 11): leaving them to the fallback made a Product step report -1,
+// which OCCTBRepGraphOccurrenceAt's caller reads as a step it cannot represent. No graph this
+// bridge builds holds either kind today, because all three creation sites set CreateAutoProduct =
+// false, so this closes a latent wrong answer rather than changing a measured one.
+//
+// No default, for the -Wswitch reason given above; the trailing return covers value 9, which
+// BRepGraph_NodeId::Kind reserves and does not name.
 static int32_t nodeKindToInt(BRepGraph_NodeId::Kind k)
 {
   switch (k)
@@ -2647,9 +2661,12 @@ static int32_t nodeKindToInt(BRepGraph_NodeId::Kind k)
       return 7;
     case BRepGraph_NodeId::Kind::CoEdge:
       return 8;
-    default:
-      return -1;
+    case BRepGraph_NodeId::Kind::Product:
+      return 10;
+    case BRepGraph_NodeId::Kind::Occurrence:
+      return 11;
   }
+  return -1;
 }
 
 // --- Product (Assembly) Queries ---

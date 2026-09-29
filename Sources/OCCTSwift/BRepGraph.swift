@@ -2976,7 +2976,12 @@ public final class BRepGraph: @unchecked Sendable {
     ///   - root: The node to traverse from, usually `findNode(for:)` on the graph's input shape.
     /// - Returns: One entry per occurrence, in the explorer's depth-first order. Empty when the
     ///   node has no occurrence under `root`, and empty rather than a failure when either node is
-    ///   out of range.
+    ///   out of range: an index OCCT does not hold reads as no occurrences, because
+    ///   `BRepGraph_ChildExplorer` starts by rejecting a root its graph has no node for rather than
+    ///   by raising. An occurrence whose path holds a step of a node kind this wrapper cannot name
+    ///   is left out rather than reported with the step missing, which would hand back a path that
+    ///   reads as measured and is not. Every node kind of 8.0.1 is nameable, so that exclusion is
+    ///   unreachable against the pinned kernel.
     public func occurrences(ofNode node: NodeRef, from root: NodeRef) -> [Occurrence] {
         let count = Int(
             OCCTBRepGraphOccurrenceCount(
@@ -3026,9 +3031,12 @@ public final class BRepGraph: @unchecked Sendable {
     /// One occurrence by its ordinal in the traversal order, resizing the step buffer if the path
     /// is deeper than the first guess.
     ///
-    /// 16 steps covers a topology path (compound to vertex is 8) plus assembly nesting, so the
-    /// retry is the unusual case rather than the normal one, and the bridge returns the full step
-    /// count precisely so the buffer can be sized exactly on the second call.
+    /// 16 is a first guess and not a bound. A descent that changes node kind at every step visits
+    /// at most the nine `BRepGraph_NodeId::Kind` topology kinds once each (compound, compSolid,
+    /// solid, shell, face, wire, coedge, edge, vertex), and nested compounds and assembly levels
+    /// add to that with no limit, so the retry is the correctness of this method and 16 only makes
+    /// it the unusual case. The bridge returns the full step count even when it wrote fewer steps
+    /// than that, precisely so the second call can size the buffer exactly.
     private func occurrence(ofNode node: NodeRef, from root: NodeRef, ordinal: Int) -> Occurrence? {
         var capacity = 16
         while true {
