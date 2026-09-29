@@ -825,9 +825,38 @@ public func findNode(for shape: Shape) -> (kind: NodeKind, index: Int)?
 
 Looks up the graph node that corresponds to the given `Shape`. Useful for round-tripping from a `Shape` to its graph index.
 
+Matching is OCCT shape identity: `TShape` plus `Location`, orientation ignored. Every sub-shape
+enumerated from the shape the graph was built from resolves, **including the sub-shapes of a placed
+instance** inside a compound or an imported assembly (#2650).
+
+A placed instance resolves to **the definition node it instantiates**, so a compound holding one
+part twice returns the same `(kind, index)` for both occurrences. That is OCCT's own model rather
+than a shortcut here: the graph stores one definition per part and carries each placement on a
+child or occurrence reference, and `BRepGraph/README.md` keeps per-occurrence context out of the
+storage model, resolving it by walking the hierarchy instead. Key a per-instance identity off the
+traversal path, never off this node.
+
+A placed shape the graph never ingested does not resolve, so this stays a lookup of the
+construction input rather than a match on `TShape` alone.
+
+```swift
+let box = Shape.box(width: 10, height: 8, depth: 6)!
+let placed = box.moved(dx: 50, dy: 0, dz: 0)!
+let pair = Shape.compound([box, placed])!
+let graph = BRepGraph(shape: pair)!
+
+let faces = pair.subShapes(ofType: .face)
+print(faces.compactMap { graph.findNode(for: $0) }.count)  // 12, six per instance
+
+let solids = pair.subShapes(ofType: .solid)
+print(graph.findNode(for: solids[0])! == graph.findNode(for: solids[1])!)  // true
+```
+
 - **Parameters:** `shape`, the shape to look up.
 - **Returns:** A `(kind, index)` tuple if the shape is known to the graph, `nil` otherwise.
-- **OCCT:** `BRepGraph::ShapesView::FindNode(shape)`.
+- **OCCT:** `BRepGraph::ShapesView::FindNode(shape)`, plus the definition-key retry the kernel's own
+  `bindSourceShapeAliases` would have bound. See
+  `Scripts/repro/2650-brepgraph-located-instance-findnode/`.
 
 ---
 
@@ -839,8 +868,18 @@ Check if a shape is known to the graph.
 public func hasNode(for shape: Shape) -> Bool
 ```
 
+The same predicate as `findNode(for:)` returning non-`nil`, on the same identity rules.
+
+```swift
+let box = Shape.box(width: 10, height: 8, depth: 6)!
+let placed = box.moved(dx: 50, dy: 0, dz: 0)!
+let graph = BRepGraph(shape: Shape.compound([box, placed])!)!
+print(graph.hasNode(for: placed))                            // true
+print(graph.hasNode(for: box.moved(dx: 99, dy: 0, dz: 0)!))  // false
+```
+
 - **Parameters:** `shape`, the shape to check.
-- **OCCT:** `BRepGraph::ShapesView::HasNode(shape)`.
+- **OCCT:** `BRepGraph::ShapesView::HasNode(shape)`, with the same retry as `findNode(for:)`.
 
 ---
 

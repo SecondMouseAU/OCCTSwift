@@ -1,0 +1,82 @@
+box.IsSame(moved)                = false
+box.TShape() == moved.TShape()   = true
+moved.Location().IsIdentity()    = false
+
+================ CreateAutoProduct = false (what the bridge passes) ================
+  A: compound[box, moved]  ok=true solids=1 faces=6 products=0 occurrences=0
+    solids of the compound                           1 of   2 resolve
+    faces of the compound                            6 of  12 resolve
+    edges of the compound                           12 of  24 resolve
+    vertices of the compound                         8 of  16 resolve
+    faces of the UNPLACED box alone                  6 of   6 resolve
+    faces of the PLACED moved alone                  0 of   6 resolve
+    FindNode(moved)    -> INVALID
+    FindNode(box)      -> Solid[0]
+    FindNode(compound) -> Compound[0]
+  B: compound[moved]       ok=true solids=1 faces=6
+    faces of the compound                            0 of   6 resolve
+    faces of the PLACED moved alone                  0 of   6 resolve
+    faces of the UNPLACED box alone                  6 of   6 resolve
+  C: root = moved          ok=true solids=1 faces=6
+    faces of the PLACED moved                        6 of   6 resolve
+    faces of the UNPLACED box                        0 of   6 resolve
+  D: compound[box, moved(compound[moved])] ok=true solids=1 faces=6
+    faces of the outer compound                      6 of  12 resolve
+    solids of the outer compound                     1 of   2 resolve
+  E: node identity for the 2 solid occurrences of one definition
+     solid 1  loc-identity=yes  node=Solid[0]
+     solid 2  loc-identity=no   node=INVALID
+     Solids().Nb()=1 Occurrences=0 Products=0
+
+================ CreateAutoProduct = true  (OCCT default)      ================
+  A: compound[box, moved]  ok=true solids=1 faces=6 products=1 occurrences=1
+    solids of the compound                           2 of   2 resolve
+    faces of the compound                           12 of  12 resolve
+    edges of the compound                           24 of  24 resolve
+    vertices of the compound                        16 of  16 resolve
+    faces of the UNPLACED box alone                  6 of   6 resolve
+    faces of the PLACED moved alone                  6 of   6 resolve
+    FindNode(moved)    -> Solid[0]
+    FindNode(box)      -> Solid[0]
+    FindNode(compound) -> Compound[0]
+  B: compound[moved]       ok=true solids=1 faces=6
+    faces of the compound                            6 of   6 resolve
+    faces of the PLACED moved alone                  6 of   6 resolve
+    faces of the UNPLACED box alone                  6 of   6 resolve
+  C: root = moved          ok=true solids=1 faces=6
+    faces of the PLACED moved                        6 of   6 resolve
+    faces of the UNPLACED box                        6 of   6 resolve
+  D: compound[box, moved(compound[moved])] ok=true solids=1 faces=6
+    faces of the outer compound                     12 of  12 resolve
+    solids of the outer compound                     2 of   2 resolve
+  E: node identity for the 2 solid occurrences of one definition
+     solid 1  loc-identity=yes  node=Solid[0]
+     solid 2  loc-identity=no   node=Solid[0]
+     Solids().Nb()=1 Occurrences=1 Products=1
+
+================ location-stripped retry vs OCCT's own aliasing ================
+  A solids                                     retry   2/  2, OCCT aliasing   2/  2, agree   2/  2
+  A faces                                      retry  12/ 12, OCCT aliasing  12/ 12, agree  12/ 12
+  A edges                                      retry  24/ 24, OCCT aliasing  24/ 24, agree  24/ 24
+  A vertices                                   retry  16/ 16, OCCT aliasing  16/ 16, agree  16/ 16
+  B faces                                      retry   6/  6, OCCT aliasing   6/  6, agree   6/  6
+  B edges                                      retry  12/ 12, OCCT aliasing  12/ 12, agree  12/ 12
+  D faces (nested)                             retry  12/ 12, OCCT aliasing  12/ 12, agree  12/ 12
+  D solids (nested)                            retry   2/  2, OCCT aliasing   2/  2, agree   2/  2
+  D edges (nested)                             retry  24/ 24, OCCT aliasing  24/ 24, agree  24/ 24
+  C faces (located root)                       retry   6/  6, OCCT aliasing   6/  6, agree   6/  6
+    MISMATCH at 1: retry=INVALID occt=Face[0]
+    MISMATCH at 2: retry=INVALID occt=Face[1]
+    MISMATCH at 3: retry=INVALID occt=Face[2]
+    MISMATCH at 4: retry=INVALID occt=Face[3]
+    MISMATCH at 5: retry=INVALID occt=Face[4]
+    MISMATCH at 6: retry=INVALID occt=Face[5]
+  C faces of the unplaced box                  retry   0/  6, OCCT aliasing   6/  6, agree   0/  6
+
+================ F: a located shape the graph never ingested ================
+  graph ingested compound[box]; query faces of moved (never ingested)
+  stripped retry resolves 6 of 6; OCCT aliasing resolves 0 of 6
+
+================ Shape(root) for a LOCATED root ================
+  CreateAutoProduct=false root=Solid[0]  Shape(root).Location().IsIdentity()=false
+  CreateAutoProduct=true  root=Solid[0]  Shape(root).Location().IsIdentity()=true
