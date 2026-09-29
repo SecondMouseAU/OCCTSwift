@@ -184,14 +184,6 @@ static inline void setCancelOut(bool*                                           
 
 } // namespace
 
-// Shared XDE export pipeline for OBJ/PLY and similar formats.
-// Tessellates the shape, creates an XDE document, adds the shape, collects root labels,
-// and invokes the provided writer factory to perform the write.
-// The writerFactory is a callable taking (const char* path) and returning a writer
-// that has a Perform(doc, rootLabels, nullptr, fileInfo, Message_ProgressRange()) method.
-// Returns true on success, false on any error.
-template <typename WriterFactory>
-
 struct OCCTTimer
 {
   OSD_Timer timer;

@@ -141,10 +141,6 @@ struct OCCTKDTree
   std::vector<gp_Pnt>           points;
 };
 
-// #794: shared helper for polynomial solvers (Quadratic/Cubic/Quartic)
-// Uses template parameter pack to handle different constructor arities
-template <typename... Args>
-
 struct OCCTIntrvInterval
 {
   Intrv_Interval interval;

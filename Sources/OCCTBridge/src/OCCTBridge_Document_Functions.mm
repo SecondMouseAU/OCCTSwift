@@ -205,10 +205,6 @@
 // Shared private structs/helpers (#1380): every split file gets this identical block,
 // compiled independently per TU -- see this split's own README for why.
 
-// Generic GD&T label lookup helper. Consolidates the three near-identical helpers for
-// dimensions, geometric tolerances, and datums (#1065).
-template <typename AttrType, typename ObjType, typename ToolGetter, typename LabelsGetter>
-
 // Helper: common iteration logic for naming trace (forward/backward)
 // Template parameter: the iterator type (TNaming_NewShapeIterator or TNaming_OldShapeIterator)
 template <typename Iterator>
@@ -244,11 +240,6 @@ static int32_t occtDocumentNamingTraceImpl(OCCTDocumentRef doc,
     return 0;
   }
 }
-
-// Helper: common iteration logic for format enumeration (reading/writing)
-// FormatsFn is a pointer-to-member-function of TDocStd_Application taking
-// NCollection_Sequence<TCollection_AsciiString>&
-template <typename FormatsFn>
 
 struct OCCTAssemblyGraph
 {

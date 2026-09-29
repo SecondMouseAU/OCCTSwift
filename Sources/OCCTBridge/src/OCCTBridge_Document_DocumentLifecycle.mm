@@ -205,10 +205,6 @@
 // Shared private structs/helpers (#1380): every split file gets this identical block,
 // compiled independently per TU -- see this split's own README for why.
 
-// Generic GD&T label lookup helper. Consolidates the three near-identical helpers for
-// dimensions, geometric tolerances, and datums (#1065).
-template <typename AttrType, typename ObjType, typename ToolGetter, typename LabelsGetter>
-
 /// Shared by OCCTDocumentCreateDimension and OCCTDocumentCreateDimensionWithTolerance.
 ///
 /// The whole object, tolerance pair included, is built and checked before AddDimension() is called,
@@ -283,10 +279,6 @@ static int32_t occtDocumentCreateDimensionImpl(OCCTDocumentRef doc,
     return -1;
   }
 }
-
-// Helper: common iteration logic for naming trace (forward/backward)
-// Template parameter: the iterator type (TNaming_NewShapeIterator or TNaming_OldShapeIterator)
-template <typename Iterator>
 
 // #970: move a pending named-transaction name onto the delta the commit just produced.
 // TDF_Delta is the only thing in OCCT that carries a caller-supplied transaction name:

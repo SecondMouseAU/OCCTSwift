@@ -290,15 +290,6 @@ static bool occtDocumentModifiersInRange(const int32_t* modifiers, int32_t count
   return true;
 }
 
-// Helper: common iteration logic for naming trace (forward/backward)
-// Template parameter: the iterator type (TNaming_NewShapeIterator or TNaming_OldShapeIterator)
-template <typename Iterator>
-
-// Helper: common iteration logic for format enumeration (reading/writing)
-// FormatsFn is a pointer-to-member-function of TDocStd_Application taking
-// NCollection_Sequence<TCollection_AsciiString>&
-template <typename FormatsFn>
-
 struct OCCTAssemblyGraph
 {
   Handle(XCAFDoc_AssemblyGraph) graph;
