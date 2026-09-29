@@ -45,7 +45,9 @@ struct StressRoundTripSTEPTests {
     @Test func cone() throws { try roundTrip(standardCone(), name: "cone") }
     @Test func torus() throws { try roundTrip(standardTorus(), name: "torus") }
     @Test func filletedBoxShape() throws { try roundTrip(filletedBox(), name: "filletedBox") }
-    @Test func drilledPlateShape() throws { try roundTrip(drilledPlate(), name: "drilledPlate") }
+    @Test func drilledPlateShape() throws {
+        try roundTrip(drilledPlate(), name: "drilledPlate")
+    }
     @Test func compound() throws { try roundTrip(standardCompound(), name: "compound") }
 }
 
@@ -78,7 +80,9 @@ struct StressRoundTripBREPTests {
     @Test func cone() throws { try roundTrip(standardCone(), name: "cone") }
     @Test func torus() throws { try roundTrip(standardTorus(), name: "torus") }
     @Test func filletedBoxShape() throws { try roundTrip(filletedBox(), name: "filletedBox") }
-    @Test func drilledPlateShape() throws { try roundTrip(drilledPlate(), name: "drilledPlate") }
+    @Test func drilledPlateShape() throws {
+        try roundTrip(drilledPlate(), name: "drilledPlate")
+    }
     @Test func compound() throws { try roundTrip(standardCompound(), name: "compound") }
 }
 
@@ -113,9 +117,9 @@ struct StressRoundTripBREPStringTests {
     @Test func sphere() { roundTrip(standardSphere(), name: "sphere") }
     @Test func cone() { roundTrip(standardCone(), name: "cone") }
     @Test func torus() { roundTrip(standardTorus(), name: "torus") }
-    @Test func filletedBoxShape() { roundTrip(filletedBox(), name: "filletedBox") }
-    @Test func drilledPlateShape() { roundTrip(drilledPlate(), name: "drilledPlate") }
-    @Test func compound() { roundTrip(standardCompound(), name: "compound") }
+    @Test func filletedBoxShape() throws { roundTrip(try filletedBox(), name: "filletedBox") }
+    @Test func drilledPlateShape() throws { roundTrip(try drilledPlate(), name: "drilledPlate") }
+    @Test func compound() throws { roundTrip(try standardCompound(), name: "compound") }
 }
 
 // MARK: - STL Round-Trip
@@ -267,13 +271,14 @@ struct StressCrossFormatConsistencyTests {
         #expect(abs(vSTEP - vBREP) / origVol < 0.01)
     }
 
-    @Test func allShapesBREPString() {
-        for (name, shape) in allStandardShapes() {
-            guard let brep = shape.toBREPString() else { continue }
-            guard let restored = Shape.fromBREPString(brep) else {
-                #expect(Bool(false), "BREP string restore failed for \(name)")
-                continue
-            }
+    /// #2830: the export used to `continue` on nil, so a shape whose BREP string could not be
+    /// produced at all left no trace, and the matrix itself was one row short because
+    /// `allStandardShapes()` dropped `"openShell"` in silence. Both halves now fail.
+    @Test func allShapesBREPString() throws {
+        for (name, shape) in try allStandardShapes() {
+            let brep = try #require(shape.toBREPString(), "BREP string export failed for \(name)")
+            let restored = try #require(
+                Shape.fromBREPString(brep), "BREP string restore failed for \(name)")
             #expect(restored.isValid, "Restored \(name) not valid")
         }
     }

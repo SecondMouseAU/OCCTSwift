@@ -257,16 +257,34 @@ struct StressDegenerateOperationTests {
         if let r = result { _ = r.isValid }
     }
 
-    @Test func shellThicknessEqualsHalf() {
-        let box = standardBox()
-        let result = box.shelled(thickness: -5.0)
-        if let r = result { _ = r.isValid }
+    /// #2830: a magnitude boundary needs an input the algorithm accepts. `shelled(thickness:)` is
+    /// `MakeThickSolidBySimple`, which refuses any closed solid before the thickness is considered
+    /// (#2739, `Scripts/repro/2830-openshell-fixture/`), so running it on `standardBox()` measured
+    /// the refusal and not the boundary, and then discarded that too. On the open shell of the same
+    /// 10 box, -5.0 is genuinely half the box.
+    ///
+    /// The boundary also turns out not to be one: `MakeThickSolidBySimple` computes no
+    /// intersections (`BRepOffsetAPI_MakeThickSolid.hxx`), so half the box still yields a valid
+    /// solid. 992.063492 is the kernel's own figure for this input, here so that a change in that
+    /// behaviour fails rather than passing unnoticed.
+    @Test func shellThicknessEqualsHalf() throws {
+        let result = try #require(try openShell().shelled(thickness: -5.0))
+        #expect(result.isValid)
+        #expect(result.subShapeCount(ofType: .face) == 14)
+        #expect(abs(try #require(result.volume) - 992.063492) < 1e-5)
     }
 
-    @Test func shellThicknessExceedsHalf() {
-        let box = standardBox()
-        let result = box.shelled(thickness: -6.0)
-        if let r = result { _ = r.isValid }
+    /// Past half the box, for the reason on ``shellThicknessEqualsHalf()``. Still accepted, and the
+    /// volume still grows with the thickness, which is what proves the argument reached the kernel.
+    @Test func shellThicknessExceedsHalf() throws {
+        let shell = try openShell()
+        let result = try #require(shell.shelled(thickness: -6.0))
+        #expect(result.isValid)
+        #expect(abs(try #require(result.volume) - 1173.714286) < 1e-5)
+        let atHalf = try #require(shell.shelled(thickness: -5.0))
+        let thickVolume = try #require(result.volume)
+        let halfVolume = try #require(atHalf.volume)
+        #expect(thickVolume > halfVolume)
     }
 
     @Test func offsetByZero() {
@@ -370,10 +388,14 @@ struct StressNearDegenerateTests {
         if let r = result { _ = r.isValid }
     }
 
-    @Test func veryThinShell() {
-        let box = standardBox()
-        let result = box.shelled(thickness: -0.001)
-        if let r = result { _ = r.isValid }
+    /// The thin end of the same boundary, on the same open shell and for the same reason as
+    /// ``StressDegenerateOperationTests/shellThicknessEqualsHalf()`` (#2830). A 500 area shell
+    /// thickened by 0.001 holds 0.214282 on the pinned kernel, which is the figure that proves the
+    /// thickness was not rounded away.
+    @Test func veryThinShell() throws {
+        let result = try #require(try openShell().shelled(thickness: -0.001))
+        #expect(result.isValid)
+        #expect(abs(try #require(result.volume) - 0.214282) < 1e-6)
     }
 
     @Test func verySmallDrill() {

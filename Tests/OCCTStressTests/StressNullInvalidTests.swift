@@ -28,16 +28,24 @@ struct StressNilPropagationTests {
         }
     }
 
-    @Test func drillAfterFailedShell() {
+    /// #2830: the shell here does not "may fail", it always fails, and for a reason that has
+    /// nothing to do with the thickness. `shelled(thickness:)` is `MakeThickSolidBySimple`, whose
+    /// domain is a non-closed shell or face, so a closed box is refused before the magnitude is
+    /// ever considered (#2739, `Scripts/repro/2830-openshell-fixture/`). That made the whole
+    /// `if let` body unreachable, and this test asserted nothing at all. The refusal is now pinned
+    /// and the drill runs on the input the caller still holds, which is the scenario the name
+    /// describes.
+    @Test func drillAfterFailedShell() throws {
         let box = standardBox()
-        // Shell with thickness larger than half the box, may fail
-        let badShell = box.shelled(thickness: -6.0)
-        if let s = badShell {
-            // If it succeeded, try to drill it
-            let drilled = s.drilled(
-                at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 1, depth: 0)
-            if let d = drilled { #expect(d.isValid) }
-        }
+        #expect(box.shelled(thickness: -6.0) == nil, "a closed box has no MakeThickSolidBySimple")
+        let drilled = try #require(
+            box.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 1, depth: 0),
+            "drilling after the refused shell should still work")
+        #expect(drilled.isValid)
+        // The drill has to have removed material, or "carried on after the failure" is unproven.
+        let boxVolume = try #require(box.volume)
+        let drilledVolume = try #require(drilled.volume)
+        #expect(drilledVolume < boxVolume)
     }
 
     @Test func chamferAfterFailedFillet() {
@@ -215,11 +223,15 @@ struct StressInvalidParameterTests {
         if let r = result { _ = r.isValid }
     }
 
+    /// #2830: the sign is not what decides this. `shelled(thickness:)` is
+    /// `MakeThickSolidBySimple`, which refuses a closed solid at either sign and every magnitude
+    /// (#2739), so the previous `if let r = result { _ = r.isValid }` was unreachable and discarded
+    /// its own result besides. Both signs are pinned here; hollowing a closed solid is
+    /// `shelled(thickness:openFaces:)`.
     @Test func negativeShell() {
         let box = standardBox()
-        // Positive thickness = outward, negative = inward
-        let result = box.shelled(thickness: 1.0)
-        if let r = result { _ = r.isValid }
+        #expect(box.shelled(thickness: -1.0) == nil)
+        #expect(box.shelled(thickness: 1.0) == nil)
     }
 
     @Test func zeroDrill() {

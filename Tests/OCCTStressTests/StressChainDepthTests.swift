@@ -115,10 +115,21 @@ struct StressFeatureChainTests {
         // Chamfer
         if let c = shape.chamfered(distance: 0.3) { shape = c }
         #expect(shape.isValid)
-        // Shell
-        if let s = shape.shelled(thickness: -1.0) { shape = s }
-        // Shell may fail on complex geometry, that's OK
-        #expect(shape.isValid)
+        // Shell. #2830: this link never ran, and "may fail on complex geometry" was the wrong
+        // reason. `shelled(thickness:)` is `MakeThickSolidBySimple`, whose domain is a non-closed
+        // shell or face, so it refuses this closed chain result for the same reason it refuses a
+        // plain box (#2739). The refusal is pinned rather than skipped, because an `if let` that
+        // never binds leaves the chain one link shorter than the test claims, with nothing saying
+        // so.
+        //
+        // `shelled(thickness:openFaces:)` is what hollows a closed solid, and it is deliberately
+        // not the link here: on this chain result it returns a shape whose `isValid` is false and
+        // whose `volume` is nil, measured, so it would trade a dead link for a failing one. That
+        // non-nil-but-invalid result is filed as #2846, since it is a bridge and docs question. The
+        // chain therefore ends at the chamfer, which is what its name already says. The trailing
+        // `#expect(shape.isValid)` that used to sit here is gone: `shape` is untouched by the
+        // refused shell, so it re-asserted the chamfer already asserted three lines up.
+        #expect(shape.shelled(thickness: -1.0) == nil)
     }
 
     @Test func tenSuccessiveFillets() {
