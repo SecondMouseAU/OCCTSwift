@@ -2603,7 +2603,7 @@ extension Curve3D {
     ///   ``Curve3D/isCN(_:)`` for why a negative order is refused here rather than by OCCT (#2862).
     public func bezierIsCN(_ n: Int) -> Bool {
         guard n >= 0 else { return false }
-        OCCTCurve3DBezierIsCN(handle, Int32(n))
+        return OCCTCurve3DBezierIsCN(handle, Int32(n))
     }
 
     // MARK: - Bezier 3D completions (v0.126.0)
@@ -4189,7 +4189,7 @@ extension Curve3D {
     /// ``Surface/bezierIsCNu(_:)`` and ``Surface/bezierIsCNv(_:)``. #2862.
     public func isCN(_ n: Int) -> Bool {
         guard n >= 0 else { return false }
-        OCCTCurve3DIsCN(handle, Int32(n))
+        return OCCTCurve3DIsCN(handle, Int32(n))
     }
 
     /// Get the parameter on the reversed curve corresponding to parameter u on this curve.

@@ -3531,7 +3531,7 @@ extension Surface {
     ///   ``Curve3D/isCN(_:)`` for why a negative order is refused here rather than by OCCT (#2862).
     public func bezierIsCNu(_ n: Int) -> Bool {
         guard n >= 0 else { return false }
-        OCCTSurfaceBezierIsCNu(handle, Int32(n))
+        return OCCTSurfaceBezierIsCNu(handle, Int32(n))
     }
 
     /// Whether this Bezier surface has at least C^n continuity in V.
@@ -3541,7 +3541,7 @@ extension Surface {
     ///   ``Curve3D/isCN(_:)`` for why a negative order is refused here rather than by OCCT (#2862).
     public func bezierIsCNv(_ n: Int) -> Bool {
         guard n >= 0 else { return false }
-        OCCTSurfaceBezierIsCNv(handle, Int32(n))
+        return OCCTSurfaceBezierIsCNv(handle, Int32(n))
     }
 
     /// Get all poles as flat array for Bezier surface.
@@ -5346,7 +5346,7 @@ extension Surface {
     ///   ``Curve3D/isCN(_:)`` for why a negative order is refused here rather than by OCCT (#2862).
     public func isCNu(_ n: Int) -> Bool {
         guard n >= 0 else { return false }
-        OCCTSurfaceIsCNu(handle, Int32(n))
+        return OCCTSurfaceIsCNu(handle, Int32(n))
     }
 
     /// Whether this surface has at least C^n continuity in the V direction.
@@ -5356,7 +5356,7 @@ extension Surface {
     ///   ``Curve3D/isCN(_:)`` for why a negative order is refused here rather than by OCCT (#2862).
     public func isCNv(_ n: Int) -> Bool {
         guard n >= 0 else { return false }
-        OCCTSurfaceIsCNv(handle, Int32(n))
+        return OCCTSurfaceIsCNv(handle, Int32(n))
     }
 
     /// Create a U-reversed copy of this surface.

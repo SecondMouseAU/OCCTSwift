@@ -2451,7 +2451,7 @@ extension Curve2D {
     ///   ``Curve3D/isCN(_:)`` for why a negative order is refused here rather than by OCCT (#2862).
     public func bsplineIsCN(_ n: Int) -> Bool {
         guard n >= 0 else { return false }
-        OCCTCurve2DBSplineIsCN(handle, Int32(n))
+        return OCCTCurve2DBSplineIsCN(handle, Int32(n))
     }
 
     // MARK: - Bezier 2D completions (v0.126.0)
@@ -3342,7 +3342,7 @@ extension Curve2D {
     ///   ``Curve3D/isCN(_:)`` for why a negative order is refused here rather than by OCCT (#2862).
     public func isCN(_ n: Int) -> Bool {
         guard n >= 0 else { return false }
-        OCCTCurve2DIsCN(handle, Int32(n))
+        return OCCTCurve2DIsCN(handle, Int32(n))
     }
 
     /// Get the parameter on the reversed curve corresponding to parameter u on this curve.
