@@ -1,0 +1,313 @@
+#2801 sweep, cluster: index-taking pole/weight/knot accessors on the Bezier / Convert / Law family
+Run 2026-09-29 on macOS 27.0.0 (Darwin arm64).
+
+KERNEL PROBED AGAINST
+  Libraries/OCCT.xcframework is a symlink to /Users/elb/Projects/OCCTSwift/Libraries/OCCT.xcframework
+  macos-arm64/libOCCT-macos.a  157577464 bytes, mtime 2026-09-22 18:28
+  Sibling /Users/elb/Projects/OCCTSwift/Libraries/OCCT.xcframework.zip  149574222 bytes, mtime 2026-09-22 18:38
+  sha256 of that zip: da14acb1c0d58eb319381845472285123caa018c06593bbee90e7c484185f4fc
+  That checksum is the v4.0.0-kernel.1 pin. This worktree's Package.swift pins v4.0.0-kernel.2
+  (checksum 18b181cc27778520fa2912ac2abb38038800b70e48d2fe1cf7fedcc61414d1c3), so the library
+  probed here is NOT the pinned asset. Mode 0 confirms it is still a No_Exception build.
+
+SOURCE TREE READ
+  Libraries/occt-src -> /Users/elb/Projects/OCCTSwift/Libraries/occt-src (OCCT V8_0_1 + carried patches)
+
+COMPILE LINE (as SwiftPM compiles Sources/OCCTBridge/src/*.mm: no -DNo_Exception)
+  clang++ -std=c++17 -ObjC++ -w \
+    -I"Libraries/OCCT.xcframework/macos-arm64/Headers" \
+    -L"Libraries/OCCT.xcframework/macos-arm64" \
+    -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
+    Scripts/repro/2801-sweep-bezier/probe.mm -o /tmp/probe-bezier-2801
+  compile exit=0
+
+EXIT CODE LEGEND:  0 = returned normally   133 = SIGTRAP (libmalloc abort)
+                 138 = SIGBUS             139 = SIGSEGV
+
+Each mode was run in its own process.
+
+=============================================================== mode 0
+mode 0
+control A: Geom_Direction(0,0,0) -- out-of-line check, should NOT throw here
+  -> built, X()=nan
+control B: Geom_BezierCurve::Pole(1000) -- LITERAL throw in .cxx, should THROW
+  -> THREW 19Standard_OutOfRange: Geom_BezierCurve::Pole
+mode 0 completed without a fatal signal
+exit=0
+=============================================================== mode 1
+mode 1
+NbPoles=4; calling Pole(1000000)
+  -> NO THROW, pole = (0, 0)
+mode 1 completed without a fatal signal
+exit=0
+=============================================================== mode 2
+mode 2
+NbPoles=4; calling Pole(7) then Pole(0) then Pole(-3)
+  -> Pole(7) NO THROW, = (7.29114e-304, 3.23786e-319)
+  -> Pole(0) NO THROW, = (2.997e-320, 9.88131e-324)
+  -> Pole(-3) NO THROW, = (0, 4.24399e-314)
+mode 2 completed without a fatal signal
+exit=0
+=============================================================== mode 3
+mode 3
+NbPoles=4; calling SetPole(1000000, ...)
+  -> NO THROW, SetPole(1000000) accepted
+mode 3 completed without a fatal signal
+exit=0
+=============================================================== mode 4
+mode 4
+NbPoles=4; SetPole(6, (42,43))
+  -> NO THROW, accepted; NbPoles now 4
+  -> Value(0.5) = (1.5, 3)
+mode 4 completed without a fatal signal
+exit=0
+=============================================================== mode 5
+mode 5
+rational, NbPoles=4; SetWeight(2, 0.0) then SetWeight(3, -5.0)
+  -> SetWeight(2, 0.0) NO THROW; Weight(2) = 0
+  -> SetWeight(3, -5.0) NO THROW; Weight(3) = -5
+  -> Value(0.5) = (2.064, 3.792)
+mode 5 completed without a fatal signal
+exit=0
+=============================================================== mode 6
+mode 6
+rational, NbPoles=4; SetWeight(1000000, 2.0)
+  -> NO THROW, accepted
+mode 6 completed without a fatal signal
+exit=0
+=============================================================== mode 7
+mode 7
+non-rational NbPoles=4; Weight(1000000)
+  -> NO THROW, Weight(1000000) = 1
+rational NbPoles=4; Weight(1000000)
+  -> NO THROW, Weight(1000000) = 0
+mode 7 completed without a fatal signal
+exit=0
+=============================================================== mode 8
+mode 8
+NbPoles=4; InsertPoleAfter(1000000, ...)
+/opt/homebrew/bin/bash: line 32: 55757 Bus error: 10              /tmp/probe-bezier-2801 $m 2>&1
+exit=138
+=============================================================== mode 9
+mode 9
+NbPoles=4; InsertPoleAfter(9, ...)
+  -> NO THROW, NbPoles now 5
+mode 9 completed without a fatal signal
+exit=0
+=============================================================== mode 10
+mode 10
+NbPoles=4; InsertPoleAfter(2, P, Weight=0.0)
+  -> NO THROW, NbPoles now 5, IsRational=1
+  -> Value(0.5) = (1.5, 2.9)
+mode 10 completed without a fatal signal
+exit=0
+=============================================================== mode 11
+mode 11
+NbPoles=4; RemovePole(1000000)
+/opt/homebrew/bin/bash: line 32: 55763 Segmentation fault: 11     /tmp/probe-bezier-2801 $m 2>&1
+exit=139
+=============================================================== mode 12
+mode 12
+NbPoles=2 (a straight-line Bezier)
+  -> after RemovePole(1): NbPoles=1 Degree=0
+/opt/homebrew/bin/bash: line 32: 55764 Segmentation fault: 11     /tmp/probe-bezier-2801 $m 2>&1
+exit=139
+=============================================================== mode 13
+mode 13
+Degree=5; Increase(2)
+/opt/homebrew/bin/bash: line 32: 55766 Trace/BPT trap: 5          /tmp/probe-bezier-2801 $m 2>&1
+exit=133
+=============================================================== mode 14
+mode 14
+Degree=3 MaxDegree=25; Increase(MaxDegree+50)
+  -> NO THROW, Degree now 75 NbPoles 76
+mode 14 completed without a fatal signal
+exit=0
+=============================================================== mode 15
+mode 15
+Degree=3; Increase(-5)
+/opt/homebrew/bin/bash: line 32: 55770 Segmentation fault: 11     /tmp/probe-bezier-2801 $m 2>&1
+exit=139
+=============================================================== mode 16
+mode 16
+NbUPoles=3 NbVPoles=4; Pole(1000000, 1)
+/opt/homebrew/bin/bash: line 32: 55771 Segmentation fault: 11     /tmp/probe-bezier-2801 $m 2>&1
+exit=139
+=============================================================== mode 17
+mode 17
+NbUPoles=3 NbVPoles=4; Pole(5,7) then Pole(0,0) then Pole(-4,-4)
+  -> Pole(5,7) NO THROW, = (0, 0, 0)
+  -> Pole(0,0) NO THROW, = (1.97626e-323, 2.14601e-314, 2.47033e-323)
+  -> Pole(-4,-4) NO THROW, = (0, 0, 0)
+mode 17 completed without a fatal signal
+exit=0
+=============================================================== mode 18
+mode 18
+NbUPoles=3 NbVPoles=4; SetPole(1000000,1,...) then SetWeight(1,1,-3)
+  -> THREW 19Standard_OutOfRange: 
+  -> THREW 26Standard_ConstructionError: Geom_BezierSurface::SetWeight
+mode 18 completed without a fatal signal
+exit=0
+=============================================================== mode 19
+mode 19
+NbUPoles=3 NbVPoles=4; Weight(1000000, 1)
+  -> NO THROW, Weight = 1
+mode 19 completed without a fatal signal
+exit=0
+=============================================================== mode 20
+mode 20
+3D NbPoles=4; SetPole(1000000,..) / SetWeight(1000000,2) / RemovePole(1000000)
+  -> THREW 19Standard_OutOfRange: Geom_BezierCurve::SetPole
+  -> THREW 19Standard_OutOfRange: Geom_BezierCurve::SetWeight
+  -> THREW 19Standard_OutOfRange: Geom_BezierCurve::RemovePole
+  -> THREW 26Standard_ConstructionError: Geom_BezierCurve::Increase
+mode 20 completed without a fatal signal
+exit=0
+=============================================================== mode 21
+mode 21
+NbPoles=4; SetPole(1 << 28, ...) -- a 4 GiB offset past the array
+/opt/homebrew/bin/bash: line 32: 55777 Bus error: 10              /tmp/probe-bezier-2801 $m 2>&1
+exit=138
+=============================================================== mode 22
+mode 22
+NbPoles=2; RemovePole(1) (the nbpoles<=2 guard is in the .cxx)
+  -> NO THROW, NbPoles=1 Degree=0
+Multiplicities() on the 1-pole curve
+  -> NO THROW, Length=2 first=1
+Value(0.5) on the 1-pole curve
+  -> NO THROW, = (1, 1)
+mode 22 completed without a fatal signal
+exit=0
+=============================================================== mode 23
+mode 23
+NbPoles=4; SetPole(5) and SetPole(6) past the end of a 4-slot array
+/opt/homebrew/bin/bash: line 32: 55779 Trace/BPT trap: 5          /tmp/probe-bezier-2801 $m 2>&1
+exit=133
+
+=============================================================== mode 3, repeated
+(SetPole(1000000): a 16 MB-past-the-end write that happened to land in mapped memory;
+ five consecutive runs to show the non-fault is reproducible, not a one-off.)
+  run 1 exit=0
+  run 2 exit=0
+  run 3 exit=0
+  run 4 exit=0
+  run 5 exit=0
+
+=============================================================== mode 23, streams separated
+/opt/homebrew/bin/bash: line 48: 55785 Trace/BPT trap: 5          /tmp/probe-bezier-2801 23 > /tmp/m23.out 2> /tmp/m23.err
+exit=133
+--- stdout:
+mode 23
+NbPoles=4; SetPole(5) and SetPole(6) past the end of a 4-slot array
+--- stderr: (empty; macOS libmalloc aborts via __abort_with_payload with no write to fd 2)
+
+=============================================================== mode 13, repeated 20x
+(Increase(2) on a degree-5 curve. NON-DETERMINISTIC: sometimes a silent degree DOWNgrade,
+ sometimes SIGTRAP from libmalloc catching the overrun. Heap-layout dependent.)
+  run 1 exit=0
+/opt/homebrew/bin/bash: line 7: 60427 Trace/BPT trap: 5          /tmp/probe-bezier-2801 13 > /dev/null 2>&1
+  run 2 exit=133
+  run 3 exit=0
+  run 4 exit=0
+/opt/homebrew/bin/bash: line 7: 60432 Trace/BPT trap: 5          /tmp/probe-bezier-2801 13 > /dev/null 2>&1
+  run 5 exit=133
+  run 6 exit=0
+/opt/homebrew/bin/bash: line 7: 60435 Trace/BPT trap: 5          /tmp/probe-bezier-2801 13 > /dev/null 2>&1
+  run 7 exit=133
+  run 8 exit=0
+  run 9 exit=0
+  run 10 exit=0
+/opt/homebrew/bin/bash: line 7: 60440 Trace/BPT trap: 5          /tmp/probe-bezier-2801 13 > /dev/null 2>&1
+  run 11 exit=133
+  run 12 exit=0
+  run 13 exit=0
+  run 14 exit=0
+  run 15 exit=0
+  run 16 exit=0
+  run 17 exit=0
+  run 18 exit=0
+  run 19 exit=0
+/opt/homebrew/bin/bash: line 7: 60450 Trace/BPT trap: 5          /tmp/probe-bezier-2801 13 > /dev/null 2>&1
+  run 20 exit=133
+  summary: exit 0 = 15, exit 133 (SIGTRAP) = 5, other = 0
+
+=============================================================== mode 4, repeated 20x
+(SetPole(6) on a 4-pole curve: silent two-slot-past-the-end write.)
+  run 1 exit=0
+  run 2 exit=0
+  run 3 exit=0
+  run 4 exit=0
+  run 5 exit=0
+  run 6 exit=0
+  run 7 exit=0
+  run 8 exit=0
+  run 9 exit=0
+  run 10 exit=0
+  run 11 exit=0
+  run 12 exit=0
+  run 13 exit=0
+  run 14 exit=0
+  run 15 exit=0
+  run 16 exit=0
+  run 17 exit=0
+  run 18 exit=0
+  run 19 exit=0
+  run 20 exit=0
+  summary: exit 0 = 20, non-zero = 0
+
+=============================================================== mode 9, repeated 20x
+(InsertPoleAfter(9) on a 4-pole curve: OOB read of myPoles(5..9) + OOB write of npoles(6..10).)
+  run 1 exit=0
+  run 2 exit=0
+  run 3 exit=0
+  run 4 exit=0
+  run 5 exit=0
+  run 6 exit=0
+  run 7 exit=0
+  run 8 exit=0
+  run 9 exit=0
+  run 10 exit=0
+  run 11 exit=0
+  run 12 exit=0
+  run 13 exit=0
+  run 14 exit=0
+  run 15 exit=0
+  run 16 exit=0
+  run 17 exit=0
+  run 18 exit=0
+  run 19 exit=0
+  run 20 exit=0
+  summary: exit 0 = 20, non-zero = 0
+
+================================================================================
+RE-VERIFICATION AGAINST THE PINNED ASSET
+================================================================================
+The run above used the developer checkout's Libraries/OCCT.xcframework, which is the
+v4.0.0-kernel.1-vintage library (zip sha256 da14acb1c0d58eb3...), one repin behind what this
+worktree's Package.swift pins.  Re-run below against the PINNED v4.0.0-kernel.2 asset, downloaded
+fresh and checksum-verified:
+
+  gh release download v4.0.0-kernel.2 --repo SecondMouseAU/OCCTSwift -p OCCT.xcframework.zip
+  swift package compute-checksum OCCT.xcframework.zip
+    -> 18b181cc27778520fa2912ac2abb38038800b70e48d2fe1cf7fedcc61414d1c3
+  matches Package.swift's checksum: yes
+
+clang++ -std=c++17 -ObjC++ -w \
+  -I"$PINNED/OCCT.xcframework/macos-arm64/Headers" \
+  -L"$PINNED/OCCT.xcframework/macos-arm64" \
+  -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
+  Scripts/repro/2801-sweep-bezier/probe.mm -o /tmp/probe-bezier-k2
+
+mode 0   exit=0                       (No_Exception build confirmed on the pin too)
+mode 8   exit=138  SIGBUS             Geom2d_BezierCurve::InsertPoleAfter(1000000, ...)
+mode 11  exit=139  SIGSEGV            Geom2d_BezierCurve::RemovePole(1000000)
+mode 12  exit=139  SIGSEGV            RemovePole on a 1-pole curve
+mode 15  exit=139  SIGSEGV            Geom2d_BezierCurve::Increase(-5)
+mode 16  exit=139  SIGSEGV            Geom_BezierSurface::Pole(1000000, 1)
+mode 18  exit=0                       CONTROL: Geom_BezierSurface setters use literal throw, live
+mode 20  exit=0                       CONTROL: Geom_BezierCurve (3D) uses literal throw, live
+mode 21  exit=138  SIGBUS             Geom2d_BezierCurve::SetPole(1<<28, ...)
+mode 23  exit=133  SIGTRAP            SetPole(5)/(6) with a live malloc neighbour, libmalloc abort
+
+Identical on both kernels, including both controls.  The defect is not a property of one build of
+the asset.
