@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// TObj application singleton for OCAF-based document management.

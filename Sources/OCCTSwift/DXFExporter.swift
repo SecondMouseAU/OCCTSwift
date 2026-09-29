@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import simd
 
 // MARK: - DXF 2D export (#63)
@@ -172,7 +172,7 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink, Drawing
         do {
             try out.write(to: url, atomically: true, encoding: .utf8)
         } catch {
-            throw DXFError.writeFailed(error.localizedDescription)
+            throw DXFError.writeFailed(error.exportDescription)
         }
     }
 
@@ -182,7 +182,7 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink, Drawing
         "\(code)\n\(value)\n"
     }
     private func pair(_ code: Int, _ value: Double) -> String {
-        pair(code, String(format: "%.6f", value))
+        pair(code, String(cFormat: "%.6f", value))
     }
     private func pair(_ code: Int, _ value: Int) -> String {
         pair(code, "\(value)")

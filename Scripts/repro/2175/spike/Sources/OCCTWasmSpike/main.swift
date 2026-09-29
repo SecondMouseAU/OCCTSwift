@@ -15,8 +15,27 @@
 //
 // Exit status is the number of failed cases, so the runner needs no output parsing to know.
 
-import Foundation
+// FoundationEssentials, and the choice matters more than it looks. #2761's saving is
+// ALL-OR-NOTHING PER MODULE: one linked file importing full Foundation pulls the
+// internationalisation data back in, and that includes the CONSUMER'S OWN code, not just
+// the package's. Measured here: with `import Foundation` on this line and every one of
+// OCCTSwift's 220 files migrated, the module was 141,893,725 bytes, which is the
+// unmigrated size. The saving only appears once this line moves too.
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 import OCCTSwift
+
+// The C library, for `exit`. Foundation re-exported it; FoundationEssentials does not.
+#if canImport(Darwin)
+    import Darwin
+#elseif canImport(WASILibc)
+    import WASILibc
+#elseif canImport(Glibc)
+    import Glibc
+#endif
 
 // MARK: - reporting
 
@@ -29,7 +48,9 @@ var failures = 0
 func report(_ name: String, _ passed: Bool, _ detail: String) {
     let verdict = passed ? "PASS" : "FAIL"
     if !passed { failures += 1 }
-    let padded = name.padding(toLength: 24, withPad: " ", startingAt: 0)
+    // `padding(toLength:withPad:startingAt:)` is Foundation-only, and this is column alignment in
+    // a report, so it is spelled out rather than reached for.
+    let padded = name.count >= 24 ? name : name + String(repeating: " ", count: 24 - name.count)
     print("case \(padded) \(verdict)  \(detail)")
 }
 

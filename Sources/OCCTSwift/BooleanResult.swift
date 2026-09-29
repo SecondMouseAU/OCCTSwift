@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Result of a boolean operation with shape tracking.

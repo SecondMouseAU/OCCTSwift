@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// A clipping plane that can be used to cut geometry during rendering.

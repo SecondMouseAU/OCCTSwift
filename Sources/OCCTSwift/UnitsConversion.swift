@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Length unit types matching OCCT UnitsMethods_LengthUnit enum.

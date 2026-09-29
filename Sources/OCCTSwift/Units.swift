@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Unit conversion utilities wrapping OCCT UnitsAPI.

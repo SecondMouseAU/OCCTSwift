@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 extension Shape {
@@ -190,7 +190,7 @@ extension Shape {
     /// The precise form of ``fill(boundaries:parameters:)``: every edge names its own
     /// reference face and continuity order, and may bound the resulting face or act as an
     /// internal constraint the surface must also satisfy. `parameters.continuity` is
-    /// ignored — each constraint carries its own.
+    /// ignored: each constraint carries its own.
     ///
     /// - Parameters:
     ///   - constraints: Edge constraints defining the surface
@@ -734,7 +734,7 @@ extension Shape {
 
     // MARK: - BRepGProp_Face integration (#266 follow-up)
 
-    /// `BRepGProp_Face` Gauss-integration orders in U and V — the quadrature this face needs for exact surface integrals.
+    /// `BRepGProp_Face` Gauss-integration orders in U and V, the quadrature this face needs for exact surface integrals.
     ///
     /// Non-trivial only for BSpline faces; nil if the shape isn't a single face.
     public var faceIntegrationOrders: (u: Int, v: Int)? {
@@ -744,7 +744,7 @@ extension Shape {
         return (Int(u), Int(v))
     }
 
-    /// `BRepGProp_Face` U-direction integration knots — the BSpline span boundaries used when
+    /// `BRepGProp_Face` U-direction integration knots, the BSpline span boundaries used when
     /// integrating over the face's U range (just `[uMin, uMax]` for non-BSpline faces).
     public func faceIntegrationKnotsU() -> [Double] {
         var buffer = [Double](repeating: 0, count: 256)
@@ -753,7 +753,7 @@ extension Shape {
         return Array(buffer.prefix(Int(n)))
     }
 
-    /// `BRepGProp_Face` V-direction integration knots — companion to ``faceIntegrationKnotsU()``.
+    /// `BRepGProp_Face` V-direction integration knots, companion to ``faceIntegrationKnotsU()``.
     public func faceIntegrationKnotsV() -> [Double] {
         var buffer = [Double](repeating: 0, count: 256)
         let n = OCCTBRepGPropFaceVKnots(handle, &buffer, 256)
@@ -961,7 +961,7 @@ extension Shape {
     // MARK: - GeomFill_Coons / GeomFill_Curved
 
     /// Shared marshaling for `coonsFilling`/`curvedFilling`: both validate and flatten the same 4
-    /// boundary-point arrays, size the same output buffer, and unflatten the same pole grid shape —
+    /// boundary-point arrays, size the same output buffer, and unflatten the same pole grid shape:
     /// they differ only in which bridge fill function computes the poles (#796).
     private static func fillPoleGrid(
         boundary1: [SIMD3<Double>], boundary2: [SIMD3<Double>],
@@ -1038,9 +1038,18 @@ extension Shape {
     /// - Note: **Neither this call nor the kernel diagnoses a disagreeing corner**, and OCCT itself
     ///   does not leave that to its callers. `GeomFill_BSplineCurves::Init` runs a private `Arrange`
     ///   first, which reorders and reverses the four curves into this layout at
-    ///   `Precision::Confusion()` and raises `Standard_ConstructionError` ("Courbes non jointives")
-    ///   when they do not join. This wrapper is the lower-level entry point and passes the four rows
-    ///   through as given, so arranging and checking them is the caller's job here.
+    ///   `Precision::Confusion()`, and refuses a set that does not join. This wrapper is the
+    ///   lower-level entry point and passes the four rows through as given, so arranging and
+    ///   checking them is the caller's job here. **If you want the arranging and the refusal, use
+    ///   the curve-based wrappers of that class**, ``Surface/bsplineFill(curves:style:)`` and
+    ///   ``Surface/bezierFill(_:_:_:_:style:)``: they take the four boundaries in any order and
+    ///   either direction and return `nil` for a set that does not close (#2829). What they do not
+    ///   do is return a pole grid, so this pair stays as it is.
+    /// - Note: OCCT's own refusal is `Standard_ConstructionError_Raise_if`, and that macro is
+    ///   compiled out of the kernel this package ships, so reading `GeomFill_BSplineCurves.cxx:287`
+    ///   as "the kernel will tell me" is wrong here. Measured: until #2829 a non-joining set was an
+    ///   uncatchable crash, on a planar boundary and on a periodic one, in both the BSpline and the
+    ///   Bezier flavour. Evidence in `Scripts/repro/2829-geomfill-arrange-guard/`.
     /// - Note: `Poles` come back row-major in U with V varying fastest, so the pole at `(u, v)`,
     ///   both zero-based, is `poles[u * nbV + v]`.
     /// - Note: The tests in `Tests/OCCTSurfaceTests/GeomFillCoonsTests.swift` pin both a correct
@@ -1375,7 +1384,7 @@ extension Shape {
         return ok ? SIMD3(dx, dy, dz) : nil
     }
 
-    /// Get tangent in V direction on a face at (u, v) — the second axis of the tangent plane (companion to ``faceLPropTangentU(u:v:)``).
+    /// Get tangent in V direction on a face at (u, v), the second axis of the tangent plane (companion to ``faceLPropTangentU(u:v:)``).
     ///
     /// Returns nil if the V tangent is undefined.
     public func faceLPropTangentV(u: Double, v: Double) -> SIMD3<Double>? {

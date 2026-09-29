@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Configuration for a rendering Z-layer that controls depth testing, polygon offset,

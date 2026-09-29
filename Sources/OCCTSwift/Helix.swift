@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Helix curve construction using OCCT HelixGeom classes (rc4).
