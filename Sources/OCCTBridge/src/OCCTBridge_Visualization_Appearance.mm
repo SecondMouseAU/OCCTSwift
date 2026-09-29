@@ -244,72 +244,6 @@ struct OCCTSelector
   }
 };
 
-static int32_t OCCTSelectorCollectResults(OCCTSelectorRef sel,
-                                          OCCTPickResult* out,
-                                          int32_t         maxResults)
-{
-  int32_t count = 0;
-  for (int i = 1; i <= sel->selector->NbPicked() && count < maxResults; i++)
-  {
-    Handle(SelectMgr_EntityOwner) owner = sel->selector->Picked(i);
-    if (owner.IsNull())
-      continue;
-
-    Handle(OCCTBRepSelectable) selectable =
-      Handle(OCCTBRepSelectable)::DownCast(owner->Selectable());
-    if (selectable.IsNull())
-      continue;
-
-    int32_t foundId = -1;
-    for (NCollection_DataMap<int32_t, Handle(OCCTBRepSelectable)>::Iterator it(sel->objects);
-         it.More();
-         it.Next())
-    {
-      if (it.Value() == selectable)
-      {
-        foundId = it.Key();
-        break;
-      }
-    }
-    if (foundId < 0)
-      continue;
-
-    const SelectMgr_SortCriterion& criterion = sel->selector->PickedData(i);
-
-    out[count].shapeId = foundId;
-    out[count].depth   = criterion.Depth;
-    out[count].pointX  = criterion.Point.X();
-    out[count].pointY  = criterion.Point.Y();
-    out[count].pointZ  = criterion.Point.Z();
-
-    // Extract sub-shape information from BRepOwner
-    out[count].subShapeType  = static_cast<int32_t>(TopAbs_SHAPE);
-    out[count].subShapeIndex = -1;
-
-    Handle(StdSelect_BRepOwner) brepOwner = Handle(StdSelect_BRepOwner)::DownCast(owner);
-    if (!brepOwner.IsNull() && brepOwner->HasShape())
-    {
-      const TopoDS_Shape& subShape = brepOwner->Shape();
-      out[count].subShapeType      = static_cast<int32_t>(subShape.ShapeType());
-
-      // #541: a picked sub-shape's index is 0-based, so it can be handed straight to
-      // OCCTShapeGetFaceAtIndex / GetSubShapeByTypeIndex. It used to be 1-based with 0
-      // meaning "the whole shape", which both misaddressed every pick by one and made
-      // the sentinel indistinguishable from a hit on sub-shape 0; the sentinel is -1 now.
-      if (brepOwner->ComesFromDecomposition())
-      {
-        TopTools_IndexedMapOfShape map;
-        TopExp::MapShapes(selectable->Shape(), subShape.ShapeType(), map);
-        int idx                  = map.FindIndex(subShape);
-        out[count].subShapeIndex = (idx > 0) ? idx - 1 : -1;
-      }
-    }
-
-    count++;
-  }
-  return count;
-}
-
 struct OCCTDrawer
 {
   Handle(Prs3d_Drawer) drawer;
@@ -367,18 +301,6 @@ static void fillMaterialProps(const Graphic3d_MaterialAspect& mat, OCCTMaterialP
 static NCollection_List<Handle(Font_SystemFont)> g_fontList;
 
 static bool g_fontListPopulated = false;
-
-// Caller must hold fontListMutex().
-static void ensureFontListLocked()
-{
-  if (!g_fontListPopulated)
-  {
-    Handle(Font_FontMgr) mgr = Font_FontMgr::GetInstance();
-    mgr->InitFontDataBase();
-    g_fontList          = mgr->GetAvailableFonts();
-    g_fontListPopulated = true;
-  }
-}
 
 struct OCCTImage
 {

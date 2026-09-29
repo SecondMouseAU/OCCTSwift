@@ -327,58 +327,9 @@ struct OCCTZLayerSettings
   Graphic3d_ZLayerSettings settings;
 };
 
-static void fillMaterialProps(const Graphic3d_MaterialAspect& mat, OCCTMaterialProperties* props)
-{
-  Quantity_Color ac      = mat.AmbientColor();
-  props->ambientR        = ac.Red();
-  props->ambientG        = ac.Green();
-  props->ambientB        = ac.Blue();
-  Quantity_Color dc      = mat.DiffuseColor();
-  props->diffuseR        = dc.Red();
-  props->diffuseG        = dc.Green();
-  props->diffuseB        = dc.Blue();
-  Quantity_Color sc      = mat.SpecularColor();
-  props->specularR       = sc.Red();
-  props->specularG       = sc.Green();
-  props->specularB       = sc.Blue();
-  Quantity_Color ec      = mat.EmissiveColor();
-  props->emissiveR       = ec.Red();
-  props->emissiveG       = ec.Green();
-  props->emissiveB       = ec.Blue();
-  props->transparency    = mat.Transparency();
-  props->shininess       = mat.Shininess();
-  props->refractionIndex = mat.RefractionIndex();
-  props->isPhysic        = (mat.MaterialType() == Graphic3d_MATERIAL_PHYSIC);
-  // PBR
-  Graphic3d_PBRMaterial pbr = mat.PBRMaterial();
-  props->pbrMetallic        = pbr.Metallic();
-  // #1419: NormalizedRoughness() is the authored [0,1] value; Roughness() remaps it into
-  // [MinRoughness,1] for OCCT's own internal calculations, which is not what a caller reading
-  // this struct back (e.g. for glTF's roughnessFactor) wants.
-  props->pbrRoughness        = pbr.NormalizedRoughness();
-  props->pbrIOR              = pbr.IOR();
-  props->pbrAlpha            = pbr.Alpha();
-  NCollection_Vec3<float> em = pbr.Emission();
-  props->pbrEmissionR        = em.x();
-  props->pbrEmissionG        = em.y();
-  props->pbrEmissionB        = em.z();
-}
-
 static NCollection_List<Handle(Font_SystemFont)> g_fontList;
 
 static bool g_fontListPopulated = false;
-
-// Caller must hold fontListMutex().
-static void ensureFontListLocked()
-{
-  if (!g_fontListPopulated)
-  {
-    Handle(Font_FontMgr) mgr = Font_FontMgr::GetInstance();
-    mgr->InitFontDataBase();
-    g_fontList          = mgr->GetAvailableFonts();
-    g_fontListPopulated = true;
-  }
-}
 
 struct OCCTImage
 {
