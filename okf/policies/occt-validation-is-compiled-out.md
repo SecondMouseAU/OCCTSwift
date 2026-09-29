@@ -82,8 +82,10 @@ SwiftPM compiles the bridge and once as cmake compiled the kernel):
 ## The rule for a bridge author
 
 1. **Guard the value before the call.** A magnitude test, a coincidence test, a range test, whatever
-   the documented exception was about. `StepToGeom::MakeDirection` is OCCT's own example of doing
-   this, per [follow-occt-callers](follow-occt-callers.md).
+   the documented exception was about. `StepToGeom.cxx:1474` is OCCT's own example, and it is the
+   one to copy: it tests `gp_XYZ(X, Y, Z).SquareModulus() > gp::Resolution() * gp::Resolution()`,
+   and infinities before that, and returns a null handle rather than building the
+   `Geom_Direction` at all. Per [follow-occt-callers](follow-occt-callers.md).
 2. **Test `IsDone()`, or `Status() != gce_Done`, before reading any result accessor.** This is the
    largest single class of compiled-out check: 122 of the 828 out-of-line sites are
    `StdFail_NotDone_Raise_if`, against 30 inline ones, and they sit on `Value()`, `Shape()`,
@@ -142,9 +144,10 @@ So one check costs on the order of a tenth of a nanosecond, visible as 10% to 20
 almost nothing else and invisible on an index test. **This bounds the cost per check and says
 nothing about how many execute in a real workload**, which is the number that would decide the flag
 and which needs the kernel built both ways. Against that, the 828 are not shaped like inner-loop
-code: 92 of them sit on a member called `Value`, and the packages holding most of them are
-`GeomToStep` (31), `GC` (24), `gce` (15), `math` (14) and `TopoDSToStep` (13), which are
-once-per-construction result accessors.
+code. Counting classes rather than sites, because that is what the map's rows are: 92 of the 284
+classes carrying one have it on a member called `Value`, and the packages holding the most such
+classes are `GeomToStep` (31), `GC` (24), `gce` (15), `math` (14) and `TopoDSToStep` (13), which are
+once-per-construction result accessors rather than per-element ones.
 
 **The behaviour change is the real cost and it is unmeasured.** Flipping it turns "returns garbage"
 into "throws" at 828 sites inside the kernel, on paths whose bridge callers were written against the

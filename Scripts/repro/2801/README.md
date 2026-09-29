@@ -44,7 +44,8 @@ interleaved runs, medians on one laptop 2026-09-29:
 Read it as a tenth of a nanosecond per check, visible as 10% to 20% on a body that does almost
 nothing else and invisible on an index test. **It says nothing about how many checks a real workload
 executes**, which is the number that would decide
-`BUILD_RELEASE_DISABLE_EXCEPTIONS`, and which needs the kernel built both ways. The spread between
+`BUILD_RELEASE_DISABLE_EXCEPTIONS`, and which needs the kernel built both ways. Nor does it measure
+libOCCT: these are the checks that ARE in the binary, used as a stand-in for the ones that are not. The spread between
 runs of the same binary is comparable to the effect on the constructor row, so that row is the weak
 one; `Normalized()` is consistent across all three runs.
 
