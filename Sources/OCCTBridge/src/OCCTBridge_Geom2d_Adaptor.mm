@@ -752,6 +752,10 @@ int32_t OCCTCurve2DDrawAdaptive(OCCTCurve2DRef c,
 {
   if (!c || c->curve.IsNull() || !outXY || maxPoints <= 0)
     return 0;
+  // #2861: see occtValidTangentialDeflection (OCCTBridge_Internal.h). The 2D twin of
+  // OCCTCurve3DDrawAdaptive, with the same compiled-out precondition.
+  if (!occtValidTangentialDeflection(angularDefl, chordalDefl))
+    return 0;
   try
   {
     Geom2dAdaptor_Curve         adaptor(c->curve);

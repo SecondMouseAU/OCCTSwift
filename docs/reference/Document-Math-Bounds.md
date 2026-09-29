@@ -1578,7 +1578,10 @@ public static func fromCylinder(origin: SIMD3<Double>, axis: SIMD3<Double>, radi
                                  u1: Double, u2: Double, v1: Double, v2: Double) -> Surface?
 ```
 
-- **Parameters:** `origin`, `axis`, cylinder position and orientation; `radius`, cylinder radius; `u1`/`u2`, angular range (radians); `v1`/`v2`, axial parameter range.
+- **Parameters:** `origin`, `axis`, cylinder position and orientation; `radius`, cylinder radius;
+  `u1`/`u2`, angular range (radians), **ordered, with `u2 - u1` in `0...2 * .pi`**; `v1`/`v2`, axial
+  parameter range, which must differ by more than `Epsilon(v1)`.
+- **Returns:** `nil` if the range is not one `Convert_CylinderToBSplineSurface` accepts.
 - **OCCT:** `Convert_CylinderToBSplineSurface` (via `OCCTConvertCylinderToBSplineSurface`).
 - **Example:**
   ```swift
@@ -1586,6 +1589,15 @@ public static func fromCylinder(origin: SIMD3<Double>, axis: SIMD3<Double>, radi
                                      radius: 2.0, u1: 0, u2: 2 * .pi,
                                      v1: 0, v2: 5.0) { }
   ```
+
+The ordering is not decoration. `Convert_CylinderToBSplineSurface` states the constraint as a
+`Standard_DomainError_Raise_if`, which the pinned kernel compiles to nothing
+([occt-validation-is-compiled-out](../../okf/policies/occt-validation-is-compiled-out.md)), and its
+pole and knot arrays are fixed by its base class before it derives their real extent from the range
+it was handed. Before #2861 added the check on our side of the bridge: swapping the two arguments
+(`u1: 2 * .pi, u2: 0`) SIGSEGVed uncatchably, `u2 - u1 >= 10.472` wrote about 3.4 KB past a 432-byte
+allocation before returning `nil`, and `2 * .pi < u2 - u1 < 10.472` returned a non-`nil` surface whose
+poles sat 11.7 to 12.7 from the axis of a radius-5 cylinder.
 
 ---
 
@@ -1599,7 +1611,10 @@ public static func fromCone(origin: SIMD3<Double>, axis: SIMD3<Double>,
                              u1: Double, u2: Double, v1: Double, v2: Double) -> Surface?
 ```
 
-- **Parameters:** `semiAngle`, half-angle in radians; `refRadius`, reference radius at the base.
+- **Parameters:** `semiAngle`, half-angle in radians; `refRadius`, reference radius at the base;
+  `u1`/`u2` and `v1`/`v2` carry exactly the constraint documented for `fromCylinder` above, and
+  `Convert_ConeToBSplineSurface.cxx:94` is the same compiled-out `Standard_DomainError_Raise_if`.
+- **Returns:** `nil` if the range is not one `Convert_ConeToBSplineSurface` accepts.
 - **OCCT:** `Convert_ConeToBSplineSurface` (via `OCCTConvertConeToBSplineSurface`).
 
 ---

@@ -2937,13 +2937,34 @@ void OCCTMat2dTranspose(const double* _Nonnull mat, double* _Nonnull result)
   result[3]  = t.Value(2, 2);
 }
 
+// === #2859: every Geom2d_BezierCurve index guard is a compiled-out macro ===
+//
+// Geom2d_BezierCurve writes all of its preconditions as `Standard_*_Raise_if` in
+// Geom2d_BezierCurve.cxx, and this kernel is built Release, which defines No_Exception and empties
+// that macro (okf/policies/occt-validation-is-compiled-out.md). Geom_BezierCurve, the same class in
+// 3D, writes the identical guards as literal `throw` statements, which no macro gates, so the 3D
+// side still refuses an out-of-range index and the 2D side indexes NCollection_Array1 out of
+// bounds. Nothing in either signature, header comment or our own docs distinguishes them.
+//
+// Measured on the pinned v4.0.0-kernel.2 asset (Scripts/repro/2801-sweep-bezier): Pole(1000000)
+// SIGSEGVs, Pole(7) on a 4-pole curve returns (7.29e-304, 0), SetPole(5) tripped a libmalloc abort,
+// SetPole(1000000) wrote 16 MB past the array and returned success, and SetWeight(at: 2, weight: 0)
+// stuck a zero weight on a rational curve. So each entry point applies the bound itself, which is
+// exactly what its OCCTCurve2DBSpline* sibling above already does.
+
 void OCCTCurve2DBezierGetPole(OCCTCurve2DRef curve, int32_t index, double* x, double* y)
 {
   try
   {
-    auto* c      = static_cast<OCCTCurve2D*>(curve);
-    auto  bezier = occ::handle<Geom2d_BezierCurve>::DownCast(c->curve);
-    if (bezier.IsNull())
+    auto* c = static_cast<OCCTCurve2D*>(curve);
+    if (!c || c->curve.IsNull())
+    {
+      *x = *y = 0;
+      return;
+    }
+    auto bezier = occ::handle<Geom2d_BezierCurve>::DownCast(c->curve);
+    // Geom2d_BezierCurve.cxx:609, Standard_OutOfRange_Raise_if(Index < 1 || Index > NbPoles()).
+    if (bezier.IsNull() || index < 1 || index > bezier->NbPoles())
     {
       *x = *y = 0;
       return;
@@ -2963,9 +2984,12 @@ bool OCCTCurve2DBezierSetPole(OCCTCurve2DRef curve, int32_t index, double x, dou
 {
   try
   {
-    auto* c      = static_cast<OCCTCurve2D*>(curve);
-    auto  bezier = occ::handle<Geom2d_BezierCurve>::DownCast(c->curve);
-    if (bezier.IsNull())
+    auto* c = static_cast<OCCTCurve2D*>(curve);
+    if (!c || c->curve.IsNull())
+      return false;
+    auto bezier = occ::handle<Geom2d_BezierCurve>::DownCast(c->curve);
+    // Geom2d_BezierCurve.cxx:397, Standard_OutOfRange_Raise_if(Index < 1 || Index > NbPoles()).
+    if (bezier.IsNull() || index < 1 || index > bezier->NbPoles())
       return false;
     bezier->SetPole(index, gp_Pnt2d(x, y));
     return true;
@@ -2981,9 +3005,17 @@ bool OCCTCurve2DBezierSetWeight(OCCTCurve2DRef curve, int32_t index, double weig
 {
   try
   {
-    auto* c      = static_cast<OCCTCurve2D*>(curve);
-    auto  bezier = occ::handle<Geom2d_BezierCurve>::DownCast(c->curve);
-    if (bezier.IsNull())
+    auto* c = static_cast<OCCTCurve2D*>(curve);
+    if (!c || c->curve.IsNull())
+      return false;
+    auto bezier = occ::handle<Geom2d_BezierCurve>::DownCast(c->curve);
+    // Geom2d_BezierCurve.cxx:422-423, Standard_OutOfRange_Raise_if(Index < 1 || Index > nbpoles)
+    // and Standard_ConstructionError_Raise_if(Weight <= gp::Resolution()). The weight test is
+    // spelled as a negated `>` so a NaN weight refuses too: a zero or negative weight stuck, and
+    // Value(0.5) then returned a finite point off the curve's own convex hull.
+    if (bezier.IsNull() || index < 1 || index > bezier->NbPoles())
+      return false;
+    if (!(weight > gp::Resolution()))
       return false;
     bezier->SetWeight(index, weight);
     return true;
@@ -3773,6 +3805,16 @@ bool OCCTCurve2DBezierInsertPoleAfter(OCCTCurve2DRef curve, int32_t index, doubl
   auto bz = Handle(Geom2d_BezierCurve)::DownCast(curve->curve);
   if (bz.IsNull())
     return false;
+  // #2859: Geom2d_BezierCurve.cxx:199-203 guards this with two compiled-out macros,
+  // Standard_ConstructionError_Raise_if(nbpoles >= MaxDegree()) and
+  // Standard_OutOfRange_Raise_if(Index < 0 || Index > nbpoles). Index 9 on a 4-pole curve returned
+  // success while reading myPoles(5..9) and writing npoles(6..10) past a 5-slot array with no
+  // signal in 20 of 20 runs; index 1000000 SIGBUSed. The kernel's third condition,
+  // Weight <= gp::Resolution(), cannot hold here because this entry point takes no weight and
+  // InsertPoleAfter defaults it to 1.
+  const int nbPoles = bz->NbPoles();
+  if (index < 0 || index > nbPoles || nbPoles >= Geom2d_BezierCurve::MaxDegree())
+    return false;
   try
   {
     bz->InsertPoleAfter(index, gp_Pnt2d(x, y));
@@ -3791,6 +3833,15 @@ bool OCCTCurve2DBezierRemovePole(OCCTCurve2DRef curve, int32_t index)
     return false;
   auto bz = Handle(Geom2d_BezierCurve)::DownCast(curve->curve);
   if (bz.IsNull())
+    return false;
+  // #2859: Geom2d_BezierCurve.cxx:276-278, Standard_ConstructionError_Raise_if(nbpoles <= 2) and
+  // Standard_OutOfRange_Raise_if(Index < 1 || Index > nbpoles), both compiled out. Index 1000000
+  // SIGSEGVed; worse, removing from a 2-pole curve succeeded and left a 1-pole degree-0
+  // Geom2d_BezierCurve, a live Swift object in a state the kernel's own constructor forbids, whose
+  // next RemovePole SIGSEGVed. The nbpoles <= 2 half of the guard is what stops that object
+  // existing: OCCTCurve2DCreateBezier already refuses poleCount < 2, so this was its only route.
+  const int nbPoles = bz->NbPoles();
+  if (index < 1 || index > nbPoles || nbPoles <= 2)
     return false;
   try
   {
@@ -3829,6 +3880,15 @@ bool OCCTCurve2DBezierIncreaseDegree(OCCTCurve2DRef curve, int32_t degree)
     return false;
   auto bz = Handle(Geom2d_BezierCurve)::DownCast(curve->curve);
   if (bz.IsNull())
+    return false;
+  // #2859: Geom2d_BezierCurve.cxx:144, Standard_ConstructionError_Raise_if(Deg < Degree() ||
+  // Deg > MaxDegree()), compiled out. Increase(-5) SIGSEGVed. Increase(2) on a degree-5 curve was
+  // non-deterministic: 5 of 20 identical runs aborted in libmalloc, and the other 15 silently
+  // *lowered* the degree to 2 and dropped three poles. Increase(75) against MaxDegree() == 25
+  // returned success and produced a degree-75, 76-pole Bezier. Equality is deliberately allowed:
+  // Increase returns early on Deg == Degree() (:138) before reaching the check, so a no-op
+  // elevation is a documented success rather than a refusal.
+  if (degree < bz->Degree() || degree > Geom2d_BezierCurve::MaxDegree())
     return false;
   try
   {

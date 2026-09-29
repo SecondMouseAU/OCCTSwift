@@ -202,6 +202,8 @@
 #include <GeomEval_AHTBezierSurface.hxx>
 #include <GeomFill_NetworkSurface.hxx>
 #include <GeomAPI_ExtremaCurveCurve.hxx>
+#include <Standard_Real.hxx>
+#include <cmath>
 
 // Shared private structs/helpers (#1380): every split file gets this identical block,
 // compiled independently per TU -- see this split's own README for why.
@@ -2731,6 +2733,42 @@ OCCTSurfaceRef OCCTConvertSphereToBSplineSurface(double ox,
   }
 }
 
+// === #2861: the only validation the parameterised cylinder and cone converters had is gone ===
+//
+// Convert_CylinderToBSplineSurface.cxx:83 and Convert_ConeToBSplineSurface.cxx:94 open with
+// Standard_DomainError_Raise_if(|V2 - V1| <= |Epsilon(V1)| || deltaU > 2*pi || deltaU < 0), and
+// this Release kernel empties that macro (okf/policies/occt-validation-is-compiled-out.md). Their
+// base class has already fixed the pole and knot arrays at 9 and 5, and they then derive `nbUSpans
+// = trunc(1.2 * deltaU / pi) + 1` from the range they were handed, so:
+//
+//   deltaU <= -5*pi/3   nbUSpans <= -1, myNbUKnots <= 0, `myUMults(myNbUKnots)++` stores at index
+//                       <= 0 of a 1-based NCollection_Array1 and Finalize() resizes to a negative
+//                       length: SIGSEGV. u1 = 2*pi, u2 = 0 is inside this band, so swapping two
+//                       adjacent arguments crashes the process uncatchably.
+//   deltaU >= 10.472    nbUSpans >= 5, myNbUPoles >= 11, and ComputePoles writes up to Poles(79, 2)
+//                       into the 9x2 array BEFORE Finalize() resizes it: about 3.4 KB past a
+//                       432-byte allocation. Geom_BSplineSurface then refuses the weights, so the
+//                       visible result is null and nothing signals the write.
+//   2*pi < deltaU       a non-null surface whose poles sit 11.7 to 12.7 from the axis of a radius-5
+//     < 10.472          cylinder, self-overlapping in U. `deltaU > 2*pi` was the only refusal.
+//
+// NCollection_Array1's own range check is inline, which would make it live in the bridge's own
+// unit, but it expands inside the OCCT unit here, so No_Exception empties it there too: at depth an
+// inline check is no protection either. Measured on the pinned v4.0.0-kernel.2 asset
+// (Scripts/repro/2801-sweep-convert, modes 41-55). Convert_CircleToBSplineCurve.cxx:129 is the
+// control: it writes the same precondition as a literal `throw`, which no macro gates, and
+// Curve2D.fromCircleArc has always returned nil on the same input.
+//
+// The conditions are OCCT's own, spelled so that a NaN bound refuses rather than slipping through
+// two `<`/`>` tests that are both false on NaN; trunc() of a NaN deltaU is undefined behaviour.
+static bool occtValidElementaryConvertRange(double u1, double u2, double v1, double v2)
+{
+  const double deltaU = u2 - u1;
+  if (!(deltaU >= 0.0 && deltaU <= 2 * M_PI))
+    return false;
+  return std::abs(v2 - v1) > std::abs(Epsilon(v1));
+}
+
 OCCTSurfaceRef OCCTConvertCylinderToBSplineSurface(double ox,
                                                    double oy,
                                                    double oz,
@@ -2743,6 +2781,8 @@ OCCTSurfaceRef OCCTConvertCylinderToBSplineSurface(double ox,
                                                    double v1,
                                                    double v2)
 {
+  if (!occtValidElementaryConvertRange(u1, u2, v1, v2))
+    return nullptr;
   try
   {
     gp_Cylinder                      cyl(gp_Ax3(gp_Pnt(ox, oy, oz), gp_Dir(nx, ny, nz)), radius);
@@ -2769,6 +2809,8 @@ OCCTSurfaceRef OCCTConvertConeToBSplineSurface(double ox,
                                                double v1,
                                                double v2)
 {
+  if (!occtValidElementaryConvertRange(u1, u2, v1, v2))
+    return nullptr;
   try
   {
     gp_Cone cone(gp_Ax3(gp_Pnt(ox, oy, oz), gp_Dir(nx, ny, nz)), semiAngle, refRadius);
@@ -5091,6 +5133,13 @@ int32_t OCCTSurfaceBezierVDegree(OCCTSurfaceRef surface)
   }
 }
 
+// #2859: Geom_BezierSurface's *setters* are literal throws and so still refuse an out-of-range
+// index, but its Pole(UIndex, VIndex) getter guards with Standard_OutOfRange_Raise_if
+// (Geom_BezierSurface.cxx:1744), which this Release kernel compiles to nothing
+// (okf/policies/occt-validation-is-compiled-out.md). Measured on the pinned v4.0.0-kernel.2 asset
+// (Scripts/repro/2801-sweep-bezier, mode 16): Pole(1000000, 1) SIGSEGVs, and on a 3x4 grid
+// Pole(0, 0) returned (1.98e-323, 2.13e-314, 2.47e-323). OCCTSurfaceBSplineGetPole above already
+// applies this exact bound; the Bezier twin did not.
 void OCCTSurfaceBezierGetPole(OCCTSurfaceRef surface,
                               int32_t        uIndex,
                               int32_t        vIndex,
@@ -5100,9 +5149,15 @@ void OCCTSurfaceBezierGetPole(OCCTSurfaceRef surface,
 {
   try
   {
-    auto* s      = static_cast<OCCTSurface*>(surface);
-    auto  bezier = occ::handle<Geom_BezierSurface>::DownCast(s->surface);
-    if (bezier.IsNull())
+    auto* s = static_cast<OCCTSurface*>(surface);
+    if (!s || s->surface.IsNull())
+    {
+      *x = *y = *z = 0;
+      return;
+    }
+    auto bezier = occ::handle<Geom_BezierSurface>::DownCast(s->surface);
+    if (bezier.IsNull() || uIndex < 1 || uIndex > bezier->NbUPoles() || vIndex < 1
+        || vIndex > bezier->NbVPoles())
     {
       *x = *y = *z = 0;
       return;

@@ -1136,13 +1136,22 @@ Inserts a new pole after a given 1-based index in a 2D Bézier curve.
 public func bezierInsertPoleAfter(_ index: Int, point: SIMD2<Double>) -> Bool
 ```
 
-- **Parameters:** `index`, 1-based index after which to insert; `point`, new pole coordinates.
-- **Returns:** `true` on success, `false` if not a Bézier or `index` is out of range.
+- **Parameters:** `index`, 1-based index after which to insert, valid over `0...poleCount` (`0`
+  prepends); `point`, new pole coordinates.
+- **Returns:** `true` on success, `false` if not a Bézier, if `index` is outside `0...poleCount`, or
+  if the curve already carries `Curve2D.bezierMaxDegree` poles.
 - **OCCT:** `Geom2d_BezierCurve::InsertPoleAfter`.
 - **Example:**
   ```swift
   curve.bezierInsertPoleAfter(1, point: SIMD2(0.5, 0.5))
   ```
+
+The bound is applied on our side of the bridge. `Geom2d_BezierCurve::InsertPoleAfter` writes both of
+its preconditions as `Standard_*_Raise_if`, which the pinned kernel compiles to nothing
+([occt-validation-is-compiled-out](../../okf/policies/occt-validation-is-compiled-out.md)). Before
+#2859 the refusal this page already claimed did not exist: `index: 9` on a 4-pole curve returned
+`true` while writing past the pole array, with no signal in 20 of 20 runs, and `index: 1000000`
+SIGBUSed.
 
 ---
 
@@ -1157,13 +1166,20 @@ public func bezierRemovePole(_ index: Int) -> Bool
 
 Removing a pole lowers the degree by one. A Bézier must have at least 2 poles.
 
-- **Parameters:** `index`, 1-based pole index to remove.
-- **Returns:** `true` on success, `false` if not a Bézier or the operation would violate constraints.
+- **Parameters:** `index`, 1-based pole index to remove, valid over `1...poleCount`.
+- **Returns:** `true` on success, `false` if not a Bézier, if `index` is outside `1...poleCount`, or
+  if the curve has only 2 poles.
 - **OCCT:** `Geom2d_BezierCurve::RemovePole`.
 - **Example:**
   ```swift
   curve.bezierRemovePole(2)
   ```
+
+Both bounds are applied on our side of the bridge, for the reason above. Before #2859 neither held:
+`index: 1000000` SIGSEGVed, and removing from a 2-pole curve *succeeded*, leaving a 1-pole degree-0
+Bézier, a live object in a state `Geom2d_BezierCurve`'s own constructor forbids, whose next
+`bezierRemovePole` SIGSEGVed. The `poleCount > 2` half of the guard is what keeps that object from
+existing at all.
 
 ---
 
@@ -1199,13 +1215,22 @@ public func bezierIncreaseDegree(_ degree: Int) -> Bool
 
 Degree elevation is exact, the curve shape does not change.
 
-- **Parameters:** `degree`, new degree (must be greater than the current degree).
-- **Returns:** `true` on success, `false` if not a Bézier or the requested degree is not higher.
+- **Parameters:** `degree`, new degree, at least the current degree and at most
+  `Curve2D.bezierMaxDegree`. Equal to the current degree is a no-op that reports `true`, which is
+  what `Geom2d_BezierCurve::Increase` does (it returns before its own precondition).
+- **Returns:** `true` on success, `false` if not a Bézier, if `degree` is below the current degree,
+  or if it is above `Curve2D.bezierMaxDegree`.
 - **OCCT:** `Geom2d_BezierCurve::Increase`.
 - **Example:**
   ```swift
   curve.bezierIncreaseDegree(4)
   ```
+
+The range check is applied on our side of the bridge, for the reason above. Before #2859 the claim
+that elevation is exact held only for valid input: `bezierIncreaseDegree(-5)` SIGSEGVed,
+`bezierIncreaseDegree(2)` on a degree-5 curve aborted in libmalloc in 5 of 20 identical runs and in
+the other 15 silently *lowered* the degree to 2 and dropped 3 poles, and `bezierIncreaseDegree(75)`
+against a maximum of 25 reported success and produced a degree-75, 76-pole Bézier.
 
 ---
 

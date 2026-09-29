@@ -2148,7 +2148,16 @@ Get a control pole (1-based indices).
 public func pole(uIndex: Int, vIndex: Int) -> SIMD3<Double>
 ```
 
+- **Returns:** the pole, or `SIMD3(0, 0, 0)` when `uIndex` is outside `1...nbUPoles`, `vIndex` is
+  outside `1...nbVPoles`, or the surface is not a Bézier. **There is no refusal channel**, so that
+  zero is not distinguishable from a real pole at the origin (#726).
 - **OCCT:** `OCCTSurfaceBezierGetPole` → `Geom_BezierSurface::Pole`.
+
+`Geom_BezierSurface`'s *setters* state their bounds as literal `throw`s, which survive this build,
+but this getter states its bound as a `Standard_OutOfRange_Raise_if`, which does not
+([occt-validation-is-compiled-out](../../okf/policies/occt-validation-is-compiled-out.md)). Before
+#2859 the bound was applied nowhere: `pole(uIndex: 1000000, vIndex: 1)` SIGSEGVed, and on a 3x4 grid
+`pole(uIndex: 0, vIndex: 0)` returned `(1.98e-323, 2.13e-314, 2.47e-323)`.
 
 ---
 
@@ -2316,7 +2325,13 @@ Get a control pole (1-based index).
 public func pole(at index: Int) -> SIMD2<Double>
 ```
 
+- **Returns:** the pole, or `SIMD2(0, 0)` when `index` is outside `1...poleCount` or the curve is not
+  a 2D Bézier. **There is no refusal channel**, so that zero is not distinguishable from a real pole
+  at the origin; test `index` against `poleCount` yourself where the difference matters (#726).
 - **OCCT:** `OCCTCurve2DBezierGetPole` → `Geom2d_BezierCurve::Pole`.
+
+Before #2859 an out-of-range index was not that zero but an out-of-bounds read: `pole(at: 7)` on a
+4-pole curve returned `(7.29e-304, 0)` and `pole(at: 1000000)` SIGSEGVed.
 
 ---
 
@@ -2329,7 +2344,15 @@ Set a control pole (1-based index).
 public func setPole(at index: Int, point: SIMD2<Double>) -> Bool
 ```
 
+- **Returns:** `false` if the curve is not a 2D Bézier, or if `index` is outside `1...poleCount`.
 - **OCCT:** `OCCTCurve2DBezierSetPole` → `Geom2d_BezierCurve::SetPole`.
+
+The bound is applied on our side of the bridge, because `Geom2d_BezierCurve::SetPole`'s own
+`Standard_OutOfRange_Raise_if` is compiled out of the pinned kernel
+([occt-validation-is-compiled-out](../../okf/policies/occt-validation-is-compiled-out.md)). Before
+#2859 an out-of-range index was a wild heap **write** that reported success: `index: 1000000` stored
+16 MB past the end in 5 of 5 runs, and `index: 5` on a 4-pole curve with a live `malloc` neighbour
+tripped libmalloc's own corruption check as a SIGTRAP.
 
 ---
 
@@ -2342,7 +2365,16 @@ Set a pole weight (1-based index).
 public func setWeight(at index: Int, weight: Double) -> Bool
 ```
 
+- **Parameters:** `index`, 1-based pole index; `weight`, strictly positive (`Geom2d_BezierCurve`
+  requires `weight > gp::Resolution()`).
+- **Returns:** `false` if the curve is not a 2D Bézier, if `index` is outside `1...poleCount`, or if
+  `weight` is zero, negative or NaN.
 - **OCCT:** `OCCTCurve2DBezierSetWeight` → `Geom2d_BezierCurve::SetWeight`.
+
+Both checks are applied on our side of the bridge, for the reason above. Before #2859
+`setWeight(at: 2, weight: 0)` and `setWeight(at: 3, weight: -5)` both reported success and stuck, and
+`point(at: 0.5)` then returned a finite point off the curve's own convex hull: a negative-weight
+rational Bézier is a live curve with a pole inside its own domain.
 
 ---
 

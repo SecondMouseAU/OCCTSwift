@@ -1252,6 +1252,28 @@ inline bool occtValidParameterRange(double u1, double u2)
   return std::isfinite(u1) && std::isfinite(u2);
 }
 
+/// The deflection precondition every `GCPnts_TangentialDeflection` entry point has to apply itself.
+/// `GCPnts_TangentialDeflection::initialize` opens with
+/// `Standard_ConstructionError_Raise_if(theCurvatureDeflection < Precision::Confusion() ||
+/// theAngularDeflection < Precision::Angular(), ...)` (GCPnts_TangentialDeflection.cxx:395), and
+/// this kernel is built Release, which defines No_Exception and empties every `*_Raise_if` in a
+/// `.cxx` (okf/policies/occt-validation-is-compiled-out.md). Same class of gap as
+/// `occtValidSampleCount` above, on a different sampler.
+///
+/// Measured on the pinned v4.0.0-kernel.2 asset (Scripts/repro/2801-sweep-convert, modes 61-62): on
+/// a half-circle edge, `(angular = 0.1, curvature = 0, minPoints = 2)` reported
+/// `NbPoints() == 1000001` where a valid request gives 33, stopped only by an internal 1e6 cap, and
+/// the bridge's own `maxPoints` truncation then handed Swift the first 10,000 of them, which cover
+/// 1.00% of the arc with no error signal. `curvature = 1e-12` does the same. #2861.
+///
+/// Spelled as a conjunction of `>=` so a NaN deflection refuses rather than passing two `<` tests
+/// that are both false on NaN. A negative deflection gives `NbPoints() == 2`, degenerate rather
+/// than misleading, and is refused here too because that is what the kernel's own check refused.
+inline bool occtValidTangentialDeflection(double angularDeflection, double curvatureDeflection)
+{
+  return curvatureDeflection >= Precision::Confusion() && angularDeflection >= Precision::Angular();
+}
+
 // === #603: one Gauss quadrature is not enough to measure an arc ===
 //
 // `CPnts_AbscissaPoint::Length` integrates |C'(u)| with a SINGLE fixed-order Gauss rule over the
