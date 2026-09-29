@@ -742,6 +742,15 @@ double OCCTCurve3DDistanceToSurface(OCCTCurve3DRef curve, OCCTSurfaceRef surface
   try
   {
     GeomAPI_ExtremaCurveSurface extrema(curve->curve, surface->surface);
+    // NbExtrema() == 0 is exactly IsDone() here (#2831): it returns myExtCS.NbExt() when myIsDone
+    // and 0 otherwise, and myIsDone is set whenever Extrema_ExtCS is done with either a solution or
+    // a parallel verdict, whose branch appends one mySqDist entry (Extrema_ExtCS.cxx:305). So the
+    // count is >= 1 whenever the algorithm succeeded, and LowerDistance() reads mySqDist alone.
+    //
+    // THAT HOLDS ONLY BECAUSE THIS READS THE DISTANCE AND NOTHING ELSE. The same parallel branch
+    // appends nothing to the point sequences, so a Points()/NearestPoints() read behind this same
+    // guard would fault uncatchably, which is what #2840 measured in the Extrema_ExtSS twin. Add an
+    // IsParallel() gate before touching a point here, do not extend the count test.
     if (extrema.NbExtrema() == 0)
       return -1.0;
     return extrema.LowerDistance();
@@ -849,6 +858,22 @@ int32_t OCCTSurfaceExtrema(OCCTSurfaceRef            s1,
     GeomAPI_ExtremaSurfaceSurface
       extrema(s1->surface, s2->surface, u1Min, u1Max, v1Min, v1Max, u2Min, u2Max, v2Min, v2Max);
 
+    // #2840: NbExtrema() > 0 is NOT enough to read NearestPoints()/LowerDistanceParameters(), and
+    // this is not the harmless version of that mistake. Extrema_ExtSS's analytic parallel branch
+    // (Extrema_ExtSS.cxx:226-234) appends one entry to mySqDist and nothing to myPOnS1/myPOnS2,
+    // NbExt() is mySqDist.Length(), and Extrema_ExtSS::Points bounds only against NbExt(), so both
+    // accessors read myPOnS1.Value(1) on an empty NCollection_Sequence. Standard_OutOfRange is
+    // compiled out in this Release kernel, so that read is an OS fault, uncatchable by the
+    // catch (...) below (#345). Measured with two parallel Geom_Planes 5 apart,
+    // Scripts/repro/2831/probe.mm: NbExtrema() == 1, IsParallel() == true, LowerDistance() == 5
+    // correctly, and NearestPoints() and LowerDistanceParameters() each exit 139.
+    //
+    // So gate on IsParallel(), as OCCTCurve3DExtrema does for Extrema_ExtCC's identical shape
+    // (#636) and as OCCTExtremaExtElSSPlanes does one layer down. The refusal loses a real
+    // measurement, the constant gap between the two surfaces, because OCCTSurfaceExtremaResult has
+    // no way to report a distance with no points; giving it one is a SemVer event and is #2840's.
+    if (extrema.IsParallel())
+      return 0;
     int32_t nb = extrema.NbExtrema();
     if (nb <= 0)
       return 0;

@@ -321,17 +321,26 @@ public func extrema(
 ) -> SurfaceExtremaResult?
 ```
 
-When `uvBounds1` or `uvBounds2` is `nil`, the bridge substitutes `(0, 1, 0, 1)`, valid for surfaces already in the unit parameter domain; supply explicit bounds for surfaces with other parameter ranges. Returns `nil` when no extrema are found.
+When `uvBounds1` or `uvBounds2` is `nil`, each surface's own `domain` is used. That sentence said "the bridge substitutes `(0, 1, 0, 1)`" until #2840 corrected it; the hardcoded unit box was #1543's defect and has not been the behaviour since, and `SurfaceExtremaTests.nilBoundsUsesFullDomain` pins the difference (a sphere pair reports 12.0 with the real domain and about 24.29 with the unit box). Returns `nil` when no extrema are found.
 
 - **Parameters:** `other`, the second surface; `uvBounds1`, optional UV bounds restricting the search on this surface; `uvBounds2`, optional UV bounds on `other`.
-- **Returns:** `SurfaceExtremaResult`, or `nil` if `GeomAPI_ExtremaSurfaceSurface` finds no solution.
+- **Returns:** `SurfaceExtremaResult`, or `nil` if `GeomAPI_ExtremaSurfaceSurface` finds no solution, or if the two surfaces are **parallel** (see below).
 - **OCCT:** `GeomAPI_ExtremaSurfaceSurface`.
+- **Parallel surfaces return `nil` (#2840), and the example here used to say otherwise.** Two
+  everywhere-equidistant surfaces have a well-defined gap and no discrete nearest pair.
+  `Extrema_ExtSS`'s parallel branch fills its distance sequence and leaves both point sequences
+  empty, while `NbExtrema()` counts the distances, so the count claims a pair that is not there;
+  reading it faults uncatchably on this build, measured in `Scripts/repro/2831/probe.mm`. This page's
+  example was two parallel planes with the comment `≈ 10.0`, which is what the kernel would report if
+  it reported anything, and what running it actually did was take the process down. #2840 carries the
+  kernel fix and the decision about reporting a distance with no points.
 - **Example:**
   ```swift
-  if let s1 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
-     let s2 = Surface.plane(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1)),
+  // Two separated spheres: a genuine discrete nearest pair.
+  if let s1 = Surface.sphere(center: SIMD3(0, 0, 0), radius: 3),
+     let s2 = Surface.sphere(center: SIMD3(20, 0, 0), radius: 5),
      let ex = s1.extrema(to: s2) {
-      print(ex.distance)  // ≈ 10.0
+      print(ex.distance)  // ≈ 12.0, with point1 ≈ (3, 0, 0) and point2 ≈ (15, 0, 0)
   }
   ```
 - **Note:** Infinite (untrimmed) surfaces need explicit `uvBounds` to bound the search; otherwise the solver may fail or return a nonsensical result.

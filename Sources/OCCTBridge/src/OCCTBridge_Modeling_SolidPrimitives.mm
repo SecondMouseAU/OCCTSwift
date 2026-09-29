@@ -1045,6 +1045,20 @@ OCCTShapeRef OCCTShapeCreateHalfSpace(OCCTShapeRef faceShape, double refX, doubl
 
     gp_Pnt                    refPt(refX, refY, refZ);
     BRepPrimAPI_MakeHalfSpace maker(face, refPt);
+    // #2831: Solid()'s own StdFail_NotDone_Raise_if is compiled out in this Release kernel
+    // (BUILD_RELEASE_DISABLE_EXCEPTIONS, #2801), so reading it on a failed maker hands back the
+    // default-constructed mySolid, a null TopoDS_Solid that reads as a shape to the Swift side, and
+    // the catch below cannot run. OCCT's own caller tests IsDone() first
+    // (BRepTest_TopologyCommands.cxx:50-58, which prints "HalfSpace NotDone" and refuses), so this
+    // does the same. NOT COVERED BY A TEST, deliberately: the constructor reaches NotDone() only
+    // when FindExtrema fails, and no input reachable through Shape.halfSpace(face:referencePoint:)
+    // does that, because the bridge takes a face rather than a shell and a reference point that
+    // projects off the face falls to the edge branch. #2801's Scripts/repro/2801/probe.mm case 4
+    // reaches it with an empty TopoDS_Shell and measures the non-throwing null return. A regression
+    // test would pass with and without this line, which okf/policies/prove-the-test-fails.md rules
+    // out, so the guard ships as the contract with its evidence in this comment.
+    if (!maker.IsDone())
+      return nullptr;
     return new OCCTShape(maker.Solid());
   }
   catch (...)
