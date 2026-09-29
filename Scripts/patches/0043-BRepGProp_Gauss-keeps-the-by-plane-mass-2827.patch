@@ -1,0 +1,92 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - BRepGProp_Gauss keeps the by-plane mass
+ instead of discarding it
+
+BRepGProp_Gauss::convert, the six-argument overload, computes the mass and then
+throws it away for every by-plane computation:
+
+  convert(theInertia, theOutGravityCenter, theOutMatrixOfInertia, theOutMass);
+  if (std::abs(theInertia.Mass) >= EPS_DIM && theIsByPoint)
+  {
+    const double anInvMass = 1.0 / theInertia.Mass;
+    if (theIsByPoint)  { ... theCoeff[i] + theInertia.I* * anInvMass ... }
+    else               { ... theInertia.I* * anInvMass ... }
+    theOutMass = theInertia.Mass;
+  }
+  else
+  {
+    theOutMass = 0.0;
+    theOutGravityCenter.SetCoord(0.0, 0.0, 0.0);
+  }
+
+The four-argument convert on the first line has already set theOutMass
+correctly. The && theIsByPoint in the condition below it then sends every
+by-plane call into the else, which was written for the vanishing-mass case, and
+that else overwrites the mass with 0.0 and the gravity centre with (0, 0, 0).
+The inner if (theIsByPoint) ... else ... is dead in its else branch for the same
+reason, and its presence is the evidence the outer condition was meant to test
+EPS_DIM alone: there is no other way for that branch to be reached.
+
+All four by-plane BRepGProp_Vinert::Perform overloads are affected, and so are
+the four gp_Pln constructors that delegate to them. They are the only callers
+that pass theIsByPoint == false (BRepGProp_Vinert.cxx:285, :300, :317, plus the
+:263 overload that forwards to :273), and both BRepGProp_Gauss::Compute paths,
+the adaptive one at BRepGProp_Gauss.cxx:1101 and the plain one at :1388, reach
+this convert. BRepGProp_Sinert and BRepGProp_Cinert are unaffected: Compute
+calls the six-argument convert only when myType == Vinert and otherwise calls
+the four-argument one, which has no such flag.
+
+Dropping && theIsByPoint is the whole fix, and it makes the inner else live and
+correct rather than merely reachable. For a by-point computation theCoeff is a
+three-element translation, theOrigin - loc (BRepGProp_Vinert.cxx:238), so the
+gravity centre is theCoeff[i] + I*/mass. For a by-plane computation theCoeff is
+the four plane coefficients a, b, c, d, with d re-based on loc
+(BRepGProp_Vinert.cxx:279), which is not a translation and must not be added to
+anything; the correct by-plane gravity centre is I*/mass relative to loc, which
+is exactly what the inner else computes and what the four-argument convert on
+the first line had already written. The matrix of inertia is assigned
+unconditionally after the branch and does not change.
+
+Measured on macOS arm64 against the pinned V8_0_1 asset by
+Scripts/repro/2827/probe.mm, per face with the BRepGProp_Domain loaded so the
+integral is over the trimmed region, alongside
+BRepGProp::VolumePropertiesGK(S, Props, thePln, 1e-6, true, true, false) over
+the same shape as the independent construction:
+
+  fixture and plane                   Vinert by plane   VolumePropertiesGK
+  10-cube, plane z = 0                              0   999.9999999999999
+  10-cube, plane z = -100                           0   1000.000000000002
+  10-cube, oblique plane                            0   1000
+  20x20x2 plate, radius-3 hole, z = 0               0   743.4513322353838
+  cylinder r = 5 h = 10, plane z = 0                0   785.3981633974456
+
+The by-point Vinert sum over the same faces is 999.9999999999998,
+743.4513322353837 and 785.3981633974482, and BRepGProp::VolumeProperties reports
+999.9999999999998, 743.4513322353836 and 785.3981633974482 for the three shapes.
+So the by-plane number is not the integrand vanishing, and not a plane placed
+where the answer happens to be zero: the same three shapes measured through
+OCCT's own by-plane entry point give the volume to the last few digits.
+
+That entry point is why the kernel does not meet the defect itself. It goes
+through BRepGProp_VinertGK and math_KronrodSingleIntegration, a separate
+integrator that never reaches this function, and BRepGProp.cxx:311 is OCCT's only
+BRepGProp_Vinert call site and passes a point.
+
+SecondMouseAU/OCCTSwift#2827.
+---
+ .../TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx            |  3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx b/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx
+--- a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx
++++ b/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx
+@@ -499,7 +499,8 @@
+                               double&                         theOutMass)
+ {
+   convert(theInertia, theOutGravityCenter, theOutMatrixOfInertia, theOutMass);
+-  if (std::abs(theInertia.Mass) >= EPS_DIM && theIsByPoint)
++  // The by-plane case (theIsByPoint false) has a mass too, and the inner else branch is its centre.
++  if (std::abs(theInertia.Mass) >= EPS_DIM)
+   {
+     const double anInvMass = 1.0 / theInertia.Mass;
+     if (theIsByPoint)

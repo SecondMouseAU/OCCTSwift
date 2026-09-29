@@ -1,0 +1,105 @@
+# Swift-side values the merged OCCTDrawingTests observe, printed by a temporary print-only test
+# (Tests/OCCTDrawingTests/ZZEvidenceDump.swift, never committed) that replays each test's scene on the
+# tip of v5.0.0-766-execution. One EV|key|value line per quantity.
+EV|angleFaces.degrees|90.0
+EV|angleFaces.isValid|true
+EV|frame.visibleBBoxCentre|[5.0, -10.0]
+EV|frame.mark|[5.0, -10.0]
+EV|frame.mark|[5.0, -10.0]
+EV|centermarks.top|added=2 skipped=0
+EV|centermarks.side|added=0 skipped=2
+EV|centermarks.minRadius|added=0 skipped=0
+EV|autodim.boxFront.linear|[3.0000002, 10.0000002]
+EV|autodim.boxFront.skipped|[]
+EV|autodim.cylTop.diameters|2
+EV|autodim.cylTop.linear|[10.0000002, 10.0000002]
+EV|autodim.cylTop.skipped|[]
+EV|autodim.cylSide.diameters|0
+EV|autodim.cylSide.edgeOnSkips|2
+EV|autodim.cylSide.skipped|["circle edge-on in view", "circle edge-on in view"]
+EV|autodim.minRadius.diameters|0
+EV|autodim.minRadius.belowMinRadiusSkips|2
+EV|autodim.minRadius.skipped|["circle radius 5.0 < minRadius", "circle radius 5.0 < minRadius"]
+EV|camera.center|[25.0, 25.0, 0.0]
+EV|camera.mid|[0.0, 0.0]
+EV|camera.maxCornerNDC|1.0
+EV|diameter.value|16.0
+EV|diameter.isValid|true
+EV|radius.value|7.0
+EV|radius.isValid|true
+EV|radiusBox.constructed|true
+EV|radiusBox.isValid|false
+EV|radiusBox.value|0.0
+EV|axes.cyl|origin=[0.0, 0.0, 0.0] direction=[0.0, 0.0, 1.0] kind=cylinder
+EV|axes.projectedDown+Z|[0.0, 0.0]
+EV|axes.projectedDown+Y|[1.0, 0.0]
+EV|axes.cyl.count|1
+EV|axes.box.count|0
+EV|centreline.side.endpoints|[[-55.0, 0.0], [55.0, 0.0]]
+EV|centreline.top|added=0 skipped=1
+EV|add.edgeInternalVertex|Optional(1)
+EV|add.faceVertex|Optional(2)
+EV|add.shellAdd|nil
+EV|add.solidAdd|nil
+EV|add.compoundAdd|nil
+EV|add.compSolidAdd|nil
+EV|remove.edgeRemoveVertex|false
+EV|remove.edgeReplaceVertex|nil
+EV|remove.wireRemoveCoEdge|false
+EV|remove.faceRemoveVertex|false
+EV|remove.faceRemoveWire|false
+EV|remove.shellRemoveFace|false
+EV|remove.shellRemoveChild|false
+EV|remove.solidRemoveShell|false
+EV|remove.solidRemoveChild|false
+EV|remove.compoundRemoveChild|false
+EV|remove.compSolidRemoveSolid|false
+EV|coedge.before|[0, 0]
+EV|coedge.after|[5, 3]
+EV|occ.afterLink|[5.0, 6.0, 7.0]
+EV|occ.afterSet|[11.0, 12.0, 13.0]
+EV|cache.fresh.facePresent|false
+EV|cache.fresh.faceDerived|count=0 active=-1 repId=nil
+EV|cache.fresh.edgePresent|false
+EV|cache.fresh.coedgePresent|false
+EV|cache.fresh.coedgeOnTriCount|0
+EV|cache.after.facePresent|true
+EV|cache.after.faceDerived|count=1 active=0 repId=Optional(0) rep=0
+EV|p1036.beyondEye.drawingNil|true
+EV|p1036.eyePlaneCutting.drawingNil|true
+EV|p1036.eyeOnFace.drawingNil|true
+EV|length.points10|value=10.0 isValid=true
+EV|length.edge7|value=7.0 isValid=true
+EV|length.faces10|value=10.0 isValid=true
+EV|normalProj.inside|edges=2 min=[9.701424854581914, -2.4253563972347387, -1.468714060483818e-07] max=[10.000000146871416, 2.425356397234736, 1.468714060483818e-07]
+EV|normalProj.outside|edges=2 min=[9.486832640068224, -3.1622780006052933, -3.4043691237357003e-07] max=[10.000000340436916, 3.162278000605292, 3.4043691237357003e-07]
+EV|pointProj.boxTop|point=[0.0, 0.0, 5.0] distance=10.0
+EV|pointProj.boxTopAll|count=1 firstDistance=10.0
+EV|pointProj.sphere|point=[5.0, 0.0, 0.0] distance=5.0
+EV|selector.centre|0
+EV|selector.miss|0
+EV|selector.multi.added|[true, true]
+EV|selector.multi.left|0
+EV|selector.multi.right|0
+EV|selector.remove.removed|true
+EV|selector.remove.hits|0
+EV|selector.rect|0
+EV|selector.clear|0
+EV|zlayer|[-5, 0, -2, -3, -4]
+EV|zlayer.polygonOffset|mode=1 factor=1.5 units=2.0
+EV|zlayer.depthOffsetPositive|mode=1 factor=1.0 units=1.0
+EV|zlayer.depthOffsetNegative|mode=1 factor=1.0 units=-1.0
+EV|diameterGeometry|circleRadius=5.0 endpointDistance=10.0
+EV|diameterCustom.value|99.0
+EV|camera.view.m00|[1.0, 0.0]
+EV|camera.view.m22|[1.0, 0.0]
+EV|camera.roundtrip.screen|[0.01, 0.006, 0.09909909909909909]
+EV|camera.roundtrip.world|[5.0, 3.0, 0.0]
+# Follow-up: full-precision re-observation for five records (Tests/OCCTDrawingTests/ZZEvidenceDump3.swift, never committed).
+EV|precision.cameraProjection|m00=0.0013333333190530539 m11=0.0020000000949949026 m22=-0.0003333334461785853 m23=-3.333334461785853e-07
+EV|precision.cameraOrthographic|perspM00=2.4142134189605713 orthoM00=0.0020000000949949026
+EV|precision.behindPicturePlane|[0.9433961264150944, 1.4285715285714287]
+EV|precision.fastIso.visible|edges=9 min=[-8.838834864831846, -9.185586635436922] max=[8.838834864831846, 9.185586635436922]
+EV|precision.fastIso.hidden|edges=3 min=[-8.838834864831846, -7.14434518311761] max=[8.838834864831847, 9.185586635436922]
+EV|precision.fastCyl.visible|edges=76 min=[-1e-07, -5.000000099706646] max=[10.0000001, 5.000000099706646]
+EV|precision.fastCyl.outline|edges=4 min=[-1e-07, -5.000000099706646] max=[10.0000001, 5.000000099706646]

@@ -2696,7 +2696,7 @@ public final class BRepGraph: @unchecked Sendable {
             kind = try c.decode(Int.self, forKey: .kind)
             counter = try c.decode(UInt32.self, forKey: .counter)
             // Payloads written before #295 have no graphID. Decode them as unstamped instead of
-            // failing the load: they resolve nowhere, which is the honest answer, since they never
+            // failing the load: they resolve nowhere, which is the correct answer, since they never
             // carried the provenance that says which graph they meant.
             graphID = try c.decodeIfPresent(UInt64.self, forKey: .graphID) ?? 0
         }
@@ -2887,6 +2887,200 @@ public final class BRepGraph: @unchecked Sendable {
     public func contains(uid: GraphItemUID) -> Bool {
         guard uid.graphID == instanceID else { return false }
         return OCCTBRepGraphHasItemUID(handle, Int32(uid.domain), Int32(uid.kind), uid.counter)
+    }
+
+    // MARK: - Occurrence-Aware Lookup (BRepGraph_ChildExplorer usage paths)
+
+    /// One step of the traversal path that identifies a concrete occurrence.
+    ///
+    /// A direct wrap of `BRepGraph_UsagePath::Step`, whose three fields are the whole of OCCT's
+    /// identity for one traversal branch. Two occurrences of the same part share every ``node`` on
+    /// the path and differ only in the ``refKind``/``refIndex`` and ``stepIndex`` of the step where
+    /// the branch splits, so a comparison that looked only at nodes would collapse them back
+    /// together.
+    public struct UsagePathStep: Sendable, Hashable {
+        /// The node this step reaches.
+        public let node: NodeRef
+        /// The reference entry this step was reached through, or `nil` for a structural link that
+        /// owns no reference entry (`Occurrence` to `Product`, `CoEdge` to `Edge`) and for the
+        /// traversal's own root step.
+        public let refKind: RefKind?
+        /// The index of that reference entry, `-1` when ``refKind`` is `nil`.
+        public let refIndex: Int
+        /// Sibling order of this step at its level, `-1` for the traversal's own root step.
+        public let stepIndex: Int
+    }
+
+    /// One occurrence of a node: the definition it instantiates, where it sits, and the path that
+    /// reaches it.
+    ///
+    /// ``path`` is the identity. ``node`` is deliberately not: it is the definition node, shared by
+    /// every occurrence of the same part, which is what ``findNode(for:)`` answers.
+    public struct Occurrence: Sendable, Hashable {
+        /// The definition node this is an occurrence of.
+        public let node: NodeRef
+        /// The placement composed from the traversal root down to this occurrence.
+        ///
+        /// A 3x4 row-major matrix (12 doubles), the same layout as ``childRefLocalLocation(_:)``.
+        /// The translation column is elements 3, 7 and 11.
+        public let location: [Double]
+        /// The orientation composed down the traversal, as a `TopAbs_Orientation` ordinal
+        /// (0 forward, 1 reversed, 2 internal, 3 external).
+        public let orientation: Int
+        /// The traversal steps from the root to this occurrence, root step first.
+        public let path: [UsagePathStep]
+    }
+
+    /// Every occurrence of a node reachable from a root node, in traversal order.
+    ///
+    /// This is the occurrence-aware half of ``findNode(for:)``. `findNode` answers the *definition*
+    /// node, so two instances of one part return the same `(kind, index)`; this answers the
+    /// *occurrences*, one entry per placement, each carrying the composed location and the
+    /// `BRepGraph_UsagePath` that distinguishes it. A downstream identity table keys an instance off
+    /// ``Occurrence/path``, not off the node.
+    ///
+    /// The model is the kernel's own: `BRepGraph/README.md:398` keeps occurrence context out of the
+    /// storage model and resolves it "through explorer usage paths", and `BRepGraph_ChildExplorer`
+    /// "visits each occurrence. If Edge[5] is reachable through Face[0] and Face[1], it is visited
+    /// twice with different accumulated transforms".
+    ///
+    /// **The root is not optional and there is no default.** A graph this wrapper builds has no
+    /// `Product` and no `Occurrence` node at all, so ``rootNodes`` and ``rootProductIndices`` are
+    /// empty and cannot serve as one. The root to pass is the node of the shape the graph was built
+    /// from, which ``findNode(for:)`` gives you.
+    ///
+    /// **Cost is one traversal of the root's subgraph**, not a map lookup: 0.21 ms over a compound
+    /// of 200 instances, measured in `Scripts/repro/2835-brepgraph-occurrence-lookup/`. Filtering to
+    /// one definition costs the same as keeping every occurrence of the kind, so code that wants the
+    /// occurrences of many nodes should not call this once per node.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 8, depth: 6)!
+    /// let placed = box.moved(dx: 50, dy: 0, dz: 0)!
+    /// let pair = Shape.compound([box, placed])!
+    /// let graph = BRepGraph(shape: pair)!
+    /// let root = graph.findNode(for: pair)!
+    ///
+    /// // One solid definition, two occurrences of it.
+    /// let solid = graph.findNode(for: pair.subShapes(ofType: .solid)[0])!
+    /// let occurrences = graph.occurrences(
+    ///     ofNode: BRepGraph.NodeRef(kind: solid.kind, index: solid.index),
+    ///     from: BRepGraph.NodeRef(kind: root.kind, index: root.index))
+    /// print(occurrences.count)                              // 2
+    /// print(occurrences[0].location[3], occurrences[1].location[3])  // 0.0 50.0
+    /// print(occurrences[0].path == occurrences[1].path)      // false
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - node: The definition node whose occurrences to enumerate.
+    ///   - root: The node to traverse from, usually `findNode(for:)` on the graph's input shape.
+    /// - Returns: One entry per occurrence, in the explorer's depth-first order. Empty when the
+    ///   node has no occurrence under `root`, and empty rather than a failure when either node is
+    ///   out of range: an index OCCT does not hold reads as no occurrences, because
+    ///   `BRepGraph_ChildExplorer` starts by rejecting a root its graph has no node for rather than
+    ///   by raising. An occurrence whose path holds a step of a node kind this wrapper cannot name
+    ///   is left out rather than reported with the step missing, which would hand back a path that
+    ///   reads as measured and is not. Every node kind of 8.0.1 is nameable, so that exclusion is
+    ///   unreachable against the pinned kernel.
+    public func occurrences(ofNode node: NodeRef, from root: NodeRef) -> [Occurrence] {
+        let count = Int(
+            OCCTBRepGraphOccurrenceCount(
+                handle, root.kind.rawValue, Int32(root.index),
+                node.kind.rawValue, Int32(node.index)))
+        if count <= 0 { return [] }
+        var result = [Occurrence]()
+        result.reserveCapacity(count)
+        for ordinal in 0..<count {
+            if let occurrence = occurrence(ofNode: node, from: root, ordinal: ordinal) {
+                result.append(occurrence)
+            }
+        }
+        return result
+    }
+
+    /// Every occurrence of a shape reachable from a root node, in traversal order.
+    ///
+    /// Resolves `shape` with ``findNode(for:)`` and then enumerates that node's occurrences, so a
+    /// picked sub-shape of a placed instance answers every placement of the part it belongs to,
+    /// including the one it was picked from.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 8, depth: 6)!
+    /// let placed = box.moved(dx: 50, dy: 0, dz: 0)!
+    /// let pair = Shape.compound([box, placed])!
+    /// let graph = BRepGraph(shape: pair)!
+    /// let root = graph.findNode(for: pair)!
+    /// let pickedFace = placed.subShapes(ofType: .face)[0]
+    ///
+    /// let occurrences = graph.occurrences(
+    ///     of: pickedFace,
+    ///     from: BRepGraph.NodeRef(kind: root.kind, index: root.index))
+    /// print(occurrences.count)  // 2, the picked face's own placement and the other instance's
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - shape: The shape to look up, typically a sub-shape of the graph's input.
+    ///   - root: The node to traverse from, usually `findNode(for:)` on the graph's input shape.
+    /// - Returns: One entry per occurrence, or an empty array when `shape` has no node.
+    public func occurrences(of shape: Shape, from root: NodeRef) -> [Occurrence] {
+        guard let found = findNode(for: shape) else { return [] }
+        return occurrences(
+            ofNode: NodeRef(kind: found.kind, index: found.index), from: root)
+    }
+
+    /// One occurrence by its ordinal in the traversal order, resizing the step buffer if the path
+    /// is deeper than the first guess.
+    ///
+    /// 16 is a first guess and not a bound. A descent that changes node kind at every step visits
+    /// at most the nine `BRepGraph_NodeId::Kind` topology kinds once each (compound, compSolid,
+    /// solid, shell, face, wire, coedge, edge, vertex), and nested compounds and assembly levels
+    /// add to that with no limit, so the retry is the correctness of this method and 16 only makes
+    /// it the unusual case. The bridge returns the full step count even when it wrote fewer steps
+    /// than that, precisely so the second call can size the buffer exactly.
+    private func occurrence(ofNode node: NodeRef, from root: NodeRef, ordinal: Int) -> Occurrence? {
+        var capacity = 16
+        while true {
+            var matrix = [Double](repeating: 0, count: 12)
+            var orientation: Int32 = 0
+            var steps = [OCCTBRepGraphUsageStep](
+                repeating: OCCTBRepGraphUsageStep(
+                    nodeKind: -1, nodeIndex: -1, refKind: -1, refIndex: -1, stepIndex: -1),
+                count: capacity)
+            let stepCount = matrix.withUnsafeMutableBufferPointer { matrixBuffer in
+                steps.withUnsafeMutableBufferPointer { stepBuffer in
+                    Int(
+                        OCCTBRepGraphOccurrenceAt(
+                            handle, root.kind.rawValue, Int32(root.index),
+                            node.kind.rawValue, Int32(node.index), Int32(ordinal),
+                            matrixBuffer.baseAddress!, &orientation,
+                            stepBuffer.baseAddress!, Int32(capacity)))
+                }
+            }
+            if stepCount < 0 { return nil }
+            if stepCount > capacity {
+                capacity = stepCount
+                continue
+            }
+            var path = [UsagePathStep]()
+            path.reserveCapacity(stepCount)
+            for step in steps.prefix(stepCount) {
+                // A step whose node kind does not map is a step this wrapper cannot represent.
+                // Reporting the occurrence without it, or with a substituted kind, would hand back
+                // a path that reads as measured and is not, so the occurrence is dropped instead.
+                guard let stepKind = NodeKind(rawValue: step.nodeKind) else { return nil }
+                path.append(
+                    UsagePathStep(
+                        node: NodeRef(kind: stepKind, index: Int(step.nodeIndex)),
+                        refKind: RefKind(rawValue: step.refKind),
+                        refIndex: Int(step.refIndex),
+                        stepIndex: Int(step.stepIndex)))
+            }
+            return Occurrence(
+                node: node,
+                location: matrix,
+                orientation: Int(orientation),
+                path: path)
+        }
     }
 
     /// Identifies this graph instance for as long as it lives.
