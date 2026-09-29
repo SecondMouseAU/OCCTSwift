@@ -26,10 +26,11 @@ repository's own builds. What that probe does is in
 - **No release carries any of this yet.** Every file below landed on `main` after `v4.0.0-beta.3`
   was cut. Until a release includes them you must depend on a **branch or a revision**, which means
   no semantic versioning. This is the main reason to wait if you can.
-- **Module size.** A small app doing the whole list above is about **141 MB uncompressed, 41 MB
-  gzipped, 27 MB brotli**, and an application's module is within 14 KB of this repository's own
-  probe, so almost none of that is your code. About 13 MB of the compressed total is Foundation,
-  before any OCCT. Nothing has been
+- **Module size.** A small app doing the whole list above is about **99 MB uncompressed, 25 MB
+  gzipped, 17 MB brotli**, and an application's module is within 14 KB of this repository's own
+  probe, so almost none of that is your code. It was 27 MB brotli until #2761 moved this package to
+  `FoundationEssentials`, which took 10.1 MB off. **You have to do the same in your own code to
+  keep that saving; see below.** Nothing else has been tried yet: no `wasm-opt`, no `-Osize`. Nothing has been
   optimised yet; [#2761](https://github.com/SecondMouseAU/OCCTSwift/issues/2761) holds the
   measurements and the untried levers. **If your budget is well under that, do the size work before
   the integration, not after.**
@@ -77,6 +78,62 @@ dependencies: [
     .package(url: "https://github.com/SecondMouseAU/OCCTSwift.git", branch: "main")
 ]
 ```
+
+## Keep the size saving: your code has to move too
+
+**This is the one that will waste a day if you miss it.** #2761 moved this package off full
+`Foundation` to `FoundationEssentials`, which is worth **10.1 MB brotli**. That saving is
+**all-or-nothing per linked module**, and your own sources are part of the module.
+
+Measured, because it happened here: with all 219 of this package's files migrated and **one**
+`import Foundation` left in the consumer's own `main.swift`, the module came back at
+**141,893,725 bytes**, which is the unmigrated size. Every byte of the saving was gone, put back by
+a single line in code the package does not control.
+
+So in your own target:
+
+```swift
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
+```
+
+and expect to meet the same gaps this package did. `FoundationEssentials` **has** `Data`, `URL`,
+`Date`, `UUID`, `JSONEncoder`, `ProcessInfo` and, perhaps surprisingly, `FileManager`. It does
+**not** have:
+
+| Missing | Use instead |
+|---|---|
+| `String(format:)` | the C library's `vsnprintf`, or build the string directly |
+| `String.padding(toLength:withPad:startingAt:)` | pad manually |
+| `trimmingCharacters(in:)` | trim on `Character.isWhitespace` |
+| `replacingOccurrences(of:with:)` | the stdlib's `firstRange(of:)` in a loop |
+| `components(separatedBy:)` | `split(whereSeparator:)` |
+| `Error.localizedDescription` | `String(describing:)` |
+| `range(of:)` | the stdlib's `firstRange(of:)` |
+| `NSLock` | see `Sources/OCCTPlatform/PlatformLock.swift` |
+
+And name the C library explicitly, because `Foundation` re-exports it and `FoundationEssentials`
+does not. `free`, `exit`, `sin`, `cos`, `sqrt` and friends all come from there:
+
+```swift
+#if canImport(Darwin)
+    import Darwin
+#elseif canImport(WASILibc)
+    import WASILibc
+#elseif canImport(Glibc)
+    import Glibc
+#endif
+```
+
+That block is [what swift.org's own porting guide
+publishes](https://docs.swift.org/latest/documentation/wasmguide/porting).
+
+**Check your work by size, not by compiling.** A module that still carries the
+internationalisation data compiles perfectly and is 40 MB larger. Build once each way and compare
+bytes.
 
 ## Three things that will cost you an afternoon otherwise
 

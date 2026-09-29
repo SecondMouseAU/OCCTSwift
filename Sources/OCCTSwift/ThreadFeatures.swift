@@ -1,18 +1,6 @@
-import Foundation
+import OCCTPlatform
 import OCCTBridge
 import simd
-
-// The platform C library, named because this file uses it directly (free, sin, cos, sqrt and
-// the like). `import Foundation` happens to re-export it on Apple platforms, so these were in
-// scope by accident rather than by declaration; FoundationEssentials does not, which is how
-// #2761 found them. Naming it here is correct independently of that work.
-#if canImport(Darwin)
-    import Darwin
-#elseif canImport(WASILibc)
-    import WASILibc
-#elseif canImport(Glibc)
-    import Glibc
-#endif
 
 // MARK: - Thread feature API (#66, v0.139 Thread Form v2)
 //
@@ -447,7 +435,7 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
     /// ACME `1.5-4 ACME`; Whitworth `W1/2` / `1/2 BSW`; BSP parallel `G1/2`; BSP taper `R1/2`/`Rc1/2`;
     /// NPT `1/2-14 NPT`. Returns nil on unrecognised input.
     public static func parse(_ text: String) -> ThreadSpec? {
-        let trimmed = text.trimmingCharacters(in: .whitespaces)
+        let trimmed = text.trimmingWhitespace()
         if let m = parseMetric(trimmed) { return m }
         if let t = parseTrapezoidal(trimmed) { return t }
         if let a = parseAcme(trimmed) { return a }
@@ -477,7 +465,7 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
         let upper = text.uppercased()
         guard upper.hasSuffix("ACME") else { return nil }
         return parseInchDesignation(
-            upper.dropLast(4).trimmingCharacters(in: .whitespaces), form: .acme)
+            upper.dropLast(4).trimmingWhitespace(), form: .acme)
     }
 
     // BSP (G parallel / R-Rc taper) and Whitworth/NPT share fraction → (OD mm, TPI) tables.
@@ -510,16 +498,16 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
         for entry in prefixed where u.hasPrefix(entry.prefix) {
             return spec(
                 entry.table,
-                String(text.dropFirst(entry.prefix.count)).trimmingCharacters(in: .whitespaces),
+                String(text.dropFirst(entry.prefix.count)).trimmingWhitespace(),
                 entry.form)
         }
         if u.hasSuffix("BSW") {
-            return spec(bsw, u.dropLast(3).trimmingCharacters(in: .whitespaces), .whitworth)
+            return spec(bsw, u.dropLast(3).trimmingWhitespace(), .whitworth)
         }
         if u.hasSuffix("NPT") {
-            let core = u.dropLast(3).trimmingCharacters(in: .whitespaces)
+            let core = u.dropLast(3).trimmingWhitespace()
             let key =
-                core.split(separator: "-").first.map { $0.trimmingCharacters(in: .whitespaces) }
+                core.split(separator: "-").first.map { $0.trimmingWhitespace() }
                 ?? core
             return spec(npt, key, .nptTapered)
         }
@@ -556,10 +544,10 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
         let sep = text.split(separator: "-", maxSplits: 1)
         guard sep.count == 2 else { return nil }
         let raw = String(sep[1])
-        let countPart = (raw.components(separatedBy: .whitespaces).first ?? raw)
-            .trimmingCharacters(in: .whitespaces)
+        let countPart = (raw.whitespaceSeparatedFields().first ?? raw)
+            .trimmingWhitespace()
         guard let threadsPerInch = Double(countPart), threadsPerInch > 0,
-            let inches = parseFractionOrDecimal(sep[0].trimmingCharacters(in: .whitespaces))
+            let inches = parseFractionOrDecimal(sep[0].trimmingWhitespace())
         else { return nil }
         return ThreadSpec(
             form: form, nominalDiameter: inches * mmPerInch, pitch: mmPerInch / threadsPerInch)

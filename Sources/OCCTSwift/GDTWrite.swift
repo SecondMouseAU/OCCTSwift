@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import OCCTBridge
 
 // MARK: - GD&T write path (v0.140, #67/#70 follow-up)

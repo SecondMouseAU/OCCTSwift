@@ -5,7 +5,7 @@
 //  The read side of the bridge's caught-exception channel (#1161).
 //
 
-import Foundation
+import OCCTPlatform
 import OCCTBridge
 
 /// Reads the OCCT exceptions the bridge caught on the way to returning `nil`.

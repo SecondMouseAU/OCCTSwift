@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import OCCTBridge
 
 /// A multi-edge `Wire` treated as a single, continuously-parameterized curve

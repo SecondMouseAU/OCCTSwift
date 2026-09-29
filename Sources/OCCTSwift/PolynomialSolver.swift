@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import OCCTBridge
 
 /// Results from polynomial root solving.

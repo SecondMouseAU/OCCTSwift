@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import OCCTBridge
 
 /// Date/time wrapping OCCT Quantity_Date.

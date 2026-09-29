@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import OCCTBridge
 
 /// A single `Edge` as an **arc-length-parameterized** curve (`BRepAdaptor_Curve`).

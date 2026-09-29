@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import OCCTBridge
 
 /// An evolution function defining how a scalar value varies along a parameter range.

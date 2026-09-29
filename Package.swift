@@ -570,8 +570,12 @@ let wasiCompatTargets: [Target] =
     ]
     : []
 
+// OCCTPlatform is unconditional: it is the one target that knows which platform this is, and every
+// file in the Swift layer imports it instead of Foundation. See Sources/OCCTPlatform/Platform.swift.
 let swiftLayerDependencies: [Target.Dependency] =
-    isWASI ? ["OCCTBridge", "OCCT", "simd"] : ["OCCTBridge", "OCCT"]
+    isWASI
+    ? ["OCCTBridge", "OCCT", "OCCTPlatform", "simd"]
+    : ["OCCTBridge", "OCCT", "OCCTPlatform"]
 
 let package = Package(
     name: "OCCTSwift",
@@ -732,6 +736,16 @@ let package = Package(
         // Scripts/repro/harnesses/, not Scripts/repro/<issue-dir>/: an issue's own repro
         // directory keeps only its README and captured output (neither is Swift source SwiftPM
         // needs to see), so no `exclude:` is needed here at all.
+        // The single home for every platform conditional in this package: which Foundation and
+        // which C library, re-exported so no other file needs an `#if`. #2761.
+        .target(
+            name: "OCCTPlatform",
+            path: "Sources/OCCTPlatform",
+            swiftSettings: [
+                .swiftLanguageMode(.v6)
+            ]
+        ),
+
         .executableTarget(
             name: "Harnesses",
             dependencies: ["OCCTSwift", "RunnerCore"],

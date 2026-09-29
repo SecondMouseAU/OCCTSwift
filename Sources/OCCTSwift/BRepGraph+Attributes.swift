@@ -10,7 +10,7 @@
 // The store is generic ("critical edge", "load-path face", material tags, …). Domain-specific
 // typed accessors (e.g. reconstruction fit residuals) belong in the consuming package.
 
-import Foundation
+import OCCTPlatform
 import OCCTBridge
 
 // MARK: - AttrValue

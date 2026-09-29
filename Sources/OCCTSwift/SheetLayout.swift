@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import simd
 
 // MARK: - Sheet auto-composition (#84, v0.149)

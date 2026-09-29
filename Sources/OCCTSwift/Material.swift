@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import OCCTBridge
 
 /// PBR (Physically Based Rendering) material for XDE document support.

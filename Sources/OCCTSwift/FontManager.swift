@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import OCCTBridge
 
 /// System font manager wrapping OCCT Font_FontMgr.

@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import simd
 
 // MARK: - Shape.section2D (#73, v0.144)

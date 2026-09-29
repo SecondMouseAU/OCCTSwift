@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import simd
 
 // MARK: - Auto-centreline generation from #65 revolution axes
