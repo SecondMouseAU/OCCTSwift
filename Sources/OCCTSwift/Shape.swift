@@ -864,18 +864,44 @@ public final class Shape: @unchecked Sendable {
         return Shape(handle: h)
     }
 
-    /// Offset an open shell or face by `thickness`, via `MakeThickSolidBySimple`.
+    /// Thicken a **non-closed** shell or face into a solid, via `MakeThickSolidBySimple`.
     ///
-    /// - Note: This wraps `BRepOffsetAPI_MakeThickSolid::MakeThickSolidBySimple`, which OCCT's own
-    ///   header documents as taking "non-closed shell or face" input, not a closed solid. Measured
-    ///   on a closed box, cylinder and sphere at several thicknesses and both signs, this always
-    ///   returns `nil`: it cannot hollow a closed solid the way the name suggests. Use
-    ///   ``shelled(thickness:openFaces:)`` with at least one open face to hollow a closed solid
-    ///   instead. See #2739 for the open question of whether this overload should be re-routed
-    ///   onto the same algorithm.
+    /// The accepted input is an open shell or a single face. A closed solid is refused, and
+    /// ``shelled(thickness:openFaces:)`` is the overload that hollows one.
+    ///
+    /// ```swift
+    /// // A face thickened into a slab: the accepted domain.
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let slab = Shape.fromFace(box.faces()[0])!.shelled(thickness: 2.0)
+    /// slab?.signedVolume          // -200, a reversed slab of the face's 100 area times 2
+    ///
+    /// // A closed solid is refused, at either sign.
+    /// box.shelled(thickness: 2.0)     // nil
+    /// box.shelled(thickness: -2.0)    // nil
+    ///
+    /// // To hollow a closed solid, name the faces that become the openings.
+    /// box.shelled(thickness: -1.0, openFaces: box.upwardFaces())
+    /// ```
+    ///
+    /// - Note: This wraps `BRepOffsetAPI_MakeThickSolid::MakeThickSolidBySimple`, whose own header
+    ///   documents "Non-closed shell or face is expected as input", and whose only two callers in
+    ///   OCCT's own tree each hand it a single extracted face. Measured on a closed box, cylinder
+    ///   and sphere at several thicknesses and both signs, it reports `IsDone() == false` and this
+    ///   returns `nil`. **That routing is deliberate and #2739 settled it**: the alternative,
+    ///   `MakeThickSolidByJoin` with an empty closing-face list, does not hollow either. It returns
+    ///   the plain offset solid, a 24-box from a 20-box at `+2.0`, which is what ``offset(by:)``
+    ///   already gives. Hollowing needs at least one closing face, so
+    ///   ``shelled(thickness:openFaces:)`` is not a workaround for this overload but the operation
+    ///   a closed solid actually calls for. Evidence:
+    ///   `Scripts/repro/2739-shelled-single-argument-routing/`.
+    /// - Note: A positive `thickness` offsets along the face normals and leaves the resulting solid
+    ///   **reversed**, so ``volume`` returns `nil` for it and ``signedVolume`` returns a negative
+    ///   number; a negative `thickness` gives a forward solid. The kernel does not normalise this,
+    ///   and OCCT's own test reads the figure through `std::abs`. Call ``orientedForward()`` if you
+    ///   need the forward solid.
     /// - Parameter thickness: Offset distance passed straight to the underlying OCCT call.
-    /// - Returns: The offset shape, or `nil` on failure, including whenever `self` is a closed
-    ///   solid (#2739).
+    /// - Returns: The thickened solid, or `nil` on failure, including whenever `self` is closed
+    ///   (#2739).
     public func shelled(thickness: Double) -> Shape? {
         guard let handle = OCCTShapeShell(self.handle, thickness) else { return nil }
         return Shape(handle: handle)
@@ -1024,7 +1050,8 @@ public final class Shape: @unchecked Sendable {
     /// ```
     /// `false` is also the answer for two shapes `BRepCheck_Analyzer` itself cannot survive, both
     /// reachable through a `.brep` file and neither constructible through this API: a face edge with
-    /// no valid 3D curve and at least one pcurve (#2746), and a face with no surface (#2777). OCCT's
+    /// no valid 3D curve and at least one pcurve (#2746), and a face with no surface (#2777, and
+    /// #2789 for the analyzer's own faulting line on it). OCCT's
     /// checker calls both invalid wherever it manages to answer at all, so the refusal agrees with
     /// the kernel rather than standing in for it.
     public var isValid: Bool {

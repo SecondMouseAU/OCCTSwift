@@ -215,6 +215,36 @@ stay valid: there is no second graph to look them up in. See
 `findDerivedOrSelf`, `historyIsDeleted`), and issue
 [#290](https://github.com/SecondMouseAU/OCCTSwift/issues/290) for the design.
 
+## In an assembly, a node names the part, not the instance
+
+A graph built from a compound of placed instances, which is what a STEP assembly reads as, holds
+**one definition per part** and carries each placement on a child or occurrence reference. So every
+sub-shape of every instance resolves through `findNode(for:)`, and the two instances of one part
+resolve to the *same* node:
+
+```swift
+let box = Shape.box(width: 10, height: 8, depth: 6)!
+let placed = box.moved(dx: 50, dy: 0, dz: 0)!
+let pair = Shape.compound([box, placed])!
+let graph = BRepGraph(shape: pair)!
+
+let solids = pair.subShapes(ofType: .solid)
+print(solids.compactMap { graph.findNode(for: $0) }.count)                  // 2, both resolve
+print(graph.findNode(for: solids[0])! == graph.findNode(for: solids[1])!)   // true, one definition
+print(graph.solidCount)                                                    // 1
+```
+
+That is OCCT's own model rather than a limitation of the wrapper, and it is the one place where a
+`GraphUID` is not the reference you want: minting a UID for each picked face of a two-instance
+assembly yields one UID for both, because both faces are the same definition node. **Per-instance
+identity lives on the traversal path, not on the node.** Walk the hierarchy from the root and carry
+the occurrence you arrived through alongside the node, the way `childCount(rootKind:rootIndex:targetKind:)`
+and the occurrence accessors let you, or key the instance off the product tree with
+[XCAF Assemblies](xcaf-assemblies.md) and use the node only for "which part is this".
+
+A placed shape the graph never ingested does not resolve at all, so `hasNode(for:)` still answers
+the question it names: was this shape part of the construction input.
+
 ## Choosing a reference: a decision guide
 
 | You want to... | Use |
@@ -224,6 +254,7 @@ stay valid: there is no second graph to look them up in. See
 | the same, for a reference entry or a mixed node/ref path | `GraphRefUID` / `GraphItemUID` |
 | keep a selection across a boolean, fillet, or other rebuild | absorb the operation's **history** |
 | keep a selection across a save and reload | store `(kind, index)` + the shape, re-mint on load |
+| tell two instances of one part apart in an assembly | the occurrence path, never the node or its UID |
 
 Two rules cover the mistakes: do not store a raw index and expect it to mean the same node later, and
 do not expect a UID to mean anything in a different graph.

@@ -120,9 +120,10 @@ Counting sites therefore answers two questions at once, and they want different 
   `census-dead-file-statics.py --json` enumerates them with exact line ranges, so a deletion pass
   deletes the population that was measured rather than one re-found by hand.
 
-**A hoist can be blocked by a duplicated file-local TYPE, and nothing measures those.** The splits
-copied file-scope `struct`s and `class`es into every file of a domain exactly as they copied
-functions, and three of the nine reachable-duplication helpers cannot move until their type does:
+**A hoist can be blocked by a duplicated file-local TYPE, and a type is invisible to the function
+census.** The splits copied file-scope `struct`s and `class`es into every file of a domain exactly as
+they copied functions, and three of the nine reachable-duplication helpers cannot move until their
+type does:
 
 - `setCancelOut` names `BridgeProgressIndicator`, a `Message_ProgressIndicator` subclass defined in
   seven `OCCTBridge_IO_*.mm` files. Moving an ODR-sensitive polymorphic class into a header every
@@ -133,7 +134,14 @@ functions, and three of the nine reachable-duplication helpers cannot move until
   without the other moves the reach problem rather than solving it.
 
 `census-dead-file-statics.py` covers functions only, and says so, so a type is invisible to it and to
-every count on this page. Ask about types separately before concluding a domain is clean.
+every count on this page. **The type population is measured separately**, by
+`check-bridge-type-odr.py` (#2820): 83 type names defined at file scope in more than one bridge
+`.mm`, across 605 definitions, of which the 18 copied twelve or thirteen times are the opaque handle
+types (`OCCTSewing` thirteen; seventeen more twelve, including `OCCTBoolTimeoutBreaker`, which is the
+second polymorphic one after `BridgeProgressIndicator`). That script is a gate on the sharper half of the question, whether the copies still agree,
+because a divergence is an ODR violation the compiler cannot diagnose and its symptom is memory
+corruption rather than a build failure. It says nothing about whether a type *should* be duplicated;
+that answer is the same as for a helper, and it is this page.
 
 **Deleting one dead helper can leave another dead**, since a dead body is the only caller of
 whatever it called. The census reports that fixpoint separately (`Dead only once the above go`),

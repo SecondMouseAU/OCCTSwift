@@ -25,6 +25,7 @@
 #include <vector>
 #include <TopAbs_Orientation.hxx>
 #include <TopLoc_Location.hxx>
+#include <TopTools_MapOfShape.hxx>
 #include <TopoDS.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Pnt2d.hxx>
@@ -169,7 +170,86 @@ struct OCCTBRepGraph
   std::vector<occ::handle<Geom_Surface>>                surfReps;
   std::vector<occ::handle<Geom_Curve>>                  curve3dReps;
   std::vector<occ::handle<Geom2d_Curve>>                curve2dReps;
+  // Every sub-shape of the shape this graph was built from whose own Location is not the
+  // identity, i.e. every sub-shape reached through a placed instance (#2650).
+  //
+  // FindNode keys on OCCT shape identity, TShape + Location, orientation ignored
+  // (BRepGraph_ShapesView.hxx:216), so a face of a placed instance is not the same key as
+  // the definition's face. The kernel nonetheless intends it to resolve, and binds each
+  // source key as an alias of its definition node to make it so: bindSourceShapeAliases,
+  // whose declaration says it exists "to keep ShapesView::FindNode() usable with the
+  // original TopoDS subshapes when root placement is stored on a Product occurrence or
+  // Compound child ref" (BRepGraph_ShapesView.hxx:258). It runs only where
+  // shouldStoreRootLocationInRef() holds, which for a parentless Add is
+  // Options::CreateAutoProduct (BRepGraph_ShapesView.cxx:897-922), and OCCTBRepGraphCreate
+  // passes false for that, so no alias is bound and every sub-shape of a placed instance
+  // misses. Measured both ways in Scripts/repro/2650-brepgraph-located-instance-findnode/.
+  //
+  // Holding the input's located sub-shapes lets occtBRepGraphResolveNode apply the same key
+  // transformation the kernel's own alias binder applies (BRepGraph_ShapesView.cxx:526-527,
+  // `aLookup.Location(theDefinitionLocation)`, the identity for a Compound child) without
+  // widening the lookup to a placed shape the graph never ingested, which is what keeps
+  // HasNode's "was part of construction input" contract true. Only non-identity locations
+  // are stored, so an unplaced single part stores nothing. Written once during construction
+  // and read-only afterwards, so it adds no shared mutable state.
+  //
+  // What it costs on a large assembly, since the entry count is one per placed sub-shape and
+  // therefore scales with the assembly rather than with the part. Measured on arm64 macOS by
+  // Scripts/repro/2650-brepgraph-located-instance-findnode/sizeof-probe.mm: a
+  // TopTools_MapOfShape is 56 bytes empty and 32 bytes per entry node plus one 8-byte bucket
+  // pointer, so about 40 bytes per located sub-shape. A TopoDS_Shape is 24 of those 32: a
+  // TShape handle, a TopLoc_Location and an orientation, so the map holds no geometry and
+  // copies none, and the shapes it references are the graph's own. A thousand placed
+  // instances of a part with a hundred sub-shapes each is 100,000 entries, about 4 MB, next
+  // to a BRepGraph holding those same 100,000 sub-shapes' nodes and geometry. The map is
+  // bounded by the input and freed with the graph.
+  TopTools_MapOfShape locatedInputSubShapes;
 };
+
+// Record the located sub-shapes of a shape this graph has just ingested. Walks every
+// sub-shape of every type including the root, the way OCCT's own collectAddedNodes does
+// (BRepGraph_ShapesView.cxx:470), and keeps the ones carrying a placement.
+static void occtCollectLocatedSubShapes(const TopoDS_Shape& shape, TopTools_MapOfShape& outMap)
+{
+  if (shape.IsNull())
+    return;
+  TopTools_IndexedMapOfShape allSubShapes;
+  TopExp::MapShapes(shape, allSubShapes);
+  for (int i = 1; i <= allSubShapes.Extent(); ++i)
+  {
+    const TopoDS_Shape& sub = allSubShapes(i);
+    if (!sub.Location().IsIdentity())
+      outMap.Add(sub);
+  }
+}
+
+// Resolve a shape to its graph node. Shared by OCCTBRepGraphFindNode and
+// OCCTBRepGraphHasNode so the two cannot disagree, which is how OCCT relates them too
+// (HasNode is FindNode(...).IsValid(), BRepGraph_ShapesView.cxx:1305-1312).
+//
+// The retry is the located-instance case (#2650): the direct key misses, and the definition
+// key, which is the same shape with its placement dropped, is the alias the kernel would
+// have bound. It answers the DEFINITION node, so the several occurrences of one definition
+// all resolve to the same node; that is the kernel's own collapse, measured identical to
+// OCCT's aliasing element for element on the compound cases in
+// Scripts/repro/2650-brepgraph-located-instance-findnode/probe-output.txt. Per-occurrence
+// identity is not a NodeId question upstream either: BRepGraph/README.md:398 keeps
+// occurrence context out of the storage model and resolves it through explorer usage paths.
+static BRepGraph_NodeId occtBRepGraphResolveNode(OCCTBRepGraphRef g, const TopoDS_Shape& shape)
+{
+  const BRepGraph_NodeId direct = g->graph.Shapes().FindNode(shape);
+  // Answer directly, without the definition-key retry, in all three cases where the retry
+  // could only be wrong: the direct key hit, the shape carries no placement to drop, or the
+  // shape was never in this graph's construction input.
+  if (direct.IsValid() || shape.Location().IsIdentity()
+      || !g->locatedInputSubShapes.Contains(shape))
+  {
+    return direct;
+  }
+  TopoDS_Shape definitionKey = shape;
+  definitionKey.Location(TopLoc_Location());
+  return g->graph.Shapes().FindNode(definitionKey);
+}
 
 static BRepGraph_NodeId::Kind kindFromInt(int32_t k)
 {
@@ -252,6 +332,12 @@ OCCTBRepGraphRef OCCTBRepGraphCreate(OCCTShapeRef shape, bool parallel)
       delete ref;
       return nullptr;
     }
+    // #2650: record which of the input's sub-shapes carry a placement, so a later
+    // findNode/hasNode can resolve them to their definition node the way the kernel's own
+    // alias binder would. CreateAutoProduct stays false, because turning it on strips the
+    // root's own Location into the auto Product's occurrence and Shapes().Shape(root) then
+    // comes back unplaced, measured in the repro's last block.
+    occtCollectLocatedSubShapes(*(const TopoDS_Shape*)shape, ref->locatedInputSubShapes);
     return ref;
   }
   catch (...)
@@ -940,7 +1026,7 @@ void OCCTBRepGraphFindNode(OCCTBRepGraphRef g,
     return;
   try
   {
-    auto nid = g->graph.Shapes().FindNode(shape->shape);
+    auto nid = occtBRepGraphResolveNode(g, shape->shape);
     if (nid.IsValid())
     {
       *outKind  = static_cast<int32_t>(nid.NodeKind);
@@ -959,7 +1045,7 @@ bool OCCTBRepGraphHasNode(OCCTBRepGraphRef g, OCCTShapeRef shape)
     return false;
   try
   {
-    return g->graph.Shapes().HasNode(shape->shape);
+    return occtBRepGraphResolveNode(g, shape->shape).IsValid();
   }
   catch (...)
   {
@@ -2380,6 +2466,10 @@ OCCTBRepGraphRef OCCTBRepGraphCopy(OCCTBRepGraphRef g, bool copyGeom)
     // geometrically identical face. Minting a fresh id here would reject those lookups and
     // silently break a working, kernel-sanctioned correspondence (#295).
     ref->instanceID = g->instanceID;
+    // #2650: the identity copy replays the source's shape bindings into the target
+    // (copyFullGraphIdentity's CopyShapeBindingsFrom, BRepGraph_Copy.cxx:1265), so the same
+    // input keys name the same nodes here and the record carries over with the identity.
+    ref->locatedInputSubShapes = g->locatedInputSubShapes;
     return ref;
   }
   catch (...)
@@ -2422,6 +2512,10 @@ OCCTBRepGraphRef OCCTBRepGraphCopyFace(OCCTBRepGraphRef g, int32_t faceIndex, bo
     // UID would resolve here to whichever face was extracted, a wrong node, which is
     // exactly #295. Verified: on a box, face 0's UID resolved inside copyFace(3) and
     // returned face 3. A fresh id makes those lookups return nil instead.
+    //
+    // locatedInputSubShapes is deliberately left empty for the same reason: this graph
+    // ingested no shape of its own, so it has no construction input whose placed sub-shapes
+    // a lookup could claim were part of it (#2650).
     return ref;
   }
   catch (...)
@@ -2458,6 +2552,10 @@ OCCTBRepGraphRef OCCTBRepGraphTransformTranslation(OCCTBRepGraphRef g,
     // and transplants identity, so a source UID names the same node in the placed graph
     // (measured: all 6 box face UIDs map to the same face, merely translated).
     ref->instanceID = g->instanceID;
+    // locatedInputSubShapes is NOT inherited, unlike OCCTBRepGraphCopy: every shape this
+    // graph holds carries trsf on top of whatever placement it had, so the source's located
+    // sub-shapes are not this graph's construction input and a retry keyed on them would be
+    // claiming something that was never measured (#2650).
     return ref;
   }
   catch (...)

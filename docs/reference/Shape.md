@@ -995,22 +995,30 @@ Each entry specifies an edge, a reference face adjacent to that edge, a distance
 
 ### `shelled(thickness:)`
 
-Offset an open shell or face, via `BRepOffsetAPI_MakeThickSolid::MakeThickSolidBySimple`.
+Thicken a **non-closed** shell or face into a solid, via `BRepOffsetAPI_MakeThickSolid::MakeThickSolidBySimple`.
 
 ```swift
 public func shelled(thickness: Double) -> Shape?
 ```
 
 - **Parameters:** `thickness`, offset distance passed straight through to the underlying OCCT call.
-- **Returns:** The offset shape, or `nil` on failure.
+- **Returns:** The thickened solid, or `nil` on failure, including whenever the receiver is closed.
 - **OCCT:** `BRepOffsetAPI_MakeThickSolid` (via `OCCTShapeShell`).
-- **Warning:** `MakeThickSolidBySimple` takes a non-closed shell or face as input, not a closed solid, per OCCT's own header comment. Measured on a closed box, cylinder and sphere at several thicknesses and both signs, this always returns `nil` on a closed solid ([#2739](https://github.com/SecondMouseAU/OCCTSwift/issues/2739)). Use [`shelled(thickness:openFaces:)`](Shape-Features.md#shelledthicknessopenfaces) with at least one open face to hollow a closed solid.
+- **Warning:** `MakeThickSolidBySimple` takes a non-closed shell or face as input, not a closed solid, per OCCT's own header comment, and its only two callers in OCCT's own tree each hand it a single extracted face. Measured on a closed box, cylinder and sphere at several thicknesses and both signs, this always returns `nil` on a closed solid ([#2739](https://github.com/SecondMouseAU/OCCTSwift/issues/2739)). Use [`shelled(thickness:openFaces:)`](Shape-Features.md#shelledthicknessopenfaces) with at least one open face to hollow a closed solid.
+- **The routing is deliberate, and [#2739](https://github.com/SecondMouseAU/OCCTSwift/issues/2739) settled it.** The alternative, `MakeThickSolidByJoin` with an empty closing-face list, does not hollow a closed solid either: measured, it returns the plain offset solid, a 24-box from a 20-box at `+2.0`, one shell and six faces, the same geometry `BRepOffsetAPI_MakeOffsetShape::PerformByJoin` returns and therefore what [`offset(by:)`](#offsetby-simple) already gives. Hollowing needs at least one closing face. An explicit closedness guard was measured and declined as well: `BRep_Tool::IsClosed` answers only for `TopAbs_SHELL` and `TopAbs_WIRE`, so it returns `false` for the closed `TopoDS_Solid` the kernel refuses, and `IsDone()` is the kernel's own answer. Evidence: `Scripts/repro/2739-shelled-single-argument-routing/`.
+- **A positive `thickness` returns a reversed solid.** It offsets along the face normals and the kernel does not normalise the result's orientation, so [`volume`](Shape-Features.md#volume) returns `nil` and [`signedVolume`](Shape-Features.md#signedvolume) a negative number; a negative `thickness` gives a forward solid. OCCT's own `ThickSolidLargerVolume` test reads the figure through `std::abs`. Call [`orientedForward()`](Shape-Features.md#orientedforward) for the forward solid.
 - **Warning:** The offset surfaces this produces (`Geom_OffsetSurface`) can hang the mesher unboundedly on pathological input, see the warning on [`mesh(linearDeflection:angularDeflection:)`](#meshlineardeflectionangulardeflection) ([#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286)).
 - **Example:**
   ```swift
-  // Returns nil: `box` is a closed solid, and this overload only accepts an open
-  // shell or face (#2739). Use shelled(thickness:openFaces:) to hollow a closed solid.
-  let shell = Shape.box(width: 10, height: 10, depth: 10)?.shelled(thickness: 1)
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+
+  // A single face thickened into a slab: the accepted domain.
+  let slab = Shape.fromFace(box.faces()[0])!.shelled(thickness: 2.0)
+  slab?.signedVolume          // -200, the face's 100 area times 2, reversed
+
+  // Returns nil at either sign: `box` is a closed solid (#2739).
+  box.shelled(thickness: 1.0)
+  box.shelled(thickness: -1.0)
   ```
 
 ---

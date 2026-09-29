@@ -80,7 +80,7 @@ the pinned version onto a machine with no pip or venv; see
 
 ### Static Gate Scripts
 
-Fifteen gates, seven censuses and one merge-history audit, all pure Python over the repo's own text.
+Sixteen gates, seven censuses and one merge-history audit, all pure Python over the repo's own text.
 No OCCT, no build, no network, and the whole job reports in under a minute on the runner. The
 measured breakdown, and the recipe for re-deriving it rather than trusting it, are in
 [`okf/policies/static-gates.md`](okf/policies/static-gates.md): this line claimed `~3s for the lot`
@@ -111,6 +111,7 @@ python3 Scripts/check-bridge-diagnostics.py      # every function-level bridge c
 python3 Scripts/check-wasm-kernel-parity.py      # the wasm kernel asset carries the same patch set as the pinned native one (#2269)
 python3 Scripts/check-preprocessor-balance.py     # no patch unbalances a source file's #if/#else/#endif (#2167)
 python3 Scripts/check-wasi-patch-base.py         # every patches-wasi patch was cut from the carried-patch tree (#2168)
+python3 Scripts/check-bridge-type-odr.py         # every type defined in more than one bridge .mm is defined identically (#2820)
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
 python3 Scripts/census-arguments-tuple-shapes.py # CENSUS, not a gate: @Test(arguments:) elements whose layout trips the toolchain defect (#1057)
@@ -409,6 +410,17 @@ the reproducer). What a bridge author needs without opening it:
   new `BRepCheck_Analyzer`, and answer "invalid" for a whole-shape question or the site's existing
   "could not determine" for a per-sub-shape one. The predicate is **not** "has a null `Curve3D`
   representation", which is false for the shape a `.brep` round trip produces and crashes anyway.
+  **It faults a second time, at a different line in the same function, on a disjoint input** (#2789):
+  `BRepCheck_Edge.cxx:463` dereferences the face surface it fetched untested at `:336`, in the
+  `!pcurvefound` branch that a face with **no surface** always takes, since a null handle is
+  handle-equal to no pcurve's. That line is outside both `if (myGctrl)` blocks, so `geometryChecks`
+  does not gate it. So **both** predicates go before every analyzer: `occtShapeHasPCurveOnlyEdge`
+  **and** `occtShapeHasSurfacelessFace`. Sixteen sites, and two of them are invisible to a grep for
+  `BRepCheck_Analyzer`, because `BRepAlgoAPI_Check::Perform` builds one for you
+  (`BRepAlgoAPI_Check.cxx:92`): derive the population from the class that **faults**, not the class
+  the bridge writes. `BRepCheck_Face::Minimum` answers `BRepCheck_NoSurface` on the same face without
+  faulting, which is the status a guarded site reports. The four `OCCTBRepCheckFace*` wrappers and
+  `checkSubShape`'s `Minimum()`-only checkers need no guard, measured.
 - **`ShapeUpgrade_ShapeDivide::Perform()` is not crash-safe on a shape it did not build.** Its
   `TopAbs_FACE` loop hands every face to `ShapeUpgrade_FaceDivide::SplitSurface`, which calls
   `ShapeAnalysis::GetFaceUVBounds`, which dereferences `BRep_Tool::Surface(F, L)` untested in the
@@ -435,7 +447,7 @@ the reproducer). What a bridge author needs without opening it:
   path. OCCT's own STEP writer holds exactly that test (`STEPControl_ActorWrite::hasGeometry`, surface
   clause only), which is why STEP write survives and IGES write does not, and which is the shape the
   upstream fix should take. Two adjacent faults were measured and are separately filed: the same
-  shape kills `BRepCheck_Analyzer` when the face carries a wire (#2789, fourteen guard sites left),
+  shape kills `BRepCheck_Analyzer` when the face carries a wire (#2789, located and guarded, above),
   and `ShapeCustom::SweptToElementary` / `ConvertToRevolution` / `ConvertToBSpline` fault at three
   other lines, now located and guarded (#2790, below).
 - **Three more `ShapeCustom` converters fault on the same face, at their own lines, and they take the

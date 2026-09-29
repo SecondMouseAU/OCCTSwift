@@ -22,7 +22,10 @@ script checks is the mechanically-checkable SUBSET of that question, four ways:
    a separate, simpler index.
 3. **`Scripts/*.py` docstring usage lines vs. real `argparse` flags**: a docstring showing
    `python3 Scripts/foo.py --bar` where `--bar` is not a flag `main()`'s `ArgumentParser` actually
-   registers.
+   registers. A flag registered by a `Scripts/` **helper module** the script imports counts as
+   registered, since that is what a shared `add_arguments()` does; `declared_flags_for()` follows
+   those imports, and it has to, because #2818 centralised two flags that way and four correct
+   usage lines in three scripts immediately read as ghosts.
 4. **Patch-number citations vs. `Scripts/patches/*.patch` on disk**: a `Scripts/patches/00NN-*`
    citation in prose naming a file that is not actually present (already retired, or never existed
    under that number). Scanned in `CLAUDE.md` and in the two `okf/references/` pages that took over
@@ -227,6 +230,36 @@ def bridge_comment_findings():
     return findings
 
 
+ADD_ARGUMENT_RE = re.compile(r'add_argument\([\'"](--[A-Za-z0-9-]+)[\'"]')
+# `import occt_asset_identity as ...`, the shape a Scripts/ helper module is imported by. Only a
+# module that is itself a `Scripts/*.py` file counts; a stdlib import resolves to no file and is
+# skipped.
+SIBLING_IMPORT_RE = re.compile(r'^\s*import\s+([a-z_][a-z0-9_]*)(?:\s+as\s+\w+)?\s*(?:#.*)?$',
+                               re.MULTILINE)
+
+
+def declared_flags_for(path, text, seen=None):
+    """Every flag `path` registers, including those a Scripts/ helper module registers for it.
+
+    A shared helper that calls `add_argument` on the caller's parser is registering those flags just
+    as surely as a literal call in the caller would, so a script that imports one has them. Without
+    this, centralising two flags in `Scripts/occt_asset_identity.py` (#2818) made four correct usage
+    lines in three scripts read as naming unregistered flags, which is a false positive this census
+    would have carried indefinitely. The recursion is depth-limited by `seen` rather than by a fixed
+    depth, so a helper that imports a helper works and a cycle terminates.
+    """
+    seen = seen if seen is not None else set()
+    flags = set(ADD_ARGUMENT_RE.findall(text))
+    for module in SIBLING_IMPORT_RE.findall(text):
+        sibling = os.path.join(REPO_ROOT, "Scripts", module + ".py")
+        if module in seen or not os.path.isfile(sibling):
+            continue
+        seen.add(module)
+        with open(sibling, encoding="utf-8") as fh:
+            flags |= declared_flags_for(sibling, fh.read(), seen)
+    return flags
+
+
 def script_flag_findings():
     """Channel 3: a Scripts/*.py docstring usage line naming a flag argparse doesn't register."""
     findings = []
@@ -236,7 +269,7 @@ def script_flag_findings():
         basename = os.path.basename(path)
         with open(path, encoding="utf-8") as fh:
             text = fh.read()
-        declared_flags = set(re.findall(r'add_argument\([\'"](--[A-Za-z0-9-]+)[\'"]', text))
+        declared_flags = declared_flags_for(path, text)
         if not declared_flags:
             continue  # a script with no argparse flags at all has nothing to check here
         # Docstring is the leading triple-quoted string; scan the whole file's text for usage
@@ -385,6 +418,49 @@ def self_test():
         if os.path.exists(tmp_script):
             os.remove(tmp_script)
 
+    # Channel 3, second half: a flag a Scripts/ HELPER module registers on the caller's parser is
+    # registered. Centralising two flags in `Scripts/occt_asset_identity.py` (#2818) turned four
+    # correct usage lines in three scripts into findings, and a census that reports a correct line
+    # every run is a census nobody rereads. Both halves are asserted, because a rule that unions in
+    # every sibling module's flags indiscriminately would stop catching a real ghost.
+    tmp_helper = os.path.join(REPO_ROOT, "Scripts", "_census_staleness_selftest_helper.py")
+    tmp_caller = os.path.join(REPO_ROOT, "Scripts", "_census_staleness_selftest_caller.py")
+    try:
+        with open(tmp_helper, "w", encoding="utf-8") as fh:
+            fh.write("import argparse\n"
+                     "def add_arguments(ap):\n"
+                     "    ap.add_argument('--from-helper', action='store_true')\n")
+        with open(tmp_caller, "w", encoding="utf-8") as fh:
+            fh.write(
+                '"""\n'
+                "    python3 Scripts/_census_staleness_selftest_caller.py --from-helper\n"
+                "    python3 Scripts/_census_staleness_selftest_caller.py --still-a-ghost\n"
+                # A flag some OTHER Scripts/*.py registers and this one does not import. The removal
+                # matrix showed a rule that unions in every sibling's flags rather than the imported
+                # ones passed with `--still-a-ghost` alone, since nothing registers that spelling.
+                "    python3 Scripts/_census_staleness_selftest_caller.py --require-typecheck\n"
+                '"""\n'
+                "import argparse\n"
+                "import _census_staleness_selftest_helper as helper\n"
+                "ap = argparse.ArgumentParser()\n"
+                "ap.add_argument('--own-flag', action='store_true')\n"
+                "helper.add_arguments(ap)\n"
+            )
+        findings = script_flag_findings()
+        flagged = {flag for path, _, flag, _, _ in findings
+                   if "_census_staleness_selftest_caller.py" in path}
+        if "--from-helper" in flagged:
+            failures.append("a flag registered by an imported Scripts/ helper was reported as "
+                            "unregistered")
+        for ghost in ("--still-a-ghost", "--require-typecheck"):
+            if ghost not in flagged:
+                failures.append(f"following an imported helper's flags made the channel blind to "
+                                f"{ghost}, a real ghost flag in the same script")
+    finally:
+        for path in (tmp_helper, tmp_caller):
+            if os.path.exists(path):
+                os.remove(path)
+
     # Channel 4: exercised directly against the real CLAUDE.md/Scripts/patches, no injection (an
     # injected fake patch-number citation would need editing CLAUDE.md itself, riskier than reading
     # the real file); instead prove the two mechanical facts it depends on are sound.
@@ -408,7 +484,8 @@ def self_test():
             print(f"SELF-TEST FAILURE: {f}")
         return False
     print("SELF-TEST: OK (4 channels: injected miss caught, injected real-symbol correctly not "
-          "flagged, header/patch scans sane)")
+          "flagged, a helper-registered flag not flagged while a ghost beside it still is, "
+          "header/patch scans sane)")
     return True
 
 

@@ -1,0 +1,57 @@
+closed box(20) volume=8000.000000 cylinder(r10,h20)=6283.185307 sphere(r10)=4188.790205
+
+--- what the bridge does today: MakeThickSolidBySimple on a closed solid ---
+BySimple(closed box, +2.0)                                     IsDone=0
+BySimple(closed cylinder, +2.0)                                IsDone=0
+BySimple(closed sphere, +2.0)                                  IsDone=0
+BySimple(closed box, -2.0)                                     IsDone=0
+BySimple(closed cylinder, -2.0)                                IsDone=0
+BySimple(closed sphere, -2.0)                                  IsDone=0
+BySimple(closed box, +0.1)                                     IsDone=0
+BySimple(closed cylinder, +0.1)                                IsDone=0
+BySimple(closed sphere, +0.1)                                  IsDone=0
+BySimple(closed box, -0.1)                                     IsDone=0
+BySimple(closed cylinder, -0.1)                                IsDone=0
+BySimple(closed sphere, -0.1)                                  IsDone=0
+
+--- what OCCT's own callers do: MakeThickSolidByJoin, empty removal list ---
+ByJoin(closed box, EMPTY faces, +2.0)                          IsDone=1 type=2 solids=1 shells=1 faces=6 valid=1 volume=-13824.000000
+ByJoin(closed cylinder, EMPTY faces, +2.0)                     IsDone=1 type=2 solids=1 shells=1 faces=3 valid=1 volume=-10857.344211
+ByJoin(closed sphere, EMPTY faces, +2.0)                       IsDone=1 type=2 solids=1 shells=1 faces=1 valid=1 volume=-7238.229474
+ByJoin(closed box, EMPTY faces, -2.0)                          IsDone=1 type=2 solids=1 shells=1 faces=6 valid=1 volume=4096.000000
+ByJoin(closed cylinder, EMPTY faces, -2.0)                     IsDone=1 type=2 solids=1 shells=1 faces=3 valid=1 volume=3216.990877
+ByJoin(closed sphere, EMPTY faces, -2.0)                       IsDone=1 type=2 solids=1 shells=1 faces=1 valid=1 volume=2144.660585
+ByJoin(closed box, EMPTY faces, +0.1)                          IsDone=1 type=2 solids=1 shells=1 faces=6 valid=1 volume=-8242.408000
+ByJoin(closed cylinder, EMPTY faces, +0.1)                     IsDone=1 type=2 solids=1 shells=1 faces=3 valid=1 volume=-6473.572105
+ByJoin(closed sphere, EMPTY faces, +0.1)                       IsDone=1 type=2 solids=1 shells=1 faces=1 valid=1 volume=-4315.714737
+ByJoin(closed box, EMPTY faces, -0.1)                          IsDone=1 type=2 solids=1 shells=1 faces=6 valid=1 volume=7762.392000
+ByJoin(closed cylinder, EMPTY faces, -0.1)                     IsDone=1 type=2 solids=1 shells=1 faces=3 valid=1 volume=6096.568420
+ByJoin(closed sphere, EMPTY faces, -0.1)                       IsDone=1 type=2 solids=1 shells=1 faces=1 valid=1 volume=4064.378947
+
+--- the two negative volumes #2739 records ---
+BySimple(single open face of a 10-box, +2.0)                   IsDone=1 type=2 solids=1 shells=1 faces=6 valid=1 volume=-200.000000
+BySimple(single open face of a 10-box, -2.0)                   IsDone=1 type=2 solids=1 shells=1 faces=6 valid=1 volume=200.000000
+  (OCCT's own ThickSolidLargerVolume reads this volume through std::abs:
+   GTests/BRepOffsetAPI_MakeThickSolid_Test.cxx:143)
+ByJoin(closed box, 1 face removed, -1.0)                       IsDone=1 type=2 solids=1 shells=1 faces=11 valid=1 volume=1844.000000
+ByJoin(closed box, 1 face removed, +1.0)                       IsDone=1 type=2 solids=1 shells=1 faces=23 valid=1 volume=2127.758101
+
+--- control: is VolumeProperties simply reporting a signed mass? ---
+box volume=8000.000000  box.Reversed() volume=-8000.000000
+
+--- second construction: is ByJoin-with-an-empty-list just Shape.offset(by:)? ---
+MakeOffsetShape::PerformByJoin(closed box, +2.0) type=2 solids=1 shells=1 faces=6 volume=13824.000000
+MakeOffsetShape::PerformByJoin(closed box, -2.0) type=2 solids=1 shells=1 faces=6 volume=4096.000000
+
+--- the domain BySimple does accept: an open shell and a single face ---
+open shell: faces=5 closed=0
+BySimple(open shell (20-box minus one face), +2.0)             IsDone=1 type=2 solids=1 shells=1 faces=14 valid=1 volume=-1742.730159
+BySimple(open shell (20-box minus one face), -2.0)             IsDone=1 type=2 solids=1 shells=1 faces=14 valid=1 volume=1686.857143
+
+--- would BRep_Tool::IsClosed separate the accepted domain from the refused one? ---
+closed solid (box)               type=2 IsClosed=0  BySimple(+2.0) IsDone=0
+closed shell of that box         type=3 IsClosed=1  BySimple(+2.0) IsDone=0
+open shell (box minus a face)    type=3 IsClosed=0  BySimple(+2.0) IsDone=1
+single face                      type=4 IsClosed=0  BySimple(+2.0) IsDone=1
+closed solid (cylinder)          type=2 IsClosed=0  BySimple(+2.0) IsDone=0
+closed solid (sphere)            type=2 IsClosed=0  BySimple(+2.0) IsDone=0

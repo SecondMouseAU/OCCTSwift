@@ -2472,9 +2472,26 @@ bool OCCTShapeFixerStatusFlag(OCCTShapeFixerRef ref, int32_t flag)
 // #1297: converged with the older, now-removed OCCTShapeBooleanCheck (formerly
 // OCCTBridge_Modeling.mm), which guarded its OCCTShapeRef argument(s) before dereferencing.
 // Shape.isValidForBoolean / isValidForBoolean(with:) forward here now; the guard came along too.
+//
+// #2789: these two functions construct a BRepCheck_Analyzer, and a search of this bridge for
+// `BRepCheck_Analyzer` does not find them. BRepAlgoAPI_Check::Perform runs BOPAlgo_ArgumentAnalyzer
+// and then builds `BRepCheck_Analyzer(myS1)` at BRepAlgoAPI_Check.cxx:92 and `(myS2)` at :94,
+// unconditionally for a non-null shape, so BOTH of the analyzer's fatal inputs reach it: #2746's
+// pcurve-only face edge and #2789's surface-less face carrying a wire. Measured: the committed
+// fixtures brepcheck-incontext-pcurve-only-edge.brep and surfaceless-face-with-wire.brep each exit
+// 139 through `BRepAlgoAPI_Check(shape, true, true)` with the catch (...) below in place, because
+// an OS signal is not a C++ exception. These were the only two analyzer constructions in the bridge
+// carrying NEITHER predicate, and they were missed by #2750 for the same reason #2798's two
+// BRepTools_Modifier sites were missed by #2777: the grep that derived the population named the
+// class the bridge writes, not the class that faults.
+//
+// false is what both functions already answer for a shape that is not valid for a boolean, and a
+// shape in either state is not.
 bool OCCTShapeBooleanCheckSingle(OCCTShapeRef shape, bool testSmallEdges, bool testSelfInterference)
 {
   if (!shape)
+    return false;
+  if (occtShapeHasPCurveOnlyEdge(shape->shape) || occtShapeHasSurfacelessFace(shape->shape))
     return false;
   try
   {
@@ -2496,6 +2513,11 @@ bool OCCTShapeBooleanCheckPair(OCCTShapeRef shape1,
                                bool         testSelfInterference)
 {
   if (!shape1 || !shape2)
+    return false;
+  // #2750, #2789: see OCCTShapeBooleanCheckSingle above. Both arguments are analyzed, so both are
+  // screened.
+  if (occtShapeHasPCurveOnlyEdge(shape1->shape) || occtShapeHasSurfacelessFace(shape1->shape)
+      || occtShapeHasPCurveOnlyEdge(shape2->shape) || occtShapeHasSurfacelessFace(shape2->shape))
     return false;
   try
   {

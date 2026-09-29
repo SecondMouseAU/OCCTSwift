@@ -967,7 +967,13 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurfaceWire(OCCTSurfaceRef surface, OCCTWire
     // #2750: BuildCurves3d can leave an edge with its projected pcurve and no 3D curve, which is
     // the one input BRepCheck_Analyzer faults on (#2746). That face is not one this function
     // can hand back: nullptr is what it already answers for an analyzer-invalid face.
-    if (occtShapeHasPCurveOnlyEdge(fixed))
+    //
+    // #2789: the surface clause beside it, for the analyzer's other fatal input. It is defensive
+    // here rather than measured reachable: `surf` is guarded non-null on entry and
+    // BRepBuilderAPI_MakeFace stores it, so ShapeFix_Face would have to replace the face with a
+    // surface-less one. The guard is at every analyzer construction uniformly, which is a rule a
+    // reader can check by grep, rather than at the subset a per-site argument admits.
+    if (occtShapeHasPCurveOnlyEdge(fixed) || occtShapeHasSurfacelessFace(fixed))
       return nullptr;
     BRepCheck_Analyzer chk(fixed);
     if (!chk.IsValid())
@@ -1026,10 +1032,10 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurfaceWireWithHoles(OCCTSurfaceRef     surf
       fixer.Perform();
       TopoDS_Face fixed = fixer.Face();
       BRepLib::BuildCurves3d(fixed);
-      // #2750: see OCCTShapeCreateFaceFromSurfaceWire above (#2746). A face in that state is not
-      // accepted, so this attempt falls through to the other winding exactly as an
-      // analyzer-invalid face does.
-      if (occtShapeHasPCurveOnlyEdge(fixed))
+      // #2750, #2789: see OCCTShapeCreateFaceFromSurfaceWire above (#2746, #2789), including why
+      // the surface clause is defensive at this site. A face in either state is not accepted, so
+      // this attempt falls through to the other winding exactly as an analyzer-invalid face does.
+      if (occtShapeHasPCurveOnlyEdge(fixed) || occtShapeHasSurfacelessFace(fixed))
         continue;
       if (BRepCheck_Analyzer(fixed).IsValid())
         return new OCCTShape(fixed);
@@ -1300,7 +1306,12 @@ OCCTShapeRef OCCTMakeFaceAddHole(OCCTShapeRef face, OCCTShapeRef wire)
     // #2750: occtShapeHasPCurveOnlyEdge before each analyzer, because a host face whose edges
     // lost their 3D curves faults inside it (#2746). It reads as "not a usable face", which is
     // the verdict this function already reaches for an analyzer-invalid build.
-    if (holed.IsNull() || occtShapeHasPCurveOnlyEdge(holed) || !BRepCheck_Analyzer(holed).IsValid())
+    //
+    // #2789: occtShapeHasSurfacelessFace beside it, and this one IS reachable with caller input:
+    // `host` is the caller's face, so a surface-less face read off a .brep file arrives here
+    // unaltered and BRepCheck_Edge.cxx:463 takes the process down. Same verdict, same reason.
+    if (holed.IsNull() || occtShapeHasPCurveOnlyEdge(holed) || occtShapeHasSurfacelessFace(holed)
+        || !BRepCheck_Analyzer(holed).IsValid())
     {
       // Non-planar host, or a winding test that couldn't decide: take the other orientation
       // when it is the one that yields a valid face. If NEITHER does, the wire is not a usable
@@ -1309,7 +1320,8 @@ OCCTShapeRef OCCTMakeFaceAddHole(OCCTShapeRef face, OCCTShapeRef wire)
       // function cannot fix. That is the same call the degenerate guard above makes, and what
       // #234 established: a non-nil invalid face is exactly what breaks the caller later.
       TopoDS_Face alt = build(!reverse);
-      if (alt.IsNull() || occtShapeHasPCurveOnlyEdge(alt) || !BRepCheck_Analyzer(alt).IsValid())
+      if (alt.IsNull() || occtShapeHasPCurveOnlyEdge(alt) || occtShapeHasSurfacelessFace(alt)
+          || !BRepCheck_Analyzer(alt).IsValid())
         return nullptr;
       holed = alt;
     }
@@ -1446,7 +1458,12 @@ int32_t OCCTMakeEdgeError(OCCTShapeRef edge)
   // cannot reach the fault; the guard is here for the shape a caller passes that is not an edge.
   // 1 is the error code this function already uses, and the predicate measured a real error, so
   // -1 ("could not check") would not be what happened.
-  if (occtShapeHasPCurveOnlyEdge(edge->shape))
+  //
+  // #2789: the same for a face with no surface, and the same note about a bare edge carrying no
+  // face: this clause is for the shape a caller passes that is not an edge. A surface-less face is
+  // BRepCheck_NoSurface by OCCT's own BRepCheck_Face::Minimum, measured, so 1 rather than -1 here
+  // too.
+  if (occtShapeHasPCurveOnlyEdge(edge->shape) || occtShapeHasSurfacelessFace(edge->shape))
     return 1;
   try
   {
