@@ -73,8 +73,16 @@ Check if this curve has at least Cn continuity.
 public func isCN(_ n: Int) -> Bool
 ```
 
-- **Parameters:** `n`, minimum continuity order required.
-- **Returns:** `true` if the curve is at least Cn continuous.
+- **Parameters:** `n`, minimum continuity order required, which must not be negative.
+- **Returns:** `false` for a negative `n`.
+
+`n < 0` is refused on the Swift side, because the answer does not depend on the class.
+`Standard_RangeError_Raise_if(N < 0, ...)` sits in a `.cxx` for all eight classes implementing `IsCN`
+here, so the pinned Release kernel compiles it out of every one of them
+([occt-validation-is-compiled-out](../../okf/policies/occt-validation-is-compiled-out.md)), and
+`isCN(-1)` returned `true`: answered by `Geom_BSplineCurve`'s own `N <= 0` test rather than by the
+class agreeing. `Curve3D.bezierIsCN`, `Curve2D.bsplineIsCN`, `Surface.bezierIsCNu` and
+`Surface.bezierIsCNv` carry the same refusal (#2862).
 - **OCCT:** `Geom_Curve::IsCN` (via `OCCTCurve3DIsCN`).
 - **Example:**
   ```swift
@@ -167,7 +175,8 @@ Check if this 2D curve has at least Cn continuity.
 public func isCN(_ n: Int) -> Bool
 ```
 
-- **Parameters:** `n`, minimum continuity order required.
+- **Parameters:** `n`, minimum continuity order required, which must not be negative.
+- **Returns:** `false` for a negative `n`; see `Curve3D.isCN(_:)` above for why (#2862).
 - **OCCT:** `Geom2d_Curve::IsCN` (via `OCCTCurve2DIsCN`).
 
 ---
@@ -216,7 +225,8 @@ Check if this surface has at least Cn continuity in the U direction.
 public func isCNu(_ n: Int) -> Bool
 ```
 
-- **Parameters:** `n`, minimum continuity order required.
+- **Parameters:** `n`, minimum continuity order required, which must not be negative.
+- **Returns:** `false` for a negative `n`; see `Curve3D.isCN(_:)` above for why (#2862).
 - **OCCT:** `Geom_Surface::IsCNu` (via `OCCTSurfaceIsCNu`).
 
 ---
@@ -229,6 +239,8 @@ Check if this surface has at least Cn continuity in the V direction.
 public func isCNv(_ n: Int) -> Bool
 ```
 
+- **Parameters:** `n`, minimum continuity order required, which must not be negative.
+- **Returns:** `false` for a negative `n`; see `Curve3D.isCN(_:)` above for why (#2862).
 - **OCCT:** `Geom_Surface::IsCNv` (via `OCCTSurfaceIsCNv`).
 
 ---

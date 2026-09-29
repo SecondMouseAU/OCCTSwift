@@ -2444,8 +2444,13 @@ extension Curve2D {
         Int(OCCTCurve2DBSplineContinuity(handle))
     }
 
-    /// Is the BSpline curve at least CN continuous?
+    /// Whether this BSpline curve has at least C^n continuity.
+    ///
+    /// - Parameter n: The continuity order, which must not be negative.
+    /// - Returns: `false` for a negative `n`, and `false` if the curve is null. See
+    ///   ``Curve3D/isCN(_:)`` for why a negative order is refused here rather than by OCCT (#2862).
     public func bsplineIsCN(_ n: Int) -> Bool {
+        guard n >= 0 else { return false }
         OCCTCurve2DBSplineIsCN(handle, Int32(n))
     }
 
@@ -3330,8 +3335,13 @@ extension Curve2D {
     )
     public var continuityOrder: Int { Int(OCCTCurve2DGetContinuity(handle)) }
 
-    /// Check if this curve has at least Cn continuity.
+    /// Whether this curve has at least C^n continuity.
+    ///
+    /// - Parameter n: The continuity order, which must not be negative.
+    /// - Returns: `false` for a negative `n`, and `false` if the curve is null. See
+    ///   ``Curve3D/isCN(_:)`` for why a negative order is refused here rather than by OCCT (#2862).
     public func isCN(_ n: Int) -> Bool {
+        guard n >= 0 else { return false }
         OCCTCurve2DIsCN(handle, Int32(n))
     }
 

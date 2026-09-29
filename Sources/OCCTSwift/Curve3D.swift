@@ -2596,8 +2596,13 @@ extension Curve3D {
         Int(OCCTCurve3DBezierContinuity(handle))
     }
 
-    /// Is the Bezier curve at least CN continuous?
+    /// Whether this Bezier curve has at least C^n continuity.
+    ///
+    /// - Parameter n: The continuity order, which must not be negative.
+    /// - Returns: `false` for a negative `n`, and `false` if the curve is null. See
+    ///   ``Curve3D/isCN(_:)`` for why a negative order is refused here rather than by OCCT (#2862).
     public func bezierIsCN(_ n: Int) -> Bool {
+        guard n >= 0 else { return false }
         OCCTCurve3DBezierIsCN(handle, Int32(n))
     }
 
@@ -4163,8 +4168,27 @@ extension Curve3D {
     )
     public var continuityOrder: Int { Int(OCCTCurve3DGetContinuity(handle)) }
 
-    /// Check if this curve has at least Cn continuity.
+    /// Whether this curve has at least C^n continuity.
+    ///
+    /// ```swift
+    /// let seg = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
+    /// seg.isCN(3)    // true, a line is infinitely differentiable
+    /// seg.isCN(-1)   // false: a negative order is not a question about the curve
+    /// ```
+    ///
+    /// - Parameter n: The continuity order, which must not be negative.
+    /// - Returns: `false` for a negative `n`, and `false` if the curve is null.
+    ///
+    /// The negative case is refused on the Swift side rather than in the bridge, because the answer
+    /// does not depend on the class. `Standard_RangeError_Raise_if(N < 0, ...)` sits in a `.cxx` for
+    /// all eight classes that implement `IsCN` here, so the pinned Release kernel compiles it out of
+    /// every one of them (see `okf/policies/occt-validation-is-compiled-out.md`), and `isCN(-1)`
+    /// returned `true`: answered by `Geom_BSplineCurve`'s own `N <= 0` test rather than by the class
+    /// agreeing. The same refusal is applied to ``Curve3D/bezierIsCN(_:)``, ``Curve2D/isCN(_:)``,
+    /// ``Curve2D/bsplineIsCN(_:)``, ``Surface/isCNu(_:)``, ``Surface/isCNv(_:)``,
+    /// ``Surface/bezierIsCNu(_:)`` and ``Surface/bezierIsCNv(_:)``. #2862.
     public func isCN(_ n: Int) -> Bool {
+        guard n >= 0 else { return false }
         OCCTCurve3DIsCN(handle, Int32(n))
     }
 
