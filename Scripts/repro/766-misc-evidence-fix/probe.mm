@@ -1,6 +1,6 @@
 // #766 / #1989 evidence correction: kernel side of the like-for-like OCCTMiscTests parity records.
 // The records themselves were never brought to main and live only on the v5.0.0-766-execution
-// branch. This probe stands on its own: it measures the kernel directly.
+// branch, per #2854. This probe stands on its own: it measures the kernel directly.
 //
 // The earlier probes under Scripts/repro/766-misc-*/ printed %.12g and named quantities the
 // bridge side did not carry. This one prints, for every corrected record, the SAME quantity the
