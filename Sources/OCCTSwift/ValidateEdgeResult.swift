@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Edge validation result (3D curve vs curve-on-surface consistency).

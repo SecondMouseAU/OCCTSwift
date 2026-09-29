@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Result of converting composite Bezier segments to a BSpline curve (3D).

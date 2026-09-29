@@ -1,17 +1,5 @@
-import Foundation
+import OCCTPlatform
 import simd
-
-// The platform C library, named because this file uses it directly (free, sin, cos, sqrt and
-// the like). `import Foundation` happens to re-export it on Apple platforms, so these were in
-// scope by accident rather than by declaration; FoundationEssentials does not, which is how
-// #2761 found them. Naming it here is correct independently of that work.
-#if canImport(Darwin)
-    import Darwin
-#elseif canImport(WASILibc)
-    import WASILibc
-#elseif canImport(Glibc)
-    import Glibc
-#endif
 
 // MARK: - Shared annotation + dimension dispatch (#85, v0.150; unified onto DXF, #795)
 //
@@ -314,7 +302,7 @@ internal func dashLengths(for layer: String) -> [Int]? {
 /// DXF formats numbers separately (`%.6f`, via its own `pair(_:_:)` helper) so is not
 /// part of this. #795.
 internal func formatMM(_ v: Double) -> String {
-    String(format: "%.4f", v)
+    String(cFormat: "%.4f", v)
 }
 
 // MARK: - Annotation dispatch
@@ -439,32 +427,32 @@ private func formatTolerance(base: String, tolerance: DrawingTolerance) -> Toler
         return TolerancedLabel(main: base, upper: nil, lower: nil)
     case .symmetric(let v):
         return TolerancedLabel(
-            main: base + " ±" + String(format: "%.3f", v),
+            main: base + " ±" + String(cFormat: "%.3f", v),
             upper: nil, lower: nil)
     case .fitClass(let s):
         return TolerancedLabel(main: base + " " + s, upper: nil, lower: nil)
     case .bilateral(let plus, let minus):
         return TolerancedLabel(
             main: base,
-            upper: "+" + String(format: "%.3f", plus),
-            lower: "-" + String(format: "%.3f", minus))
+            upper: "+" + String(cFormat: "%.3f", plus),
+            lower: "-" + String(cFormat: "%.3f", minus))
     case .unilateral(let v):
         if v >= 0 {
             return TolerancedLabel(
                 main: base,
-                upper: "+" + String(format: "%.3f", v),
+                upper: "+" + String(cFormat: "%.3f", v),
                 lower: "0")
         } else {
             return TolerancedLabel(
                 main: base,
                 upper: "0",
-                lower: String(format: "%.3f", v))
+                lower: String(cFormat: "%.3f", v))
         }
     case .limits(let lower, let upper):
         return TolerancedLabel(
             main: base,
-            upper: String(format: "%.3f", upper),
-            lower: String(format: "%.3f", lower))
+            upper: String(cFormat: "%.3f", upper),
+            lower: String(cFormat: "%.3f", lower))
     }
 }
 
@@ -495,7 +483,7 @@ private func emitLinear(_ d: DrawingDimension.Linear, into ops: DrawingPrimitive
     ops.addLine(d.to, to2, "DIMENSION")
     ops.addLine(from2, to2, "DIMENSION")
     let mid = (from2 + to2) / 2
-    let base = d.label ?? String(format: "%.2f", d.value)
+    let base = d.label ?? String(cFormat: "%.2f", d.value)
     let rotDeg = atan2(dir.y, dir.x) * 180 / .pi
     let parts = formatTolerance(base: base, tolerance: d.tolerance)
     emitTolerancedText(
@@ -514,7 +502,7 @@ private func emitRadial(_ d: DrawingDimension.Radial, into ops: DrawingPrimitive
     ops.addLine(endOnCircle, leaderTip, "DIMENSION")
     // .radial reports its raw radius (DrawingDimension.value does the same; #1185
     // moved that formula off the now-shared `Circular` struct, which has no `.value`).
-    let base = d.label ?? String(format: "R%.2f", d.radius)
+    let base = d.label ?? String(cFormat: "R%.2f", d.radius)
     let parts = formatTolerance(base: base, tolerance: d.tolerance)
     let perp = leftPerpendicular2D(of: SIMD2(cos(d.leaderAngle), sin(d.leaderAngle)))
     emitTolerancedText(
@@ -531,7 +519,7 @@ private func emitDiameter(_ d: DrawingDimension.Diameter, into ops: DrawingPrimi
     let tip = SIMD2(pB.x + 5 * cos, pB.y + 5 * sin)
     // .diameter reports 2 * radius (DrawingDimension.value does the same; #1185
     // moved that formula off the now-shared `Circular` struct, which has no `.value`).
-    let base = d.label ?? String(format: "⌀%.2f", 2 * d.radius)
+    let base = d.label ?? String(cFormat: "⌀%.2f", 2 * d.radius)
     let parts = formatTolerance(base: base, tolerance: d.tolerance)
     let perp = leftPerpendicular2D(of: SIMD2(cos, sin))
     emitTolerancedText(
@@ -561,7 +549,7 @@ private func emitAngular(_ d: DrawingDimension.Angular, into ops: DrawingPrimiti
     let textPos = SIMD2(
         d.vertex.x + (d.arcRadius + 3) * cos(midAngle),
         d.vertex.y + (d.arcRadius + 3) * sin(midAngle))
-    let base = d.label ?? String(format: "%.1f°", d.value * 180 / .pi)
+    let base = d.label ?? String(cFormat: "%.1f°", d.value * 180 / .pi)
     let parts = formatTolerance(base: base, tolerance: d.tolerance)
     let radial = SIMD2(cos(midAngle), sin(midAngle))
     emitTolerancedText(
@@ -608,7 +596,7 @@ private func emitOrdinateAxisFeature(
         point(featureAlong, originAcross - tickLen),
         point(featureAlong, originAcross + tickLen), "DIMENSION")
 
-    let base = label ?? String(format: "%.2f", offset)
+    let base = label ?? String(cFormat: "%.2f", offset)
     let parts = formatTolerance(base: base, tolerance: tolerance)
     emitTolerancedText(
         parts,

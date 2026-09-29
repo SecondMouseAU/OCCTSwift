@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Shared marshaling for `GuideTrihedronAC.evaluate`/`GuideTrihedronPlan.evaluate`: both call a

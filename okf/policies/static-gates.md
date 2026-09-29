@@ -20,7 +20,7 @@ human to adjudicate, not a verdict on the tree; CI runs only its `--self-test`, 
 could never fail and so could never signal. A census that earns a better false-positive number is
 promoted by renaming it `check-` and making it exit 1; the decision is separate from the script.
 
-The six censuses today and what each is for:
+The seven censuses today and what each is for:
 
 - `census-unmeasured-values.py` (#726): values returned as measurements that were never computed.
   A bare run is the slowest of the five, because sub-kind 4 walks a taint fixpoint per bridge
@@ -68,6 +68,20 @@ The six censuses today and what each is for:
   [helper-placement-by-reach](helper-placement-by-reach.md) predicted in writing and what
   `fillCommonPart` turned out to be. Every rule in it errs towards LIVE, because its consumer is a
   deletion pass: a false dead costs a build break and a false live costs a line.
+- `census-compiled-out-validation.py` (#2801): bridge `try`/`catch` protection resting on an OCCT
+  validity check that `No_Exception` removed from the kernel, and result accessors read without the
+  `IsDone` test that is now the only guard left. It reports rather than gates because the verdict on
+  each site is whether the `catch` had another reason to exist, which is a reading. Two things about
+  it are worth copying. It reads a **committed derived map**, `Scripts/occt-raise-if-map.txt`, on the
+  `census-doc-occt-attribution.py` precedent: the facts it needs live in `Libraries/occt-src`, which
+  nothing checks out, so `--write-table` derives them once and `--reverify-table` re-derives and
+  diffs at an OCCT version bump, skipping without the tree unless `--require-occt-src`. And its
+  plausibility assertions earned their place before it reported anything: a hand-written whitelist of
+  "inert" `gp_` value types was wrong about 8 of its 18 entries, and the assertion that the map must
+  contradict none of them rejected the run rather than producing a number built on it. The rate is in
+  [occt-validation-is-compiled-out](occt-validation-is-compiled-out.md), with the story of how its
+  first version reported 89 findings that were an artefact of reusing a gate's regex for a census's
+  question.
 
 Three gates read `Scripts/patches/` and `Scripts/patches-wasi/` rather than `Sources/`, and all
 three for the same reason: `check-patch-deletes-guarded-symbol.py` (#2058), which fails when a
@@ -301,7 +315,7 @@ build was on disk.
 
 ## Every detector proves it is not blind
 
-Fifteen of the sixteen gates, all six censuses, the merge-history audit and the release check
+Fifteen of the sixteen gates, all seven censuses, the merge-history audit and the release check
 take `--self-test`, a fixture battery proving the *detector* catches each failure mode. Run it
 whenever you change one of these scripts. Three gate scripts were confidently wrong while
 reporting all clear (#618, #624/#630, #626), and a detector reporting "all clear" because it is
@@ -359,6 +373,17 @@ rather than a scan that saw nothing, which the report then says in those words. 
 floor and a canary to a magic number, and where a magic number is unavoidable, ask which legitimate
 change would cross it.
 
+**Asking that question retired the second such floor the same week.**
+`census-compiled-out-validation.py`'s `derive` aborted on `if files < 5000`, a floor on the OCCT
+source files its walk found. The real tree yields 14,671, so the floor sat at 34% of the population
+and discriminated nothing: nothing plausible crosses it from above, and a tree of 5,001 files is no
+more the pinned tree than one of 4,999. What it was catching is `--occt-src` pointed at something that
+is not an OCCT source tree, which lands at 0, and two content canaries catch that while naming which
+fact was absent, so the message stops blaming the tree for the script's confusion. The sizing question
+moved to where it belonged and already was: the *consumer*, `assert_view_is_plausible`, which refuses
+to report from a map of under 500 classes. **A floor in a producer is the shape to look for.** It
+cannot act on the answer, and the check it is standing in for belongs to whoever reads the result.
+
 The distinction worth holding: **a wrong answer is a bug, an answer about a population that was
 never examined is a lie.** The first gets found. The second is invisible precisely when it matters,
 because it looks identical to success.
@@ -396,7 +421,7 @@ change to the ruleset.
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs thirty-nine of `gate-scripts`' forty invocations, flag for
+`Scripts/git-hooks/pre-commit` runs forty of `gate-scripts`' forty-one invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the

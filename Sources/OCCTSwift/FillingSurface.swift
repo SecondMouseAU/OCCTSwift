@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 // Continuity order for filling constraints is `SurfaceContinuity` (Continuity.swift); the

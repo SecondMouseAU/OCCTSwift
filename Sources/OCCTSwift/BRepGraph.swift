@@ -5,8 +5,8 @@
 //  Graph-based B-Rep topology representation (OCCT BRepGraph)
 //
 
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 
 /// A graph-based representation of B-Rep topology.
 ///
@@ -696,7 +696,11 @@ public final class BRepGraph: @unchecked Sendable {
         guard actualLen >= 0 else { return nil }
         // Ensure null-termination as a safeguard
         opNameBuffer[Int(len)] = 0
-        let opName = String(cString: opNameBuffer)
+        // Through the base pointer rather than the array: the [CChar] overload is
+        // deprecated on Apple and absent on the wasm path.
+        let opName = opNameBuffer.withUnsafeBufferPointer {
+            String(cString: $0.baseAddress!)
+        }
 
         // Collect originals.
         let count = Int(OCCTBRepGraphHistoryGetRecordOriginalsCount(handle, Int32(index)))

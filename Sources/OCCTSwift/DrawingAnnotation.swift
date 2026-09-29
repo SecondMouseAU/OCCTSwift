@@ -1,17 +1,5 @@
-import Foundation
+import OCCTPlatform
 import simd
-
-// The platform C library, named because this file uses it directly (free, sin, cos, sqrt and
-// the like). `import Foundation` happens to re-export it on Apple platforms, so these were in
-// scope by accident rather than by declaration; FoundationEssentials does not, which is how
-// #2761 found them. Naming it here is correct independently of that work.
-#if canImport(Darwin)
-    import Darwin
-#elseif canImport(WASILibc)
-    import WASILibc
-#elseif canImport(Glibc)
-    import Glibc
-#endif
 
 // MARK: - Value types for 2D drawing dimensions and annotations
 //
@@ -448,7 +436,7 @@ public enum DrawingAnnotation: Sendable, Hashable {
 /// Wrapped inside `Drawing` so each Drawing carries its own mutable collection
 /// without breaking Sendable.
 internal final class DrawingAnnotationStore: @unchecked Sendable {
-    private let lock = NSLock()
+    private let lock = PlatformLock()
     private var _dimensions: [DrawingDimension] = []
     private var _annotations: [DrawingAnnotation] = []
 

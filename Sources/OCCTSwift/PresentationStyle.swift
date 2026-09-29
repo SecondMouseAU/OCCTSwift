@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// Value-type wrapper for XCAFPrs_Style — visual presentation style.

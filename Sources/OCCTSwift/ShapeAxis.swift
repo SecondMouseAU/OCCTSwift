@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 
 /// An axis extracted from a shape or face: an origin+direction pair carrying the
 /// geometric meaning of the underlying surface.

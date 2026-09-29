@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 
 /// Display attribute controller for tessellation quality and wireframe rendering.
 ///
