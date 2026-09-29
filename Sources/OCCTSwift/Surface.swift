@@ -4519,6 +4519,9 @@ extension Surface {
     /// ```
     ///
     /// - Parameters:
+    ///   - origin: Centre of the cylinder's base circle.
+    ///   - axis: Direction of the cylinder's axis. Need not be normalised.
+    ///   - radius: Radius of the cylinder.
     ///   - u1: Start of the angular range, in radians.
     ///   - u2: End of the angular range. **`u2` must not be less than `u1`, and `u2 - u1` must not
     ///     exceed `2 * .pi`**; outside that band the result is `nil` (#2861). Swapping the two used
@@ -4552,6 +4555,10 @@ extension Surface {
     /// ```
     ///
     /// - Parameters:
+    ///   - origin: Apex-referenced origin of the cone's local frame.
+    ///   - axis: Direction of the cone's axis. Need not be normalised.
+    ///   - semiAngle: Half-angle of the cone, in radians.
+    ///   - refRadius: Radius at the origin's height, from which the cone opens at `semiAngle`.
     ///   - u1: Start of the angular range, in radians.
     ///   - u2: End of the angular range. Carries the same constraint as
     ///     ``Surface/fromCylinder(origin:axis:radius:u1:u2:v1:v2:)``: `u2` must not be less than
