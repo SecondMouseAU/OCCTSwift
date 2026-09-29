@@ -11,7 +11,7 @@ for what that takes.
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0042.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0043.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -1846,6 +1846,119 @@ mention `GetFaceUVBounds`, `dpasukhi`'s open series is Unicode strings, math rob
 `ApplicationFramework`, and OCCT#1514 `Data Exchange - Harden malformed input handling` (merged
 2026-09-01) touches only the OBJ, STL, VRML and STEP readers plus `Standard_ReadLineBuffer`, nothing
 in `TKShHealing`.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch
+
+**The by-plane mass is computed and then discarded**
+([#2827](https://github.com/SecondMouseAU/OCCTSwift/issues/2827)),
+`src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx:494-528` in the pinned tree:
+
+```cpp
+  convert(theInertia, theOutGravityCenter, theOutMatrixOfInertia, theOutMass);  // sets the mass
+  if (std::abs(theInertia.Mass) >= EPS_DIM && theIsByPoint)
+  {
+    ...
+    theOutMass = theInertia.Mass;
+  }
+  else
+  {
+    theOutMass = 0.0;                    // every by-plane call lands here
+    theOutGravityCenter.SetCoord(0.0, 0.0, 0.0);
+  }
+```
+
+The four-argument `convert` on the first line has already written the correct mass. The
+`&& theIsByPoint` then sends every by-plane call into an `else` written for the vanishing-mass case,
+which overwrites it with `0.0` and the gravity centre with `(0, 0, 0)`. The fix is to drop
+`&& theIsByPoint` from the outer condition, which is also what makes the inner
+`if (theIsByPoint) ... else ...` live: that `else` is unreachable today, and it exists, so the outer
+condition was meant to test `EPS_DIM` alone.
+
+**Why the inner `else` is the right formula and not just the reachable one.** For a by-point
+computation `theCoeff` is a three-element translation, `theOrigin - loc`
+(`BRepGProp_Vinert.cxx:238`), so the gravity centre is `theCoeff[i] + I*/mass`. For a by-plane
+computation `theCoeff` is the four plane coefficients `a, b, c, d` with `d` re-based on `loc`
+(`BRepGProp_Vinert.cxx:279`). Those are not a translation and must not be added to a coordinate. The
+by-plane gravity centre is `I*/mass` relative to `loc`, which is what the inner `else` computes and
+what the four-argument `convert` on the first line had already written. The matrix of inertia is
+assigned unconditionally after the branch and does not move.
+
+### The population, derived rather than grepped
+
+`BRepGProp_Gauss::Compute` reaches this overload only when `myType == Vinert`, and calls the
+four-argument `convert` otherwise, so `BRepGProp_Sinert` and `BRepGProp_Cinert` are untouched. Inside
+`BRepGProp_Vinert` the flag is `false` at exactly three `Compute` call sites,
+`BRepGProp_Vinert.cxx:285`, `:300` and `:317`, which are the bodies of the four by-plane `Perform`
+overloads (`:263` forwards to `:273`, whose body is `:285`) and therefore of the four `gp_Pln`
+constructors that delegate to them. Both `Compute` paths, the adaptive one at
+`BRepGProp_Gauss.cxx:1101` and the plain one at `:1388`, reach this `convert`.
+
+**OCCT has no callers of that path at all**, per
+[`okf/policies/follow-occt-callers.md`](../../okf/policies/follow-occt-callers.md)'s "when OCCT does
+not answer" clause. `BRepGProp.cxx:311` is the kernel's only `BRepGProp_Vinert` call site and it
+passes a point. The by-plane public entry point, `BRepGProp::VolumePropertiesGK(S, Props, thePln,
+...)`, goes through `BRepGProp_VinertGK` and `math_KronrodSingleIntegration`, a separate integrator
+that never reaches this function. So the kernel never meets the defect itself, and the expected value
+had to be measured rather than read off a call site.
+
+### Measured, macOS arm64 against the pinned `V8_0_1` asset
+
+`Scripts/repro/2827/probe.mm`, per face with the `BRepGProp_Domain` loaded so the integral is over
+the trimmed region, alongside `VolumePropertiesGK` over the same shape as the independent
+construction:
+
+| fixture and plane | `Vinert` by plane | `VolumePropertiesGK` |
+|---|---|---|
+| 10-cube, plane z = 0 | 0 | 999.9999999999999 |
+| 10-cube, plane z = -100 | 0 | 1000.000000000002 |
+| 10-cube, oblique plane | 0 | 1000 |
+| 20x20x2 plate, radius-3 hole, z = 0 | 0 | 743.4513322353838 |
+| cylinder r = 5 h = 10, plane z = 0 | 0 | 785.3981633974456 |
+
+The by-point `Vinert` sums over the same faces are 999.9999999999998, 743.4513322353837 and
+785.3981633974482, and `BRepGProp::VolumeProperties` reports 999.9999999999998, 743.4513322353836 and
+785.3981633974482. So the zero is not the integrand vanishing, and not a plane placed where the
+answer happens to be zero: the same three shapes through OCCT's own by-plane entry point give the
+volume to the last few digits. **The probe runs against the pinned asset and proves the defect and
+the reference value; it does not exercise the patch, which has not been built.**
+
+### CI coverage, and the pin
+
+**The patch is carried, NOT built and NOT pinned**, deliberately, and this is the one carried patch
+in the tree that has never been compiled. OCCT 8.0.2 is days out at the time of writing and there is
+a standing hold on repinning until it lands (`okf/policies/pinned-kernel-patch-check.md`), so an
+8.0.1 rebuild for this one-liner would be thrown away by 8.0.2's own rebuild. The consequence is
+explicit rather than implied:
+
+- `ci.yml`'s `build-and-test` resolves the pinned asset, which lacks `0043`, so the required status
+  check does not exercise it.
+- `kernel-integration.yml` triggers on `Scripts/patches/**` and builds from source, so it is the job
+  that first compiles this hunk. Until it has run green, "applies cleanly" is all that is known, and
+  [`okf/policies/`](../../okf/policies/)'s rule that applying is not compiling is the reason that
+  sentence is here.
+- `Face.volumeInertia(planeNormal:planeDistance:)` keeps the doc comment #2836 gave it, saying the
+  `volume` is `0.0` and not a measurement, and its regression test keeps pinning the zero so that the
+  repin which fixes this **fails** rather than passing quietly.
+
+A repin needs: a rebuild from a tree whose only modifications are the carried patches,
+`python3 Scripts/check-pinned-asset-patches.py --require-asset` clean against that asset, the zip
+uploaded as a new pre-release (`v4.0.0-kernel.2` is spent, so the next tag is `kernel.3`), **both**
+`url:` and `checksum:` bumped, `0043` moved into `Package.swift`'s enumerated list (taking
+`patches_pinned` to thirty-one and `patches_unpinned` back to none), and
+`Tests/OCCTAnalysisTests/BRepGPropVinertTests.swift`'s pinned-zero regression inverted to assert the
+measurement.
+
+**Retargeting risk at 8.0.2.** `BRepGProp_Gauss.cxx` is unmodified by every other carried patch, and
+upstream `master` was byte-identical on this line as of 2026-09-29 with no issue or PR naming
+`BRepGProp_Gauss`, so the hunk is expected to apply to `V8_0_2` unchanged. Re-run
+`git -C occt-src apply --check` at the repin rather than assuming it.
+
+Not filed upstream yet: #2827 holds the upstream PR, per
+[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
+and the standing hold on kernel-patch findings until 8.0.2 lands. The upstream submission is where
+the GTest goes; the carried patch is the one-liner alone, as `0042` was.
 
 **Retire** once the bundled OCCT includes this fix.
 

@@ -222,10 +222,10 @@ let occtTarget: Target = isWASI
     // which is what they were built to do; if a later asset repeats either stray the finding comes
     // back rather than staying suppressed.
     //
-    // Scripts/patches/ and the enumeration above now agree at thirty, and the asset carries all
-    // thirty, so there is no untested set. If you rebuild and the checksum does not match the value
-    // below, that is a real difference to investigate rather than an expected one, which is the
-    // opposite of what this paragraph said while kernel.1 was pinned.
+    // Scripts/patches/ now holds thirty-one and the asset carries thirty, so 0043 (#2827) is the
+    // untested set. If you rebuild and the checksum does not match the value below, that is a real
+    // difference to investigate rather than an expected one, which is the opposite of what this
+    // paragraph said while kernel.1 was pinned.
     //
     // CLAUDE.md: "A divergence with a written reason is expected; one without is a finding." This
     // is the written reason. Scripts/check-pinned-asset-patches.py carries the same two rows in
@@ -266,13 +266,19 @@ let occtTarget: Target = isWASI
     // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
     // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
     // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-    // Scripts/patches/ holds thirty patches and the pinned asset holds all thirty, enumerated
-    // above. `ls Scripts/patches/*.patch | wc -l` answers 30 against a list of 30.
-    // The pinned asset lacks none of them, so there is no untested set:
-    // ci.yml's build-and-test resolves this asset, so every carried
-    // patch is now exercised by the ordinary macOS job rather than only by kernel-integration.yml on
-    // the PR that added it. 0042 (#2773) was the last one outstanding, carried 2026-09-27 and pinned
-    // the same day by v4.0.0-kernel.2.
+    // Scripts/patches/ holds thirty-one patches and the pinned asset holds thirty, enumerated
+    // above. `ls Scripts/patches/*.patch | wc -l` answers 31 against a list of 30.
+    // The pinned asset lacks one of them, and this is the written reason: 0043 (#2827,
+    // BRepGProp_Gauss keeps the by-plane mass) is carried but NOT built and NOT pinned, because
+    // OCCT 8.0.2 is days out and there is a standing hold on repinning until it lands, so an 8.0.1
+    // rebuild for a one-line fix would be discarded by 8.0.2's own rebuild within days. It is the
+    // only carried patch in the tree that has never been compiled; kernel-integration.yml is what
+    // first compiles it, since its trigger paths include Scripts/patches/**, and ci.yml's
+    // build-and-test resolves this asset and therefore does not exercise it. What it leaves exposed
+    // is recorded in okf/references/carried-occt-patches.md and documented on the one public API
+    // that reaches it, Face.volumeInertia(planeNormal:planeDistance:). Before 0043,
+    // 0042 (#2773) was the last one outstanding, carried 2026-09-27 and pinned the same day by
+    // v4.0.0-kernel.2.
     //
     // PR #2776's bridge guard is kept rather than retired with the repin, which is a deliberate
     // exception to the rule in okf/policies/pinned-kernel-patch-check.md that a repin retires the

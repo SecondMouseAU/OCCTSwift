@@ -1916,6 +1916,17 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
     // 0.0, for a plane through the origin and for one 100 away from the shape. Nothing on our side
     // can recover the value, so the bridge reports what the kernel returns and Face.volumeInertia's
     // doc comment says it is not a measurement.
+    //
+    // What the value should be, measured rather than reasoned out, because OCCT has no caller of
+    // the by-plane Vinert path to copy: BRepGProp.cxx:311 is the kernel's only BRepGProp_Vinert
+    // call site and passes a point, and the by-plane public entry point
+    // BRepGProp::VolumePropertiesGK(S, Props, thePln, ...) uses BRepGProp_VinertGK and
+    // math_KronrodSingleIntegration, a separate integrator that never reaches the broken convert.
+    // Over the same three shapes it reports 999.9999999999999, 743.4513322353838 and
+    // 785.3981633974456 against by-point sums of 999.9999999999998, 743.4513322353837 and
+    // 785.3981633974482. Scripts/repro/2827/probe.mm is that measurement; the kernel one-liner is
+    // Scripts/patches/0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch, carried but NOT
+    // pinned, so nothing here changes until a repin. See okf/references/carried-occt-patches.md.
     result.mass    = vinert.Mass();
     gp_Pnt cm      = vinert.CentreOfMass();
     result.centerX = cm.X();

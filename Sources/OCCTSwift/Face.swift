@@ -881,9 +881,10 @@ extension Face {
     /// - Parameters:
     ///   - planeNormal: normal of the reference plane.
     ///   - planeDistance: signed distance from the origin to the plane along `planeNormal`.
-    /// - Returns: the inertia about the reference plane. `volume` is **always `0.0`** on this
-    ///   kernel and is not a measurement (#2827); the centre of mass and the inertia matrix are
-    ///   measured and correct.
+    /// - Returns: the inertia about the reference plane, where **neither field is a measurement on
+    ///   this kernel (#2827)**: `volume` is always `0.0`, and `centerOfMass` is therefore always
+    ///   `nil`, because the same `else` branch that zeroes the mass also sets the kernel's centre of
+    ///   mass to `(0, 0, 0)` and ``FaceVolumeInertia`` reports a zero-mass centroid as `nil`.
     public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0)
         -> FaceVolumeInertia
     {

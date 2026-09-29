@@ -1476,17 +1476,31 @@ public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0)
 - **Parameters:**
   - `planeNormal`: normal of the reference plane.
   - `planeDistance`: signed distance from origin to the plane along `planeNormal`.
-- **Returns:** `FaceVolumeInertia` measured relative to the given plane.
+- **Returns:** a `FaceVolumeInertia` whose `volume` is always `0.0` and whose `centerOfMass` is
+  therefore always `nil` on every kernel this package has pinned. Neither is a measurement; see the
+  bullet below.
 - **OCCT:** `BRepGProp_Vinert(face, gp_Pln)` via `OCCTBRepGPropVinertPlane`.
 - **It returns 0 on every current kernel, and that 0 is not a measurement (#2827).** OCCT computes
   the by-plane mass and discards it: `BRepGProp_Gauss::convert` keeps the value only when its
   `theIsByPoint` flag is set (`BRepGProp_Gauss.cxx:494-528`), and every by-plane path, all four
   `BRepGProp_Vinert::Perform` overloads and both `BRepGProp_Gauss::Compute` branches, reaches it with
   that flag clear. Measured on a cube, a holed plate and a cylinder, for a plane through the origin,
-  a plane 100 away from the shape and an oblique plane: every face, exactly `0.0`. The function got
-  #2806's `BRepGProp_Domain` as well, so it becomes correct rather than merely zero as soon as a
-  pinned kernel carries the one-line fix. Use `Face.volumeInertia` meanwhile, whose by-point form is
-  measured.
+  a plane 100 away from the shape and an oblique plane: every face, exactly `0.0`. The same `else`
+  branch also sets the kernel's centre of mass to `(0, 0, 0)`, which `FaceVolumeInertia` reports as
+  `nil`, so the field is not a usable fallback either. The function got #2806's `BRepGProp_Domain` as
+  well, so it becomes correct rather than merely zero as soon as a pinned kernel carries the one-line
+  fix. Use `Face.volumeInertia` meanwhile, whose by-point form is measured.
+- **What the value should be, and how that is known.** OCCT has no caller of the by-plane
+  `BRepGProp_Vinert` path to copy (`BRepGProp.cxx:311` is its only `BRepGProp_Vinert` call site and
+  passes a point), so it was measured against the independent construction:
+  `BRepGProp::VolumePropertiesGK(S, Props, thePln, ...)` goes through `BRepGProp_VinertGK` and
+  `math_KronrodSingleIntegration`, a separate integrator that never reaches the broken function, and
+  over those same three shapes it reports `999.9999999999999`, `743.4513322353838` and
+  `785.3981633974456` against by-point sums of `999.9999999999998`, `743.4513322353837` and
+  `785.3981633974482`. `Scripts/repro/2827/probe.mm` is the measurement, and
+  `Scripts/patches/0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch` is the one-line kernel
+  fix, carried and not pinned (see
+  [`okf/references/carried-occt-patches.md`](../../okf/references/carried-occt-patches.md)).
 - **Example:**
   ```swift
   let face = Shape.box(width: 10, height: 10, depth: 10)!.faces()[0]

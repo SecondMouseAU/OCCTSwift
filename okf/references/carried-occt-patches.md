@@ -95,15 +95,12 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds thirty patches. The v4.0.0-kernel.2 asset `Package.swift` pins lacks none of them,
-so **there is no divergence today**, per
-[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). The table below is kept
-empty rather than deleted, because the divergence is the normal state between a patch landing and
-the next repin, and the shape of the entry is what the policy asks for:
+`Scripts/patches/` holds thirty-one patches. The v4.0.0-kernel.2 asset `Package.swift` pins lacks one of them,
+per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
 
 | Unpinned | What it leaves exposed |
 |---|---|
-| none | |
+| `0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827` | Every by-plane `BRepGProp_Vinert` computation reports mass `0.0` and centre of mass `(0, 0, 0)` instead of the value it computed, because `BRepGProp_Gauss::convert` gates the keep on `theIsByPoint`. One public API reaches it, `Face.volumeInertia(planeNormal:planeDistance:)`, whose `volume` is therefore always `0.0` and is not a measurement; the doc comment and `docs/reference/Shape-HLR-Geom.md` say so, and `BRepGPropVinertTests` pins the zero so the repin that fixes it fails rather than passing quietly. Nothing on the bridge side can recover the value: it does not exist by the time the bridge can read it, and recomputing the integral is out of scope. The workaround a caller has is `Face.volumeInertia`, the by-point form, which is measured and correct. **This is the only carried patch in the tree that has never been compiled.** It is carried unbuilt on purpose: OCCT 8.0.2 is days out, a repin is on hold until it lands, and an 8.0.1 rebuild for a one-liner would be discarded by 8.0.2's own rebuild. `kernel-integration.yml` is the job that first compiles it |
 
 `0042` (#2773) was the last entry here. It was carried on 2026-09-27, built and verified in the
 binary the same day (all three slices, `check-pinned-asset-patches.py --asset` confirms its literal
