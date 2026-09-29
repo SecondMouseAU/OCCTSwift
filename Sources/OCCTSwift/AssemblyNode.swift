@@ -376,23 +376,59 @@ extension AssemblyNode {
 extension AssemblyNode {
     /// Initialize an integer array attribute on this label.
     ///
+    /// The bounds are inclusive, so `lower: 1, upper: 4` makes a four-element array indexed
+    /// `1...4`. An empty or reversed range is refused: `upper < lower` answers `false` and leaves
+    /// the label untouched, because OCCT's own `Standard_RangeError` for that case is compiled out
+    /// of the kernel this package ships and the allocation it guards is undefined behaviour
+    /// (#2855).
+    ///
+    /// ```swift
+    /// guard let doc = Document.create(), let label = doc.createLabel() else { return }
+    /// print(label.initIntegerArray(lower: 1, upper: 4))   // true
+    /// print(label.initIntegerArray(lower: 10, upper: 1))  // false, reversed range
+    /// ```
+    ///
     /// - Parameters:
-    ///   - lower: Lower bound index
-    ///   - upper: Upper bound index
+    ///   - lower: Lower bound index, inclusive.
+    ///   - upper: Upper bound index, inclusive. Must be at least `lower`.
     /// - Returns: `true` when the `TDataStd_IntegerArray` attribute was set on this
-    ///   label; `false` if the document or the label is null, or OCCT raised.
+    ///   label; `false` if the document or the label is null, `upper` is below `lower`,
+    ///   or OCCT raised.
     @discardableResult
     public func initIntegerArray(lower: Int32, upper: Int32) -> Bool {
         OCCTDocumentInitIntegerArray(document.handle, labelId, lower, upper)
     }
 
     /// Set a value in the integer array attribute.
+    ///
+    /// An index outside `integerArrayBounds` is refused with `false` and writes nothing. That test
+    /// is this wrapper's, not OCCT's: every range check between `TDataStd_IntegerArray::SetValue`
+    /// and the raw store is compiled out of the kernel this package ships, so the same call used to
+    /// write past the array and answer `true` (#2855).
+    ///
+    /// ```swift
+    /// guard let doc = Document.create(), let label = doc.createLabel() else { return }
+    /// _ = label.initIntegerArray(lower: 1, upper: 4)
+    /// print(label.setIntegerArrayValue(at: 1, value: 42))  // true
+    /// print(label.setIntegerArrayValue(at: 5, value: 42))  // false, one past Upper()
+    /// print(label.integerArrayValue(at: 1) ?? -1)          // 42
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: A 1-based-or-otherwise index inside the array's own `lower...upper` range.
+    ///   - value: The integer to store.
+    /// - Returns: `true` when the value was stored; `false` if the document or label is null, the
+    ///   label carries no integer array, the index is out of range, or OCCT raised.
     @discardableResult
     public func setIntegerArrayValue(at index: Int32, value: Int32) -> Bool {
         OCCTDocumentSetIntegerArrayValue(document.handle, labelId, index, value)
     }
 
     /// Get a value from the integer array attribute.
+    ///
+    /// - Parameter index: An index inside the array's own `lower...upper` range.
+    /// - Returns: The stored integer, or `nil` when the label carries no integer array or the
+    ///   index is out of range.
     public func integerArrayValue(at index: Int32) -> Int32? {
         var value: Int32 = 0
         guard OCCTDocumentGetIntegerArrayValue(document.handle, labelId, index, &value) else {
@@ -415,23 +451,55 @@ extension AssemblyNode {
 extension AssemblyNode {
     /// Initialize a real array attribute on this label.
     ///
+    /// The bounds are inclusive, and `upper < lower` is refused with `false` for the same reason
+    /// the integer sibling refuses it: the `Standard_RangeError` OCCT documents on
+    /// `TDataStd_RealArray::Init` is not in the kernel this package ships (#2855).
+    ///
+    /// ```swift
+    /// guard let doc = Document.create(), let label = doc.createLabel() else { return }
+    /// print(label.initRealArray(lower: 1, upper: 3))  // true
+    /// print(label.initRealArray(lower: 3, upper: 1))  // false, reversed range
+    /// ```
+    ///
     /// - Parameters:
-    ///   - lower: Lower bound index
-    ///   - upper: Upper bound index
+    ///   - lower: Lower bound index, inclusive.
+    ///   - upper: Upper bound index, inclusive. Must be at least `lower`.
     /// - Returns: `true` when the `TDataStd_RealArray` attribute was set on this
-    ///   label; `false` if the document or the label is null, or OCCT raised.
+    ///   label; `false` if the document or the label is null, `upper` is below `lower`,
+    ///   or OCCT raised.
     @discardableResult
     public func initRealArray(lower: Int32, upper: Int32) -> Bool {
         OCCTDocumentInitRealArray(document.handle, labelId, lower, upper)
     }
 
     /// Set a value in the real array attribute.
+    ///
+    /// An index outside `realArrayBounds` is refused with `false` and writes nothing, which is this
+    /// wrapper's test rather than OCCT's (#2855).
+    ///
+    /// ```swift
+    /// guard let doc = Document.create(), let label = doc.createLabel() else { return }
+    /// _ = label.initRealArray(lower: 1, upper: 3)
+    /// print(label.setRealArrayValue(at: 2, value: 3.5))  // true
+    /// print(label.setRealArrayValue(at: 4, value: 3.5))  // false, one past Upper()
+    /// print(label.realArrayValue(at: 2) ?? 0)            // 3.5
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: An index inside the array's own `lower...upper` range.
+    ///   - value: The value to store.
+    /// - Returns: `true` when the value was stored; `false` if the document or label is null, the
+    ///   label carries no real array, the index is out of range, or OCCT raised.
     @discardableResult
     public func setRealArrayValue(at index: Int32, value: Double) -> Bool {
         OCCTDocumentSetRealArrayValue(document.handle, labelId, index, value)
     }
 
     /// Get a value from the real array attribute.
+    ///
+    /// - Parameter index: An index inside the array's own `lower...upper` range.
+    /// - Returns: The stored value, or `nil` when the label carries no real array or the index is
+    ///   out of range.
     public func realArrayValue(at index: Int32) -> Double? {
         var value: Double = 0
         guard OCCTDocumentGetRealArrayValue(document.handle, labelId, index, &value) else {
