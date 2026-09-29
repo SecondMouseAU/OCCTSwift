@@ -210,7 +210,7 @@ total on this page.
 exemption manifest can only exempt a file the population already reaches. Two manifests now hold the
 exempt list, both shrink-only and both enforced by `check-style-manifest.py`:
 `Scripts/style-manifest-swift.txt` (rollout day, empty) and
-`Scripts/style-manifest-swift-wave2.txt` (what the widening reached, 418 files). The real run
+`Scripts/style-manifest-swift-wave2.txt` (what the widening reached, 272 files). The real run
 asserts **selected + listed == tracked** and plants a canary violation in every `swift-format`
 invocation, so a narrowing and a silent tool are both a red gate rather than a quieter one. There is
 deliberately no `--fix`, for the reason `Scripts/format-bridge.sh`'s header gives.

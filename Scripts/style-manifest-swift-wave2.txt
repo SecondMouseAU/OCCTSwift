@@ -21,7 +21,6 @@
 # edited rather than lines rewrapped: 607 BeginDocumentationCommentWithOneLineSummary,
 # 12 EndOfLineComment, 12 AlwaysUseLowerCamelCase, 4 ReplaceForEachWithForLoop, and 2 each of
 # ValidateDocumentationComments, NoBlockComments and OneCasePerLine.
-Package.swift
 Scripts/repro/1057-tuple-arguments-crash/standalone/Tests/TupleGridTests/TupleGridTests.swift
 Scripts/repro/2048/stub/Package.swift
 Scripts/repro/990-orthonormal-radial-basis/basis-compare.swift
