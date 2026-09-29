@@ -642,7 +642,12 @@ public final class Curve3D: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - angularDeflection: Maximum angular deviation between consecutive points, in radians.
-    ///   - chordalDeflection: Maximum chordal deviation from the true curve.
+    ///     Must be at least `Precision::Angular()` (1e-12); below that the result is empty (#2861).
+    ///   - chordalDeflection: Maximum chordal deviation from the true curve. Must be at least
+    ///     `Precision::Confusion()` (1e-7); below that the result is empty (#2861), because
+    ///     `GCPnts_TangentialDeflection` has no such check in the pinned kernel and subdivides to an
+    ///     internal million-point cap instead, of which `maxPoints` would return the first fraction
+    ///     of a percent.
     ///   - maxPoints: Output *capacity*, clamped into `0...`
     ///     ``Sampling/maximumSampleCount`` (#558). The deflection criteria decide the actual point
     ///     count; `maxPoints` only truncates, so clamping an unservable capacity returns the same

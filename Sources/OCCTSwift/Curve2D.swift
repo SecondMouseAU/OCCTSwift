@@ -323,8 +323,13 @@ public final class Curve2D: @unchecked Sendable {
     ///
     /// Produces more points where curvature is high and fewer where the curve is straight.
     /// - Parameters:
-    ///   - angularDeflection: Maximum angular deflection in radians (default 0.1)
-    ///   - chordalDeflection: Maximum chordal deflection (default 0.01)
+    ///   - angularDeflection: Maximum angular deflection in radians (default 0.1). Must be at
+    ///     least `Precision::Angular()` (1e-12); below that the result is empty (#2861).
+    ///   - chordalDeflection: Maximum chordal deflection (default 0.01). Must be at least
+    ///     `Precision::Confusion()` (1e-7); below that the result is empty (#2861), because
+    ///     `GCPnts_TangentialDeflection` has no such check in the pinned kernel and subdivides to
+    ///     an internal million-point cap instead, of which `maxPoints` would return the first
+    ///     fraction of a percent.
     ///   - maxPoints: Output *capacity* (default 4096), clamped into `0...`
     ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#558). The deflection
     ///     criteria decide the actual point count, so clamping an unservable capacity returns the
@@ -2464,12 +2469,39 @@ extension Curve2D {
     // MARK: - Bezier 2D completions (v0.126.0)
 
     /// Insert a pole after index in a 2D Bezier curve (1-based index).
+    ///
+    /// ```swift
+    /// let bez = Curve2D.bezier(poles: [SIMD2(0, 0), SIMD2(1, 2), SIMD2(3, 2), SIMD2(4, 0)])!
+    /// bez.bezierInsertPoleAfter(2, point: SIMD2(2, 3))   // true, now 5 poles
+    /// bez.bezierInsertPoleAfter(9, point: SIMD2(2, 3))   // false, index past the pole count
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: Where to insert, 1-based. `0` prepends, so the valid range is `0...poleCount`.
+    ///   - point: The new pole.
+    /// - Returns: `false` if the curve is not a 2D Bezier, if `index` is outside `0...poleCount`,
+    ///   or if the curve already has ``Curve2D/bezierMaxDegree`` poles. Bounds-checked on our side
+    ///   because `Geom2d_BezierCurve`'s own checks are compiled out of the pinned kernel: before
+    ///   #2859 an out-of-range index either SIGBUSed or returned `true` after writing past the pole
+    ///   array.
     @discardableResult
     public func bezierInsertPoleAfter(_ index: Int, point: SIMD2<Double>) -> Bool {
         OCCTCurve2DBezierInsertPoleAfter(handle, Int32(index), point.x, point.y)
     }
 
     /// Remove a pole at index from a 2D Bezier curve (1-based index).
+    ///
+    /// ```swift
+    /// let bez = Curve2D.bezier(poles: [SIMD2(0, 0), SIMD2(1, 2), SIMD2(3, 2), SIMD2(4, 0)])!
+    /// bez.bezierRemovePole(2)   // true, now 3 poles
+    /// bez.bezierRemovePole(2)   // false: a Bezier cannot drop below 2 poles
+    /// ```
+    ///
+    /// - Parameter index: Which pole to remove, 1-based.
+    /// - Returns: `false` if the curve is not a 2D Bezier, if `index` is outside `1...poleCount`,
+    ///   or if the curve has only 2 poles, since `Geom2d_BezierCurve` requires at least 2. That
+    ///   last refusal is load-bearing: before #2859 the 2-pole case succeeded and left a 1-pole
+    ///   curve, a state the kernel's own constructor forbids, whose next removal SIGSEGVed.
     @discardableResult
     public func bezierRemovePole(_ index: Int) -> Bool {
         OCCTCurve2DBezierRemovePole(handle, Int32(index))
@@ -2482,6 +2514,23 @@ extension Curve2D {
     }
 
     /// Increase degree of a 2D Bezier curve.
+    ///
+    /// Degree elevation is exact: the curve's shape does not change, only its pole count.
+    ///
+    /// ```swift
+    /// let bez = Curve2D.bezier(poles: [SIMD2(0, 0), SIMD2(1, 2), SIMD2(3, 2), SIMD2(4, 0)])!
+    /// bez.bezierIncreaseDegree(5)   // true, degree 3 -> 5
+    /// bez.bezierIncreaseDegree(2)   // false, lower than the current degree
+    /// ```
+    ///
+    /// - Parameter degree: The target degree. Must be at least the current
+    ///   ``BezierProperties/degree`` and at most ``Curve2D/bezierMaxDegree``. Equal to the current
+    ///   degree is a no-op and reports `true`, which is what `Geom2d_BezierCurve::Increase` does.
+    /// - Returns: `false` if the curve is not a 2D Bezier, or if `degree` is outside that range.
+    ///   Range-checked on our side because `Geom2d_BezierCurve`'s own check is compiled out of the
+    ///   pinned kernel: before #2859, `bezierIncreaseDegree(-5)` SIGSEGVed, a *lower* degree
+    ///   silently dropped poles (and aborted in libmalloc in 5 of 20 identical runs), and a degree
+    ///   above the maximum reported success while producing a curve the kernel cannot represent.
     @discardableResult
     public func bezierIncreaseDegree(_ degree: Int) -> Bool {
         OCCTCurve2DBezierIncreaseDegree(handle, Int32(degree))
@@ -3255,6 +3304,22 @@ extension Curve2D {
         public var isRational: Bool { OCCTCurve2DBezierIsRational(handle) }
 
         /// Get a pole (1-based index).
+        ///
+        /// ```swift
+        /// let bez = Curve2D.bezier(poles: [SIMD2(0, 0), SIMD2(1, 2), SIMD2(3, 2), SIMD2(4, 0)])!
+        /// bez.bezierProperties.pole(at: 2)   // SIMD2(1, 2)
+        /// ```
+        ///
+        /// - Parameter index: Which pole, 1-based. Outside `1...`
+        ///   ``BezierProperties/poleCount`` this returns `SIMD2(0, 0)`, the same value it returns
+        ///   for a curve that is not a 2D Bezier at all.
+        /// - Returns: The pole, or `SIMD2(0, 0)`.
+        ///
+        /// **This accessor has no refusal channel**, so `SIMD2(0, 0)` is not distinguishable from a
+        /// legitimate pole at the origin. Test the index against ``BezierProperties/poleCount``
+        /// yourself where that distinction matters (#726). What the bound check added in #2859 does
+        /// buy you is that an out-of-range index is now that zero rather than a SIGSEGV or an
+        /// arbitrary heap value: `pole(at: 7)` on a 4-pole curve used to return `(7.29e-304, 0)`.
         public func pole(at index: Int) -> SIMD2<Double> {
             var x = 0.0
             var y = 0.0
@@ -3263,12 +3328,31 @@ extension Curve2D {
         }
 
         /// Set a pole (1-based index).
+        ///
+        /// - Parameters:
+        ///   - index: Which pole, 1-based.
+        ///   - point: The new position.
+        /// - Returns: `false` if the curve is not a 2D Bezier, or if `index` is outside `1...`
+        ///   ``BezierProperties/poleCount``. Bounds-checked on our side because
+        ///   `Geom2d_BezierCurve::SetPole`'s own check is compiled out of the pinned kernel: before
+        ///   #2859 an out-of-range index was a wild heap *write* that reported success (#2859
+        ///   measured a 16 MB-past-the-end store, and libmalloc caught a nearer one as a SIGTRAP).
         @discardableResult
         public func setPole(at index: Int, point: SIMD2<Double>) -> Bool {
             OCCTCurve2DBezierSetPole(handle, Int32(index), point.x, point.y)
         }
 
         /// Set a weight (1-based index).
+        ///
+        /// - Parameters:
+        ///   - index: Which pole's weight, 1-based.
+        ///   - weight: The new weight. Must be strictly positive; `Geom2d_BezierCurve` requires
+        ///     `weight > gp::Resolution()`.
+        /// - Returns: `false` if the curve is not a 2D Bezier, if `index` is outside `1...`
+        ///   ``BezierProperties/poleCount``, or if `weight` is zero, negative or NaN. Both checks
+        ///   are ours because the kernel's are compiled out: before #2859, `setWeight(at: 2,
+        ///   weight: 0)` and `setWeight(at: 3, weight: -5)` both reported success and stuck, after
+        ///   which ``Curve2D/point(at:)`` returned a finite point off the curve's own convex hull.
         @discardableResult
         public func setWeight(at index: Int, weight: Double) -> Bool {
             OCCTCurve2DBezierSetWeight(handle, Int32(index), weight)

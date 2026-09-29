@@ -586,6 +586,14 @@ int32_t OCCTCurve3DDrawAdaptive(OCCTCurve3DRef c,
 {
   if (!c || c->curve.IsNull() || !outXYZ || maxPoints <= 0)
     return 0;
+  // #2861: GCPnts_TangentialDeflection's own deflection check is compiled out of this kernel, and
+  // without it the sampler subdivides until an internal 1e6-point cap stops it, so the truncation
+  // to maxPoints below hands back the first fraction of a percent of the curve as if it were a
+  // sampling of the whole. See occtValidTangentialDeflection (OCCTBridge_Internal.h). The refusal
+  // is 0 points, which is what this function already returns for a null curve or an unusable
+  // capacity.
+  if (!occtValidTangentialDeflection(angularDefl, chordalDefl))
+    return 0;
   try
   {
     GeomAdaptor_Curve           adaptor(c->curve);
@@ -819,6 +827,11 @@ int32_t OCCTGCPntsTangentialDeflection(OCCTEdgeRef _Nonnull edge,
 {
   if (!occtShapeIsPresent(edge))
     return 0;
+  // #2861: see occtValidTangentialDeflection (OCCTBridge_Internal.h). Measured on a half-circle
+  // edge, `curvatureDeflection = 0` gave NbPoints() == 1000001 and Swift received the first 10,000,
+  // covering 1.00% of the arc with nothing to distinguish it from a sampling of the whole.
+  if (!occtValidTangentialDeflection(angularDeflection, curvatureDeflection))
+    return 0;
   try
   {
     BRepAdaptor_Curve           curve(TopoDS::Edge(edge->edge));
@@ -856,6 +869,10 @@ int32_t OCCTGCPntsTangentialDeflectionCurve(OCCTCurve3DRef _Nonnull curve,
                                             int32_t maxPoints)
 {
   if (!curve || curve->curve.IsNull())
+    return 0;
+  // #2861: see occtValidTangentialDeflection (OCCTBridge_Internal.h). The standalone-curve twin of
+  // OCCTGCPntsTangentialDeflection above, with the same compiled-out precondition.
+  if (!occtValidTangentialDeflection(angularDeflection, curvatureDeflection))
     return 0;
   try
   {

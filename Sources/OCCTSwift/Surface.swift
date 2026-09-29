@@ -4430,6 +4430,24 @@ extension Surface {
 extension Surface {
 
     /// Convert a cylinder patch to a BSpline surface.
+    ///
+    /// ```swift
+    /// let s = Surface.fromCylinder(
+    ///     origin: .zero, axis: SIMD3(0, 0, 1), radius: 5,
+    ///     u1: 0, u2: .pi, v1: 0, v2: 10)
+    /// // s != nil
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - u1: Start of the angular range, in radians.
+    ///   - u2: End of the angular range. **`u2` must not be less than `u1`, and `u2 - u1` must not
+    ///     exceed `2 * .pi`**; outside that band the result is `nil` (#2861). Swapping the two used
+    ///     to SIGSEGV uncatchably, and a range wider than a full turn used to produce either a
+    ///     self-overlapping surface or a heap write past the converter's fixed pole array.
+    ///   - v1: Start of the height range.
+    ///   - v2: End of the height range. Must differ from `v1` by more than `Epsilon(v1)`.
+    /// - Returns: The converted BSpline surface, or `nil` if the range is not one
+    ///   `Convert_CylinderToBSplineSurface` accepts.
     public static func fromCylinder(
         origin: SIMD3<Double>, axis: SIMD3<Double>, radius: Double,
         u1: Double, u2: Double, v1: Double, v2: Double
@@ -4444,6 +4462,24 @@ extension Surface {
     }
 
     /// Convert a cone patch to a BSpline surface.
+    ///
+    /// ```swift
+    /// let s = Surface.fromCone(
+    ///     origin: .zero, axis: SIMD3(0, 0, 1),
+    ///     semiAngle: 0.3, refRadius: 5,
+    ///     u1: 0, u2: .pi, v1: 0, v2: 10)
+    /// // s != nil
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - u1: Start of the angular range, in radians.
+    ///   - u2: End of the angular range. Carries the same constraint as
+    ///     ``Surface/fromCylinder(origin:axis:radius:u1:u2:v1:v2:)``: `u2` must not be less than
+    ///     `u1`, and `u2 - u1` must not exceed `2 * .pi`, else the result is `nil` (#2861).
+    ///   - v1: Start of the height range.
+    ///   - v2: End of the height range. Must differ from `v1` by more than `Epsilon(v1)`.
+    /// - Returns: The converted BSpline surface, or `nil` if the range is not one
+    ///   `Convert_ConeToBSplineSurface` accepts.
     public static func fromCone(
         origin: SIMD3<Double>, axis: SIMD3<Double>,
         semiAngle: Double, refRadius: Double,
@@ -5183,6 +5219,19 @@ extension Surface {
         public var isVRational: Bool { OCCTSurfaceBezierIsVRational(handle) }
 
         /// Get a pole (1-based indices).
+        ///
+        /// - Parameters:
+        ///   - uIndex: Which U pole, 1-based, within `1...` ``BezierProperties/nbUPoles``.
+        ///   - vIndex: Which V pole, 1-based, within `1...` ``BezierProperties/nbVPoles``.
+        /// - Returns: The pole, or `SIMD3(0, 0, 0)` outside those ranges, which is the same value
+        ///   this returns for a surface that is not a Bezier at all.
+        ///
+        /// **This accessor has no refusal channel**, so `SIMD3(0, 0, 0)` is not distinguishable from
+        /// a legitimate pole at the origin; test the indices yourself where that matters (#726).
+        /// What the bound check added in #2859 buys you is that an out-of-range index is now that
+        /// zero rather than a SIGSEGV or an arbitrary heap value: on a 3x4 grid `pole(uIndex: 0,
+        /// vIndex: 0)` used to return `(1.98e-323, 2.13e-314, 2.47e-323)`. These poles are reachable
+        /// on a Bezier the caller never built, via ``Surface/toBezierPatches()``.
         public func pole(uIndex: Int, vIndex: Int) -> SIMD3<Double> {
             unwrapVectorComponents {
                 OCCTSurfaceBezierGetPole(handle, Int32(uIndex), Int32(vIndex), $0, $1, $2)

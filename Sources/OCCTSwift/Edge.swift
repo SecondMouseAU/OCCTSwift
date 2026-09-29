@@ -592,6 +592,27 @@ extension Edge {
 
 extension Edge {
     /// Sample this edge using tangential deflection criteria.
+    ///
+    /// ```swift
+    /// if let edge = Shape.box(width: 10, height: 10, depth: 10)?.edges().first {
+    ///     let pts = edge.tangentialDeflectionPoints()
+    ///     // pts.isEmpty == false
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - angularDeflection: Maximum angular deviation between consecutive points, in radians.
+    ///     Must be at least `Precision::Angular()` (1e-12); below that the result is empty (#2861).
+    ///   - curvatureDeflection: Maximum deviation from the true curve. Must be at least
+    ///     `Precision::Confusion()` (1e-7); below that the result is empty (#2861).
+    ///   - minPoints: Lower bound on the point count, honoured from 2 up.
+    /// - Returns: The sampled points, in edge order, at most 10,000 of them.
+    ///
+    /// The deflection bounds are enforced on our side: `GCPnts_TangentialDeflection`'s own check is
+    /// compiled out of the pinned kernel, and without it a zero or near-zero `curvatureDeflection`
+    /// subdivides to an internal million-point cap. On a half-circle edge that reported 1,000,001
+    /// points where a valid request gives 33, and the 10,000-point truncation then returned 1.00% of
+    /// the arc with nothing marking it as partial.
     public func tangentialDeflectionPoints(
         angularDeflection: Double = 0.1,
         curvatureDeflection: Double = 0.1,
