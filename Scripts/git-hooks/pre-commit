@@ -131,6 +131,13 @@ run "check-wasm-kernel-parity.py"             Scripts/check-wasm-kernel-parity.p
 run "check-bridge-diagnostics.py --self-test" Scripts/check-bridge-diagnostics.py --self-test
 run "check-bridge-diagnostics.py"             Scripts/check-bridge-diagnostics.py
 
+# #2820. A file-scope type defined in several bridge .mm files must be defined identically in
+# all of them. The compiler cannot diagnose a divergence, because each translation unit sees
+# exactly one definition and is individually valid, and these are the opaque handle structs a
+# Swift caller creates in one .mm and releases in another.
+run "check-bridge-type-odr.py --self-test"    Scripts/check-bridge-type-odr.py --self-test
+run "check-bridge-type-odr.py"                Scripts/check-bridge-type-odr.py
+
 # Not a Python gate, so it does not go through run(). merge.conflictStyle is diff3 in this repo, and
 # a resolver written for the default two-way style strips <<<<<<< / ======= / >>>>>>> and leaves the
 # ||||||| ancestor line behind. Five reached docs/CHANGELOG.md before anyone noticed.

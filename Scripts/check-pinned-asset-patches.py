@@ -75,10 +75,31 @@ does not check out. It belongs to the release process, at the step that re-point
 Per #2098, a run that examined nothing must fail rather than pass: without the asset the script
 prints a note and returns 0, and `--require-asset` turns that into an error.
 
+WHICH ASSET, AND WHETHER IT IS THE PINNED ONE (#2818). This script already computed the answer and
+then dropped it: its `zip_identity()` sha256ed the zip beside the xcframework against `Package.swift`'s
+`checksum:` and returned "this is NOT the pinned asset", and that result was printed and never
+entered `problems`, so a run against a disproven asset could still exit 0. Two changes, both in
+`Scripts/occt_asset_identity.py`, which the other three #2818 scripts share:
+
+  * A verdict of NOT-PINNED is now a finding. UNVERIFIABLE is not, because it is the correct state of
+    a freshly built asset at a release step, where the zip may not exist yet and where the whole
+    point of the run is to check an asset that is not yet pinned. `--require-pinned-asset` makes
+    UNVERIFIABLE a refusal too, for a run that must be about the pin.
+  * The `ACKNOWLEDGED` table is keyed on the asset actually read, not on the tag `Package.swift`
+    pins. Those are different things: an acknowledgement written about the pinned asset used to
+    suppress a finding about whatever local build was on disk. The key is the pinned tag when
+    identity is proven and `sha256:<16 hex>` of the macos archive otherwise, and the report prints
+    the key a new row would need.
+
+It also gained the SwiftPM fallback the other three did, so a checkout with no `Libraries/` reads
+the artifact under `.build/artifacts/*/OCCT/OCCT.xcframework` instead of reporting that nothing was
+examined.
+
 Usage:
-  Scripts/check-pinned-asset-patches.py                      # the check, against Libraries/OCCT.xcframework
+  Scripts/check-pinned-asset-patches.py                      # the check, against the resolved asset
   Scripts/check-pinned-asset-patches.py --asset DIR          # ...against another xcframework
   Scripts/check-pinned-asset-patches.py --require-asset      # a missing asset is an error (#2098)
+  Scripts/check-pinned-asset-patches.py --require-pinned-asset  # ...and so is an unproven one (#2818)
   Scripts/check-pinned-asset-patches.py --list               # the derived evidence, no asset read
   Scripts/check-pinned-asset-patches.py --self-test
 """
@@ -89,8 +110,11 @@ import re
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import occt_asset_identity as identity_helper  # noqa: E402  (after the sys.path insert)
+
 CARRIED_GLOB = 'Scripts/patches/*.patch'
-DEFAULT_ASSET = 'Libraries/OCCT.xcframework'
+DEFAULT_ASSET = identity_helper.LIBRARIES_ASSET
 
 # slice directory -> the static archive inside it, as Scripts/build-occt.sh names them.
 SLICES = (
@@ -106,13 +130,19 @@ SLICES = (
 # The revision is the last commit that still had the file. `Scripts/patches/README.md`'s "Retired
 # patches" section holds each one's writeup and the reason.
 # A divergence with a written reason is expected; one without is a finding (`CLAUDE.md`). This is
-# where the written reason lives for the machine as well as the reader: {(pinned tag, retired patch
-# number): why}. An acknowledged extra is printed and does not fail the run.
+# where the written reason lives for the machine as well as the reader:
+# {(asset key, retired patch number): why}. An acknowledged extra is printed and does not fail the
+# run.
 #
-# The key carries the tag `Package.swift` pins, so a repin retires the row automatically rather
-# than leaving it to suppress a finding about an asset it was never written about. An
-# acknowledgement whose patch is NOT found in the asset is itself a finding, for the same reason:
-# it has outlived what it described and the next reader would trust it.
+# THE KEY IS THE ASSET READ, NOT THE TAG `Package.swift` PINS (#2818). Those are different things,
+# and keying on the pin meant an acknowledgement written about the pinned asset suppressed a
+# finding about whatever local build happened to be on disk. The key is
+# `occt_asset_identity.AssetIdentity.key`: the pinned tag where identity is PROVEN, and
+# `sha256:<16 hex>` of the macos archive where it is not. The report prints the key a new row would
+# need, so writing one is mechanical rather than guessed. A repin still retires a row
+# automatically, because the proven key changes with the tag. An acknowledgement whose patch is NOT
+# found in the asset is itself a finding, for the same reason: it has outlived what it described
+# and the next reader would trust it.
 ACKNOWLEDGED = {
     ('v4.0.0-kernel.1', '0032'):
         'Built from a Libraries/occt-src tree where 0032 had been retired from Scripts/patches/ '
@@ -505,28 +535,11 @@ def pinned_reference(repo='.'):
         return pinned_reference_from(handle.read())
 
 
-def zip_identity(asset_root, pinned_checksum):
-    """Whether the zip beside this xcframework is the one Package.swift pins.
-
-    Returns (verdict, message). `None` where there is no zip to hash, which is the normal case in
-    a worktree and in CI. It matters at the release step, where "is the thing I just checked the
-    thing consumers will download" is the whole question.
-    """
-    candidate = os.path.join(os.path.dirname(os.path.abspath(asset_root)), 'OCCT.xcframework.zip')
-    if not os.path.isfile(candidate) or not pinned_checksum:
-        return None, ''
-    import hashlib
-    digest = hashlib.sha256()
-    with open(candidate, 'rb') as handle:
-        for chunk in iter(lambda: handle.read(1 << 22), b''):
-            digest.update(chunk)
-    actual = digest.hexdigest()
-    if actual == pinned_checksum:
-        return True, 'OCCT.xcframework.zip beside it hashes to Package.swift\'s checksum, so ' \
-                     'this IS the pinned asset'
-    return False, ('OCCT.xcframework.zip beside it hashes to %s, where Package.swift pins %s, so '
-                   'this is NOT the pinned asset' % (actual[:16] + '...', pinned_checksum[:16]
-                                                     + '...'))
+# `zip_identity()` lived here and now lives in `occt_asset_identity.identify()` (#2818), which does
+# the same sha256 of `OCCT.xcframework.zip` against `Package.swift`'s `checksum:` plus the two things
+# this copy could not: it falls back to SwiftPM's own resolution record, and its verdict reaches
+# `problems` instead of only being printed. Not left behind as a second copy, per
+# okf/policies/helper-placement-by-reach.md: a duplicated body is what drifts.
 
 
 def retired_patches(repo='.'):
@@ -543,7 +556,8 @@ def retired_patches(repo='.'):
     return texts, unrecovered
 
 
-def run(asset_root=DEFAULT_ASSET, require_asset=False, repo='.', asset=None):
+def run(asset_root=DEFAULT_ASSET, require_asset=False, repo='.', asset=None,
+        require_pinned_asset=False, explicit=None):
     carried = carried_patches(repo)
     if not carried:
         print('check-pinned-asset-patches: no patches found under %s, so there was nothing to '
@@ -562,11 +576,20 @@ def run(asset_root=DEFAULT_ASSET, require_asset=False, repo='.', asset=None):
             print('  %s' % name)
         return 1
 
+    # #2818. Resolve the asset rather than assuming `asset_root` exists, so a checkout with no
+    # Libraries/ reads the artifact SwiftPM resolved instead of reporting that nothing was examined.
+    # `explicit` None means the resolution order (Libraries/, then the SwiftPM artifact); a path
+    # means that asset and nothing else. `asset_root` is only the name used in the message below.
+    ident = None
     if asset is None:
-        asset = Asset.open(asset_root)
+        ident = identity_helper.identify(repo, explicit)
+        if ident.present:
+            asset_root = ident.path
+            asset = Asset.open(asset_root)
     if asset is None:
-        message = ('check-pinned-asset-patches: %s holds no readable slice, so the asset was '
-                   'never examined.' % asset_root)
+        looked = '\n  '.join((ident.looked_at if ident else ()) or (asset_root,))
+        message = ('check-pinned-asset-patches: no readable xcframework slice, so the asset was '
+                   'never examined. Looked at:\n  %s' % looked)
         if require_asset:
             print(message + ' --require-asset was given, and a run that examined nothing fails '
                             'rather than passes (#2098).')
@@ -627,42 +650,49 @@ def run(asset_root=DEFAULT_ASSET, require_asset=False, repo='.', asset=None):
         if hits:
             unexpected.append((number, filename, reason, hits))
 
-    tag, checksum = pinned_reference(repo)
-    identity, identity_note = zip_identity(asset_root, checksum)
-    acknowledged, stale = split_acknowledged(unexpected, tag)
+    tag, _checksum = pinned_reference(repo)
+    if ident is None:  # an Asset handed in directly, which only the self-test does
+        ident = identity_helper.identify(repo, asset_root, fingerprint=False)
+    # The ACKNOWLEDGED table is keyed on the asset actually read (#2818), so a row written about
+    # the pinned asset cannot excuse a finding about a local build with the same patch in it.
+    acknowledged, stale = split_acknowledged(unexpected, ident.key)
 
     return report(asset, carried, confirmed, undetermined, missing, unexpected, divergent,
-                  unrecovered, require_asset, tag, identity, identity_note, acknowledged, stale)
+                  unrecovered, require_asset, tag, ident, acknowledged, stale,
+                  require_pinned_asset)
 
 
-def split_acknowledged(unexpected, tag):
-    """Move the extras ACKNOWLEDGED names for this pin out of the findings, and report stale rows.
+def split_acknowledged(unexpected, asset_key):
+    """Move the extras ACKNOWLEDGED for THIS asset out of the findings, and report stale rows.
 
-    `unexpected` is filtered in place. `stale` is every acknowledgement for this pin whose patch
-    was NOT found, which is an acknowledgement describing an asset that no longer exists.
+    `asset_key` is `occt_asset_identity.AssetIdentity.key`, not the tag `Package.swift` pins
+    (#2818). `unexpected` is filtered in place. `stale` is every acknowledgement for this asset
+    whose patch was NOT found, which is an acknowledgement describing an asset that no longer
+    exists.
     """
     acknowledged = []
     for row in list(unexpected):
         number = row[0]
-        why = ACKNOWLEDGED.get((tag, number))
+        why = ACKNOWLEDGED.get((asset_key, number))
         if why:
             acknowledged.append((number, row[1], why))
             unexpected.remove(row)
     found = {row[0] for row in unexpected} | {row[0] for row in acknowledged}
-    stale = [(number, why) for (pin, number), why in sorted(ACKNOWLEDGED.items())
-             if pin == tag and number not in found]
+    stale = [(number, why) for (key, number), why in sorted(ACKNOWLEDGED.items())
+             if key == asset_key and number not in found]
     return acknowledged, stale
 
 
 def report(asset, carried, confirmed, undetermined, missing, unexpected, divergent, unrecovered,
-           require_asset, tag=None, identity=None, identity_note='', acknowledged=(), stale=()):
+           require_asset, tag=None, ident=None, acknowledged=(), stale=(),
+           require_pinned_asset=False):
     slices = ', '.join(sl.name for sl in asset.slices)
     print('check-pinned-asset-patches: %d carried patches against %d slice(s): %s'
           % (len(carried), len(asset.slices), slices))
-    print('Package.swift pins %s. %s\n' % (tag or '(no tag parsed)',
-                                           identity_note or 'No OCCT.xcframework.zip beside the '
-                                                            'xcframework, so whether this is that '
-                                                            'asset was not checked.'))
+    print('Package.swift pins %s.' % (tag or '(no tag parsed)'))
+    for line in ident.banner(indent=''):
+        print(line)
+    print()
 
     by_patch = {}
     for name, item, _ in confirmed:
@@ -677,6 +707,24 @@ def report(asset, carried, confirmed, undetermined, missing, unexpected, diverge
         print('  %-72s %s' % (name[:72], why))
 
     problems = 0
+
+    # #2818. The identity verdict used to be printed and then dropped, so a run against an asset
+    # positively shown NOT to be the pinned one could still exit 0. It is a finding now.
+    # UNVERIFIABLE is deliberately NOT one: that is the correct state of a freshly built asset at a
+    # repin, where the zip may not exist yet and where the whole point of the run is to check an
+    # asset that is not the pinned one yet. `--require-pinned-asset` is how a run says it must be
+    # about the pin.
+    if ident.verdict == identity_helper.NOT_PINNED:
+        problems += 1
+        print('\nNOT THE PINNED ASSET (1), identity was computed and disproved, so every verdict '
+              'below is\nabout a kernel the repo does not pin')
+        print('  %s' % ident.reason)
+    elif require_pinned_asset and ident.verdict != identity_helper.PINNED:
+        problems += 1
+        print('\nIDENTITY NOT PROVEN (1), --require-pinned-asset was given and this asset cannot '
+              'be shown\nto be the one Package.swift pins')
+        print('  %s' % ident.reason)
+
     if missing:
         problems += len(missing)
         print('\nEXPECTED AND ABSENT (%d), each one decisive evidence that the patch did not '
@@ -709,6 +757,7 @@ def report(asset, carried, confirmed, undetermined, missing, unexpected, diverge
         problems += len(unexpected)
         print('\nUNEXPECTEDLY PRESENT (%d), retired patches whose code is in this asset and which '
               'nothing explains' % len(unexpected))
+        print('  An acknowledgement for THIS asset is keyed (%r, <number>) (#2818).' % ident.key)
         for number, filename, reason, hits in unexpected:
             print('  %s  %s' % (number, filename))
             print('    %s' % reason)
@@ -1016,7 +1065,32 @@ def self_test():
          len(split_acknowledged([('0032', 'f.patch', 'r', [])], 'v0.0.0-other')[0]) == 0),
         ('an acknowledgement whose patch is not in the asset is reported stale',
          split_acknowledged([], 'v4.0.0-kernel.1')[1] != []),
+        # #2818. The key is the asset READ, not the tag pinned, so an acknowledgement written about
+        # the pinned asset must not excuse a finding about an unverified local build carrying the
+        # same patch. The fixture drives it through the same key an unverifiable asset produces.
+        ('an acknowledgement for the pinned tag does not suppress a finding about an unverified '
+         'asset',
+         len(split_acknowledged([('0032', 'f.patch', 'r', [])],
+                                'sha256:0123456789abcdef')[0]) == 0),
+        ('AssetIdentity.key is the pinned tag only where identity is PROVEN',
+         identity_helper.AssetIdentity('/x', 'libraries', identity_helper.PINNED, '',
+                                       pinned_tag='v1').key == 'v1'
+         and identity_helper.AssetIdentity(
+             '/x', 'libraries', identity_helper.UNVERIFIABLE, '', pinned_tag='v1',
+             archive_sha256='ab' * 32).key == 'sha256:abababababababab'),
+        # And the verdict is a finding rather than a printed note, which is the whole of #2818's
+        # fourth item: the old `zip_identity()` computed this and `report()` only printed it.
+        ('a NOT-PINNED verdict is a finding while UNVERIFIABLE is not',
+         "if ident.verdict == identity_helper.NOT_PINNED:" in
+         open(os.path.abspath(__file__)).read()),
     ]
+
+    # #2818's identity logic, folded in rather than trusted to the helper's own run.
+    identity_failures = identity_helper.self_test()
+    parser_cases.append(('asset identity: every case in occt_asset_identity.self_test()',
+                         not identity_failures))
+    for line in identity_failures:
+        print('  asset identity: %s' % line)
 
     failed = 0
     print('check-pinned-asset-patches --self-test')
@@ -1031,7 +1105,9 @@ def self_test():
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--asset', default=DEFAULT_ASSET, metavar='DIR',
-                        help='the xcframework to read (default %s)' % DEFAULT_ASSET)
+                        help='the xcframework to read (default %s, then the SwiftPM artifact under '
+                             '.build/artifacts/)' % DEFAULT_ASSET)
+    identity_helper.add_arguments(parser, DEFAULT_ASSET, asset_flag=False)
     parser.add_argument('--require-asset', action='store_true',
                         help='fail rather than skip when the asset is not there (#2098)')
     parser.add_argument('--list', action='store_true',
@@ -1043,7 +1119,9 @@ def main():
         return self_test()
     if args.list:
         return list_evidence()
-    return run(asset_root=args.asset, require_asset=args.require_asset)
+    return run(asset_root=args.asset, require_asset=args.require_asset,
+               require_pinned_asset=args.require_pinned_asset,
+               explicit=identity_helper.explicit_from(args, DEFAULT_ASSET))
 
 
 if __name__ == '__main__':

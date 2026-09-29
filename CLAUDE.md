@@ -80,7 +80,7 @@ the pinned version onto a machine with no pip or venv; see
 
 ### Static Gate Scripts
 
-Fifteen gates, six censuses and one merge-history audit, all pure Python over the repo's own text.
+Sixteen gates, six censuses and one merge-history audit, all pure Python over the repo's own text.
 No OCCT, no build, no network, and the whole job reports in under a minute on the runner. The
 measured breakdown, and the recipe for re-deriving it rather than trusting it, are in
 [`okf/policies/static-gates.md`](okf/policies/static-gates.md): this line claimed `~3s for the lot`
@@ -111,6 +111,7 @@ python3 Scripts/check-bridge-diagnostics.py      # every function-level bridge c
 python3 Scripts/check-wasm-kernel-parity.py      # the wasm kernel asset carries the same patch set as the pinned native one (#2269)
 python3 Scripts/check-preprocessor-balance.py     # no patch unbalances a source file's #if/#else/#endif (#2167)
 python3 Scripts/check-wasi-patch-base.py         # every patches-wasi patch was cut from the carried-patch tree (#2168)
+python3 Scripts/check-bridge-type-odr.py         # every type defined in more than one bridge .mm is defined identically (#2820)
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
 python3 Scripts/census-arguments-tuple-shapes.py # CENSUS, not a gate: @Test(arguments:) elements whose layout trips the toolchain defect (#1057)
