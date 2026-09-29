@@ -153,9 +153,11 @@ them comparing prose to prose, and the asset shipped carrying two patches nobody
 ## How long the job takes, and how to re-derive it
 
 **Measured 2026-09-28 from the runner's own step timings, over the 21 most recent successful
-`gate-scripts` jobs that ran the current 44-step list.** A laptop measurement would answer a
+`gate-scripts` jobs that ran the then-current 44-step list.** A laptop measurement would answer a
 different question: what this job costs is what it costs a PR, and `ubuntu-latest` is where that is
-decided.
+decided. #2820 has since added two invocations, `check-bridge-type-odr.py` bare and its
+`--self-test`, each well under a second; the figures below are not re-measured for them, and the
+recipe under "Re-derive it" is how to replace them rather than adjust them by hand.
 
 | | min | median | max |
 |---|---|---|---|
@@ -217,6 +219,20 @@ That sequence is the rule worth carrying, not the outcome: **measure the rate, f
 then gate.** #1407 is the same precedent. A detector promoted before its backlog is zero teaches
 people to ignore a red check, which costs more than the check was ever worth.
 
+**Which is also what says when a detector may gate on its first day.** The sequence is about the
+backlog, not about a probationary period, so a detector whose backlog is *already* zero has nothing
+to work down and gating it immediately costs nobody a red check. `check-bridge-type-odr.py` (#2820)
+is that case: the issue measured 83 file-scope type names defined in more than one bridge `.mm`
+across 605 definitions and **0 of the 83 disagreeing**, so the gate landed exiting 1 with the tree
+clean. Two things made it the right call rather than an exception taken for convenience. The subject
+is a defect and not a list to adjudicate: a class defined in several translation units is well formed
+only while the definitions are token for token identical, and a divergence in an opaque handle struct
+is memory corruption across a boundary the type system cannot see, which the compiler cannot
+diagnose because each unit is individually valid. And the gate fires on **disagreement**, not on
+duplication, so the 605 legal copies are reported as a census figure beside the verdict and hoisting
+one of them into `OCCTBridge_Internal.h` ([helper-placement-by-reach](helper-placement-by-reach.md))
+makes the gate quieter rather than louder.
+
 There was never a false-positive argument against gating it. Nothing here has a measured
 false-positive class to discount the way `census-doc-occt-attribution.py` has its 41%: the compiler
 adjudicates. It was volume, and volume is fixable.
@@ -248,9 +264,44 @@ Three of its design choices are worth carrying to any detector that shells out t
   freshness check owes a self-test case run against the real tree, so a misfire arrives as a named
   failure rather than as a refusal on every PR.
 
+**Freshness is one axis and identity is another, and #2818 is the second.** Four scripts read
+`Libraries/OCCT.xcframework` and decided "this is the pinned kernel" from `os.path.isdir` alone:
+`check-766-probe-reproduction.py`, `census-doc-occt-attribution.py`, `derive-gdt-enums.py` and the
+release check `check-pinned-asset-patches.py`, which computed the answer and then only printed it.
+None of the four looked where SwiftPM actually puts the pinned asset, so a clean checkout reported
+SKIPPED over an asset that was present, and a checkout with a locally built one reported verdicts
+about a kernel the repo does not pin. Measured, not theoretical: on 2026-09-28 the main checkout's
+`Libraries/` archive and the pinned `v4.0.0-kernel.2` archive had different sha256s, and `Libraries/`
+was every one of those scripts' default.
+
+`Scripts/occt_asset_identity.py` is the one helper all four now use, placed by reach rather than
+copied ([helper-placement-by-reach](helper-placement-by-reach.md)), and its self-test is folded into
+each of theirs rather than trusted to its own run. The part worth carrying to any detector that reads
+a pinned artefact is **what is actually comparable**: `Package.swift`'s `checksum:` is of the **zip**,
+so an extracted tree cannot be hashed into it. Only three things can be compared, and the fourth
+answer is a real answer:
+
+- a zip beside the xcframework, sha256ed against `checksum:`, which is the release step's case;
+- SwiftPM's own `.build/workspace-state.json` record, which is proof by provenance because SwiftPM
+  refuses an artifact whose zip does not hash to that checksum;
+- an archive fingerprint, which identifies which kernel was read and makes a past verdict
+  attributable, and can never on its own say "this is the pinned one";
+- **`unverifiable`**, for an extracted tree with neither, which is what the four used to call pinned.
+
+`--require-pinned-asset` is the #2098 `--require-` mode applied to this axis. Where a detector writes
+or compares a **committed** file derived from the pinned kernel (`Scripts/occt-packages.txt`,
+`Scripts/occt-gdt-enums.txt`), the requirement is not optional: those modes refuse an unproven asset
+whether or not the flag was passed, because baking off-pin enum ordinals into a committed manifest is
+a wrong-value defect and the raw values cross the bridge unremapped.
+
+And an acknowledgement about an asset is keyed on the asset, never on the pin. The release check's
+`ACKNOWLEDGED` table was keyed on the tag `Package.swift` pins, which is a different thing from the
+asset it read, so a row written about the pinned asset suppressed a finding about whatever local
+build was on disk.
+
 ## Every detector proves it is not blind
 
-Fourteen of the fifteen gates, all six censuses, the merge-history audit and the release check
+Fifteen of the sixteen gates, all six censuses, the merge-history audit and the release check
 take `--self-test`, a fixture battery proving the *detector* catches each failure mode. Run it
 whenever you change one of these scripts. Three gate scripts were confidently wrong while
 reporting all clear (#618, #624/#630, #626), and a detector reporting "all clear" because it is
@@ -329,7 +380,7 @@ change to the ruleset.
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs thirty-seven of `gate-scripts`' thirty-eight invocations, flag for
+`Scripts/git-hooks/pre-commit` runs thirty-nine of `gate-scripts`' forty invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the

@@ -77,14 +77,23 @@ false-positive rate, and it comes with a rename to `check-` per this repo's own 
 
 ## The pinned headers, not the refman
 
-Class existence is asked of `Libraries/OCCT.xcframework/macos-arm64/Headers/*.hxx`, CLAUDE.md's
+Class existence is asked of the pinned xcframework's `macos-arm64/Headers/*.hxx`, CLAUDE.md's
 designated source of truth for version-sensitive detail, never of the `occt-refman` cache through
 the `context` MCP. A live MCP call is not reproducible in CI and cannot be diffed; the headers are
-local, deterministic, and are what the bridge actually compiles against. `Libraries/` is absent in
-CI and in a fresh clone, so the existence check reports SKIPPED there rather than passing silently,
-and the attribution check (the one that catches 25 of #808's 26 and all 6 of #809's) runs everywhere
-off a committed 5 KB package manifest, `Scripts/occt-packages.txt`, re-derivable with
-`--reverify-packages`.
+local, deterministic, and are what the bridge actually compiles against. The attribution check (the
+one that catches 25 of #808's 26 and all 6 of #809's) runs everywhere off a committed 5 KB package
+manifest, `Scripts/occt-packages.txt`, re-derivable with `--reverify-packages`.
+
+**Which xcframework, and whether it is the pinned one (#2818).** This script used to read
+`Libraries/OCCT.xcframework` on `os.path.isdir` alone, so a class present in the pinned asset but
+absent from a locally built one printed under `ABSENT from the pinned headers`, which is a finding
+about the wrong kernel, and `--reverify-packages` would then recommend `--write-packages`, which
+rewrites a committed file. `Scripts/occt_asset_identity.py` resolves the asset instead: an explicit
+`--asset`, then `Libraries/`, then the artifact SwiftPM resolved under `.build/artifacts/`, which is
+why a clean checkout now checks existence rather than reporting SKIPPED. Every run prints the
+verdict, an `absent` finding says which kernel it is about, and **`--reverify-packages` and
+`--write-packages` refuse outright unless identity is proven**, since the manifest they read and
+write describes the pinned kernel by definition.
 
 Usage (from anywhere; paths derive from this file's location):
 
@@ -94,6 +103,7 @@ Usage (from anywhere; paths derive from this file's location):
     python3 Scripts/census-doc-occt-attribution.py --lane gp_,GC_     # restrict to a #807 lane
     python3 Scripts/census-doc-occt-attribution.py --sample 40        # a reproducible sample
     python3 Scripts/census-doc-occt-attribution.py --reverify-packages
+    python3 Scripts/census-doc-occt-attribution.py --asset DIR        # a specific xcframework
 """
 
 from __future__ import annotations
@@ -104,11 +114,16 @@ import os
 import re
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import occt_asset_identity as identity_helper  # noqa: E402  (after the sys.path insert)
+
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 SCRIPTS = os.path.join(ROOT, "Scripts")
 DOCS = os.path.join(ROOT, "docs")
 SWIFT_DIR = os.path.join(ROOT, "Sources", "OCCTSwift")
 BRIDGE_INC = os.path.join(ROOT, "Sources", "OCCTBridge", "include")
+# The default only; the asset actually read is resolved per run by `resolve_headers()` below, and
+# `Libraries/` is one of three candidates rather than the only one (#2818).
 OCCT_HEADERS = os.path.join(ROOT, "Libraries", "OCCT.xcframework", "macos-arm64", "Headers")
 PACKAGE_MANIFEST = os.path.join(SCRIPTS, "occt-packages.txt")
 
@@ -213,12 +228,26 @@ def load_packages() -> tuple[set[str], set[str]]:
 OCCT_NAME_RE = re.compile(r"\b[A-Za-z][A-Za-z0-9]*_[A-Za-z][A-Za-z0-9_]*\b")
 
 
-def derive_packages() -> tuple[set[str], set[str], set[str]]:
+def resolve_headers(args) -> tuple[str | None, "identity_helper.AssetIdentity"]:
+    """(the Headers directory to read, the identity of the asset it came from).
+
+    Resolution and the verdict both live in `occt_asset_identity` (#2818), so the four scripts that
+    read this asset cannot drift apart on either.
+    """
+    ident = identity_helper.identify(
+        ROOT, identity_helper.explicit_from(args, identity_helper.LIBRARIES_ASSET)
+    )
+    if not ident.present:
+        return None, ident
+    return os.path.join(ident.path, identity_helper.DEFAULT_SLICE, "Headers"), ident
+
+
+def derive_packages(headers: str | None = OCCT_HEADERS) -> tuple[set[str], set[str], set[str]]:
     """Re-derive from the bundled headers: (prefixes, bare package classes, every class name)."""
     prefixes, bare, names = set(), set(), set()
-    if not os.path.isdir(OCCT_HEADERS):
+    if not headers or not os.path.isdir(headers):
         return prefixes, bare, names
-    for fn in sorted(os.listdir(OCCT_HEADERS)):
+    for fn in sorted(os.listdir(headers)):
         if not fn.endswith((".hxx", ".lxx")):
             continue
         name = fn[: -len(".hxx")]
@@ -228,7 +257,7 @@ def derive_packages() -> tuple[set[str], set[str], set[str]]:
                 prefixes.add(name.split("_", 1)[0])
             else:
                 bare.add(name)
-        with open(os.path.join(OCCT_HEADERS, fn), errors="ignore") as fh:
+        with open(os.path.join(headers, fn), errors="ignore") as fh:
             names.update(OCCT_NAME_RE.findall(fh.read()))
     return prefixes, bare, names
 
@@ -1006,6 +1035,18 @@ def self_test() -> int:
         reach=reach_from_bridge_source(two_hop_source),
     )
 
+    # #2818's asset identity. Folded in rather than trusted to the helper's own run: the manifest
+    # modes below refuse on a verdict this logic produces, and a detector that depends on a
+    # sibling's logic proves it is not blind on its own run (static-gates.md).
+    identity_failures = identity_helper.self_test()
+    _RAN.append("asset identity")
+    if identity_failures:
+        bad += 1
+        for line in identity_failures:
+            print(f"  FAIL  asset identity: {line}")
+    else:
+        print("  PASS  asset identity: every case in occt_asset_identity.self_test()")
+
     total = len(_RAN)
     print(f"\nself-test: {total - bad} passed, {bad} failed")
     return bad
@@ -1086,15 +1127,35 @@ def main() -> int:
                     help="re-derive Scripts/occt-packages.txt from the bundled headers and diff")
     ap.add_argument("--write-packages", action="store_true",
                     help="rewrite Scripts/occt-packages.txt from the bundled headers")
+    identity_helper.add_arguments(ap)
     args = ap.parse_args()
 
     if args.self_test:
         return 1 if self_test() else 0
 
+    headers, ident = resolve_headers(args)
+    for line in ident.banner():
+        print(line.lstrip())
+
+    # #2818. The manifest describes the PINNED kernel, so the two modes that read or rewrite it
+    # require a proven asset whether or not `--require-pinned-asset` was passed. Deriving a
+    # committed package list from whatever xcframework happens to be on disk is the specific
+    # failure this replaces: `--reverify-packages` would report PACKAGE DRIFT and recommend
+    # `--write-packages`, and the recommendation would commit the wrong kernel's classes.
+    manifest_mode = args.reverify_packages or args.write_packages
+    message = identity_helper.refusal(ident, args.require_pinned_asset or manifest_mode)
+    if message:
+        if manifest_mode and not args.require_pinned_asset:
+            message += ("\n  --reverify-packages and --write-packages read and rewrite a committed "
+                        "manifest of the PINNED kernel's packages, so they require a proven asset. "
+                        "Run `swift package resolve` and re-run.")
+        print(message, file=sys.stderr)
+        return 2
+
     if args.write_packages:
-        prefixes, bare, _names = derive_packages()
+        prefixes, bare, _names = derive_packages(headers)
         if not prefixes:
-            print(f"{OCCT_HEADERS} not present; cannot derive.")
+            print(f"{headers} not present; cannot derive.")
             return 1
         write_manifest(prefixes, bare)
         print(f"wrote {os.path.relpath(PACKAGE_MANIFEST, ROOT)}: "
@@ -1102,12 +1163,12 @@ def main() -> int:
         return 0
 
     prefixes, bare = load_packages()
-    derived_prefixes, derived_bare, header_names = derive_packages()
+    derived_prefixes, derived_bare, header_names = derive_packages(headers)
     have_headers = bool(header_names)
 
     if args.reverify_packages:
         if not have_headers:
-            print(f"Package re-derivation SKIPPED: {OCCT_HEADERS} not present "
+            print(f"Package re-derivation SKIPPED: {headers} not present "
                   "(the normal case in CI and a fresh clone).")
             return 0
         drift = (derived_prefixes ^ prefixes) | (derived_bare ^ bare)
@@ -1140,9 +1201,11 @@ def main() -> int:
     print(f"  class attributions checked: {checked}")
     print(f"  unresolved (no bridge fn) : {len(unresolved)}")
     if have_headers:
-        print(f"  pinned headers            : {len(header_names)} classes, existence checked")
+        print(f"  pinned headers            : {len(header_names)} classes, existence checked "
+              f"against the {ident.verdict.upper()} asset")
     else:
-        print(f"  pinned headers            : {OCCT_HEADERS} absent, existence check SKIPPED")
+        print(f"  pinned headers            : {headers or 'no asset'} absent, existence check "
+              f"SKIPPED")
     print(f"  findings                  : {len(findings)}")
     print(f"  attributions naming only a bridge symbol: {len(symbol_only)}")
 
@@ -1173,7 +1236,12 @@ def main() -> int:
               "\n  it reaches, so the class it should name has never been checked by anything.")
 
     if absent:
-        print("\nABSENT from the pinned headers (the class the doc names does not exist):")
+        # #2818: "the pinned headers" is a claim about which kernel, so it is stated rather than
+        # assumed. A class present in the pinned asset and missing from a local build used to print
+        # here with no way for a reader to tell the two apart.
+        where = ("the pinned headers" if ident.verdict == identity_helper.PINNED
+                 else f"the {ident.verdict.upper()} headers at {ident.path}")
+        print(f"\nABSENT from {where} (the class the doc names does not exist):")
         for f in absent:
             print(f"  {f.claim.path}:{f.claim.line}  {f.cls}"
                   f"{'::' + f.member if f.member else ''}  [{f.claim.channel}/{f.how}]")

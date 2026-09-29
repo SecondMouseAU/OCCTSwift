@@ -30,14 +30,27 @@ silently starts dropping dimensions of that type. Both enums have grown across O
     python3 Scripts/derive-gdt-enums.py --reverify-headers  # exit 1 if manifest and headers differ
     python3 Scripts/derive-gdt-enums.py --write-manifest  # rewrite the manifest from the headers
     python3 Scripts/derive-gdt-enums.py --self-test       # prove each failure mode is caught
+    python3 Scripts/derive-gdt-enums.py --asset DIR       # read a specific xcframework
 
 WHY A COMMITTED MANIFEST AND NOT A DIRECT HEADER READ. `ci.yml`'s `gate-scripts` job runs on
-`ubuntu-latest` with no `Libraries/OCCT.xcframework`, so a gate that reads the headers directly
+`ubuntu-latest` with no xcframework at all, so a gate that reads the headers directly
 would report SKIPPED on every CI run, which is the same as not existing. `Scripts/occt-gdt-enums.txt`
 holds the derivation, checked in, and `--verify` compares Swift against it with no kernel present.
 `--reverify-headers` is the other half and needs the kernel: it is what catches an OCCT bump, and it
 is why the manifest is a derivation rather than a second hand-written list. Same split, and the same
 reason, as `Scripts/occt-packages.txt` and `census-doc-occt-attribution.py`.
+
+WHICH KERNEL THE HEADER HALF READS (#2818). `--verify`, the half CI runs, is artefact-free by design
+and reads no asset, so nothing below applies to it. The two halves that do read one,
+`--reverify-headers` and `--write-manifest`, used to take `Libraries/OCCT.xcframework` on
+`os.path.isdir` alone: a locally built kernel's extra enum became an `UNKNOWN` hard failure, and the
+remedy the failure printed was `--write-manifest`, which would bake that kernel's ordinals into a
+committed file whose whole purpose is to describe the pinned one. Ordinals cross the bridge
+unremapped, so a manifest derived from the wrong kernel is a wrong-value defect rather than a
+cosmetic one. `Scripts/occt_asset_identity.py` now resolves the asset (explicit `--asset`, then
+`Libraries/`, then the SwiftPM artifact under `.build/artifacts/`) and **both halves refuse unless
+identity is proven**, which also means a clean checkout can run them at all instead of reporting
+SKIPPED.
 
 WHICH ENUMS ARE GATED, AND WHICH ARE NOT. `XCAFDimTolObjects` ships exactly one more transcribable
 enum than these fourteen: `ToleranceZoneAffectedPlane`. It is not bound in Swift, because
@@ -62,8 +75,12 @@ import os
 import re
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import occt_asset_identity as identity_helper  # noqa: E402  (after the sys.path insert)
+
 SWIFT_FILE = os.path.join("Sources", "OCCTSwift", "GDTRead.swift")
 MANIFEST = os.path.join("Scripts", "occt-gdt-enums.txt")
+# The default only. The asset actually read is resolved per run, per #2818.
 OCCT_HEADERS = os.path.join("Libraries", "OCCT.xcframework", "macos-arm64", "Headers")
 
 # Swift enum name -> (OCCT enum type, header stem). The header stem is also the OCCT member prefix.
@@ -512,7 +529,16 @@ def self_test():
         ok = check(run())
         failed += not ok
         print(f"  {'ok  ' if ok else 'FAIL'}  {name}")
-    total = len(SELF_TEST)
+    # #2818's asset identity, folded in rather than trusted to the helper's own run: the two
+    # header-reading halves refuse on a verdict this logic produces, so this script owes the proof
+    # that the logic is not blind (static-gates.md).
+    identity_failures = identity_helper.self_test()
+    failed += bool(identity_failures)
+    for line in identity_failures:
+        print(f"  FAIL  asset identity: {line}")
+    if not identity_failures:
+        print("  ok    asset identity: every case in occt_asset_identity.self_test()")
+    total = len(SELF_TEST) + 1
     print(f"{total - failed}/{total} cases correct")
     return 1 if failed else 0
 
@@ -551,6 +577,7 @@ def main():
     ap.add_argument("--write-manifest", action="store_true",
                     help="rewrite the manifest from the pinned headers")
     ap.add_argument("--self-test", action="store_true", help="prove each failure mode is caught")
+    identity_helper.add_arguments(ap)
     args = ap.parse_args()
 
     if args.self_test:
@@ -561,11 +588,31 @@ def main():
               file=sys.stderr)
         return 2
 
-    if args.write_manifest:
-        if not os.path.isdir(OCCT_HEADERS):
-            print(f"{OCCT_HEADERS} not present; cannot derive.", file=sys.stderr)
+    # #2818. Resolved once, and only for the halves that read it: `--verify` is artefact-free by
+    # design and must stay that way, since it is the half CI runs.
+    headers, ident = None, None
+    if args.reverify_headers or args.write_manifest:
+        ident = identity_helper.identify(
+            ".", identity_helper.explicit_from(args, identity_helper.LIBRARIES_ASSET)
+        )
+        for line in ident.banner(indent=""):
+            print(line)
+        # Both halves derive from, or compare against, a committed manifest of the PINNED kernel's
+        # ordinals, so a proven asset is required whether or not the flag was passed. Baking
+        # off-pin ordinals into that file is a wrong-value defect: the raw values cross the bridge
+        # unremapped.
+        message = identity_helper.refusal(ident, True)
+        if message:
+            print(message, file=sys.stderr)
+            if not args.require_pinned_asset:
+                print("  --reverify-headers and --write-manifest describe the PINNED kernel's "
+                      "enums, so they require a proven asset. Run `swift package resolve` and "
+                      "re-run.", file=sys.stderr)
             return 2
-        write_manifest(derive_from_headers(OCCT_HEADERS), MANIFEST)
+        headers = os.path.join(ident.path, identity_helper.DEFAULT_SLICE, "Headers")
+
+    if args.write_manifest:
+        write_manifest(derive_from_headers(headers), MANIFEST)
         print(f"manifest written to {MANIFEST}")
         return 0
 
@@ -575,31 +622,27 @@ def main():
         swift = parse_swift_enums(fh.read())
 
     if args.reverify_headers:
-        if not os.path.isdir(OCCT_HEADERS):
-            print(f"Header re-derivation SKIPPED: {OCCT_HEADERS} not present "
-                  "(expected in CI and in a fresh clone).")
-            return 0
-        derived = derive_from_headers(OCCT_HEADERS)
+        derived = derive_from_headers(headers)
         drift = compare(derived, {k: [(c, o) for c, o, _ in v] for k, v in manifest.items()})
         for name, kind, detail in drift:
             print(f"  {kind:12s} {name}: {detail}", file=sys.stderr)
 
         # Check for unknown enums (not in BOUND, not in KNOWN_UNBOUND)
-        unknown = check_unknown_enums(OCCT_HEADERS)
+        unknown = check_unknown_enums(headers)
         for stem, count in unknown:
-            print(f"  UNKNOWN      {stem} ({count} members) — not in BOUND or KNOWN_UNBOUND",
+            print(f"  UNKNOWN      {stem} ({count} members), not in BOUND or KNOWN_UNBOUND",
                   file=sys.stderr)
 
         # Report known unbound enums for visibility
-        for stem, count in find_enum_headers(OCCT_HEADERS):
+        for stem, count in find_enum_headers(headers):
             if stem in KNOWN_UNBOUND:
                 print(f"  unbound      {stem} ({count} members), no Swift enum, see #1004")
 
         if drift or unknown:
             if unknown:
-                print("\nUnknown GD&T enums detected in the pinned kernel. Each must be added to "
-                      "BOUND (if wrapped in Swift) or KNOWN_UNBOUND (if intentionally not wrapped).",
-                      file=sys.stderr)
+                print(f"\nUnknown GD&T enums detected in the {ident.verdict.upper()} kernel. "
+                      "Each must be added to BOUND (if wrapped in Swift) or KNOWN_UNBOUND (if "
+                      "intentionally not wrapped).", file=sys.stderr)
             if drift:
                 print("\nThe manifest no longer matches the pinned headers. Re-run with "
                       "--write-manifest, then bring GDTRead.swift's enums into line with it.",

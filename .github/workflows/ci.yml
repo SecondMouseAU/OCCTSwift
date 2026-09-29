@@ -35,16 +35,18 @@ jobs:
   #     job would be red for a reason that has nothing to do with it, which is the same as not
   #     having it. That state is fixable by bumping the pin, and is fixed today, but the
   #     separation is what makes the gate survive the next time it happens.
-  #   - ubuntu-latest, because all twenty-three are pure Python over the repo's own text: no Xcode, no
+  #   - ubuntu-latest, because all twenty-four are pure Python over the repo's own text: no Xcode, no
   #     OCCT, no swift build. A macOS runner would cost 10x the minutes to run the identical checks.
-  #     The twenty-first is here as its `--self-test` alone for exactly that reason: the real run of
-  #     check-pinned-asset-patches.py reads the pinned xcframework, which is not text (#2196).
+  #     check-pinned-asset-patches.py is here as its `--self-test` alone for exactly that reason:
+  #     its real run reads the pinned xcframework, which is not text (#2196). An ordinal stood here
+  #     and named a position in a list that grows, which is the staleness this file's other counts
+  #     are gated against.
   #   - each script's --self-test runs alongside its real invocation. A gate whose detector is
   #     wrong reports "all clear" just as confidently as a gate whose subject is clean; this branch
   #     shipped three gate scripts that were confidently wrong (#618, #624/#630, #626), so the
   #     detector's own fixtures are part of what CI checks, not a developer-only convenience.
   #   - `if: '!cancelled()'` on every step after the first, so one failing gate does not hide the
-  #     other twenty-two. Without it a contributor fixes them one CI round trip at a time. It is
+  #     other twenty-three. Without it a contributor fixes them one CI round trip at a time. It is
   #     `!cancelled()` rather than `always()` so the concurrency group's cancel-in-progress still
   #     takes effect.
   #
@@ -252,6 +254,22 @@ jobs:
       - name: check-bridge-diagnostics.py
         if: '!cancelled()'
         run: python3 Scripts/check-bridge-diagnostics.py
+
+      # #2820. A file-scope type defined in several bridge translation units is well formed only
+      # while the definitions are token for token identical, and the compiler cannot diagnose a
+      # divergence: each unit sees exactly one definition and is individually valid. These are the
+      # opaque handle structs a Swift caller creates in one .mm and releases in another, so the
+      # symptom would be memory corruption rather than a build failure. It gates from its first day
+      # rather than reporting first, which static-gates.md's measure-the-rate-then-gate sequence
+      # allows here because the backlog was already zero when #2820 measured it: 83 duplicated type
+      # names across 605 definitions, 0 of them disagreeing.
+      - name: check-bridge-type-odr.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-bridge-type-odr.py --self-test
+
+      - name: check-bridge-type-odr.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-bridge-type-odr.py
 
       # A hand-resolved conflict can leave a marker behind, and this repo sets
       # merge.conflictStyle=diff3, whose `|||||||` ancestor line is exactly the one a resolver
