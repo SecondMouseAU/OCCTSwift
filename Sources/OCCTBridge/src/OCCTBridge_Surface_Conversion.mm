@@ -872,6 +872,11 @@ int32_t OCCTSurfaceExtrema(OCCTSurfaceRef            s1,
     // (#636) and as OCCTExtremaExtElSSPlanes does one layer down. The refusal loses a real
     // measurement, the constant gap between the two surfaces, because OCCTSurfaceExtremaResult has
     // no way to report a distance with no points; giving it one is a SemVer event and is #2840's.
+    //
+    // Carried patch 0044 fixes the kernel half, bounding Extrema_ExtSS::Points against myPOnS1
+    // rather than NbExt(), but it is NOT in the pinned asset and THIS GATE IS NOT RETIRED WHEN IT
+    // IS. Patched, the kernel raises Standard_OutOfRange for the same input, which the catch below
+    // turns into the same 0; the gate says so up front, costs nothing, and covers an older pin.
     if (extrema.IsParallel())
       return 0;
     int32_t nb = extrema.NbExtrema();

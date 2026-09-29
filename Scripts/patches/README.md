@@ -11,7 +11,7 @@ for what that takes.
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0043.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0044.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -2014,6 +2014,113 @@ opposite sign to a geometric distance and `loc` cancels out. This patch exposes 
 causing it, and the two belong in one PR because a reviewer reading the first will ask about the
 second. The upstream submission is where
 the GTest goes; the carried patch is the one-liner alone, as `0042` was.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840.patch
+
+**`Points()` reads an empty point sequence on a parallel pair**
+([#2840](https://github.com/SecondMouseAU/OCCTSwift/issues/2840)). `Extrema_ExtSS` and
+`Extrema_ExtCS` both count extrema with `NbExt() == mySqDist.Length()` and bound `Points()` against
+that count alone, and both analytic branches append a distance with no matching point pair when the
+pair is parallel (`Extrema_ExtSS.cxx:226-234`, `Extrema_ExtCS.cxx:302-306` in the pinned tree):
+
+```cpp
+  myIsPar = myExtElSS.IsParallel();
+  if (myIsPar)
+  {
+    mySqDist.Append(myExtElSS.SquareDistance(1));   // and nothing to myPOnS1/myPOnS2
+  }
+```
+
+An equidistant family has no unique witness point, so there is nothing to append. `NbExt()` then
+reports 1, `Points(1, ...)` passes its range test, and `myPOnS1.Value(1)` reads an empty
+`NCollection_Sequence`. The fix is the one `Extrema_ExtCC::Points` already carries as `0024`: bound
+against the point sequence. The tighter bound changes nothing for a non-parallel result, since
+`mySqDist` and the point sequences are appended together in every other branch.
+
+**The fault is not in `Points()`' own bound test.** That test is a literal `throw`, live in this
+Release build. What faults is `NCollection_Sequence::Value`'s `Standard_OutOfRange_Raise_if`, which
+is **inline** and therefore compiled out by `BUILD_RELEASE_DISABLE_EXCEPTIONS` in whichever
+translation unit expands it, here `Extrema_ExtSS.cxx`. So the read is an OS fault rather than a
+throw, uncatchable in-process (#345), and
+`Scripts/census-compiled-out-validation.py` has no channel that could have seen it: filed as
+[#2858](https://github.com/SecondMouseAU/OCCTSwift/issues/2858).
+
+### The family is exactly three, and generalising has nothing to generalise over
+
+This patch is the third instance of `0024`'s shape and the question of whether to generalise rather
+than copy was asked before it was written, in #2840 and answered by #2801's sweep. Every `.cxx`
+under `src/ModelingData/TKGeomBase/Extrema` that mentions `myIsPar`, compared for `mySqDist.Append`
+count against point-append count:
+
+| class | sqdist appends | point appends | verdict |
+|---|---|---|---|
+| `Extrema_ExtCC` | 11 | 0 | #636, carried patch `0024` |
+| `Extrema_ExtCS` | 4 | 6 | this patch |
+| `Extrema_ExtSS` | 4 | 3 | this patch |
+| `Extrema_ExtCC2d` | 2 | 0 | clean: `Points` bounds against `mynbext`, which moves in lockstep with `mypoints.Append` in both `Results` overloads |
+| `Extrema_ExtElC2d` | 0 | 0 | clean: fixed-size member array bounded against `myNbExt` |
+| `Extrema_ExtElC`, `Extrema_ExtElCS`, `Extrema_ExtElSS` | 0 | 0 | no appends at all |
+
+**There is no fourth, so the shared fix has three call sites and will not acquire more.** And there
+is no shared thing to put the fix in: the three classes hold their points in three different member
+shapes, `mypoints` interleaved for `Extrema_ExtCC`, `myPOnC`/`myPOnS` for `Extrema_ExtCS`,
+`myPOnS1`/`myPOnS2` for `Extrema_ExtSS`, with no common base and no accessor in common. A helper
+over that is a new base class or a new free function for a one-line predicate, which is a larger
+change to propose upstream than the three one-line bounds it would replace, and which upstream has
+no precedent for in this package. So the shape is copied, deliberately, and the two remaining sites
+land together rather than one at a time.
+
+### Measured, macOS arm64, before and after
+
+`Scripts/repro/2840/probe.mm` against the pinned `v4.0.0-kernel.3` asset with both translation units
+override-linked, per
+[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
+section 3. The transcript is committed as `Scripts/repro/2840/override-link-transcript.txt`.
+
+| mode | before | after |
+|---|---|---|
+| `Extrema_ExtSS`, two `Geom_Plane`s 5 apart, `Points(1, ...)` | exit 139 | `Standard_OutOfRange`, exit 0 |
+| `Extrema_ExtCS`, a `Geom_Line` 5 above a `Geom_Plane`, `Points(1, ...)` | exit 139 | `Standard_OutOfRange`, exit 0 |
+| `Extrema_ExtSS` control, two spheres 20 apart | 2 extrema, points returned | identical |
+| `Extrema_ExtCS` control, a line 40 above a sphere | 2 extrema, points returned | identical |
+
+`IsDone()`, `IsParallel()`, `NbExt()` and `SquareDistance(1)` are unchanged on every mode: the
+parallel pair still reports its one real measurement, 25 as a square distance in both cases. Only
+the point read moves, from a fault to a refusal. The unpatched override-linked run is
+byte-identical to the archive alone, which is how the pinned asset is known to carry no fix of its
+own here.
+
+### CI coverage, and the pin
+
+**Carried, not pinned.** `Scripts/patches/` holds thirty-two and the pinned `v4.0.0-kernel.3` asset
+holds thirty-one, so this patch is in **no** required check:
+`ci.yml`'s `build-and-test` resolves the asset. `kernel-integration.yml` triggers on
+`Scripts/patches/**` and builds `V8_0_1` plus every carried patch from source, so the PR that adds
+this one gets it compiled, and that proves it applies, compiles and regresses nothing. It cannot
+prove the fix reaches a consumer, and here it could not even if it ran on every PR, because **the
+bridge already refuses the input before the kernel sees it**.
+
+That is the argument for not rebuilding now. `0043` was rebuilt the day it was carried because what
+it left exposed was a value a caller reads. This one leaves nothing exposed: `OCCTSurfaceExtrema`
+gained an `IsParallel()` gate with #2831, and every other bridge entry point that reaches either
+class through a point read already had one (`OCCTExtremaExtSSPoint`, `OCCTExtremaExtCSPoint`,
+`OCCTCurve3DDistanceToSurface`, which reads `LowerDistance()` alone). The standing hold on repinning
+until OCCT 8.0.2 lands therefore wins, and the 8.0.2 rebuild absorbs this patch for free.
+
+**Retargeting risk at 8.0.2.** No other carried patch touches either file, and both `Points()`
+bodies are three lines that have not changed since the class was written, so the hunks are expected
+to apply to `V8_0_2` unchanged. Re-run `git -C occt-src apply --check` at the repin rather than
+assuming it.
+
+Not filed upstream yet: the standing hold in
+[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
+holds every upstream PR until 8.0.2 ships. The submission is staged in
+`Scripts/repro/2840/upstream/`: two GTests, `Extrema_ExtSS_Test.cxx` and `Extrema_ExtCS_Test.cxx`,
+compiled and run both ways (each parallel case exits 139 unpatched and passes patched, both controls
+pass on both sides), plus the two `FILES.cmake` lines they need. `0024` is still unfiled too, so one
+PR covering all three classes may read better than two.
 
 **Retire** once the bundled OCCT includes this fix.
 

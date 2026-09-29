@@ -45,7 +45,7 @@ let useLocalXCFramework: Bool = {
     return FileManager.default.fileExists(atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the thirty-one carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the thirty-two carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target = isWASI
     // WASI: Use locally built static library from Scripts/build-occt-wasm.sh
@@ -227,7 +227,8 @@ let occtTarget: Target = isWASI
     // which is what they were built to do; if a later asset repeats either stray the finding comes
     // back rather than staying suppressed.
     //
-    // Scripts/patches/ and the asset now hold the same thirty-one, so there is no untested set.
+    // The asset holds thirty-one and Scripts/patches/ holds thirty-two, so 0044 is the untested
+    // set of one, written up where the counts are, above.
     // If you rebuild and the checksum does not match the value below, that is a real difference to
     // investigate rather than an expected one, which is the opposite of what this paragraph said
     // while kernel.1 was pinned.
@@ -271,10 +272,32 @@ let occtTarget: Target = isWASI
     // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
     // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
     // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-    // Scripts/patches/ holds thirty-one patches and the pinned asset holds all thirty-one,
-    // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 31 against a list of 31.
-    // The pinned asset lacks none of them, so there is no written divergence to give here. 0043
-    // (#2827, BRepGProp_Gauss keeps the by-plane mass) was the last one outstanding: carried
+    // Scripts/patches/ holds thirty-two patches and the pinned asset holds thirty-one of them,
+    // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 32 against a list of 31.
+    // The pinned asset lacks one of them, and this is the written divergence:
+    //
+    //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
+    //         sequence rather than against NbExt(), which counts mySqDist and so counts
+    //         the parallel branch's distance-with-no-point. Carried 2026-09-30 and NOT
+    //         built, deliberately: the 8.0.2 repin (due 2026-10-02, and already owed a
+    //         wasm rebuild) absorbs it, and unlike 0043 it leaves NOTHING exposed to a
+    //         Swift caller. OCCTSurfaceExtrema gained an IsParallel() gate with #2831, and
+    //         OCCTExtremaExtSSPoint, OCCTExtremaExtCSPoint and OCCTCurve3DDistanceToSurface
+    //         were already gated, so no bridge entry point can reach the faulting read.
+    //         So it is in NO required check: build-and-test resolves this asset.
+    //         kernel-integration.yml builds it from source on the PR that adds it, which
+    //         proves it applies, compiles and regresses nothing, and nothing more.
+    //         Measured before and after by override-link in Scripts/repro/2840/.
+    //         DO NOT RETIRE THOSE BRIDGE GATES WHEN THIS IS PINNED. The rule in
+    //         okf/policies/pinned-kernel-patch-check.md retires a mitigation its patch
+    //         supersedes, and this is the 0042-shaped exception: patched, the kernel raises
+    //         Standard_OutOfRange for the same input the gate refuses, so both answer nil
+    //         and the gate is redundant rather than wrong, it still covers anyone pinning an
+    //         older asset, and it is also the deliberate API decision that a parallel pair is
+    //         a refusal rather than a distance with no points (a SemVer change, still open).
+    //
+    // 0043
+    // (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it: carried
     // 2026-09-29 unbuilt, because OCCT 8.0.2 was days out and there is a standing hold on repinning
     // until it lands, then built and pinned the same day by v4.0.0-kernel.3 once the cost of
     // shipping a fabricated 0.0 through Face.volumeInertia(planeNormal:planeDistance:) for that

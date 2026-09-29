@@ -23,8 +23,9 @@ in the kernel", run
 read [`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md) for
 why the count is necessary and not sufficient, and
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) for the current
-divergence (thirty-one on disk, thirty-one pinned, as of 2026-09-29: none, since the
-`v4.0.0-kernel.3` repin) and what an unpinned patch leaves exposed. A divergence with a written
+divergence (thirty-two on disk, thirty-one pinned, as of 2026-09-30: `0044`, carried unbuilt
+because the OCCT 8.0.2 repin absorbs it and the bridge already refuses the input it fixes) and what
+an unpinned patch leaves exposed. A divergence with a written
 reason is expected; one without is a finding.
 
 **The comparison runs the other way too, and nothing used to make it.** The pinned asset holds
