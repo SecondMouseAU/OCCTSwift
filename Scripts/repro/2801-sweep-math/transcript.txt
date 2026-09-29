@@ -1,0 +1,167 @@
+#2801 sweep, dimension/squareness cluster -- probe transcript
+date:   2026-09-29T05:57:15Z
+host:   Darwin 27.0.0 arm64
+clang:  Apple clang version 21.0.0 (clang-2100.3.34.2)
+
+xcframework under test (a SYMLINK in this worktree, may be a locally built kernel
+rather than the pinned v4.0.0-kernel.2 asset -- decisive probes should be re-run
+against the pin):
+lrwxr-xr-x  1 elb  wheel  56 29 Sep 15:38 Libraries/OCCT.xcframework -> /Users/elb/Projects/OCCTSwift/Libraries/OCCT.xcframework
+  resolved: /Users/elb/Projects/OCCTSwift/Libraries/OCCT.xcframework
+  lib mtime/size: -rw-r--r--  1 elb  staff  157577464 22 Sep 18:28 Libraries/OCCT.xcframework/macos-arm64/libOCCT-macos.a
+
+COMPILE LINE (as SwiftPM compiles Sources/OCCTBridge/src/*.mm: no -DNo_Exception)
+clang++ -std=c++17 -ObjC++ -w \
+  -I"Libraries/OCCT.xcframework/macos-arm64/Headers" \
+  -L"Libraries/OCCT.xcframework/macos-arm64" \
+  -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
+  Scripts/repro/2801-sweep-math/probe.mm -o /tmp/probe-math-2801
+compile: OK, no diagnostics
+
+Each mode below ran in its OWN process. exit=139 SIGSEGV, 138 SIGBUS, 134 SIGABRT,
+3 = the probe caught a live C++ exception, 0 = returned normally.
+
+======== ./probe zero-dims
+[mode zero-dims]
+built 0x0
+exit=0
+
+======== ./probe index-oob-uncaught
+[mode index-oob-uncaught]
+libc++abi: terminating due to uncaught exception of type Standard_OutOfRange: NCollection_Array1::at
+exit=134
+
+======== ./probe transpose-nonsquare
+[mode transpose-nonsquare]
+caught Standard_Failure: 14math_NotSquare
+exit=3
+
+======== ./probe transpose-nonsquare-uncaught
+[mode transpose-nonsquare-uncaught]
+libc++abi: terminating due to uncaught exception of type math_NotSquare: math_Matrix::Transpose() - matrix is not square
+exit=134
+
+======== ./probe determinant-nonsquare-small
+[mode determinant-nonsquare-small]
+3x2 Determinant() returned -1
+exit=0
+
+======== ./probe determinant-nonsquare
+[mode determinant-nonsquare]
+built 100x1
+Determinant() returned nan
+exit=0
+
+======== ./probe invert-nonsquare
+[mode invert-nonsquare]
+built 100x1
+exit=138
+
+======== ./probe uzawa-overdetermined-small
+[mode uzawa-overdetermined-small]
+4x2 ctor returned; IsDone=1
+exit=0
+
+======== ./probe uzawa-overdetermined
+[mode uzawa-overdetermined]
+Cont 100x40, Errinit will be sized 40 and written to 100
+ctor returned; IsDone=1
+exit=0
+
+======== ./probe uzawa-few-vars
+[mode uzawa-few-vars]
+Cont 100x2, Errinit sized 2 written to 100
+exit=139
+
+======== ./probe trsf-setvalues-singular
+[mode trsf-setvalues-singular]
+SetValues returned; ScaleFactor=-0 Value(1,1)=nan Value(2,2)=nan Value(1,4)=5 isnan(1,1)=1
+exit=0
+
+======== ./probe trsf-setvalues-rank2
+[mode trsf-setvalues-rank2]
+SetValues returned; ScaleFactor=-0 Value(1,1)=nan Value(3,3)=nan
+exit=0
+
+======== ./probe trsf-setscale-zero
+[mode trsf-setscale-zero]
+SetScale(0) returned; ScaleFactor=0
+Invert() returned; ScaleFactor=inf isinf=1
+exit=0
+
+======== ./probe scale-box-by-zero
+[mode scale-box-by-zero]
+Transform IsDone=1 ShapeIsNull=0
+volume of the scaled-by-zero box = 0
+exit=0
+
+
+======== the same three modes under Guard Malloc, which gives every heap block its own
+======== guard page, so an overrun faults instead of silently scribbling:
+        DYLD_INSERT_LIBRARIES=/usr/lib/libgmalloc.dylib MALLOC_PROTECT_AFTER=1 ./probe <mode>
+
+======== gmalloc ./probe determinant-nonsquare
+GuardMalloc[probe-math-2801-61925]: Allocations will be placed on 16 byte boundaries.
+GuardMalloc[probe-math-2801-61925]:  - Some buffer overruns may not be noticed.
+GuardMalloc[probe-math-2801-61925]:  - Applications using vector instructions (e.g., SSE) should work.
+GuardMalloc[probe-math-2801-61925]: version 064578.57.1
+[mode determinant-nonsquare]
+built 100x1
+exit=139
+
+======== gmalloc ./probe uzawa-overdetermined
+GuardMalloc[probe-math-2801-61926]: Allocations will be placed on 16 byte boundaries.
+GuardMalloc[probe-math-2801-61926]:  - Some buffer overruns may not be noticed.
+GuardMalloc[probe-math-2801-61926]:  - Applications using vector instructions (e.g., SSE) should work.
+GuardMalloc[probe-math-2801-61926]: version 064578.57.1
+[mode uzawa-overdetermined]
+Cont 100x40, Errinit will be sized 40 and written to 100
+exit=139
+
+======== gmalloc ./probe determinant-nonsquare-small
+GuardMalloc[probe-math-2801-61928]: Allocations will be placed on 16 byte boundaries.
+GuardMalloc[probe-math-2801-61928]:  - Some buffer overruns may not be noticed.
+GuardMalloc[probe-math-2801-61928]:  - Applications using vector instructions (e.g., SSE) should work.
+GuardMalloc[probe-math-2801-61928]: version 064578.57.1
+[mode determinant-nonsquare-small]
+3x2 Determinant() returned -1
+exit=0
+
+======== gmalloc ./probe uzawa-overdetermined-small
+GuardMalloc[probe-math-2801-61929]: Allocations will be placed on 16 byte boundaries.
+GuardMalloc[probe-math-2801-61929]:  - Some buffer overruns may not be noticed.
+GuardMalloc[probe-math-2801-61929]:  - Applications using vector instructions (e.g., SSE) should work.
+GuardMalloc[probe-math-2801-61929]: version 064578.57.1
+[mode uzawa-overdetermined-small]
+4x2 ctor returned; IsDone=1
+exit=0
+
+======== repeatability of the two plain-allocator faults, 3 runs each
+invert-nonsquare run1 exit=138
+invert-nonsquare run2 exit=138
+invert-nonsquare run3 exit=138
+uzawa-few-vars run1 exit=139
+uzawa-few-vars run2 exit=139
+uzawa-few-vars run3 exit=139
+
+================================================================================
+RE-VERIFICATION AGAINST THE PINNED ASSET
+================================================================================
+The run above used the developer checkout's Libraries/OCCT.xcframework, a locally built kernel.
+Re-run below against the PINNED v4.0.0-kernel.2 asset, downloaded fresh and checksum-verified
+against Package.swift (18b181cc27778520fa2912ac2abb38038800b70e48d2fe1cf7fedcc61414d1c3).
+
+invert-nonsquare                 exit=138  SIGBUS
+uzawa-few-vars                   exit=139  SIGSEGV
+transpose-nonsquare-uncaught     exit=134  SIGABRT  (live inline throw, no try in the bridge)
+index-oob-uncaught               exit=134  SIGABRT  (live inline throw, no try in the bridge)
+determinant-nonsquare            exit=0    Determinant() returned nan       (100x1)
+determinant-nonsquare-small      exit=0    Determinant() returned -1        (3x2)
+uzawa-overdetermined             exit=0    silently corrupt result
+uzawa-overdetermined-small       exit=0    ctor returned; IsDone=1          (4x2)
+zero-dims                        exit=0    built 0x0
+trsf-setvalues-singular          exit=0    ScaleFactor=-0 Value(1,1)=nan Value(2,2)=nan
+trsf-setscale-zero               exit=0    ScaleFactor=0, then Invert() -> ScaleFactor=inf
+scale-box-by-zero                exit=0    Transform IsDone=1 ShapeIsNull=0, volume=0
+
+Identical to the first pass on every mode.  The defects are not a property of one build.
