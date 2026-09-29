@@ -192,6 +192,17 @@ struct OCCTBRepGraph
   // HasNode's "was part of construction input" contract true. Only non-identity locations
   // are stored, so an unplaced single part stores nothing. Written once during construction
   // and read-only afterwards, so it adds no shared mutable state.
+  //
+  // What it costs on a large assembly, since the entry count is one per placed sub-shape and
+  // therefore scales with the assembly rather than with the part. Measured on arm64 macOS by
+  // Scripts/repro/2650-brepgraph-located-instance-findnode/sizeof-probe.mm: a
+  // TopTools_MapOfShape is 56 bytes empty and 32 bytes per entry node plus one 8-byte bucket
+  // pointer, so about 40 bytes per located sub-shape. A TopoDS_Shape is 24 of those 32: a
+  // TShape handle, a TopLoc_Location and an orientation, so the map holds no geometry and
+  // copies none, and the shapes it references are the graph's own. A thousand placed
+  // instances of a part with a hundred sub-shapes each is 100,000 entries, about 4 MB, next
+  // to a BRepGraph holding those same 100,000 sub-shapes' nodes and geometry. The map is
+  // bounded by the input and freed with the graph.
   TopTools_MapOfShape locatedInputSubShapes;
 };
 
@@ -227,6 +238,9 @@ static void occtCollectLocatedSubShapes(const TopoDS_Shape& shape, TopTools_MapO
 static BRepGraph_NodeId occtBRepGraphResolveNode(OCCTBRepGraphRef g, const TopoDS_Shape& shape)
 {
   const BRepGraph_NodeId direct = g->graph.Shapes().FindNode(shape);
+  // Answer directly, without the definition-key retry, in all three cases where the retry
+  // could only be wrong: the direct key hit, the shape carries no placement to drop, or the
+  // shape was never in this graph's construction input.
   if (direct.IsValid() || shape.Location().IsIdentity()
       || !g->locatedInputSubShapes.Contains(shape))
   {
