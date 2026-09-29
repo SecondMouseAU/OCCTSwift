@@ -1,0 +1,262 @@
+import Foundation
+import OCCTBridge
+import Testing
+import simd
+
+@testable import OCCTSwift
+
+// Bridge side of the #1987 evidence-fix pass. Kept as .txt so SwiftPM does not compile it: it was
+// run once as Tests/OCCTFoundationTests/ZZEvidenceScratch.swift (`swift test --filter
+// ZZEvidenceScratch`) and deleted, so no Tests/ file changed. It replays the exact calls of the
+// flagged Foundation tests through the Swift API and writes what they observe, one JSON object
+// per line, to bridge-replay-transcript.jsonl (the output written here is that transcript).
+private enum J {
+    case d(Double), b(Bool), i(Int), s(String), null, list([J])
+    var text: String {
+        switch self {
+        case .d(let x): return String(format: "%.17g", x)
+        case .b(let x): return x ? "true" : "false"
+        case .i(let x): return String(x)
+        case .s(let x):
+            let data = try! JSONEncoder().encode(x)
+            return String(data: data, encoding: .utf8)!
+        case .null: return "null"
+        case .list(let xs): return "[" + xs.map { $0.text }.joined(separator: ",") + "]"
+        }
+    }
+}
+
+private final class Sink {
+    var lines: [String] = []
+    func emit(_ id: String, _ kv: [(String, J)]) {
+        lines.append(
+            "{\"id\":\"\(id)\",\"data\":{"
+                + kv.map { "\"\($0.0)\":\($0.1.text)" }.joined(separator: ",") + "}}")
+    }
+}
+
+private func fromOptional(_ s: String?) -> J { s.map { .s($0) } ?? .null }
+private func dateString(_ d: OCCTDate) -> String {
+    let c = d.components
+    return String(
+        format: "%04d-%02d-%02d %02d:%02d:%02d", c.year, c.month, c.day, c.hour, c.minute, c.second)
+}
+
+@Suite("ZZ evidence scratch")
+struct ZZEvidenceScratch {
+    @Test func replay() throws {
+        let sink = Sink()
+
+        // ---- #1078 (Issue1078UnicodeConvertLengthTests)
+        let longString = String(repeating: "漢", count: 5000)
+        OCCTSerial.withLock {
+            UnicodeUtils.setFormat(.ansi)
+            var small = [CChar](repeating: 0, count: 8)
+            let reported = OCCTUnicodeConvertFromUnicode(longString, &small, Int32(small.count))
+            sink.emit("1078-short", [("converted_length", .i(Int(reported)))])
+            let full = UnicodeUtils.convertFromUnicode(longString, maxSize: 10000)
+            sink.emit("1078-swiftfull", [("converted_length", .i(full?.count ?? -1))])
+            let clipped = UnicodeUtils.convertFromUnicode(longString, maxSize: 10)
+            sink.emit("1078-maxsize", [("result_character_count", .i(clipped?.count ?? -1))])
+        }
+
+        // ---- #1442 (Issue1442DiskUnicodeOSDUtilitiesTests)
+        var vfs = statvfs()
+        _ = statvfs("/", &vfs)
+        let totalKB = Int64((UInt64(vfs.f_blocks) * (UInt64(vfs.f_frsize) / 512)) / 2)
+        let freeKB = Int64((UInt64(vfs.f_bavail) * (UInt64(vfs.f_frsize) / 512)) / 2)
+        let size = DiskInfo.size(path: "/")
+        sink.emit("1442-size", [("size_kb", .i(Int(size))), ("statvfs_size_kb", .i(Int(totalKB)))])
+        let free = DiskInfo.freeSpace(path: "/")
+        let tol = max(freeKB / 10, 1024)
+        sink.emit(
+            "1442-free",
+            [
+                ("free_kb_within_tolerance_of_statvfs", .b(abs(free - freeKB) <= tol)),
+                ("free_kb", .i(Int(free))), ("statvfs_free_kb", .i(Int(freeKB))),
+            ])
+        sink.emit("1442-valid-real", [("valid", .b(DiskInfo.isValid(path: "/")))])
+        let bogus = "/this/path/does/not/exist/xyz123_\(Int.random(in: 100_000..<999_999))"
+        sink.emit("1442-valid-bogus", [("valid", .b(DiskInfo.isValid(path: bogus)))])
+
+        // ---- OCCT signal handling (#175)
+        let square = try #require(
+            Wire.polygon3D(
+                [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true))
+        let collinear = try #require(
+            Wire.polygon3D([SIMD3(0, 0, 5), SIMD3(1, 0, 5), SIMD3(2, 0, 5)], closed: true))
+        let loftIsNil = Shape.loft(profiles: [square, collinear], solid: true) == nil
+        let box = try #require(Shape.box(width: 1, height: 1, depth: 1))
+        let mesh = try #require(box.mesh(linearDeflection: 0.01))
+        sink.emit("signal-loft", [("loft_is_nil", .b(loftIsNil)), ("box_mesh_triangles", .i(mesh.triangleCount))])
+
+        // ---- Color OCCT Operations Tests
+        sink.emit("color-fromNameInvalid", [("found", .b(Color.fromName("NOTACOLOR_XYZ") != nil))])
+        sink.emit("color-fromHexInvalid", [("found", .b(Color.fromHex("NOT_HEX") != nil))])
+        let hls = Color(red: 1, green: 0, blue: 0).hls
+        sink.emit("color-hls", [("hue", .d(hls.hue)), ("lightness", .d(hls.lightness)), ("saturation", .d(hls.saturation))])
+        let orig = Color(red: 0.4, green: 0.6, blue: 0.2)
+        let oh = orig.hls
+        let restored = Color.fromHLS(hue: oh.hue, lightness: oh.lightness, saturation: oh.saturation)
+        sink.emit(
+            "color-fromHLSRoundtrip",
+            [("restored_red", .d(restored.red)), ("restored_green", .d(restored.green)), ("restored_blue", .d(restored.blue))])
+        let brighter = Color(red: 0.5, green: 0.5, blue: 0.5).withIntensityChanged(by: 0.1)
+        sink.emit("color-changeIntensity", [("red", .d(brighter.red)), ("green", .d(brighter.green)), ("blue", .d(brighter.blue))])
+        let srgb = Color(red: 0.5, green: 0.5, blue: 0.5).sRGB
+        sink.emit("color-linearToSRGB", [("red", .d(srgb.red)), ("green", .d(srgb.green)), ("blue", .d(srgb.blue))])
+        let lin = Color(red: 0.5, green: 0.5, blue: 0.5).linearRGB
+        sink.emit("color-sRGBToLinear", [("red", .d(lin.red)), ("green", .d(lin.green)), ("blue", .d(lin.blue))])
+        let back = Color(red: 0.3, green: 0.6, blue: 0.9).sRGB.linearRGB
+        sink.emit("color-sRGBRoundtrip", [("red", .d(back.red)), ("green", .d(back.green)), ("blue", .d(back.blue))])
+        let lab = Color(red: 0.5, green: 0.5, blue: 0.5).lab
+        sink.emit("color-toLab", [("l", .d(lab.l)), ("a", .d(lab.a)), ("b", .d(lab.b))])
+        sink.emit("color-epsilon", [("epsilon", .d(Color.epsilon))])
+
+        // ---- ColorTool GetAllColors
+        if let doc = Document.create() {
+            let redId = doc.colorToolAddColor(r: 1.0, g: 0.0, b: 0.0)
+            let greenId = doc.colorToolAddColor(r: 0.0, g: 1.0, b: 0.0)
+            let all = doc.colorToolGetAllColors()
+            sink.emit(
+                "colortool-getAllColors",
+                [
+                    ("count", .i(all.count)),
+                    ("first_is_red", .b(all.count > 0 && all[0] == redId)),
+                    ("second_is_green", .b(all.count > 1 && all[1] == greenId)),
+                ])
+        }
+
+        // ---- Material OCCT Operations Tests
+        sink.emit("material-nameOutOfRange", [("found", .b(Material.predefinedMaterialName(at: 999) != nil))])
+        sink.emit("material-byIndexOutOfRange", [("found", .b(Material.predefinedMaterial(at: 999) != nil))])
+        sink.emit("material-byNameInvalid", [("found", .b(Material.predefinedMaterial(named: "NOT_A_MATERIAL_XYZ") != nil))])
+        let byIndex = try #require(Material.predefinedMaterial(at: 1))
+        let brass = try #require(Material.predefinedMaterial(named: "Brass"))
+        sink.emit(
+            "material-byIndex",
+            [
+                ("same_as_brass_by_name", .b(byIndex == brass)),
+                ("shininess", .d(Double(byIndex.shininess))),
+                ("pbr_normalized_roughness", .d(Double(byIndex.pbrRoughness))),
+            ])
+        let copper = try #require(Material.predefinedMaterial(named: "Copper"))
+        sink.emit(
+            "material-pbr",
+            [
+                ("pbr_metallic", .d(Double(copper.pbrMetallic))),
+                ("pbr_normalized_roughness", .d(Double(copper.pbrRoughness))),
+                ("pbr_ior", .d(Double(copper.pbrIOR))),
+            ])
+        sink.emit("material-minRoughness", [("min_roughness", .d(Double(Material.minRoughness)))])
+        let water = try #require(Material.predefinedMaterial(named: "Water"))
+        sink.emit(
+            "material-water",
+            [("pbr_normalized_roughness", .d(Double(water.pbrRoughness))), ("min_roughness", .d(Double(Material.minRoughness)))])
+        sink.emit("material-brass", [("pbr_normalized_roughness", .d(Double(brass.pbrRoughness)))])
+
+        // ---- OCCTDate Tests
+        let jan1 = try #require(OCCTDate(month: 1, day: 1, year: 2000))
+        let oneDay = try #require(Period(days: 1))
+        sink.emit("date-addPeriod", [("date", .s(dateString(jan1.adding(oneDay))))])
+        let jan15 = try #require(OCCTDate(month: 1, day: 15, year: 2000, hour: 12))
+        let sixHours = try #require(Period(hours: 6))
+        let minus = try #require(jan15.subtracting(sixHours))
+        sink.emit("date-subtractPeriod", [("date", .s(dateString(minus)))])
+        let jan2 = try #require(OCCTDate(month: 1, day: 2, year: 2000))
+        sink.emit("date-comparison", [("d1_earlier_than_d2", .b(jan1 < jan2)), ("d2_later_than_d1", .b(jan2 > jan1))])
+        let h24 = try #require(Period(hours: 24))
+        sink.emit("date-operatorPlus", [("date", .s(dateString(jan1 + h24)))])
+        sink.emit("date-invalid", [("created", .b(OCCTDate(month: 0, day: 0, year: 1900) != nil))])
+
+        // ---- FontManager Tests
+        FontManager.initDatabase()
+        sink.emit("font-initDatabase", [("font_count", .i(FontManager.fontCount)), ("font_names", .list(FontManager.allFontNames.map { .s($0) }))])
+        sink.emit("font-fontCount", [("font_count", .i(FontManager.fontCount)), ("font_name_at_0", fromOptional(FontManager.fontName(at: 0)))])
+        sink.emit("font-outOfRange", [("found", .b(FontManager.fontName(at: 999999) != nil))])
+
+        // ---- PixMap Tests
+        let img = try #require(PixMap())
+        img.initTrash(format: .rgba, width: 4, height: 4)
+        img.setPixel(at: 2, y: 2, color: Color(red: 0.8, green: 0.2, blue: 0.5, alpha: 1.0))
+        let got = img.pixel(at: 2, y: 2)
+        sink.emit("pixmap-setAndGet", [("red", .d(got.red)), ("green", .d(got.green)), ("blue", .d(got.blue)), ("alpha", .d(got.alpha))])
+
+        // ---- extras found by re-running the criteria over the whole file
+        sink.emit("material-roughnessFromSpecular", [("roughness", .d(Double(Material.roughnessFromSpecular(color: .white, shininess: 0.8))))])
+        sink.emit("date-epoch", [("date", .s(dateString(OCCTDate.epoch)))])
+        let created = try #require(OCCTDate(month: 6, day: 15, year: 2000, hour: 14, minute: 30))
+        sink.emit("date-createDate", [("date", .s(dateString(created)))])
+        Units.setLocalSystem(.mdtv)
+        let afterMdtv = Units.localSystem.rawValue
+        Units.setLocalSystem(.si)
+        let afterSi = Units.localSystem.rawValue
+        sink.emit("units-localSystem", [("after_set_mdtv", .i(Int(afterMdtv))), ("after_set_si", .i(Int(afterSi)))])
+
+        // ---- UnitsAPI Tests
+        sink.emit("units-inchToMM", [("value", .d(Units.convert(1.0, from: "in", to: "mm")))])
+        sink.emit("units-degToRad", [("value", .d(Units.convert(180.0, from: "deg", to: "rad")))])
+
+        // ---- OSD Environment / Chronometer / Report / Timer / MemInfo
+        Environment.set("OCCT_SWIFT_TEST", value: "hello")
+        let after = Environment.get("OCCT_SWIFT_TEST")
+        Environment.remove("OCCT_SWIFT_TEST")
+        let gone = Environment.get("OCCT_SWIFT_TEST")
+        sink.emit("env-setGetRemove", [("after_set", fromOptional(after)), ("after_remove_is_empty", .b(gone == nil))])
+
+        var sum = 0.0
+        for i in 0..<1_000_000 { sum += Double(i) }
+        var rb = rusage()
+        getrusage(RUSAGE_SELF, &rb)
+        let cpu = CPUTime.processCPU()
+        var ra = rusage()
+        getrusage(RUSAGE_SELF, &ra)
+        let lo = Double(rb.ru_utime.tv_sec) + Double(rb.ru_utime.tv_usec) * 1e-6
+        let hi = Double(ra.ru_utime.tv_sec) + Double(ra.ru_utime.tv_usec) * 1e-6
+        sink.emit(
+            "cpu-processCPU",
+            [
+                ("user_cpu_positive", .b(cpu.user > 0)),
+                ("user_cpu_within_0_02_s_of_getrusage", .b(cpu.user >= lo - 0.02 && cpu.user <= hi + 0.02)),
+                ("user_cpu_s", .d(cpu.user)), ("getrusage_user_s_before", .d(lo)), ("getrusage_user_s_after", .d(hi)),
+                ("sum", .d(sum)),
+            ])
+
+        let report = try #require(Report())
+        sink.emit("report-dump", [("dump_byte_count", .i(report.dump().utf8.count))])
+
+        let timer = OCCTSwift.Timer()
+        timer.start()
+        Thread.sleep(forTimeInterval: 0.05)
+        timer.stop()
+        let el = timer.elapsedTime
+        sink.emit(
+            "timer-basicTiming",
+            [("elapsed_at_least_0_04_s", .b(el >= 0.04)), ("elapsed_under_5_s", .b(el < 5)), ("elapsed_s", .d(el))])
+
+        let t0 = OCCTSwift.Timer.wallClockTime
+        Thread.sleep(forTimeInterval: 0.05)
+        let t1 = OCCTSwift.Timer.wallClockTime
+        sink.emit(
+            "timer-wallClockTime",
+            [
+                ("wall_clock_positive", .b(t0 > 0)), ("advance_at_least_0_04_s", .b(t1 - t0 >= 0.04)),
+                ("advance_under_5_s", .b(t1 - t0 < 5)), ("t0", .d(t0)), ("advance_s", .d(t1 - t0)),
+            ])
+
+        let before = Double(MemInfo.heapUsage) / 1_048_576
+        let mib = MemInfo.heapUsageMiB
+        let afterMem = Double(MemInfo.heapUsage) / 1_048_576
+        sink.emit(
+            "meminfo-heapUsageMiB",
+            [
+                ("mib_positive", .b(mib > 0)),
+                ("mib_within_25_percent_of_bytes_over_2_20", .b(mib >= min(before, afterMem) * 0.75 && mib <= max(before, afterMem) * 1.25)),
+                ("mib", .d(mib)), ("bytes_over_2_20_before", .d(before)), ("bytes_over_2_20_after", .d(afterMem)),
+            ])
+
+        try sink.lines.joined(separator: "\n").appending("\n").write(
+            toFile: "bridge-replay-transcript.jsonl",
+            atomically: true, encoding: .utf8)
+    }
+}

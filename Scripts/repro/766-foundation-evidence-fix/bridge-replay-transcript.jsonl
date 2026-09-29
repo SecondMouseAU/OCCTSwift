@@ -1,0 +1,48 @@
+{"id":"1078-short","data":{"converted_length":5000}}
+{"id":"1078-swiftfull","data":{"converted_length":5000}}
+{"id":"1078-maxsize","data":{"result_character_count":9}}
+{"id":"1442-size","data":{"size_kb":971350180,"statvfs_size_kb":971350180}}
+{"id":"1442-free","data":{"free_kb_within_tolerance_of_statvfs":true,"free_kb":13302696,"statvfs_free_kb":13302696}}
+{"id":"1442-valid-real","data":{"valid":true}}
+{"id":"1442-valid-bogus","data":{"valid":false}}
+{"id":"signal-loft","data":{"loft_is_nil":true,"box_mesh_triangles":12}}
+{"id":"color-fromNameInvalid","data":{"found":false}}
+{"id":"color-fromHexInvalid","data":{"found":false}}
+{"id":"color-hls","data":{"hue":0,"lightness":0.99999994039535522,"saturation":1}}
+{"id":"color-fromHLSRoundtrip","data":{"restored_red":0.40000000596046448,"restored_green":0.60000008344650269,"restored_blue":0.20000001788139343}}
+{"id":"color-changeIntensity","data":{"red":0.50111722946166992,"green":0.50111722946166992,"blue":0.50111722946166992}}
+{"id":"color-linearToSRGB","data":{"red":0.73535698652267456,"green":0.73535698652267456,"blue":0.73535698652267456}}
+{"id":"color-sRGBToLinear","data":{"red":0.21404114365577698,"green":0.21404114365577698,"blue":0.21404114365577698}}
+{"id":"color-sRGBRoundtrip","data":{"red":0.30000004172325134,"green":0.60000008344650269,"blue":0.89999979734420776}}
+{"id":"color-toLab","data":{"l":76.069267272949219,"a":-1.3228341231297236e-05,"b":5.2913364925188944e-06}}
+{"id":"color-epsilon","data":{"epsilon":0.0001}}
+{"id":"colortool-getAllColors","data":{"count":2,"first_is_red":true,"second_is_green":true}}
+{"id":"material-nameOutOfRange","data":{"found":false}}
+{"id":"material-byIndexOutOfRange","data":{"found":false}}
+{"id":"material-byNameInvalid","data":{"found":false}}
+{"id":"material-byIndex","data":{"same_as_brass_by_name":true,"shininess":0.64999997615814209,"pbr_normalized_roughness":0.2121320366859436}}
+{"id":"material-pbr","data":{"pbr_metallic":1,"pbr_normalized_roughness":0.2121320366859436,"pbr_ior":1.5}}
+{"id":"material-minRoughness","data":{"min_roughness":0.0099999997764825821}}
+{"id":"material-water","data":{"pbr_normalized_roughness":0,"min_roughness":0.0099999997764825821}}
+{"id":"material-brass","data":{"pbr_normalized_roughness":0.2121320366859436}}
+{"id":"date-addPeriod","data":{"date":"2000-01-02 00:00:00"}}
+{"id":"date-subtractPeriod","data":{"date":"2000-01-15 06:00:00"}}
+{"id":"date-comparison","data":{"d1_earlier_than_d2":true,"d2_later_than_d1":true}}
+{"id":"date-operatorPlus","data":{"date":"2000-01-02 00:00:00"}}
+{"id":"date-invalid","data":{"created":false}}
+{"id":"font-initDatabase","data":{"font_count":0,"font_names":[]}}
+{"id":"font-fontCount","data":{"font_count":0,"font_name_at_0":null}}
+{"id":"font-outOfRange","data":{"found":false}}
+{"id":"pixmap-setAndGet","data":{"red":0.80000001192092896,"green":0.20000000298023224,"blue":0.49803921580314636,"alpha":1}}
+{"id":"material-roughnessFromSpecular","data":{"roughness":0.20000000298023224}}
+{"id":"date-epoch","data":{"date":"1979-01-01 00:00:00"}}
+{"id":"date-createDate","data":{"date":"2000-06-15 14:30:00"}}
+{"id":"units-localSystem","data":{"after_set_mdtv":2,"after_set_si":1}}
+{"id":"units-inchToMM","data":{"value":25.399999999999999}}
+{"id":"units-degToRad","data":{"value":3.1415926535897931}}
+{"id":"env-setGetRemove","data":{"after_set":"hello","after_remove_is_empty":true}}
+{"id":"cpu-processCPU","data":{"user_cpu_positive":true,"user_cpu_within_0_02_s_of_getrusage":true,"user_cpu_s":0.13,"getrusage_user_s_before":0.135987,"getrusage_user_s_after":0.135988,"sum":499999500000}}
+{"id":"report-dump","data":{"dump_byte_count":0}}
+{"id":"timer-basicTiming","data":{"elapsed_at_least_0_04_s":true,"elapsed_under_5_s":true,"elapsed_s":0.060026999999999942}}
+{"id":"timer-wallClockTime","data":{"wall_clock_positive":true,"advance_at_least_0_04_s":true,"advance_under_5_s":true,"t0":0.70765999999999996,"advance_s":0.058502999999999972}}
+{"id":"meminfo-heapUsageMiB","data":{"mib_positive":true,"mib_within_25_percent_of_bytes_over_2_20":true,"mib":0.8518524169921875,"bytes_over_2_20_before":0.8518524169921875,"bytes_over_2_20_after":0.8518524169921875}}

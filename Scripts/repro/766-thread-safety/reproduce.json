@@ -1,0 +1,18 @@
+{
+  "argv": {
+    "value": [
+      "inputs"
+    ],
+    "reason": "the probe takes the directory holding fillet298_in1.brep / in2.brep / args.txt as argv[1] and defaults to \".\", where they are not. The transcript's own header records the capture as `probe Scripts/repro/766-thread-safety/inputs`. Without it the #298 section reads \"298 args: radius=0 idx1.size=0 idx2.size=0\" and \"298 inputs missing\"."
+  },
+  "rerun_keep": {
+    "pattern": "^[0-9]{3,4} ",
+    "reason": "the capture applied this filter and the transcript's header says so: \"RWObj_CafReader prints three progress lines per OBJ read. They are filtered out below (grep -E '^[0-9]{3,4} ') and nothing else is.\" The concurrent sections do 8x15 and 8x25 round trips, so the unfiltered run is 3,513 lines, 2,067 of them non-blank, and 17 survive the filter. With the filter and argv those seventeen measurements reproduce byte for byte against v4.0.0-kernel.2, although the capture was taken against v4.0.0-kernel.1 (PR #2823)."
+  },
+  "transcript_only": [
+    {
+      "pattern": "^#( |$)",
+      "reason": "the transcript closes with a seventeen-line provenance block: the Swift side's own OBS values from the same observation run, and the #341 TSan result against the instrumented kernel. strip_header() drops a LEADING provenance block, and this is the only transcript of 344 that carries a trailing one, so it is declared here rather than made a rule for all 344. Every line the probe prints starts with a digit, so this pattern cannot reach a measurement."
+    }
+  ]
+}
