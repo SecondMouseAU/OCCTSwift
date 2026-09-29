@@ -258,21 +258,33 @@ void OCCTMathMatrixRelease(OCCTMathMatrixRef _Nonnull m);
 int32_t OCCTMathMatrixRows(OCCTMathMatrixRef _Nonnull m);
 int32_t OCCTMathMatrixCols(OCCTMathMatrixRef _Nonnull m);
 
-/// Get/set matrix value (1-based indices).
-double OCCTMathMatrixGetValue(OCCTMathMatrixRef _Nonnull m, int32_t row, int32_t col);
-void   OCCTMathMatrixSetValue(OCCTMathMatrixRef _Nonnull m, int32_t row, int32_t col, double value);
+/// Get a matrix value (1-based indices). Returns false, writing nothing, when either index is
+/// outside 1..RowNumber() / 1..ColNumber(), which includes every index of a matrix built with a
+/// non-positive dimension (#2860).
+bool OCCTMathMatrixGetValue(OCCTMathMatrixRef _Nonnull m,
+                            int32_t row,
+                            int32_t col,
+                            double* _Nonnull outValue);
 
-/// Get matrix determinant.
-double OCCTMathMatrixDeterminant(OCCTMathMatrixRef _Nonnull m);
+/// Set a matrix value (1-based indices). Returns false, storing nothing, on the same indices
+/// OCCTMathMatrixGetValue refuses (#2860).
+bool OCCTMathMatrixSetValue(OCCTMathMatrixRef _Nonnull m, int32_t row, int32_t col, double value);
 
-/// Invert the matrix in-place.
+/// Get the matrix determinant. Returns false, writing nothing, unless the matrix is square with at
+/// least one row: math_Matrix::Determinant() has no squareness check of any kind, and a 0x0 reports
+/// a determinant of 1 (#2860).
+bool OCCTMathMatrixDeterminant(OCCTMathMatrixRef _Nonnull m, double* _Nonnull outDeterminant);
+
+/// Invert the matrix in-place. Returns false, changing nothing, unless the matrix is square with at
+/// least one row (#2860).
 bool OCCTMathMatrixInvert(OCCTMathMatrixRef _Nonnull m);
 
 /// Multiply all elements by a scalar.
 void OCCTMathMatrixMultiplyScalar(OCCTMathMatrixRef _Nonnull m, double scalar);
 
-/// Transpose the matrix in-place.
-void OCCTMathMatrixTranspose(OCCTMathMatrixRef _Nonnull m);
+/// Transpose the matrix in-place. Returns false, changing nothing, unless the matrix is square with
+/// at least one row (#2860).
+bool OCCTMathMatrixTranspose(OCCTMathMatrixRef _Nonnull m);
 
 // MARK: - math_Gauss (v0.94.0)
 
@@ -1095,11 +1107,21 @@ int32_t OCCTIntfToolLinBox(OCCTIntfToolRef _Nonnull tool,
                            double ymax,
                            double zmax);
 
-/// Get the begin parameter of a segment (1-based index).
-double OCCTIntfToolBeginParam(OCCTIntfToolRef _Nonnull tool, int32_t segIndex);
+/// Number of clipped segments currently held, which is the upper bound on the 1-based index
+/// OCCTIntfToolBeginParam and OCCTIntfToolEndParam accept (#2857).
+int32_t OCCTIntfToolNbSegments(OCCTIntfToolRef _Nonnull tool);
 
-/// Get the end parameter of a segment (1-based index).
-double OCCTIntfToolEndParam(OCCTIntfToolRef _Nonnull tool, int32_t segIndex);
+/// Get the begin parameter of a segment (1-based index). Returns false, writing nothing, when
+/// segIndex is outside 1..OCCTIntfToolNbSegments (#2857).
+bool OCCTIntfToolBeginParam(OCCTIntfToolRef _Nonnull tool,
+                            int32_t segIndex,
+                            double* _Nonnull outParam);
+
+/// Get the end parameter of a segment (1-based index). Returns false, writing nothing, when
+/// segIndex is outside 1..OCCTIntfToolNbSegments (#2857).
+bool OCCTIntfToolEndParam(OCCTIntfToolRef _Nonnull tool,
+                          int32_t segIndex,
+                          double* _Nonnull outParam);
 
 // MARK: - gp_Ax3 (v0.116.0)
 

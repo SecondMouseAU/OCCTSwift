@@ -52,8 +52,21 @@ extension Shape {
     ///
     /// - Parameters:
     ///   - center: Center of scaling
-    ///   - factor: Scale factor
+    ///   - factor: Scale factor. Must be non-null: `nil` is returned for `abs(factor) <
+    ///     Double.leastNormalMagnitude`, which is the threshold `gp_Trsf::SetScale` itself uses.
     /// - Returns: Scaled shape, or nil on failure
+    ///
+    /// A zero factor used to come back as a **shape**, not as `nil` (#2860):
+    /// `gp_Trsf::SetScale`'s own construction check is compiled out of the kernel this package
+    /// ships, `GC_MakeScale` has no status accessor to test, and
+    /// `BRepBuilderAPI_Transform::IsDone()` then reported true for a solid whose measured volume was
+    /// 0. `gp_Trsf::Invert()` of that transform reports a scale factor of infinity.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)
+    /// box?.scaledAboutPoint(SIMD3(0, 0, 0), factor: 2.0)   // a shape
+    /// box?.scaledAboutPoint(SIMD3(0, 0, 0), factor: 0.0)   // nil, not a zero-volume solid
+    /// ```
     public func scaledAboutPoint(_ center: SIMD3<Double>, factor: Double) -> Shape? {
         guard
             let h = OCCTShapeScaleAboutPoint(
@@ -81,6 +94,29 @@ extension Shape {
     /// Apply a transformation matrix via BRepTools_TrsfModification.
     ///
     /// The 3x4 matrix is specified as row-major (a11..a14, a21..a24, a31..a34).
+    ///
+    /// Returns `nil` when the 3x3 part is singular, which is the test `gp_Trsf::SetValues` applies
+    /// and whose `Standard_ConstructionError` is compiled out of the kernel this package ships
+    /// (#2860). Before the guard, an all-zero or rank-2 3x3 returned a transform with a scale factor
+    /// of `-0` and `nan` in its matrix, and that `nan` transform was handed straight to
+    /// `BRepTools_TrsfModification`.
+    ///
+    /// ```swift
+    /// if let box = Shape.box(width: 10, height: 10, depth: 10) {
+    ///     // A valid uniform scale of 2.
+    ///     Shape.trsfModification(
+    ///         box,
+    ///         a11: 2, a12: 0, a13: 0, a14: 0,
+    ///         a21: 0, a22: 2, a23: 0, a24: 0,
+    ///         a31: 0, a32: 0, a33: 2, a34: 0)
+    ///     // A rank-2 3x3: nil, not a nan transform.
+    ///     Shape.trsfModification(
+    ///         box,
+    ///         a11: 1, a12: 0, a13: 0, a14: 0,
+    ///         a21: 0, a22: 1, a23: 0, a24: 0,
+    ///         a31: 0, a32: 1, a33: 0, a34: 0)
+    /// }
+    /// ```
     public static func trsfModification(
         _ shape: Shape,
         a11: Double, a12: Double, a13: Double, a14: Double,
@@ -100,6 +136,12 @@ extension Shape {
     /// Apply a general transformation matrix via BRepTools_GTrsfModification.
     ///
     /// Supports non-uniform scaling. Shape should be NURBS-converted first for non-affine transforms.
+    ///
+    /// Unlike ``trsfModification(_:a11:a12:a13:a14:a21:a22:a23:a24:a31:a32:a33:a34:)`` this carries
+    /// **no** singularity guard, and does not need one: `gp_GTrsf::SetValue` has no determinant
+    /// requirement, and a rank-2 vectorial part was measured to raise `Standard_NoSuchObject` out of
+    /// `BRepTools_Modifier`, which the bridge catches and reports as `nil`. See
+    /// `Scripts/repro/2860-guard-preconditions/`, mode `gtrsf-singular`.
     public static func gtrsfModification(
         _ shape: Shape,
         a11: Double, a12: Double, a13: Double, a14: Double,
