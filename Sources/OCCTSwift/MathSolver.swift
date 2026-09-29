@@ -986,11 +986,25 @@ extension MathSolver {
     /// `startPoint[i]` loops read out of bounds on any mismatch. `nConstraints * nVars` is
     /// itself checked for overflow (review finding 8).
     ///
+    /// **`nConstraints` must also be no greater than `nVars`**, and that one is a bound on
+    /// `math_Uzawa` rather than on this wrapper's own arithmetic (#2860). `math_Uzawa`'s
+    /// constructor sizes its `Errinit` error vector on the constraint matrix's **column** count and
+    /// `Perform` then writes `Errinit(i)` for `i` in `1...RowNumber()`, so more constraints than
+    /// variables is an out-of-bounds write inside OCCT. The kernel's own dimension check relates
+    /// neither count to the other, which is why this is not a restored check but a precondition
+    /// derived from reading `math_Uzawa.cxx`: 100 constraints over 2 variables was a deterministic
+    /// SIGSEGV, and 4 over 2 returned `IsDone() == true` with a wrong answer, because the overrun
+    /// stayed inside `math_VectorBase`'s 32-element inlined buffer.
+    ///
     /// ```swift
     /// MathSolver.uzawa(constraintMatrix: [1, 1], nConstraints: 1, nVars: 2,
     ///                   constraintRHS: [1], startPoint: [0, 0])   // != nil
     /// MathSolver.uzawa(constraintMatrix: [], nConstraints: 0, nVars: -1,
     ///                   constraintRHS: [], startPoint: [])        // nil
+    /// // Four constraints on two variables: nil, and no longer a wrong answer.
+    /// MathSolver.uzawa(constraintMatrix: [1, 0, 0, 1, 1, 1, 1, 0],
+    ///                   nConstraints: 4, nVars: 2,
+    ///                   constraintRHS: [1, 1, 1, 1], startPoint: [0, 0])   // nil
     /// ```
     public static func uzawa(
         constraintMatrix: [Double], nConstraints: Int, nVars: Int,
@@ -1002,6 +1016,7 @@ extension MathSolver {
         guard
             MathDimension.validRectangle(
                 rows: nConstraints, cols: nVars, count: constraintMatrix.count),
+            nConstraints <= nVars,
             constraintRHS.count == nConstraints,
             startPoint.count == nVars
         else { return nil }

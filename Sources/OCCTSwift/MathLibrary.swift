@@ -19,28 +19,125 @@ public final class MathMatrix: @unchecked Sendable {
     /// Number of columns.
     public var cols: Int { Int(OCCTMathMatrixCols(handle)) }
 
-    /// Get value at (row, col) — 1-based indexing.
-    public func value(row: Int, col: Int) -> Double {
-        OCCTMathMatrixGetValue(handle, Int32(row), Int32(col))
+    /// True when the matrix is square and has at least one row, which is the precondition
+    /// ``determinant``, ``invert()`` and ``transpose()`` all require.
+    ///
+    /// A 0x0 matrix, which ``init(rows:cols:initialValue:)`` accepts, is **not** square by this
+    /// definition even though its row and column counts agree: `math_Matrix::Determinant()` reports
+    /// a determinant of 1 for it (#2860).
+    ///
+    /// ```swift
+    /// MathMatrix(rows: 3, cols: 3).isSquare   // true
+    /// MathMatrix(rows: 3, cols: 2).isSquare   // false
+    /// MathMatrix(rows: 0, cols: 0).isSquare   // false
+    /// ```
+    public var isSquare: Bool {
+        let n = rows
+        return n >= 1 && n == cols
     }
 
-    /// Set value at (row, col) — 1-based indexing.
-    public func setValue(row: Int, col: Int, value: Double) {
-        OCCTMathMatrixSetValue(handle, Int32(row), Int32(col), value)
+    /// The value at (`row`, `col`), 1-based, or `nil` when either index is out of range.
+    ///
+    /// `nil` rather than a `Double`, because every value in the range is a legitimate matrix entry
+    /// and there is no number that could mean "that cell does not exist". Before #2860 this returned
+    /// `math_Matrix::Value`'s result unguarded, and nothing underneath tested the pair of indices:
+    /// `NCollection_Array2::Value` flattens them to a single position and bounds that against the
+    /// **total** element count only. So an index that left the buffer, such as `(9, 9)` on a 3x3,
+    /// threw and reached Swift-generated frames as an **uncatchable SIGABRT** (#345), and an index
+    /// that stayed inside it, such as `(1, 4)` on a 3x3, returned **a different cell's value**:
+    /// measured, `1.0`, the element at `(2, 1)`. A matrix built with a non-positive dimension
+    /// refuses every index.
+    ///
+    /// ```swift
+    /// let m = MathMatrix(rows: 3, cols: 3, initialValue: 2.0)
+    /// m.value(row: 1, col: 1)   // 2.0
+    /// m.value(row: 9, col: 9)   // nil, and no longer a crash
+    /// ```
+    public func value(row: Int, col: Int) -> Double? {
+        guard let row = Int32(exactly: row), let col = Int32(exactly: col) else { return nil }
+        var out = 0.0
+        guard OCCTMathMatrixGetValue(handle, row, col, &out) else { return nil }
+        return out
     }
 
-    /// Compute determinant.
-    public var determinant: Double { OCCTMathMatrixDeterminant(handle) }
+    /// Stores `value` at (`row`, `col`), 1-based.
+    ///
+    /// Returns `false`, storing nothing, when either index is out of range: the same indices
+    /// ``value(row:col:)`` refuses, and for the same reason (#2860).
+    ///
+    /// ```swift
+    /// let m = MathMatrix(rows: 2, cols: 2)
+    /// m.setValue(row: 1, col: 2, value: 7.0)   // true
+    /// m.setValue(row: 3, col: 1, value: 7.0)   // false, and no longer a crash
+    /// ```
+    @discardableResult
+    public func setValue(row: Int, col: Int, value: Double) -> Bool {
+        guard let row = Int32(exactly: row), let col = Int32(exactly: col) else { return false }
+        return OCCTMathMatrixSetValue(handle, row, col, value)
+    }
 
-    /// Invert the matrix in-place.
+    /// The determinant, or `nil` unless the matrix ``isSquare``.
+    ///
+    /// `nil` rather than `0.0`, for the reason ``MathGauss/determinant(matrix:n:)`` already returns
+    /// an optional (#640, review finding 7): `0.0` is also the determinant of a genuinely singular
+    /// square matrix, so it cannot carry a refusal. Before #2860 a non-square matrix was not
+    /// refused at all: `math_Matrix::Determinant()` has no squareness check of any kind, so a 3x2
+    /// returned **-1**, a confident determinant for a matrix that has none, and a 100x1 returned
+    /// `nan` with the heap corrupted behind it.
+    ///
+    /// ```swift
+    /// let m = MathMatrix(rows: 2, cols: 2)
+    /// m.setValue(row: 1, col: 1, value: 2.0)
+    /// m.setValue(row: 2, col: 2, value: 3.0)
+    /// m.determinant                          // 6.0
+    /// MathMatrix(rows: 3, cols: 2).determinant   // nil, and no longer -1
+    /// ```
+    public var determinant: Double? {
+        var out = 0.0
+        guard OCCTMathMatrixDeterminant(handle, &out) else { return nil }
+        return out
+    }
+
+    /// Inverts the matrix in place.
+    ///
+    /// Returns `false`, changing nothing, unless it ``isSquare``.
+    ///
+    /// A 100x1 used to be a SIGBUS: `math_Matrix::Invert`'s own `math_NotSquare_Raise_if` sits in
+    /// `math_Matrix.cxx` and is compiled out of the kernel this package ships, so the matrix reached
+    /// `math_Gauss`, which writes `a(i, j)` for `j` up to `RowNumber()` (#2860).
+    ///
+    /// ```swift
+    /// let m = MathMatrix(rows: 2, cols: 2, initialValue: 1.0)
+    /// m.setValue(row: 1, col: 1, value: 2.0)
+    /// m.invert()                              // true or false, depending on singularity
+    /// MathMatrix(rows: 100, cols: 1).invert() // false, and no longer a SIGBUS
+    /// ```
     @discardableResult
     public func invert() -> Bool { OCCTMathMatrixInvert(handle) }
 
     /// Multiply all elements by a scalar.
+    ///
+    /// ```swift
+    /// let m = MathMatrix(rows: 2, cols: 2, initialValue: 1.5)
+    /// m.multiply(by: 2.0)
+    /// ```
     public func multiply(by scalar: Double) { OCCTMathMatrixMultiplyScalar(handle, scalar) }
 
-    /// Transpose the matrix in-place.
-    public func transpose() { OCCTMathMatrixTranspose(handle) }
+    /// Transposes the matrix in place.
+    ///
+    /// Returns `false`, changing nothing, unless it ``isSquare``.
+    ///
+    /// `math_Matrix::Transpose`'s `math_NotSquare_Raise_if` is inline, so it is live in the bridge's
+    /// own translation unit and a 3x2 used to throw straight into Swift-generated frames as an
+    /// uncatchable SIGABRT (#2860, #345).
+    ///
+    /// ```swift
+    /// let m = MathMatrix(rows: 3, cols: 3, initialValue: 1.0)
+    /// m.transpose()                              // true
+    /// MathMatrix(rows: 3, cols: 2).transpose()   // false, and no longer a SIGABRT
+    /// ```
+    @discardableResult
+    public func transpose() -> Bool { OCCTMathMatrixTranspose(handle) }
 }
 
 /// Gaussian elimination linear system solver.

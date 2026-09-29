@@ -25,9 +25,9 @@ struct IntfToolTests {
             lineDirection: SIMD3(0, 0, 1),
             boxMin: SIMD3(0, 0, 0),
             boxMax: SIMD3(10, 10, 10))
-        if nSeg > 0 {
-            let begin = tool.beginParam(segment: 1)
+        if nSeg > 0, let begin = tool.beginParam(segment: 1),
             let end = tool.endParam(segment: 1)
+        {
             #expect(end > begin)
         }
     }
@@ -59,9 +59,9 @@ struct IntfToolTests {
             lineDirection: SIMD3(0, 0, 1),
             boxMin: SIMD3(0, 0, 0),
             boxMax: SIMD3(10, 10, 10))
-        if nSeg > 0 {
-            let begin = tool.beginParam(segment: 1)
+        if nSeg > 0, let begin = tool.beginParam(segment: 1),
             let end = tool.endParam(segment: 1)
+        {
             // Should represent the Z range through the box
             #expect(begin < end)
         }

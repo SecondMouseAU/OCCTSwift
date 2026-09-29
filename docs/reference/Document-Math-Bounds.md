@@ -1174,42 +1174,80 @@ public var cols: Int { get }
 #### `MathMatrix.cols`
 
 ---
-### `value(row:col:)`
+### `isSquare`
 
-Read the element at (row, col), **1-based**.
+`true` when the matrix is square **and** has at least one row, which is the precondition
+`determinant`, `invert()` and `transpose()` all require.
 
 ```swift
-public func value(row: Int, col: Int) -> Double
+public var isSquare: Bool { get }
 ```
 
+- A 0x0 matrix, which `init(rows:cols:initialValue:)` accepts, is **not** square by this definition
+  even though its counts agree: `math_Matrix::Determinant()` reports a determinant of 1 for it
+  (#2860).
+- **Derived in Swift**, from `rows` and `cols`; no bridge function of its own.
+
+---
+
+### `value(row:col:)`
+
+Read the element at (row, col), **1-based**. `nil` when either index is out of range.
+
+```swift
+public func value(row: Int, col: Int) -> Double?
+```
+
+- **Returns:** the element, or `nil` when `row` is outside `1...rows`, `col` is outside `1...cols`,
+  or either does not fit an `Int32`. `nil` rather than a `Double` because every value in range is a
+  legitimate entry and no number could mean "that cell does not exist".
+- Unguarded before #2860, and nothing underneath tested the pair of indices:
+  `NCollection_Array2::Value` flattens them to one position and bounds that against the **total**
+  element count only. An index that left the buffer, `(9, 9)` on a 3x3, threw, and since
+  `NCollection_Array1::at` is inline the throw was live in the bridge's own translation unit and
+  crossed into Swift-generated frames as an **uncatchable SIGABRT** (#345). An index that stayed
+  inside it, `(1, 4)` on a 3x3, returned **a different cell's value**: measured, `1.0`, the element
+  at `(2, 1)`.
 - **OCCT:** `math_Matrix::Value` (via `OCCTMathMatrixGetValue`).
 - **Example:**
   ```swift
-  let v = m.value(row: 1, col: 1)
+  let m = MathMatrix(rows: 3, cols: 3, initialValue: 2.0)
+  let v = m.value(row: 1, col: 1)   // 2.0
+  let none = m.value(row: 9, col: 9)   // nil
   ```
 
 ---
 
 ### `setValue(row:col:value:)`
 
-Write the element at (row, col), **1-based**.
+Write the element at (row, col), **1-based**. `false`, storing nothing, when either index is out of
+range.
 
 ```swift
-public func setValue(row: Int, col: Int, value: Double)
+@discardableResult
+public func setValue(row: Int, col: Int, value: Double) -> Bool
 ```
 
+- **Returns:** `true` when stored; `false` on the indices `value(row:col:)` refuses, for the same
+  reason (#2860).
 - **OCCT:** `math_Matrix::Value` (via `OCCTMathMatrixSetValue`).
 
 ---
 
 ### `determinant`
 
-Determinant of the matrix.
+Determinant of the matrix, or `nil` unless it `isSquare`.
 
 ```swift
-public var determinant: Double { get }
+public var determinant: Double? { get }
 ```
 
+- **Returns:** the determinant, or `nil` for a non-square matrix and for a 0x0.
+- `nil` rather than `0.0`, for the reason `MathGauss.determinant(matrix:n:)` is already optional
+  (#640): `0.0` is also the determinant of a genuinely singular square matrix, so it cannot carry a
+  refusal. `math_Matrix::Determinant()` has no squareness check of any kind, not even a compiled-out
+  one, so before #2860 a 3x2 returned **-1** and a 100x1 returned `nan` with the heap corrupted
+  behind it.
 - **OCCT:** `math_Matrix::Determinant` (via `OCCTMathMatrixDeterminant`).
 
 ---
@@ -1223,7 +1261,10 @@ Invert the matrix in-place.
 public func invert() -> Bool
 ```
 
-- **Returns:** `true` on success; `false` if the matrix is singular.
+- **Returns:** `true` on success; `false` if the matrix is singular, is not square, or is 0x0.
+- A 100x1 was a **SIGBUS** before #2860: `math_Matrix::Invert`'s own `math_NotSquare_Raise_if` sits in
+  `math_Matrix.cxx` and is compiled out of the pinned kernel, so the matrix reached `math_Gauss`,
+  which writes `a(i, j)` for `j` up to `RowNumber()`.
 - **OCCT:** `math_Matrix::Invert` (via `OCCTMathMatrixInvert`).
 
 ---
@@ -1245,9 +1286,14 @@ public func multiply(by scalar: Double)
 Transpose the matrix in-place.
 
 ```swift
-public func transpose()
+@discardableResult
+public func transpose() -> Bool
 ```
 
+- **Returns:** `true` when transposed; `false`, changing nothing, unless the matrix `isSquare`.
+- A 3x2 was an **uncatchable SIGABRT** before #2860: `math_Matrix::Transpose`'s
+  `math_NotSquare_Raise_if` is inline, so it is live in the bridge's own translation unit and threw
+  straight into Swift-generated frames (#345).
 - **OCCT:** `math_Matrix::Transpose` (via `OCCTMathMatrixTranspose`).
 
 ---

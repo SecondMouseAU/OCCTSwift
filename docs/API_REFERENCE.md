@@ -26,7 +26,7 @@ two files desynced by 882 across 11 releases before this rule existed, see
 [#289](https://github.com/SecondMouseAU/OCCTSwift/issues/289).
 
 **The category rows below do not sum to the Total, and are not meant to.** They are an illustrative
-categorisation covering **3,328** of the entry points (~76% of the `Total` below); the rest are real, callable,
+categorisation covering **3,330** of the entry points (~76% of the `Total` below); the rest are real, callable,
 and documented in [reference/](reference/) but not yet slotted into a category row. Treat the rows as
 a map of the major areas, and the `Total` as the count.
 
@@ -286,7 +286,7 @@ a map of the major areas, and the `Total` as the count.
 | **Geom2dAPI_PointsToBSpline** | 1 | approximate2D |
 | **TDataXtd_PatternStd** | 5 | setPattern, hasPattern, setSignature, getSignature, nbTrsfs |
 | **BRepAlgo_FaceRestrictor** | 1 | faceRestrictAlgo |
-| **math_Matrix** | 8 | create, rows, cols, getValue, setValue, determinant, invert, multiplyScalar, transpose |
+| **math_Matrix** | 9 | create, rows, cols, isSquare, getValue, setValue, determinant, invert, multiplyScalar, transpose |
 | **math_Gauss** | 2 | solve, determinant |
 | **math_SVD** | 1 | solve |
 | **math_DirectPolynomialRoots** | 1 | solve |
@@ -434,7 +434,7 @@ a map of the major areas, and the `Total` as the count.
 | **Surface Evaluation** | 3 | evalD0, evalD1, evalD2 |
 | **RWMesh_FaceIterator** | 10 | create, release, more, next, nbNodes, nbTriangles, node, hasNormals, normal, triangle |
 | **RWMesh_VertexIterator** | 5 | create, release, more, next, point |
-| **Intf_Tool** | 5 | create, release, linBox, beginParam, endParam |
+| **Intf_Tool** | 6 | create, release, linBox, nbSegments, beginParam, endParam |
 | **BRepAlgo_AsDes** | 5 | create, release, add, hasDescendant, descendantCount |
 | **BiTgte_CurveOnEdge** | 4 | create, release, domain, value |
 | **Shape Location/Orientation** | 9 | child, isLocked, setLocked, located, getLocation, setLocation, oriented, compounded, empty |
@@ -504,7 +504,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
 | **Bridge Diagnostics** (#1161, see [Diagnostics](reference/Diagnostics.md)) | 8 | OCCTDiagnostics: capturing, records, clear, isCaptureEnabled, isLoggingEnabled, stackTraceDepth, droppedRecordCount; Record: description |
-| **Total** | **4,367** | |
+| **Total** | **4,369** | |
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
 

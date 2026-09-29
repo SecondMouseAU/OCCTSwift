@@ -742,31 +742,96 @@ int32_t OCCTMathMatrixCols(OCCTMathMatrixRef m)
   return m->mat.ColNumber();
 }
 
-double OCCTMathMatrixGetValue(OCCTMathMatrixRef m, int32_t row, int32_t col)
+// #2860's two math_Matrix preconditions, both measured against the pinned v4.0.0-kernel.2 asset in
+// Scripts/repro/2801-sweep-math/ and Scripts/repro/2860-guard-preconditions/.
+//
+// 1. An index must lie in 1..RowNumber() / 1..ColNumber(), and NOTHING under math_Matrix tests that
+//    pair. NCollection_Array2::Value flattens to (row - lowerRow) * sizeCol + (col - lowerCol) and
+//    calls NCollection_Array1::at(pos), whose Standard_OutOfRange_Raise_if bounds pos against the
+//    TOTAL element count and never against the row or column count separately. So the two halves
+//    behave differently, and only one of them is a crash:
+//      - an index whose flattened position leaves the buffer throws, and since Array1::at is inline
+//        that check is live in THIS translation unit, so before the guard it reached Swift as an
+//        uncatchable SIGABRT (#345, exit 134 measured for (9, 9) on a 3x3);
+//      - an index whose flattened position stays inside the buffer returns a DIFFERENT CELL'S
+//        VALUE. Measured with the guard removed: (1, 4) on a 3x3 returns 1.0, which is the element
+//        at (2, 1). That is #2857's shape arriving in math_Matrix, and no try can see it, which is
+//        why the guard tests both indices rather than relying on the throw.
+// 2. Determinant, Invert and Transpose need a square matrix with at least one row. Transpose's
+//    math_NotSquare_Raise_if is inline (math_Matrix.lxx:728) and therefore live and uncatchable the
+//    same way; Invert's (math_Matrix.cxx:187) and math_Gauss's (math_Gauss.cxx:31) are out-of-line
+//    and so absent from the kernel we ship, per
+//    okf/policies/occt-validation-is-compiled-out.md, leaving math_Recipes to write a(i,j) for j up
+//    to RowNumber() (100x1: SIGBUS); Determinant has no squareness check at all, not even a
+//    compiled-out one, and returns -1 for a 3x2. "At least one row" is not redundant with
+//    squareness: a 0x0 is square, and Determinant() returns 1 for it.
+//
+// Both thresholds that decide crash against silence are measured: math_DoubleTab inlines 64 doubles
+// (math_DoubleTab.hxx:33), so an overrun of a matrix with rows * cols <= 64 stays inside the object
+// and returns a plausible number, and above 64 it runs off a heap block and faults. A guard is the
+// only thing that covers both.
+static bool occtMathMatrixIsSquare(OCCTMathMatrixRef m)
 {
-  return m->mat(row, col);
+  return m->mat.RowNumber() >= 1 && m->mat.RowNumber() == m->mat.ColNumber();
 }
 
-void OCCTMathMatrixSetValue(OCCTMathMatrixRef m, int32_t row, int32_t col, double value)
+static bool occtMathMatrixIndexIsInRange(OCCTMathMatrixRef m, int32_t row, int32_t col)
 {
-  m->mat(row, col) = value;
+  return row >= 1 && row <= m->mat.RowNumber() && col >= 1 && col <= m->mat.ColNumber();
 }
 
-double OCCTMathMatrixDeterminant(OCCTMathMatrixRef m)
+bool OCCTMathMatrixGetValue(OCCTMathMatrixRef m, int32_t row, int32_t col, double* outValue)
 {
+  if (!occtMathMatrixIndexIsInRange(m, row, col))
+    return false;
   try
   {
-    return m->mat.Determinant();
+    *outValue = m->mat(row, col);
+    return true;
   }
   catch (...)
   {
     occtRecordCaughtException(__func__);
-    return 0.0;
+    return false;
+  }
+}
+
+bool OCCTMathMatrixSetValue(OCCTMathMatrixRef m, int32_t row, int32_t col, double value)
+{
+  if (!occtMathMatrixIndexIsInRange(m, row, col))
+    return false;
+  try
+  {
+    m->mat(row, col) = value;
+    return true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
+}
+
+bool OCCTMathMatrixDeterminant(OCCTMathMatrixRef m, double* outDeterminant)
+{
+  if (!occtMathMatrixIsSquare(m))
+    return false;
+  try
+  {
+    *outDeterminant = m->mat.Determinant();
+    return true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
   }
 }
 
 bool OCCTMathMatrixInvert(OCCTMathMatrixRef m)
 {
+  if (!occtMathMatrixIsSquare(m))
+    return false;
   try
   {
     m->mat.Invert();
@@ -784,9 +849,20 @@ void OCCTMathMatrixMultiplyScalar(OCCTMathMatrixRef m, double scalar)
   m->mat.Multiply(scalar);
 }
 
-void OCCTMathMatrixTranspose(OCCTMathMatrixRef m)
+bool OCCTMathMatrixTranspose(OCCTMathMatrixRef m)
 {
-  m->mat.Transpose();
+  if (!occtMathMatrixIsSquare(m))
+    return false;
+  try
+  {
+    m->mat.Transpose();
+    return true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
 }
 
 bool OCCTMathGaussSolve(const double* matrixData, int32_t n, const double* rhs, double* outSolution)
@@ -1594,13 +1670,13 @@ void OCCTIntfToolRelease(OCCTIntfToolRef tool)
   delete tool;
 }
 
-double OCCTIntfToolBeginParam(OCCTIntfToolRef tool, int32_t segIndex)
+int32_t OCCTIntfToolNbSegments(OCCTIntfToolRef tool)
 {
   if (!tool)
     return 0;
   try
   {
-    return tool->tool.BeginParam(segIndex);
+    return tool->tool.NbSegments();
   }
   catch (...)
   {
@@ -1609,18 +1685,52 @@ double OCCTIntfToolBeginParam(OCCTIntfToolRef tool, int32_t segIndex)
   }
 }
 
-double OCCTIntfToolEndParam(OCCTIntfToolRef tool, int32_t segIndex)
+// #2857: Intf_Tool::BeginParam and EndParam index beginOnCurve / endOnCurve, which are raw
+// double[6] members (Intf_Tool.hxx:78-79), after a Standard_OutOfRange_Raise_if that sits in
+// Intf_Tool.cxx and is therefore absent from the kernel we ship, per
+// okf/policies/occt-validation-is-compiled-out.md. A raw C array has no container beneath it, so
+// unlike the NCollection cases there is no inline check to survive at any depth: the read is
+// unconditional pointer arithmetic. Measured on a clip with NbSegments() == 1, index 7 returns
+// endOnCurve[0], the genuine END parameter of segment 1, as the BEGIN parameter of a segment that
+// does not exist, and index 1000000000 is a SIGBUS.
+//
+// NbSegments() is the bound the kernel's own guard tested, and it is safe to test against: every
+// site in Intf_Tool.cxx that grows nbSeg past 1 is itself wrapped in `if (nbSeg < 6)`, and LinBox,
+// the only operation this bridge wraps, sets nbSeg to 0 or 1 and never more.
+static bool occtIntfToolSegmentIsInRange(OCCTIntfToolRef tool, int32_t segIndex)
 {
-  if (!tool)
-    return 0;
+  return segIndex >= 1 && segIndex <= tool->tool.NbSegments();
+}
+
+bool OCCTIntfToolBeginParam(OCCTIntfToolRef tool, int32_t segIndex, double* outParam)
+{
+  if (!tool || !occtIntfToolSegmentIsInRange(tool, segIndex))
+    return false;
   try
   {
-    return tool->tool.EndParam(segIndex);
+    *outParam = tool->tool.BeginParam(segIndex);
+    return true;
   }
   catch (...)
   {
     occtRecordCaughtException(__func__);
-    return 0;
+    return false;
+  }
+}
+
+bool OCCTIntfToolEndParam(OCCTIntfToolRef tool, int32_t segIndex, double* outParam)
+{
+  if (!tool || !occtIntfToolSegmentIsInRange(tool, segIndex))
+    return false;
+  try
+  {
+    *outParam = tool->tool.EndParam(segIndex);
+    return true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
   }
 }
 
@@ -2038,6 +2148,23 @@ bool OCCTMathUzawa(const double* _Nonnull contData,
                    double* _Nonnull result,
                    int32_t* _Nonnull nbIter)
 {
+  // #2860 finding 1, and the one guard in this file whose precondition is NOT a compiled-out kernel
+  // check restored: math_Uzawa is wrong on its own terms, so
+  // -DBUILD_RELEASE_DISABLE_EXCEPTIONS=OFF would not fix it. math_Uzawa.cxx:47 sizes
+  // Errinit(1, Cont.ColNumber()) and :101/:104 write Errinit(i) for i = 1..Cont.RowNumber(); the
+  // kernel's own Standard_DimensionError_Raise_if at :94 tests only Secont.Length() and Nce + Nci
+  // against Nlig and never relates rows to columns, so restoring it would still let
+  // nConstraints > nVars through. math_Uzawa.cxx also #defines No_Standard_OutOfRange and
+  // No_Standard_DimensionError itself (:27-29), so even a Debug kernel has no check underneath.
+  //
+  // The precondition the kernel actually needs is therefore derived here and not quoted from it:
+  // nConstraints <= nVars, so that every index Perform writes into Errinit is one the constructor
+  // sized it for. Measured: 100 constraints over 2 variables is a deterministic SIGSEGV, and 4 over
+  // 2 returns IsDone() == true with a wrong answer, because math_VectorBase inlines 32 doubles
+  // (math_VectorBase.hxx:63) and an overrun that stays inside that buffer scribbles inside the
+  // math_Uzawa object instead of faulting. Refusing is the only outcome that covers both.
+  if (nConstraints < 1 || nVars < 1 || nConstraints > nVars)
+    return false;
   try
   {
     math_Matrix Cont(1, nConstraints, 1, nVars);

@@ -240,6 +240,8 @@
 #include <BRepBuilderAPI_GTransform.hxx>
 #include <gp_GTrsf.hxx>
 #include <gp_Mat.hxx>
+#include <gp.hxx>
+#include <gp_XYZ.hxx>
 #include <BRepBuilderAPI_MakeShell.hxx>
 #include <BRepOffset_MakeSimpleOffset.hxx>
 #include <BRepOffsetAPI_MiddlePath.hxx>
@@ -305,6 +307,7 @@
 #include <Message_ProgressRange.hxx>
 #include <Message_ProgressScope.hxx>
 #include <chrono>
+#include <cmath>
 #include <BOPAlgo_CheckResult.hxx>
 #include <BOPAlgo_CheckStatus.hxx>
 #include <TopTools_HSequenceOfShape.hxx>
@@ -1130,6 +1133,17 @@ OCCTShapeRef _Nullable OCCTShapeScaleAboutPoint(OCCTShapeRef shape,
 {
   if (!shape)
     return nullptr;
+  // #2860 finding 7: gp_Trsf::SetScale's Standard_ConstructionError_Raise_if is out-of-line
+  // (gp_Trsf.cxx:164) and so absent from the kernel we ship, and GC_MakeScale has no status
+  // accessor at all, so there is nothing to test after the call. Measured with factor 0:
+  // BRepBuilderAPI_Transform::IsDone() is true, the Shape is not null, and
+  // BRepGProp::VolumeProperties of it is 0, a collapsed solid handed back as a valid Shape;
+  // gp_Trsf::Invert() of the same transform reports ScaleFactor = inf. Guard the value, per rule 1
+  // of okf/policies/occt-validation-is-compiled-out.md. gp::Resolution() is the threshold
+  // gp_Trsf::SetScale itself uses, so this refuses exactly what it would have refused, and 1e-15 is
+  // still accepted.
+  if (std::abs(factor) < gp::Resolution())
+    return nullptr;
   try
   {
     GC_MakeScale             ms(gp_Pnt(px, py, pz), factor);
@@ -1190,6 +1204,20 @@ OCCTShapeRef _Nullable OCCTShapeTrsfModification(OCCTShapeRef _Nonnull shapeRef,
                                                  double a33,
                                                  double a34)
 {
+  // #2860 finding 6: gp_Trsf::SetValues rejects a null determinant with a
+  // Standard_ConstructionError_Raise_if at gp_Trsf.cxx:366, out-of-line and therefore absent from
+  // the kernel we ship; with it gone it reaches M.Divide(s) with s == 0, whose own inline check is
+  // expanded inside that same .cxx and so is gone too. Measured on an all-zero 3x3 and on a rank-2
+  // one: SetValues returns normally with ScaleFactor = -0 and Value(1,1) = Value(2,2) = nan, and
+  // the nan transform is then handed to BRepTools_TrsfModification. This is the kernel's own test,
+  // on the kernel's own quantity: gp_Mat(col1, col2, col3).Determinant() against gp::Resolution(),
+  // which measures 0 for both singular cases above and 1e-15 for a legitimate 1e-5 uniform scale,
+  // so it refuses what SetValues would have refused and nothing else.
+  {
+    const gp_Mat matrix(gp_XYZ(a11, a21, a31), gp_XYZ(a12, a22, a32), gp_XYZ(a13, a23, a33));
+    if (std::abs(matrix.Determinant()) < gp::Resolution())
+      return nullptr;
+  }
   try
   {
     auto&   shape = reinterpret_cast<OCCTShape*>(shapeRef)->shape;

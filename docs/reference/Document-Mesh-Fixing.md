@@ -291,9 +291,35 @@ public func clipLineToBox(
   let n = tool.clipLineToBox(
       lineOrigin: SIMD3(0, 0, 0), lineDirection: SIMD3(1, 0, 0),
       boxMin: SIMD3(-5, -5, -5), boxMax: SIMD3(5, 5, 5))
-  if n > 0 {
-      print("enters at t =", tool.beginParam(segment: 1))
-      print("exits at t =", tool.endParam(segment: 1))
+  if let begin = tool.beginParam(segment: 1), let end = tool.endParam(segment: 1) {
+      print("enters at t =", begin)
+      print("exits at t =", end)
+  }
+  ```
+
+---
+
+### `IntfTool.segmentCount`
+
+The number of clipped segments currently held, and therefore the upper bound on the 1-based index
+`beginParam(segment:)` and `endParam(segment:)` accept.
+
+```swift
+public var segmentCount: Int { get }
+```
+
+- `0` before any clip, and `0` for a line that misses the box.
+- Unwrapped until #2857, which is why a Swift caller had no way to learn the valid range other than
+  `clipLineToBox`'s `@discardableResult` return value.
+- **OCCT:** `Intf_Tool::NbSegments` (via `OCCTIntfToolNbSegments`).
+- **Example:**
+  ```swift
+  let tool = IntfTool()
+  tool.clipLineToBox(
+      lineOrigin: SIMD3(-10, 0.5, 0.5), lineDirection: SIMD3(1, 0, 0),
+      boxMin: SIMD3(0, 0, 0), boxMax: SIMD3(1, 1, 1))
+  for i in 1...max(tool.segmentCount, 1) where i <= tool.segmentCount {
+      print(i, tool.beginParam(segment: i) ?? 0)
   }
   ```
 
@@ -301,26 +327,35 @@ public func clipLineToBox(
 
 ### `IntfTool.beginParam(segment:)`
 
-Get the entry parameter of a clipped segment.
+Get the entry parameter of a clipped segment, or `nil` when the index is out of range.
 
 ```swift
-public func beginParam(segment: Int) -> Double
+public func beginParam(segment: Int) -> Double?
 ```
 
-- **Parameters:** `segment`, 1-based segment index.
+- **Parameters:** `segment`, 1-based segment index. Valid range is `1...segmentCount`.
+- **Returns:** the parameter, or `nil` when `segment` is outside that range or does not fit an
+  `Int32`.
+- `Intf_Tool::BeginParam` indexes a raw `double[6]` behind a `Standard_OutOfRange_Raise_if` that is
+  compiled out of the pinned kernel, and a C array has no container check underneath, so before #2857
+  the index was unchecked at every level. Measured on a clip with one segment, `segment: 7` returned
+  `endOnCurve[0]`, the genuine **end** parameter of segment 1, as the **begin** parameter of a segment
+  that does not exist, and a large index was a SIGBUS.
 - **OCCT:** `Intf_Tool::BeginParam`.
 
 ---
 
 ### `IntfTool.endParam(segment:)`
 
-Get the exit parameter of a clipped segment.
+Get the exit parameter of a clipped segment, or `nil` when the index is out of range.
 
 ```swift
-public func endParam(segment: Int) -> Double
+public func endParam(segment: Int) -> Double?
 ```
 
-- **Parameters:** `segment`, 1-based segment index.
+- **Parameters:** `segment`, 1-based segment index. Valid range is `1...segmentCount`.
+- **Returns:** the parameter, or `nil` when `segment` is outside that range. The same unchecked
+  `double[6]` index as `beginParam(segment:)`, guarded the same way (#2857).
 - **OCCT:** `Intf_Tool::EndParam`.
 
 ---
