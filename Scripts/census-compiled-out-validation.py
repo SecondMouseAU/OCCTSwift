@@ -389,7 +389,15 @@ VERDICTS = ("fabricated", "mixed", "live-inline", "live-throw")
 
 
 def classify_class(cls, table, packages):
-    """What a bridge-side mention of an OCCT class can actually raise in this build."""
+    """What a bridge-side mention of an OCCT class can actually raise in this build.
+
+    Class-level, not member-level, and the approximation is one-directional: a class with an inline
+    check on any member reads as `live-inline` even where the member the bridge calls has its check
+    in the .cxx. That biases towards "protected", which is the right direction for a census whose
+    findings cost a reader's time, and it means a clean channel-one run is weaker evidence than a
+    finding. The map carries the member names per kind, so sharpening this is a matter of resolving
+    which member a call site names rather than of deriving anything new.
+    """
     entry = table.get(cls)
     if not entry:
         package = cls.split("_", 1)[0]

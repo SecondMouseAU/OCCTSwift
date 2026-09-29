@@ -117,6 +117,12 @@ naming something else in the block that can throw. The reason the rate is zero i
 in nearly every case the bridge builds the `gp_Dir` itself, in the same statement as the `gp_Ax2`,
 so the live inline check is the bridge's own.
 
+**A clean channel-one run is weaker evidence than a channel-one finding**, and the script says so in
+`classify_class`. Its verdict is class-level: a class with an inline check on any member reads as
+protected even where the member actually called has its check in the `.cxx`. The bias is deliberate,
+because a false finding costs a reader's time, and it is the reason to read this row as "no site is
+obviously fabricated" rather than as "every site is protected".
+
 **That number was 89 before the script was fixed, and the fix is the lesson.** The first version
 reused `check-throwing-calls.py`'s construction regex, which takes everything up to the next `;`, so
 in `gp_Ax2 axis(gp_Pnt(...), gp_Dir(x, y, z))` the inner `gp_Dir` was swallowed by the outer match
