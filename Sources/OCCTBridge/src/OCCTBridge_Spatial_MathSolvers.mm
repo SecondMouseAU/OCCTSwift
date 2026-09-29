@@ -745,11 +745,18 @@ int32_t OCCTMathMatrixCols(OCCTMathMatrixRef m)
 // #2860's two math_Matrix preconditions, both measured against the pinned v4.0.0-kernel.2 asset in
 // Scripts/repro/2801-sweep-math/ and Scripts/repro/2860-guard-preconditions/.
 //
-// 1. An index must lie in 1..RowNumber() / 1..ColNumber(). math_Matrix::Value is inline, so
-//    NCollection_Array2's Standard_OutOfRange_Raise_if is expanded in THIS translation unit and is
-//    live: an out-of-range index throws, and a throw that reaches Swift-generated frames is an
-//    uncatchable SIGABRT (#345, exit 134 measured). The guard exists so the caller gets a refusal
-//    instead, not to replace the try.
+// 1. An index must lie in 1..RowNumber() / 1..ColNumber(), and NOTHING under math_Matrix tests that
+//    pair. NCollection_Array2::Value flattens to (row - lowerRow) * sizeCol + (col - lowerCol) and
+//    calls NCollection_Array1::at(pos), whose Standard_OutOfRange_Raise_if bounds pos against the
+//    TOTAL element count and never against the row or column count separately. So the two halves
+//    behave differently, and only one of them is a crash:
+//      - an index whose flattened position leaves the buffer throws, and since Array1::at is inline
+//        that check is live in THIS translation unit, so before the guard it reached Swift as an
+//        uncatchable SIGABRT (#345, exit 134 measured for (9, 9) on a 3x3);
+//      - an index whose flattened position stays inside the buffer returns a DIFFERENT CELL'S
+//        VALUE. Measured with the guard removed: (1, 4) on a 3x3 returns 1.0, which is the element
+//        at (2, 1). That is #2857's shape arriving in math_Matrix, and no try can see it, which is
+//        why the guard tests both indices rather than relying on the throw.
 // 2. Determinant, Invert and Transpose need a square matrix with at least one row. Transpose's
 //    math_NotSquare_Raise_if is inline (math_Matrix.lxx:728) and therefore live and uncatchable the
 //    same way; Invert's (math_Matrix.cxx:187) and math_Gauss's (math_Gauss.cxx:31) are out-of-line

@@ -1201,9 +1201,13 @@ public func value(row: Int, col: Int) -> Double?
 - **Returns:** the element, or `nil` when `row` is outside `1...rows`, `col` is outside `1...cols`,
   or either does not fit an `Int32`. `nil` rather than a `Double` because every value in range is a
   legitimate entry and no number could mean "that cell does not exist".
-- Unguarded before #2860, and an out-of-range index was an **uncatchable SIGABRT**: `math_Matrix::Value`
-  is inline, so `NCollection_Array2`'s `Standard_OutOfRange_Raise_if` is live in the bridge's own
-  translation unit and the throw crossed into Swift-generated frames (#345).
+- Unguarded before #2860, and nothing underneath tested the pair of indices:
+  `NCollection_Array2::Value` flattens them to one position and bounds that against the **total**
+  element count only. An index that left the buffer, `(9, 9)` on a 3x3, threw, and since
+  `NCollection_Array1::at` is inline the throw was live in the bridge's own translation unit and
+  crossed into Swift-generated frames as an **uncatchable SIGABRT** (#345). An index that stayed
+  inside it, `(1, 4)` on a 3x3, returned **a different cell's value**: measured, `1.0`, the element
+  at `(2, 1)`.
 - **OCCT:** `math_Matrix::Value` (via `OCCTMathMatrixGetValue`).
 - **Example:**
   ```swift

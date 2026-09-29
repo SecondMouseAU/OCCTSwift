@@ -151,9 +151,16 @@ struct Issue2860MathGuardTests {
     @Test("MathMatrix.value and setValue refuse every out-of-range 1-based index")
     func outOfRangeIndicesAreRefused() {
         let m = MathMatrix(rows: 3, cols: 3, initialValue: 1.0)
-        // Each of these used to be an uncatchable SIGABRT: math_Matrix::Value is inline, so
-        // NCollection_Array2's Standard_OutOfRange_Raise_if is live in the bridge's own translation
-        // unit and the throw crossed into Swift-generated frames (#345, exit 134 measured).
+        // NCollection_Array2::Value flattens the pair to one position and bounds that against the
+        // TOTAL element count only, so the list below contains two different defects and the
+        // difference is measured rather than assumed (proved by removing the guard):
+        //
+        //   (9, 9) leaves the 9-element buffer, so NCollection_Array1::at throws, and since at is
+        //   inline the throw was live here and crossed into Swift as an uncatchable SIGABRT
+        //   (#345, exit 134 measured);
+        //   (1, 4) STAYS inside it and returned 1.0, the element at (2, 1). No try can see that
+        //   one, which is why the guard tests both indices rather than relying on the throw, and
+        //   why this test asserts nil for every entry rather than only for the large ones.
         let bad: [(Int, Int)] = [
             (0, 1), (1, 0), (4, 1), (1, 4), (9, 9), (-1, 1), (1, -1),
             (Int(Int32.max), 1), (Int(Int32.min), 1),

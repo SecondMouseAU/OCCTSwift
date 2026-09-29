@@ -40,10 +40,13 @@ public final class MathMatrix: @unchecked Sendable {
     ///
     /// `nil` rather than a `Double`, because every value in the range is a legitimate matrix entry
     /// and there is no number that could mean "that cell does not exist". Before #2860 this returned
-    /// `math_Matrix::Value`'s result unguarded: `Value` is inline, so `NCollection_Array2`'s
-    /// `Standard_OutOfRange_Raise_if` is live in the bridge's own translation unit, and the throw
-    /// reached Swift-generated frames as an **uncatchable SIGABRT** for any out-of-range index
-    /// (#345). A matrix built with a non-positive dimension refuses every index.
+    /// `math_Matrix::Value`'s result unguarded, and nothing underneath tested the pair of indices:
+    /// `NCollection_Array2::Value` flattens them to a single position and bounds that against the
+    /// **total** element count only. So an index that left the buffer, such as `(9, 9)` on a 3x3,
+    /// threw and reached Swift-generated frames as an **uncatchable SIGABRT** (#345), and an index
+    /// that stayed inside it, such as `(1, 4)` on a 3x3, returned **a different cell's value**:
+    /// measured, `1.0`, the element at `(2, 1)`. A matrix built with a non-positive dimension
+    /// refuses every index.
     ///
     /// ```swift
     /// let m = MathMatrix(rows: 3, cols: 3, initialValue: 2.0)
