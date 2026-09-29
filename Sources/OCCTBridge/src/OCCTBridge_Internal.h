@@ -3874,6 +3874,43 @@ inline TDF_Label getLabelForTag(OCCTDocumentRef document, int tag)
   return document->doc->Main().FindChild(tag, Standard_True);
 }
 
+//! Whether a caller's `lower`/`upper` is a range a `TDataStd_*Array` attribute can be built on
+//! and then saved. Call it before every `TDataStd_*Array::Set`, and answer the refusal the
+//! function already gives a bad input.
+//!
+//! Every `Init` in that family opens with
+//! `Standard_RangeError_Raise_if(upper < lower, "TDataStd_<T>Array::Init")`, which is out-of-line
+//! and therefore absent from the Release kernel we link, per
+//! `okf/policies/occt-validation-is-compiled-out.md`. The range reaches `NCollection_HArray1`
+//! unchecked, where `mySize` is `upper - lower + 1` evaluated in `int` and stored in a `size_t`.
+//!
+//! Measured against the pinned kernel in `Scripts/repro/2866/`, one process per case. With
+//! `lower` 10 and `upper` 1, `TDataStd_ByteArray`, `TDataStd_ExtStringArray` and
+//! `TDataStd_ReferenceArray` each ask the allocator for 18446744073709551608 elements and
+//! SIGSEGV inside `Set`, uncatchably. `TDataStd_BooleanArray` alone survives, because its `Init`
+//! allocates `HArray1(0, Length() >> 3)` and a negative `Length()` shifts to -1, i.e. a zero-size
+//! array; it stores the caller's bounds anyway, so it builds an attribute whose `Upper()` is
+//! below its `Lower()` and whose `Length()` is negative.
+//!
+//! The bound is `upper < lower`, not `upper < lower - 1`. Admitting the exactly-empty spelling
+//! would stop the fault, since `NCollection_Array1` early-returns on a zero `mySize`, but it is
+//! not a value OCAF can persist: an attribute built that way saves to BinOcaf or XmlOcaf and
+//! reloads as "failure reading attribute", measured for all four in both formats. The drivers
+//! spell the refusal themselves wherever they spell it at all, as a live `if` rather than a
+//! compiled-out macro (`BinMDataStd_ByteArrayDriver.cxx:55` and `:106`, on the retrieve and the
+//! store side; `XmlMDataStd_ByteArrayDriver.cxx:85`, "The last index is greater than the first
+//! index"), which is OCCT's own callers answering the question its headers leave open, per
+//! `okf/policies/follow-occt-callers.md`. A collection that may legitimately be empty belongs in
+//! the `TDataStd_*List` attributes, which carry no range.
+//!
+//! #2866. #2855 wrote the same test inline in `OCCTDocumentInitIntegerArray` and
+//! `OCCTDocumentInitRealArray`; those two predate this helper and are left as they are, so that
+//! this change is the four setters it is about.
+inline bool occtArrayRangeIsStorable(int lower, int upper)
+{
+  return upper >= lower;
+}
+
 //! Sets both tolerance values on a dimension object and reports whether the kernel kept them, by
 //! reading them back rather than trusting the setters' own return.
 //!

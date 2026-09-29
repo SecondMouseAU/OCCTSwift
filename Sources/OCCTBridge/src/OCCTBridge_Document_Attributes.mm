@@ -1943,8 +1943,14 @@ bool OCCTDocumentSetBooleanArray(OCCTDocumentRef document,
   try
   {
     TDF_Label label = getLabelForTag(document, tag);
-    auto      arr   = TDataStd_BooleanArray::Set(label, lower, upper);
-    int       len   = upper - lower + 1;
+    // #2866: TDataStd_BooleanArray::Init's upper < lower check is compiled out of the kernel we
+    // link, so a reversed range reaches NCollection_HArray1 unchecked. This one does not fault; it
+    // builds an attribute whose Upper() is below its Lower(). See the helper for the
+    // measurement.
+    if (!occtArrayRangeIsStorable(lower, upper))
+      return false;
+    auto arr = TDataStd_BooleanArray::Set(label, lower, upper);
+    int  len = upper - lower + 1;
     for (int i = 0; i < len && i < count; i++)
     {
       arr->SetValue(lower + i, values[i]);
@@ -2108,8 +2114,14 @@ bool OCCTDocumentSetByteArray(OCCTDocumentRef document,
   try
   {
     TDF_Label label = getLabelForTag(document, tag);
-    auto      arr   = TDataStd_ByteArray::Set(label, lower, upper);
-    int       len   = upper - lower + 1;
+    // #2866: TDataStd_ByteArray::Init's upper < lower check is compiled out of the kernel we link,
+    // so a reversed range reaches NCollection_HArray1 unchecked. This one is an uncatchable
+    // SIGSEGV inside Set. See the helper for the measurement, and for why the bound
+    // admits no empty range either.
+    if (!occtArrayRangeIsStorable(lower, upper))
+      return false;
+    auto arr = TDataStd_ByteArray::Set(label, lower, upper);
+    int  len = upper - lower + 1;
     for (int i = 0; i < len && i < count; i++)
     {
       arr->SetValue(lower + i, values[i]);
@@ -2372,8 +2384,13 @@ bool OCCTDocumentSetExtStringArray(OCCTDocumentRef    document,
   try
   {
     TDF_Label label = getLabelForTag(document, tag);
-    auto      arr   = TDataStd_ExtStringArray::Set(label, lower, upper);
-    int       len   = upper - lower + 1;
+    // #2866: TDataStd_ExtStringArray::Init's upper < lower check is compiled out of the kernel we
+    // link, so a reversed range reaches NCollection_HArray1 unchecked. This one is an uncatchable
+    // SIGSEGV inside Set. See the helper for the measurement.
+    if (!occtArrayRangeIsStorable(lower, upper))
+      return false;
+    auto arr = TDataStd_ExtStringArray::Set(label, lower, upper);
+    int  len = upper - lower + 1;
     for (int i = 0; i < len && i < count; i++)
     {
       arr->SetValue(lower + i, TCollection_ExtendedString(values[i], true));
@@ -2569,9 +2586,14 @@ bool OCCTDocumentSetReferenceArray(OCCTDocumentRef document,
   try
   {
     TDF_Label label = getLabelForTag(document, tag);
-    TDF_Label main  = document->doc->Main();
-    auto      arr   = TDataStd_ReferenceArray::Set(label, lower, upper);
-    int       len   = upper - lower + 1;
+    // #2866: TDataStd_ReferenceArray::Init's upper < lower check is compiled out of the kernel we
+    // link, so a reversed range reaches NCollection_HArray1 unchecked. This one is an uncatchable
+    // SIGSEGV inside Set. See the helper for the measurement.
+    if (!occtArrayRangeIsStorable(lower, upper))
+      return false;
+    TDF_Label main = document->doc->Main();
+    auto      arr  = TDataStd_ReferenceArray::Set(label, lower, upper);
+    int       len  = upper - lower + 1;
     for (int i = 0; i < len && i < count; i++)
     {
       arr->SetValue(lower + i, main.FindChild(refTags[i]));
