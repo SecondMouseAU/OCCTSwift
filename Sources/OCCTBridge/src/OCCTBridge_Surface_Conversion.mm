@@ -871,7 +871,7 @@ int32_t OCCTSurfaceExtrema(OCCTSurfaceRef            s1,
     // So gate on IsParallel(), as OCCTCurve3DExtrema does for Extrema_ExtCC's identical shape
     // (#636) and as OCCTExtremaExtElSSPlanes does one layer down. The refusal loses a real
     // measurement, the constant gap between the two surfaces, because OCCTSurfaceExtremaResult has
-    // no way to report a distance with no points; giving it one is a SemVer event and is #2840's.
+    // no way to report a distance with no points; giving it one is a SemVer event, held as #2876.
     //
     // Carried patch 0044 fixes the kernel half, bounding Extrema_ExtSS::Points against myPOnS1
     // rather than NbExt(), but it is NOT in the pinned asset and THIS GATE IS NOT RETIRED WHEN IT
