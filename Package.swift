@@ -296,8 +296,8 @@ let occtTarget: Target = isWASI
     //         older asset, and it is also the deliberate API decision that a parallel pair is
     //         a refusal rather than a distance with no points (a SemVer change, still open).
     //
-    // 0043
-    // (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it: carried
+    // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
+    // and it went the other way, which is the comparison worth keeping beside 0044: carried
     // 2026-09-29 unbuilt, because OCCT 8.0.2 was days out and there is a standing hold on repinning
     // until it lands, then built and pinned the same day by v4.0.0-kernel.3 once the cost of
     // shipping a fabricated 0.0 through Face.volumeInertia(planeNormal:planeDistance:) for that
