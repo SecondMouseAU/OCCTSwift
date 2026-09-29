@@ -1,0 +1,27 @@
+#2830. Run of Scripts/repro/2830-openshell-fixture/probe.mm, compiled per the ground-truth-probe
+skill against Libraries/OCCT.xcframework/macos-arm64 in the main checkout. The behaviour agrees with
+the pinned v4.0.0-kernel.1 asset the test targets resolve: measured through the Swift API on that
+asset, a closed box is refused at every thickness and the sewn five-face open shell is accepted, the
+same split this probe reports.
+
+--- 1. the error code behind #2739's IsDone=0, read off the algorithm itself ---
+MakeSimpleOffset(closed box solid, -2.0)                   IsDone=0 error=ErrorInvalidNbShells   msg=Result contains two or more shells
+MakeSimpleOffset(closed box solid, +2.0)                   IsDone=0 error=ErrorInvalidNbShells   msg=Result contains two or more shells
+MakeSimpleOffset(that box's closed shell, -2.0)            IsDone=0 error=ErrorInvalidNbShells   msg=Result contains two or more shells
+MakeSimpleOffset(open shell, 5 of 6 faces, -2.0)           IsDone=1 error=OK                     msg=
+
+--- 2. the mechanism: BuildMissingWalls needs free boundary wires ---
+closed box solid               free closed wires=0 free open wires=0 BRep_Tool::IsClosed=0
+closed shell                   free closed wires=0 free open wires=0 BRep_Tool::IsClosed=1
+open shell (5 faces)           free closed wires=1 free open wires=0 BRep_Tool::IsClosed=0
+
+--- 3. and so the quilt sees two shells, not one ---
+BuildSolidFlag=false on the closed box: IsDone=1 error=OK
+quilt of (input faces + offset faces, no walls) -> shells=2
+
+--- 4. the fixture candidate itself, measured ---
+open shell of a 10-box: type=3 faces=5 shells=1 IsClosed=0 area=500.000000 volume=800.000000
+closed 10-box for comparison:  type=2 faces=6 shells=1 IsClosed=0 area=600.000000 volume=1000.000000
+
+--- 5. control: is the sewn result one shell, or a compound of faces? ---
+SewedShape().ShapeType()=3 (3 = TopAbs_SHELL, 0 = TopAbs_COMPOUND)

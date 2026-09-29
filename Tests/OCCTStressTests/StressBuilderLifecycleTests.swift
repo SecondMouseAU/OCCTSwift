@@ -967,8 +967,8 @@ struct StressWireFixerLifecycleTests {
         }
     }
 
-    @Test func extendedFixMethods() {
-        let box = filletedBox()
+    @Test func extendedFixMethods() throws {
+        let box = try filletedBox()
         let faces = box.subShapes(ofType: .face)
         let wires = box.subShapes(ofType: .wire)
         guard let face = faces.first, let wireShape = wires.first,

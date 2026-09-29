@@ -102,9 +102,14 @@ struct StressShapeFeatureTests {
         if let r { #expect(r.isValid) }
     }
 
-    @Test func shell() {
-        let r = standardBox().shelled(thickness: -1.0)
-        if let r { #expect(r.isValid) }
+    /// #2830: this used to call `shelled(thickness:)` on a closed box, which is refused for every
+    /// thickness, so the `isValid` assertion never ran and the API row measured nothing. The
+    /// algorithm is `MakeThickSolidBySimple`, whose domain is a non-closed shell or face (#2739),
+    /// hence the open shell. 210.857143 is the kernel's own figure for this input.
+    @Test func shell() throws {
+        let r = try #require(openShell().shelled(thickness: -1.0))
+        #expect(r.isValid)
+        #expect(abs(try #require(r.volume) - 210.857143) < 1e-5)
     }
 
     @Test func drill() {
@@ -685,8 +690,8 @@ struct StressMeshAPITests {
         }
     }
 
-    @Test func meshOnAllShapes() {
-        for (name, shape) in allStandardShapes() {
+    @Test func meshOnAllShapes() throws {
+        for (name, shape) in try allStandardShapes() {
             let m = shape.mesh(linearDeflection: 0.5)
             #expect(m != nil, "Mesh failed for \(name)")
         }
@@ -704,14 +709,14 @@ struct StressFeatureRecognitionTests {
         #expect(aag.nodes.count == 6)
     }
 
-    @Test func aagOnFilletedBox() {
-        let box = filletedBox()
+    @Test func aagOnFilletedBox() throws {
+        let box = try filletedBox()
         let aag = AAG(shape: box)
         #expect(aag.nodes.count > 6)
     }
 
-    @Test func aagOnDrilledPlate() {
-        let plate = drilledPlate()
+    @Test func aagOnDrilledPlate() throws {
+        let plate = try drilledPlate()
         let aag = AAG(shape: plate)
         #expect(aag.nodes.count > 6)
     }

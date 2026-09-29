@@ -96,6 +96,21 @@ separate from any guard the matrix covers. `try #require(op())` proves non-nil, 
 cheap structural delta works: `#762` asserts the face count rose, since a fillet or chamfer replaces
 each target edge with at least one new face.
 
+### A fixture can be absent rather than wrong
+
+That is the same blindness one step further out, and it is worse, because there is nothing to
+inspect. `#2830`: a matrix fixture list appended its `"openShell"` entry inside an `if let` on a
+call that returns nil for every input it was ever given, so the list was one row short from the day
+the fixture was written. Measured, 9 fixtures against the 10 the comment described, for the whole
+life of the fixture. No assertion downstream could see it and no injection into the source could
+either: the row was not wrong, it was missing, and a matrix that walks a list reads a missing row as
+a smaller loop.
+
+So a list a matrix walks needs its **membership** asserted, against a declared set of names rather
+than a count, and every fallible fixture factory needs to throw rather than fall back or be skipped.
+A `?? input` fallback and an `if let` append are the two shapes to look for; both read as defensive
+and both are the defect.
+
 ## How to apply
 
 For a test: break the code it covers, run it, see red, restore, see green.
