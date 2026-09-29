@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 
 /// Shared arc-length-adaptor interface implemented by ``EdgeCurve`` and ``WireCurve`` (#211/#212/#422).
 ///

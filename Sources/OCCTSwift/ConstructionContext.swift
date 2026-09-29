@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import simd
 
 // MARK: - ConstructionContext (#72 Phase 3)
@@ -41,7 +41,7 @@ internal protocol ConstructionEntityID: Sendable, Hashable {
 /// today's three instantiations (`ConstructionPlane`/`ConstructionAxis`/`ConstructionPoint`,
 /// all already `Sendable`) (#914 review, finding 13).
 internal final class EntityStore<ID: ConstructionEntityID, Value: Sendable>: @unchecked Sendable {
-    private let lock = NSLock()
+    private let lock = PlatformLock()
     private var entries: [ID: (name: String?, value: Value)] = [:]
     private var order: [ID] = []
 
@@ -160,7 +160,7 @@ public final class ConstructionContext: @unchecked Sendable {
     /// caller's *own* loop of many separate `remove()` calls atomic as a whole (nothing here
     /// promises `ctx.allAxes.forEach { ctx.remove(axis: $0.id) }` is one atomic step; each call in
     /// it still is, and a concurrent `count()` will legitimately see that loop's progress).
-    private let crossStoreLock = NSLock()
+    private let crossStoreLock = PlatformLock()
 
     /// Atomic snapshot of every plane/axis/point currently registered, taken under one
     /// `crossStoreLock` critical section, the same cross-store atomicity `count`/`removeAll`
@@ -424,7 +424,7 @@ extension Document {
 ///   not theoretical: it shipped, and in a tight create/destroy loop *every* new instance inherited
 ///   its predecessor's context (#277).
 internal final class DocumentAssociatedStorage<T: AnyObject>: @unchecked Sendable {
-    private let lock = NSLock()
+    private let lock = PlatformLock()
     private var table: [ObjectIdentifier: T] = [:]
 
     func value(for owner: AnyObject) -> T? {

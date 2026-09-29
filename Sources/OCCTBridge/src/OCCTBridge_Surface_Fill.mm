@@ -185,6 +185,7 @@
 #include <gp_Pnt2d.hxx>
 #include <NCollection_HArray1.hxx>
 #include <NCollection_Array1.hxx>
+#include <Precision.hxx>
 #include <TopExp.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
@@ -432,6 +433,97 @@ static int extractFillingPoles(GeomFill_Filling& filling, double* outPoints, int
   return total;
 }
 
+// === #2829: the joining check GeomFill_BSplineCurves/BezierCurves make and our kernel drops ===
+//
+// Both classes arrange their four boundary curves themselves. A private Arrange() walks them head
+// to tail at Precision::Confusion(), swapping slots and Reversed()-ing whichever curve runs the
+// wrong way (GeomFill_BSplineCurves.cxx:53, GeomFill_BezierCurves.cxx:103), so the caller owes
+// them a closed loop and nothing more: not an order, not a direction. Only the first curve is
+// pinned, as CC1, and its own direction becomes U. Each Init() then refuses a set that does not
+// join:
+//
+//   Standard_ConstructionError_Raise_if(!IsOK, " GeomFill_BSplineCurves: Courbes non jointives");
+//     GeomFill_BSplineCurves.cxx:287, and identically GeomFill_BezierCurves.cxx:209
+//
+// That refusal is compiled out of the kernel we ship. Scripts/build-occt.sh configures
+// -DCMAKE_BUILD_TYPE=Release; OCCT's BUILD_RELEASE_DISABLE_EXCEPTIONS defaults to ON
+// (occt-src/CMakeLists.txt:194-196) and adds -DNo_Exception
+// (occt-src/adm/cmake/occt_defs_flags.cmake:226-228); Standard_ConstructionError.hxx:24-30 then
+// expands the macro to nothing, and the `bool IsOK =` that feeds it sits behind the same
+// #ifndef No_Exception. Arrange()'s false is discarded and Init() reads CC1->Degree() off the null
+// handle it never filled in, which is an uncatchable SIGSEGV that the catch (...) in the entry
+// points below cannot absorb. Measured on the pinned v4.0.0-kernel.2 asset for both classes and on
+// a periodic support: Scripts/repro/2829-geomfill-arrange-guard/transcript.txt, sections [C], [D]
+// and [E], all exit 139.
+//
+// occtGeomFillCurvesJoin is Arrange()'s acceptance half transcribed literally, endpoints only: the
+// same greedy walk over slots 1..3, the same reversal branch, and the degenerate-curve pre-pass
+// that the BSpline flavour has (GeomFill_BSplineCurves.cxx:77-91) and the Bezier one does not
+// (GeomFill_BezierCurves.cxx:118), which the flag selects. Transcribing rather than inventing a
+// check is what keeps this faithful: the predicate agrees with the kernel on all 24 permutations x
+// 16 direction flips of a joining quadrilateral (transcript section [F], 384/384) and on the
+// tolerance boundary (section [G]: 9.9e-8 joins, 2e-7 does not), so it refuses only what the
+// kernel would have refused and never a set the kernel accepts.
+//
+// It does NOT stand in for the two refusals that are real `throw` statements and therefore survive
+// No_Exception: Coons style with fewer than 4 poles per direction
+// (GeomFill_BSplineCurves.cxx:300) and SetSameDistribution's PrepareInsertKnots failure. Those
+// still arrive as Standard_ConstructionError and the catch (...) below still turns them into
+// nullptr.
+struct OCCTGeomFillBoundaryEnds
+{
+  gp_Pnt start;
+  gp_Pnt end;
+};
+
+static bool occtGeomFillCurvesJoin(const OCCTGeomFillBoundaryEnds ends[4],
+                                   double                         tol,
+                                   bool                           degeneratePrePass)
+{
+  OCCTGeomFillBoundaryEnds g[4] = {ends[0], ends[1], ends[2], ends[3]};
+
+  for (int i = 1; i <= 3; i++)
+  {
+    bool found = false;
+
+    // Arrange()'s first pass: a curve degenerated to a point goes in before the curvature leaves
+    // that point. GeomFill_BezierCurves has no such pass, so its flavour skips this.
+    if (degeneratePrePass)
+    {
+      for (int j = i; j <= 3 && !found; j++)
+      {
+        if (g[j].start.Distance(g[j].end) < tol && g[j].start.Distance(g[i - 1].end) < tol)
+        {
+          std::swap(g[i], g[j]);
+          found = true;
+        }
+      }
+    }
+
+    if (!found)
+    {
+      for (int j = i; j <= 3 && !found; j++)
+      {
+        if (g[j].start.Distance(g[i - 1].end) < tol)
+        {
+          std::swap(g[i], g[j]);
+          found = true;
+        }
+        else if (g[j].end.Distance(g[i - 1].end) < tol)
+        {
+          std::swap(g[j].start, g[j].end);
+          std::swap(g[i], g[j]);
+          found = true;
+        }
+      }
+    }
+
+    if (!found)
+      return false;
+  }
+  return true;
+}
+
 // Package one occtSurfaceToAnalytical answer as the C result both entry points return.
 static OCCTSurfToAnaSurfResult occtSurfToAnaSurfResult(OCCTSurfaceRef _Nullable surfaceRef,
                                                        double        tolerance,
@@ -624,6 +716,15 @@ OCCTSurfaceRef OCCTSurfaceBezierFill4(OCCTCurve3DRef c1,
     Handle(Geom_BezierCurve) bc4 = Handle(Geom_BezierCurve)::DownCast(c4->curve);
     if (bc1.IsNull() || bc2.IsNull() || bc3.IsNull() || bc4.IsNull())
       return nullptr;
+    // #2829: refuse a non-joining set here, because GeomFill_BezierCurves cannot. See
+    // occtGeomFillCurvesJoin. GeomFill_BezierCurves' Arrange has no degenerate-curve pre-pass.
+    const OCCTGeomFillBoundaryEnds ends[4] = {{bc1->StartPoint(), bc1->EndPoint()},
+                                              {bc2->StartPoint(), bc2->EndPoint()},
+                                              {bc3->StartPoint(), bc3->EndPoint()},
+                                              {bc4->StartPoint(), bc4->EndPoint()}};
+    if (!occtGeomFillCurvesJoin(ends, Precision::Confusion(), false))
+      return nullptr;
+
     GeomFill_FillingStyle style = GeomFill_StretchStyle;
     if (fillStyle == 1)
       style = GeomFill_CoonsStyle;
@@ -719,6 +820,16 @@ OCCTSurfaceRef OCCTSurfaceFillBSpline4Curves(OCCTCurve3DRef c1,
     Handle(Geom_BSplineCurve) bc3 = toBSplineCurve(c3->curve);
     Handle(Geom_BSplineCurve) bc4 = toBSplineCurve(c4->curve);
     if (bc1.IsNull() || bc2.IsNull() || bc3.IsNull() || bc4.IsNull())
+      return nullptr;
+
+    // #2829: refuse a non-joining set here, because GeomFill_BSplineCurves cannot. See
+    // occtGeomFillCurvesJoin. Its Arrange does have the degenerate-curve pre-pass, so a side
+    // collapsed to a point is still accepted (transcript section [H]).
+    const OCCTGeomFillBoundaryEnds ends[4] = {{bc1->StartPoint(), bc1->EndPoint()},
+                                              {bc2->StartPoint(), bc2->EndPoint()},
+                                              {bc3->StartPoint(), bc3->EndPoint()},
+                                              {bc4->StartPoint(), bc4->EndPoint()}};
+    if (!occtGeomFillCurvesJoin(ends, Precision::Confusion(), true))
       return nullptr;
 
     GeomFill_FillingStyle style = GeomFill_StretchStyle;

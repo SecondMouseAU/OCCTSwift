@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 
 /// Sheet-metal composition API.
 ///

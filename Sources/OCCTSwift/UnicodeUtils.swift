@@ -1,18 +1,6 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
-
-// The platform C library, named because this file uses it directly (free, sin, cos, sqrt and
-// the like). `import Foundation` happens to re-export it on Apple platforms, so these were in
-// scope by accident rather than by declaration; FoundationEssentials does not, which is how
-// #2761 found them. Naming it here is correct independently of that work.
-#if canImport(Darwin)
-    import Darwin
-#elseif canImport(WASILibc)
-    import WASILibc
-#elseif canImport(Glibc)
-    import Glibc
-#endif
 
 /// Unicode format for Resource_Unicode.
 public enum UnicodeFormat: Int32, Sendable {
@@ -62,6 +50,8 @@ public enum UnicodeUtils {
         guard actualLen >= 0 else { return nil }
         // Ensure null-termination as a safeguard
         output[Int(len) < bufSize ? Int(len) : bufSize - 1] = 0
-        return String(cString: output)
+        // Through the base pointer rather than the array: the [CChar] overload is
+        // deprecated on Apple and absent on the wasm path.
+        return output.withUnsafeBufferPointer { String(cString: $0.baseAddress!) }
     }
 }

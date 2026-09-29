@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 import simd
 
 // MARK: - ISO 6410 cosmetic thread representation (#77, v0.146)

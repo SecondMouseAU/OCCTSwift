@@ -1,4 +1,4 @@
-import Foundation
+import OCCTPlatform
 
 // MARK: - ISO drawing style conventions (#78 G1, v0.144)
 
@@ -162,7 +162,7 @@ public enum DrawingScale: Sendable, Hashable {
         case .one: return "1:1"
         case .reduction(let n): return "1:\(n)"
         case .enlargement(let n): return "\(n):1"
-        case .custom(let f): return String(format: "%.3g:1", f)
+        case .custom(let f): return String(cFormat: "%.3g:1", f)
         }
     }
 

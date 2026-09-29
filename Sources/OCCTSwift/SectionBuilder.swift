@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// A builder for computing sections (intersections) between shapes, planes, and surfaces.

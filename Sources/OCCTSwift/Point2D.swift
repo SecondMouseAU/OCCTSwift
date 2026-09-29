@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// A 2D geometric point backed by `Geom2d_CartesianPoint`.

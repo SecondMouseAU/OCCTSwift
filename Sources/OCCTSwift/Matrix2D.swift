@@ -1,5 +1,5 @@
-import Foundation
 import OCCTBridge
+import OCCTPlatform
 import simd
 
 /// A 2x2 matrix for 2D operations, wrapping gp_Mat2d.
