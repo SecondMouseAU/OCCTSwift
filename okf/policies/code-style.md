@@ -136,6 +136,13 @@ instead of passing it. Both devices are [static-gates](static-gates.md)'s, for i
 `--self-test` proves the detector catches what its author thought of, and cannot prove it looked
 at the real input.
 
+**SwiftLint had the same gap and it was cheaper.** `.swiftlint.yml`'s `excluded:` held `Tests` and
+`Scripts`, so `swiftlint --strict` read 234 files, not the repository, and #2852's own premise that
+it "does cover the repository" is wrong as measured. Widening it cost exactly one fix:
+`orphaned_doc_comment` found a single finding across the 1,494 files it newly reached, a `///`
+block detached from its declaration by an inserted `// MARK:`, which is the shape of both of #877's.
+1,728 files are linted now.
+
 Widening it newly reached 1,500 files and `swift-format lint --strict` rejected 418 of them, so
 #2852 seeded a **second** manifest, `Scripts/style-manifest-swift-wave2.txt`, with those 418, and
 then formatted and delisted the 146 that needed nothing but `swift-format format -i`. It is a
