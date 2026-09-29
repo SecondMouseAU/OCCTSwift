@@ -191,6 +191,30 @@ missing module stays a skip, because a skip is visible to whoever has no build w
 is not. `docs/` is not an input, so editing a snippet never trips it, and CI never meets it, because
 the `swift build` step ahead of it recompiles the module on every run.
 
+### Swift Format Lint
+
+```bash
+python3 Scripts/check-swift-format.py            # GATE: every tracked .swift file not on a manifest passes swift-format lint --strict (#2852)
+python3 Scripts/check-swift-format.py --list     # the population and the manifest accounting, lint nothing
+python3 Scripts/check-swift-format.py --self-test
+```
+
+**Outside `gate-scripts` too**, because it shells out to `swift-format`, which that job does not
+have. It runs in `code-style.yml` beside the SwiftLint and clang-format steps, and is counted in no
+total on this page.
+
+**The population is `git ls-files '*.swift'` minus the exemption manifests, not a directory.** Until
+#2852 this was four lines of shell walking `find Sources/OCCTSwift`, which reached 230 of the repo's
+1,730 tracked Swift files: `Tests/`, `Scripts/`, `Sources/OCCTPlatform`, `Sources/OCCTTest`,
+`Sources/WASICompat` and `Package.swift` were outside the step and nothing said so, because an
+exemption manifest can only exempt a file the population already reaches. Two manifests now hold the
+exempt list, both shrink-only and both enforced by `check-style-manifest.py`:
+`Scripts/style-manifest-swift.txt` (rollout day, empty) and
+`Scripts/style-manifest-swift-wave2.txt` (what the widening reached, 418 files). The real run
+asserts **selected + listed == tracked** and plants a canary violation in every `swift-format`
+invocation, so a narrowing and a silent tool are both a red gate rather than a quieter one. There is
+deliberately no `--fix`, for the reason `Scripts/format-bridge.sh`'s header gives.
+
 ### Pinned-Asset Patch Check
 
 ```bash
