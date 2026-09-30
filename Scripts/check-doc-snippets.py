@@ -1175,16 +1175,18 @@ class RunOutcome:
 PACKAGE_ARCHIVE = 'libOCCTSwift.a'
 
 
-def archive_dirs(base=None, depth=MODULE_SEARCH_DEPTH):
-    """Directories under `.build` holding `libOCCTSwift.a`, most recently written first.
+def artefact_dirs(name, base=None, depth=MODULE_SEARCH_DEPTH):
+    """Directories under `.build` holding a file called `name`, most recently written first.
 
-    `module_dirs`' argument, applied to the other artefact: SwiftPM has shipped at least three
-    layouts this script has met, and the archive does not have to sit where the module sits.
+    `module_dirs`' argument, applied to the other artefacts: SwiftPM has shipped at least three
+    layouts this script has met, and neither the archive nor the merged object has to sit where
+    the module sits. Measured on the CI runner, which put the module in `<bin>/Modules/` and the
+    compiled code somewhere a search beside it did not reach.
     """
     root = REPO if base is None else pathlib.Path(base)
     hits = []
     for d in range(1, depth + 1):
-        hits.extend(root.glob('/'.join(['.build'] + ['*'] * d + [PACKAGE_ARCHIVE])))
+        hits.extend(root.glob('/'.join(['.build'] + ['*'] * d + [name])))
     ordered = []
     for hit in sorted(hits, key=lambda h: h.stat().st_mtime, reverse=True):
         if hit.parent not in ordered:
@@ -1192,28 +1194,79 @@ def archive_dirs(base=None, depth=MODULE_SEARCH_DEPTH):
     return ordered
 
 
+def archive_dirs(base=None, depth=MODULE_SEARCH_DEPTH):
+    """Directories under `.build` holding `libOCCTSwift.a`, most recently written first."""
+    return artefact_dirs(PACKAGE_ARCHIVE, base=base, depth=depth)
+
+
+# The merged object the llbuild layout writes per target when it writes no archive. Measured on
+# the CI runner, which produced `<bin>/Modules/OCCTSwift.swiftmodule` and no `lib*.a` at all,
+# while a local build of the same manifest produced both.
+PACKAGE_OBJECT = 'OCCTSwift.o'
+
+
 def link_args(module_dir, base=None):
-    """`-L`/`-l` flags that link an executable against the built package, or None.
+    """Flags that link an executable against the built package, or None.
 
-    The directory is the one holding `libOCCTSwift.a`, checked beside the module first (it is
-    usually there, and `module_dir` may be the bin root or its `Modules/` subdirectory, #2867) and
-    searched for under `.build` otherwise. Every `lib*.a` in that directory is then passed, rather
-    than a fixed list of names: SwiftPM merges every target and the whole OCCT kernel into one
-    archive here, and a layout that splits them still answers the glob.
+    Two shapes, because SwiftPM emits two. **The merged static archive** is preferred: checked
+    beside the module first (`module_dir` may be the bin root or its `Modules/` subdirectory,
+    #2867), then searched for under `.build`. Every `lib*.a` in whichever directory holds it is
+    passed, rather than a fixed list of names, since SwiftPM merges every target and the whole
+    OCCT kernel into one archive here and a layout that splits them still answers the glob.
 
-    Reading a cached archive is the #2867 trap on a second artefact, and the answer is the same
-    one: `ci.yml` deletes both before the build, so anything found was written by that build.
+    **The per-target objects** are the fallback, for the layout CI turned out to use: measured on
+    the runner, `swift build` wrote `<bin>/Modules/OCCTSwift.swiftmodule` and no archive anywhere
+    under `.build`. The objects are passed directly rather than through `-l`, which is why they
+    cannot be mixed with the archive: both define the same symbols.
+
+    Reading a cached artefact is the #2867 trap on a second artefact, and the answer is the same
+    one: `ci.yml` deletes the archive alongside the module before the build, so anything found
+    was written by that build.
     """
     for d in (module_dir, module_dir.parent):
         if (d / PACKAGE_ARCHIVE).is_file():
-            return _flags_for(d)
+            return _archive_flags(d)
     for d in archive_dirs(base):
-        return _flags_for(d)
+        return _archive_flags(d)
+    for d in (module_dir, module_dir.parent):
+        if (d / PACKAGE_OBJECT).is_file():
+            return _object_flags(d)
+    for d in artefact_dirs(PACKAGE_OBJECT, base):
+        return _object_flags(d)
     return None
 
 
-def _flags_for(d):
+def _archive_flags(d):
     return ['-L', str(d)] + [f'-l{a.stem[3:]}' for a in sorted(d.glob('lib*.a'))] + ['-lc++']
+
+
+def _object_flags(d):
+    return ([str(o) for o in sorted(d.glob('*.o'))]
+            + ['-L', str(d)] + [f'-l{a.stem[3:]}' for a in sorted(d.glob('lib*.a'))]
+            + ['-lc++'])
+
+
+def link_inventory(module_dir, base=None):
+    """What the two searches actually saw, for a refusal that names it rather than a directory."""
+    lines = []
+    for d in (module_dir, module_dir.parent):
+        if not d.is_dir():
+            lines.append(f'  {d}: not a directory')
+            continue
+        archives = sorted(p.name for p in d.glob('lib*.a'))
+        objects = sorted(p.name for p in d.glob('*.o'))
+        lines.append(f'  {d}: {len(archives)} lib*.a {archives[:8]}, '
+                     f'{len(objects)} *.o {objects[:8]}')
+    for name in (PACKAGE_ARCHIVE, PACKAGE_OBJECT):
+        found = artefact_dirs(name, base)
+        lines.append(f'  {name} under .build (depth {MODULE_SEARCH_DEPTH}): '
+                     + (', '.join(str(d) for d in found) if found else 'nowhere'))
+    build = (REPO if base is None else pathlib.Path(base)) / '.build'
+    for d in range(1, 4):
+        got = sorted(build.glob('/'.join(['*'] * d)))
+        lines.append(f'  .build depth {d}: {len(got)} entr(ies) '
+                     + str([p.name for p in got[:12]]))
+    return lines
 
 
 def runnable(blocks, results):
@@ -1383,18 +1436,16 @@ def execute_stage(cases, tc_args, stall=DEFAULT_STALL, keep=None, verbose=False,
             # Name what was looked for and where, per static-gates.md: #2867's refusal named a
             # directory and left "was it this build's artefact at all" to arithmetic across three
             # jobs' logs.
-            searched = [d for d in (pathlib.Path(a) for i, a in enumerate(tc_args)
-                                    if i and tc_args[i - 1] == '-I')]
-            found = archive_dirs()
+            searched = [pathlib.Path(a) for i, a in enumerate(tc_args)
+                        if i and tc_args[i - 1] == '-I']
+            inventory = []
+            for d in searched:
+                inventory += link_inventory(d)
             return {}, 0.0, SkipNote(
-                f'no {PACKAGE_ARCHIVE} beside the built module, so nothing can be linked '
-                'against. The type-check stage needs only a .swiftmodule; this stage needs the '
-                'archive too. Looked beside '
-                + ', '.join(str(d) for d in searched)
-                + ' and their parents, then under '
-                + str(REPO / '.build') + f' to depth {MODULE_SEARCH_DEPTH}, which holds it in '
-                + (', '.join(str(d) for d in found) if found else 'no directory')
-                + '. Run `swift build`.',
+                f'neither {PACKAGE_ARCHIVE} nor {PACKAGE_OBJECT} was found, so nothing can be '
+                'linked against. The type-check stage needs only a .swiftmodule; this stage '
+                'needs the compiled code too. Run `swift build`. What the search saw:\n'
+                + '\n'.join(inventory),
                 fatal=True)
         exe, detail = build_runner(outdir, tc_args, extra_link=extra_link, verbose=verbose)
         if exe is None:
@@ -2080,16 +2131,33 @@ def _self_test_run_stage():
     finally:
         shutil.rmtree(holder, ignore_errors=True)
 
+    # The layout CI turned out to use: a module, per-target objects, and no archive anywhere.
+    objonly = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-objects-'))
+    try:
+        obj_bin = objonly / '.build' / 'debug'
+        (obj_bin / 'Modules').mkdir(parents=True)
+        for name in (PACKAGE_OBJECT, 'OCCTBridge.o', 'OCCTPlatform.o'):
+            (obj_bin / name).write_bytes(b'')
+        (obj_bin / 'libOCCT-macos.a').write_bytes(b'!<arch>\n')
+        got = link_args(obj_bin / 'Modules', base=objonly)
+        case('with no archive, the per-target objects are passed directly and the kernel by -l',
+             got is not None
+             and str(obj_bin / PACKAGE_OBJECT) in got
+             and '-lOCCT-macos' in got
+             and '-lOCCTSwift' not in got, repr(got))
+    finally:
+        shutil.rmtree(objonly, ignore_errors=True)
+
     # ...and with nothing to find anywhere, it says so rather than returning a partial link.
     empty = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-noarchive-'))
     try:
         (empty / '.build').mkdir()
-        case('no archive anywhere is None, not a partial set of flags',
+        case('no archive and no object anywhere is None, not a partial set of flags',
              link_args(empty / 'nowhere', base=empty) is None)
     finally:
         shutil.rmtree(empty, ignore_errors=True)
 
-    fixed_cases = 7
+    fixed_cases = 8
     if shutil.which('swiftc') is None and shutil.which('xcrun') is None:
         return failures, fixed_cases, fixed_cases + 3
 
