@@ -120,10 +120,13 @@ def code_block_mask(lines):
     hundred lines below it, and the tool then refused a body that was correct. The rules here are
     CommonMark's, which is what GitHub renders:
 
-      * an opener is indented at most three spaces. At four the line is an indented code block, so
-        an illustrative fence quoted inside prose opens nothing, which is the shape #2889 used;
+      * an opener is indented at most three SPACES. At four the line is an indented code block, so
+        an illustrative fence quoted inside prose opens nothing, which is the shape #2889 used. A
+        leading tab is four columns, so `FENCE_RE` not matching one is the right answer and not an
+        oversight: a tab-indented marker is indented code, opening and closing nothing;
       * a backtick opener's info string may not itself contain a backtick, so `` ``` `` written
-        inline is not an opener;
+        inline is not an opener. A TILDE opener's info string may contain anything, backticks
+        included, which is CommonMark's own asymmetry and is why the test is on the character;
       * a closer is the same character as its opener, at least as long, indented at most three
         spaces, and carries nothing after the marker but whitespace. A line with an info string is
         therefore never a closer, so two openers in a row are two openers rather than a pair;
@@ -635,6 +638,17 @@ def self_test():
     case("a-shorter-marker-does-not-close-a-longer-opener",
          extract_section("````\n```\n## CHANGELOG entry\n") is None,
          repr(extract_section("````\n```\n## CHANGELOG entry\n")))
+    # A leading tab is four columns, so a tab-indented marker is indented code and opens nothing,
+    # the same answer as four spaces. Kilo read the space-only regex as an oversight on PR #2892;
+    # this is the case that says it is the rule.
+    case("a-tab-indented-marker-opens-nothing",
+         extract_section("\t```swift\n\n## CHANGELOG entry\n\n### A (#1)\n") is not None,
+         repr(extract_section("\t```swift\n\n## CHANGELOG entry\n\n### A (#1)\n")))
+    # ...and a tilde opener's info string MAY hold backticks, which is CommonMark's asymmetry with
+    # the backtick form, so this fence opens and its `## ` line is not the heading.
+    case("a-tilde-opener-may-hold-backticks-in-its-info-string",
+         extract_section("~~~ see ``` below\n## CHANGELOG entry\n~~~\n") is None,
+         repr(extract_section("~~~ see ``` below\n## CHANGELOG entry\n~~~\n")))
     case("a-marker-line-holding-another-marker-is-not-an-opener",
          extract_section("``` shown inline: ```\n## CHANGELOG entry\n\n### A (#1)\n")
          is not None)
