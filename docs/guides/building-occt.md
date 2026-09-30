@@ -332,6 +332,23 @@ comm -23 \
 
 Every line it prints is a file no carried patch explains. It must print nothing.
 
+**1b. Re-derive what the repo has committed ABOUT that tree.** Two files in `Scripts/` are
+derivations of `Libraries/occt-src` as it stands after step 1, and nothing but this step and
+`kernel-integration.yml` re-derives them:
+
+```bash
+python3 Scripts/census-compiled-out-validation.py --write-table                 # rewrite the map
+python3 Scripts/census-compiled-out-validation.py --reverify-table --require-occt-src
+python3 Scripts/census-compiled-out-validation.py --verify-no-exception-regions --require-occt-src
+```
+
+`--write-table` refuses a tree that does not carry every patch in `Scripts/patches/`, so it is
+also a second reading of step 1, from the patches' side rather than the tree's. Commit the map if
+it moved, and check the totals in its header moved the way the patch predicts.
+`check-inventory-prose.py` fails when the map's provenance stamp and `Scripts/patches/` disagree,
+which is what nothing did while `0042`'s throw sat in the kernel and not in the map for two pins
+(#2885).
+
 **2. Confirm the objects are genuinely newer than the patched sources.** Each slice's build dir is
 `rm -rf`'d and re-configured per run, so a normal run cannot go stale, but a *resumed* build can
 (`CMakeCache.txt` bakes in the configuring checkout's absolute path, and the script's `|| true`

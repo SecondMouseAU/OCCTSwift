@@ -109,6 +109,42 @@ The seven censuses today and what each is for:
   because its subject (a `#ifndef No_Exception` region that swallows the condition variable and
   not only the raise) cannot be derived from raise sites at all.
 
+  **And #2885 is the general lesson that a committed derivation needs a trigger, not a note.**
+  "`--reverify-table` re-derives at an OCCT version bump" was true and was nobody's step, so
+  nothing ran it when a *carried patch* changed a raise site: `0042` added a throw to
+  `ShapeAnalysis::GetFaceUVBounds` and the map said that class held no live throw for two pins,
+  with every gate green, every canary satisfied and every plausibility assertion passing. The
+  assertions could not have seen it either, and that is the part to carry: they ask whether the
+  map is a map of *an* OCCT tree, not whether it is a map of *this* one, and a map missing one
+  throw row is a perfectly good map of the tree it was derived from.
+
+  What closed it is **the artefact recording its own inputs**. `--write-table` stamps the map with
+  the OCCT version the tree states and one line per carried patch with a digest, and
+  `check-inventory-prose.py` fails when that stamp and `Scripts/patches/` disagree: text against
+  text, no tree, red on the PR that carries the patch rather than at some later reading. Three
+  properties are worth copying to the next committed derivation:
+
+  - **The stamp is measured, not asserted.** `--write-table` verifies every carried patch is
+    really in the tree it is about to derive from, by matching each hunk's post-image against the
+    file, and refuses to write anything when one is not. A stamp that merely copied today's patch
+    list onto yesterday's rows would put the gate to sleep, which is worse than the gap it closes.
+  - **It is keyed on the inputs, not on the pin.** The tree `build-occt.sh` patches is the one
+    `Scripts/patches/` describes, so an unpinned patch is in this check's subject and not in
+    `check-pinned-asset-patches.py`'s. The two are meant to be able to disagree, and saying which
+    is which is part of the check.
+  - **The half that needs the tree runs where a tree exists.** `--reverify-table
+    --require-occt-src` and `--verify-no-exception-regions --require-occt-src` run in
+    `kernel-integration.yml` after the patched build, which is triggered by exactly the change
+    that makes the map stale. The stamp catches a stale derivation; only the re-derivation catches
+    wrong *rows*, and a PR that edits the map alone still gets only the first.
+
+  It is implemented inside `check-inventory-prose.py` rather than as a seventeenth gate, on
+  `check_tsan_suppressions()`'s precedent: one artefact has this shape today, that file already
+  reads `Scripts/patches/` and already owns every record this repo keeps of the patch inventory,
+  and a standalone script for one artefact would be disproportionate. The patch **count** in the
+  stamp is a CLAIMS row like every other counted claim; the per-patch digests are what catch a
+  patch revised in place, which no count can see.
+
 Three gates read `Scripts/patches/` and `Scripts/patches-wasi/` rather than `Sources/`, and all
 three for the same reason: `check-patch-deletes-guarded-symbol.py` (#2058), which fails when a
 carried patch deletes a line naming an OCCT symbol a `Tests/` comment says its invariant depends
